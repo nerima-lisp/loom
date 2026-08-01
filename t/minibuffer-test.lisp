@@ -1,0 +1,123 @@
+;;;; t/minibuffer-test.lisp
+;;;;
+;;;; Application layer: the minibuffer protocol (src/application/minibuffer.lisp).
+;;;; Exercises activate/confirm, activate/cancel, Backspace editing, and that
+;;;; MINIBUFFER-MESSAGE is a transient status independent of MINIBUFFER-ACTIVE-P.
+;;;; Key events are built with CL-TTY-KIT:MAKE-KEY-EVENT, the library's real
+;;;; public constructor, rather than a hand-rolled test double.
+(in-package #:loom/test)
+
+(defun %char-key (character)
+  (cl-tty-kit:make-key-event :type :character :code character))
+
+(defun %special-key (code)
+  (cl-tty-kit:make-key-event :type :special :code code))
+
+(defun %type-string (minibuffer string)
+  (loop for character across string
+        do (minibuffer-handle-key minibuffer (%char-key character))))
+
+(describe
+  "minibuffer-activate and confirm"
+  (it
+    "types input and invokes ON-CONFIRM with it, then deactivates"
+    (let ((minibuffer (make-minibuffer))
+          (confirmed nil))
+      (minibuffer-activate minibuffer "Find file: "
+                            :on-confirm (lambda (input) (setf confirmed input)))
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "Find file: ")
+      (%type-string minibuffer "hello")
+      (expect (minibuffer-input-string minibuffer) :to-equal "hello")
+      (minibuffer-handle-key minibuffer (%special-key :enter))
+      (expect confirmed :to-equal "hello")
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+      (expect (minibuffer-input-string minibuffer) :to-equal ""))))
+
+(describe
+  "minibuffer-activate and cancel"
+  (it
+    "C-g invokes ON-CANCEL and deactivates without calling ON-CONFIRM"
+    (let ((minibuffer (make-minibuffer))
+          (cancelled nil)
+          (confirmed nil))
+      (minibuffer-activate minibuffer "Find file: "
+                            :on-confirm (lambda (input) (setf confirmed input))
+                            :on-cancel (lambda () (setf cancelled t)))
+      (%type-string minibuffer "abc")
+      (minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :character :code #\g :modifiers '(:control)))
+      (expect cancelled :to-be-truthy)
+      (expect confirmed :to-be-falsy)
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
+    "also recognizes the plain :SPECIAL :CONTROL-G form"
+    (let ((minibuffer (make-minibuffer))
+          (cancelled nil))
+      (minibuffer-activate minibuffer "Prompt: " :on-cancel (lambda () (setf cancelled t)))
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect cancelled :to-be-truthy)
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy))))
+
+(describe
+  "minibuffer-handle-key backspace editing"
+  (it
+    "deletes the last character of the input"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate minibuffer "Prompt: ")
+      (%type-string minibuffer "abc")
+      (minibuffer-handle-key minibuffer (%special-key :backspace))
+      (expect (minibuffer-input-string minibuffer) :to-equal "ab")))
+
+  (it
+    "is a no-op on empty input"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate minibuffer "Prompt: ")
+      (minibuffer-handle-key minibuffer (%special-key :backspace))
+      (expect (minibuffer-input-string minibuffer) :to-equal ""))))
+
+(describe
+  "minibuffer-handle-key history recall"
+  (it
+    "Up walks history newest-first, replacing the current input each step"
+    ;; CL-HISTORY-KIT's default :LINE-PREFIX mode matches only entries whose
+    ;; text starts with the input typed so far, so recall is exercised here
+    ;; against empty input (matching every entry) rather than partial text.
+    (let* ((history (history-kit:make-history))
+           (minibuffer (make-minibuffer :history history)))
+      (history-kit:history-add history "first")
+      (history-kit:history-add history "second")
+      (minibuffer-activate minibuffer "M-x ")
+      (minibuffer-handle-key minibuffer (%special-key :up))
+      (expect (minibuffer-input-string minibuffer) :to-equal "second")
+      (minibuffer-handle-key minibuffer (%special-key :up))
+      (expect (minibuffer-input-string minibuffer) :to-equal "first")
+      (minibuffer-handle-key minibuffer (%special-key :down))
+      (expect (minibuffer-input-string minibuffer) :to-equal "second"))))
+
+(describe
+  "minibuffer-message"
+  (it
+    "does not affect minibuffer-active-p when the minibuffer is inactive"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-message minibuffer "Saved.")
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
+    "does not affect minibuffer-active-p when the minibuffer is active"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate minibuffer "Prompt: ")
+      (minibuffer-message minibuffer "Wrote file.")
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (expect (minibuffer-input-string minibuffer) :to-equal ""))))
+
+(describe
+  "minibuffer-handle-key when inactive"
+  (it
+    "is a no-op"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-handle-key minibuffer (%char-key #\x))
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+      (expect (minibuffer-input-string minibuffer) :to-equal ""))))

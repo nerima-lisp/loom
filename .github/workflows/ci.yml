@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Supersede in-flight runs for the same PR; never cancel a push to the default
+# branch.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # One job on purpose. Granularity belongs in the flake's `checks.*`
+  # attributes, which `nix flake check` evaluates in parallel with build
+  # caching. Add a second job ONLY for work the Nix sandbox cannot do:
+  # network access, a real PTY/TTY, or artifact upload.
+  check:
+    name: nix flake check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # persist-credentials: false -- this job runs untrusted PR code via
+      # `nix flake check`, and never needs the token, so don't leave it in
+      # .git/config for that code to read.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      # Runs the SBCL test suite (checks.default), the build/dump smoke check
+      # (checks.build), and the treefmt formatting gate (checks.formatting).
+      - name: Check flake
+        run: nix flake check --print-build-logs
+
+      # Catches stray conflict markers and whitespace errors that compile fine.
+      - name: Check diff hygiene
+        run: git diff --check
