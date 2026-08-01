@@ -29,7 +29,7 @@
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "existing.txt" dir)))
         (host-kit:write-file-string "already here" path)
-        (signals 'error (file-tree-create-file nil path))))))
+        (signals error (file-tree-create-file nil path))))))
 
 (describe
   "file-tree-create-directory"
@@ -45,7 +45,7 @@
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "subdir/" dir)))
         (host-kit:create-directory path)
-        (signals 'error (file-tree-create-directory nil path))))))
+        (signals error (file-tree-create-directory nil path))))))
 
 (describe
   "file-tree-rename"
@@ -83,7 +83,7 @@
     "signals an error when path does not exist"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "missing.txt" dir)))
-        (signals 'error (file-tree-delete nil path))))))
+        (signals error (file-tree-delete nil path))))))
 
 (describe
   "loom-fs-list-directory"

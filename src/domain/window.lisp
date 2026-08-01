@@ -133,10 +133,19 @@ to the newly created window. Returns the newly created window.")
                                 direction)
         (destructuring-bind (x1 y1 w1 h1) rect1
           (destructuring-bind (x2 y2 w2 h2) rect2
-            (let* ((leaf1 (make-window-leaf :buffer buffer :x x1 :y y1 :width w1 :height h1))
-                   (leaf2 (make-window-leaf :buffer buffer :x x2 :y y2 :width w2 :height h2))
+            ;; WINDOW is mutated in place to become the first half, rather
+            ;; than being discarded in favor of a fresh struct, so that any
+            ;; reference to it a caller already holds stays valid -- and
+            ;; correctly reflects the post-split size -- instead of becoming
+            ;; silently stale. %WINDOW-REPLACE below still finds it by EQ,
+            ;; which mutating its slots does not affect.
+            (setf (window-leaf-x window) x1
+                  (window-leaf-y window) y1
+                  (window-leaf-width window) w1
+                  (window-leaf-height window) h1)
+            (let* ((leaf2 (make-window-leaf :buffer buffer :x x2 :y y2 :width w2 :height h2))
                    (split-node (make-window-split-node :direction direction
-                                                        :children (list leaf1 leaf2))))
+                                                        :children (list window leaf2))))
               (setf (window-tree-root tree)
                     (%window-replace (window-tree-root tree) window split-node))
               (setf (window-tree-selected tree) leaf2)

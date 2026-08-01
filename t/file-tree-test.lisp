@@ -73,13 +73,13 @@
     "signals an error when toggling a path that is a file, not a directory"
     (let ((tree (make-file-tree "/root/")))
       (setf (loom::file-tree-child-lister tree) #'%fake-lister)
-      (signals 'error (file-tree-toggle-expand tree "/root/a.txt"))))
+      (signals error (file-tree-toggle-expand tree "/root/a.txt"))))
 
   (it
     "signals an error when toggling a path not present in the tree"
     (let ((tree (make-file-tree "/root/")))
       (setf (loom::file-tree-child-lister tree) #'%fake-lister)
-      (signals 'error (file-tree-toggle-expand tree "/does/not/exist")))))
+      (signals error (file-tree-toggle-expand tree "/does/not/exist")))))
 
 (describe
   "file-tree-move-selection"

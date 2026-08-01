@@ -36,8 +36,8 @@
   (it
     "signals an error for an out-of-range buffer-line"
     (let ((buffer (make-buffer)))
-      (signals 'error (buffer-line buffer 1))
-      (signals 'error (buffer-line buffer -1)))))
+      (signals error (buffer-line buffer 1))
+      (signals error (buffer-line buffer -1)))))
 
 (describe
   "buffer-text"
@@ -181,7 +181,7 @@
   (it
     "signals an error when end precedes start"
     (let ((buffer (make-buffer :initial-content "hello")))
-      (signals 'error (buffer-delete-region buffer 0 3 0 1))))
+      (signals error (buffer-delete-region buffer 0 3 0 1))))
 
   (it
     "single-line delete on a non-first line of a multi-line buffer leaves other lines untouched"
@@ -275,4 +275,4 @@
   (it
     "signals an error saving a buffer with no path"
     (let ((buffer (make-buffer :initial-content "hi")))
-      (signals 'error (buffer-save buffer)))))
+      (signals error (buffer-save buffer)))))
