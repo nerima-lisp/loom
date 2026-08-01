@@ -202,6 +202,34 @@
             };
           };
           default = loom;
+
+          # Rendered documentation site (Material for MkDocs).
+          # Build fully offline: Material for MkDocs bundles all of its assets,
+          # so no network access is required inside the Nix sandbox. --strict
+          # promotes broken links and unlisted pages to build failures.
+          docs = pkgs.stdenvNoCC.mkDerivation {
+            pname = "loom-docs";
+            inherit version;
+            src = pkgs.lib.fileset.toSource {
+              root = ./docs;
+              fileset = pkgs.lib.fileset.unions [
+                ./docs/mkdocs.yml
+                ./docs/src
+              ];
+            };
+            nativeBuildInputs = [ pkgs.python3Packages.mkdocs-material ];
+            buildPhase = ''
+              runHook preBuild
+              mkdocs build --strict --config-file mkdocs.yml --site-dir "$out"
+              runHook postBuild
+            '';
+            dontInstall = true;
+            meta = {
+              description = "Rendered MkDocs (Material) documentation for loom";
+              homepage = "https://github.com/nerima-lisp/loom";
+              license = pkgs.lib.licenses.mit;
+            };
+          };
         }
       );
 
@@ -250,6 +278,13 @@
           # Fails `nix flake check` when any tracked file is unformatted,
           # turning the formatter into an enforced CI gate.
           formatting = treefmtEval.${system}.config.build.check self;
+
+          # The docs package builds with `mkdocs --strict`, so a broken link or
+          # a page missing from the nav fails the build. Without this the docs
+          # are only ever built by the publish workflow, which runs after a
+          # merge to main, meaning such a break surfaces as a failed deploy
+          # rather than as a failed pull request.
+          docs = self.packages.${system}.docs;
         }
       );
 
