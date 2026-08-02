@@ -28,6 +28,15 @@
       url = "github:nerima-lisp/cl-tty-kit/v1.2.0";
       flake = false;
     };
+    # Not a dependency loom names anywhere: cl-tty-kit v1.2.0's own
+    # `:depends-on ("cl-codec-kit")` needs it, and `buildASDFSystem` resolves a
+    # system's dependencies only from the `lispLibs` it is handed, so a
+    # transitive edge has to be spelled here or the build stops with
+    # `Component "cl-codec-kit" not found, required by #<SYSTEM "cl-tty-kit">`.
+    cl-codec-kit = {
+      url = "github:nerima-lisp/cl-codec-kit/v0.4.0";
+      flake = false;
+    };
     cl-host-kit = {
       url = "github:nerima-lisp/cl-host-kit/v0.2.5";
       flake = false;
@@ -49,6 +58,7 @@
       nixpkgs,
       cl-weave,
       cl-tty-kit,
+      cl-codec-kit,
       cl-host-kit,
       cl-history-kit,
       treefmt-nix,
@@ -117,6 +127,7 @@
       depSources = [
         cl-weave
         cl-tty-kit
+        cl-codec-kit
         cl-host-kit
         cl-history-kit
       ];
@@ -128,11 +139,22 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          # cl-tty-kit's own `:depends-on ("cl-codec-kit")`. `buildASDFSystem`
+          # resolves a system's dependencies from its `lispLibs` alone, so the
+          # edge has to be built here and handed over explicitly; it is not
+          # discovered from the .asd.
+          clCodecKit = pkgs.sbcl.buildASDFSystem {
+            pname = "cl-codec-kit";
+            version = asdVersionOf "${cl-codec-kit}/cl-codec-kit.asd";
+            src = cl-codec-kit;
+            systems = [ "cl-codec-kit" ];
+          };
           clTtyKit = pkgs.sbcl.buildASDFSystem {
             pname = "cl-tty-kit";
             version = asdVersionOf "${cl-tty-kit}/cl-tty-kit.asd";
             src = cl-tty-kit;
             systems = [ "cl-tty-kit" ];
+            lispLibs = [ clCodecKit ];
           };
           clHostKit = pkgs.sbcl.buildASDFSystem {
             pname = "cl-host-kit";
