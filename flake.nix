@@ -14,7 +14,7 @@
     # mandatory `inputs.nixpkgs.follows` -- without it, it would drag in its
     # own nixpkgs, inflating flake.lock and rebuilding the same derivations.
     cl-weave = {
-      url = "github:nerima-lisp/cl-weave/v1.1.0";
+      url = "github:nerima-lisp/cl-weave/v1.1.4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -25,15 +25,15 @@
     # non-flake input has no inputs of its own, so it cannot contribute a
     # second nixpkgs to flake.lock at all.
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.0.3";
+      url = "github:nerima-lisp/cl-tty-kit/v1.2.0";
       flake = false;
     };
     cl-host-kit = {
-      url = "github:nerima-lisp/cl-host-kit/v0.2.1";
+      url = "github:nerima-lisp/cl-host-kit/v0.2.5";
       flake = false;
     };
     cl-history-kit = {
-      url = "github:nerima-lisp/cl-history-kit/v1.0.1";
+      url = "github:nerima-lisp/cl-history-kit/v1.0.2";
       flake = false;
     };
 
