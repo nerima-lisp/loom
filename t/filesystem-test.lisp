@@ -100,4 +100,14 @@
                 '(:directory :directory :file :file))
         (expect (mapcar (lambda (entry) (file-namestring (car entry))) entries)
                 :to-equal
-                '("aardvark" "zoo" "apple.txt" "banana.txt"))))))
+                '("aardvark" "zoo" "apple.txt" "banana.txt")))))
+
+  (it
+    "omits special entries that are neither a regular file nor a directory"
+    (host-kit:with-temporary-directory (dir)
+      (host-kit:write-file-string "" (merge-pathnames "real.txt" dir))
+      (sb-posix:symlink "real.txt" (merge-pathnames "a-symlink" dir))
+      (let ((entries (loom-fs-list-directory dir)))
+        (expect (mapcar (lambda (entry) (file-namestring (car entry))) entries)
+                :to-equal
+                '("real.txt"))))))

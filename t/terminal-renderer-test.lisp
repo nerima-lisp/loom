@@ -55,6 +55,15 @@
                 :to-equal
                 (format nil "only l~%      ~%      "))))))
 
+  (it
+    "draws a viewport beginning at the requested line"
+    (let* ((buffer (make-instance 'fake-buffer :lines (list "zero" "one" "two")))
+           (renderer (make-loom-renderer 4 2)))
+      (loom-renderer-draw-buffer renderer buffer 0 0 4 2 :start-line 1)
+      (let ((screen (cl-tty-kit:renderer-screen (loom-renderer-cl-tty-renderer renderer))))
+        (expect (cl-tty-kit:screen-to-string screen)
+                :to-equal (format nil "one ~%two ")))))
+
 (describe
   "loom-renderer-present"
   (it

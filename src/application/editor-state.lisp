@@ -5,7 +5,7 @@
 ;;;; together -- this is the one mutable object every command function reads
 ;;;; and mutates.
 ;;;;
-;;;; Every command (see application/commands.lisp) is a plain function of
+;;;; Every command (see application/commands-*.lisp) is a plain function of
 ;;;; zero arguments that reads and mutates the single special variable
 ;;;; *EDITOR-STATE*, rather than taking the editor state as an explicit
 ;;;; argument -- this is what lets a keymap binding be a bare function
@@ -48,6 +48,6 @@ reach any of them through *EDITOR-STATE* alone."
 
 (defvar *editor-state* nil
   "The single, dynamically-bound EDITOR-STATE struct that every command
-function (see application/commands.lisp) reads and mutates. Bound to a
+function (see application/commands-*.lisp) reads and mutates. Bound to a
 freshly created EDITOR-STATE by loom's entry point (see MAIN in src/main.lisp)
 before any command runs, and NIL otherwise.")

@@ -14,21 +14,21 @@
     # mandatory `inputs.nixpkgs.follows` -- without it, it would drag in its
     # own nixpkgs, inflating flake.lock and rebuilding the same derivations.
     cl-weave = {
-      url = "github:nerima-lisp/cl-weave/v1.1.4";
+      url = "github:nerima-lisp/cl-weave/v1.2.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # loom's three runtime dependencies. We only need each one's source tree
+    # loom's runtime dependencies. We only need each one's source tree
     # (built below as an SBCL lisp library via buildASDFSystem), so they are
     # consumed as non-flake sources. `flake = false` reaches the same goal
     # `inputs.nixpkgs.follows` exists for, and reaches it more completely: a
     # non-flake input has no inputs of its own, so it cannot contribute a
     # second nixpkgs to flake.lock at all.
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.2.0";
+      url = "github:nerima-lisp/cl-tty-kit/v1.4.0";
       flake = false;
     };
-    # Not a dependency loom names anywhere: cl-tty-kit v1.2.0's own
+    # Not a dependency loom names anywhere: cl-tty-kit v1.4.0's own
     # `:depends-on ("cl-codec-kit")` needs it, and `buildASDFSystem` resolves a
     # system's dependencies only from the `lispLibs` it is handed, so a
     # transitive edge has to be spelled here or the build stops with
@@ -38,11 +38,19 @@
       flake = false;
     };
     cl-host-kit = {
-      url = "github:nerima-lisp/cl-host-kit/v0.2.5";
+      url = "github:nerima-lisp/cl-host-kit/v0.3.0";
       flake = false;
     };
     cl-history-kit = {
       url = "github:nerima-lisp/cl-history-kit/v1.0.2";
+      flake = false;
+    };
+    cl-prolog = {
+      url = "github:nerima-lisp/cl-prolog/v1.4.0";
+      flake = false;
+    };
+    cl-cli = {
+      url = "github:nerima-lisp/cl-cli/v1.3.0";
       flake = false;
     };
 
@@ -61,6 +69,8 @@
       cl-codec-kit,
       cl-host-kit,
       cl-history-kit,
+      cl-prolog,
+      cl-cli,
       treefmt-nix,
       ...
     }:
@@ -130,10 +140,12 @@
         cl-codec-kit
         cl-host-kit
         cl-history-kit
+        cl-prolog
+        cl-cli
       ];
       depRegistry = nixpkgs.lib.concatMapStrings (dep: "${dep}//:") depSources;
 
-      # loom's three runtime dependencies, each built as an SBCL lisp
+      # loom's runtime dependencies, each built as an SBCL lisp
       # library. Defined once and consumed by both `packages` and `checks`.
       lispLibsFor =
         system:
@@ -168,11 +180,29 @@
             src = cl-history-kit;
             systems = [ "cl-history-kit" ];
           };
+          clProlog = pkgs.sbcl.buildASDFSystem {
+            pname = "cl-prolog";
+            version = asdVersionOf "${cl-prolog}/cl-prolog.asd";
+            src = cl-prolog;
+            systems = [ "cl-prolog" ];
+          };
+          # cl-cli's own :depends-on is uiop (already in SBCL) plus
+          # cl-host-kit on SBCL, so clHostKit above covers it; no extra
+          # transitive edge needs spelling out here the way cl-tty-kit's did.
+          clCli = pkgs.sbcl.buildASDFSystem {
+            pname = "cl-cli";
+            version = asdVersionOf "${cl-cli}/cl-cli.asd";
+            src = cl-cli;
+            systems = [ "cl-cli" ];
+            lispLibs = [ clHostKit ];
+          };
         in
         [
           clTtyKit
           clHostKit
           clHistoryKit
+          clProlog
+          clCli
         ];
 
       # treefmt drives `nix fmt` and the `checks.<system>.formatting` gate.

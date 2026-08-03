@@ -7,14 +7,17 @@
 built on [`cl-tty-kit`](https://github.com/nerima-lisp/cl-tty-kit) for raw-mode
 terminal I/O and double-buffered rendering,
 [`cl-host-kit`](https://github.com/nerima-lisp/cl-host-kit) for filesystem
-access, and [`cl-history-kit`](https://github.com/nerima-lisp/cl-history-kit)
-for minibuffer input recall.
+access, [`cl-history-kit`](https://github.com/nerima-lisp/cl-history-kit) for
+minibuffer input recall, [`cl-prolog`](https://github.com/nerima-lisp/cl-prolog)
+for the M-x extended-command registry, and
+[`cl-cli`](https://github.com/nerima-lisp/cl-cli) for argv parsing (`--help`/
+`--version`).
 
 Implemented today: buffer editing (insert/delete/undo, Emacs-style
 movement/kill-ring/yank), a working raw-mode terminal event loop, multiple
 windows via horizontal/vertical splits (`C-x 2` / `C-x 3` / `C-x o`), and a
 file-tree sidebar (`C-x C-t`) backed by real filesystem create/rename/delete.
-See `install-default-keybindings` in `src/application/commands.lisp` for the
+See `install-default-keybindings` in `src/application/commands-keybindings.lisp` for the
 full keybinding set. Not yet implemented: syntax highlighting, an LSP client,
 extensibility via a user `init.lisp`, and session/layout persistence across
 launches -- these are future phases, not part of this MVP.
@@ -25,7 +28,8 @@ The repository is built and tested with [Nix flakes](https://nixos.wiki/wiki/Fla
 
 ```sh
 # Enter a development shell with SBCL and every sibling dependency
-# (cl-tty-kit, cl-host-kit, cl-history-kit, cl-weave) on CL_SOURCE_REGISTRY.
+# (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog, cl-cli, cl-weave) on
+# CL_SOURCE_REGISTRY.
 nix develop
 
 # Inside the shell:
@@ -34,15 +38,19 @@ sbcl --script run-tests.lisp
 
 # Build the loom binary (dumps an SBCL image via save-lisp-and-die):
 nix build
+./result/bin/loom --help
+./result/bin/loom --version
 ./result/bin/loom
+# A directory opens the file tree; an existing file opens in the first window.
+./result/bin/loom path/to/file.lisp
 
 # Run every check (test suite, build, formatting) the way CI does:
 nix flake check --print-build-logs
 ```
 
 Without Nix: put `loom` alongside checkouts of `cl-tty-kit`, `cl-host-kit`,
-`cl-history-kit`, and `cl-weave` (e.g. all under the same `ghq`-style parent
-directory), then either
+`cl-history-kit`, `cl-prolog`, `cl-cli`, and `cl-weave` (e.g. all under the
+same `ghq`-style parent directory), then either
 
 ```sh
 sbcl --script run-tests.lisp
@@ -56,6 +64,16 @@ or, from a REPL:
 (asdf:test-system :loom)
 ```
 
+## Default keys
+
+- `C-f` / `C-b`, `C-n` / `C-p`, `C-a` / `C-e`: move point.
+- `Enter`, `C-d`, Backspace, `C-o`: insert a newline, delete, or open a line; `C-x u`: undo.
+- `C-k`, `C-w`, `C-y`: kill line or region, then yank.
+- `C-s`, `M-%`, `M-g g`: search, replace all matches, or go to a line.
+- `C-x C-f`, `C-x C-s`, `C-x C-c`: open, save, or quit. Quit asks how to handle every modified buffer.
+- `C-h` or `F1`: show the in-editor command reference.
+- `C-x 2`, `C-x 3`, `C-x o`: split windows or move to the next window.
+
 ## Layout
 
 - `loom.asd` -- the `loom` and `loom/test` ASDF systems.
@@ -67,7 +85,9 @@ or, from a REPL:
   rendering (`cl-tty-kit`) and filesystem access (`cl-host-kit`).
 - `src/application/` -- orchestration: the shared `editor-state` struct and
   `*editor-state*` special variable every command operates on, the
-  minibuffer, and the command/keybinding vocabulary.
+  minibuffer, and the command/keybinding vocabulary, split by concern
+  (`commands-internal`, `-movement`, `-editing`, `-search`, `-file`,
+  `-window`, `-misc`, `-keybindings`).
 - `src/presentation/` -- screen composition (`compose-frame`): what to draw
   where, given the current `editor-state`.
 - `src/main.lisp` -- the `loom:main` entry point saved into the executable.

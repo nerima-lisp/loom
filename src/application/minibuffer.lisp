@@ -1,10 +1,13 @@
 ;;;; src/application/minibuffer.lisp
 ;;;;
 ;;;; Application layer: the minibuffer protocol. Orchestration, not pure
-;;;; domain state -- it coordinates keymap input (domain/keymap.lisp),
-;;;; drives CL-HISTORY-KIT directly for Up/Down recall (see
-;;;; infrastructure/history.lisp for why no separate history adapter exists),
-;;;; and will later coordinate other infrastructure ports.
+;;;; domain state -- it coordinates keymap input (domain/keymap.lisp) and
+;;;; drives CL-HISTORY-KIT directly for Up/Down recall. No separate
+;;;; infrastructure/history.lisp adapter exists for this: MAKE-MINIBUFFER and
+;;;; MINIBUFFER-HANDLE-KEY already name CL-HISTORY-KIT:MAKE-HISTORY and
+;;;; CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT directly in their
+;;;; contracts below, so there is no separate "history" sub-protocol to
+;;;; wrap.
 ;;;;
 ;;;; The minibuffer is the single-line prompt/status area at the bottom of the
 ;;;; editor, used both for interactive input (find-file, M-x, search, ...) and
@@ -111,7 +114,8 @@ zero arguments called when the user cancels (e.g. C-g). Returns MINIBUFFER.")
 active MINIBUFFER: ordinary character events are appended to the input,
 Backspace/Delete edit it, Up/Down recall history (when MINIBUFFER was created
 with one, via CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT), RET invokes the
-ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE and deactivates MINIBUFFER,
+ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE after deactivating the
+current prompt (so the callback may activate a next prompt),
 and C-g invokes ON-CANCEL and deactivates MINIBUFFER. Has no effect if
 MINIBUFFER is not active. Returns MINIBUFFER.")
   (:method (minibuffer key-event)
@@ -146,9 +150,9 @@ MINIBUFFER is not active. Returns MINIBUFFER.")
                  (on-confirm (%minibuffer-on-confirm minibuffer)))
              (when history
                (history-kit:history-add history input))
+             (%minibuffer-deactivate minibuffer)
              (when on-confirm
-               (funcall on-confirm input))
-             (%minibuffer-deactivate minibuffer)))
+               (funcall on-confirm input))))
           ((eq type :character)
            (setf (%minibuffer-input minibuffer)
                  (concatenate 'string (%minibuffer-input minibuffer)

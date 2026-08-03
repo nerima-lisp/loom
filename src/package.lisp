@@ -65,6 +65,7 @@
    #:window-select-next
    #:window-buffer
    #:window-set-buffer
+   #:window-scroll-line
    #:window-x
    #:window-y
    #:window-width
@@ -87,7 +88,7 @@
    #:loom-fs-list-directory
 
    ;; Editor state (src/application/editor-state.lisp): the special variable
-   ;; and struct that every command in src/application/commands.lisp operates on.
+   ;; and struct that every command in src/application/commands-*.lisp operates on.
    #:*editor-state*
    #:editor-state
    #:make-editor-state

@@ -23,24 +23,37 @@
 ;;; ---------------------------------------------------------------------
 ;;; Representation
 ;;;
-;;; A plain adjustable vector of line-strings (no rope/gap-buffer -- buffers
-;;; here are small enough that splice-by-list-conversion is fast enough, and
-;;; a plain vector is much easier to get right). :CONC-NAME and :CONSTRUCTOR
-;;; are both overridden so the struct's auto-generated accessor/constructor
+;;; A piece table stores immutable initial text plus an append-only add buffer.
+;;; Edits split and join compact piece metadata instead of copying unaffected text.
+;;; :CONC-NAME and :CONSTRUCTOR are both overridden so the struct's auto-generated accessor/constructor
 ;;; names (BUFFER-NAME, MAKE-BUFFER, ...) don't collide with the protocol's
 ;;; exported generic functions of the same names above.
 ;;; ---------------------------------------------------------------------
 
+(defstruct (piece (:constructor %make-piece) (:conc-name %piece-))
+  "A contiguous slice of a piece table source."
+  (source :original :type symbol)
+  (start 0 :type integer)
+  (length 0 :type integer))
+
+(deftype %maybe-line/column ()
+  "A buffer's mark line/column: unset (NIL) until BUFFER-SET-MARK's first
+call, an INTEGER (see %CLAMP-POSITION) from then on. Named so BUFFER's two
+mark slots below state the same union once instead of repeating it."
+  '(or null integer))
+
 (defstruct (buffer (:constructor %make-buffer) (:conc-name %buffer-))
-  "Internal representation of a loom buffer: a line vector plus point, mark,
+  "Internal representation of a loom buffer: a piece table plus point, mark,
 modified-p, and undo-list state."
   (name "*scratch*" :type string)
   (path nil)
-  (lines (make-array 1 :adjustable t :fill-pointer 1 :initial-contents '("")))
+  (original "" :type string)
+  (add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0))
+  (pieces nil :type list)
   (point-line 0 :type integer)
   (point-column 0 :type integer)
-  (mark-line nil :type (or null integer))
-  (mark-column nil :type (or null integer))
+  (mark-line nil :type %maybe-line/column)
+  (mark-column nil :type %maybe-line/column)
   (modified-p nil)
   (undo-list nil :type list))
 
@@ -82,83 +95,148 @@ directly observed."
         (values line (+ column (length (first segments))))
         (values (+ line (1- (length segments))) (length (car (last segments)))))))
 
-(defun %lines-list (buffer)
-  (coerce (%buffer-lines buffer) 'list))
+(defun %piece-source-text (buffer piece)
+  (ecase (%piece-source piece)
+    (:original (%buffer-original buffer))
+    (:add (%buffer-add-buffer buffer))))
 
-(defun %set-lines-from-list (buffer list)
-  (setf (%buffer-lines buffer)
-        (make-array (length list)
-                     :adjustable t
-                     :fill-pointer (length list)
-                     :initial-contents list)))
+(defun %piece-text (buffer piece)
+  (let ((source (%piece-source-text buffer piece)))
+    (subseq source
+            (%piece-start piece)
+            (+ (%piece-start piece) (%piece-length piece)))))
+
+(defun %pieces-text (buffer)
+  (with-output-to-string (stream)
+    (dolist (piece (%buffer-pieces buffer))
+      (write-string (%piece-text buffer piece) stream))))
+
+(defun %coalesce-pieces (pieces)
+  "Merge adjacent slices from the same source, keeping metadata compact."
+  (let ((result nil))
+    (dolist (piece pieces (nreverse result))
+      (let ((previous (first result)))
+        (if (and previous
+                 (eq (%piece-source previous) (%piece-source piece))
+                 (= (+ (%piece-start previous) (%piece-length previous))
+                    (%piece-start piece)))
+            (incf (%piece-length previous) (%piece-length piece))
+            (push piece result))))))
+
+(defun %append-add-text (buffer text)
+  "Append TEXT once and return its start offset and length in the add source."
+  (let ((start (length (%buffer-add-buffer buffer))))
+    (loop for character across text
+          do (vector-push-extend character (%buffer-add-buffer buffer)))
+    (values start (length text))))
+
+(defun %splice-insert-piece (buffer offset new-piece)
+  (let ((result nil) (cursor 0) (inserted nil))
+    (dolist (piece (%buffer-pieces buffer))
+      (let ((next (+ cursor (%piece-length piece))))
+        (if (and (not inserted) (<= cursor offset) (<= offset next))
+            (let ((left-length (- offset cursor))
+                  (right-length (- next offset)))
+              (when (plusp left-length)
+                (push (%make-piece :source (%piece-source piece) :start (%piece-start piece) :length left-length) result))
+              (push new-piece result)
+              (when (plusp right-length)
+                (push (%make-piece :source (%piece-source piece) :start (+ (%piece-start piece) left-length) :length right-length) result))
+              (setf inserted t))
+            (push piece result))
+        (setf cursor next)))
+    (unless inserted (push new-piece result))
+    (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
+
+(defun %splice-delete-range (buffer start end)
+  (let ((result nil) (cursor 0))
+    (dolist (piece (%buffer-pieces buffer))
+      (let* ((piece-length (%piece-length piece)) (next (+ cursor piece-length)))
+        (cond
+          ((or (<= next start) (>= cursor end)) (push piece result))
+          (t
+           (let ((prefix-length (max 0 (- start cursor)))
+                 (suffix-offset (max 0 (- end cursor))))
+             (when (plusp prefix-length)
+               (push (%make-piece :source (%piece-source piece) :start (%piece-start piece) :length prefix-length) result))
+             (when (< suffix-offset piece-length)
+               (push (%make-piece :source (%piece-source piece) :start (+ (%piece-start piece) suffix-offset) :length (- piece-length suffix-offset)) result)))))
+        (setf cursor next)))
+    (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
+
+(defun %position-to-offset (buffer line column)
+  (let ((current-line 0) (current-column 0) (offset 0))
+    (dolist (piece (%buffer-pieces buffer))
+      (loop for character across (%piece-text buffer piece)
+            do (when (and (= current-line line) (= current-column column))
+                 (return-from %position-to-offset offset))
+               (incf offset)
+               (if (char= character #\Newline)
+                   (progn (incf current-line) (setf current-column 0))
+                   (incf current-column))))
+    (if (and (= current-line line) (= current-column column))
+        offset
+        (error "buffer position (~D, ~D) out of range" line column))))
+
+(defun %line-count (buffer)
+  (let ((count 1))
+    (dolist (piece (%buffer-pieces buffer) count)
+      (loop for character across (%piece-text buffer piece)
+            when (char= character #\Newline)
+              do (incf count)))))
+
+(defun %line-at (buffer line-number)
+  "Return the text of LINE-NUMBER, not including its trailing newline.
+Trusts its callers -- %CLAMP-POSITION, BUFFER-LINE (which validates
+LINE-NUMBER itself before calling this), and BUFFER-DELETE-CHAR's
+backward/forward helpers (which derive it from BUFFER's own point) -- to
+never pass an out-of-range LINE-NUMBER; this is an internal helper, not a
+system boundary. WITH-OUTPUT-TO-STRING's own return value (the stream
+accumulated so far) is what's returned once the target line -- necessarily
+BUFFER's last, since it has no trailing newline -- is reached without one."
+  (block result
+    (let ((current-line 0))
+      (with-output-to-string (stream)
+        (dolist (piece (%buffer-pieces buffer))
+          (loop for character across (%piece-text buffer piece)
+                do (cond
+                     ((= current-line line-number)
+                      (if (char= character #\Newline)
+                          (return-from result (get-output-stream-string stream))
+                          (write-char character stream)))
+                     ((char= character #\Newline)
+                      (incf current-line)))))))))
+
+(defun %piece-table-range-text (buffer start end)
+  (with-output-to-string (stream)
+    (let ((cursor 0))
+      (dolist (piece (%buffer-pieces buffer))
+        (let ((next (+ cursor (%piece-length piece))))
+          (when (and (< cursor end) (> next start))
+            (let ((slice-start (max start cursor)) (slice-end (min end next)))
+              (write-string (subseq (%piece-text buffer piece) (- slice-start cursor) (- slice-end cursor)) stream)))
+          (setf cursor next))))))
 
 (defun %raw-insert-at (buffer line column text)
-  "Physically splice TEXT into BUFFER's line vector at (LINE, COLUMN), with
-no undo bookkeeping or modified-flag update -- callers needing those use
-%DO-INSERT. Returns (values end-line end-column), the position immediately
-after the inserted text."
-  (let* ((segments (%split-newlines text)))
-    (if (= (length segments) 1)
-        ;; Fast path: TEXT contains no newline, so the edit is confined to a
-        ;; single line and the line count doesn't change. Mutate the existing
-        ;; adjustable vector in place via AREF instead of paying the O(N)
-        ;; %LINES-LIST/%SET-LINES-FROM-LIST list round-trip for what is the
-        ;; single hottest path in the editor (every self-insert-command).
-        (let* ((old-line (aref (%buffer-lines buffer) line))
-               (before (subseq old-line 0 column))
-               (after (subseq old-line column))
-               (seg (first segments)))
-          (setf (aref (%buffer-lines buffer) line) (concatenate 'string before seg after)))
-        (let* ((lines-list (%lines-list buffer))
-               (old-line (nth line lines-list))
-               (before (subseq old-line 0 column))
-               (after (subseq old-line column))
-               (first-seg (first segments))
-               (last-seg (car (last segments)))
-               (middle-segs (butlast (rest segments)))
-               (new-first (concatenate 'string before first-seg))
-               (new-last (concatenate 'string last-seg after))
-               (insert-lines (append middle-segs (list new-last))))
-          (setf (nth line lines-list) new-first)
-          (setf lines-list (append (subseq lines-list 0 (1+ line))
-                                    insert-lines
-                                    (subseq lines-list (1+ line))))
-          (%set-lines-from-list buffer lines-list)))
-    (%advance-position line column text)))
+  "Splice TEXT into the piece table at (LINE, COLUMN), without undo bookkeeping."
+  (multiple-value-bind (start length) (%append-add-text buffer text)
+    (when (plusp length)
+      (%splice-insert-piece buffer (%position-to-offset buffer line column)
+                            (%make-piece :source :add :start start :length length))))
+  (%advance-position line column text))
 
 (defun %raw-delete-region (buffer start-line start-column end-line end-column)
-  "Physically remove the text between the two positions from BUFFER's line
-vector, with no undo bookkeeping or modified-flag update -- callers needing
-those use %DO-DELETE."
-  (if (= start-line end-line)
-      ;; Fast path: the region is confined to a single line, so the line
-      ;; count doesn't change. Mutate the existing adjustable vector in place
-      ;; via AREF instead of paying the O(N) %LINES-LIST/%SET-LINES-FROM-LIST
-      ;; list round-trip -- see %RAW-INSERT-AT's matching fast path.
-      (let* ((old-line (aref (%buffer-lines buffer) start-line))
-             (new-line (concatenate 'string
-                                     (subseq old-line 0 start-column)
-                                     (subseq old-line end-column))))
-        (setf (aref (%buffer-lines buffer) start-line) new-line))
-      (let* ((lines-list (%lines-list buffer))
-             (prefix (subseq (nth start-line lines-list) 0 start-column))
-             (suffix (subseq (nth end-line lines-list) end-column))
-             (merged (concatenate 'string prefix suffix)))
-        (setf lines-list (append (subseq lines-list 0 start-line)
-                                  (list merged)
-                                  (subseq lines-list (1+ end-line))))
-        (%set-lines-from-list buffer lines-list))))
+  "Remove text between two positions from the piece table without undo bookkeeping."
+  (let ((start (%position-to-offset buffer start-line start-column))
+        (end (%position-to-offset buffer end-line end-column)))
+    (when (< start end)
+      (%splice-delete-range buffer start end))))
 
 (defun %extract-region (buffer start-line start-column end-line end-column)
   "Return, without mutating BUFFER, the text between the two positions."
-  (if (= start-line end-line)
-      (subseq (aref (%buffer-lines buffer) start-line) start-column end-column)
-      (let ((parts nil))
-        (push (subseq (aref (%buffer-lines buffer) start-line) start-column) parts)
-        (loop for l from (1+ start-line) below end-line
-              do (push (aref (%buffer-lines buffer) l) parts))
-        (push (subseq (aref (%buffer-lines buffer) end-line) 0 end-column) parts)
-        (format nil "~{~A~^~%~}" (nreverse parts)))))
+  (%piece-table-range-text buffer
+                           (%position-to-offset buffer start-line start-column)
+                           (%position-to-offset buffer end-line end-column)))
 
 (defun %do-insert (buffer line column text)
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
@@ -201,38 +279,25 @@ makes the ring model work."
                (%buffer-point-column buffer) column))))))
 
 (defun %clamp-position (buffer line column)
-  "Clamp (LINE, COLUMN) into BUFFER's valid range: LINE into
-[0, line-count), COLUMN into [0, (length of that line)]. Returns (values
-clamped-line clamped-column)."
-  (let* ((line-count (length (%buffer-lines buffer)))
+  "Clamp (LINE, COLUMN) into BUFFER valid bounds."
+  (let* ((line-count (%line-count buffer))
          (clamped-line (max 0 (min line (1- line-count))))
-         (line-len (length (aref (%buffer-lines buffer) clamped-line)))
+         (line-len (length (%line-at buffer clamped-line)))
          (clamped-column (max 0 (min column line-len))))
     (values clamped-line clamped-column)))
 
 (defgeneric make-buffer (&key name path initial-content)
   (:documentation
-   "Create and return a new, empty-undo-history buffer.
-
-NAME is the buffer's display name (a string); when not supplied an
-implementation-chosen default (e.g. \"*scratch*\") is used. PATH, when
-supplied, is the pathname/namestring the buffer is associated with for
-BUFFER-SAVE and is returned by BUFFER-PATH; it does not by itself cause any
-file I/O -- use BUFFER-LOAD to read a file's contents into a new buffer.
-INITIAL-CONTENT, when supplied, is a string that becomes the buffer's initial
-text; the buffer is otherwise empty. Point and mark both start at line 0,
-column 0, and BUFFER-MODIFIED-P is false immediately after creation.
-
-Returns the new buffer object.")
+   "Create and return a new, empty-undo-history buffer.")
   (:method (&key name path initial-content)
-    (let* ((lines-list (if initial-content (%split-newlines initial-content) (list "")))
-           (lines-vec (make-array (length lines-list)
-                                   :adjustable t
-                                   :fill-pointer (length lines-list)
-                                   :initial-contents lines-list)))
+    (let ((original (or initial-content "")))
       (%make-buffer :name (or name "*scratch*")
                     :path path
-                    :lines lines-vec
+                    :original original
+                    :add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0)
+                    :pieces (if (plusp (length original))
+                                (list (%make-piece :source :original :start 0 :length (length original)))
+                                nil)
                     :point-line 0
                     :point-column 0
                     :mark-line nil
@@ -253,29 +318,21 @@ buffer has never been loaded from or saved to a file.")
     (%buffer-path buffer)))
 
 (defgeneric buffer-text (buffer)
-  (:documentation
-   "Return BUFFER's entire contents as a single string, including internal
-newlines between lines.")
+  (:documentation "Return BUFFER entire contents as a single string.")
   (:method (buffer)
-    (format nil "~{~A~^~%~}" (%lines-list buffer))))
+    (%pieces-text buffer)))
 
 (defgeneric buffer-line-count (buffer)
-  (:documentation
-   "Return the number of lines in BUFFER as a non-negative integer. An empty
-buffer has exactly one (empty) line, so this is always at least 1.")
+  (:documentation "Return the number of lines in BUFFER; an empty buffer has one line.")
   (:method (buffer)
-    (length (%buffer-lines buffer))))
+    (%line-count buffer)))
 
 (defgeneric buffer-line (buffer line-number)
-  (:documentation
-   "Return the text of the line at zero-based LINE-NUMBER in BUFFER, as a
-string with no trailing newline. Signals an error if LINE-NUMBER is out of
-range, i.e. not in [0, (BUFFER-LINE-COUNT BUFFER)).")
+  (:documentation "Return the zero-based LINE-NUMBER text without its trailing newline.")
   (:method (buffer line-number)
-    (unless (and (>= line-number 0) (< line-number (buffer-line-count buffer)))
-      (error "buffer-line: line-number ~D out of range [0,~D)"
-             line-number (buffer-line-count buffer)))
-    (aref (%buffer-lines buffer) line-number)))
+    (unless (and (>= line-number 0) (< line-number (%line-count buffer)))
+      (error "buffer-line: line-number ~D out of range [0,~D)" line-number (%line-count buffer)))
+    (%line-at buffer line-number)))
 
 (defgeneric buffer-point-line (buffer)
   (:documentation "Return the zero-based line number of BUFFER's point.")
@@ -330,41 +387,42 @@ Returns BUFFER.")
               (%buffer-point-column buffer) end-column)))
     buffer))
 
+(defun %delete-char-backward (buffer)
+  "Delete the character before point, joining with the previous line at
+column 0. A no-op at the very start of the buffer."
+  (let ((line (%buffer-point-line buffer))
+        (column (%buffer-point-column buffer)))
+    (cond
+      ((and (= line 0) (= column 0)) nil)
+      ((> column 0)
+       (%do-delete buffer line (1- column) line column)
+       (setf (%buffer-point-line buffer) line
+             (%buffer-point-column buffer) (1- column)))
+      (t
+       (let* ((prev-line (1- line))
+              (prev-len (length (%line-at buffer prev-line))))
+         (%do-delete buffer prev-line prev-len line 0)
+         (setf (%buffer-point-line buffer) prev-line
+               (%buffer-point-column buffer) prev-len))))))
+
+(defun %delete-char-forward (buffer)
+  "Delete the character at point, joining with the next line at
+end-of-line. A no-op at the very end of the buffer."
+  (let* ((line (%buffer-point-line buffer))
+         (column (%buffer-point-column buffer))
+         (line-count (%line-count buffer))
+         (line-len (length (%line-at buffer line))))
+    (cond
+      ((and (= line (1- line-count)) (= column line-len)) nil)
+      ((< column line-len) (%do-delete buffer line column line (1+ column)))
+      (t (%do-delete buffer line column (1+ line) 0)))))
+
 (defgeneric buffer-delete-char (buffer &key backward)
-  (:documentation
-   "Delete a single character adjacent to BUFFER's point. When BACKWARD is
-true, deletes the character immediately before point (Backspace semantics)
-and moves point back by one; otherwise deletes the character immediately
-after/at point (Delete semantics) and leaves point where it is. A no-op at
-a buffer boundary (start of buffer for BACKWARD, end of buffer otherwise).
-Marks BUFFER as modified and records undo information when a character was
-actually deleted. Returns BUFFER.")
+  (:documentation "Delete one character next to point, returning BUFFER.")
   (:method (buffer &key backward)
-    (let ((line (%buffer-point-line buffer))
-          (column (%buffer-point-column buffer)))
-      (if backward
-          (cond
-            ((and (= line 0) (= column 0))
-             nil) ; no-op: start of buffer
-            ((> column 0)
-             (%do-delete buffer line (1- column) line column)
-             (setf (%buffer-point-line buffer) line
-                   (%buffer-point-column buffer) (1- column)))
-            (t ;; column = 0, line > 0: join with previous line
-             (let* ((prev-line (1- line))
-                    (prev-len (length (aref (%buffer-lines buffer) prev-line))))
-               (%do-delete buffer prev-line prev-len line 0)
-               (setf (%buffer-point-line buffer) prev-line
-                     (%buffer-point-column buffer) prev-len))))
-          (let ((line-count (length (%buffer-lines buffer)))
-                (line-len (length (aref (%buffer-lines buffer) line))))
-            (cond
-              ((and (= line (1- line-count)) (= column line-len))
-               nil) ; no-op: end of buffer
-              ((< column line-len)
-               (%do-delete buffer line column line (1+ column)))
-              (t ;; column = line-len, line < line-count - 1: join with next line
-               (%do-delete buffer line column (1+ line) 0))))))
+    (if backward
+        (%delete-char-backward buffer)
+        (%delete-char-forward buffer))
     buffer))
 
 (defgeneric buffer-delete-region (buffer start-line start-column end-line end-column)
@@ -464,3 +522,40 @@ Declared here (name, docstring, argument list) only; the real, disk-touching
 :METHOD lives in infrastructure/filesystem.lisp, matching how the
 disk-touching FILE-TREE-* generics are split from domain/file-tree.lisp
 into that same file."))
+
+(defun %buffer-point-offset (buffer)
+  "Return BUFFER's point as an offset in BUFFER-TEXT."
+  (let ((offset (buffer-point-column buffer)))
+    (loop for line below (buffer-point-line buffer)
+          do (incf offset (1+ (length (buffer-line buffer line)))))
+    offset))
+
+(defun %buffer-offset-position (buffer offset)
+  "Return the line and column corresponding to OFFSET in BUFFER-TEXT."
+  (loop for line below (buffer-line-count buffer)
+        for line-length = (length (buffer-line buffer line))
+        if (<= offset line-length)
+          do (return (values line offset))
+        do (decf offset (1+ line-length))
+        finally (let ((last-line (1- (buffer-line-count buffer))))
+                  (return (values last-line
+                                  (length (buffer-line buffer last-line)))))))
+
+(defun %replacement-occurrences (text old start)
+  "Return OLD offsets in one non-overlapping cycle beginning at START."
+  (labels ((collect-occurrences (from to)
+             (loop for offset = (search old text :start2 from :end2 to)
+                   while offset
+                   collect offset
+                   do (setf from (+ offset (length old))))))
+    (append (collect-occurrences start (length text))
+            (collect-occurrences 0 start))))
+
+(defun %find-next-occurrence (buffer string)
+  "Return the next case-sensitive occurrence of STRING at or after point.
+Searches the text before point once when the first search reaches the end."
+  (unless (zerop (length string))
+    (let* ((text (buffer-text buffer))
+           (start (%buffer-point-offset buffer)))
+      (or (search string text :start2 start)
+          (and (plusp start) (search string text :end2 start))))))

@@ -35,21 +35,17 @@ CL-TTY-KIT:MAKE-RENDERER) that RENDERER wraps.")
   (:method ((renderer loom-renderer))
     (%loom-renderer-cl-tty-renderer renderer)))
 
-(defgeneric loom-renderer-draw-buffer (renderer buffer x y width height)
+(defgeneric loom-renderer-draw-buffer (renderer buffer x y width height &key start-line)
   (:documentation
    "Draw BUFFER's currently visible region into RENDERER's screen, occupying
 the rectangle whose top-left corner is (X, Y) and which is WIDTH columns by
 HEIGHT rows, all in screen-cell coordinates. Does not itself flush anything
 to a terminal -- see LOOM-RENDERER-PRESENT. Returns RENDERER.")
-  (:method ((renderer loom-renderer) buffer x y width height)
+  (:method ((renderer loom-renderer) buffer x y width height &key (start-line 0))
     (let ((screen (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer)))
           (line-count (buffer-line-count buffer)))
-      ;; TODO: viewport scrolling -- ROW is used directly as BUFFER's line
-      ;; number below, so drawing always starts at line 0. Once a
-      ;; viewport/scroll-offset concept exists on the window or buffer, add
-      ;; it in here (e.g. (+ row scroll-offset)) instead of ROW alone.
       (dotimes (row height)
-        (let ((line-number row))
+        (let ((line-number (+ start-line row)))
           (when (< line-number line-count)
             (let* ((text (buffer-line buffer line-number))
                    (visible (if (> (length text) width)

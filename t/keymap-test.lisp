@@ -37,7 +37,25 @@
     (let ((keymap (make-keymap)))
       (keymap-define-key keymap (list (cons '(:control :meta) #\a)) 'combo-command)
       (expect (keymap-lookup keymap (list (cons '(:meta :control) #\a)))
-              :to-be 'combo-command))))
+              :to-be 'combo-command)))
+
+  (it
+    "returns NIL when looking up a sequence longer than a direct binding"
+    (let ((keymap (make-keymap)))
+      (keymap-define-key keymap (list *ctrl-x*) 'dummy-command)
+      (expect (keymap-lookup keymap (list *ctrl-x* *ctrl-s*)) :to-be-falsy)))
+
+  (it
+    "returns NIL for an empty key sequence"
+    (let ((keymap (make-keymap)))
+      (expect (keymap-lookup keymap nil) :to-be-falsy)))
+
+  (it
+    "accepts a bare character/keyword descriptor as shorthand for an unmodified key"
+    (let ((keymap (make-keymap)))
+      (keymap-define-key keymap (list #\q) 'quit-command)
+      (expect (keymap-lookup keymap (list (cons nil #\q))) :to-be 'quit-command)
+      (expect (keymap-lookup keymap (list #\q)) :to-be 'quit-command))))
 
 (describe
   "keymap-state-dispatch"

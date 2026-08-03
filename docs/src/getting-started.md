@@ -38,7 +38,7 @@ loom ~/project
 `C-x C-t` toggles the file-tree sidebar; `C-x C-f` prompts for a path and
 opens it in the selected window; `C-x C-s` saves the selected buffer; `C-x
 C-c` quits. See
-[`install-default-keybindings`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands.lisp)
+[`install-default-keybindings`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp)
 for the full keybinding set.
 
 ## Build from source

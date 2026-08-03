@@ -47,7 +47,17 @@
       (expect (window-width original) :to-equal 8)
       (expect (window-y new-window) :to-equal 4)
       (expect (window-height new-window) :to-equal 3)
-      (expect (window-width new-window) :to-equal 8))))
+      (expect (window-width new-window) :to-equal 8)))
+
+  (it
+    "splits a second time, replacing a leaf nested under an existing split node"
+    (let* ((tree (make-window-tree :scratch 20 10))
+           (original (window-tree-selected-window tree))
+           (second (window-split tree original :vertical))
+           (third (window-split tree second :horizontal)))
+      (expect (window-tree-windows tree) :to-have-length 3)
+      (expect (window-tree-selected-window tree) :to-be third)
+      (expect (window-buffer third) :to-be :scratch))))
 
 (describe
   "window-select-next"
@@ -84,4 +94,23 @@
       (expect (window-x right) :to-equal 10)
       (expect (window-width right) :to-equal 10)
       (expect (window-height left) :to-equal 10)
-      (expect (window-height right) :to-equal 10))))
+      (expect (window-height right) :to-equal 10)))
+
+  (it
+    "recurses into a nested split node, not just a flat two-window split"
+    (let* ((tree (make-window-tree :scratch 20 10))
+           (left (window-tree-selected-window tree))
+           (right (window-split tree left :vertical))
+           (bottom (window-split tree right :horizontal)))
+      (expect (window-tree-resize tree 20 10) :to-be tree)
+      (expect (window-x left) :to-equal 0)
+      (expect (window-width left) :to-equal 10)
+      (expect (window-height left) :to-equal 10)
+      (expect (window-x right) :to-equal 10)
+      (expect (window-y right) :to-equal 0)
+      (expect (window-width right) :to-equal 10)
+      (expect (window-height right) :to-equal 5)
+      (expect (window-x bottom) :to-equal 10)
+      (expect (window-y bottom) :to-equal 5)
+      (expect (window-width bottom) :to-equal 10)
+      (expect (window-height bottom) :to-equal 5))))

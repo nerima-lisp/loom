@@ -24,16 +24,18 @@ Confining `cl-tty-kit`/`cl-host-kit`/`cl-history-kit` calls to
 `infrastructure/` is what makes `domain/` testable without a terminal: a test
 exercises a buffer, window tree, or keymap directly, with no process I/O.
 
-Commands (`src/application/commands.lisp`) are plain, ordinary functions of
-zero arguments that read and mutate the single special variable
-`*editor-state*`, rather than taking the editor state as an explicit
-argument -- this is what lets a keymap binding be a bare function designator.
-`install-default-keybindings` binds each command to its Emacs-style key
+Commands (`src/application/commands-*.lisp`, split by concern -- movement,
+editing, search, file, window, misc, keybindings, plus the shared
+`commands-internal.lisp`) are plain, ordinary functions of zero arguments
+that read and mutate the single special variable `*editor-state*`, rather
+than taking the editor state as an explicit argument -- this is what lets a
+keymap binding be a bare function designator. `install-default-keybindings`
+(`commands-keybindings.lisp`) binds each command to its Emacs-style key
 sequence.
 
 ## Toolkit foundation
 
-loom builds on three `nerima-lisp` toolkit libraries, each wired at the layer
+loom builds on five `nerima-lisp` toolkit libraries, each wired at the layer
 where it fits the domain-driven design:
 
 - **[cl-tty-kit](https://github.com/nerima-lisp/cl-tty-kit)** -- raw-mode
@@ -49,6 +51,14 @@ where it fits the domain-driven design:
 - **[cl-history-kit](https://github.com/nerima-lisp/cl-history-kit)** -- the
   history object a minibuffer is created with, driving Up/Down recall while
   prompting (`find-file`, `save-buffer`, file-tree create/rename).
+- **[cl-prolog](https://github.com/nerima-lisp/cl-prolog)** -- the logic-
+  programming rulebase `define-extended-commands`
+  (`src/application/commands-misc.lisp`) compiles down to, resolving M-x's
+  typed command names to their command functions.
+- **[cl-cli](https://github.com/nerima-lisp/cl-cli)** -- the declarative app
+  spec `*loom-app*` (`src/main.lisp`) parses `argv` against: a single root
+  positional (the file/directory to open) plus `--help`/`-h`/`--version`/`-V`
+  for free.
 
 ## Test suite
 

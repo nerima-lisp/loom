@@ -31,9 +31,7 @@ file-tree features are implemented against."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit"
-               "cl-host-kit"
-               "cl-history-kit")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog" "cl-cli")
   :pathname "src"
   :serial t
   :components
@@ -53,10 +51,16 @@ file-tree features are implemented against."
    (:file "domain/file-tree")
    (:file "infrastructure/terminal-renderer")
    (:file "infrastructure/filesystem")
-   (:file "infrastructure/history")
    (:file "application/editor-state")
    (:file "application/minibuffer")
-   (:file "application/commands")
+   (:file "application/commands-internal")
+   (:file "application/commands-movement")
+   (:file "application/commands-editing")
+   (:file "application/commands-search")
+   (:file "application/commands-file")
+   (:file "application/commands-window")
+   (:file "application/commands-misc")
+   (:file "application/commands-keybindings")
    (:file "presentation/layout")
    (:file "main"))
   :in-order-to ((asdf:test-op (asdf:test-op "loom/test"))))
@@ -84,7 +88,8 @@ file-tree features are implemented against."
    (:file "file-tree-test")
    (:file "minibuffer-test")
    (:file "commands-test")
-   (:file "layout-test"))
+   (:file "layout-test")
+   (:file "main-test"))
   ;; Not HOST-KIT:SYMBOL-CALL or UIOP:SYMBOL-CALL: a .asd is read by the plain
   ;; CL reader before :depends-on is ever consulted, so any PKG:SYMBOL token
   ;; here must resolve against a package already in the image. FIND-SYMBOL /
