@@ -73,6 +73,32 @@ dropped once a push would exceed this.")
       (unless (and (= end-line line) (= end-column column))
         (%kill-ring-push (buffer-delete-region buffer line column end-line end-column))))))
 
+(defun %kill-between-offsets (buffer start-offset end-offset)
+  (unless (= start-offset end-offset)
+    (let* ((start (buffer-offset-position buffer start-offset))
+           (end (buffer-offset-position buffer end-offset))
+           (text (buffer-delete-region
+                  buffer
+                  (buffer-position-line start)
+                  (buffer-position-column start)
+                  (buffer-position-line end)
+                  (buffer-position-column end))))
+      (%kill-ring-push text))))
+
+(defun kill-word ()
+  "Kill forward to the end of the next word (M-d)."
+  (let* ((buffer (%selected-buffer))
+         (start (buffer-point-offset buffer))
+         (end (%forward-word-offset (buffer-text buffer) start)))
+    (%kill-between-offsets buffer start end)))
+
+(defun backward-kill-word ()
+  "Kill backward to the beginning of the previous word (M-Backspace)."
+  (let* ((buffer (%selected-buffer))
+         (end (buffer-point-offset buffer))
+         (start (%backward-word-offset (buffer-text buffer) end)))
+    (%kill-between-offsets buffer start end)))
+
 (defun %order-region (point-line point-column mark-line mark-column)
   "Return (VALUES START-LINE START-COLUMN END-LINE END-COLUMN) for the region
 delimited by point and mark, with whichever of the two positions comes first
@@ -104,6 +130,27 @@ in the buffer as the start: positions are compared by line, then by column."
   "Set mark to point's current position."
   (let ((buffer (%selected-buffer)))
     (buffer-set-mark buffer (buffer-point-line buffer) (buffer-point-column buffer))))
+
+(defun exchange-point-and-mark ()
+  "Exchange point and mark, or report that no mark is set (C-x C-x)."
+  (let ((buffer (%selected-buffer)))
+    (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+      (if (null mark-line)
+          (minibuffer-message (editor-state-minibuffer *editor-state*)
+                              "The mark is not set")
+          (let ((point-line (buffer-point-line buffer))
+                (point-column (buffer-point-column buffer)))
+            (buffer-set-point buffer mark-line mark-column)
+            (buffer-set-mark buffer point-line point-column))))))
+
+(defun mark-whole-buffer ()
+  "Set the mark at the end and point at the beginning of the buffer (C-x h)."
+  (let* ((buffer (%selected-buffer))
+         (end (buffer-offset-position buffer (length (buffer-text buffer)))))
+    (buffer-set-mark buffer
+                     (buffer-position-line end)
+                     (buffer-position-column end))
+    (buffer-set-point buffer 0 0)))
 
 (defun undo-command ()
   "Undo the most recent change group in the selected buffer."

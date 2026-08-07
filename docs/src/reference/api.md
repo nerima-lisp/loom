@@ -202,14 +202,6 @@ Create and return a new loom renderer backed by a `cl-tty-kit` screen and
 double-buffered diff renderer of the given `width`/`height` (terminal
 columns/rows).
 
-### `loom-renderer-cl-tty-renderer`
-
-```lisp
-(loom:loom-renderer-cl-tty-renderer renderer)
-```
-
-Return the underlying `cl-tty-kit` renderer object `renderer` wraps.
-
 ### `loom-renderer-draw-buffer`
 
 ```lisp

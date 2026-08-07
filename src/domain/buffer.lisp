@@ -461,6 +461,13 @@ or last saved.")
   (:method (buffer)
     (%buffer-modified-p buffer)))
 
+(defgeneric buffer-mark-saved (buffer)
+  (:documentation
+   "Mark BUFFER as having no unsaved changes and return BUFFER.")
+  (:method (buffer)
+    (setf (%buffer-modified-p buffer) nil)
+    buffer))
+
 (defgeneric buffer-undo (buffer)
   (:documentation
    "Undo the most recent change group in BUFFER, Emacs ring-style: there is
@@ -527,54 +534,39 @@ Declared here (name, docstring, argument list) only; the real, disk-touching
 disk-touching FILE-TREE-* generics are split from domain/file-tree.lisp
 into that same file."))
 
-(defun %buffer-point-offset (buffer)
+(deftype buffer-offset ()
+  "A non-negative character offset in BUFFER-TEXT."
+  '(integer 0 *))
+
+(defstruct (buffer-position
+            (:constructor %make-buffer-position (line column)))
+  "A zero-based line and column position in a buffer."
+  (line 0 :type buffer-offset)
+  (column 0 :type buffer-offset))
+
+(defstruct (buffer-span
+            (:constructor %make-buffer-span (start end)))
+  "A half-open character-offset span in a buffer."
+  (start 0 :type buffer-offset)
+  (end 0 :type buffer-offset))
+
+(defun buffer-point-offset (buffer)
   "Return BUFFER's point as an offset in BUFFER-TEXT."
   (let ((offset (buffer-point-column buffer)))
     (loop for line below (buffer-point-line buffer)
           do (incf offset (1+ (length (buffer-line buffer line)))))
     offset))
 
-(defun %buffer-offset-position (buffer offset)
-  "Return the line and column corresponding to OFFSET in BUFFER-TEXT."
+(defun buffer-offset-position (buffer offset)
+  "Return the BUFFER-POSITION corresponding to OFFSET in BUFFER-TEXT."
+  (declare (type buffer-offset offset))
   (loop for line below (buffer-line-count buffer)
         for line-length = (length (buffer-line buffer line))
         if (<= offset line-length)
-          do (return (values line offset))
+          do (return (%make-buffer-position line offset))
         do (decf offset (1+ line-length))
         finally (let ((last-line (1- (buffer-line-count buffer))))
-                  (return (values last-line
-                                  (length (buffer-line buffer last-line)))))))
-
-(defun %replacement-match-spans (text pattern start)
-  "Return every non-overlapping (MATCH-START . MATCH-END) span where regular
-expression PATTERN matches TEXT, in one cycle beginning at START: matches
-from START to the end of TEXT first, then matches from the beginning of TEXT
-up to START -- mirroring %FIND-NEXT-OCCURRENCE's own wrap-around. PATTERN is a
-CL-REGEX-KIT pattern, so it is case-sensitive unless it opens with the
-inline (?i) flag."
-  (let ((regex (cl-regex-kit:compile-regex pattern)))
-    (flet ((spans-in (from to)
-             (mapcar (lambda (match)
-                       (cons (cl-regex-kit:match-start match)
-                             (cl-regex-kit:match-end match)))
-                     (cl-regex-kit:all-matches regex text :start from :end to
-                                                          :timeout +regex-search-timeout-seconds+))))
-      (append (spans-in start (length text))
-              (spans-in 0 start)))))
-
-(defun %find-next-occurrence (buffer pattern)
-  "Return the next occurrence of regular-expression PATTERN at or after
-point, as a CL-REGEX-KIT:MATCH-RESULT, or NIL if PATTERN is empty or matches
-nowhere in BUFFER's text. Searches the text before point once when the first
-search (from point to end-of-text) finds nothing, mirroring the previous
-literal-search wrap-around. PATTERN is case-sensitive unless it opens with
-the inline (?i) flag."
-  (unless (zerop (length pattern))
-    (let ((text (buffer-text buffer))
-          (start (%buffer-point-offset buffer))
-          (regex (cl-regex-kit:compile-regex pattern)))
-      (or (cl-regex-kit:scan regex text :start start
-                                        :timeout +regex-search-timeout-seconds+)
-          (and (plusp start)
-               (cl-regex-kit:scan regex text :end start
-                                             :timeout +regex-search-timeout-seconds+))))))
+                  (return
+                    (%make-buffer-position
+                     last-line
+                     (length (buffer-line buffer last-line)))))))

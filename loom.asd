@@ -31,7 +31,7 @@ a file-tree sidebar are all implemented against that layering."
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog" "cl-cli"
-               "cl-regex-kit" "cl-boundary-kit")
+               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit")
   :pathname "src"
   :serial t
   :components
@@ -46,11 +46,13 @@ a file-tree sidebar are all implemented against that layering."
   ;; precedent.
   ((:file "package")
    (:file "domain/buffer")
+   (:file "domain/buffer-search")
    (:file "domain/window")
    (:file "domain/keymap")
    (:file "domain/file-tree")
    (:file "infrastructure/terminal-renderer")
    (:file "infrastructure/filesystem")
+   (:file "infrastructure/concurrent-runtime")
    (:file "application/editor-state")
    (:file "application/minibuffer")
    (:file "application/commands-internal")
@@ -114,7 +116,7 @@ a file-tree sidebar are all implemented against that layering."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("loom" "cl-weave")
+  :depends-on ("loom" "cl-weave" "cl-date-kit")
   :pathname "t"
   :serial t
   :components
@@ -129,7 +131,9 @@ a file-tree sidebar are all implemented against that layering."
    (:file "minibuffer-test")
    (:file "commands-test")
    (:file "layout-test")
-   (:file "main-test"))
+   (:file "main-test")
+   (:file "concurrent-runtime-test")
+   (:file "advanced-test"))
   ;; Not HOST-KIT:SYMBOL-CALL or UIOP:SYMBOL-CALL: a .asd is read by the plain
   ;; CL reader before :depends-on is ever consulted, so any PKG:SYMBOL token
   ;; here must resolve against a package already in the image. FIND-SYMBOL /

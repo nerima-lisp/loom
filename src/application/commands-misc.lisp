@@ -19,63 +19,142 @@
   "Report a Quit message (C-g)."
   (minibuffer-message (editor-state-minibuffer *editor-state*) "Quit"))
 
-(defmacro define-extended-commands (&body name-command-pairs)
-  "Define *EXTENDED-COMMAND-RULEBASE* from NAME-COMMAND-PAIRS, each a
-\(STRING-NAME SYMBOL\) pair naming a command invokable by M-x under
-STRING-NAME. A single declarative table in place of hand-repeated
-CL-PROLOG:DEFINE-RULEBASE clauses, while still compiling down to a real
-CL-PROLOG rulebase for %FIND-EXTENDED-COMMAND's query below."
-  `(cl-prolog:define-rulebase *extended-command-rulebase*
-     ,@(mapcar (lambda (pair)
-                 (destructuring-bind (name command) pair
-                   `((extended-command ,name ,command))))
-               name-command-pairs)))
+(defmacro command-spec (name command &key keys)
+  "Describe COMMAND's M-x NAME and its optional default key sequence data."
+  (unless (or (null name) (stringp name))
+    (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
+  (unless (symbolp command)
+    (error "COMMAND-SPEC command must be a symbol: ~S" command))
+  `(list :name ,name :command ',command :keys ',keys))
+
+(defmacro define-command-specs (&body specs)
+  "Define the command registry and rulebase from COMMAND-SPEC forms.
+
+Each spec is the single source for the command's extended-command name and
+default key sequences. NIL names describe keymap-only commands such as M-x
+itself. The explicit registry is used for lookup; the generated rulebase is
+an internal implementation detail for command dispatch."
+  (let ((entries
+          (mapcar
+           (lambda (spec)
+             (unless (and (consp spec) (eq (first spec) 'command-spec))
+               (error "Expected a COMMAND-SPEC form, got: ~S" spec))
+             (destructuring-bind (operator name command &key keys) spec
+               (declare (ignore operator))
+               (unless (or (null name) (stringp name))
+                 (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
+               (unless (symbolp command)
+                 (error "COMMAND-SPEC command must be a symbol: ~S" command))
+               (list name command keys)))
+           specs)))
+    (let* ((names (remove nil (mapcar (function first) entries)))
+           (duplicate
+             (find-if (lambda (name)
+                        (> (count name names :test (function string-equal)) 1))
+                      names)))
+      (when duplicate
+        (error "Duplicate COMMAND-SPEC name: ~S" duplicate)))
+    `(progn
+       (defparameter *command-specs*
+         (list
+          ,@(mapcar
+             (lambda (entry)
+               (destructuring-bind (name command keys) entry
+                 `(list :name ,name :command ',command :keys ',keys)))
+             entries)))
+       (cl-prolog:define-rulebase *extended-command-rulebase*
+         ,@(mapcar
+            (lambda (entry)
+              (destructuring-bind (name command keys) entry
+                (declare (ignore keys))
+                `((extended-command ,name ,command))))
+            (remove nil entries :key (function first)))))))
 
 (progn
-  (define-extended-commands
-    ("forward-char" forward-char)
-    ("backward-char" backward-char)
-    ("next-line" next-line)
-    ("previous-line" previous-line)
-    ("move-beginning-of-line" move-beginning-of-line)
-    ("move-end-of-line" move-end-of-line)
-    ("delete-char" delete-char)
-    ("delete-backward-char" delete-backward-char)
-    ("newline" newline-command)
-    ("open-line" open-line)
-    ("kill-line" kill-line)
-    ("kill-region" kill-region)
-    ("yank" yank)
-    ("set-mark-command" set-mark-command)
-    ("undo" undo-command)
-    ("search-forward" search-forward)
-    ("replace-string" replace-string)
-    ("goto-line" goto-line)
-    ("find-file" find-file)
-    ("save-buffer" save-buffer)
-    ("split-window-below" split-window-below)
-    ("split-window-right" split-window-right)
-    ("other-window" other-window)
-    ("switch-to-buffer" switch-to-buffer)
-    ("toggle-file-tree" toggle-file-tree)
-    ("file-tree-select-next" file-tree-select-next)
-    ("file-tree-select-previous" file-tree-select-previous)
-    ("file-tree-open-selected" file-tree-open-selected)
-    ("file-tree-create-file" file-tree-create-file-command)
-    ("file-tree-create-directory" file-tree-create-directory-command)
-    ("file-tree-rename" file-tree-rename-command)
-    ("file-tree-delete" file-tree-delete-command)
-    ("keyboard-quit" keyboard-quit)
-    ("help" help-command)
-    ("save-buffers-kill-terminal" save-buffers-kill-terminal))
+  (define-command-specs
+    (command-spec "forward-char" forward-char :keys ((:control #\f)))
+    (command-spec "backward-char" backward-char :keys ((:control #\b)))
+    (command-spec "next-line" next-line :keys ((:control #\n)))
+    (command-spec "previous-line" previous-line :keys ((:control #\p)))
+    (command-spec "forward-word" forward-word :keys ((:alt #\f)))
+    (command-spec "backward-word" backward-word :keys ((:alt #\b)))
+    (command-spec "move-beginning-of-line" move-beginning-of-line
+                  :keys ((:control #\a)))
+    (command-spec "move-end-of-line" move-end-of-line :keys ((:control #\e)))
+    (command-spec "beginning-of-buffer" beginning-of-buffer :keys ((:alt #\<)))
+    (command-spec "end-of-buffer" end-of-buffer :keys ((:alt #\>)))
+    (command-spec "scroll-up-command" scroll-up-command :keys ((:control #\v)))
+    (command-spec "scroll-down-command" scroll-down-command :keys ((:alt #\v)))
+    (command-spec "delete-char" delete-char :keys ((:control #\d)))
+    (command-spec "delete-backward-char" delete-backward-char
+                  :keys (:backspace))
+    (command-spec "newline" newline-command :keys (:enter))
+    (command-spec "open-line" open-line :keys ((:control #\o)))
+    (command-spec "kill-line" kill-line :keys ((:control #\k)))
+    (command-spec "kill-word" kill-word :keys ((:alt #\d)))
+    (command-spec "backward-kill-word" backward-kill-word
+                  :keys ((:alt :backspace)))
+    (command-spec "kill-region" kill-region :keys ((:control #\w)))
+    (command-spec "yank" yank :keys ((:control #\y)))
+    (command-spec "set-mark-command" set-mark-command
+                  :keys ((:control #\Space)))
+    (command-spec "exchange-point-and-mark" exchange-point-and-mark
+                  :keys (((:control #\x) (:control #\x))))
+    (command-spec "mark-whole-buffer" mark-whole-buffer
+                  :keys (((:control #\x) #\h)))
+    (command-spec "undo" undo-command
+                  :keys (((:control #\x) #\u)))
+    (command-spec "search-forward" search-forward :keys ((:control #\s)))
+    (command-spec "search-backward" search-backward :keys ((:control #\r)))
+    (command-spec "replace-string" replace-string :keys ((:alt #\%)))
+    (command-spec "goto-line" goto-line :keys (((:alt #\g) #\g)))
+    (command-spec "find-file" find-file
+                  :keys (((:control #\x) (:control #\f))))
+    (command-spec "save-buffer" save-buffer
+                  :keys (((:control #\x) (:control #\s))))
+    (command-spec "write-file" write-file
+                  :keys (((:control #\x) (:control #\w))))
+    (command-spec "split-window-below" split-window-below
+                  :keys (((:control #\x) #\2)))
+    (command-spec "split-window-right" split-window-right
+                  :keys (((:control #\x) #\3)))
+    (command-spec "other-window" other-window
+                  :keys (((:control #\x) #\o)))
+    (command-spec "delete-window" delete-window
+                  :keys (((:control #\x) #\0)))
+    (command-spec "delete-other-windows" delete-other-windows
+                  :keys (((:control #\x) #\1)))
+    (command-spec "switch-to-buffer" switch-to-buffer
+                  :keys (((:control #\x) #\b)))
+    (command-spec "toggle-file-tree" toggle-file-tree
+                  :keys (((:control #\x) (:control #\t))))
+    (command-spec "file-tree-select-next" file-tree-select-next
+                  :keys (((:control #\c) #\n)))
+    (command-spec "file-tree-select-previous" file-tree-select-previous
+                  :keys (((:control #\c) #\p)))
+    (command-spec "file-tree-open-selected" file-tree-open-selected
+                  :keys (((:control #\c) #\o)))
+    (command-spec "file-tree-create-file" file-tree-create-file-command
+                  :keys (((:control #\c) #\c)))
+    (command-spec "file-tree-create-directory" file-tree-create-directory-command
+                  :keys (((:control #\c) #\d)))
+    (command-spec "file-tree-rename" file-tree-rename-command)
+    (command-spec "file-tree-delete" file-tree-delete-command)
+    (command-spec "keyboard-quit" keyboard-quit :keys ((:control #\g)))
+    (command-spec "help" help-command :keys ((:control #\h) :f1))
+    (command-spec "save-buffers-kill-terminal" save-buffers-kill-terminal
+                  :keys (((:control #\x) (:control #\c))))
+    (command-spec nil execute-extended-command :keys ((:alt #\x))))
 
   (defun %find-extended-command (input)
     "Return the registered command named by INPUT, or NIL."
-    (cl-prolog:with-prolog-query (?command)
-        (*extended-command-rulebase*
-         `(extended-command ,(string-downcase (string-trim (quote (#\Space #\Tab)) input))
-                            ?command))
-      ?command))
+    (let ((name (string-downcase (string-trim (quote (#\Space #\Tab)) input))))
+      (getf
+       (find-if (lambda (spec)
+                  (and (getf spec :name)
+                       (string= name (getf spec :name))))
+                *command-specs*)
+       :command)))
 
   (defun execute-extended-command ()
     "Prompt for a registered command and execute it (M-x)."
@@ -114,11 +193,9 @@ src/main.lisp to exit cleanly."))
              (window-tree-windows (editor-state-window-tree *editor-state*)))
      :test (function eq)))
 
-  ;; A CL-PROLOG rulebase in place of a hand-written COND: each clause's
-  ;; :WHEN guard is the one condition under which that answer resolves to
-  ;; its action, so the quit-prompt's answer table reads the same way the
-  ;; extended-command lookup above does. See %FIND-EXTENDED-COMMAND's
-  ;; DEFINE-RULEBASE for the sibling precedent this follows.
+  ;; A CL-PROLOG rulebase keeps the quit-prompt answer table declarative.
+  ;; The COMMAND-SPEC macro emits a rulebase as inspectable metadata, while
+  ;; %FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
   (cl-prolog:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)
      (:when (and ?has-path (string-equal ?answer "s"))))

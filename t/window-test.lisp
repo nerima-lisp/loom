@@ -114,3 +114,38 @@
       (expect (window-y bottom) :to-equal 5)
       (expect (window-width bottom) :to-equal 10)
       (expect (window-height bottom) :to-equal 5))))
+
+(describe
+  "window-delete"
+  (it
+    "keeps the only window when deletion is requested"
+    (let* ((tree (make-window-tree :scratch 10 10))
+           (window (window-tree-selected-window tree)))
+      (expect (window-delete tree window) :to-be window)
+      (expect (window-tree-windows tree) :to-have-length 1)
+      (expect (window-tree-selected-window tree) :to-be window)))
+
+  (it
+    "deletes a selected split and restores the root dimensions"
+    (let* ((tree (make-window-tree :scratch 10 10))
+           (original (window-tree-selected-window tree))
+           (selected (window-split tree original :horizontal)))
+      (expect (window-delete tree selected) :to-be original)
+      (expect (window-tree-windows tree) :to-have-length 1)
+      (expect (window-tree-selected-window tree) :to-be original)
+      (expect (window-width original) :to-equal 10)
+      (expect (window-height original) :to-equal 10)))
+
+  (it
+    "collapses every other leaf while preserving the selected leaf"
+    (let* ((tree (make-window-tree :scratch 20 10))
+           (left (window-tree-selected-window tree))
+           (right (window-split tree left :vertical))
+           (bottom (window-split tree right :horizontal)))
+      (expect (window-delete-other-windows tree bottom) :to-be bottom)
+      (expect (window-tree-windows tree) :to-have-length 1)
+      (expect (window-tree-selected-window tree) :to-be bottom)
+      (expect (window-x bottom) :to-equal 0)
+      (expect (window-y bottom) :to-equal 0)
+      (expect (window-width bottom) :to-equal 20)
+      (expect (window-height bottom) :to-equal 10))))

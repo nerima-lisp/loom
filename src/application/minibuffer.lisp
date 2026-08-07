@@ -2,12 +2,10 @@
 ;;;;
 ;;;; Application layer: the minibuffer protocol. Orchestration, not pure
 ;;;; domain state -- it coordinates keymap input (domain/keymap.lisp) and
-;;;; drives CL-HISTORY-KIT directly for Up/Down recall. No separate
-;;;; infrastructure/history.lisp adapter exists for this: MAKE-MINIBUFFER and
-;;;; MINIBUFFER-HANDLE-KEY already name CL-HISTORY-KIT:MAKE-HISTORY and
+;;;; drives CL-HISTORY-KIT directly for Up/Down recall. MAKE-MINIBUFFER and
+;;;; MINIBUFFER-HANDLE-KEY name CL-HISTORY-KIT:MAKE-HISTORY and
 ;;;; CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT directly in their
-;;;; contracts below, so there is no separate "history" sub-protocol to
-;;;; wrap.
+;;;; contracts below.
 ;;;;
 ;;;; The minibuffer is the single-line prompt/status area at the bottom of the
 ;;;; editor, used both for interactive input (find-file, M-x, search, ...) and

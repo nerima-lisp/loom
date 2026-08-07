@@ -13,10 +13,11 @@ an empty buffer associated with that path, so a later save creates the file."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((path "Find file: "))
-    (window-set-buffer (%selected-window)
-                       (if (probe-file path)
-                           (buffer-load path)
-                           (make-buffer :name (file-namestring path) :path path)))))
+    (let ((buffer (if (probe-file path)
+                      (buffer-load path)
+                      (make-buffer :name (file-namestring path) :path path))))
+      (%register-buffer buffer)
+      (window-set-buffer (%selected-window) buffer))))
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
@@ -66,6 +67,7 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
                                     :path path
                                     :initial-content (buffer-text buffer))))
       (%transfer-point-and-mark buffer new-buffer)
+      (%register-buffer new-buffer)
       (window-set-buffer window new-buffer)
       (%save-buffer-or-warn-overwrite new-buffer path))))
 
@@ -76,3 +78,22 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
     (if (buffer-path buffer)
         (buffer-save buffer)
         (%prompt-and-save-new-buffer window buffer))))
+
+(defun write-file ()
+  "Write the selected buffer to a new prompted path.
+
+The selected window visits a fresh buffer carrying the original text and
+point/mark, leaving the previous buffer in the session registry as a separate
+buffer, like Emacs's C-x C-w visit behavior."
+  (let* ((window (%selected-window))
+         (buffer (window-buffer window)))
+    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                   :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((path "Write file: "))
+      (let ((new-buffer (make-buffer :name (file-namestring path)
+                                     :path path
+                                     :initial-content (buffer-text buffer))))
+        (%transfer-point-and-mark buffer new-buffer)
+        (%register-buffer new-buffer)
+        (window-set-buffer window new-buffer)
+        (%save-buffer-or-warn-overwrite new-buffer path)))))

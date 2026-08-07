@@ -45,6 +45,15 @@
   "Return the buffer displayed in *EDITOR-STATE*'s currently selected window."
   (window-buffer (%selected-window)))
 
+(defun %editor-buffers ()
+  "Return the buffers known to the current editor session."
+  (editor-state-buffers *editor-state*))
+
+(defun %register-buffer (buffer)
+  "Add BUFFER to the current session's registry unless it is already present."
+  (pushnew buffer (editor-state-buffers *editor-state*) :test #'eq)
+  buffer)
+
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
   "Prompt for each (VAR PROMPT-STRING) pair in BINDINGS in turn, binding VAR
 to the typed input, then run BODY with every VAR bound and MINIBUFFER-VAR

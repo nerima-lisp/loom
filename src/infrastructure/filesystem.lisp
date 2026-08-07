@@ -161,5 +161,5 @@ Signals an error if PATH does not exist. Returns TREE.")
     (unless path
       (error "buffer-save: buffer ~A has no associated path" (buffer-name buffer)))
     (cl-boundary-kit:filesystem-store-file *loom-filesystem* path (buffer-text buffer))
-    (setf (%buffer-modified-p buffer) nil))
+    (buffer-mark-saved buffer))
   buffer)

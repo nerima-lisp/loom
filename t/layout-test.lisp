@@ -33,7 +33,7 @@ the degenerate-window tests are the ones that need them to differ."
 (defun %layout-screen (state)
   "The cl-tty-kit screen STATE's renderer draws into."
   (cl-tty-kit:renderer-screen
-   (loom-renderer-cl-tty-renderer (editor-state-renderer state))))
+   (loom::%loom-renderer-cl-tty-renderer (editor-state-renderer state))))
 
 (defun %layout-window (state)
   "STATE's sole (or currently selected) window."

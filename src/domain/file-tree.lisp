@@ -109,6 +109,13 @@ is selected (e.g. an empty tree).")
   (:method (tree)
     (file-tree-selection tree)))
 
+(defgeneric file-tree-entry-kind (tree path)
+  (:documentation
+   "Return :FILE or :DIRECTORY for PATH in TREE, or NIL when PATH is not
+reachable in TREE.")
+  (:method (tree path)
+    (%file-tree-find-kind tree path)))
+
 (defgeneric file-tree-move-selection (tree direction)
   (:documentation
    "Move TREE's selection cursor by one visible entry (see

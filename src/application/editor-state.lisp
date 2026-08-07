@@ -30,9 +30,14 @@ reach any of them through *EDITOR-STATE* alone."
   ;; The FILE-TREE-* protocol object (domain/file-tree.lisp,
   ;; infrastructure/filesystem.lisp) for the sidebar file browser.
   file-tree
+  ;; The main-lane-owned CCK runtime that refreshes file-tree listings.
+  concurrent-runtime
   ;; The LOOM-RENDERER-* protocol object (infrastructure/terminal-renderer.lisp)
   ;; used to draw the current frame.
   renderer
+  ;; Every buffer known to this editor session, including buffers not currently
+  ;; displayed in a window. C-x b and quit confirmation use this registry.
+  buffers
   ;; The Emacs-style kill ring: a list of killed (cut/copied) strings, most
   ;; recent first, that yank (C-y) and yank-pop (M-y) commands consume.
   kill-ring

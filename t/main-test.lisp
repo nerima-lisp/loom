@@ -218,7 +218,8 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (with-replaced-function (cl-tty-kit:terminal-size (lambda () (values 100 40)))
         (expect (multiple-value-list (loom::%poll-terminal-resize renderer 80 24))
                 :to-equal (list 100 40))
-        (expect (cl-tty-kit:renderer-width (loom-renderer-cl-tty-renderer renderer))
+        (expect (cl-tty-kit:renderer-width
+                 (loom::%loom-renderer-cl-tty-renderer renderer))
                 :to-equal 100))))
 
   (it
@@ -305,7 +306,9 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (unwind-protect
           (let ((fd (sb-sys:fd-stream-fd (cl-tty-kit:pty-stream pty)))
                 (invocation (cl-cli:parse-argv loom::*loom-app* '("loom"))))
-            (with-open-file (*standard-input* "/dev/null" :direction :input)
+            (with-open-file (*standard-input* "/dev/null"
+                                              :direction :input
+                                              :element-type '(unsigned-byte 8))
               ;; *STANDARD-INPUT* is unrelated to FD (which only backs the
               ;; raw-mode ioctls); reading immediate EOF from /dev/null makes
               ;; %RUN-EVENT-LOOP return after just its initial render.

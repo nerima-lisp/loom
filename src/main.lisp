@@ -166,6 +166,12 @@ unchanged when the terminal size could not be read or has not changed."
           (values width height))
         (values last-width last-height))))
 
+(defun %file-tree-prefetch-paths (tree)
+  "Return TREE's root and currently expanded directories for prefetching."
+  (cons (file-tree-root-path tree)
+        (loop for path being the hash-keys of (file-tree-expanded tree)
+              collect path)))
+
 (defun %run-event-loop (stream)
   "Run the main input and render loop, writing frames to STREAM.\n\nThe initial frame is rendered before waiting for input. Each subsequent\niteration reads raw octets, dispatches decoded key events, reacts to terminal\nresizes, then redraws the frame."
   (let ((decoder (cl-tty-kit:make-input-decoder))
@@ -173,6 +179,13 @@ unchanged when the terminal size could not be read or has not changed."
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*))))
     (multiple-value-bind (last-width last-height) (%initial-terminal-size)
       (labels ((render-frame ()
+                 (let ((runtime (editor-state-concurrent-runtime *editor-state*)))
+                   (when runtime
+                     (loom-concurrent-runtime-drain runtime)
+                     (loom-concurrent-runtime-prefetch
+                      runtime
+                      (%file-tree-prefetch-paths
+                       (editor-state-file-tree *editor-state*)))))
                  (compose-frame *editor-state*)
                  (loom-renderer-present (editor-state-renderer *editor-state*)
                                         :stream stream
@@ -227,7 +240,25 @@ parsed from argv, or NIL when none was given."
                                  :keymap keymap
                                  :file-tree file-tree
                                  :renderer renderer
+                                 :buffers (list initial-buffer)
                                  :kill-ring nil))))))
+
+(defun %enable-concurrent-file-tree (state)
+  "Replace STATE's synchronous file-tree lister with a cached runtime."
+  (let* ((tree (editor-state-file-tree state))
+         (lister (file-tree-child-lister tree))
+         (root (file-tree-root-path tree))
+         (initial-entries (funcall lister root))
+         (runtime (make-loom-concurrent-runtime
+                   :directory-lister lister)))
+    (loom-concurrent-runtime-prime-directory runtime root initial-entries)
+    (setf (file-tree-child-lister tree)
+          (lambda (path)
+            (multiple-value-bind (entries present-p)
+                (loom-concurrent-runtime-directory-entries runtime path)
+              (if present-p entries nil))))
+    (setf (editor-state-concurrent-runtime state) runtime)
+    runtime))
 
 (defun %loom-version ()
   "Return LOOM's version string from its own ASDF system definition -- the
@@ -252,15 +283,22 @@ function's own HANDLER-CASE gets a chance to report it -- the terminal is
 never left in raw/alternate-screen mode, whether the error is caught here or
 not."
   (%initialize-editor-state (cl-cli:positional-value invocation :path))
-  (handler-case
-      (cl-tty-kit:with-terminal-session (stream :fd fd
-                                         :raw-mode t
-                                         :alternate-screen t
-                                         :hide-cursor nil)
-        (%run-event-loop stream))
-    (error (condition)
-      (format *error-output* "~&loom: ~A~%" condition)))
-  0)
+  (%enable-concurrent-file-tree *editor-state*)
+  (unwind-protect
+       (handler-case
+           (progn
+             (cl-tty-kit:with-terminal-session (stream :fd fd
+                                                :raw-mode t
+                                                :alternate-screen t
+                                                :hide-cursor nil)
+               (%run-event-loop stream))
+             0)
+         (error (condition)
+           (format *error-output* "~&loom: ~A~%" condition)
+           1))
+    (let ((runtime (editor-state-concurrent-runtime *editor-state*)))
+      (when runtime
+        (loom-concurrent-runtime-shutdown runtime)))))
 
 (defparameter *loom-app*
   (cl-cli:make-app

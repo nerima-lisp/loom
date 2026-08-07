@@ -4,8 +4,8 @@
 ;;;; application/commands-internal.lisp for the shared command-authoring
 ;;;; convention every commands-*.lisp file follows). Loaded last among the
 ;;;; commands-*.lisp files since INSTALL-DEFAULT-KEYBINDINGS names every
-;;;; command defined in its siblings -- though only as data inside DEFKEYS's
-;;;; quoted bindings, so this file's own position in loom.asd's :SERIAL T
+;;;; command defined in its siblings -- from the COMMAND-SPEC registry in
+;;;; commands-misc.lisp, so this file's own position in loom.asd's :SERIAL T
 ;;;; load order is a matter of reading convenience, not a real dependency.
 (in-package #:loom)
 
@@ -43,44 +43,22 @@ one KEYMAP-DEFINE-KEY call per binding into a single declarative table."
                                        (quote ,command))))
                bindings)))
 
+(defun %defkeys-chord (spec)
+  "Return the runtime key descriptor for one command-spec chord SPEC."
+  (if (atom spec)
+      (cons nil spec)
+      (destructuring-bind (modifier code) spec
+        (cons (list modifier) code))))
+
+(defun %defkeys-key-sequence (key-form)
+  "Normalize command-spec KEY-FORM using DEFKEYS's descriptor convention."
+  (mapcar (function %defkeys-chord)
+          (if (%defkeys-single-chord-p key-form) (list key-form) key-form)))
+
 (defun install-default-keybindings (keymap)
-  "Bind the default Emacs-style key sequences to their commands in KEYMAP."
-  (defkeys keymap
-    ((:control #\f) forward-char)
-    ((:control #\b) backward-char)
-    ((:control #\n) next-line)
-    ((:control #\p) previous-line)
-    ((:control #\a) move-beginning-of-line)
-    ((:control #\e) move-end-of-line)
-    ((:control #\d) delete-char)
-    (:backspace delete-backward-char)
-    (:enter newline-command)
-    ((:control #\k) kill-line)
-    ((:control #\s) search-forward)
-    ((:alt #\x) execute-extended-command)
-    ((:alt #\%) replace-string)
-    ((:control #\w) kill-region)
-    ((:control #\o) open-line)
-    (((:alt #\g) #\g) goto-line)
-    ((:control #\y) yank)
-    ((:control #\Space) set-mark-command)
-    (((:control #\x) #\u) undo-command)
-    (((:control #\x) (:control #\f)) find-file)
-    (((:control #\x) (:control #\s)) save-buffer)
-    (((:control #\x) #\2) split-window-below)
-    (((:control #\x) #\3) split-window-right)
-    (((:control #\x) #\o) other-window)
-    (((:control #\x) #\b) switch-to-buffer)
-    (((:control #\x) (:control #\t)) toggle-file-tree)
-    (((:control #\c) #\n) file-tree-select-next)
-    (((:control #\c) #\p) file-tree-select-previous)
-    (((:control #\c) #\o) file-tree-open-selected)
-    (((:control #\c) #\c) file-tree-create-file-command)
-    (((:control #\c) #\d) file-tree-create-directory-command)
-    (((:control #\c) #\r) file-tree-rename-command)
-    (((:control #\c) #\k) file-tree-delete-command)
-    ((:control #\g) keyboard-quit)
-    ((:control #\h) help-command)
-    (:f1 help-command)
-    (((:control #\x) (:control #\c)) save-buffers-kill-terminal))
-  keymap)
+  "Bind command-spec key sequences to their commands in KEYMAP."
+  (dolist (spec *command-specs* keymap)
+    (dolist (key-form (getf spec :keys))
+      (keymap-define-key keymap
+                         (%defkeys-key-sequence key-form)
+                         (getf spec :command)))))

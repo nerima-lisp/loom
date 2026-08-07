@@ -74,6 +74,14 @@
       url = "github:nerima-lisp/cl-regex-kit/v0.3.0";
       flake = false;
     };
+    cl-date-kit = {
+      url = "github:nerima-lisp/cl-date-kit/v1.0.0";
+      flake = false;
+    };
+    cl-concurrent-kit = {
+      url = "github:nerima-lisp/cl-concurrent-kit/v0.6.1";
+      flake = false;
+    };
     # Not a dependency loom names anywhere: cl-regex-kit's own
     # `:depends-on ("cl-parser-kit")` needs it, same transitive-edge
     # situation cl-codec-kit is in above for cl-tty-kit.
@@ -105,6 +113,8 @@
       cl-prolog,
       cl-cli,
       cl-regex-kit,
+      cl-date-kit,
+      cl-concurrent-kit,
       cl-parser-kit,
       cl-boundary-kit,
       treefmt-nix,
@@ -112,6 +122,34 @@
     }:
     let
       lib = nixpkgs.lib;
+
+      # A Git-backed flake source can omit newly split, untracked ASDF
+      # components. Re-materialize the worktree before cl-nix-forge's
+      # fileset filter runs, while retaining its .asd/.lisp allowlist. The
+      # filter also keeps .git and generated output out of the source hash.
+      sourceRoot =
+        /.
+        + builtins.unsafeDiscardStringContext "${builtins.path {
+          path = ./.;
+          name = "loom-lisp-source";
+          filter =
+            path: type:
+            let
+              pathName = builtins.baseNameOf (toString path);
+              sourceFile = lib.hasSuffix ".asd" (toString path) || lib.hasSuffix ".lisp" (toString path);
+            in
+            (
+              type == "directory"
+              && !(builtins.elem pathName [
+                ".git"
+                ".serena"
+                ".worktrees"
+                "coverage"
+                "result"
+              ])
+            )
+            || (type == "regular" && sourceFile);
+        }}";
 
       # x86_64-linux is what CI gates; aarch64-darwin is the development
       # machine. Every per-system output -- packages, checks, apps AND
@@ -210,6 +248,18 @@
             source = cl-boundary-kit;
             dependencies = [ clHostKit ];
           };
+          clDateKit = sibling {
+            name = "cl-date-kit";
+            source = cl-date-kit;
+          };
+          clConcurrentKit = sibling {
+            name = "cl-concurrent-kit";
+            source = cl-concurrent-kit;
+            dependencies = [
+              clBoundaryKit
+              clDateKit
+            ];
+          };
           # cl-weave is a dependency of `loom/test` only (see loom.asd), so it
           # is built here for `lispCheckDependencies` below; it must not enter
           # the delivered binary's closure.
@@ -237,9 +287,9 @@
       # release.yml refuses to publish a tag that disagrees with it.
       asd = ./loom.asd;
 
-      # Path literal, not `self`: `lib.fileset` refuses a flake's string-like
-      # `self`. `./.` is the same directory.
-      root = ./.;
+      # `sourceRoot` is a real path, not the flake's string-like `self`, so
+      # `lib.fileset` can use it as the root and retain every split source.
+      root = sourceRoot;
 
       lispDependencies =
         ctx: with siblingsFor ctx; [
@@ -250,6 +300,7 @@
           clCli
           clRegexKit
           clBoundaryKit
+          clConcurrentKit
         ];
 
       lispCheckDependencies = ctx: [ (siblingsFor ctx).clWeave ];

@@ -27,12 +27,19 @@
 
 (declaim (optimize sb-cover:store-coverage-data))
 
+(defun loom-source-file-p (file root)
+  "Return true when FILE belongs to Loom's own source tree."
+  (uiop:subpathp
+   (uiop:parse-native-namestring file)
+   (merge-pathnames #P"src/" root)))
+
 (let* ((root (truename #P"./"))
        (parent (uiop:pathname-parent-directory-pathname root))
        (coverage-dir
          (uiop:ensure-directory-pathname
           (or (uiop:getenv "LOOM_COVERAGE_DIR")
-              (merge-pathnames #P"coverage/" root))))
+              (merge-pathnames #P"loom-coverage/"
+                               (uiop:temporary-directory)))))
        (passed-p nil))
   (asdf:initialize-source-registry
    `(:source-registry
@@ -47,13 +54,15 @@
                    (asdf:load-system :loom/test :force :all)
                    ;; Drive the cl-weave suite for its coverage side effects;
                    ;; the report is produced regardless of pass/fail.
-                   (uiop:symbol-call :loom/test '#:run-tests)
-                   t)
+                   ;; Preserve RUN-TESTS' actual pass/fail return value.
+                   (uiop:symbol-call :loom/test '#:run-tests))
                (sb-ext:timeout ()
                  (format *error-output* "~&loom/test: timed out after 1800s~%")
                  nil)
                (error (condition)
                  (format *error-output* "~&loom/test failed: ~A~%" condition)
                  nil)))
-    (sb-cover:report coverage-dir))
+    (sb-cover:report coverage-dir
+                     :if-matches (lambda (file)
+                                   (loom-source-file-p file root))))
   (sb-ext:exit :code (if passed-p 0 1)))

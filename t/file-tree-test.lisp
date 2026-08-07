@@ -48,6 +48,14 @@
               '(("/root/a.txt" . 0) ("/root/sub/" . 0)))))
 
   (it
+    "reports the public kind of each reachable entry"
+    (let ((tree (make-file-tree "/root/")))
+      (setf (loom::file-tree-child-lister tree) #'%fake-lister)
+      (expect (file-tree-entry-kind tree "/root/a.txt") :to-equal :file)
+      (expect (file-tree-entry-kind tree "/root/sub/") :to-equal :directory)
+      (expect (file-tree-entry-kind tree "/does/not/exist") :to-be nil)))
+
+  (it
     "expands a directory to reveal its children one level deeper, lazily"
     (let ((tree (make-file-tree "/root/")))
       (setf (loom::file-tree-child-lister tree) #'%fake-lister)

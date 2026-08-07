@@ -27,6 +27,7 @@ which do; see %WITH-MINIBUFFER-STATE."
                         :keymap (make-keymap)
                         :file-tree nil
                         :renderer nil
+                        :buffers (list buffer)
                         :kill-ring nil)))
 
 (defmacro %with-minibuffer-state ((minibuffer initial-content &rest extra-bindings)
@@ -123,6 +124,19 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (expect (buffer-point-column buffer) :to-equal 0))))
 
   (it
+    "moves by words and reaches both buffer boundaries"
+    (let ((*editor-state* (%fresh-editor-state "one two")))
+      (let ((buffer (%selected-test-buffer)))
+        (loom::forward-word)
+        (expect buffer :to-have-point (cons 0 3))
+        (loom::forward-word)
+        (expect buffer :to-have-point (cons 0 7))
+        (loom::beginning-of-buffer)
+        (expect buffer :to-have-point (cons 0 0))
+        (loom::end-of-buffer)
+        (expect buffer :to-have-point (cons 0 7)))))
+
+  (it
     "inserts a newline and advances point"
     (let ((*editor-state* (%fresh-editor-state "hello")))
       (let ((buffer (%selected-test-buffer)))
@@ -177,6 +191,42 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
           (expect mark-line :to-equal 0)
           (expect mark-column :to-equal 3)))))
+
+  (it
+    "kill-word removes the next word and adds it to the kill ring"
+    (let ((*editor-state* (%fresh-editor-state "one two")))
+      (let ((buffer (%selected-test-buffer)))
+        (loom::kill-word)
+        (expect (buffer-text buffer) :to-equal " two")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "one"))))
+
+  (it
+    "backward-kill-word removes the previous word"
+    (let ((*editor-state* (%fresh-editor-state "one two")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 7)
+        (loom::backward-kill-word)
+        (expect (buffer-text buffer) :to-equal "one ")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "two"))))
+
+  (it
+    "exchanges point and mark and marks the whole buffer"
+    (let ((*editor-state* (%fresh-editor-state "hello")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 2)
+        (buffer-set-mark buffer 0 4)
+        (loom::exchange-point-and-mark)
+        (expect buffer :to-have-point (cons 0 4))
+        (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+          (expect mark-line :to-equal 0)
+          (expect mark-column :to-equal 2))
+        (loom::mark-whole-buffer)
+        (expect buffer :to-have-point (cons 0 0))
+        (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+          (expect mark-line :to-equal 0)
+          (expect mark-column :to-equal 5)))))
 
   (it
     "kill-line at end of a non-last line kills through the newline"
@@ -272,6 +322,11 @@ commands \(commands-window.lisp\) against a real temporary directory."
   "install-default-keybindings"
   (it-each
       (("C-x C-s" (((:control) . #\x) ((:control) . #\s)) loom::save-buffer)
+       ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom::write-file)
+       ("C-x 0" (((:control) . #\x) (nil . #\0)) loom::delete-window)
+       ("C-x 1" (((:control) . #\x) (nil . #\1)) loom::delete-other-windows)
+       ("C-r" (((:control) . #\r)) loom::search-backward)
+       ("M-f" (((:alt) . #\f)) loom::forward-word)
        ("Enter" ((nil . :enter)) loom::newline-command)
        ("C-x 2" (((:control) . #\x) (nil . #\2)) loom::split-window-below)
        ("C-g" (((:control) . #\g)) loom::keyboard-quit))
@@ -306,6 +361,30 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (let ((buffer (%selected-test-buffer)))
           (expect (buffer-name buffer) :to-equal "existing.txt")
           (expect (buffer-text buffer) :to-equal "already here"))))))
+
+  (it
+    "writes the selected buffer to a new path and registers the new buffer"
+    (host-kit:with-temporary-directory (dir)
+      (%with-minibuffer-state (minibuffer "hello world"
+                               (original (%selected-test-buffer))
+                               (path (merge-pathnames "alias.txt" dir)))
+        (buffer-set-point original 0 5)
+        (buffer-set-mark original 0 2)
+        (loom::write-file)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) path)
+        (let ((new-buffer (%selected-test-buffer)))
+          (expect (buffer-name new-buffer) :to-equal "alias.txt")
+          (expect (buffer-path new-buffer) :to-equal path)
+          (expect (buffer-text new-buffer) :to-equal "hello world")
+          (expect new-buffer :to-have-point (cons 0 5))
+          (multiple-value-bind (mark-line mark-column) (buffer-mark new-buffer)
+            (expect mark-line :to-equal 0)
+            (expect mark-column :to-equal 2))
+          (expect (host-kit:read-file-string path) :to-equal "hello world")
+          (expect (member original (editor-state-buffers *editor-state*))
+                  :to-be-truthy)
+          (expect (member new-buffer (editor-state-buffers *editor-state*))
+                  :to-be-truthy)))))
 
 (describe
   "save-buffer path-less first save"
@@ -369,6 +448,15 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (loom::search-forward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
         (expect (buffer-point-column buffer) :to-equal 0))))
+  (it
+    "searches backward to the previous match"
+    (%with-minibuffer-state (minibuffer "one two one")
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 11)
+        (loom::search-backward)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "one")
+        (expect buffer :to-have-point (cons 0 8))
+        (expect (loom::%minibuffer-message minibuffer) :to-equal "Found"))))
   (it
     "reports not found when the searched text does not occur anywhere"
     (%with-minibuffer-state (minibuffer "alpha")
@@ -466,9 +554,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
     ;; CL-REGEX-KIT itself rejects, and watching both call sites refuse it.
     (let ((buffer (make-buffer :initial-content "abc 123"))
           (loom::+regex-search-timeout-seconds+ -1))
-      (signals type-error (loom::%find-next-occurrence buffer "\\d+"))
+      (signals type-error (buffer-search-forward buffer "\\d+"))
       (signals type-error
-        (loom::%replacement-match-spans (buffer-text buffer) "\\d+" 0))))
+        (buffer-search-spans buffer "\\d+" 0))))
   (it-each
       (("C-s" (((:control) . #\s)) loom::search-forward)
        ("M-%" (((:alt) . #\%)) loom::replace-string)
@@ -617,16 +705,50 @@ commands \(commands-window.lisp\) against a real temporary directory."
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
 
 (describe
-  "define-extended-commands macroexpansion"
-  (it "expands each (name command) pair into its own cl-prolog rulebase clause"
+  "define-command-specs macroexpansion"
+  (it "emits the command registry and generated cl-prolog rulebase"
     (let ((expansion (macroexpand-1
-                      '(loom::define-extended-commands
-                        ("forward-char" forward-char)
-                        ("kill-line" kill-line)))))
-      (expect (first expansion) :to-equal 'cl-prolog:define-rulebase)
-      (expect (second expansion) :to-equal 'loom::*extended-command-rulebase*)
-      (expect (third expansion) :to-equal '((loom::extended-command "forward-char" forward-char)))
-      (expect (fourth expansion) :to-equal '((loom::extended-command "kill-line" kill-line))))))
+                      '(loom::define-command-specs
+                        (loom::command-spec "forward-char" forward-char)
+                        (loom::command-spec "kill-line" kill-line)))))
+      (expect (first expansion) :to-equal 'progn)
+      (expect (first (second expansion)) :to-equal 'defparameter)
+      (expect (first (third expansion)) :to-equal 'cl-prolog:define-rulebase)
+      (expect (second (third expansion)) :to-equal 'loom::*extended-command-rulebase*)
+      (expect (third (third expansion))
+              :to-equal
+              '((loom::extended-command "forward-char" forward-char)))
+      (expect (fourth (third expansion))
+              :to-equal
+              '((loom::extended-command "kill-line" kill-line))))))
+
+(describe
+  "command-spec validation"
+  (it "rejects a non-string command-spec name"
+    (signals error
+      (macroexpand-1 '(loom::command-spec 42 forward-char))))
+  (it "rejects a non-symbol command-spec command"
+    (signals error
+      (macroexpand-1 '(loom::command-spec "forward-char" 42))))
+  (it "rejects a non-command-spec registry entry"
+    (signals error
+      (macroexpand-1 '(loom::define-command-specs (not-a-command-spec)))))
+  (it "rejects a non-string registry name"
+    (signals error
+      (macroexpand-1
+       '(loom::define-command-specs
+          (loom::command-spec 42 forward-char)))))
+  (it "rejects a non-symbol registry command"
+    (signals error
+      (macroexpand-1
+       '(loom::define-command-specs
+          (loom::command-spec "forward-char" 42)))))
+  (it "rejects duplicate registry names case-insensitively"
+    (signals error
+      (macroexpand-1
+       '(loom::define-command-specs
+          (loom::command-spec "forward-char" forward-char)
+          (loom::command-spec "FORWARD-CHAR" backward-char))))))
 
 (progn
   (describe "help command"
@@ -646,7 +768,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (expect (keymap-lookup keymap key-sequence) :to-be command))))
 
   (describe "execute-extended-command"
-    (it "resolves a registered command through the command rulebase"
+    (it "resolves a registered command through the command-spec registry"
       (%with-minibuffer-state (minibuffer "hi")
         (loom::execute-extended-command)
         (expect (minibuffer-prompt-string minibuffer) :to-equal "M-x ")
@@ -666,11 +788,11 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
 (progn
   (defparameter +m-x-exempt-commands+ (list (quote loom::execute-extended-command))
-    "The keybound commands DEFINE-EXTENDED-COMMANDS deliberately does not
-register for M-x. EXECUTE-EXTENDED-COMMAND is the only member: it *is* the
-M-x prompt, so an \"M-x execute-extended-command\" would do nothing but
-reopen the prompt the user is already answering. Anything else missing from
-the registry is an oversight, which is what the spec below fails on.")
+    "The keybound command EXECUTE-EXTENDED-COMMAND deliberately does not
+register in the COMMAND-SPEC table for M-x. It *is* the M-x prompt, so an
+\"M-x execute-extended-command\" would do nothing but reopen the prompt the
+user is already answering. Anything else missing from the registry is an
+oversight, which is what the spec below fails on.")
 
   (defun %keymap-bound-commands (keymap)
     "Return every command symbol bound anywhere in KEYMAP, once each,
@@ -692,8 +814,8 @@ is to not maintain a second hand-written list of them."
 
   (defun %extended-command-names (command)
     "Return the M-x names COMMAND may be registered under. Two spellings are
-in real use in DEFINE-EXTENDED-COMMANDS's table: a command whose Lisp name is
-free to be the user-facing one registers under it verbatim
+in real use in the COMMAND-SPEC table: a command whose Lisp name is free to
+be the user-facing one registers under it verbatim
 \(\"forward-char\"\), while a command that had to take a -COMMAND suffix in
 Lisp to avoid clashing with a same-named generic registers under the bare
 name \(NEWLINE-COMMAND as \"newline\", FILE-TREE-RENAME-COMMAND as
@@ -757,10 +879,39 @@ reachability rather than on which of the two spellings was chosen."
         (expect (window-tree-selected-window tree) :to-be original))))
 
   (it
+    "delete-window removes the selected split and restores the full layout"
+    (let ((*editor-state* (%fresh-editor-state "hi")))
+      (let* ((tree (editor-state-window-tree *editor-state*))
+             (original (window-tree-selected-window tree)))
+        (loom::split-window-below)
+        (loom::delete-window)
+        (expect (window-tree-windows tree) :to-have-length 1)
+        (expect (window-tree-selected-window tree) :to-be original)
+        (expect (window-width original) :to-equal 80)
+        (expect (window-height original) :to-equal 24))))
+
+  (it
+    "delete-other-windows keeps the selected pane and restores the full layout"
+    (let ((*editor-state* (%fresh-editor-state "hi")))
+      (let* ((tree (editor-state-window-tree *editor-state*)))
+        (loom::split-window-right)
+        (loom::split-window-below)
+        (let ((selected (window-tree-selected-window tree)))
+          (loom::delete-other-windows)
+          (expect (window-tree-windows tree) :to-have-length 1)
+          (expect (window-tree-selected-window tree) :to-be selected)
+          (expect (window-x selected) :to-equal 0)
+          (expect (window-y selected) :to-equal 0)
+          (expect (window-width selected) :to-equal 80)
+          (expect (window-height selected) :to-equal 24)))))
+
+  (it
     "switch-to-buffer displays a buffer already shown in another window"
     (%with-minibuffer-state (minibuffer "selected"
                              (tree (editor-state-window-tree *editor-state*))
                              (other (make-buffer :name "other.txt" :initial-content "other")))
+      (setf (editor-state-buffers *editor-state*)
+            (cons other (editor-state-buffers *editor-state*)))
       (window-set-buffer (window-split tree (window-tree-selected-window tree) :horizontal) other)
       (window-select-next tree)
       (loom::switch-to-buffer)
@@ -808,7 +959,29 @@ reachability rather than on which of the two spellings was chosen."
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
         (loom::file-tree-select-next)
         (loom::file-tree-open-selected)
-        (expect (buffer-name (%selected-test-buffer)) :to-equal "note.txt"))))
+        (expect (buffer-name (%selected-test-buffer)) :to-equal "note.txt")
+        (expect (member (%selected-test-buffer)
+                        (editor-state-buffers *editor-state*))
+                :to-be-truthy))))
+
+  (it
+    "file-tree-open-selected does nothing when no entry is selected"
+    (let ((*editor-state* (%fresh-editor-state "")))
+      (setf (editor-state-file-tree *editor-state*) (make-file-tree "/root/"))
+      (expect (loom::file-tree-open-selected) :to-be nil)))
+
+  (it
+    "file-tree-open-selected reports an entry that disappeared"
+    (let ((*editor-state* (%fresh-editor-state ""))
+          (tree (make-file-tree "/root/")))
+      (setf (editor-state-file-tree *editor-state*) tree
+            (loom::file-tree-selection tree) "/root/vanished.txt")
+      (with-replaced-function
+          (file-tree-entry-kind
+           (lambda (tree path)
+             (declare (ignore tree path))
+             nil))
+        (signals error (loom::file-tree-open-selected)))))
 
   (it
     "file-tree-open-selected expands a directory entry instead of opening it"

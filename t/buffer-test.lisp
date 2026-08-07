@@ -126,6 +126,16 @@
       (expect (buffer-modified-p buffer) :to-be-falsy))))
 
 (describe
+  "buffer-mark-saved"
+  (it
+    "clears the modified state and returns the buffer"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-insert-string buffer "!")
+      (expect (buffer-modified-p buffer) :to-be-truthy)
+      (expect (buffer-mark-saved buffer) :to-be buffer)
+      (expect (buffer-modified-p buffer) :to-be-falsy))))
+
+(describe
   "buffer-delete-char"
   (it
     "backward deletes the character before point and moves point back"
@@ -320,17 +330,13 @@
       (expect (length (loom::%buffer-pieces buffer)) :to-equal 4))))
 
 (describe
-  "%buffer-offset-position"
+  "buffer-offset-position"
   (it
     "clamps an offset past the end of the text to the last line's own end"
-    ;; Unreachable through any current command (SEARCH-FORWARD/REPLACE-STRING
-    ;; only ever compute an OFFSET within a found match's real span), but
-    ;; documents and locks in %BUFFER-OFFSET-POSITION's own defensive
-    ;; clamping contract as a directly callable internal function.
     (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
-      (multiple-value-bind (line column) (loom::%buffer-offset-position buffer 9999)
-        (expect line :to-equal 1)
-        (expect column :to-equal 3)))))
+      (let ((position (buffer-offset-position buffer 9999)))
+        (expect (buffer-position-line position) :to-equal 1)
+        (expect (buffer-position-column position) :to-equal 3)))))
 
 (describe
   "%raw-insert-at and %raw-delete-region"
