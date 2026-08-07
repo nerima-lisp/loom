@@ -55,14 +55,15 @@ nix fmt -- --ci      # verify Nix formatting without rewriting files
 nix flake check --print-build-logs  # tests + binary + formatting + strict docs
 nix develop          # dev shell with SBCL + cl-weave
 nix develop -c sbcl --script run-tests.lisp
+LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
-The integrated suite currently reports 309 passed tests with no skips, todos,
-failures, or errors. It covers unit and integration behavior and includes an
-internal real-PTY smoke test; launching the built executable through an
-external terminal process is not yet covered by a process-level CLI/PTY E2E
-test.
+The integrated suite currently reports 313 passed tests with no skips, todos,
+failures, or errors. `t/unit/` covers CLI parsing, `t/integration/` covers
+disk-backed editor flows, and the suite includes an internal real-PTY smoke
+test. The separate `t/e2e/loom-test.py` runner requires the `nix build`
+artifact and validates the built executable as an external PTY process.
 
 The coverage command reports the measured SB-COVER expression and branch
 totals separately. A branch result does not establish full expression

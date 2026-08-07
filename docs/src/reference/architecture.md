@@ -82,9 +82,16 @@ The suite uses cl-weave's ordinary assertions and its advanced registrations:
 `it-each`, `it-property`, `it-fuzz`, `with-continuation-values`,
 `with-soft-assertions`, and `with-replaced-function`. `main-test.lisp` mostly
 uses controlled terminal seams and also includes a real-PTY smoke test. The
-integrated tree currently reports 309 passed tests with no skips, todos,
-failures, or errors. This is not yet a process-level CLI/PTY E2E test because
-it does not launch the built `loom` executable as an external process.
+integrated tree currently reports 313 passed tests with no skips, todos,
+failures, or errors. `t/unit/` contains CLI parsing tests and `t/integration/`
+contains disk-backed editor-flow tests; both are loaded by
+`run-tests.lisp`. Process-level CLI/PTY E2E is kept separate because it
+launches the built executable as an external process:
+
+```sh
+nix build
+LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
+```
 
 Coverage is measured separately and written outside the checkout when using
 the documented command:

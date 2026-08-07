@@ -28,13 +28,14 @@ implemented today from what is deliberately deferred.
 - **`--help` / `--version` CLI flags** -- built on `cl-cli`; see `*loom-app*`
   in [`src/main.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/main.lisp).
 - **Measured test and coverage paths** -- the integrated tree currently
-  reports 309 passed tests with no skips, todos, failures, or errors when the
+  reports 313 passed tests with no skips, todos, failures, or errors when the
   regression suite is run with
   `nix develop -c sbcl --script run-tests.lisp`. The cl-weave suite includes
   `it-each`, `it-property`, `it-fuzz`, continuation observations, soft
-  assertions, function replacement, and a real-PTY smoke test. It does not
-  yet launch the built executable as an external process, so process-level
-  CLI/PTY E2E remains a follow-up. Measure coverage with
+  assertions, function replacement, and a real-PTY smoke test. Unit tests are
+  under `t/unit/`, integration tests are under `t/integration/`, and
+  `t/e2e/loom-test.py` launches the built executable through a Unix PTY to
+  verify the process-level CLI and edit/save/exit path. Measure coverage with
   `LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script
   scripts/coverage.lisp`; record SB-COVER expression and branch totals
   separately rather than treating branch coverage as a full-coverage
@@ -51,10 +52,6 @@ so their absence does not read as a bug:
 - **Session/layout persistence** across launches.
 - **A buffer-list registry** -- `switch-to-buffer` currently searches only
   the buffers already displayed in some window of the current window tree.
-- **Process-level CLI/PTY E2E** -- the existing real-PTY coverage stays inside
-  the test process; launching and driving the built executable through a
-  terminal remains future work.
-
 ## Released changes
 
 See the [GitHub Releases](https://github.com/nerima-lisp/loom/releases).
