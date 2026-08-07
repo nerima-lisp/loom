@@ -1,10 +1,11 @@
 ;;;; src/application/minibuffer.lisp
 ;;;;
 ;;;; Application layer: the minibuffer protocol. Orchestration, not pure
-;;;; domain state -- it coordinates keymap input (domain/keymap.lisp),
-;;;; drives CL-HISTORY-KIT directly for Up/Down recall (see
-;;;; infrastructure/history.lisp for why no separate history adapter exists),
-;;;; and will later coordinate other infrastructure ports.
+;;;; domain state -- it coordinates keymap input (domain/keymap.lisp) and
+;;;; drives CL-HISTORY-KIT directly for Up/Down recall. MAKE-MINIBUFFER and
+;;;; MINIBUFFER-HANDLE-KEY name CL-HISTORY-KIT:MAKE-HISTORY and
+;;;; CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT directly in their
+;;;; contracts below.
 ;;;;
 ;;;; The minibuffer is the single-line prompt/status area at the bottom of the
 ;;;; editor, used both for interactive input (find-file, M-x, search, ...) and
@@ -42,6 +43,23 @@ both shapes are recognized here."
            (eql (cl-tty-kit:key-event-code key-event) #\g)
            (member :control (cl-tty-kit:key-event-modifiers key-event)))))
 
+(defun %minibuffer-key-kind (key-event type code)
+  "Classify KEY-EVENT -- whose CL-TTY-KIT:KEY-EVENT-TYPE and -CODE the caller
+has already read out as TYPE and CODE -- as one of the seven things
+MINIBUFFER-HANDLE-KEY does with a keystroke: :CANCEL, :BACKSPACE,
+:HISTORY-PREVIOUS, :HISTORY-NEXT, :CONFIRM, :CHARACTER, or :IGNORE for
+anything else. Pure: the classification is separated from the mutation so
+MINIBUFFER-HANDLE-KEY dispatches on one value rather than re-testing TYPE
+and CODE at every branch."
+  (cond
+    ((%control-g-key-p key-event) :cancel)
+    ((and (eq type :special) (eq code :backspace)) :backspace)
+    ((and (eq type :special) (eq code :up)) :history-previous)
+    ((and (eq type :special) (eq code :down)) :history-next)
+    ((and (eq type :special) (eq code :enter)) :confirm)
+    ((eq type :character) :character)
+    (t :ignore)))
+
 (defun %minibuffer-deactivate (minibuffer)
   "Reset MINIBUFFER to the inactive state, discarding prompt/input/callbacks."
   (setf (%minibuffer-active-p minibuffer) nil
@@ -53,6 +71,21 @@ both shapes are recognized here."
     (when history
       (history-kit:history-reset-navigation history)))
   minibuffer)
+
+(defun %minibuffer-recall-history (minibuffer direction)
+  "Replace MINIBUFFER's input with the history entry one step DIRECTION away:
+:PREVIOUS drives CL-HISTORY-KIT:HISTORY-PREVIOUS, handing it the current input
+so a partly typed line comes back on the way down again, and :NEXT drives
+HISTORY-NEXT. A MINIBUFFER created without a history object, and a step that
+ran off the end of the history, both leave the input untouched."
+  (let* ((history (%minibuffer-history minibuffer))
+         (recalled (when history
+                     (ecase direction
+                       (:previous (history-kit:history-previous
+                                    history (%minibuffer-input minibuffer)))
+                       (:next (history-kit:history-next history))))))
+    (when recalled
+      (setf (%minibuffer-input minibuffer) recalled))))
 
 (defgeneric make-minibuffer (&key history)
   (:documentation
@@ -111,45 +144,37 @@ zero arguments called when the user cancels (e.g. C-g). Returns MINIBUFFER.")
 active MINIBUFFER: ordinary character events are appended to the input,
 Backspace/Delete edit it, Up/Down recall history (when MINIBUFFER was created
 with one, via CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT), RET invokes the
-ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE and deactivates MINIBUFFER,
+ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE after deactivating the
+current prompt (so the callback may activate a next prompt),
 and C-g invokes ON-CANCEL and deactivates MINIBUFFER. Has no effect if
 MINIBUFFER is not active. Returns MINIBUFFER.")
   (:method (minibuffer key-event)
     (when (%minibuffer-active-p minibuffer)
-      (let ((type (cl-tty-kit:key-event-type key-event))
-            (code (cl-tty-kit:key-event-code key-event))
-            (history (%minibuffer-history minibuffer)))
-        (cond
-          ;; C-g: cancel and deactivate.
-          ((%control-g-key-p key-event)
+      (let* ((type (cl-tty-kit:key-event-type key-event))
+             (code (cl-tty-kit:key-event-code key-event))
+             (history (%minibuffer-history minibuffer))
+             (kind (%minibuffer-key-kind key-event type code)))
+        (case kind
+          (:cancel
            (when (%minibuffer-on-cancel minibuffer)
              (funcall (%minibuffer-on-cancel minibuffer)))
            (%minibuffer-deactivate minibuffer))
-          ((and (eq type :special) (eq code :backspace))
+          (:backspace
            (let ((input (%minibuffer-input minibuffer)))
              (when (plusp (length input))
                (setf (%minibuffer-input minibuffer)
                      (subseq input 0 (1- (length input)))))))
-          ((and (eq type :special) (eq code :up))
-           (when history
-             (let ((recalled (history-kit:history-previous
-                               history (%minibuffer-input minibuffer))))
-               (when recalled
-                 (setf (%minibuffer-input minibuffer) recalled)))))
-          ((and (eq type :special) (eq code :down))
-           (when history
-             (let ((recalled (history-kit:history-next history)))
-               (when recalled
-                 (setf (%minibuffer-input minibuffer) recalled)))))
-          ((and (eq type :special) (eq code :enter))
+          (:history-previous (%minibuffer-recall-history minibuffer :previous))
+          (:history-next (%minibuffer-recall-history minibuffer :next))
+          (:confirm
            (let ((input (%minibuffer-input minibuffer))
                  (on-confirm (%minibuffer-on-confirm minibuffer)))
              (when history
                (history-kit:history-add history input))
+             (%minibuffer-deactivate minibuffer)
              (when on-confirm
-               (funcall on-confirm input))
-             (%minibuffer-deactivate minibuffer)))
-          ((eq type :character)
+               (funcall on-confirm input))))
+          (:character
            (setf (%minibuffer-input minibuffer)
                  (concatenate 'string (%minibuffer-input minibuffer)
                               (string code))))

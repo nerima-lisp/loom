@@ -15,13 +15,14 @@ nix profile install github:nerima-lisp/loom
 loom
 ```
 
-Consumers inside the nerima-lisp org pin a release tag rather than following
-the default branch:
+Consumers inside the nerima-lisp org pin a reviewed commit or an existing
+release tag rather than following the default branch. Replace
+`<reviewed-ref>` with the ref selected for the deployment:
 
 ```nix
 # flake.nix
 inputs.loom = {
-  url = "github:nerima-lisp/loom/v0.1.0";
+  url = "github:nerima-lisp/loom/<reviewed-ref>";
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
@@ -38,7 +39,7 @@ loom ~/project
 `C-x C-t` toggles the file-tree sidebar; `C-x C-f` prompts for a path and
 opens it in the selected window; `C-x C-s` saves the selected buffer; `C-x
 C-c` quits. See
-[`install-default-keybindings`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands.lisp)
+[`install-default-keybindings`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp)
 for the full keybinding set.
 
 ## Build from source
@@ -50,9 +51,16 @@ tested path is Nix:
 git clone https://github.com/nerima-lisp/loom
 cd loom
 nix build            # produces ./result/bin/loom
-nix flake check      # tests + formatting + docs, the same gate CI uses
+nix fmt -- --ci      # verify Nix formatting without rewriting files
+nix flake check --print-build-logs  # tests + binary + formatting + strict docs
 nix develop          # dev shell with SBCL + cl-weave
+nix develop -c sbcl --script run-tests.lisp
+LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
+
+The coverage command reports the measured SB-COVER expression and branch
+totals separately. A branch result does not establish full expression
+coverage; inspect the generated report for uncovered forms.
 
 Inside `nix develop`, load the system into a REPL:
 

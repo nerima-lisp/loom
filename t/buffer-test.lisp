@@ -6,18 +6,24 @@
 ;;;; trivial-in-terms-of-the-rest-of-the-protocol BUFFER-LOAD/BUFFER-SAVE.
 (in-package #:loom/test)
 
+(defmatcher :to-have-point (buffer expected)
+  "buffer's point to equal the given (line . column)"
+  (let ((actual-point (cons (buffer-point-line buffer) (buffer-point-column buffer)))
+        (expected-point (first expected)))
+    (values (equal actual-point expected-point) actual-point expected-point)))
+
 (describe
   "make-buffer"
   (it
     "defaults to an empty *scratch* buffer with point/mark at 0,0"
     (let ((buffer (make-buffer)))
-      (expect (buffer-name buffer) :to-equal "*scratch*")
-      (expect (buffer-path buffer) :to-be nil)
-      (expect (buffer-line-count buffer) :to-equal 1)
-      (expect (buffer-line buffer 0) :to-equal "")
-      (expect (buffer-point-line buffer) :to-equal 0)
-      (expect (buffer-point-column buffer) :to-equal 0)
-      (expect (buffer-modified-p buffer) :to-be-falsy)))
+      (with-soft-assertions
+        (expect (buffer-name buffer) :to-equal "*scratch*")
+        (expect (buffer-path buffer) :to-be nil)
+        (expect (buffer-line-count buffer) :to-equal 1)
+        (expect (buffer-line buffer 0) :to-equal "")
+        (expect buffer :to-have-point (cons 0 0))
+        (expect (buffer-modified-p buffer) :to-be-falsy))))
 
   (it
     "takes name and path"
@@ -52,18 +58,15 @@
     "moves point to an in-range position"
     (let ((buffer (make-buffer :initial-content (format nil "hello~%world"))))
       (buffer-set-point buffer 1 3)
-      (expect (buffer-point-line buffer) :to-equal 1)
-      (expect (buffer-point-column buffer) :to-equal 3)))
+      (expect buffer :to-have-point (cons 1 3))))
 
   (it
     "clamps an out-of-range position"
     (let ((buffer (make-buffer :initial-content (format nil "hi~%there"))))
       (buffer-set-point buffer 99 99)
-      (expect (buffer-point-line buffer) :to-equal 1)
-      (expect (buffer-point-column buffer) :to-equal 5)
+      (expect buffer :to-have-point (cons 1 5))
       (buffer-set-point buffer -5 -5)
-      (expect (buffer-point-line buffer) :to-equal 0)
-      (expect (buffer-point-column buffer) :to-equal 0))))
+      (expect buffer :to-have-point (cons 0 0)))))
 
 (describe
   "buffer-mark / buffer-set-mark"
@@ -89,8 +92,7 @@
       (buffer-set-point buffer 0 1)
       (buffer-insert-string buffer "e")
       (expect (buffer-line buffer 0) :to-equal "hello")
-      (expect (buffer-point-line buffer) :to-equal 0)
-      (expect (buffer-point-column buffer) :to-equal 2)
+      (expect buffer :to-have-point (cons 0 2))
       (expect (buffer-modified-p buffer) :to-be-truthy)))
 
   (it
@@ -101,8 +103,7 @@
       (expect (buffer-line-count buffer) :to-equal 2)
       (expect (buffer-line buffer 0) :to-equal "hello")
       (expect (buffer-line buffer 1) :to-equal "world")
-      (expect (buffer-point-line buffer) :to-equal 1)
-      (expect (buffer-point-column buffer) :to-equal 0)))
+      (expect buffer :to-have-point (cons 1 0))))
 
   (it
     "single-line insert on a non-first line of a multi-line buffer leaves other lines untouched"
@@ -113,8 +114,26 @@
       (expect (buffer-line buffer 0) :to-equal "one")
       (expect (buffer-line buffer 1) :to-equal "hello")
       (expect (buffer-line buffer 2) :to-equal "three")
-      (expect (buffer-point-line buffer) :to-equal 1)
-      (expect (buffer-point-column buffer) :to-equal 2))))
+      (expect buffer :to-have-point (cons 1 2))))
+
+  (it
+    "is a no-op for an empty string, leaving point and modified-p unchanged"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-point buffer 0 2)
+      (buffer-insert-string buffer "")
+      (expect (buffer-line buffer 0) :to-equal "hello")
+      (expect buffer :to-have-point (cons 0 2))
+      (expect (buffer-modified-p buffer) :to-be-falsy))))
+
+(describe
+  "buffer-mark-saved"
+  (it
+    "clears the modified state and returns the buffer"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-insert-string buffer "!")
+      (expect (buffer-modified-p buffer) :to-be-truthy)
+      (expect (buffer-mark-saved buffer) :to-be buffer)
+      (expect (buffer-modified-p buffer) :to-be-falsy))))
 
 (describe
   "buffer-delete-char"
@@ -140,8 +159,7 @@
       (buffer-delete-char buffer :backward t)
       (expect (buffer-line-count buffer) :to-equal 1)
       (expect (buffer-line buffer 0) :to-equal "helloworld")
-      (expect (buffer-point-line buffer) :to-equal 0)
-      (expect (buffer-point-column buffer) :to-equal 5)))
+      (expect buffer :to-have-point (cons 0 5))))
 
   (it
     "forward deletes the character at point and leaves point where it is"
@@ -150,6 +168,14 @@
       (buffer-delete-char buffer)
       (expect (buffer-line buffer 0) :to-equal "ello")
       (expect (buffer-point-column buffer) :to-equal 0)))
+
+  (it
+    "forward at the end of a non-last line joins with the next line"
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
+      (buffer-set-point buffer 0 3)
+      (buffer-delete-char buffer)
+      (expect (buffer-text buffer) :to-equal "onetwo")
+      (expect buffer :to-have-point (cons 0 3))))
 
   (it
     "forward is a no-op at the end of the buffer"
@@ -175,13 +201,17 @@
         (expect deleted :to-equal (format nil "ello~%wor"))
         (expect (buffer-line-count buffer) :to-equal 1)
         (expect (buffer-line buffer 0) :to-equal "hld")
-        (expect (buffer-point-line buffer) :to-equal 0)
-        (expect (buffer-point-column buffer) :to-equal 1))))
+        (expect buffer :to-have-point (cons 0 1)))))
 
   (it
     "signals an error when end precedes start"
     (let ((buffer (make-buffer :initial-content "hello")))
       (signals error (buffer-delete-region buffer 0 3 0 1))))
+
+  (it
+    "signals an error when a position is out of range even though ordering is valid"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (signals error (buffer-delete-region buffer 0 0 99 99))))
 
   (it
     "single-line delete on a non-first line of a multi-line buffer leaves other lines untouched"
@@ -192,8 +222,7 @@
         (expect (buffer-line buffer 0) :to-equal "one")
         (expect (buffer-line buffer 1) :to-equal "hllo")
         (expect (buffer-line buffer 2) :to-equal "three")
-        (expect (buffer-point-line buffer) :to-equal 1)
-        (expect (buffer-point-column buffer) :to-equal 1)))))
+        (expect buffer :to-have-point (cons 1 1))))))
 
 (describe
   "buffer-undo"
@@ -227,6 +256,19 @@
       ;; (recorded before it) are left alone
       (buffer-undo buffer)
       (expect (buffer-line buffer 0) :to-equal "ab")))
+
+  (it
+    "a second consecutive call does not push a duplicate boundary marker"
+    (let ((buffer (make-buffer :initial-content "")))
+      (buffer-insert-string buffer "a")
+      (buffer-record-undo-boundary buffer)
+      (buffer-record-undo-boundary buffer)
+      (buffer-insert-string buffer "b")
+      (expect (buffer-line buffer 0) :to-equal "ab")
+      ;; if the second boundary call had pushed another marker, this undo
+      ;; would land on an empty group instead of undoing "b"
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "a")))
 
   (it
     "is a no-op once history is exhausted"
@@ -276,3 +318,41 @@
     "signals an error saving a buffer with no path"
     (let ((buffer (make-buffer :initial-content "hi")))
       (signals error (buffer-save buffer)))))
+(describe "piece table storage"
+  (it "preserves initial text while later edits use the add buffer"
+    (let ((buffer (make-buffer :initial-content (format nil "alpha~%omega"))))
+      (buffer-set-point buffer 0 5)
+      (buffer-insert-string buffer "-beta")
+      (buffer-delete-region buffer 1 1 1 3)
+      (expect (buffer-text buffer) :to-equal (format nil "alpha-beta~%oga"))
+      (expect (loom::%buffer-original buffer) :to-equal (format nil "alpha~%omega"))
+      (expect (length (loom::%buffer-add-buffer buffer)) :to-equal 5)
+      (expect (length (loom::%buffer-pieces buffer)) :to-equal 4))))
+
+(describe
+  "buffer-offset-position"
+  (it
+    "clamps an offset past the end of the text to the last line's own end"
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
+      (let ((position (buffer-offset-position buffer 9999)))
+        (expect (buffer-position-line position) :to-equal 1)
+        (expect (buffer-position-column position) :to-equal 3)))))
+
+(describe
+  "%raw-insert-at and %raw-delete-region"
+  (it
+    "%raw-insert-at is a no-op for an empty string"
+    ;; Every current caller (BUFFER-INSERT-STRING, undo's re-insertion of a
+    ;; deleted span) already guards against an empty string before ever
+    ;; reaching here, so this exercises %RAW-INSERT-AT's own guard directly.
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (loom::%raw-insert-at buffer 0 2 "")
+      (expect (buffer-line buffer 0) :to-equal "hello")
+      (expect (length (loom::%buffer-pieces buffer)) :to-equal 1)))
+
+  (it
+    "%raw-delete-region is a no-op for an empty (start = end) region"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (loom::%raw-delete-region buffer 0 2 0 2)
+      (expect (buffer-line buffer 0) :to-equal "hello")
+      (expect (length (loom::%buffer-pieces buffer)) :to-equal 1))))

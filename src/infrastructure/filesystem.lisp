@@ -2,10 +2,39 @@
 ;;;;
 ;;;; Infrastructure layer: the file-tree protocol's disk-touching generics,
 ;;;; split out of the tree-state generics in domain/file-tree.lisp because
-;;;; these four operate on the real filesystem via CL-HOST-KIT rather than on
-;;;; pure tree state. Generic names are unchanged from the original flat
-;;;; src/protocol.lisp; only the file they live in changed.
+;;;; these operate on the real filesystem rather than on pure tree state.
+;;;;
+;;;; Most of them reach the disk through *LOOM-FILESYSTEM*, a CL-BOUNDARY-KIT
+;;;; filesystem boundary, so t/filesystem-test.lisp can rebind that one
+;;;; variable to an in-memory fake instead of creating a real temporary
+;;;; directory. Two operations deliberately stay on CL-HOST-KIT directly,
+;;;; because routing them through the boundary would cost correctness rather
+;;;; than buy testability:
+;;;;
+;;;;   LOOM-FS-LIST-DIRECTORY needs each entry classified as :DIRECTORY or
+;;;;   :FILE. CL-BOUNDARY-KIT:FILESYSTEM-LIST-DIRECTORY returns bare
+;;;;   pathnames with no classification, so the kind would have to be
+;;;;   recovered with a second probe per entry, whereas
+;;;;   CL-HOST-KIT:CALL-WITH-DIRECTORY-ENTRIES already reports it in one pass.
+;;;;
+;;;;   FILE-TREE-DELETE deletes a populated directory tree. The boundary's
+;;;;   FILESYSTEM-DELETE-DIRECTORY removes only an already-empty directory, so
+;;;;   the recursion would have to be written here on top of
+;;;;   FILESYSTEM-LIST-DIRECTORY -- which is CL:DIRECTORY underneath and so
+;;;;   RESOLVES SYMLINKS. Recursing over resolved entries walks *through* a
+;;;;   symlink to a directory outside the tree and deletes its contents; the
+;;;;   file-tree sidebar's delete command has no confirmation prompt, so that
+;;;;   is unacceptable. CL-HOST-KIT:DELETE-PATH :RECURSIVE T does not follow
+;;;;   symlinks and does the whole job in one call.
 (in-package #:loom)
+
+(defparameter *loom-filesystem* (cl-boundary-kit:make-filesystem)
+  "The CL-BOUNDARY-KIT filesystem boundary that every disk-touching operation
+in this file goes through, except LOOM-FS-LIST-DIRECTORY and FILE-TREE-DELETE
+-- see this file's header comment for why those two stay on CL-HOST-KIT
+directly. Tests rebind this to CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's
+in-memory fake so they exercise the operations without touching a real
+temporary directory.")
 
 ;;; ---------------------------------------------------------------------
 ;;; LOOM-FS-LIST-DIRECTORY: the real, disk-backed "children lister" for a
@@ -49,8 +78,10 @@ are omitted."
       (append (sort (nreverse directories) #'by-namestring<)
               (sort (nreverse files) #'by-namestring<)))))
 
-;;; Each of the four generics below performs its disk operation for real via
-;;; CL-HOST-KIT. None of them needs to explicitly "refresh" TREE afterwards:
+;;; Each of the four generics below performs its disk operation for real --
+;;; the first three through *LOOM-FILESYSTEM*, FILE-TREE-DELETE through
+;;; CL-HOST-KIT for the reason in this file's header comment. None of them
+;;; needs to explicitly "refresh" TREE afterwards:
 ;;; FILE-TREE-ENTRIES (domain/file-tree.lisp's %FILE-TREE-FLATTEN) calls
 ;;; FILE-TREE-CHILD-LISTER fresh on every invocation rather than caching a
 ;;; previous listing, so the very next FILE-TREE-ENTRIES call -- e.g. the
@@ -59,30 +90,47 @@ are omitted."
 
 (defgeneric file-tree-create-file (tree path)
   (:documentation
-   "Create a new, empty regular file on disk at PATH (via CL-HOST-KIT).
+   "Create a new, empty regular file on disk at PATH (via *LOOM-FILESYSTEM*).
 Signals an error if PATH already exists. Returns PATH.")
   (:method (tree path)
     (declare (ignorable tree))
-    (host-kit:write-file-string "" path :if-exists :error)
+    ;; :IF-EXISTS :ERROR is forwarded to WITH-OPEN-FILE semantics unchanged, so
+    ;; the "already exists" half of the contract is the boundary's to enforce.
+    (cl-boundary-kit:filesystem-store-file *loom-filesystem* path ""
+                                           :if-exists :error)
     path))
 
 (defgeneric file-tree-create-directory (tree path)
   (:documentation
-   "Create a new, empty directory on disk at PATH (via CL-HOST-KIT). Signals
+   "Create a new, empty directory on disk at PATH (via *LOOM-FILESYSTEM*). Signals
 an error if PATH already exists. Returns PATH.")
   (:method (tree path)
     (declare (ignorable tree))
-    (host-kit:create-directory path :if-exists :error)
+    ;; CL-BOUNDARY-KIT:FILESYSTEM-MAKE-DIRECTORY is ENSURE-DIRECTORIES-EXIST
+    ;; underneath, so it succeeds silently on an already-existing directory
+    ;; rather than signalling. The "already exists" half of this generic's
+    ;; contract therefore has to be checked here instead of delegated.
+    (when (cl-boundary-kit:filesystem-directory-exists-p *loom-filesystem* path)
+      (error "file-tree-create-directory: ~A already exists" path))
+    (cl-boundary-kit:filesystem-make-directory *loom-filesystem* path)
     path))
 
 (defgeneric file-tree-rename (tree old-path new-path)
   (:documentation
    "Move/rename the file or directory at OLD-PATH to NEW-PATH on disk (via
-CL-HOST-KIT:MOVE-PATH). Signals an error if OLD-PATH does not exist or
+*LOOM-FILESYSTEM*). Signals an error if OLD-PATH does not exist or
 NEW-PATH already does. Returns NEW-PATH.")
   (:method (tree old-path new-path)
     (declare (ignorable tree))
-    (host-kit:move-path old-path new-path :if-exists :error)
+    ;; Both halves of the contract are checked here rather than delegated:
+    ;; CL-BOUNDARY-KIT:FILESYSTEM-RENAME-FILE is CL:RENAME-FILE underneath,
+    ;; which on SBCL silently overwrites an existing destination instead of
+    ;; signalling -- so without this guard a rename would clobber NEW-PATH.
+    (unless (cl-boundary-kit:filesystem-path-exists-p *loom-filesystem* old-path)
+      (error "file-tree-rename: ~A does not exist" old-path))
+    (when (cl-boundary-kit:filesystem-path-exists-p *loom-filesystem* new-path)
+      (error "file-tree-rename: ~A already exists" new-path))
+    (cl-boundary-kit:filesystem-rename-file *loom-filesystem* old-path new-path)
     new-path))
 
 (defgeneric file-tree-delete (tree path)
@@ -90,6 +138,8 @@ NEW-PATH already does. Returns NEW-PATH.")
    "Delete the file or directory at PATH from disk (via CL-HOST-KIT).
 Signals an error if PATH does not exist. Returns TREE.")
   (:method (tree path)
+    ;; Not *LOOM-FILESYSTEM*: recursing over the boundary's list-directory
+    ;; would follow symlinks out of the tree. See this file's header comment.
     (host-kit:delete-path path :recursive t :if-does-not-exist :error)
     tree))
 
@@ -103,13 +153,13 @@ Signals an error if PATH does not exist. Returns TREE.")
 ;;; ---------------------------------------------------------------------
 
 (defmethod buffer-load (path)
-  (let ((content (host-kit:read-file-string path)))
+  (let ((content (cl-boundary-kit:filesystem-read-file *loom-filesystem* path)))
     (make-buffer :name (file-namestring path) :path path :initial-content content)))
 
 (defmethod buffer-save (buffer)
   (let ((path (buffer-path buffer)))
     (unless path
       (error "buffer-save: buffer ~A has no associated path" (buffer-name buffer)))
-    (host-kit:write-file-string (buffer-text buffer) path)
-    (setf (%buffer-modified-p buffer) nil))
+    (cl-boundary-kit:filesystem-store-file *loom-filesystem* path (buffer-text buffer))
+    (buffer-mark-saved buffer))
   buffer)

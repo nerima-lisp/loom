@@ -1,22 +1,20 @@
 ;;;; src/infrastructure/terminal-renderer.lisp
 ;;;;
-;;;; Infrastructure layer: the renderer protocol. A thin adapter wrapping a
-;;;; single CL-TTY-KIT screen/renderer pair, adding the notion of drawing a
-;;;; loom BUFFER's visible region into a rectangular area of the screen.
+;;;; Infrastructure layer: the renderer port. It owns a single CL-TTY-KIT
+;;;; screen/renderer pair and exposes only the drawing capabilities that
+;;;; presentation needs for a loom BUFFER's visible region.
 (in-package #:loom)
 
 ;;; LOOM-RENDERER wraps a single CL-TTY-KIT renderer object (itself already a
 ;;; back-buffer screen plus previous-frame diff state -- see
-;;; CL-TTY-KIT:MAKE-RENDERER/CL-TTY-KIT:RENDERER-SCREEN). A non-default
-;;; :CONC-NAME and :CONSTRUCTOR are used because MAKE-LOOM-RENDERER and
-;;; LOOM-RENDERER-CL-TTY-RENDERER are themselves protocol generic functions
-;;; declared below; DEFSTRUCT's default accessor/constructor names would
-;;; collide with those generic function definitions.
+;;; CL-TTY-KIT:MAKE-RENDERER/CL-TTY-KIT:RENDERER-SCREEN). The concrete
+;;; renderer accessor remains private to infrastructure; presentation consumes
+;;; only the LOOM-RENDERER-* protocol below.
 (defstruct (loom-renderer
             (:conc-name %loom-renderer-)
             (:constructor %make-loom-renderer (cl-tty-renderer))
             (:copier nil))
-  "A loom renderer: a thin wrapper around a single CL-TTY-KIT renderer object."
+  "A loom renderer backed by a single CL-TTY-KIT renderer object."
   cl-tty-renderer)
 
 (defgeneric make-loom-renderer (width height)
@@ -28,34 +26,80 @@ and rows respectively.")
   (:method (width height)
     (%make-loom-renderer (cl-tty-kit:make-renderer width height))))
 
-(defgeneric loom-renderer-cl-tty-renderer (renderer)
+(defgeneric loom-renderer-width (renderer)
   (:documentation
-   "Return the underlying CL-TTY-KIT renderer object (as created by
-CL-TTY-KIT:MAKE-RENDERER) that RENDERER wraps.")
+   "Return RENDERER's width in terminal columns.")
   (:method ((renderer loom-renderer))
-    (%loom-renderer-cl-tty-renderer renderer)))
+    (cl-tty-kit:renderer-width (%loom-renderer-cl-tty-renderer renderer))))
 
-(defgeneric loom-renderer-draw-buffer (renderer buffer x y width height)
+(defgeneric loom-renderer-height (renderer)
+  (:documentation
+   "Return RENDERER's height in terminal rows.")
+  (:method ((renderer loom-renderer))
+    (cl-tty-kit:renderer-height (%loom-renderer-cl-tty-renderer renderer))))
+
+(defgeneric loom-renderer-write-string (renderer x y string &key style)
+  (:documentation
+   "Write STRING at (X, Y) on RENDERER's screen, optionally using STYLE.
+Returns RENDERER.")
+  (:method ((renderer loom-renderer) x y string &key style)
+    (cl-tty-kit:screen-write-string
+     (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer))
+     x y string :style style)
+    renderer))
+
+(defgeneric loom-renderer-draw-horizontal-line (renderer x y length)
+  (:documentation
+   "Draw a horizontal line of LENGTH cells at (X, Y) on RENDERER's screen.
+Returns RENDERER.")
+  (:method ((renderer loom-renderer) x y length)
+    (cl-tty-kit:screen-draw-horizontal-line
+     (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer))
+     x y length)
+    renderer))
+
+(defgeneric loom-renderer-draw-vertical-line (renderer x y length)
+  (:documentation
+   "Draw a vertical line of LENGTH cells at (X, Y) on RENDERER's screen.
+Returns RENDERER.")
+  (:method ((renderer loom-renderer) x y length)
+    (cl-tty-kit:screen-draw-vertical-line
+     (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer))
+     x y length)
+    renderer))
+
+(defgeneric loom-renderer-clear (renderer)
+  (:documentation
+   "Clear RENDERER's screen. Returns RENDERER.")
+  (:method ((renderer loom-renderer))
+    (cl-tty-kit:screen-clear
+     (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer)))
+    renderer))
+
+(defgeneric loom-renderer-make-cursor (renderer &key x y visible)
+  (:documentation
+   "Create a terminal cursor for RENDERER with the given position and
+visibility. Returns the renderer-specific cursor object.")
+  (:method ((renderer loom-renderer) &key (x 0) (y 0) (visible t))
+    (declare (ignore renderer))
+    (cl-tty-kit:make-cursor :x x :y y :visible visible)))
+
+(defgeneric loom-renderer-draw-buffer (renderer buffer x y width height &key start-line)
   (:documentation
    "Draw BUFFER's currently visible region into RENDERER's screen, occupying
 the rectangle whose top-left corner is (X, Y) and which is WIDTH columns by
 HEIGHT rows, all in screen-cell coordinates. Does not itself flush anything
 to a terminal -- see LOOM-RENDERER-PRESENT. Returns RENDERER.")
-  (:method ((renderer loom-renderer) buffer x y width height)
-    (let ((screen (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer)))
-          (line-count (buffer-line-count buffer)))
-      ;; TODO: viewport scrolling -- ROW is used directly as BUFFER's line
-      ;; number below, so drawing always starts at line 0. Once a
-      ;; viewport/scroll-offset concept exists on the window or buffer, add
-      ;; it in here (e.g. (+ row scroll-offset)) instead of ROW alone.
+  (:method ((renderer loom-renderer) buffer x y width height &key (start-line 0))
+    (let ((line-count (buffer-line-count buffer)))
       (dotimes (row height)
-        (let ((line-number row))
+        (let ((line-number (+ start-line row)))
           (when (< line-number line-count)
             (let* ((text (buffer-line buffer line-number))
                    (visible (if (> (length text) width)
                                 (subseq text 0 width)
                                 text)))
-              (cl-tty-kit:screen-write-string screen x (+ y row) visible)))))
+              (loom-renderer-write-string renderer x (+ y row) visible)))))
       renderer)))
 
 (defgeneric loom-renderer-present (renderer &key stream cursor)

@@ -66,11 +66,11 @@ its root, for an entry whose path is EQUAL to PATH, and return its kind
 reachable (visible) entries."
   (labels ((search-under (dir-path)
              (let ((children (funcall (file-tree-child-lister tree) dir-path)))
-               (or (cdr (assoc path children :test #'equal))
+               (or (cdr (assoc path children :test (function equal)))
                    (loop for (child-path . kind) in children
-                         when (and (eq kind :directory)
-                                   (gethash child-path (file-tree-expanded tree)))
-                           thereis (search-under child-path))))))
+                         thereis (and (eq kind :directory)
+                                      (gethash child-path (file-tree-expanded tree))
+                                      (search-under child-path)))))))
     (search-under (file-tree-root-path tree))))
 
 (defgeneric make-file-tree (root-path)
@@ -108,6 +108,13 @@ direct children are at depth 0.")
 is selected (e.g. an empty tree).")
   (:method (tree)
     (file-tree-selection tree)))
+
+(defgeneric file-tree-entry-kind (tree path)
+  (:documentation
+   "Return :FILE or :DIRECTORY for PATH in TREE, or NIL when PATH is not
+reachable in TREE.")
+  (:method (tree path)
+    (%file-tree-find-kind tree path)))
 
 (defgeneric file-tree-move-selection (tree direction)
   (:documentation

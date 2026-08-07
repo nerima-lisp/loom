@@ -10,14 +10,31 @@ implemented today from what is deliberately deferred.
 - **Movement** -- character/line motion, beginning/end of line.
 - **Emacs-style keybindings** -- `install-default-keybindings` binds the
   default `C-x`/`C-c` prefix sequences; see
-  [`src/application/commands.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands.lisp).
+  [`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp).
 - **Window management** -- horizontal/vertical splits (`C-x 2` / `C-x 3`),
   window selection (`C-x o`), per-window buffer switching (`C-x b`).
 - **File-tree sidebar** (`C-x C-t`) -- navigate, and create/rename/delete
-  files and directories on disk, backed by `cl-host-kit`.
+  files and directories on disk, using `cl-boundary-kit` for normal
+  operations and direct `cl-host-kit` calls where filesystem guarantees
+  require them.
 - **File I/O** -- `find-file` (`C-x C-f`), `save-buffer` (`C-x C-s`).
+- **Regular-expression search and replacement** -- `C-s`, `M-%`, and
+  `M-g g`, using `cl-regex-kit` patterns with a bounded search operation.
+- **M-x command registry and prompts** -- extended commands resolve through
+  the declarative `command-spec` table; quit confirmation uses `cl-prolog`, and
+  minibuffer history uses `cl-history-kit` directly.
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
+- **`--help` / `--version` CLI flags** -- built on `cl-cli`; see `*loom-app*`
+  in [`src/main.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/main.lisp).
+- **Measured test and coverage paths** -- run the regression suite with
+  `nix develop -c sbcl --script run-tests.lisp`. The cl-weave suite includes
+  `it-each`, `it-property`, `it-fuzz`, continuation observations, soft
+  assertions, function replacement, and a real-PTY smoke test. Measure
+  coverage with `LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl
+  --script scripts/coverage.lisp`; record SB-COVER expression and branch
+  totals separately rather than treating branch coverage as a full-coverage
+  guarantee.
 
 ## Not yet implemented
 

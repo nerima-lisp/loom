@@ -29,7 +29,8 @@
   x
   y
   width
-  height)
+  height
+  (scroll-line 0))
 
 (defstruct window-split-node
   direction ; :HORIZONTAL or :VERTICAL
@@ -41,14 +42,17 @@
   width
   height)
 
-(defun %window-collect-leaves (node)
-  "Return every WINDOW-LEAF under NODE, depth-first, first child before
-second child."
-  (etypecase node
-    (window-leaf (list node))
-    (window-split-node
-     (append (%window-collect-leaves (first (window-split-node-children node)))
-             (%window-collect-leaves (second (window-split-node-children node)))))))
+(defgeneric %window-collect-leaves (node)
+  (:documentation
+   "Return every WINDOW-LEAF under NODE, depth-first, first child before
+second child. A method per node type -- rather than an ETYPECASE branching
+on both -- since WINDOW-LEAF and WINDOW-SPLIT-NODE are the tree's only two
+node shapes and this is the recursion's exhaustive base/recursive-case
+split, not a true either/or decision within one case.")
+  (:method ((node window-leaf)) (list node))
+  (:method ((node window-split-node))
+    (append (%window-collect-leaves (first (window-split-node-children node)))
+            (%window-collect-leaves (second (window-split-node-children node))))))
 
 (defun %window-split-rects (x y w h direction)
   "Divide the rect (X Y W H) into two child rects along DIRECTION, using
@@ -78,23 +82,24 @@ mutating WINDOW-SPLIT-NODE children in place as it descends."
      node)
     (t node)))
 
-(defun %window-layout (node x y w h)
-  "Recompute every leaf rect under NODE to fill (X Y W H), recursing into
+(defgeneric %window-layout (node x y w h)
+  (:documentation
+   "Recompute every leaf rect under NODE to fill (X Y W H), recursing into
 WINDOW-SPLIT-NODE children using the same proportional halving rule as
-%WINDOW-SPLIT-RECTS."
-  (etypecase node
-    (window-leaf
-     (setf (window-leaf-x node) x
-           (window-leaf-y node) y
-           (window-leaf-width node) w
-           (window-leaf-height node) h))
-    (window-split-node
-     (multiple-value-bind (rect1 rect2)
-         (%window-split-rects x y w h (window-split-node-direction node))
-       (destructuring-bind (x1 y1 w1 h1) rect1
-         (%window-layout (first (window-split-node-children node)) x1 y1 w1 h1))
-       (destructuring-bind (x2 y2 w2 h2) rect2
-         (%window-layout (second (window-split-node-children node)) x2 y2 w2 h2))))))
+%WINDOW-SPLIT-RECTS. A method per node type, matching %WINDOW-COLLECT-LEAVES'
+own base-case/recursive-case split across the tree's only two node shapes.")
+  (:method ((node window-leaf) x y w h)
+    (setf (window-leaf-x node) x
+          (window-leaf-y node) y
+          (window-leaf-width node) w
+          (window-leaf-height node) h))
+  (:method ((node window-split-node) x y w h)
+    (multiple-value-bind (rect1 rect2)
+        (%window-split-rects x y w h (window-split-node-direction node))
+      (destructuring-bind (x1 y1 w1 h1) rect1
+        (%window-layout (first (window-split-node-children node)) x1 y1 w1 h1))
+      (destructuring-bind (x2 y2 w2 h2) rect2
+        (%window-layout (second (window-split-node-children node)) x2 y2 w2 h2)))))
 
 (defgeneric make-window-tree (initial-buffer width height)
   (:documentation
@@ -104,7 +109,8 @@ terminal columns and rows). That single window is initially selected.")
   (:method (initial-buffer width height)
     (let ((leaf (make-window-leaf :buffer initial-buffer
                                    :x 0 :y 0 :width width :height height)))
-      (%make-window-tree :root leaf :selected leaf :width width :height height))))
+      (%make-window-tree :root leaf :selected leaf
+                         :width width :height height))))
 
 (defgeneric window-tree-windows (tree)
   (:documentation
@@ -163,6 +169,69 @@ last (C-x o). Returns the newly selected window.")
         (setf (window-tree-selected tree) next)
         next))))
 
+(defun %window-first-leaf (node)
+  "Return the first leaf below NODE in depth-first order."
+  (if (window-leaf-p node)
+      node
+      (%window-first-leaf (first (window-split-node-children node)))))
+
+(defun %window-delete-node (node target)
+  "Return NODE with TARGET removed, plus whether TARGET was found."
+  (if (window-leaf-p node)
+      (values node nil)
+      (let* ((children (window-split-node-children node))
+             (first-child (first children))
+             (second-child (second children)))
+        (cond
+          ((eq first-child target)
+           (values second-child t))
+          ((eq second-child target)
+           (values first-child t))
+          (t
+           (multiple-value-bind (new-first deleted-first)
+               (%window-delete-node first-child target)
+             (if deleted-first
+                 (progn
+                   (setf (first children) new-first)
+                   (values node t))
+                 (multiple-value-bind (new-second deleted-second)
+                     (%window-delete-node second-child target)
+                   (when deleted-second
+                     (setf (second children) new-second))
+                   (values node deleted-second)))))))))
+
+(defgeneric window-delete (tree window)
+  (:documentation
+   "Delete WINDOW from TREE when another window remains. Returns the
+selected window after the deletion; deleting the sole window is a no-op.")
+  (:method (tree window)
+    (let ((selected (window-tree-selected tree)))
+      (when (> (length (window-tree-windows tree)) 1)
+        (multiple-value-bind (new-root deleted)
+            (%window-delete-node (window-tree-root tree) window)
+          (when deleted
+            (setf (window-tree-root tree) new-root
+                  (window-tree-selected tree)
+                  (if (eq selected window)
+                      (%window-first-leaf new-root)
+                      selected))
+            (%window-layout (window-tree-root tree)
+                            0 0
+                            (window-tree-width tree)
+                            (window-tree-height tree)))))
+      (window-tree-selected tree))))
+
+(defgeneric window-delete-other-windows (tree window)
+  (:documentation
+   "Delete every window in TREE except WINDOW and return WINDOW.")
+  (:method (tree window)
+    (setf (window-tree-root tree) window
+          (window-tree-selected tree) window)
+    (%window-layout window 0 0
+                    (window-tree-width tree)
+                    (window-tree-height tree))
+    window))
+
 (defgeneric window-buffer (window)
   (:documentation "Return the buffer currently displayed in WINDOW.")
   (:method (window)
@@ -173,8 +242,21 @@ last (C-x o). Returns the newly selected window.")
    "Display BUFFER in WINDOW (C-x b), replacing whatever buffer it
 previously displayed. Returns WINDOW.")
   (:method (window buffer)
-    (setf (window-leaf-buffer window) buffer)
+    (setf (window-leaf-buffer window) buffer
+          (window-leaf-scroll-line window) 0)
     window))
+
+(defgeneric window-scroll-line (window)
+  (:documentation
+   "Return WINDOW's zero-based first visible buffer line.")
+  (:method (window)
+    (window-leaf-scroll-line window)))
+
+(defgeneric (setf window-scroll-line) (line window)
+  (:documentation
+   "Set WINDOW's zero-based first visible buffer LINE.")
+  (:method (line window)
+    (setf (window-leaf-scroll-line window) (max 0 line))))
 
 (defgeneric window-x (window)
   (:documentation

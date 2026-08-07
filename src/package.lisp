@@ -2,13 +2,13 @@
 ;;;;
 ;;;; The single public package for loom. Every symbol the protocol declares
 ;;;; -- across the buffer, renderer, keymap, minibuffer, window, and
-;;;; file-tree modules, now laid out package-by-feature under
-;;;; domain/, infrastructure/, application/, and presentation/ (mirroring
-;;;; nshell/src's layering) -- is exported here, plus the shared editor-state
-;;;; struct/special-variable and the MAIN entry point. Feature agents filling
-;;;; in real :method bodies against these already-exported names in their
-;;;; respective layer files do not need to change this file's export list;
-;;;; it is the fixed contract, only the file layout moved.
+;;;; file-tree modules, laid out package-by-feature under domain/,
+;;;; infrastructure/, application/, and presentation/ (mirroring nshell/src's
+;;;; layering) -- is exported here, plus the shared editor-state
+;;;; struct/special-variable and the MAIN entry point, grouped below by the
+;;;; source file that defines each group. Application-layer commands
+;;;; (src/application/commands-*.lisp) are deliberately NOT exported -- see
+;;;; commands-internal.lisp's header comment for why.
 (defpackage #:loom
   (:use #:cl)
   (:export
@@ -29,6 +29,19 @@
    #:buffer-delete-region
    #:buffer-region-string
    #:buffer-modified-p
+   #:buffer-mark-saved
+   #:buffer-offset
+   #:buffer-position
+   #:buffer-position-line
+   #:buffer-position-column
+   #:buffer-span
+   #:buffer-span-start
+   #:buffer-span-end
+   #:buffer-point-offset
+   #:buffer-offset-position
+   #:buffer-search-forward
+   #:buffer-search-backward
+   #:buffer-search-spans
    #:buffer-undo
    #:buffer-record-undo-boundary
    #:buffer-load
@@ -36,7 +49,13 @@
 
    ;; Renderer protocol (src/infrastructure/terminal-renderer.lisp)
    #:make-loom-renderer
-   #:loom-renderer-cl-tty-renderer
+   #:loom-renderer-width
+   #:loom-renderer-height
+   #:loom-renderer-write-string
+   #:loom-renderer-draw-horizontal-line
+   #:loom-renderer-draw-vertical-line
+   #:loom-renderer-clear
+   #:loom-renderer-make-cursor
    #:loom-renderer-draw-buffer
    #:loom-renderer-present
    #:loom-renderer-resize
@@ -63,8 +82,11 @@
    #:window-tree-selected-window
    #:window-split
    #:window-select-next
+   #:window-delete
+   #:window-delete-other-windows
    #:window-buffer
    #:window-set-buffer
+   #:window-scroll-line
    #:window-x
    #:window-y
    #:window-width
@@ -78,6 +100,7 @@
    #:file-tree-toggle
    #:file-tree-entries
    #:file-tree-selected-path
+   #:file-tree-entry-kind
    #:file-tree-move-selection
    #:file-tree-toggle-expand
    #:file-tree-create-file
@@ -86,8 +109,19 @@
    #:file-tree-delete
    #:loom-fs-list-directory
 
+   ;; Concurrent file-tree runtime (src/infrastructure/concurrent-runtime.lisp)
+   #:make-loom-concurrent-runtime
+   #:loom-concurrent-runtime-directory-entries
+   #:loom-concurrent-runtime-directory-error
+   #:loom-concurrent-runtime-prime-directory
+   #:loom-concurrent-runtime-invalidate-directory
+   #:loom-concurrent-runtime-invalidate-path
+   #:loom-concurrent-runtime-prefetch
+   #:loom-concurrent-runtime-drain
+   #:loom-concurrent-runtime-shutdown
+
    ;; Editor state (src/application/editor-state.lisp): the special variable
-   ;; and struct that every command in src/application/commands.lisp operates on.
+   ;; and struct that every command in src/application/commands-*.lisp operates on.
    #:*editor-state*
    #:editor-state
    #:make-editor-state
@@ -95,7 +129,9 @@
    #:editor-state-minibuffer
    #:editor-state-keymap
    #:editor-state-file-tree
+   #:editor-state-concurrent-runtime
    #:editor-state-renderer
+   #:editor-state-buffers
    #:editor-state-kill-ring
 
    ;; Entry point (src/main.lisp)
