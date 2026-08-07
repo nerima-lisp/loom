@@ -58,32 +58,36 @@ CL-PROLOG rulebase for %FIND-EXTENDED-COMMAND's query below."
     ("other-window" other-window)
     ("switch-to-buffer" switch-to-buffer)
     ("toggle-file-tree" toggle-file-tree)
+    ("file-tree-select-next" file-tree-select-next)
+    ("file-tree-select-previous" file-tree-select-previous)
+    ("file-tree-open-selected" file-tree-open-selected)
+    ("file-tree-create-file" file-tree-create-file-command)
+    ("file-tree-create-directory" file-tree-create-directory-command)
+    ("file-tree-rename" file-tree-rename-command)
+    ("file-tree-delete" file-tree-delete-command)
     ("keyboard-quit" keyboard-quit)
     ("help" help-command)
     ("save-buffers-kill-terminal" save-buffers-kill-terminal))
 
   (defun %find-extended-command (input)
     "Return the registered command named by INPUT, or NIL."
-    (multiple-value-bind (solution foundp)
-        (cl-prolog:query-prolog-first
-         *extended-command-rulebase*
+    (cl-prolog:with-prolog-query (?command)
+        (*extended-command-rulebase*
          `(extended-command ,(string-downcase (string-trim (quote (#\Space #\Tab)) input))
                             ?command))
-      (and foundp (cl-prolog:solution-binding (quote ?command) solution))))
+      ?command))
 
   (defun execute-extended-command ()
     "Prompt for a registered command and execute it (M-x)."
-    (let ((minibuffer (editor-state-minibuffer *editor-state*)))
-      (minibuffer-activate
-       minibuffer "M-x "
-       :on-confirm
-       (lambda (input)
-         (let ((command (%find-extended-command input)))
-           (if command
-               (funcall command)
-               (minibuffer-message
-                minibuffer
-                (format nil "Unknown command: ~A" input))))))))
+    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                   :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((input "M-x "))
+      (let ((command (%find-extended-command input)))
+        (if command
+            (funcall command)
+            (minibuffer-message
+             minibuffer
+             (format nil "Unknown command: ~A" input))))))
 
   (defun help-command ()
     "Show a compact reference for the primary editor commands."
@@ -110,6 +114,19 @@ src/main.lisp to exit cleanly."))
              (window-tree-windows (editor-state-window-tree *editor-state*)))
      :test (function eq)))
 
+  ;; A CL-PROLOG rulebase in place of a hand-written COND: each clause's
+  ;; :WHEN guard is the one condition under which that answer resolves to
+  ;; its action, so the quit-prompt's answer table reads the same way the
+  ;; extended-command lookup above does. See %FIND-EXTENDED-COMMAND's
+  ;; DEFINE-RULEBASE for the sibling precedent this follows.
+  (cl-prolog:define-rulebase *quit-answer-rulebase*
+    ((quit-action ?answer ?has-path :save-and-continue)
+     (:when (and ?has-path (string-equal ?answer "s"))))
+    ((quit-action ?answer ?has-path :discard-and-continue)
+     (:when (string-equal ?answer "d")))
+    ((quit-action ?answer ?has-path :cancel)
+     (:when (string-equal ?answer "c"))))
+
   (defun %quit-answer-action (answer has-path-p)
     "Return the action ANSWER selects for the quit prompt %CONTINUE-QUIT
 shows for one modified buffer: :SAVE-AND-CONTINUE, :DISCARD-AND-CONTINUE,
@@ -117,10 +134,10 @@ shows for one modified buffer: :SAVE-AND-CONTINUE, :DISCARD-AND-CONTINUE,
 buffer with no path, whose prompt (\"Discard changes... (d/c)\") never
 offers \"s\" in the first place, so an \"s\" answer there falls through to
 :RETRY exactly as a genuinely unrecognized answer would."
-    (cond ((and has-path-p (string-equal answer "s")) :save-and-continue)
-          ((string-equal answer "d") :discard-and-continue)
-          ((string-equal answer "c") :cancel)
-          (t :retry)))
+    (or (cl-prolog:with-prolog-query (?action)
+            (*quit-answer-rulebase* `(quit-action ,answer ,has-path-p ?action))
+          ?action)
+        :retry))
 
   (defun %continue-quit (buffers)
     "Prompt for the next modified buffer in BUFFERS, or signal LOOM-QUIT."
@@ -143,7 +160,9 @@ offers \"s\" in the first place, so an \"s\" answer there falls through to
                  (:discard-and-continue
                   (%continue-quit (remove buffer buffers :count 1 :test (function eq))))
                  (:cancel nil)
-                 (:retry (%continue-quit buffers)))))))))
+                 (:retry (%continue-quit buffers))))
+             :on-cancel
+             (lambda () (minibuffer-message minibuffer "Quit")))))))
 
   (defun save-buffers-kill-terminal ()
     "Exit after resolving all modified displayed buffers."

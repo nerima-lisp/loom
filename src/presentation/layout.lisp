@@ -28,6 +28,13 @@ string via NAMESTRING/identity."
          (slash (position #\/ trimmed :from-end t)))
     (if slash (subseq trimmed (1+ slash)) trimmed)))
 
+(defun %layout-truncate-to-width (text width)
+  "Return TEXT clipped to its leading WIDTH characters, or TEXT itself when it
+already fits. Every draw helper in this file writes a single row into a
+fixed-width region, so each of them clips through here rather than repeating
+the SUBSEQ."
+  (if (> (length text) width) (subseq text 0 width) text))
+
 (defun %layout-draw-file-tree (screen file-tree width height)
   "Draw FILE-TREE's currently visible entries (FILE-TREE-ENTRIES) into the
 left WIDTH-column, HEIGHT-row strip of SCREEN starting at (0,0), one entry
@@ -43,7 +50,7 @@ simply not drawn -- no scrolling is attempted here, matching this file's
             for row from 0 below height
             do (let* ((indent (make-string (* 2 depth) :initial-element #\Space))
                       (text (concatenate 'string indent (%layout-path-label path)))
-                      (visible (if (> (length text) width) (subseq text 0 width) text))
+                      (visible (%layout-truncate-to-width text width))
                       (style (when (equal path selected) '(:reverse))))
                  (cl-tty-kit:screen-write-string screen 0 row visible :style style))))))
 
@@ -95,9 +102,7 @@ apart. Returns RENDERER."
                          (1+ (buffer-point-line buffer))
                          (1+ (buffer-point-column buffer))
                          +layout-shortcut-line+))
-           (visible (if (> (length text) width)
-                        (subseq text 0 width)
-                        text)))
+           (visible (%layout-truncate-to-width text width)))
       (cl-tty-kit:screen-write-string screen 0 row visible :style '(:reverse)))))
 
 (defun %layout-minibuffer-line (minibuffer)
@@ -120,7 +125,7 @@ LOOM::FILE-TREE-CHILD-LISTER), else the empty string."
 ROW, truncated to WIDTH columns."
   (when (plusp width)
     (let* ((text (%layout-minibuffer-line minibuffer))
-           (visible (if (> (length text) width) (subseq text 0 width) text)))
+           (visible (%layout-truncate-to-width text width)))
       (cl-tty-kit:screen-write-string screen 0 row visible))))
 
 ;;; ---------------------------------------------------------------------
@@ -139,14 +144,21 @@ ROW, truncated to WIDTH columns."
           ((>= point-line (+ scroll-line height))
            (setf (window-scroll-line window) (- point-line (1- height)))))))))
 
+(defun %layout-file-tree-width (file-tree-visible-p width)
+  "Return the column width the file-tree sidebar occupies in a WIDTH-column
+terminal: a 24-column strip when FILE-TREE-VISIBLE-P, narrowed to WIDTH on a
+terminal too narrow for it, and 0 when the sidebar is hidden. EDITOR-CURSOR
+and %LAYOUT-COMPUTE-REGIONS both need this number and must agree on it, so
+neither re-derives the cap."
+  (if file-tree-visible-p (min 24 width) 0))
+
 (defun editor-cursor (editor-state)
   "Return the terminal cursor for EDITOR-STATE's selected window."
   (let* ((renderer (editor-state-renderer editor-state))
          (cl-tty-renderer (loom-renderer-cl-tty-renderer renderer))
          (file-tree (editor-state-file-tree editor-state))
-         (x-offset (if (and file-tree (file-tree-visible-p file-tree))
-                       (min 24 (cl-tty-kit:renderer-width cl-tty-renderer))
-                       0))
+         (x-offset (%layout-file-tree-width (and file-tree (file-tree-visible-p file-tree))
+                                            (cl-tty-kit:renderer-width cl-tty-renderer)))
          (window (window-tree-selected-window (editor-state-window-tree editor-state)))
          (width (window-width window))
          (height (window-height window)))
@@ -169,7 +181,7 @@ itself to only sequence the draw calls against them."
          (content-height (max 0 (- height (if shortcuts-visible-p 2 1))))
          (minibuffer-row (max 0 (1- height)))
          (shortcuts-row (max 0 (1- minibuffer-row)))
-         (file-tree-width (if file-tree-visible-p (min 24 width) 0))
+         (file-tree-width (%layout-file-tree-width file-tree-visible-p width))
          (window-area-width (max 0 (- width file-tree-width))))
     (values content-height minibuffer-row shortcuts-row shortcuts-visible-p
             file-tree-width window-area-width)))

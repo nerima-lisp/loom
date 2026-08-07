@@ -178,3 +178,24 @@
       (minibuffer-activate minibuffer "Find file: ")
       (minibuffer-handle-key minibuffer (%special-key :control-g))
       (expect (minibuffer-prompt-string minibuffer) :to-be-falsy))))
+
+;; The classification MINIBUFFER-HANDLE-KEY dispatches on, tested directly
+;; rather than only through the keystrokes above, so a new kind cannot be
+;; added to the CASE without a row here naming the key that produces it --
+;; the same dedicated-helper precedent t/commands-test.lisp set for
+;; %DEFKEYS-SINGLE-CHORD-P.
+(describe
+  "%minibuffer-key-kind"
+  (it-each
+      (("C-g as a C0 :special event" :special :control-g nil :cancel)
+       ("C-g as a kitty CSI-u :character event" :character #\g (:control) :cancel)
+       ("Backspace" :special :backspace nil :backspace)
+       ("Up" :special :up nil :history-previous)
+       ("Down" :special :down nil :history-next)
+       ("Enter" :special :enter nil :confirm)
+       ("an ordinary character" :character #\a nil :character)
+       ("an unhandled special key" :special :left nil :ignore))
+      "classifies ~A" (label type code modifiers expected)
+    (declare (ignore label))
+    (let ((key-event (cl-tty-kit:make-key-event :type type :code code :modifiers modifiers)))
+      (expect (loom::%minibuffer-key-kind key-event type code) :to-equal expected))))

@@ -25,6 +25,19 @@
 ;;; actually sent.
 ;;; ---------------------------------------------------------------------
 
+(defun %drain-buffered-octets (buffer start-count)
+  "Read the octets already waiting on *STANDARD-INPUT* into BUFFER, filling it
+from index START-COUNT onwards and stopping at (LENGTH BUFFER) octets or as
+soon as LISTEN reports nothing more is buffered -- so this never blocks.
+Returns the resulting octet count."
+  (loop with count = start-count
+        while (and (< count (length buffer)) (listen *standard-input*))
+        do (let ((byte (read-byte *standard-input* nil nil)))
+             (unless byte (loop-finish))
+             (setf (aref buffer count) byte)
+             (incf count))
+        finally (return count)))
+
 (defun %read-input-octets (buffer)
   "Block until at least one octet is available on *STANDARD-INPUT*, then
 drain any additional octets already buffered (checked via LISTEN, so this
@@ -34,13 +47,7 @@ end-of-file (no octet was read at all)."
   (let ((first (read-byte *standard-input* nil nil)))
     (when first
       (setf (aref buffer 0) first)
-      (let ((count 1))
-        (loop while (and (< count (length buffer)) (listen *standard-input*))
-              do (let ((byte (read-byte *standard-input* nil nil)))
-                   (if byte
-                       (progn (setf (aref buffer count) byte) (incf count))
-                       (loop-finish))))
-        count))))
+      (%drain-buffered-octets buffer 1))))
 
 ;;; ---------------------------------------------------------------------
 ;;; Key-event routing
@@ -127,6 +134,14 @@ HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
            (keymap-state-dispatch keymap-state (%key-event->descriptor event))))
       (error (condition)
         (minibuffer-message minibuffer (format nil "~A" condition))))))
+(defun %dispatch-input-chunk (decoder buffer count keymap-state)
+  "Decode the first COUNT octets of BUFFER through DECODER and route every key
+event they yield to %DISPATCH-KEY-EVENT with KEYMAP-STATE. A completely full
+BUFFER is handed to CL-TTY-KIT:DECODE-INPUT-CHUNK as-is, so the common case of
+a full read does not copy."
+  (let ((chunk (if (= count (length buffer)) buffer (subseq buffer 0 count))))
+    (dolist (event (cl-tty-kit:decode-input-chunk decoder chunk))
+      (%dispatch-key-event event keymap-state))))
 
 ;;; ---------------------------------------------------------------------
 ;;; Event loop
@@ -156,28 +171,26 @@ unchanged when the terminal size could not be read or has not changed."
   (let ((decoder (cl-tty-kit:make-input-decoder))
         (buf (make-array 4096 :element-type '(unsigned-byte 8)))
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*))))
-    (flet ((render-frame ()
-             (compose-frame *editor-state*)
-             (loom-renderer-present (editor-state-renderer *editor-state*)
-                                    :stream stream
-                                    :cursor (editor-cursor *editor-state*))))
-      (multiple-value-bind (last-width last-height) (cl-tty-kit:terminal-size)
-        (setf last-width (or last-width 80)
-              last-height (or last-height 24))
+    (multiple-value-bind (last-width last-height) (%initial-terminal-size)
+      (labels ((render-frame ()
+                 (compose-frame *editor-state*)
+                 (loom-renderer-present (editor-state-renderer *editor-state*)
+                                        :stream stream
+                                        :cursor (editor-cursor *editor-state*)))
+               (read-and-dispatch ()
+                 ;; NIL once *STANDARD-INPUT* hits EOF, which is what ends the
+                 ;; LOOP below; LOOM-QUIT ends it by unwinding instead.
+                 (let ((count (%read-input-octets buf)))
+                   (when count
+                     (%dispatch-input-chunk decoder buf count keymap-state)
+                     t))))
         (render-frame)
         (handler-case
-            (loop
-              (let ((count (%read-input-octets buf)))
-                (unless count
-                  (return-from %run-event-loop))
-                (let* ((chunk (if (= count (length buf)) buf (subseq buf 0 count)))
-                       (events (cl-tty-kit:decode-input-chunk decoder chunk)))
-                  (dolist (event events)
-                    (%dispatch-key-event event keymap-state))))
-              (multiple-value-setq (last-width last-height)
-                (%poll-terminal-resize (editor-state-renderer *editor-state*)
-                                       last-width last-height))
-              (render-frame))
+            (loop while (read-and-dispatch)
+                  do (multiple-value-setq (last-width last-height)
+                       (%poll-terminal-resize (editor-state-renderer *editor-state*)
+                                              last-width last-height))
+                     (render-frame))
           (loom-quit () nil))))))
 
 ;;; ---------------------------------------------------------------------

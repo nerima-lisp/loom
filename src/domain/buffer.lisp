@@ -57,6 +57,11 @@ modified-p, and undo-list state."
   (modified-p nil)
   (undo-list nil :type list))
 
+(defparameter +regex-search-timeout-seconds+ 1.0
+  "Deadline passed to CL-REGEX-KIT for every buffer search/replace match,
+bounding the event loop against a pathological pattern instead of letting it
+hang; see CL-REGEX-KIT:REGEX-TIMEOUT.")
+
 ;;; ---------------------------------------------------------------------
 ;;; Internal helpers
 ;;;
@@ -191,21 +196,20 @@ Trusts its callers -- %CLAMP-POSITION, BUFFER-LINE (which validates
 LINE-NUMBER itself before calling this), and BUFFER-DELETE-CHAR's
 backward/forward helpers (which derive it from BUFFER's own point) -- to
 never pass an out-of-range LINE-NUMBER; this is an internal helper, not a
-system boundary. WITH-OUTPUT-TO-STRING's own return value (the stream
-accumulated so far) is what's returned once the target line -- necessarily
-BUFFER's last, since it has no trailing newline -- is reached without one."
-  (block result
-    (let ((current-line 0))
-      (with-output-to-string (stream)
-        (dolist (piece (%buffer-pieces buffer))
-          (loop for character across (%piece-text buffer piece)
-                do (cond
-                     ((= current-line line-number)
-                      (if (char= character #\Newline)
-                          (return-from result (get-output-stream-string stream))
-                          (write-char character stream)))
-                     ((char= character #\Newline)
-                      (incf current-line)))))))))
+system boundary. The scan ends either at the newline closing LINE-NUMBER or,
+for BUFFER's last line, at the end of the pieces, since that line has no
+closing newline; both leave TEXT holding the answer."
+  (let ((current-line 0)
+        (text (make-string-output-stream)))
+    (block scan
+      (dolist (piece (%buffer-pieces buffer))
+        (loop for character across (%piece-text buffer piece)
+              for newline-p = (char= character #\Newline)
+              for on-target-line-p = (= current-line line-number)
+              when (and newline-p on-target-line-p) do (return-from scan)
+              when newline-p do (incf current-line)
+              when on-target-line-p do (write-char character text))))
+    (get-output-stream-string text)))
 
 (defun %piece-table-range-text (buffer start end)
   (with-output-to-string (stream)
@@ -541,21 +545,36 @@ into that same file."))
                   (return (values last-line
                                   (length (buffer-line buffer last-line)))))))
 
-(defun %replacement-occurrences (text old start)
-  "Return OLD offsets in one non-overlapping cycle beginning at START."
-  (labels ((collect-occurrences (from to)
-             (loop for offset = (search old text :start2 from :end2 to)
-                   while offset
-                   collect offset
-                   do (setf from (+ offset (length old))))))
-    (append (collect-occurrences start (length text))
-            (collect-occurrences 0 start))))
+(defun %replacement-match-spans (text pattern start)
+  "Return every non-overlapping (MATCH-START . MATCH-END) span where regular
+expression PATTERN matches TEXT, in one cycle beginning at START: matches
+from START to the end of TEXT first, then matches from the beginning of TEXT
+up to START -- mirroring %FIND-NEXT-OCCURRENCE's own wrap-around. PATTERN is a
+CL-REGEX-KIT pattern, so it is case-sensitive unless it opens with the
+inline (?i) flag."
+  (let ((regex (cl-regex-kit:compile-regex pattern)))
+    (flet ((spans-in (from to)
+             (mapcar (lambda (match)
+                       (cons (cl-regex-kit:match-start match)
+                             (cl-regex-kit:match-end match)))
+                     (cl-regex-kit:all-matches regex text :start from :end to
+                                                          :timeout +regex-search-timeout-seconds+))))
+      (append (spans-in start (length text))
+              (spans-in 0 start)))))
 
-(defun %find-next-occurrence (buffer string)
-  "Return the next case-sensitive occurrence of STRING at or after point.
-Searches the text before point once when the first search reaches the end."
-  (unless (zerop (length string))
-    (let* ((text (buffer-text buffer))
-           (start (%buffer-point-offset buffer)))
-      (or (search string text :start2 start)
-          (and (plusp start) (search string text :end2 start))))))
+(defun %find-next-occurrence (buffer pattern)
+  "Return the next occurrence of regular-expression PATTERN at or after
+point, as a CL-REGEX-KIT:MATCH-RESULT, or NIL if PATTERN is empty or matches
+nowhere in BUFFER's text. Searches the text before point once when the first
+search (from point to end-of-text) finds nothing, mirroring the previous
+literal-search wrap-around. PATTERN is case-sensitive unless it opens with
+the inline (?i) flag."
+  (unless (zerop (length pattern))
+    (let ((text (buffer-text buffer))
+          (start (%buffer-point-offset buffer))
+          (regex (cl-regex-kit:compile-regex pattern)))
+      (or (cl-regex-kit:scan regex text :start start
+                                        :timeout +regex-search-timeout-seconds+)
+          (and (plusp start)
+               (cl-regex-kit:scan regex text :end start
+                                             :timeout +regex-search-timeout-seconds+))))))

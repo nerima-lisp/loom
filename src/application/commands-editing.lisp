@@ -73,6 +73,15 @@ dropped once a push would exceed this.")
       (unless (and (= end-line line) (= end-column column))
         (%kill-ring-push (buffer-delete-region buffer line column end-line end-column))))))
 
+(defun %order-region (point-line point-column mark-line mark-column)
+  "Return (VALUES START-LINE START-COLUMN END-LINE END-COLUMN) for the region
+delimited by point and mark, with whichever of the two positions comes first
+in the buffer as the start: positions are compared by line, then by column."
+  (if (or (< point-line mark-line)
+          (and (= point-line mark-line) (<= point-column mark-column)))
+      (values point-line point-column mark-line mark-column)
+      (values mark-line mark-column point-line point-column)))
+
 (defun kill-region ()
   "Kill the region between point and mark, or report no region set."
   (let ((buffer (%selected-buffer)))
@@ -80,14 +89,10 @@ dropped once a push would exceed this.")
       (if (null mark-line)
           (minibuffer-message (editor-state-minibuffer *editor-state*)
                                "The mark is not set now, so no region is active")
-          (let ((point-line (buffer-point-line buffer))
-                (point-column (buffer-point-column buffer)))
-            (multiple-value-bind (start-line start-column end-line end-column)
-                (if (or (< point-line mark-line)
-                        (and (= point-line mark-line) (<= point-column mark-column)))
-                    (values point-line point-column mark-line mark-column)
-                    (values mark-line mark-column point-line point-column))
-              (%kill-ring-push (buffer-delete-region buffer start-line start-column end-line end-column))))))))
+          (multiple-value-bind (start-line start-column end-line end-column)
+              (%order-region (buffer-point-line buffer) (buffer-point-column buffer)
+                             mark-line mark-column)
+            (%kill-ring-push (buffer-delete-region buffer start-line start-column end-line end-column)))))))
 
 (defun yank ()
   "Insert the most recently killed text at point."

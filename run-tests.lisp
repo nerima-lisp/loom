@@ -17,6 +17,12 @@
 ;;;; ../cl-history-kit, ../cl-weave, ...) are found automatically. An
 ;;;; explicit CL_SOURCE_REGISTRY still wins, because the existing
 ;;;; configuration is inherited rather than replaced.
+;;;;
+;;;; SB-EXT:WITH-TIMEOUT bounds the whole load-and-run: `flake.nix`'s
+;;;; `checks.default` already has cl-nix-forge's own `timeoutSeconds`, but a
+;;;; plain local `sbcl --script run-tests.lisp` has nothing else guarding it,
+;;;; so a hung compile or an infinite loop in the suite would otherwise block
+;;;; forever instead of failing loudly.
 
 (require :asdf)
 
@@ -34,9 +40,12 @@
         asdf:*compile-file-failure-behaviour* :warn)
   (let ((passed-p
           (handler-case
-              (progn
+              (sb-ext:with-timeout 600
                 (asdf:load-system "loom/test")
                 (uiop:symbol-call :loom/test '#:run-tests))
+            (sb-ext:timeout ()
+              (format *error-output* "~&loom/test: timed out after 600s~%")
+              nil)
             (error (condition)
               (format *error-output* "~&loom/test failed: ~A~%" condition)
               nil))))

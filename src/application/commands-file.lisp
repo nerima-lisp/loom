@@ -10,15 +10,13 @@
 
 Existing files are loaded from disk. A path that does not yet exist opens as
 an empty buffer associated with that path, so a later save creates the file."
-  (minibuffer-activate
-   (editor-state-minibuffer *editor-state*)
-   "Find file: "
-   :on-confirm
-   (lambda (path)
-     (window-set-buffer (%selected-window)
-                         (if (probe-file path)
-                             (buffer-load path)
-                             (make-buffer :name (file-namestring path) :path path))))))
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((path "Find file: "))
+    (window-set-buffer (%selected-window)
+                       (if (probe-file path)
+                           (buffer-load path)
+                           (make-buffer :name (file-namestring path) :path path)))))
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
@@ -61,17 +59,15 @@ into domain/buffer.lisp's internal %BUFFER-PATH slot, this builds a fresh
 buffer carrying the same text and the new path via the public
 MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
 %TRANSFER-POINT-AND-MARK and %SAVE-BUFFER-OR-WARN-OVERWRITE)."
-  (minibuffer-activate
-   (editor-state-minibuffer *editor-state*)
-   "Save file: "
-   :on-confirm
-   (lambda (path)
-     (let ((new-buffer (make-buffer :name (buffer-name buffer)
-                                     :path path
-                                     :initial-content (buffer-text buffer))))
-       (%transfer-point-and-mark buffer new-buffer)
-       (window-set-buffer window new-buffer)
-       (%save-buffer-or-warn-overwrite new-buffer path)))))
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((path "Save file: "))
+    (let ((new-buffer (make-buffer :name (buffer-name buffer)
+                                    :path path
+                                    :initial-content (buffer-text buffer))))
+      (%transfer-point-and-mark buffer new-buffer)
+      (window-set-buffer window new-buffer)
+      (%save-buffer-or-warn-overwrite new-buffer path))))
 
 (defun save-buffer ()
   "Save the selected buffer, prompting for a path first if it has none."

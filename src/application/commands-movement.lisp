@@ -55,17 +55,15 @@
 
 (defun goto-line ()
   "Prompt for a one-based line number and move point there."
-  (let ((minibuffer (editor-state-minibuffer *editor-state*)))
-    (minibuffer-activate
-     minibuffer "Go to line: "
-     :on-confirm
-     (lambda (input)
-       (handler-case
-           (let ((line (parse-integer input)))
-             (if (plusp line)
-                 (let ((buffer (%selected-buffer)))
-                   (buffer-set-point buffer (1- line) (buffer-point-column buffer))
-                   (minibuffer-message minibuffer "Moved"))
-                 (minibuffer-message minibuffer "Line number must be positive")))
-         (parse-error ()
-           (minibuffer-message minibuffer "Enter a line number")))))))
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((input "Go to line: "))
+    (handler-case
+        (let ((line (parse-integer input)))
+          (if (plusp line)
+              (let ((buffer (%selected-buffer)))
+                (buffer-set-point buffer (1- line) (buffer-point-column buffer))
+                (minibuffer-message minibuffer "Moved"))
+              (minibuffer-message minibuffer "Line number must be positive")))
+      (parse-error ()
+        (minibuffer-message minibuffer "Enter a line number")))))

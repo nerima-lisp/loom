@@ -27,19 +27,16 @@
 ;; is the only buffer collection that exists today.
 (defun switch-to-buffer ()
   "Prompt for a buffer name and display it in the selected window."
-  (minibuffer-activate
-   (editor-state-minibuffer *editor-state*)
-   "Switch to buffer: "
-   :on-confirm
-   (lambda (name)
-     (let* ((tree (editor-state-window-tree *editor-state*))
-            (match (find name (window-tree-windows tree)
-                         :key (lambda (window) (buffer-name (window-buffer window)))
-                         :test #'string=)))
-       (if match
-           (window-set-buffer (window-tree-selected-window tree) (window-buffer match))
-           (minibuffer-message (editor-state-minibuffer *editor-state*)
-                                (format nil "No such buffer: ~A" name)))))))
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((name "Switch to buffer: "))
+    (let* ((tree (editor-state-window-tree *editor-state*))
+           (match (find name (window-tree-windows tree)
+                        :key (lambda (window) (buffer-name (window-buffer window)))
+                        :test #'string=)))
+      (if match
+          (window-set-buffer (window-tree-selected-window tree) (window-buffer match))
+          (minibuffer-message minibuffer (format nil "No such buffer: ~A" name))))))
 
 (defun toggle-file-tree ()
   "Toggle whether the file-tree sidebar is shown."
@@ -72,28 +69,28 @@
 (defun file-tree-create-file-command ()
   "Prompt for a path and create a new empty file there."
   (let ((tree (editor-state-file-tree *editor-state*)))
-    (minibuffer-activate
-     (editor-state-minibuffer *editor-state*)
-     "Create file: "
-     :on-confirm (lambda (path) (file-tree-create-file tree path)))))
+    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                   :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((path "Create file: "))
+      (file-tree-create-file tree path))))
 
 (defun file-tree-create-directory-command ()
   "Prompt for a path and create a new empty directory there."
   (let ((tree (editor-state-file-tree *editor-state*)))
-    (minibuffer-activate
-     (editor-state-minibuffer *editor-state*)
-     "Create directory: "
-     :on-confirm (lambda (path) (file-tree-create-directory tree path)))))
+    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                   :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((path "Create directory: "))
+      (file-tree-create-directory tree path))))
 
 (defun file-tree-rename-command ()
   "Prompt for a new path and rename the selected entry to it."
   (let* ((tree (editor-state-file-tree *editor-state*))
          (old-path (file-tree-selected-path tree)))
     (when old-path
-      (minibuffer-activate
-       (editor-state-minibuffer *editor-state*)
-       (format nil "Rename ~A to: " old-path)
-       :on-confirm (lambda (new-path) (file-tree-rename tree old-path new-path))))))
+      (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                     :on-cancel (minibuffer-message minibuffer "Quit"))
+          ((new-path (format nil "Rename ~A to: " old-path)))
+        (file-tree-rename tree old-path new-path)))))
 
 ;; No confirmation prompt: unlike create/rename, delete needs no typed input,
 ;; only a yes/no confirmation, and the minibuffer protocol as it stands

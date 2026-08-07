@@ -25,17 +25,16 @@
 ;;;; domain/keymap.lisp alone.
 ;;;;
 ;;;; None of the commands in this file or its siblings are exported from the
-;;;; LOOM package (see src/package.lisp's header comment describing its
-;;;; export list as "the fixed contract, only the file layout moved" --
-;;;; adding a whole new export section here is out of scope);
-;;;; INSTALL-DEFAULT-KEYBINDINGS and MAIN (same package) refer to them
-;;;; unqualified, and tests reach them via LOOM:: qualification, the same
-;;;; precedent t/file-tree-test.lisp already set for
-;;;; LOOM::FILE-TREE-CHILD-LISTER.
+;;;; LOOM package: they are invoked only from within the package itself, by
+;;;; INSTALL-DEFAULT-KEYBINDINGS and MAIN, which refer to them unqualified;
+;;;; tests reach them via LOOM:: qualification, the same precedent
+;;;; t/file-tree-test.lisp already set for LOOM::FILE-TREE-CHILD-LISTER.
 ;;;;
-;;;; %SELECTED-WINDOW/%SELECTED-BUFFER below are the one piece of state every
-;;;; other commands-*.lisp file depends on, which is why this file loads
-;;;; first among them.
+;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the WITH-PROMPTS macro below are
+;;;; what every other commands-*.lisp file depends on, which is why this file
+;;;; loads first among them: WITH-PROMPTS in particular must be defined before
+;;;; any file that expands it is compiled, and its callers are spread across
+;;;; the movement, search, file, window, and misc command files.
 (in-package #:loom)
 
 (defun %selected-window ()
@@ -45,3 +44,33 @@
 (defun %selected-buffer ()
   "Return the buffer displayed in *EDITOR-STATE*'s currently selected window."
   (window-buffer (%selected-window)))
+
+(defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
+  "Prompt for each (VAR PROMPT-STRING) pair in BINDINGS in turn, binding VAR
+to the typed input, then run BODY with every VAR bound and MINIBUFFER-VAR
+bound to MINIBUFFER-FORM's value (evaluated once). ON-CANCEL, when supplied,
+is a form -- evaluated with MINIBUFFER-VAR in scope -- run if the user
+cancels (C-g) at any prompt in the chain, not only the first; it is threaded
+into every generated MINIBUFFER-ACTIVATE's :ON-CANCEL, and the keyword is
+omitted entirely when ON-CANCEL is absent.
+
+MINIBUFFER-ACTIVATE returns immediately; the typed answer only arrives later,
+asynchronously, through its :ON-CONFIRM callback. A second, dependent prompt
+therefore cannot be issued until the first one's callback runs -- the
+continuation-passing chain REPLACE-STRING needs (prompt for the text to
+replace, THEN prompt for its replacement) is unavoidable by construction.
+WITH-PROMPTS is that chain written once, as a macro that expands BINDINGS
+into nested MINIBUFFER-ACTIVATE/:ON-CONFIRM continuations, so a multi-prompt
+command reads top-to-bottom like ordinary sequential code instead of as a
+hand-nested pyramid of lambdas."
+  (labels ((expand-bindings (bindings)
+             (if bindings
+                 (destructuring-bind (var prompt) (first bindings)
+                   `(minibuffer-activate ,minibuffer-var ,prompt
+                                         :on-confirm (lambda (,var)
+                                                       ,(expand-bindings (rest bindings)))
+                                         ,@(when on-cancel
+                                             `(:on-cancel (lambda () ,on-cancel)))))
+                 `(progn ,@body))))
+    `(let ((,minibuffer-var ,minibuffer-form))
+       ,(expand-bindings bindings))))

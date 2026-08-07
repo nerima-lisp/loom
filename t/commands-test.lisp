@@ -5,26 +5,40 @@
 ;;;; buffer boundaries, a kill-line/yank round trip, UNDO-COMMAND actually
 ;;;; undoing, and INSTALL-DEFAULT-KEYBINDINGS's C-x C-s binding. Each test
 ;;;; binds a fresh *EDITOR-STATE* around real domain objects (MAKE-BUFFER,
-;;;; MAKE-WINDOW-TREE, MAKE-KEYMAP); MINIBUFFER/FILE-TREE/RENDERER are left
-;;;; NIL since none of the commands exercised here touch them. Commands are
+;;;; MAKE-WINDOW-TREE, MAKE-KEYMAP) via %FRESH-EDITOR-STATE, or via
+;;;; %WITH-MINIBUFFER-STATE where the command under test prompts; FILE-TREE
+;;;; and RENDERER stay NIL unless a test installs one. Commands are
 ;;;; not exported from the LOOM package (see commands-internal.lisp's header
 ;;;; comment), so tests reach them via LOOM:: qualification, the same
 ;;;; precedent t/file-tree-test.lisp already set for
 ;;;; LOOM::FILE-TREE-CHILD-LISTER.
 (in-package #:loom/test)
 
-(defun %fresh-editor-state (initial-content)
+(defun %fresh-editor-state (initial-content &key with-minibuffer)
   "Build a minimal *EDITOR-STATE* around a single window over a buffer
 containing INITIAL-CONTENT -- enough for movement, editing, and undo
-commands, which never touch the minibuffer/file-tree/renderer slots."
+commands, which never touch the minibuffer/file-tree/renderer slots.
+WITH-MINIBUFFER installs a live MAKE-MINIBUFFER for the prompting commands,
+which do; see %WITH-MINIBUFFER-STATE."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (tree (make-window-tree buffer 80 24)))
     (make-editor-state :window-tree tree
-                        :minibuffer nil
+                        :minibuffer (and with-minibuffer (make-minibuffer))
                         :keymap (make-keymap)
                         :file-tree nil
                         :renderer nil
                         :kill-ring nil)))
+
+(defmacro %with-minibuffer-state ((minibuffer initial-content &rest extra-bindings)
+                                  &body body)
+  "Run BODY with *EDITOR-STATE* dynamically bound to a fresh state over
+INITIAL-CONTENT carrying a live minibuffer, and MINIBUFFER bound to that
+minibuffer. EXTRA-BINDINGS are appended to the same LET*, so they may refer
+to *EDITOR-STATE* and to MINIBUFFER."
+  `(let* ((*editor-state* (%fresh-editor-state ,initial-content :with-minibuffer t))
+          (,minibuffer (editor-state-minibuffer *editor-state*))
+          ,@extra-bindings)
+     ,@body))
 
 (defun %selected-test-buffer ()
   "Return the buffer displayed in the fresh editor state's sole window."
@@ -185,10 +199,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (it
     "kill-region reports no active region when the mark is unset"
-    (let* ((state (%fresh-editor-state "hello"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "hello")
       (loom::kill-region)
       (expect (loom::%minibuffer-message minibuffer)
               :to-equal "The mark is not set now, so no region is active")))
@@ -272,11 +283,8 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
   "opens an empty buffer for an uncreated path and saves it"
   (host-kit:with-temporary-directory (dir)
-    (let* ((state (%fresh-editor-state ""))
-           (minibuffer (make-minibuffer))
-           (path (merge-pathnames "created-by-find-file.txt" dir))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer ""
+                             (path (merge-pathnames "created-by-find-file.txt" dir)))
       (loom::find-file)
       (funcall (loom::%minibuffer-on-confirm minibuffer) path)
       (let ((buffer (%selected-test-buffer)))
@@ -290,12 +298,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
     "loads an existing file's contents into the selected window"
     (host-kit:with-temporary-directory (dir)
-      (let* ((state (%fresh-editor-state ""))
-             (minibuffer (make-minibuffer))
-             (path (merge-pathnames "existing.txt" dir))
-             (*editor-state* state))
+      (%with-minibuffer-state (minibuffer ""
+                               (path (merge-pathnames "existing.txt" dir)))
         (host-kit:write-file-string "already here" path)
-        (setf (editor-state-minibuffer state) minibuffer)
         (loom::find-file)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (let ((buffer (%selected-test-buffer)))
@@ -307,15 +312,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
     "carries the old buffer's point onto the newly-swapped-in buffer"
     (host-kit:with-temporary-directory (dir)
-      (let* ((buffer (make-buffer :initial-content "hello world"))
-             (tree (make-window-tree buffer 80 24))
-             (minibuffer (make-minibuffer))
-             (*editor-state* (make-editor-state :window-tree tree
-                                                 :minibuffer minibuffer
-                                                 :keymap (make-keymap)
-                                                 :file-tree nil
-                                                 :renderer nil
-                                                 :kill-ring nil)))
+      (%with-minibuffer-state (minibuffer "hello world"
+                               (tree (editor-state-window-tree *editor-state*))
+                               (buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 5)
         (buffer-set-mark buffer 0 2)
         (loom::save-buffer)
@@ -335,15 +334,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
     (host-kit:with-temporary-directory (dir)
       (let* ((existing-path (merge-pathnames "already-here.txt" dir)))
         (host-kit:write-file-string "old content" existing-path)
-        (let* ((buffer (make-buffer :initial-content "hello"))
-               (tree (make-window-tree buffer 80 24))
-               (minibuffer (make-minibuffer))
-               (*editor-state* (make-editor-state :window-tree tree
-                                                   :minibuffer minibuffer
-                                                   :keymap (make-keymap)
-                                                   :file-tree nil
-                                                   :renderer nil
-                                                   :kill-ring nil)))
+        (%with-minibuffer-state (minibuffer "hello")
           (loom::save-buffer)
           (funcall (loom::%minibuffer-on-confirm minibuffer) existing-path)
           (expect (loom::%minibuffer-message minibuffer)
@@ -366,14 +357,11 @@ commands \(commands-window.lisp\) against a real temporary directory."
   "search and replace commands"
   (it
     "searches case-sensitively from point and wraps once"
-    (let* ((state (%fresh-editor-state "alpha ALPHA alpha"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "alpha ALPHA alpha")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 6)
         (loom::search-forward)
-        (expect (minibuffer-prompt-string minibuffer) :to-equal "Search: ")
+        (expect (minibuffer-prompt-string minibuffer) :to-equal "Search (regex): ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
         (expect (buffer-point-column buffer) :to-equal 12)
         (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
@@ -383,19 +371,13 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (expect (buffer-point-column buffer) :to-equal 0))))
   (it
     "reports not found when the searched text does not occur anywhere"
-    (let* ((state (%fresh-editor-state "alpha"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "alpha")
       (loom::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty search string without moving point"
-    (let* ((state (%fresh-editor-state "alpha"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "alpha")
       (buffer-set-point (%selected-test-buffer) 0 2)
       (loom::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
@@ -403,10 +385,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
       (expect (%selected-test-buffer) :to-have-point (cons 0 2))))
   (it
     "finds an occurrence on a later line of a multi-line buffer, searching from a later starting line"
-    (let* ((state (%fresh-editor-state (format nil "one~%two~%three~%four")))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer (format nil "one~%two~%three~%four"))
       ;; Point starts on line 1 (not the default line 0), so converting it to
       ;; a flat offset must walk past at least one earlier line's length.
       (buffer-set-point (%selected-test-buffer) 1 0)
@@ -415,14 +394,11 @@ commands \(commands-window.lisp\) against a real temporary directory."
       (expect (%selected-test-buffer) :to-have-point (cons 3 0))))
   (it
     "replaces every case-sensitive occurrence from point and wraps once"
-    (let* ((state (%fresh-editor-state "red RED red"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "red RED red")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 4)
         (loom::replace-string)
-        (expect (minibuffer-prompt-string minibuffer) :to-equal "Replace: ")
+        (expect (minibuffer-prompt-string minibuffer) :to-equal "Replace (regex): ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "red")
         (expect (minibuffer-prompt-string minibuffer) :to-equal "With: ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "redred")
@@ -432,25 +408,67 @@ commands \(commands-window.lisp\) against a real temporary directory."
                 :to-equal "Replaced 2 occurrence(s)"))))
   (it
     "reports not found when the text to replace does not occur anywhere"
-    (let* ((state (%fresh-editor-state "alpha"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "alpha")
       (loom::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty replacement target without searching"
-    (let* ((state (%fresh-editor-state "alpha"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "alpha")
       (loom::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
       (expect (buffer-text (%selected-test-buffer)) :to-equal "alpha")))
+  (it
+    "moves point to a match only a regular expression describes"
+    ;; \d+ is not a literal substring of the buffer anywhere, so this passes
+    ;; only because the search side is compiled as a regular expression rather
+    ;; than looked up with CL:SEARCH.
+    (%with-minibuffer-state (minibuffer "abc 1234 def")
+      (loom::search-forward)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "\\d+")
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
+      (expect (%selected-test-buffer) :to-have-point (cons 0 4))))
+  (it
+    "replaces variable-length matches rather than a fixed-length literal"
+    ;; The two \s+ runs are different lengths, so each occurrence's end has to
+    ;; come from the match itself; computing it as start plus (LENGTH OLD)
+    ;; would delete the wrong span here.
+    (%with-minibuffer-state (minibuffer "a    b  c")
+      (loom::replace-string)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "\\s+")
+      (funcall (loom::%minibuffer-on-confirm minibuffer) " ")
+      (expect (buffer-text (%selected-test-buffer)) :to-equal "a b c")
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal "Replaced 2 occurrence(s)")))
+  (it
+    "reports a malformed search pattern in the minibuffer instead of crashing"
+    ;; CL-REGEX-KIT signals REGEX-SYNTAX-ERROR from inside SEARCH-FORWARD's
+    ;; :ON-CONFIRM. Confirming through %DISPATCH-KEY-EVENT rather than calling
+    ;; the callback directly is what runs it under the HANDLER-CASE that
+    ;; already reports FIND-FILE/SAVE-BUFFER errors, so accepting regular
+    ;; expressions needs no error handling of its own.
+    (%with-minibuffer-state (minibuffer "abc"
+                             (keymap-state (make-keymap-state (make-keymap))))
+      (loom::search-forward)
+      (%type-string minibuffer "(")
+      (loom::%dispatch-key-event (%special-key :enter) keymap-state)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-contain "Invalid regular expression")
+      (expect (%selected-test-buffer) :to-have-point (cons 0 0))))
+  (it
+    "hands its deadline to the regex engine on both the search and replace paths"
+    ;; Forcing a real REGEX-TIMEOUT would need a pattern that makes the engine
+    ;; backtrack, which is precisely what a Thompson NFA never does -- so the
+    ;; deadline is proved to reach CL-REGEX-KIT by binding it to a value
+    ;; CL-REGEX-KIT itself rejects, and watching both call sites refuse it.
+    (let ((buffer (make-buffer :initial-content "abc 123"))
+          (loom::+regex-search-timeout-seconds+ -1))
+      (signals type-error (loom::%find-next-occurrence buffer "\\d+"))
+      (signals type-error
+        (loom::%replacement-match-spans (buffer-text buffer) "\\d+" 0))))
   (it-each
       (("C-s" (((:control) . #\s)) loom::search-forward)
        ("M-%" (((:alt) . #\%)) loom::replace-string)
@@ -464,30 +482,21 @@ commands \(commands-window.lisp\) against a real temporary directory."
       (expect (keymap-lookup keymap key-sequence) :to-be command)))
   (it
     "moves to a one-based line entered in the minibuffer"
-    (let* ((state (%fresh-editor-state (format nil "one~%two~%three")))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer (format nil "one~%two~%three"))
       (loom::goto-line)
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Go to line: ")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "3")
       (expect (buffer-point-line (%selected-test-buffer)) :to-equal 2)))
   (it
     "reports a non-positive line number without moving point"
-    (let* ((state (%fresh-editor-state (format nil "one~%two")))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer (format nil "one~%two"))
       (loom::goto-line)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "0")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Line number must be positive")
       (expect (buffer-point-line (%selected-test-buffer)) :to-equal 0)))
   (it
     "reports unparseable input without moving point"
-    (let* ((state (%fresh-editor-state (format nil "one~%two")))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer (format nil "one~%two"))
       (loom::goto-line)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-number")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Enter a line number")
@@ -496,15 +505,12 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
    "asks about a modified file buffer shown in a nonselected split"
    (host-kit:with-temporary-directory (dir)
-     (let* ((state (%fresh-editor-state "selected"))
-            (minibuffer (make-minibuffer))
-            (*editor-state* state)
-            (tree (editor-state-window-tree state))
-            (other (make-buffer :name "other.txt"
-                                :path (merge-pathnames "other.txt" dir)
-                                :initial-content "other"))
-            (quit nil))
-       (setf (editor-state-minibuffer state) minibuffer)
+     (%with-minibuffer-state (minibuffer "selected"
+                             (tree (editor-state-window-tree *editor-state*))
+                             (other (make-buffer :name "other.txt"
+                                                 :path (merge-pathnames "other.txt" dir)
+                                                 :initial-content "other"))
+                             (quit nil))
        (let ((other-window (window-split tree
                                          (window-tree-selected-window tree)
                                          :horizontal)))
@@ -524,18 +530,15 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
    "saves one modified split buffer before prompting for the next"
    (host-kit:with-temporary-directory (dir)
-     (let* ((state (%fresh-editor-state "selected"))
-            (minibuffer (make-minibuffer))
-            (*editor-state* state)
-            (tree (editor-state-window-tree state))
-            (first (make-buffer :name "first.txt"
-                                :path (merge-pathnames "first.txt" dir)
-                                :initial-content "first"))
-            (second (make-buffer :name "second.txt"
-                                 :path (merge-pathnames "second.txt" dir)
-                                 :initial-content "second"))
-            (quit nil))
-       (setf (editor-state-minibuffer state) minibuffer)
+     (%with-minibuffer-state (minibuffer "selected"
+                             (tree (editor-state-window-tree *editor-state*))
+                             (first (make-buffer :name "first.txt"
+                                                 :path (merge-pathnames "first.txt" dir)
+                                                 :initial-content "first"))
+                             (second (make-buffer :name "second.txt"
+                                                  :path (merge-pathnames "second.txt" dir)
+                                                  :initial-content "second"))
+                             (quit nil))
        (window-set-buffer (window-tree-selected-window tree) first)
        (let ((second-window (window-split tree
                                           (window-tree-selected-window tree)
@@ -559,11 +562,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (it
    "cancels quit without discarding a modified scratch buffer"
-   (let* ((state (%fresh-editor-state "draft"))
-          (minibuffer (make-minibuffer))
-          (*editor-state* state)
-          (quit nil))
-     (setf (editor-state-minibuffer state) minibuffer)
+   (%with-minibuffer-state (minibuffer "draft" (quit nil))
      (let ((buffer (%selected-test-buffer)))
        (buffer-insert-string buffer "!")
        (loom::save-buffers-kill-terminal)
@@ -580,11 +579,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (it
    "re-prompts on an unrecognized answer instead of quitting or discarding"
-   (let* ((state (%fresh-editor-state "draft"))
-          (minibuffer (make-minibuffer))
-          (*editor-state* state)
-          (quit nil))
-     (setf (editor-state-minibuffer state) minibuffer)
+   (%with-minibuffer-state (minibuffer "draft" (quit nil))
      (let ((buffer (%selected-test-buffer)))
        (buffer-insert-string buffer "!")
        (loom::save-buffers-kill-terminal)
@@ -600,12 +595,24 @@ commands \(commands-window.lisp\) against a real temporary directory."
                                  (buffer-name buffer))))))))
 
 (describe
+  "%quit-answer-action"
+  (it "resolves \"s\" to :save-and-continue when the buffer has a path"
+    (expect (loom::%quit-answer-action "s" t) :to-be :save-and-continue))
+  (it "resolves \"s\" to :retry when the buffer has no path"
+    (expect (loom::%quit-answer-action "s" nil) :to-be :retry))
+  (it "resolves \"d\" to :discard-and-continue regardless of path"
+    (expect (loom::%quit-answer-action "d" t) :to-be :discard-and-continue)
+    (expect (loom::%quit-answer-action "d" nil) :to-be :discard-and-continue))
+  (it "resolves \"c\" to :cancel regardless of path"
+    (expect (loom::%quit-answer-action "c" t) :to-be :cancel)
+    (expect (loom::%quit-answer-action "c" nil) :to-be :cancel))
+  (it "resolves an unrecognized answer to :retry"
+    (expect (loom::%quit-answer-action "x" t) :to-be :retry)))
+
+(describe
   "keyboard-quit"
   (it "reports a Quit message"
-    (let* ((state (%fresh-editor-state ""))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "")
       (loom::keyboard-quit)
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
 
@@ -624,10 +631,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
 (progn
   (describe "help command"
     (it "shows the primary command reference in the minibuffer"
-      (let* ((state (%fresh-editor-state ""))
-             (minibuffer (make-minibuffer))
-             (*editor-state* state))
-        (setf (editor-state-minibuffer state) minibuffer)
+      (%with-minibuffer-state (minibuffer "")
         (loom::help-command)
         (expect (loom::%minibuffer-message minibuffer)
                 :to-equal
@@ -643,19 +647,13 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (describe "execute-extended-command"
     (it "resolves a registered command through the command rulebase"
-      (let* ((state (%fresh-editor-state "hi"))
-             (minibuffer (make-minibuffer))
-             (*editor-state* state))
-        (setf (editor-state-minibuffer state) minibuffer)
+      (%with-minibuffer-state (minibuffer "hi")
         (loom::execute-extended-command)
         (expect (minibuffer-prompt-string minibuffer) :to-equal "M-x ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "  FORWARD-CHAR  ")
         (expect (buffer-point-column (%selected-test-buffer)) :to-equal 1)))
     (it "reports an unregistered command without evaluating it"
-      (let* ((state (%fresh-editor-state "hi"))
-             (minibuffer (make-minibuffer))
-             (*editor-state* state))
-        (setf (editor-state-minibuffer state) minibuffer)
+      (%with-minibuffer-state (minibuffer "hi")
         (loom::execute-extended-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-command")
         (expect (loom::%minibuffer-message minibuffer)
@@ -665,6 +663,71 @@ commands \(commands-window.lisp\) against a real temporary directory."
         (loom::install-default-keybindings keymap)
         (expect (keymap-lookup keymap (list (cons (quote (:alt)) #\x)))
                 :to-be (quote loom::execute-extended-command))))))
+
+(progn
+  (defparameter +m-x-exempt-commands+ (list (quote loom::execute-extended-command))
+    "The keybound commands DEFINE-EXTENDED-COMMANDS deliberately does not
+register for M-x. EXECUTE-EXTENDED-COMMAND is the only member: it *is* the
+M-x prompt, so an \"M-x execute-extended-command\" would do nothing but
+reopen the prompt the user is already answering. Anything else missing from
+the registry is an oversight, which is what the spec below fails on.")
+
+  (defun %keymap-bound-commands (keymap)
+    "Return every command symbol bound anywhere in KEYMAP, once each,
+descending through prefix keys. Reads the keymap's own trie (see
+domain/keymap.lisp: a table maps one normalized descriptor to either a bound
+command or a nested table for a prefix), since KEYMAP-LOOKUP can only answer
+about a key sequence already known to the caller and this spec's whole point
+is to not maintain a second hand-written list of them."
+    (let ((commands (list)))
+      (labels ((walk (table)
+                 (maphash (lambda (descriptor value)
+                            (declare (ignore descriptor))
+                            (if (hash-table-p value)
+                                (walk value)
+                                (pushnew value commands)))
+                          table)))
+        (walk (loom::keymap-table keymap)))
+      commands))
+
+  (defun %extended-command-names (command)
+    "Return the M-x names COMMAND may be registered under. Two spellings are
+in real use in DEFINE-EXTENDED-COMMANDS's table: a command whose Lisp name is
+free to be the user-facing one registers under it verbatim
+\(\"forward-char\"\), while a command that had to take a -COMMAND suffix in
+Lisp to avoid clashing with a same-named generic registers under the bare
+name \(NEWLINE-COMMAND as \"newline\", FILE-TREE-RENAME-COMMAND as
+\"file-tree-rename\"\). Accepting both keeps this spec a check on
+reachability rather than on which of the two spellings was chosen."
+    (let* ((full (string-downcase (symbol-name command)))
+           (suffix "-command")
+           (cut (- (length full) (length suffix))))
+      (if (and (plusp cut) (string= suffix full :start2 cut))
+          (list full (subseq full 0 cut))
+          (list full))))
+
+  (describe
+    "keybinding / M-x registry consistency"
+    (it
+      "resolves every keybound command through %find-extended-command"
+      (let ((keymap (make-keymap)))
+        (loom::install-default-keybindings keymap)
+        (expect (remove-if
+                 (lambda (command)
+                   (or (member command +m-x-exempt-commands+)
+                       (some (lambda (name)
+                               (eq (loom::%find-extended-command name) command))
+                             (%extended-command-names command))))
+                 (%keymap-bound-commands keymap))
+                :to-equal (list))))
+    (it
+      "exempts execute-extended-command, which is itself the M-x prompt"
+      (let ((keymap (make-keymap)))
+        (loom::install-default-keybindings keymap)
+        (expect (%keymap-bound-commands keymap)
+                :to-contain (quote loom::execute-extended-command)))
+      (expect (loom::%find-extended-command "execute-extended-command") :to-be nil)
+      (expect (loom::%find-extended-command "execute-extended") :to-be nil))))
 
 (describe
   "window commands"
@@ -695,12 +758,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (it
     "switch-to-buffer displays a buffer already shown in another window"
-    (let* ((state (%fresh-editor-state "selected"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state)
-           (tree (editor-state-window-tree state))
-           (other (make-buffer :name "other.txt" :initial-content "other")))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "selected"
+                             (tree (editor-state-window-tree *editor-state*))
+                             (other (make-buffer :name "other.txt" :initial-content "other")))
       (window-set-buffer (window-split tree (window-tree-selected-window tree) :horizontal) other)
       (window-select-next tree)
       (loom::switch-to-buffer)
@@ -710,10 +770,7 @@ commands \(commands-window.lisp\) against a real temporary directory."
 
   (it
     "switch-to-buffer reports an unknown buffer name"
-    (let* ((state (%fresh-editor-state "selected"))
-           (minibuffer (make-minibuffer))
-           (*editor-state* state))
-      (setf (editor-state-minibuffer state) minibuffer)
+    (%with-minibuffer-state (minibuffer "selected")
       (loom::switch-to-buffer)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nope.txt")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "No such buffer: nope.txt"))))
@@ -768,12 +825,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
     "file-tree-create-file-command creates an empty file at the prompted path"
     (host-kit:with-temporary-directory (dir)
-      (let* ((state (%fresh-editor-state ""))
-             (minibuffer (make-minibuffer))
-             (*editor-state* state)
-             (path (merge-pathnames "created.txt" dir)))
-        (setf (editor-state-file-tree state) (%fresh-file-tree dir))
-        (setf (editor-state-minibuffer state) minibuffer)
+      (%with-minibuffer-state (minibuffer ""
+                               (path (merge-pathnames "created.txt" dir)))
+        (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
         (loom::file-tree-create-file-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (expect (host-kit:path-exists-p path) :to-be-truthy))))
@@ -781,12 +835,9 @@ commands \(commands-window.lisp\) against a real temporary directory."
   (it
     "file-tree-create-directory-command creates a directory at the prompted path"
     (host-kit:with-temporary-directory (dir)
-      (let* ((state (%fresh-editor-state ""))
-             (minibuffer (make-minibuffer))
-             (*editor-state* state)
-             (path (merge-pathnames "created-dir/" dir)))
-        (setf (editor-state-file-tree state) (%fresh-file-tree dir))
-        (setf (editor-state-minibuffer state) minibuffer)
+      (%with-minibuffer-state (minibuffer ""
+                               (path (merge-pathnames "created-dir/" dir)))
+        (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
         (loom::file-tree-create-directory-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (expect (host-kit:path-exists-p path) :to-be-truthy))))
@@ -797,11 +848,8 @@ commands \(commands-window.lisp\) against a real temporary directory."
       (let ((old-path (merge-pathnames "old.txt" dir))
             (new-path (merge-pathnames "new.txt" dir)))
         (host-kit:write-file-string "content" old-path)
-        (let* ((state (%fresh-editor-state ""))
-               (minibuffer (make-minibuffer))
-               (*editor-state* state))
-          (setf (editor-state-file-tree state) (%fresh-file-tree dir))
-          (setf (editor-state-minibuffer state) minibuffer)
+        (%with-minibuffer-state (minibuffer "")
+          (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
           (loom::file-tree-select-next)
           (loom::file-tree-rename-command)
           (funcall (loom::%minibuffer-on-confirm minibuffer) new-path)
@@ -883,4 +931,80 @@ commands \(commands-window.lisp\) against a real temporary directory."
               (expect (third inner-lambda) :to-equal '(progn (use old new)))))))))
   (it "expands to just the body, wrapped in a LET, when BINDINGS is empty"
     (let ((expansion (macroexpand-1 '(loom::with-prompts (m (foo)) () (use-nothing)))))
-      (expect expansion :to-equal '(let ((m (foo))) (progn (use-nothing)))))))
+      (expect expansion :to-equal '(let ((m (foo))) (progn (use-nothing))))))
+  (it "omits the :on-cancel keyword entirely when ON-CANCEL is not supplied"
+    (let ((expansion (macroexpand-1
+                       '(loom::with-prompts (m (foo)) ((old "Replace: ")) (use old)))))
+      (expect (length (third expansion)) :to-equal 5)))
+  (it "threads :on-cancel into every activation in the chain, after :on-confirm"
+    (let* ((expansion (macroexpand-1
+                        '(loom::with-prompts (m (foo) :on-cancel (bail m))
+                             ((old "Replace: ") (new "With: "))
+                           (use old new))))
+           (outer-activate (third expansion))
+           (inner-activate (third (fifth outer-activate))))
+      (expect (fourth outer-activate) :to-equal :on-confirm)
+      (expect (sixth outer-activate) :to-equal :on-cancel)
+      (expect (seventh outer-activate) :to-equal '(lambda () (bail m)))
+      (expect (sixth inner-activate) :to-equal :on-cancel)
+      (expect (seventh inner-activate) :to-equal '(lambda () (bail m))))))
+
+(describe
+  "prompt cancellation"
+  ;; Every prompting command passes WITH-PROMPTS an :ON-CANCEL that reports
+  ;; "Quit", the same message KEYBOARD-QUIT gives for a top-level C-g, so
+  ;; abandoning a prompt is acknowledged rather than silent. Driven through
+  ;; MINIBUFFER-HANDLE-KEY with a real C-g key event (the sibling tests drive
+  ;; %MINIBUFFER-ON-CONFIRM directly, which cannot exercise the cancel path).
+  (it-each
+      (("find-file" loom::find-file)
+       ("save-buffer on a path-less buffer" loom::save-buffer)
+       ("search-forward" loom::search-forward)
+       ("replace-string" loom::replace-string)
+       ("goto-line" loom::goto-line)
+       ("switch-to-buffer" loom::switch-to-buffer)
+       ("execute-extended-command" loom::execute-extended-command))
+      "~A reports Quit on C-g" (label command)
+    (declare (ignore label))
+    (%with-minibuffer-state (minibuffer "hi")
+      (funcall command)
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")))
+
+  (it
+    "cancelling replace-string's second prompt quits without replacing"
+    ;; WITH-PROMPTS threads :ON-CANCEL into every activation in the chain,
+    ;; not only the first, so a C-g after the first answer is confirmed still
+    ;; reports Quit -- and the buffer is left untouched, proving the body
+    ;; (and so %PERFORM-REPLACEMENT) never ran.
+    (%with-minibuffer-state (minibuffer "alpha alpha")
+      (loom::replace-string)
+      (%type-string minibuffer "alpha")
+      (minibuffer-handle-key minibuffer (%special-key :enter))
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "With: ")
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+      (expect (buffer-text (%selected-test-buffer)) :to-equal "alpha alpha")))
+
+  (it
+    "cancelling file-tree-create-file-command creates nothing"
+    (host-kit:with-temporary-directory (dir)
+      (%with-minibuffer-state (minibuffer "")
+        (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
+        (loom::file-tree-create-file-command)
+        (%type-string minibuffer (namestring (merge-pathnames "unwanted.txt" dir)))
+        (minibuffer-handle-key minibuffer (%special-key :control-g))
+        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (host-kit:path-exists-p (merge-pathnames "unwanted.txt" dir))
+                :to-be-falsy))))
+
+  (it
+    "cancelling save-buffers-kill-terminal's quit prompt reports Quit"
+    (%with-minibuffer-state (minibuffer "")
+      (buffer-insert-string (%selected-test-buffer) "unsaved")
+      (loom::save-buffers-kill-terminal)
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))

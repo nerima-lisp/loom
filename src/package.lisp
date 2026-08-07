@@ -2,13 +2,13 @@
 ;;;;
 ;;;; The single public package for loom. Every symbol the protocol declares
 ;;;; -- across the buffer, renderer, keymap, minibuffer, window, and
-;;;; file-tree modules, now laid out package-by-feature under
-;;;; domain/, infrastructure/, application/, and presentation/ (mirroring
-;;;; nshell/src's layering) -- is exported here, plus the shared editor-state
-;;;; struct/special-variable and the MAIN entry point. Feature agents filling
-;;;; in real :method bodies against these already-exported names in their
-;;;; respective layer files do not need to change this file's export list;
-;;;; it is the fixed contract, only the file layout moved.
+;;;; file-tree modules, laid out package-by-feature under domain/,
+;;;; infrastructure/, application/, and presentation/ (mirroring nshell/src's
+;;;; layering) -- is exported here, plus the shared editor-state
+;;;; struct/special-variable and the MAIN entry point, grouped below by the
+;;;; source file that defines each group. Application-layer commands
+;;;; (src/application/commands-*.lisp) are deliberately NOT exported -- see
+;;;; commands-internal.lisp's header comment for why.
 (defpackage #:loom
   (:use #:cl)
   (:export

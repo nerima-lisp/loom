@@ -1,26 +1,17 @@
 ;;;; t/terminal-renderer-test.lisp
 ;;;;
 ;;;; Infrastructure layer: LOOM-RENDERER-* against a real CL-TTY-KIT
-;;;; renderer/screen pair.
-;;;;
-;;;; LOOM-RENDERER-DRAW-BUFFER is exercised against a tiny local test-double
-;;;; buffer class rather than a real DOMAIN/BUFFER.LISP MAKE-BUFFER buffer:
-;;;; at the time this file was written, domain/buffer.lisp's generics were
-;;;; still their stub "not yet implemented" bodies. The double only
-;;;; satisfies BUFFER-LINE-COUNT/BUFFER-LINE -- the two generics
-;;;; LOOM-RENDERER-DRAW-BUFFER actually calls -- via DEFMETHOD specialized on
-;;;; a test-only class, so once a real domain buffer exists these tests can
-;;;; switch to MAKE-BUFFER without changing anything else.
+;;;; renderer/screen pair and a real DOMAIN/BUFFER.LISP MAKE-BUFFER buffer --
+;;;; LOOM-RENDERER-DRAW-BUFFER only ever calls BUFFER-LINE-COUNT/BUFFER-LINE,
+;;;; both of which MAKE-BUFFER satisfies directly, so no test double is
+;;;; needed here.
 (in-package #:loom/test)
 
-(defclass fake-buffer ()
-  ((lines :initarg :lines :reader fake-buffer-lines)))
-
-(defmethod buffer-line-count ((buffer fake-buffer))
-  (length (fake-buffer-lines buffer)))
-
-(defmethod buffer-line ((buffer fake-buffer) line-number)
-  (nth line-number (fake-buffer-lines buffer)))
+(defun %lines-buffer (&rest lines)
+  "Return a fresh buffer whose content is LINES joined by newlines, for
+LOOM-RENDERER-DRAW-BUFFER tests that only care about BUFFER-LINE-COUNT and
+BUFFER-LINE, not point/mark/undo state."
+  (make-buffer :initial-content (format nil "~{~A~^~%~}" lines)))
 
 (describe
   "make-loom-renderer / loom-renderer-cl-tty-renderer"
@@ -36,8 +27,7 @@
   "loom-renderer-draw-buffer"
   (it
     "writes buffer lines into the renderer's screen at the given rect"
-    (let* ((buffer (make-instance 'fake-buffer
-                                   :lines (list "hello world" "second line, too long")))
+    (let* ((buffer (%lines-buffer "hello world" "second line, too long"))
            (renderer (make-loom-renderer 10 3)))
       (loom-renderer-draw-buffer renderer buffer 0 0 5 2)
       (let ((screen (cl-tty-kit:renderer-screen (loom-renderer-cl-tty-renderer renderer))))
@@ -47,28 +37,28 @@
 
   (it
     "leaves rows past the buffer's line count untouched"
-    (let* ((buffer (make-instance 'fake-buffer :lines (list "only line")))
+    (let* ((buffer (%lines-buffer "only line"))
            (renderer (make-loom-renderer 6 3)))
       (loom-renderer-draw-buffer renderer buffer 0 0 6 3)
       (let ((screen (cl-tty-kit:renderer-screen (loom-renderer-cl-tty-renderer renderer))))
         (expect (cl-tty-kit:screen-to-string screen)
                 :to-equal
-                (format nil "only l~%      ~%      "))))))
+                (format nil "only l~%      ~%      ")))))
 
   (it
     "draws a viewport beginning at the requested line"
-    (let* ((buffer (make-instance 'fake-buffer :lines (list "zero" "one" "two")))
+    (let* ((buffer (%lines-buffer "zero" "one" "two"))
            (renderer (make-loom-renderer 4 2)))
       (loom-renderer-draw-buffer renderer buffer 0 0 4 2 :start-line 1)
       (let ((screen (cl-tty-kit:renderer-screen (loom-renderer-cl-tty-renderer renderer))))
         (expect (cl-tty-kit:screen-to-string screen)
-                :to-equal (format nil "one ~%two ")))))
+                :to-equal (format nil "one ~%two "))))))
 
 (describe
   "loom-renderer-present"
   (it
     "flushes to the given stream and returns the renderer"
-    (let* ((buffer (make-instance 'fake-buffer :lines (list "hi")))
+    (let* ((buffer (%lines-buffer "hi"))
            (renderer (make-loom-renderer 4 1)))
       (loom-renderer-draw-buffer renderer buffer 0 0 4 1)
       (let ((output (make-string-output-stream)))
