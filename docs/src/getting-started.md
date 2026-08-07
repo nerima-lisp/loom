@@ -58,6 +58,12 @@ nix develop -c sbcl --script run-tests.lisp
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
+The integrated suite currently reports 309 passed tests with no skips, todos,
+failures, or errors. It covers unit and integration behavior and includes an
+internal real-PTY smoke test; launching the built executable through an
+external terminal process is not yet covered by a process-level CLI/PTY E2E
+test.
+
 The coverage command reports the measured SB-COVER expression and branch
 totals separately. A branch result does not establish full expression
 coverage; inspect the generated report for uncovered forms.

@@ -115,11 +115,13 @@ or, from a REPL:
 - `src/presentation/` -- screen composition (`compose-frame`): what to draw
   where, given the current `editor-state`.
 - `src/main.lisp` -- the `loom:main` entry point saved into the executable.
-- `t/` -- the `loom/test` suite, using
+- `t/` -- the 309-test `loom/test` suite, using
   [`cl-weave`](https://github.com/nerima-lisp/cl-weave) (`describe`/`it`/`expect`,
   `it-each`, `it-property`, `it-fuzz`, `with-continuation-values`,
   `with-soft-assertions`, and `with-replaced-function`). `main-test` includes
-  a real-PTY smoke test in addition to the fake-terminal tests.
+  a real-PTY smoke test in addition to the fake-terminal tests. The suite
+  does not yet launch the built `loom` executable as an external process, so
+  process-level CLI/PTY E2E remains a follow-up.
 - `docs/` -- the `mkdocs`-built documentation site (this file included),
   built with `--strict` as `flake.nix`'s `checks.docs`.
 - `run-tests.lisp` -- the single script entry point for running the suite,
