@@ -8,7 +8,7 @@
 ;;;; character self-insertion, or the global keymap, poll for terminal
 ;;;; resizes, and redraw via presentation/layout.lisp's COMPOSE-FRAME plus
 ;;;; LOOM-RENDERER-PRESENT -- until the user quits (C-x C-c, see
-;;;; application/commands.lisp's SAVE-BUFFERS-KILL-TERMINAL/LOOM-QUIT) or
+;;;; application/commands-misc.lisp's SAVE-BUFFERS-KILL-TERMINAL/LOOM-QUIT) or
 ;;;; standard input reaches EOF.
 (in-package #:loom)
 
@@ -25,6 +25,19 @@
 ;;; actually sent.
 ;;; ---------------------------------------------------------------------
 
+(defun %drain-buffered-octets (buffer start-count)
+  "Read the octets already waiting on *STANDARD-INPUT* into BUFFER, filling it
+from index START-COUNT onwards and stopping at (LENGTH BUFFER) octets or as
+soon as LISTEN reports nothing more is buffered -- so this never blocks.
+Returns the resulting octet count."
+  (loop with count = start-count
+        while (and (< count (length buffer)) (listen *standard-input*))
+        do (let ((byte (read-byte *standard-input* nil nil)))
+             (unless byte (loop-finish))
+             (setf (aref buffer count) byte)
+             (incf count))
+        finally (return count)))
+
 (defun %read-input-octets (buffer)
   "Block until at least one octet is available on *STANDARD-INPUT*, then
 drain any additional octets already buffered (checked via LISTEN, so this
@@ -34,13 +47,7 @@ end-of-file (no octet was read at all)."
   (let ((first (read-byte *standard-input* nil nil)))
     (when first
       (setf (aref buffer 0) first)
-      (let ((count 1))
-        (loop while (and (< count (length buffer)) (listen *standard-input*))
-              do (let ((byte (read-byte *standard-input* nil nil)))
-                   (if byte
-                       (progn (setf (aref buffer count) byte) (incf count))
-                       (loop-finish))))
-        count))))
+      (%drain-buffered-octets buffer 1))))
 
 ;;; ---------------------------------------------------------------------
 ;;; Key-event routing
@@ -108,7 +115,7 @@ unwritable path, a file-tree create/rename against an existing/missing path,
 and so on -- is reported in the minibuffer instead of propagating out of the
 event loop to MAIN's own top-level HANDLER-CASE, which would otherwise exit
 the whole process and discard every unsaved buffer. LOOM-QUIT
-\(application/commands.lisp\) is signalled via CL:SIGNAL, not CL:ERROR, and
+\(application/commands-misc.lisp\) is signalled via CL:SIGNAL, not CL:ERROR, and
 does not inherit from CL:ERROR, so it passes straight through this
 HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
 \(LOOM-QUIT () ...\) clause for a clean exit."
@@ -127,6 +134,14 @@ HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
            (keymap-state-dispatch keymap-state (%key-event->descriptor event))))
       (error (condition)
         (minibuffer-message minibuffer (format nil "~A" condition))))))
+(defun %dispatch-input-chunk (decoder buffer count keymap-state)
+  "Decode the first COUNT octets of BUFFER through DECODER and route every key
+event they yield to %DISPATCH-KEY-EVENT with KEYMAP-STATE. A completely full
+BUFFER is handed to CL-TTY-KIT:DECODE-INPUT-CHUNK as-is, so the common case of
+a full read does not copy."
+  (let ((chunk (if (= count (length buffer)) buffer (subseq buffer 0 count))))
+    (dolist (event (cl-tty-kit:decode-input-chunk decoder chunk))
+      (%dispatch-key-event event keymap-state))))
 
 ;;; ---------------------------------------------------------------------
 ;;; Event loop
@@ -139,76 +154,95 @@ CL-TTY-KIT:TERMINAL-SIZE, falling back to 80x24 when the size is unavailable
   (multiple-value-bind (columns rows) (cl-tty-kit:terminal-size)
     (values (or columns 80) (or rows 24))))
 
-(defun %run-event-loop (stream)
-  "Run loom's main input/render loop, writing frames to STREAM. Returns
-normally -- so the caller's CL-TTY-KIT:WITH-TERMINAL-SESSION can unwind and
-restore the terminal -- once the user quits via SAVE-BUFFERS-KILL-TERMINAL
-(C-x C-c, which signals LOOM-QUIT) or *STANDARD-INPUT* reaches end-of-file.
+(defun %poll-terminal-resize (renderer last-width last-height)
+  "Check CL-TTY-KIT:TERMINAL-SIZE against LAST-WIDTH/LAST-HEIGHT and, on a
+change, resize RENDERER via LOOM-RENDERER-RESIZE. Returns the (VALUES WIDTH
+HEIGHT) to track as the last-seen size from now on -- LAST-WIDTH/LAST-HEIGHT
+unchanged when the terminal size could not be read or has not changed."
+  (multiple-value-bind (width height) (cl-tty-kit:terminal-size)
+    (if (and width height (or (/= width last-width) (/= height last-height)))
+        (progn
+          (loom-renderer-resize renderer width height)
+          (values width height))
+        (values last-width last-height))))
 
-Each iteration: read a chunk of raw octets (blocking for at least one),
-decode it into key events and dispatch each one, then poll
-CL-TTY-KIT:TERMINAL-SIZE and, on a change, resize the renderer via
-LOOM-RENDERER-RESIZE (the window tree's own resize is COMPOSE-FRAME's job --
-see its docstring -- since it alone knows the file-tree sidebar's current
-width and must recompute the layout every frame regardless of why it
-changed), then COMPOSE-FRAME and LOOM-RENDERER-PRESENT to draw."
+(defun %run-event-loop (stream)
+  "Run the main input and render loop, writing frames to STREAM.\n\nThe initial frame is rendered before waiting for input. Each subsequent\niteration reads raw octets, dispatches decoded key events, reacts to terminal\nresizes, then redraws the frame."
   (let ((decoder (cl-tty-kit:make-input-decoder))
         (buf (make-array 4096 :element-type '(unsigned-byte 8)))
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*))))
-    (multiple-value-bind (last-width last-height) (cl-tty-kit:terminal-size)
-      (setf last-width (or last-width 80)
-            last-height (or last-height 24))
-      (handler-case
-          (loop
-            (let ((count (%read-input-octets buf)))
-              (unless count
-                (return-from %run-event-loop))
-              (let* ((chunk (if (= count (length buf)) buf (subseq buf 0 count)))
-                     (events (cl-tty-kit:decode-input-chunk decoder chunk)))
-                (dolist (event events)
-                  (%dispatch-key-event event keymap-state))))
-            (multiple-value-bind (width height) (cl-tty-kit:terminal-size)
-              (when (and width height
-                         (or (/= width last-width) (/= height last-height)))
-                (setf last-width width
-                      last-height height)
-                (loom-renderer-resize (editor-state-renderer *editor-state*) width height)))
-            (compose-frame *editor-state*)
-            (loom-renderer-present (editor-state-renderer *editor-state*) :stream stream))
-        (loom-quit () nil)))))
+    (multiple-value-bind (last-width last-height) (%initial-terminal-size)
+      (labels ((render-frame ()
+                 (compose-frame *editor-state*)
+                 (loom-renderer-present (editor-state-renderer *editor-state*)
+                                        :stream stream
+                                        :cursor (editor-cursor *editor-state*)))
+               (read-and-dispatch ()
+                 ;; NIL once *STANDARD-INPUT* hits EOF, which is what ends the
+                 ;; LOOP below; LOOM-QUIT ends it by unwinding instead.
+                 (let ((count (%read-input-octets buf)))
+                   (when count
+                     (%dispatch-input-chunk decoder buf count keymap-state)
+                     t))))
+        (render-frame)
+        (handler-case
+            (loop while (read-and-dispatch)
+                  do (multiple-value-setq (last-width last-height)
+                       (%poll-terminal-resize (editor-state-renderer *editor-state*)
+                                              last-width last-height))
+                     (render-frame))
+          (loom-quit () nil))))))
 
 ;;; ---------------------------------------------------------------------
 ;;; Entry point
 ;;; ---------------------------------------------------------------------
 
-(defun %initialize-editor-state ()
-  "Build a fresh *EDITOR-STATE* around a *scratch* buffer and the real
-domain/infrastructure/application objects that back it: a window tree sized
-to the current terminal, the default keybindings, a minibuffer backed by a
-real CL-HISTORY-KIT history, a file tree rooted at the second POSIX argument
-(defaulting to the current directory) with its CHILD-LISTER seam wired to the
-real disk-backed LOOM-FS-LIST-DIRECTORY (see infrastructure/filesystem.lisp's
-header comment for why that seam exists), and a renderer sized to match."
-  (multiple-value-bind (width height) (%initial-terminal-size)
-    (let* ((scratch (make-buffer :name "*scratch*"))
-           (window-tree (make-window-tree scratch width (max 1 (1- height))))
-           (keymap (install-default-keybindings (make-keymap)))
-           (minibuffer (make-minibuffer :history (history-kit:make-history)))
-           (file-tree (make-file-tree (or (second sb-ext:*posix-argv*) ".")))
-           (renderer (make-loom-renderer width height)))
-      (setf (file-tree-child-lister file-tree) #'loom-fs-list-directory)
-      (setf *editor-state*
-            (make-editor-state :window-tree window-tree
-                                :minibuffer minibuffer
-                                :keymap keymap
-                                :file-tree file-tree
-                                :renderer renderer
-                                :kill-ring nil)))))
+(defun %startup-file-and-root (argument)
+  "Return the existing startup file, if ARGUMENT names one, and the file-tree root.\n\nAn existing regular file opens in the selected window while its containing\ndirectory becomes the file-tree root. A directory (or no argument) retains\nthe scratch buffer and is itself the root."
+  (let* ((root (or argument "."))
+         (resolved (probe-file root)))
+    (if (and resolved (not (uiop:directory-pathname-p resolved)))
+        (values resolved (make-pathname :name nil :type nil :defaults resolved))
+        (values nil root))))
 
-(defun main ()
-  "Entry point for the loom binary. Initializes *EDITOR-STATE* (see
-%INITIALIZE-EDITOR-STATE) then runs the terminal session and event loop (see
-%RUN-EVENT-LOOP) until the user quits or stdin hits EOF.
+(defun %initialize-editor-state (path-argument)
+  "Build a fresh *EDITOR-STATE* around the startup buffer and supporting
+objects. PATH-ARGUMENT is the file or directory CL-CLI:POSITIONAL-VALUE
+parsed from argv, or NIL when none was given."
+  (multiple-value-bind (width height) (%initial-terminal-size)
+    (multiple-value-bind (startup-file file-tree-root)
+        (%startup-file-and-root path-argument)
+      (let* ((initial-buffer (if startup-file
+                                 (buffer-load startup-file)
+                                 (make-buffer :name "*scratch*")))
+             (window-tree (make-window-tree initial-buffer width (max 1 (1- height))))
+             (keymap (install-default-keybindings (make-keymap)))
+             (minibuffer (make-minibuffer :history (history-kit:make-history)))
+             (file-tree (make-file-tree file-tree-root))
+             (renderer (make-loom-renderer width height)))
+        (setf (file-tree-child-lister file-tree) (function loom-fs-list-directory))
+        (setf *editor-state*
+              (make-editor-state :window-tree window-tree
+                                 :minibuffer minibuffer
+                                 :keymap keymap
+                                 :file-tree file-tree
+                                 :renderer renderer
+                                 :kill-ring nil))))))
+
+(defun %loom-version ()
+  "Return LOOM's version string from its own ASDF system definition -- the
+single source of truth loom.asd's header comment and flake.nix's ASDVERSIONOF
+both already rely on -- so CL-CLI's generated --version output cannot drift
+from it."
+  (let ((system (asdf:find-system "loom" nil)))
+    (or (and system (asdf:component-version system)) "unknown")))
+
+(defun %run-loom (invocation &key (fd 0))
+  "CL-CLI handler for *LOOM-APP*: initialize *EDITOR-STATE* around the :PATH
+positional, then run the terminal session event loop (see %RUN-EVENT-LOOP)
+until the user quits or stdin hits EOF. FD names the controlling terminal's
+file descriptor (0, i.e. stdin, in production; overridable so a test can
+pass a real CL-TTY-KIT:MAKE-PTY descriptor instead).
 
 CL-TTY-KIT:WITH-TERMINAL-SESSION already wraps its body in an UNWIND-PROTECT
 (nested inside WITH-RAW-MODE's own UNWIND-PROTECT) that restores raw mode and
@@ -217,12 +251,33 @@ inside the loop still leaves the terminal in a clean state before this
 function's own HANDLER-CASE gets a chance to report it -- the terminal is
 never left in raw/alternate-screen mode, whether the error is caught here or
 not."
-  (%initialize-editor-state)
+  (%initialize-editor-state (cl-cli:positional-value invocation :path))
   (handler-case
-      (cl-tty-kit:with-terminal-session (stream :raw-mode t
+      (cl-tty-kit:with-terminal-session (stream :fd fd
+                                         :raw-mode t
                                          :alternate-screen t
                                          :hide-cursor nil)
         (%run-event-loop stream))
     (error (condition)
       (format *error-output* "~&loom: ~A~%" condition)))
-  (sb-ext:exit :code 0))
+  0)
+
+(defparameter *loom-app*
+  (cl-cli:make-app
+   :name "loom"
+   :version (%loom-version)
+   :summary "Terminal text editor with Emacs-like keybindings"
+   :positionals (list (cl-cli:make-positional
+                       :key :path
+                       :required-p nil
+                       :description "A file to open, or a directory to browse (defaults to \".\")"))
+   :handler (function %run-loom))
+  "CL-CLI application spec for the loom binary: a single positional path
+argument and no subcommands (the \"root positional\" shape CL-CLI's own
+getting-started guide documents for script-style tools), which gets
+--help/--version/-h/-V for free instead of main.lisp hand-parsing argv.")
+
+(defun main ()
+  "Entry point for the loom binary: dispatches SB-EXT:*POSIX-ARGV* through
+*LOOM-APP* (see %RUN-LOOM) and exits with the resulting CL-CLI exit code."
+  (sb-ext:exit :code (cl-cli:run-app *loom-app* :argv sb-ext:*posix-argv*)))

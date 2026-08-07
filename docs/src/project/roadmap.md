@@ -10,7 +10,7 @@ implemented today from what is deliberately deferred.
 - **Movement** -- character/line motion, beginning/end of line.
 - **Emacs-style keybindings** -- `install-default-keybindings` binds the
   default `C-x`/`C-c` prefix sequences; see
-  [`src/application/commands.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands.lisp).
+  [`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp).
 - **Window management** -- horizontal/vertical splits (`C-x 2` / `C-x 3`),
   window selection (`C-x o`), per-window buffer switching (`C-x b`).
 - **File-tree sidebar** (`C-x C-t`) -- navigate, and create/rename/delete
@@ -18,6 +18,8 @@ implemented today from what is deliberately deferred.
 - **File I/O** -- `find-file` (`C-x C-f`), `save-buffer` (`C-x C-s`).
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
+- **`--help` / `--version` CLI flags** -- built on `cl-cli`; see `*loom-app*`
+  in [`src/main.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/main.lisp).
 
 ## Not yet implemented
 

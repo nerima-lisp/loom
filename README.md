@@ -6,16 +6,25 @@
 `loom` is a terminal text editor for SBCL with Emacs-style keybindings. It is
 built on [`cl-tty-kit`](https://github.com/nerima-lisp/cl-tty-kit) for raw-mode
 terminal I/O and double-buffered rendering,
-[`cl-host-kit`](https://github.com/nerima-lisp/cl-host-kit) for filesystem
-access, and [`cl-history-kit`](https://github.com/nerima-lisp/cl-history-kit)
-for minibuffer input recall.
+[`cl-host-kit`](https://github.com/nerima-lisp/cl-host-kit) and
+[`cl-boundary-kit`](https://github.com/nerima-lisp/cl-boundary-kit) for
+filesystem access, [`cl-history-kit`](https://github.com/nerima-lisp/cl-history-kit) for
+minibuffer input recall, [`cl-prolog`](https://github.com/nerima-lisp/cl-prolog)
+for the M-x extended-command registry and quit-prompt resolution,
+[`cl-regex-kit`](https://github.com/nerima-lisp/cl-regex-kit) for regular-
+expression search and replace, and
+[`cl-cli`](https://github.com/nerima-lisp/cl-cli) for argv parsing (`--help`/
+`--version`).
 
 Implemented today: buffer editing (insert/delete/undo, Emacs-style
-movement/kill-ring/yank), a working raw-mode terminal event loop, multiple
-windows via horizontal/vertical splits (`C-x 2` / `C-x 3` / `C-x o`), and a
-file-tree sidebar (`C-x C-t`) backed by real filesystem create/rename/delete.
-See `install-default-keybindings` in `src/application/commands.lisp` for the
-full keybinding set. Not yet implemented: syntax highlighting, an LSP client,
+movement/kill-ring/yank), regular-expression search and replace, a working
+raw-mode terminal event loop, multiple windows via horizontal/vertical splits
+(`C-x 2` / `C-x 3` / `C-x o`), and a file-tree sidebar (`C-x C-t`) backed by
+real filesystem create/rename/delete. See `install-default-keybindings` in
+`src/application/commands-keybindings.lisp` for the full keybinding set, and
+`define-extended-commands` in `src/application/commands-misc.lisp` for the
+M-x registry (every keybound command is M-x-reachable; a regression test
+enforces this). Not yet implemented: syntax highlighting, an LSP client,
 extensibility via a user `init.lisp`, and session/layout persistence across
 launches -- these are future phases, not part of this MVP.
 
@@ -25,7 +34,8 @@ The repository is built and tested with [Nix flakes](https://nixos.wiki/wiki/Fla
 
 ```sh
 # Enter a development shell with SBCL and every sibling dependency
-# (cl-tty-kit, cl-host-kit, cl-history-kit, cl-weave) on CL_SOURCE_REGISTRY.
+# (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog, cl-cli, cl-regex-kit,
+# cl-boundary-kit, cl-weave) on CL_SOURCE_REGISTRY.
 nix develop
 
 # Inside the shell:
@@ -34,15 +44,20 @@ sbcl --script run-tests.lisp
 
 # Build the loom binary (dumps an SBCL image via save-lisp-and-die):
 nix build
+./result/bin/loom --help
+./result/bin/loom --version
 ./result/bin/loom
+# A directory opens the file tree; an existing file opens in the first window.
+./result/bin/loom path/to/file.lisp
 
 # Run every check (test suite, build, formatting) the way CI does:
 nix flake check --print-build-logs
 ```
 
 Without Nix: put `loom` alongside checkouts of `cl-tty-kit`, `cl-host-kit`,
-`cl-history-kit`, and `cl-weave` (e.g. all under the same `ghq`-style parent
-directory), then either
+`cl-history-kit`, `cl-prolog`, `cl-cli`, `cl-regex-kit` (and its own
+`cl-parser-kit` dependency), `cl-boundary-kit`, and `cl-weave` (e.g. all under
+the same `ghq`-style parent directory), then either
 
 ```sh
 sbcl --script run-tests.lisp
@@ -56,25 +71,57 @@ or, from a REPL:
 (asdf:test-system :loom)
 ```
 
+## Default keys
+
+- `C-f` / `C-b`, `C-n` / `C-p`, `C-a` / `C-e`: move point.
+- `Enter`, `C-d`, Backspace, `C-o`: insert a newline, delete, or open a line; `C-x u`: undo.
+- `C-k`, `C-w`, `C-y`: kill line or region, then yank.
+- `C-s`, `M-%`, `M-g g`: search, replace all matches, or go to a line. Search
+  and replace text is a `cl-regex-kit` regular expression, not a literal
+  substring; the replacement text itself stays literal.
+- `C-x C-f`, `C-x C-s`, `C-x C-c`: open, save, or quit. Quit asks how to handle every modified buffer.
+- `C-h` or `F1`: show the in-editor command reference.
+- `C-x 2`, `C-x 3`, `C-x o`: split windows or move to the next window.
+
 ## Layout
 
 - `loom.asd` -- the `loom` and `loom/test` ASDF systems.
 - `src/package.lisp` -- the single `#:loom` package and its export list.
-- `src/domain/` -- pure state/logic with no dependency on the sibling
-  libraries: buffer text/undo, window-tree layout, keymap dispatch, and
-  file-tree state.
-- `src/infrastructure/` -- adapters to the sibling libraries: terminal
-  rendering (`cl-tty-kit`) and filesystem access (`cl-host-kit`).
+- `src/domain/` -- pure state/logic with no dependency on any I/O-touching
+  sibling library (`cl-tty-kit`/`cl-host-kit`/`cl-boundary-kit`/
+  `cl-history-kit`): buffer text/undo (including `cl-regex-kit`-backed
+  search/replace matching, itself a pure computation with no I/O), window-tree
+  layout, keymap dispatch, and file-tree state.
+- `src/infrastructure/` -- adapters to the I/O-touching sibling libraries:
+  terminal rendering (`cl-tty-kit`) and filesystem access, mostly through a
+  `cl-boundary-kit` filesystem boundary (`*loom-filesystem*`, rebound to an
+  in-memory fake in tests) except the two operations documented in that
+  file's header as staying on `cl-host-kit` directly for correctness reasons
+  (directory-entry classification, and a symlink-safe recursive delete).
 - `src/application/` -- orchestration: the shared `editor-state` struct and
   `*editor-state*` special variable every command operates on, the
-  minibuffer, and the command/keybinding vocabulary.
+  minibuffer, and the command/keybinding vocabulary, split by concern
+  (`commands-internal`, `-movement`, `-editing`, `-search`, `-file`,
+  `-window`, `-misc`, `-keybindings`).
 - `src/presentation/` -- screen composition (`compose-frame`): what to draw
   where, given the current `editor-state`.
 - `src/main.lisp` -- the `loom:main` entry point saved into the executable.
 - `t/` -- the `loom/test` suite, using
   [`cl-weave`](https://github.com/nerima-lisp/cl-weave) (`describe`/`it`/`expect`).
+- `docs/` -- the `mkdocs`-built documentation site (this file included),
+  built with `--strict` as `flake.nix`'s `checks.docs`.
 - `run-tests.lisp` -- the single script entry point for running the suite,
-  used both locally and by `flake.nix`'s `checks.default`.
+  used both locally and by `flake.nix`'s `checks.default`; bounded by an
+  in-script 600s `sb-ext:with-timeout` in addition to `checks.default`'s own
+  Nix-level timeout, so a plain local run cannot hang forever.
+- `scripts/coverage.lisp` -- runs the suite under `sb-cover` and writes an
+  HTML report to `coverage/` (override with `LOOM_COVERAGE_DIR`); bounded by
+  its own 1800s `sb-ext:with-timeout`, since it force-recompiles loom and
+  every sibling dependency under `sb-cover` instrumentation and is the
+  slowest entry point in the repo. `src/`
+  branch coverage is 100%, and the remaining expression-coverage gap is
+  non-executable forms (`in-package`, `defstruct`/`defpackage` declarations,
+  docstrings) `sb-cover` cannot instrument.
 - `flake.nix` -- Nix packaging: `packages.default` (the built binary),
   `checks.default` (the test suite), `checks.build`, `checks.formatting`, and
   `devShells.default`.

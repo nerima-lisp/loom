@@ -79,7 +79,19 @@
     "signals an error when toggling a path not present in the tree"
     (let ((tree (make-file-tree "/root/")))
       (setf (loom::file-tree-child-lister tree) #'%fake-lister)
-      (signals error (file-tree-toggle-expand tree "/does/not/exist")))))
+      (signals error (file-tree-toggle-expand tree "/does/not/exist"))))
+
+  (it
+    "finds and expands a directory nested inside an already-expanded directory"
+    (let ((tree (make-file-tree "/root/")))
+      (setf (loom::file-tree-child-lister tree) #'%fake-lister)
+      (file-tree-toggle-expand tree "/root/sub/")
+      (expect (file-tree-toggle-expand tree "/root/sub/nested/") :to-be-truthy)
+      (expect (file-tree-entries tree)
+              :to-equal
+              '(("/root/a.txt" . 0) ("/root/sub/" . 0)
+                ("/root/sub/b.txt" . 1) ("/root/sub/nested/" . 1)
+                ("/root/sub/nested/c.txt" . 2))))))
 
 (describe
   "file-tree-move-selection"
@@ -101,4 +113,24 @@
       (expect (file-tree-move-selection tree :up) :to-equal "/root/a.txt")
       ;; no-op at the start of the visible entry list
       (expect (file-tree-move-selection tree :up) :to-equal "/root/a.txt")
-      (expect (file-tree-selected-path tree) :to-equal "/root/a.txt"))))
+      (expect (file-tree-selected-path tree) :to-equal "/root/a.txt")))
+
+  (it
+    "moving :up with no prior selection selects the last visible entry"
+    (let ((tree (make-file-tree "/root/")))
+      (setf (loom::file-tree-child-lister tree) #'%fake-lister)
+      (expect (file-tree-move-selection tree :up) :to-equal "/root/sub/")))
+
+  (it
+    "signals an error for an unknown direction"
+    (let ((tree (make-file-tree "/root/")))
+      (setf (loom::file-tree-child-lister tree) #'%fake-lister)
+      (file-tree-move-selection tree :down)
+      (signals error (file-tree-move-selection tree :sideways))))
+
+  (it
+    "is a no-op on a tree with no visible entries"
+    ;; %FAKE-LISTER's (T NIL) clause gives this root zero children.
+    (let ((tree (make-file-tree "/nowhere/")))
+      (setf (loom::file-tree-child-lister tree) #'%fake-lister)
+      (expect (file-tree-move-selection tree :down) :to-be-falsy))))

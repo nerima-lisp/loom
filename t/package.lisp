@@ -9,9 +9,13 @@
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
    #:it
+   #:it-each
    #:expect
    #:signals
-   #:run-all)
+   #:run-all
+   #:defmatcher
+   #:with-soft-assertions
+   #:with-replaced-function)
   (:export #:run-tests))
 
 (in-package #:loom/test)
