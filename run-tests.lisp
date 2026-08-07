@@ -41,8 +41,11 @@
   (let ((passed-p
           (handler-case
               (sb-ext:with-timeout 600
-                (asdf:load-system "loom/test")
-                (uiop:symbol-call :loom/test '#:run-tests))
+                  (asdf:load-system "loom/test")
+                  (dolist (relative-path '(#P"t/unit/cli-test.lisp"
+                                           #P"t/integration/editor-flow-test.lisp"))
+                    (load (merge-pathnames relative-path root)))
+                  (uiop:symbol-call :loom/test '#:run-tests))
             (sb-ext:timeout ()
               (format *error-output* "~&loom/test: timed out after 600s~%")
               nil)
