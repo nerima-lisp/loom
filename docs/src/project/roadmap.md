@@ -84,8 +84,9 @@ so their absence does not read as a bug:
 - **An LSP client.**
 - **Extensibility via a user `init.lisp`.**
 - **Session/layout persistence** across launches.
-- **A buffer-list registry** -- `switch-to-buffer` currently searches only
-  the buffers already displayed in some window of the current window tree.
+- **Buffer lifecycle management.** A session-wide buffer registry and
+  `switch-to-buffer` lookup are implemented; unregistering/`kill-buffer` and
+  completion UI remain future work.
 ## Released changes
 
 See the [GitHub Releases](https://github.com/nerima-lisp/loom/releases).
