@@ -87,6 +87,13 @@ so their absence does not read as a bug:
 - **Buffer lifecycle management.** A session-wide buffer registry and
   `switch-to-buffer` lookup are implemented; unregistering/`kill-buffer` and
   completion UI remain future work.
+
 ## Released changes
 
-See the [GitHub Releases](https://github.com/nerima-lisp/loom/releases).
+### v0.1.0
+
+The MVP release consolidates the 2026 editor modernization, bounded concurrent
+file-tree runtime, integrated unit/integration/e2e test paths, and the
+session-wide buffer registry with `switch-to-buffer` lookup.
+
+Release artifacts and release notes are managed through [GitHub Releases](https://github.com/nerima-lisp/loom/releases).

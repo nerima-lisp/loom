@@ -59,7 +59,7 @@ LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
-The integrated suite currently reports 354 passed tests with no skips, todos,
+The integrated suite currently reports 356 passed tests with no skips, todos,
 failures, or errors. `t/unit/` covers CLI parsing, `t/integration/` covers
 disk-backed editor flows, and the suite includes an internal real-PTY smoke
 test. The separate `t/e2e/loom-test.py` runner requires the `nix build`
