@@ -140,6 +140,13 @@ def _assert_exit_zero(name, output, code):
         raise AssertionError(f"{name} exited with {code}: {output!r}")
 
 
+def _assert_exit_code(name, output, code, expected):
+    if code != expected:
+        raise AssertionError(
+            f"{name} exited with {code}, expected {expected}: {output!r}"
+        )
+
+
 def _test_help(binary):
     with LoomProcess(binary, ["--help"]) as process:
         output, code = process.wait()
@@ -154,6 +161,41 @@ def _test_version(binary):
     _assert_exit_zero("--version", output, code)
     if b"loom 0.1.0" not in output:
         raise AssertionError(f"--version output missing version: {output!r}")
+
+
+def _test_invalid_option(binary):
+    with LoomProcess(binary, ["--definitely-invalid"]) as process:
+        output, code = process.wait()
+    _assert_exit_code("invalid option", output, code, 64)
+    if b"Unknown option" not in output:
+        raise AssertionError(f"invalid option output missing diagnostic: {output!r}")
+
+
+def _test_missing_path(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "missing.txt")
+        with LoomProcess(binary, [path]) as process:
+            output, code = process.wait()
+    _assert_exit_code("missing path", output, code, 64)
+    if b"PATH does not exist" not in output:
+        raise AssertionError(f"missing path output missing diagnostic: {output!r}")
+
+
+def _test_startup_without_path(binary):
+    with LoomProcess(binary, []) as process:
+        process.wait_for_output()
+        process.write(b"\x18\x03")
+        output, code = process.wait()
+    _assert_exit_zero("startup without path", output, code)
+
+
+def _test_startup_directory(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        with LoomProcess(binary, [directory]) as process:
+            process.wait_for_output()
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+    _assert_exit_zero("startup directory", output, code)
 
 
 def _test_edit_save_exit(binary):
@@ -199,6 +241,10 @@ def main():
     tests = [
         ("--help", _test_help),
         ("--version", _test_version),
+        ("invalid option", _test_invalid_option),
+        ("missing path", _test_missing_path),
+        ("startup without path", _test_startup_without_path),
+        ("startup directory", _test_startup_directory),
         ("edit/save/exit", _test_edit_save_exit),
     ]
     for name, test in tests:

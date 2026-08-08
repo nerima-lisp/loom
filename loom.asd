@@ -45,6 +45,7 @@ a file-tree sidebar are all implemented against that layering."
   ;; Path-prefixed :file names, not nested :module blocks, per nshell.asd's
   ;; precedent.
   ((:file "package")
+   (:file "domain/buffer-storage")
    (:file "domain/buffer")
    (:file "domain/buffer-search")
    (:file "domain/window")
@@ -130,10 +131,16 @@ a file-tree sidebar are all implemented against that layering."
    (:file "file-tree-test")
    (:file "minibuffer-test")
    (:file "commands-test")
+   (:file "commands-movement-test")
+   (:file "commands-editing-test")
+   (:file "commands-misc-test")
+   (:file "commands-keybindings-test")
    (:file "layout-test")
    (:file "main-test")
    (:file "concurrent-runtime-test")
-   (:file "advanced-test"))
+   (:file "advanced-test")
+   (:file "unit/cli-test")
+   (:file "integration/editor-flow-test"))
   ;; Not HOST-KIT:SYMBOL-CALL or UIOP:SYMBOL-CALL: a .asd is read by the plain
   ;; CL reader before :depends-on is ever consulted, so any PKG:SYMBOL token
   ;; here must resolve against a package already in the image. FIND-SYMBOL /

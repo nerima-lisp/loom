@@ -13,7 +13,10 @@
   (closed-p nil))
 
 (defun %directory-key (path)
-  (namestring (uiop:ensure-directory-pathname (pathname path))))
+  (namestring
+   (host-kit:ensure-directory-pathname
+    (host-kit:truenamize
+     (host-kit:ensure-directory-pathname (pathname path))))))
 
 (defun make-loom-concurrent-runtime
     (&key (directory-lister #'loom-fs-list-directory)
@@ -63,6 +66,7 @@ results yet."
     (setf (gethash key (loom-concurrent-runtime-directory-cache runtime))
           entries)
     (remhash key (loom-concurrent-runtime-errors runtime))
+    (remhash key (loom-concurrent-runtime-pending runtime))
     entries))
 
 (defun loom-concurrent-runtime-invalidate-directory (runtime path)
@@ -78,7 +82,7 @@ results yet."
 (defun loom-concurrent-runtime-invalidate-path (runtime path)
   "Invalidate PATH and its parent directory listing."
   (let* ((path-key (%directory-key path))
-         (parent (uiop:pathname-parent-directory-pathname (pathname path))))
+         (parent (host-kit:pathname-directory-pathname (pathname path))))
     (loom-concurrent-runtime-invalidate-directory runtime path)
     (unless (equal path-key (%directory-key parent))
       (loom-concurrent-runtime-invalidate-directory runtime parent)))
@@ -112,43 +116,42 @@ results yet."
 The runtime limits accepted tasks to the number of result slots available, so
 workers cannot block forever trying to report a result while the main lane is
 shutting down."
-  (let ((promises '())
+  (let ((promises (list))
         (accepted 0)
         (pending (loom-concurrent-runtime-pending runtime))
         (cache (loom-concurrent-runtime-directory-cache runtime))
         (errors (loom-concurrent-runtime-errors runtime))
         (generation-table (loom-concurrent-runtime-generation runtime)))
-    (dolist (path paths (values (nreverse promises) accepted))
-      (when (and (not (loom-concurrent-runtime-closed-p runtime))
-                 (< (hash-table-count pending)
-                    (loom-concurrent-runtime-in-flight-limit runtime)))
-        (let* ((key (%directory-key path))
-               (generation (gethash key generation-table 0)))
-          (multiple-value-bind (cached cached-p) (gethash key cache)
-            (declare (ignore cached))
-            (let ((error-p (nth-value 1 (gethash key errors))))
-              (multiple-value-bind (pending-generation pending-p)
-                  (gethash key pending)
-                (declare (ignore pending-generation))
-                (unless (or cached-p error-p pending-p)
-                  (setf (gethash key pending) generation)
-                  (let ((task-path path)
-                        (task-key key)
-                        (task-generation generation))
-                    (handler-case
-                        (multiple-value-bind (promise accepted-p)
-                            (cl-concurrent-kit:try-submit
-                             (loom-concurrent-runtime-executor runtime)
-                             (%submit-directory-listing
-                              runtime task-path task-key task-generation))
-                          (if accepted-p
-                              (progn
-                                (push promise promises)
-                                (incf accepted))
-                              (remhash key pending)))
-                      (error (condition)
-                        (remhash key pending)
-                        (error condition)))))))))))))
+    (labels ((submit-path (path key generation)
+               (setf (gethash key pending) generation)
+               (handler-case
+                   (cl-concurrent-kit:try-submit
+                    (loom-concurrent-runtime-executor runtime)
+                    (%submit-directory-listing
+                     runtime path key generation))
+                 (error (condition)
+                   (remhash key pending)
+                   (error condition)))))
+      (dolist (path paths (values (nreverse promises) accepted))
+        (when (and (not (loom-concurrent-runtime-closed-p runtime))
+                   (< (hash-table-count pending)
+                      (loom-concurrent-runtime-in-flight-limit runtime)))
+          (let* ((key (%directory-key path))
+                 (generation (gethash key generation-table 0)))
+            (multiple-value-bind (cached cached-p) (gethash key cache)
+              (declare (ignore cached))
+              (let ((error-p (nth-value 1 (gethash key errors))))
+                (multiple-value-bind (pending-generation pending-p)
+                    (gethash key pending)
+                  (declare (ignore pending-generation))
+                  (unless (or cached-p error-p pending-p)
+                    (multiple-value-bind (promise accepted-p)
+                        (submit-path path key generation)
+                      (if accepted-p
+                          (progn
+                            (push promise promises)
+                            (incf accepted))
+                          (remhash key pending)))))))))))))
 
 (defun %apply-directory-result (runtime result)
   (let* ((key (getf result :key))
@@ -182,7 +185,7 @@ shutting down."
           (ready
            (incf count)
            (%apply-directory-result runtime result))
-          ((or closed (not ready))
+          (t
            (return count)))))))
 
 (defun loom-concurrent-runtime-shutdown (runtime)
@@ -190,10 +193,11 @@ shutting down."
   (unless (loom-concurrent-runtime-closed-p runtime)
     (setf (loom-concurrent-runtime-closed-p runtime) t)
     (unwind-protect
-         (cl-concurrent-kit:shutdown-executor
+      (cl-concurrent-kit:shutdown-executor
           (loom-concurrent-runtime-executor runtime)
           :wait t
           :cancel-pending t)
+      (clrhash (loom-concurrent-runtime-pending runtime))
       (cl-concurrent-kit:close-channel
        (loom-concurrent-runtime-result-channel runtime))))
   runtime)

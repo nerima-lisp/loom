@@ -17,9 +17,11 @@
 ;;;; *STANDARD-INPUT* (a binary file stream works identically to a tty
 ;;;; fd-stream) and writes to an explicit STREAM parameter (any character
 ;;;; output stream), with CL-TTY-KIT:TERMINAL-SIZE stubbed the same way as
-;;;; above. Only %RUN-LOOM and MAIN themselves -- which wrap it in a real
-;;;; CL-TTY-KIT:WITH-TERMINAL-SESSION (raw mode, alternate screen) -- need an
-;;;; actual controlling terminal, out of scope for this suite.
+;;;; above. Only %RUN-LOOM -- which wraps it in a real
+;;;; CL-TTY-KIT:WITH-TERMINAL-SESSION (raw mode, alternate screen) -- needs an
+;;;; actual controlling terminal and remains out of scope for this suite.
+;;;; MAIN's CLI/exit delegation is covered below in a child process, because
+;;;; SB-EXT:EXIT's declared NIL result cannot be replaced after compilation.
 (in-package #:loom/test)
 
 (defun %fresh-full-editor-state (initial-content)
@@ -34,6 +36,18 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
                        :file-tree (make-file-tree "/root/")
                        :renderer (make-loom-renderer 80 24)
                        :kill-ring nil)))
+
+(defclass %eof-after-listen-stream
+    (sb-gray:fundamental-binary-input-stream)
+  ())
+
+(defmethod sb-gray:stream-listen ((stream %eof-after-listen-stream))
+  (declare (ignore stream))
+  t)
+
+(defmethod sb-gray:stream-read-byte ((stream %eof-after-listen-stream))
+  (declare (ignore stream))
+  :eof)
 
 (describe
   "%read-input-octets"
@@ -64,6 +78,12 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
             (expect (loom::%read-input-octets buf) :to-be nil))))))
 
   (it
+    "stops draining when a readable stream reaches EOF"
+    (let ((*standard-input* (make-instance '%eof-after-listen-stream))
+          (buf (make-array 1 :element-type '(unsigned-byte 8))))
+      (expect (loom::%drain-buffered-octets buf 0) :to-equal 0)))
+
+  (it
     "stops filling the buffer at its capacity even if more input is available"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "input.bin" dir)))
@@ -75,6 +95,31 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
                                           :element-type '(unsigned-byte 8))
           (let ((buf (make-array 2 :element-type '(unsigned-byte 8))))
             (expect (loom::%read-input-octets buf) :to-equal 2)))))))
+
+(describe
+  "%enable-concurrent-file-tree"
+  (it
+    "serves the primed root and reports cache misses as NIL"
+    (let* ((state (%fresh-full-editor-state "content"))
+           (tree (editor-state-file-tree state))
+           (root "/root/")
+           (entries '(("/root/file.txt" . :file)))
+           (calls 0)
+           (runtime nil))
+      (setf (loom::file-tree-child-lister tree)
+            (lambda (path)
+              (incf calls)
+              (when (equal path root)
+                entries)))
+      (setf runtime (loom::%enable-concurrent-file-tree state))
+      (unwind-protect
+           (progn
+             (expect calls :to-equal 1)
+             (expect (funcall (loom::file-tree-child-lister tree) root)
+                     :to-equal entries)
+             (expect (funcall (loom::file-tree-child-lister tree) "/uncached/")
+                     :to-be nil))
+        (loom-concurrent-runtime-shutdown runtime)))))
 
 (describe
   "%key-event->descriptor"
@@ -313,7 +358,82 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
               ;; raw-mode ioctls); reading immediate EOF from /dev/null makes
               ;; %RUN-EVENT-LOOP return after just its initial render.
               (expect (loom::%run-loom invocation :fd fd) :to-equal 0)))
+        (cl-tty-kit:close-pty pty))))
+
+  (it
+    "reports an event-loop failure and returns 1"
+    (let ((pty (cl-tty-kit:make-pty :program "/bin/sh")))
+      (unwind-protect
+          (let ((fd (sb-sys:fd-stream-fd (cl-tty-kit:pty-stream pty)))
+                (invocation (cl-cli:parse-argv loom::*loom-app* '("loom"))))
+            (with-open-file (*standard-input* "/dev/null"
+                                              :direction :input
+                                              :element-type '(unsigned-byte 8))
+              (let ((*error-output* (make-string-output-stream)))
+                (with-replaced-function
+                    (loom::%run-event-loop
+                     (lambda (stream)
+                       (declare (ignore stream))
+                       (error "event loop failed")))
+                  (expect (loom::%run-loom invocation :fd fd) :to-equal 1))
+                (expect (get-output-stream-string *error-output*)
+                        :to-contain "event loop failed"))))
         (cl-tty-kit:close-pty pty)))))
+
+  (it
+    "passes process arguments to cl-cli and exits successfully"
+    (let* ((root (namestring
+                  (asdf:system-source-directory (asdf:find-system "loom"))))
+           (parent (host-kit:parent-directory-pathname (pathname root)))
+           (program (or (host-kit:find-program "sbcl")
+                        (error "SBCL is required for the MAIN child-process test")))
+           (sibling-names '("cl-tty-kit"
+                            "cl-host-kit"
+                            "cl-history-kit"
+                            "cl-prolog"
+                            "cl-cli"
+                            "cl-regex-kit"
+                            "cl-boundary-kit"
+                            "cl-concurrent-kit"
+                            "cl-weave"
+                            "cl-date-kit"
+                            "cl-codec-kit"
+                            "cl-parser-kit"))
+           (sibling-directories
+             (mapcar (lambda (name)
+                       (namestring
+                        (merge-pathnames
+                         (format nil "~A/" name)
+                         parent)))
+                     sibling-names))
+           (registry-directives
+             (if (let ((source-registry (host-kit:getenv "CL_SOURCE_REGISTRY")))
+                   (and source-registry (plusp (length source-registry))))
+                 (format nil "(list :directory ~S)" root)
+                 (format nil
+                         "(list :directory ~S)~{ (list :directory ~S)~}"
+                         root
+                         sibling-directories)))
+           (form (format nil
+                         "(progn
+                            (asdf:initialize-source-registry
+                             (list :source-registry ~A
+                                   :inherit-configuration))
+                            (asdf:load-system \"loom\")
+                            (setf sb-ext:*posix-argv*
+                                  (list \"loom\" \"--version\"))
+                            (funcall (symbol-function
+                                      (find-symbol \"MAIN\" \"LOOM\"))))"
+                         registry-directives))
+           (result (host-kit:run-program
+                    program
+                    (list "--noinform" "--non-interactive"
+                          "--eval" "(require :asdf)"
+                          "--eval" form)
+                    :timeout 30)))
+      (expect (host-kit:process-result-timed-out-p result) :to-be nil)
+      (expect (host-kit:process-result-exit-code result) :to-be 0)
+      (expect (host-kit:process-result-stdout result) :to-contain "loom")))
 
 (describe
   "%startup-file-and-root"
@@ -332,6 +452,22 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (multiple-value-bind (file root) (loom::%startup-file-and-root (namestring dir))
         (expect file :to-be nil)
         (expect root :to-equal (namestring dir)))))
+
+  (it
+    "rejects a missing path as a CLI positional error"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "missing.txt" dir)))
+        (handler-case
+            (progn
+              (loom::%startup-file-and-root (namestring path))
+              (error "Expected a missing path to be rejected"))
+          (cl-cli:cli-invalid-positional-value (condition)
+            (expect (cl-cli:cli-invalid-positional-value-name condition)
+                    :to-equal "PATH")
+            (expect (cl-cli:cli-invalid-positional-value-value condition)
+                    :to-equal (namestring path))
+            (expect (cl-cli:cli-invalid-positional-value-cause condition)
+                    :to-be nil))))))
 
   (it
     "defaults to \".\" as root when given no argument"

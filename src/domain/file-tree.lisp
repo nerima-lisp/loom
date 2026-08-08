@@ -20,8 +20,8 @@
 ;;; shown at depth 0). It defaults to a pure stub that reports every
 ;;; directory as childless, so a FILE-TREE is usable standalone (e.g. in
 ;;; tests) with no filesystem access at all. The infrastructure layer
-;;; overrides it post-construction, e.g.
-;;;   (setf (file-tree-child-lister tree) #'real-cl-host-kit-backed-lister)
+;;; overrides it post-construction with the infrastructure lister, e.g.
+;;;   (setf (file-tree-child-lister tree) #'loom-fs-list-directory)
 ;;; Expand/collapse state is a hash-table of currently-expanded directory
 ;;; paths (EQUAL-keyed, so string or pathname paths both work as long as a
 ;;; given tree is consistent about which it uses).

@@ -16,6 +16,12 @@ src/
 └── main.lisp        CLI definition and the raw-terminal event loop.
 ```
 
+The piece-table representation and pure mutation/range helpers live in
+`src/domain/buffer-storage.lisp`; `src/domain/buffer.lisp` exposes the buffer
+protocol and position/span types over that state. Keeping these responsibilities
+separate makes the representation invariants independently testable without
+introducing an I/O boundary into the domain layer.
+
 ## Boundaries
 
 `src/domain/` owns editor invariants and does not perform terminal or
@@ -36,6 +42,14 @@ filesystem packages directly, and the M-x registry uses the local
 `command-spec` table directly.
 There is no wrapper layer whose only purpose is to hide a package that already
 provides the required operation.
+
+`src/infrastructure/concurrent-runtime.lisp` owns the bounded asynchronous
+directory-listing runtime. It uses `cl-concurrent-kit` workers, a bounded
+result channel, cache/pending/error tables, and per-directory generations.
+Workers perform listing only; `loom-concurrent-runtime-drain` applies results
+on the render/event-loop lane, and invalidation advances a generation so stale
+results cannot overwrite newer state. The default runtime is four workers with
+a queue capacity of 64, so the in-flight bound is 68.
 
 Commands in `src/application/commands-*.lisp` are zero-argument functions
 that read and mutate `*editor-state*`, which lets keymaps store bare function
@@ -69,6 +83,16 @@ and dispatch to minibuffer, self-insert, or the global keymap.
   bounded by the editor's regex search timeout.
 - **[cl-cli](https://github.com/nerima-lisp/cl-cli)** parses the root
   positional argument and the `--help`/`--version` options in `main.lisp`.
+- **[cl-concurrent-kit](https://github.com/nerima-lisp/cl-concurrent-kit)**
+  supplies the executor, bounded channel, promises, and non-blocking submit
+  operation used by the concurrent file-tree runtime.
+
+The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
+`cl-host-kit`, `cl-history-kit`, `cl-prolog`, `cl-cli`, `cl-regex-kit`,
+`cl-boundary-kit`, and `cl-concurrent-kit`. The test system adds `cl-weave` and
+`cl-date-kit`; the latter is used by the concurrency tests and benchmark
+timeouts. The Nix flake pins the runtime and test inputs and supplies the
+development shell used by the commands below.
 
 ## Test Suite
 
@@ -78,15 +102,22 @@ The `loom/test` ASDF system is run by the same script locally and in Nix:
 nix develop -c sbcl --script run-tests.lisp
 ```
 
+The `loom/test` ASDF component order is:
+
+```text
+package, protocol-test, buffer-test, terminal-renderer-test,
+filesystem-test, window-test, keymap-test, file-tree-test,
+minibuffer-test, commands-test, commands-movement-test,
+commands-editing-test, commands-misc-test, commands-keybindings-test,
+layout-test, main-test, concurrent-runtime-test, advanced-test,
+unit/cli-test, integration/editor-flow-test
+```
+
 The suite uses cl-weave's ordinary assertions and its advanced registrations:
 `it-each`, `it-property`, `it-fuzz`, `with-continuation-values`,
-`with-soft-assertions`, and `with-replaced-function`. `main-test.lisp` mostly
-uses controlled terminal seams and also includes a real-PTY smoke test. The
-integrated tree currently reports 313 passed tests with no skips, todos,
-failures, or errors. `t/unit/` contains CLI parsing tests and `t/integration/`
-contains disk-backed editor-flow tests; both are loaded by
-`run-tests.lisp`. Process-level CLI/PTY E2E is kept separate because it
-launches the built executable as an external process:
+`with-soft-assertions`, and `with-replaced-function`. The process-level CLI/PTY
+E2E suite remains separate because it launches the built executable as an
+external process:
 
 ```sh
 nix build
@@ -102,6 +133,22 @@ LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/covera
 
 The report's SB-COVER expression and branch totals are recorded separately.
 Branch coverage does not establish full expression coverage; the generated
-report is the source of truth for uncovered forms. `nix flake check
+report is the source of truth for uncovered forms. SB-COVER is process-local,
+so top-level declarations and the child-process-only `loom:main` path can
+remain unexecuted in the report; those forms are reported rather than hidden.
+`nix flake check
 --print-build-logs` additionally runs the test, package, formatter, and strict
 MkDocs documentation checks.
+
+The concurrency benchmark compares synchronous directory listing with the
+runtime's bounded prefetch/drain path over eight synthetic directory paths. It
+prints synchronous time, asynchronous submit time, asynchronous total time,
+accepted task count, and the derived speedup:
+
+```sh
+nix develop -c sbcl --script scripts/benchmark-concurrency.lisp
+```
+
+The benchmark is observational and does not establish a performance target;
+the 2026 refactor objective is the bounded, race-safe file-tree runtime and
+its test coverage, not an unimplemented feature claim.

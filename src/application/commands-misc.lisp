@@ -28,12 +28,11 @@
   `(list :name ,name :command ',command :keys ',keys))
 
 (defmacro define-command-specs (&body specs)
-  "Define the command registry and rulebase from COMMAND-SPEC forms.
+  "Define the command registry from COMMAND-SPEC forms.
 
-Each spec is the single source for the command's extended-command name and
-default key sequences. NIL names describe keymap-only commands such as M-x
-itself. The explicit registry is used for lookup; the generated rulebase is
-an internal implementation detail for command dispatch."
+Each spec provides an extended-command name and default key sequence data.
+NIL names describe keymap-only commands such as M-x itself. The explicit
+registry is used for lookup."
   (let ((entries
           (mapcar
            (lambda (spec)
@@ -61,14 +60,7 @@ an internal implementation detail for command dispatch."
              (lambda (entry)
                (destructuring-bind (name command keys) entry
                  `(list :name ,name :command ',command :keys ',keys)))
-             entries)))
-       (cl-prolog:define-rulebase *extended-command-rulebase*
-         ,@(mapcar
-            (lambda (entry)
-              (destructuring-bind (name command keys) entry
-                (declare (ignore keys))
-                `((extended-command ,name ,command))))
-            (remove nil entries :key (function first)))))))
+             entries))))))
 
 (progn
   (define-command-specs
@@ -194,7 +186,6 @@ src/main.lisp to exit cleanly."))
      :test (function eq)))
 
   ;; A CL-PROLOG rulebase keeps the quit-prompt answer table declarative.
-  ;; The COMMAND-SPEC macro emits a rulebase as inspectable metadata, while
   ;; %FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
   (cl-prolog:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)

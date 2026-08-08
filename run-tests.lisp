@@ -12,11 +12,10 @@
 ;;;;
 ;;;; Dependency resolution mirrors nshell's run-tests.lisp: inside `nix
 ;;;; develop` or the Nix sandbox the systems are already on
-;;;; CL_SOURCE_REGISTRY, and for a plain ghq checkout the parent directory
-;;;; tree is registered so sibling checkouts (../cl-tty-kit, ../cl-host-kit,
-;;;; ../cl-history-kit, ../cl-weave, ...) are found automatically. An
-;;;; explicit CL_SOURCE_REGISTRY still wins, because the existing
-;;;; configuration is inherited rather than replaced.
+;;;; CL_SOURCE_REGISTRY, and for a plain ghq checkout only the sibling roots
+;;;; required by loom are registered. When CL_SOURCE_REGISTRY is already set,
+;;;; those local roots are not prepended: otherwise a dirty sibling checkout
+;;;; could shadow pinned Nix inputs.
 ;;;;
 ;;;; SB-EXT:WITH-TIMEOUT bounds the whole load-and-run: `flake.nix`'s
 ;;;; `checks.default` already has cl-nix-forge's own `timeoutSeconds`, but a
@@ -26,30 +25,61 @@
 
 (require :asdf)
 
-(let* ((root (truename #P"./"))
-       (parent (uiop:pathname-parent-directory-pathname root)))
+(let* ((script (or *load-truename*
+                   (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
+       (script-path (truename script))
+       (root (make-pathname :name nil
+                            :type nil
+                            :version nil
+                            :defaults script-path))
+       (directory (pathname-directory root))
+       (parent (make-pathname
+                :directory (if (rest directory) (butlast directory) directory)
+                :name nil
+                :type nil
+                :version nil
+                :defaults root))
+       (sibling-names '("cl-tty-kit"
+                        "cl-host-kit"
+                        "cl-history-kit"
+                        "cl-prolog"
+                        "cl-cli"
+                        "cl-regex-kit"
+                        "cl-boundary-kit"
+                        "cl-concurrent-kit"
+                        "cl-weave"
+                        "cl-date-kit"
+                        "cl-codec-kit"
+                        "cl-parser-kit"))
+       (sibling-directories
+         (mapcar (lambda (name)
+                   (merge-pathnames
+                    (format nil "~A/" name)
+                    parent))
+                 sibling-names))
+       (source-registry (sb-ext:posix-getenv "CL_SOURCE_REGISTRY")))
   (asdf:initialize-source-registry
    `(:source-registry
      (:directory ,root)
-     (:tree ,parent)
-     :inherit-configuration))
-  ;; Warn rather than abort on compile-file warnings: the suite's own
-  ;; failures are the signal this script reports, and a style warning in a
-  ;; dependency should not masquerade as a test failure.
-  (setf asdf:*compile-file-warnings-behaviour* :warn
-        asdf:*compile-file-failure-behaviour* :warn)
-  (let ((passed-p
-          (handler-case
-              (sb-ext:with-timeout 600
-                  (asdf:load-system "loom/test")
-                  (dolist (relative-path '(#P"t/unit/cli-test.lisp"
-                                           #P"t/integration/editor-flow-test.lisp"))
-                    (load (merge-pathnames relative-path root)))
-                  (uiop:symbol-call :loom/test '#:run-tests))
-            (sb-ext:timeout ()
-              (format *error-output* "~&loom/test: timed out after 600s~%")
-              nil)
-            (error (condition)
-              (format *error-output* "~&loom/test failed: ~A~%" condition)
-              nil))))
-    (sb-ext:exit :code (if passed-p 0 1))))
+     ,@(unless (and source-registry (plusp (length source-registry)))
+         (mapcar (lambda (directory)
+                   `(:directory ,directory))
+                 sibling-directories))
+     :inherit-configuration)))
+
+(asdf:load-system "cl-host-kit")
+
+;; Warn rather than abort on compile-file warnings: the suite's own
+;; failures are the signal this script reports, and a style warning in a
+;; dependency should not masquerade as a test failure.
+(setf asdf:*compile-file-warnings-behaviour* :warn
+      asdf:*compile-file-failure-behaviour* :error)
+(let ((passed-p
+        (handler-case
+            (sb-ext:with-timeout 600
+                (asdf:load-system "loom/test")
+                (funcall (symbol-function (find-symbol "RUN-TESTS" :loom/test))))
+          (sb-ext:timeout ()
+            (format *error-output* "~&loom/test: timed out after 600s~%")
+            nil))))
+  (sb-ext:exit :code (if passed-p 0 1)))

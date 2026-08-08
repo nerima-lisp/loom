@@ -59,7 +59,7 @@ LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
-The integrated suite currently reports 313 passed tests with no skips, todos,
+The integrated suite currently reports 354 passed tests with no skips, todos,
 failures, or errors. `t/unit/` covers CLI parsing, `t/integration/` covers
 disk-backed editor flows, and the suite includes an internal real-PTY smoke
 test. The separate `t/e2e/loom-test.py` runner requires the `nix build`
@@ -67,7 +67,10 @@ artifact and validates the built executable as an external PTY process.
 
 The coverage command reports the measured SB-COVER expression and branch
 totals separately. A branch result does not establish full expression
-coverage; inspect the generated report for uncovered forms.
+coverage; inspect the generated report for uncovered forms. SB-COVER is
+process-local, so top-level declarations and the child-process-only
+`loom:main` path can remain unexecuted in the report; these forms are exposed
+instead of being excluded from the measurement.
 
 Inside `nix develop`, load the system into a REPL:
 

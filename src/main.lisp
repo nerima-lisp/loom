@@ -214,9 +214,17 @@ unchanged when the terminal size could not be read or has not changed."
   "Return the existing startup file, if ARGUMENT names one, and the file-tree root.\n\nAn existing regular file opens in the selected window while its containing\ndirectory becomes the file-tree root. A directory (or no argument) retains\nthe scratch buffer and is itself the root."
   (let* ((root (or argument "."))
          (resolved (probe-file root)))
-    (if (and resolved (not (uiop:directory-pathname-p resolved)))
-        (values resolved (make-pathname :name nil :type nil :defaults resolved))
-        (values nil root))))
+    (cond
+      ((and argument (null resolved))
+       (error 'cl-cli:cli-invalid-positional-value
+              :message (format nil "PATH does not exist: ~A" argument)
+              :name "PATH"
+              :value argument
+              :cause nil))
+      ((and resolved (not (host-kit:directory-pathname-p resolved)))
+       (values resolved (make-pathname :name nil :type nil :defaults resolved)))
+      (t
+       (values nil root)))))
 
 (defun %initialize-editor-state (path-argument)
   "Build a fresh *EDITOR-STATE* around the startup buffer and supporting

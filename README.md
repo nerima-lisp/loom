@@ -15,7 +15,9 @@ for quit-prompt resolution,
 [`cl-regex-kit`](https://github.com/nerima-lisp/cl-regex-kit) for regular-
 expression search and replace, and
 [`cl-cli`](https://github.com/nerima-lisp/cl-cli) for argv parsing (`--help`/
-`--version`).
+`--version`). [`cl-concurrent-kit`](https://github.com/nerima-lisp/cl-concurrent-kit)
+provides the executor, channel, and promise primitives used by the bounded
+concurrent file-tree runtime.
 
 Implemented today: buffer editing (insert/delete/undo, Emacs-style
 movement/kill-ring/yank), regular-expression search and replace, a working
@@ -37,7 +39,8 @@ The repository is built and tested with [Nix flakes](https://nixos.wiki/wiki/Fla
 ```sh
 # Enter a development shell with SBCL and the runtime/test dependencies
 # (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog, cl-cli, cl-regex-kit,
-# cl-boundary-kit, cl-weave) on CL_SOURCE_REGISTRY.
+# cl-boundary-kit, cl-concurrent-kit) on CL_SOURCE_REGISTRY.
+# The test system additionally needs cl-weave and cl-date-kit.
 nix develop
 
 # Inside the shell:
@@ -60,12 +63,16 @@ nix fmt -- --ci
 
 # Measure coverage; keep the generated report outside the checkout:
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
+
+# Compare synchronous directory listing with the concurrent file-tree runtime:
+nix develop -c sbcl --script scripts/benchmark-concurrency.lisp
 ```
 
 Without Nix: put `loom` alongside checkouts of `cl-tty-kit`, `cl-host-kit`,
 `cl-history-kit`, `cl-prolog`, `cl-cli`, `cl-regex-kit` (and its own
-`cl-parser-kit` dependency), `cl-boundary-kit`, and `cl-weave` (e.g. all under
-the same `ghq`-style parent directory), then either
+`cl-parser-kit` dependency), `cl-boundary-kit`, `cl-concurrent-kit`, and
+`cl-weave` plus `cl-date-kit` for the test system (e.g. all under the same
+`ghq`-style parent directory), then either
 
 ```sh
 sbcl --script run-tests.lisp
@@ -76,20 +83,39 @@ or, from a REPL:
 ```lisp
 (push #P"/path/to/loom/" asdf:*central-registry*)
 (asdf:load-system "loom/test")
-(uiop:symbol-call :loom/test '#:run-tests)
+(funcall (symbol-function (find-symbol "RUN-TESTS" :loom/test)))
 ```
 
 ## Default keys
 
-- `C-f` / `C-b`, `C-n` / `C-p`, `C-a` / `C-e`: move point.
-- `Enter`, `C-d`, Backspace, `C-o`: insert a newline, delete, or open a line; `C-x u`: undo.
-- `C-k`, `C-w`, `C-y`: kill line or region, then yank.
+- `C-f` / `C-b`, `C-n` / `C-p`, `M-f` / `M-b`, `C-a` / `C-e`, `M-<` / `M->`,
+  `C-v` / `M-v`: move point, by word, by line, to a buffer boundary, or scroll.
+- `Enter`, `C-d`, Backspace, `C-o`: insert a newline, delete, or open a line;
+  `C-x u`: undo.
+- `C-k`, `M-d`, `M-Backspace`, `C-w`: kill a line, word, backward word, or
+  region; `C-y`: yank.
+- `C-Space`, `C-x C-x`, `C-x h`: set the mark, exchange point and mark, or mark
+  the whole buffer.
 - `C-s`, `M-%`, `M-g g`: search, replace all matches, or go to a line. Search
   and replace text is a `cl-regex-kit` regular expression, not a literal
   substring; the replacement text itself stays literal.
-- `C-x C-f`, `C-x C-s`, `C-x C-c`: open, save, or quit. Quit asks how to handle every modified buffer.
+- `C-r`: search backward.
+- `C-x C-f`, `C-x C-s`, `C-x C-w`: open, save, or write the current buffer to a
+  path.
+- `C-x 2`, `C-x 3`, `C-x o`, `C-x 0`, `C-x 1`, `C-x b`: split, move between,
+  delete, delete-other, or switch windows.
+- `C-x C-t`, `C-c n`, `C-c p`, `C-c o`, `C-c c`, `C-c d`: open the file tree,
+  move to the next/previous entry, open, create, or delete an entry.
+- `C-g`: keyboard quit; `C-x C-c`: quit. Quit asks how to handle every
+  modified buffer.
 - `C-h` or `F1`: show the in-editor command reference.
-- `C-x 2`, `C-x 3`, `C-x o`: split windows or move to the next window.
+- `M-x`: run a command by its name through `execute-extended-command`; it is
+  registered by the same command-spec table as the default keybindings.
+
+The CLI accepts `--help`, `--version`, and one optional positional path. A file
+opens in the first window, a directory becomes the file-tree root, and no path
+defaults to `.`. `loom:main` delegates argument parsing to `cl-cli`, then runs
+the raw-terminal event loop until `C-x C-c` or end-of-input.
 
 ## Layout
 
@@ -99,7 +125,9 @@ or, from a REPL:
   `cl-regex-kit`-backed search/replace matching), window-tree layout, keymap
   dispatch, and file-tree state. Domain code does not perform terminal or
   filesystem I/O.
-- `src/infrastructure/` -- terminal rendering and filesystem access.
+- `src/infrastructure/` -- terminal rendering, filesystem access, and the
+  concurrent file-tree runtime. The runtime caches directory entries, bounds
+  submitted work, and applies worker results on the render lane.
   `cl-boundary-kit` supplies the filesystem boundary used by the normal
   operations (`*loom-filesystem*` is rebound to an in-memory fake in tests),
   while `cl-host-kit` is called directly for directory-entry classification
@@ -115,14 +143,20 @@ or, from a REPL:
 - `src/presentation/` -- screen composition (`compose-frame`): what to draw
   where, given the current `editor-state`.
 - `src/main.lisp` -- the `loom:main` entry point saved into the executable.
-- `t/` -- the 313-test `loom/test` suite, using
-  [`cl-weave`](https://github.com/nerima-lisp/cl-weave) (`describe`/`it`/`expect`,
-  `it-each`, `it-property`, `it-fuzz`, `with-continuation-values`,
-  `with-soft-assertions`, and `with-replaced-function`). `t/unit/` covers
-  CLI parsing, `t/integration/` covers disk-backed editor flows, and
-  `main-test` includes a real-PTY smoke test in addition to the fake-terminal
-  tests. `t/e2e/loom-test.py` separately launches the built executable through
-  a Unix PTY and covers the process-level CLI and edit/save/exit path:
+- `t/` -- the ASDF `loom/test` suite, using
+  [`cl-weave`](https://github.com/nerima-lisp/cl-weave) and `cl-date-kit`.
+  `loom.asd` loads `package`, `protocol-test`, `buffer-test`,
+  `terminal-renderer-test`, `filesystem-test`, `window-test`, `keymap-test`,
+  `file-tree-test`, `minibuffer-test`, `commands-test`,
+  `commands-movement-test`, `commands-editing-test`, `commands-misc-test`,
+  `commands-keybindings-test`, `layout-test`, `main-test`,
+  `concurrent-runtime-test`, `advanced-test`, `unit/cli-test`, and
+  `integration/editor-flow-test` in serial order. `run-tests.lisp` loads this
+  same `loom/test` system before calling `loom/test:run-tests`.
+  `main-test` includes a real-PTY smoke test in addition to fake-terminal tests.
+  `t/e2e/loom-test.py` is outside ASDF and separately launches the built
+  executable through a Unix PTY to cover the process-level CLI and edit/save/exit
+  path:
 
   ```sh
   nix build
@@ -139,7 +173,14 @@ or, from a REPL:
   its own 1800s `sb-ext:with-timeout`, since it force-recompiles loom and
   every sibling dependency under `sb-cover` instrumentation. Report the
   measured expression and branch totals separately; branch coverage is not a
-  substitute for expression coverage, and generated reports are not tracked.
+  substitute for expression coverage. SB-COVER is process-local, so the raw
+  report can retain top-level declaration forms and the child-process-only
+  `loom:main` path; those forms are reported rather than hidden. Generated
+  reports are not tracked.
+- `scripts/benchmark-concurrency.lisp` -- loads `loom`, submits eight directory
+  paths to the bounded runtime, drains worker results, and prints synchronous,
+  asynchronous, accepted-count, and speedup measurements. Run it with
+  `nix develop -c sbcl --script scripts/benchmark-concurrency.lisp`.
 - `flake.nix` -- Nix packaging: `packages.default` (the built binary),
   `checks.default` (the test suite), `checks.build`, `checks.formatting`,
   `checks.docs`, and `devShells.default`. It materializes the source root

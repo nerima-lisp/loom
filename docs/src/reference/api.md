@@ -1,9 +1,11 @@
 # API reference
 
-Every symbol exported from the `loom` package (`src/package.lisp`). Line and
-column numbers throughout are zero-based; a `(line . column)` pair denotes a
-position *between* characters, exactly like Emacs point, so end positions in
-a region are exclusive.
+This page documents the selected public API used by the editor. The complete
+export contract is `src/package.lisp`; a symbol omitted from this page is not
+private merely because it is not described here. Line and column numbers
+throughout are zero-based; a `(line . column)` pair denotes a position
+*between* characters, exactly like Emacs point, so end positions in a region
+are exclusive.
 
 ## Buffer
 
@@ -552,8 +554,8 @@ Delete the entry at `path` from disk.
 ```
 
 List `path`'s direct children as `(child-path . :file-or-:directory)`
-conses, via `cl-host-kit`. The default `file-tree` child-lister used to
-back real, disk-backed sidebar listings.
+conses, via `cl-host-kit`. This is the infrastructure lister used for real,
+disk-backed sidebar listings.
 
 ## Editor state
 
@@ -630,6 +632,122 @@ Return `state`'s `loom-renderer-*` protocol object used to draw each frame.
 
 Return `state`'s Emacs-style kill ring: a list of killed strings, most
 recent first, that `C-y`/`M-y` consume.
+
+## Concurrent file-tree runtime
+
+The concurrent runtime is a bounded directory-listing cache built on
+`cl-concurrent-kit`. `main` performs the initial root listing synchronously,
+submits uncached root and expanded directories to worker threads, and applies
+available results on the render lane. Generation numbers prevent a result for
+an invalidated directory from replacing newer cache state. This runtime is
+specific to file-tree listings; it is not a general background editor or LSP
+runtime.
+
+### `make-loom-concurrent-runtime`
+
+```lisp
+(loom:make-loom-concurrent-runtime
+  &key directory-lister (parallelism 4) (queue-capacity 64))
+```
+
+Create a runtime. `directory-lister` defaults to
+`loom-fs-list-directory`; the worker pool has `parallelism` workers and a
+bounded submission queue of `queue-capacity`. The total in-flight bound is
+`parallelism + queue-capacity`. Returns the runtime.
+
+### `loom-concurrent-runtime-directory-entries`
+
+```lisp
+(loom:loom-concurrent-runtime-directory-entries runtime path)
+  => (values entries present-p)
+```
+
+Read the cached direct entries for `path`. The second value is true when a
+cache entry exists, including an empty directory.
+
+### `loom-concurrent-runtime-directory-error`
+
+```lisp
+(loom:loom-concurrent-runtime-directory-error runtime path)
+  => (values condition present-p)
+```
+
+Read a cached directory-listing error for `path`. The second value indicates
+whether an error was recorded.
+
+### `loom-concurrent-runtime-prime-directory`
+
+```lisp
+(loom:loom-concurrent-runtime-prime-directory runtime path entries)
+```
+
+Seed `path`'s cache from a synchronous listing, advance its generation, and
+clear its cached error. Returns `entries`.
+
+### `loom-concurrent-runtime-invalidate-directory`
+
+```lisp
+(loom:loom-concurrent-runtime-invalidate-directory runtime path)
+```
+
+Advance `path`'s generation and remove its cached entries, error, and pending
+promise. Returns the runtime.
+
+### `loom-concurrent-runtime-invalidate-path`
+
+```lisp
+(loom:loom-concurrent-runtime-invalidate-path runtime path)
+```
+
+Invalidate `path` and its parent directory, then return the runtime. File-tree
+mutations use this to make both a changed entry and its containing listing
+stale.
+
+### `loom-concurrent-runtime-prefetch`
+
+```lisp
+(loom:loom-concurrent-runtime-prefetch runtime paths)
+  => (values promises accepted-count)
+```
+
+Try to submit uncached, non-pending paths to the bounded worker pool. Returns
+the promises for accepted submissions and the number accepted. A full queue,
+an already cached/pending path, or a shut-down runtime causes a path to be
+skipped rather than blocking the render lane.
+
+### `loom-concurrent-runtime-drain`
+
+```lisp
+(loom:loom-concurrent-runtime-drain runtime)
+  => applied-count
+```
+
+Apply all currently available worker results on the calling thread and
+return the number applied. Results from older generations are discarded.
+
+### `loom-concurrent-runtime-shutdown`
+
+```lisp
+(loom:loom-concurrent-runtime-shutdown runtime)
+```
+
+Stop the worker pool, close the result channel, and return `runtime`.
+Shutdown is idempotent.
+
+## CLI and commands
+
+`loom:main` delegates argument parsing to `cl-cli` using application name
+`loom` and version `0.1.0`. The CLI accepts `--help`/`-h`,
+`--version`/`-V`, and one optional positional `path`; a file opens in the
+first window, a directory becomes the file-tree root, and no path defaults to
+`.`. There are no subcommands.
+
+`install-default-keybindings` installs the command registry's bindings into
+the top-level keymap. The registry includes movement, editing, search/replace,
+file, window, file-tree, help, keyboard-quit, and quit commands. `M-x` invokes
+`execute-extended-command`, which prompts for a command name and dispatches a
+registered command. Command functions are intentionally not exported; use the
+keymap or `M-x` entry points for interactive invocation.
 
 ## Entry point
 

@@ -8,8 +8,10 @@ implemented today from what is deliberately deferred.
 - **Buffer editing** -- insert/delete, Emacs-style kill-ring/yank, multi-level
   undo grouped by command boundary.
 - **Movement** -- character/line motion, beginning/end of line.
-- **Emacs-style keybindings** -- `install-default-keybindings` binds the
-  default `C-x`/`C-c` prefix sequences; see
+- **Emacs-style keybindings** -- `install-default-keybindings` installs the
+  command registry's movement, editing, search, file, window, file-tree,
+  help, keyboard-quit, and quit bindings, including the `C-x`/`C-c` prefix
+  sequences; see
   [`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp).
 - **Window management** -- horizontal/vertical splits (`C-x 2` / `C-x 3`),
   window selection (`C-x o`), per-window buffer switching (`C-x b`).
@@ -25,21 +27,53 @@ implemented today from what is deliberately deferred.
   minibuffer history uses `cl-history-kit` directly.
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
-- **`--help` / `--version` CLI flags** -- built on `cl-cli`; see `*loom-app*`
-  in [`src/main.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/main.lisp).
-- **Measured test and coverage paths** -- the integrated tree currently
-  reports 313 passed tests with no skips, todos, failures, or errors when the
-  regression suite is run with
-  `nix develop -c sbcl --script run-tests.lisp`. The cl-weave suite includes
-  `it-each`, `it-property`, `it-fuzz`, continuation observations, soft
-  assertions, function replacement, and a real-PTY smoke test. Unit tests are
-  under `t/unit/`, integration tests are under `t/integration/`, and
-  `t/e2e/loom-test.py` launches the built executable through a Unix PTY to
-  verify the process-level CLI and edit/save/exit path. Measure coverage with
+- **Bounded concurrent file-tree runtime** -- `cl-concurrent-kit` workers
+  prefetch uncached directory listings, while generation checks, cache
+  invalidation, and render-lane draining prevent stale results from changing
+  editor state. The default is four workers with a queue capacity of 64.
+- **CLI** -- built on `cl-cli`; `--help`/`-h`, `--version`/`-V`, and one
+  optional positional path are supported. A file opens in the first window,
+  a directory becomes the file-tree root, and no path defaults to `.`. See
+  `*loom-app*` in
+  [`src/main.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/main.lisp).
+- **Integrated test, coverage, and benchmark paths** -- the `loom/test` ASDF
+  system loads these components in order:
+
+  ```text
+  package, protocol-test, buffer-test, terminal-renderer-test,
+  filesystem-test, window-test, keymap-test, file-tree-test,
+  minibuffer-test, commands-test, commands-movement-test,
+  commands-editing-test, commands-misc-test, commands-keybindings-test,
+  layout-test, main-test, concurrent-runtime-test, advanced-test,
+  unit/cli-test, integration/editor-flow-test
+  ```
+
+  Run the integrated suite with
+  `nix develop -c sbcl --script run-tests.lisp`. The process-level CLI/edit/
+  save/exit checks remain in `t/e2e/loom-test.py` and run against the built
+  executable:
+
+  ```sh
+  nix build
+  LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
+  ```
+
+  Measure coverage with
   `LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script
   scripts/coverage.lisp`; record SB-COVER expression and branch totals
-  separately rather than treating branch coverage as a full-coverage
-  guarantee.
+  separately. SB-COVER is process-local, so top-level declarations and the
+  child-process-only `loom:main` path can remain unexecuted; inspect and report
+  those forms rather than hiding them. Compare synchronous listing with the
+  concurrent runtime using
+  `nix develop -c sbcl --script scripts/benchmark-concurrency.lisp`, which
+  reports timings, accepted tasks, and derived speedup.
+
+## 2026 refactor status
+
+The bounded concurrent file-tree runtime and its ASDF-integrated
+`concurrent-runtime-test` are implemented in the current source. This marks
+the runtime portion of the 2026 refactor objective as present; it does not
+make the deferred editor features below complete.
 
 ## Not yet implemented
 

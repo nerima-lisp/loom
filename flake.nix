@@ -17,7 +17,7 @@
     # warning. See ../nshell/flake.nix for the sibling L4-application
     # migration this one mirrors.
     cl-nix-forge = {
-      url = "github:nerima-lisp/cl-nix-forge/v0.4.2";
+      url = "github:nerima-lisp/cl-nix-forge/v0.5.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -30,7 +30,7 @@
     # without it, it would drag in its own nixpkgs, inflating flake.lock and
     # rebuilding the same derivations.
     cl-weave = {
-      url = "github:nerima-lisp/cl-weave/v1.2.0";
+      url = "github:nerima-lisp/cl-weave/v1.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -41,29 +41,28 @@
     # non-flake input has no inputs of its own, so it cannot contribute a
     # second nixpkgs to flake.lock at all.
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.4.0";
+      url = "github:nerima-lisp/cl-tty-kit/v1.5.0";
       flake = false;
     };
-    # Not a dependency loom names anywhere: cl-tty-kit v1.4.0's own
-    # `:depends-on ("cl-codec-kit")` needs it, and `lispDerivation` resolves a
-    # system's dependencies only from the `lispDependencies` it is handed, so
-    # a transitive edge has to be spelled here (see `siblingsFor` below) or
-    # the build stops with `Component "cl-codec-kit" not found, required by
-    # #<SYSTEM "cl-tty-kit">`.
+    # cl-tty-kit v1.5.0's own `:depends-on` entries need these transitive
+    # inputs, and `lispDerivation` resolves a system's dependencies only from
+    # the `lispDependencies` it is handed, so they have to be spelled here
+    # (see `siblingsFor` below) or the build stops with missing component
+    # errors.
     cl-codec-kit = {
-      url = "github:nerima-lisp/cl-codec-kit/v0.4.0";
+      url = "github:nerima-lisp/cl-codec-kit/v0.5.0";
       flake = false;
     };
     cl-host-kit = {
-      url = "github:nerima-lisp/cl-host-kit/v0.3.0";
+      url = "github:nerima-lisp/cl-host-kit/v0.3.1";
       flake = false;
     };
     cl-history-kit = {
-      url = "github:nerima-lisp/cl-history-kit/v1.0.2";
+      url = "github:nerima-lisp/cl-history-kit/v1.0.4";
       flake = false;
     };
     cl-prolog = {
-      url = "github:nerima-lisp/cl-prolog/v1.4.0";
+      url = "github:nerima-lisp/cl-prolog/v1.4.3";
       flake = false;
     };
     cl-cli = {
@@ -86,11 +85,11 @@
     # `:depends-on ("cl-parser-kit")` needs it, same transitive-edge
     # situation cl-codec-kit is in above for cl-tty-kit.
     cl-parser-kit = {
-      url = "github:nerima-lisp/cl-parser-kit/v1.0.3";
+      url = "github:nerima-lisp/cl-parser-kit/v1.1.1";
       flake = false;
     };
     cl-boundary-kit = {
-      url = "github:nerima-lisp/cl-boundary-kit/v2.1.0";
+      url = "github:nerima-lisp/cl-boundary-kit/v2.3.0";
       flake = false;
     };
 
@@ -123,33 +122,30 @@
     let
       lib = nixpkgs.lib;
 
-      # A Git-backed flake source can omit newly split, untracked ASDF
-      # components. Re-materialize the worktree before cl-nix-forge's
-      # fileset filter runs, while retaining its .asd/.lisp allowlist. The
-      # filter also keeps .git and generated output out of the source hash.
-      sourceRoot =
-        /.
-        + builtins.unsafeDiscardStringContext "${builtins.path {
-          path = ./.;
-          name = "loom-lisp-source";
-          filter =
-            path: type:
-            let
-              pathName = builtins.baseNameOf (toString path);
-              sourceFile = lib.hasSuffix ".asd" (toString path) || lib.hasSuffix ".lisp" (toString path);
-            in
-            (
-              type == "directory"
-              && !(builtins.elem pathName [
-                ".git"
-                ".serena"
-                ".worktrees"
-                "coverage"
-                "result"
-              ])
-            )
-            || (type == "regular" && sourceFile);
-        }}";
+      # Keep every tracked ASDF component, including split test files, in the
+      # filtered source passed to cl-nix-forge. The filter also keeps .git and
+      # generated output out of the source hash.
+      sourceRoot = builtins.path {
+        path = ./.;
+        name = "loom-lisp-source";
+        filter =
+          path: type:
+          let
+            pathName = builtins.baseNameOf (toString path);
+            sourceFile = lib.hasSuffix ".asd" (toString path) || lib.hasSuffix ".lisp" (toString path);
+          in
+          (
+            type == "directory"
+            && !(builtins.elem pathName [
+              ".git"
+              ".serena"
+              ".worktrees"
+              "coverage"
+              "result"
+            ])
+          )
+          || (type == "regular" && sourceFile);
+      };
 
       # x86_64-linux is what CI gates; aarch64-darwin is the development
       # machine. Every per-system output -- packages, checks, apps AND
@@ -213,7 +209,10 @@
           clTtyKit = sibling {
             name = "cl-tty-kit";
             source = cl-tty-kit;
-            dependencies = [ clCodecKit ];
+            dependencies = [
+              clCodecKit
+              clConcurrentKit
+            ];
           };
           clHostKit = sibling {
             name = "cl-host-kit";
@@ -287,9 +286,11 @@
       # release.yml refuses to publish a tag that disagrees with it.
       asd = ./loom.asd;
 
-      # `sourceRoot` is a real path, not the flake's string-like `self`, so
-      # `lib.fileset` can use it as the root and retain every split source.
-      root = sourceRoot;
+      # `root` is a path because cl-nix-forge passes it to lib.fileset. The
+      # filtered materialized source belongs in `src`, whose derivation API
+      # accepts the string-like result of builtins.path.
+      root = ./.;
+      src = sourceRoot;
 
       lispDependencies =
         ctx: with siblingsFor ctx; [

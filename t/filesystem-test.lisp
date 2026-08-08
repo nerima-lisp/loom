@@ -119,6 +119,86 @@ merge against the same root to land on the same entry."
         (expect (host-kit:directory-exists-p path) :to-be-truthy)
         (signals error (file-tree-create-directory nil path))))))
 
+  (it
+    "recovers when a parent mkdir loses a race to another directory"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((parent-path (merge-pathnames "race-parent/" dir))
+             (target-path (pathname (format nil "~Atarget [race]/"
+                                             (namestring parent-path))))
+             (native-parent (loom::%native-namestring parent-path))
+             (original-directory-p (symbol-function 'loom::%native-directory-p))
+             (original-mkdir (symbol-function 'loom::%native-mkdir))
+             (parent-checks 0))
+        (host-kit:create-directory parent-path)
+        (unwind-protect
+             (progn
+               (with-replaced-function
+                   (loom::%native-directory-p
+                    (lambda (native-path)
+                      (if (string= native-path native-parent)
+                          (if (= (incf parent-checks) 1)
+                              nil
+                              (funcall original-directory-p native-path))
+                          (funcall original-directory-p native-path))))
+                 (with-replaced-function
+                     (loom::%native-mkdir
+                      (lambda (native-path)
+                        (if (string= native-path native-parent)
+                            (error "simulated parent mkdir race")
+                            (funcall original-mkdir native-path))))
+                   (expect (file-tree-create-directory nil target-path)
+                           :to-equal target-path)))
+               (expect parent-checks :to-equal 2)
+               (expect (loom::%native-directory-p
+                        (loom::%native-namestring target-path))
+                       :to-be-truthy))
+          (ignore-errors (loom::%native-delete-path parent-path))))))
+
+  (it
+    "reports a target that appears after its existence check"
+    (host-kit:with-temporary-directory (dir)
+      (let ((target-path (pathname (format nil "~Atarget [appeared]/"
+                                            (namestring dir)))))
+        (sb-posix:mkdir (loom::%native-namestring target-path) #o777)
+        (unwind-protect
+             (progn
+               (with-replaced-function
+                   (loom::%native-path-exists-p
+                    (lambda (path)
+                      (declare (ignore path))
+                      nil))
+                 (signals error
+                   (file-tree-create-directory nil target-path)))
+               (expect (loom::%native-directory-p
+                        (loom::%native-namestring target-path))
+                       :to-be-truthy))
+          (ignore-errors (loom::%native-delete-path target-path))))))
+
+  (it
+    "propagates a parent mkdir error when the path is still not a directory"
+    (host-kit:with-temporary-directory (dir)
+      (let ((target-path (pathname (format nil "~Atarget [error]/"
+                                            (namestring dir)))))
+        (with-replaced-function
+            (loom::%native-directory-p
+             (lambda (native-path)
+               (declare (ignore native-path))
+               nil))
+          (signals error (file-tree-create-directory nil target-path)))
+        (expect (loom::%native-path-exists-p target-path) :to-be-falsy))))
+
+#+sbcl
+(describe
+  "native filesystem path helpers"
+  (it
+    "joins child names without adding a root slash to an empty directory"
+    (expect (loom::%native-child-namestring "" "entry.txt")
+            :to-equal "entry.txt")
+    (expect (loom::%native-child-namestring "/tmp/" "entry.txt")
+            :to-equal "/tmp/entry.txt")
+    (expect (loom::%native-child-namestring "/tmp" "entry.txt")
+            :to-equal "/tmp/entry.txt")))
+
 (describe
   "file-tree-rename"
   (it
@@ -312,4 +392,94 @@ merge against the same root to land on the same entry."
       (let ((entries (loom-fs-list-directory dir)))
         (expect (mapcar (lambda (entry) (file-namestring (car entry))) entries)
                 :to-equal
-                '("real.txt"))))))
+                '("real.txt")))))
+
+  (it
+    "round-trips literal namestrings with spaces, brackets, hashes, and Unicode"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((old-name "space [bracket] # 日本語.txt")
+             (new-name "renamed [bracket] # 日本語.txt")
+             (conflict-name "conflict [bracket] # 日本語.txt")
+             (old-path
+               (pathname (format nil "~A~A" (namestring dir) old-name)))
+             (new-path
+               (pathname (format nil "~A~A" (namestring dir) new-name)))
+             (conflict-path
+               (pathname (format nil "~A~A" (namestring dir) conflict-name))))
+        (expect (file-tree-create-file nil old-path) :to-equal old-path)
+        (signals error (file-tree-create-file nil old-path))
+        (let ((buffer (make-buffer :path old-path :initial-content "日本語の内容")))
+          (buffer-save buffer)
+          (expect (buffer-text (buffer-load old-path))
+                  :to-equal
+                  "日本語の内容"))
+        (let ((entries (loom-fs-list-directory dir)))
+          (expect (mapcar (lambda (entry) (file-namestring (car entry))) entries)
+                  :to-equal
+                  (list old-name))
+          (expect (cdr (first entries)) :to-be :file)
+          (expect (namestring (car (first entries)))
+                  :to-equal
+                  (namestring old-path)))
+        (expect (file-tree-create-file nil conflict-path) :to-equal conflict-path)
+        (let ((buffer
+                (make-buffer :path conflict-path :initial-content "destination")))
+          (buffer-save buffer))
+        (signals error (file-tree-rename nil old-path conflict-path))
+        (expect (buffer-text (buffer-load old-path))
+                :to-equal
+                "日本語の内容")
+        (expect (buffer-text (buffer-load conflict-path))
+                :to-equal
+                "destination")
+        (expect (file-tree-rename nil old-path new-path) :to-equal new-path)
+        (expect (buffer-text (buffer-load new-path))
+                :to-equal
+                "日本語の内容")
+        (file-tree-delete nil new-path)
+        (signals error (file-tree-delete nil new-path))
+        (signals error (file-tree-rename nil new-path old-path))
+        (file-tree-delete nil conflict-path)
+        (expect (loom-fs-list-directory dir) :to-be nil)
+        (let* ((directory-name "folder [bracket] # 日本語")
+               (directory-path
+                 (pathname (format nil "~A~A/" (namestring dir) directory-name)))
+               (nested-directory-name "nested folder [bracket] # 日本語")
+               (nested-directory-path
+                 (pathname (format nil "~A~A/"
+                                   (namestring directory-path)
+                                   nested-directory-name)))
+               (nested-name "nested [bracket] # 日本語.txt")
+               (nested-path
+                 (pathname (format nil "~A~A"
+                                   (namestring nested-directory-path)
+                                   nested-name))))
+          (expect (file-tree-create-directory nil nested-directory-path)
+                  :to-equal
+                  nested-directory-path)
+          (signals error (file-tree-create-directory nil nested-directory-path))
+          (expect (mapcar #'cdr (loom-fs-list-directory directory-path))
+                  :to-equal
+                  '(:directory))
+          (expect (file-tree-create-file nil nested-path)
+                  :to-equal
+                  nested-path)
+          (signals error (file-tree-create-file nil nested-path))
+          (expect (mapcar (lambda (entry) (file-namestring (car entry)))
+                          (loom-fs-list-directory nested-directory-path))
+                  :to-equal
+                  (list nested-name))
+          (host-kit:with-temporary-directory (outside)
+            (let* ((preserved (merge-pathnames "preserved.txt" outside))
+                   (link-name "link [bracket] # 日本語")
+                   (link-path
+                     (pathname (format nil "~A~A"
+                                       (namestring directory-path)
+                                       link-name))))
+              (host-kit:write-file-string "keep me" preserved)
+              (sb-posix:symlink (namestring outside) (namestring link-path))
+              (file-tree-delete nil directory-path)
+              (expect (loom-fs-list-directory dir) :to-be nil)
+              (expect (host-kit:path-exists-p preserved) :to-be-truthy)
+              (expect (host-kit:read-file-string preserved) :to-equal "keep me")
+              (signals error (file-tree-delete nil directory-path)))))))))

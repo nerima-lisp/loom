@@ -137,6 +137,93 @@
       (expect (window-height original) :to-equal 10)))
 
   (it
+    "selects the first leaf after deleting a selected nested window"
+    (let* ((tree (make-window-tree :scratch 20 10))
+           (left (window-tree-selected-window tree))
+           (right (window-split tree left :vertical))
+           (bottom (window-split tree right :horizontal)))
+      (expect (window-delete tree bottom) :to-be left)
+      (expect (window-tree-windows tree) :to-have-length 2)
+      (expect (window-tree-selected-window tree) :to-be left)))
+
+  (it
+    "keeps the current selection when deleting a different window"
+    (let* ((tree (make-window-tree :scratch 10 10))
+           (original (window-tree-selected-window tree))
+           (selected (window-split tree original :vertical)))
+      (expect (window-delete tree original) :to-be selected)
+      (expect (window-tree-windows tree) :to-have-length 1)
+      (expect (window-tree-selected-window tree) :to-be selected)))
+
+  (it
+    "ignores a missing target in a multi-window tree"
+    (let* ((tree (make-window-tree :scratch 10 10))
+           (original (window-tree-selected-window tree))
+           (selected (window-split tree original :vertical))
+           (missing (loom::make-window-leaf :buffer :missing)))
+      (expect (window-delete tree missing) :to-be selected)
+      (expect (window-tree-windows tree) :to-have-length 2)
+      (expect (window-tree-selected-window tree) :to-be selected)))
+
+  (it
+    "handles leaf targets and direct split children"
+    (let* ((leaf (loom::make-window-leaf :buffer :leaf))
+           (other (loom::make-window-leaf :buffer :other))
+           (node (loom::make-window-split-node
+                   :direction :vertical
+                   :children (list leaf other))))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node leaf other)
+        (expect result :to-be leaf)
+        (expect deleted :to-be-falsy))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node node leaf)
+        (expect result :to-be other)
+        (expect deleted :to-be-truthy))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node node other)
+        (expect result :to-be leaf)
+        (expect deleted :to-be-truthy))))
+
+  (it
+    "recurses through nested split nodes and reports missing targets"
+    (let* ((left (loom::make-window-leaf :buffer :left))
+           (middle (loom::make-window-leaf :buffer :middle))
+           (right (loom::make-window-leaf :buffer :right))
+           (nested (loom::make-window-split-node
+                    :direction :horizontal
+                    :children (list left middle)))
+           (root (loom::make-window-split-node
+                  :direction :vertical
+                  :children (list nested right))))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node root left)
+        (expect result :to-be root)
+        (expect deleted :to-be-truthy)
+        (expect (first (loom::window-split-node-children root))
+                :to-be middle)))
+    (let* ((left (loom::make-window-leaf :buffer :left))
+           (middle (loom::make-window-leaf :buffer :middle))
+           (right (loom::make-window-leaf :buffer :right))
+           (nested (loom::make-window-split-node
+                    :direction :horizontal
+                    :children (list middle right)))
+           (root (loom::make-window-split-node
+                  :direction :vertical
+                  :children (list left nested)))
+           (missing (loom::make-window-leaf :buffer :missing)))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node root right)
+        (expect result :to-be root)
+        (expect deleted :to-be-truthy)
+        (expect (second (loom::window-split-node-children root))
+                :to-be middle))
+      (multiple-value-bind (result deleted)
+          (loom::%window-delete-node root missing)
+        (expect result :to-be root)
+        (expect deleted :to-be-falsy))))
+
+  (it
     "collapses every other leaf while preserving the selected leaf"
     (let* ((tree (make-window-tree :scratch 20 10))
            (left (window-tree-selected-window tree))

@@ -77,3 +77,12 @@ BUFFER-LINE, not point/mark/undo state."
       (let ((cl-tty-renderer (loom::%loom-renderer-cl-tty-renderer renderer)))
         (expect (cl-tty-kit:renderer-width cl-tty-renderer) :to-equal 8)
         (expect (cl-tty-kit:renderer-height cl-tty-renderer) :to-equal 2)))))
+
+(describe
+  "loom-renderer-make-cursor"
+  (it
+    "creates a visible cursor at the origin by default"
+    (let ((cursor (loom-renderer-make-cursor (make-loom-renderer 10 4))))
+      (expect (cl-tty-kit:cursor-x cursor) :to-equal 0)
+      (expect (cl-tty-kit:cursor-y cursor) :to-equal 0)
+      (expect (cl-tty-kit:cursor-visible-p cursor) :to-be-truthy))))
