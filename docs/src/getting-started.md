@@ -72,10 +72,11 @@ Named registers are available through `C-x r s`, `C-x r i`, `C-x r SPC`, and
 
 The coverage command reports the measured SB-COVER expression and branch
 totals separately. A branch result does not establish full expression
-coverage; inspect the generated report for uncovered forms. SB-COVER is
-process-local, so top-level declarations and the child-process-only
-`loom:main` path can remain unexecuted in the report; these forms are exposed
-instead of being excluded from the measurement.
+coverage; inspect the generated report for uncovered forms. Instrumentation
+covers both Loom's `src/` and `packages/` trees. SB-COVER is process-local, so
+top-level declarations and the child-process-only `loom:main` path can remain
+unexecuted in the report; these forms are exposed instead of being excluded
+from the measurement.
 
 Inside `nix develop`, load the system into a REPL:
 

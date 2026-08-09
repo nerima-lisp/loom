@@ -166,6 +166,8 @@ LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/covera
 ```
 
 The report's SB-COVER expression and branch totals are recorded separately.
+The report is restricted to Loom's `src/` and `packages/` trees, so the
+package-by-feature implementation is included in the measurement.
 Branch coverage does not establish full expression coverage; the generated
 report is the source of truth for uncovered forms. SB-COVER is process-local,
 so top-level declarations and the child-process-only `loom:main` path can

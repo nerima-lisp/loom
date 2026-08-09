@@ -87,10 +87,11 @@ implemented today from what is deliberately deferred.
   Measure coverage with
   `LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script
   scripts/coverage.lisp`; record SB-COVER expression and branch totals
-  separately. SB-COVER is process-local, so top-level declarations and the
-  child-process-only `loom:main` path can remain unexecuted; inspect and report
-  those forms rather than hiding them. Compare synchronous listing with the
-  concurrent runtime using
+  separately. The report covers Loom's `src/` and `packages/` trees, including
+  package-by-feature code. SB-COVER is process-local, so top-level declarations
+  and the child-process-only `loom:main` path can remain unexecuted; inspect
+  and report those forms rather than hiding them. Compare synchronous listing
+  with the concurrent runtime using
   `nix develop -c sbcl --script scripts/benchmark-concurrency.lisp`, which
   reports timings, accepted tasks, and derived speedup.
 

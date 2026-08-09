@@ -222,12 +222,13 @@ the raw-terminal event loop until `C-x C-c` or end-of-input.
 - `scripts/coverage.lisp` -- runs the suite under `sb-cover` and writes an
   HTML report to `coverage/` (override with `LOOM_COVERAGE_DIR`); bounded by
   its own 1800s `sb-ext:with-timeout`, since it force-recompiles loom and
-  every sibling dependency under `sb-cover` instrumentation. Report the
-  measured expression and branch totals separately; branch coverage is not a
-  substitute for expression coverage. SB-COVER is process-local, so the raw
-  report can retain top-level declaration forms and the child-process-only
-  `loom:main` path; those forms are reported rather than hidden. Generated
-  reports are not tracked.
+  every sibling dependency under `sb-cover` instrumentation. The report is
+  restricted to Loom's `src/` and `packages/` trees, so package-by-feature
+  code is included. Report the measured expression and branch totals
+  separately; branch coverage is not a substitute for expression coverage.
+  SB-COVER is process-local, so the raw report can retain top-level
+  declaration forms and the child-process-only `loom:main` path; those forms
+  are reported rather than hidden. Generated reports are not tracked.
 - `scripts/benchmark-concurrency.lisp` -- loads `loom`, submits eight directory
   paths to the bounded runtime, drains worker results, and prints synchronous,
   asynchronous, accepted-count, and speedup measurements. Run it with
