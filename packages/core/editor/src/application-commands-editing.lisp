@@ -42,20 +42,18 @@
 (defun newline-command ()
   "Insert newlines repeatedly according to the active numeric prefix."
   (let ((count (max 0 (%command-prefix-count))))
-    (dotimes (index count)
-      (declare (ignore index))
-      (buffer-insert-string (%selected-buffer) (string #\Newline)))))
+    (loop repeat count
+          do (buffer-insert-string (%selected-buffer) (string #\Newline)))))
 
 (defun open-line ()
   "Insert newlines while leaving point before them (C-o)."
   (let ((count (max 0 (%command-prefix-count))))
-    (dotimes (index count)
-      (declare (ignore index))
-      (let ((buffer (%selected-buffer)))
-        (let ((line (buffer-point-line buffer))
-              (column (buffer-point-column buffer)))
-          (buffer-insert-string buffer (string #\Newline))
-          (buffer-set-point buffer line column))))))
+    (loop repeat count
+          do (let ((buffer (%selected-buffer)))
+               (let ((line (buffer-point-line buffer))
+                     (column (buffer-point-column buffer)))
+                 (buffer-insert-string buffer (string #\Newline))
+                 (buffer-set-point buffer line column))))))
 
 ;; Unlike Emacs's KILL-RING-MAX (~120 by default), nothing previously capped
 ;; how many entries EDITOR-STATE-KILL-RING could accumulate: repeated
@@ -94,9 +92,8 @@ dropped once a push would exceed this.")
 (defun kill-line ()
   "Kill through successive line ends according to the active prefix."
   (let ((count (max 0 (%command-prefix-count))))
-    (dotimes (index count)
-      (declare (ignore index))
-      (%kill-line-once))))
+    (loop repeat count
+          do (%kill-line-once))))
 
 (defun %kill-between-offsets (buffer start-offset end-offset)
   (unless (= start-offset end-offset)
@@ -118,15 +115,13 @@ dropped once a push would exceed this.")
     (cond
       ((plusp count)
        (let ((end point))
-         (dotimes (index count)
-           (declare (ignore index))
-           (setf end (%forward-word-offset (buffer-text buffer) end)))
+         (loop repeat count
+               do (setf end (%forward-word-offset (buffer-text buffer) end)))
          (%kill-between-offsets buffer point end)))
       ((minusp count)
        (let ((start point))
-         (dotimes (index (- count))
-           (declare (ignore index))
-           (setf start (%backward-word-offset (buffer-text buffer) start)))
+         (loop repeat (- count)
+               do (setf start (%backward-word-offset (buffer-text buffer) start)))
          (%kill-between-offsets buffer start point))))))
 
 (defun backward-kill-word ()
@@ -137,25 +132,14 @@ dropped once a push would exceed this.")
     (cond
       ((plusp count)
        (let ((start point))
-         (dotimes (index count)
-           (declare (ignore index))
-           (setf start (%backward-word-offset (buffer-text buffer) start)))
+         (loop repeat count
+               do (setf start (%backward-word-offset (buffer-text buffer) start)))
          (%kill-between-offsets buffer start point)))
       ((minusp count)
        (let ((end point))
-         (dotimes (index (- count))
-           (declare (ignore index))
-           (setf end (%forward-word-offset (buffer-text buffer) end)))
+         (loop repeat (- count)
+               do (setf end (%forward-word-offset (buffer-text buffer) end)))
          (%kill-between-offsets buffer point end))))))
-
-(defun %order-region (point-line point-column mark-line mark-column)
-  "Return (VALUES START-LINE START-COLUMN END-LINE END-COLUMN) for the region
-delimited by point and mark, with whichever of the two positions comes first
-in the buffer as the start: positions are compared by line, then by column."
-  (if (or (< point-line mark-line)
-          (and (= point-line mark-line) (<= point-column mark-column)))
-      (values point-line point-column mark-line mark-column)
-      (values mark-line mark-column point-line point-column)))
 
 (defun kill-region ()
   "Kill the region between point and mark, or report no region set."
@@ -173,9 +157,8 @@ in the buffer as the start: positions are compared by line, then by column."
   "Insert the most recently killed text, repeating for the active prefix."
   (let ((text (first (editor-state-kill-ring *editor-state*))))
     (when (and text (plusp (%command-prefix-count)))
-      (dotimes (index (%command-prefix-count))
-        (declare (ignore index))
-        (buffer-insert-string (%selected-buffer) text)))))
+      (loop repeat (%command-prefix-count)
+            do (buffer-insert-string (%selected-buffer) text)))))
 
 (defun set-mark-command ()
   "Set mark to point's current position."

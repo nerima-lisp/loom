@@ -3,11 +3,11 @@
 ;;;; Infrastructure adapter for the optional user-owned startup file. The
 ;;;; loader only resolves the conventional path and establishes the public
 ;;;; user package; the application layer owns the extension API itself.
-(in-package #:loom)
+(in-package #:loom/feature/user-init)
 
-(defun %configured-user-init-path ()
+(defun %configured-user-init-path (&optional (getenv (function uiop:getenv)))
   "Return the explicit or conventional path for the user init file."
-  (let ((override (uiop:getenv "LOOM_INIT_FILE")))
+  (let ((override (funcall getenv "LOOM_INIT_FILE")))
     (if (and override (plusp (length override)))
         (pathname override)
         (merge-pathnames #P".loom/init.lisp"

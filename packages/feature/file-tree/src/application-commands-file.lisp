@@ -3,14 +3,15 @@
 ;;;; Application layer: file-open/save commands (see
 ;;;; application/commands-internal.lisp for the shared command-authoring
 ;;;; convention every commands-*.lisp file follows).
-(in-package #:loom)
+(in-package #:loom/feature/file-tree)
 
 (defun %make-file-buffer (path &key name initial-content)
   "Create a buffer for PATH and infer its major mode from the path."
   (let ((buffer (make-buffer :name (or name (file-namestring path))
                              :path path
                              :initial-content initial-content)))
-    (buffer-set-major-mode buffer (major-mode-for-path path))
+    (buffer-set-major-mode buffer
+                           (loom/feature/mode:major-mode-for-path path))
     buffer))
 
 (defun find-file ()
@@ -25,7 +26,7 @@ an empty buffer associated with that path, so a later save creates the file."
                       (buffer-load path)
                       (%make-file-buffer path))))
       (%register-buffer buffer)
-      (window-set-buffer (%selected-window) buffer))))
+      (loom/feature/window:window-set-buffer (%selected-window) buffer))))
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
@@ -76,13 +77,13 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
                                          :initial-content (buffer-text buffer))))
       (%transfer-point-and-mark buffer new-buffer)
       (%register-buffer new-buffer)
-      (window-set-buffer window new-buffer)
+      (loom/feature/window:window-set-buffer window new-buffer)
       (%save-buffer-or-warn-overwrite new-buffer path))))
 
 (defun save-buffer ()
   "Save the selected buffer, prompting for a path first if it has none."
   (let* ((window (%selected-window))
-         (buffer (window-buffer window)))
+         (buffer (loom/feature/window:window-buffer window)))
     (if (buffer-path buffer)
         (buffer-save buffer)
         (%prompt-and-save-new-buffer window buffer))))
@@ -94,7 +95,7 @@ The selected window visits a fresh buffer carrying the original text and
 point/mark, leaving the previous buffer in the session registry as a separate
 buffer, like Emacs's C-x C-w visit behavior."
   (let* ((window (%selected-window))
-         (buffer (window-buffer window)))
+         (buffer (loom/feature/window:window-buffer window)))
     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                    :on-cancel (minibuffer-message minibuffer "Quit"))
         ((path "Write file: "))
@@ -102,5 +103,5 @@ buffer, like Emacs's C-x C-w visit behavior."
                                            :initial-content (buffer-text buffer))))
         (%transfer-point-and-mark buffer new-buffer)
         (%register-buffer new-buffer)
-        (window-set-buffer window new-buffer)
+        (loom/feature/window:window-set-buffer window new-buffer)
         (%save-buffer-or-warn-overwrite new-buffer path)))))

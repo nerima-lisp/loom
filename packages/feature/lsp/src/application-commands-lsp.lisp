@@ -4,7 +4,7 @@
 ;;;; diagnostics.  The session protocol owns transport, document versions,
 ;;;; and diagnostic values; this file only turns those values into editor
 ;;;; use-cases and a normal Loom buffer.
-(in-package #:loom)
+(in-package #:loom/feature/lsp)
 
 (defparameter *lsp-diagnostics-buffer-name* "*Loom-Diagnostics*")
 
@@ -19,10 +19,11 @@
 (defun %lsp-diagnostics-buffer ()
   "Return the registered buffer used to display LSP diagnostics."
   (or (find *lsp-diagnostics-buffer-name*
-            (%editor-buffers)
+            (loom/application:%editor-buffers)
             :key #'buffer-name
             :test #'string=)
-      (%register-buffer (make-buffer :name *lsp-diagnostics-buffer-name*))))
+      (loom/application:%register-buffer
+       (make-buffer :name *lsp-diagnostics-buffer-name*))))
 
 (defun %replace-buffer-text (buffer text)
   "Replace BUFFER's complete contents with TEXT and mark it saved."
@@ -62,12 +63,13 @@
 
 (defun lsp-start ()
   "Prompt for an LSP command and start a session for the selected buffer."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
+  (loom/application:with-prompts
+      (minibuffer (editor-state-minibuffer *editor-state*)
+                       :on-cancel (minibuffer-message minibuffer "Quit"))
       ((command "LSP command: "))
     (if (zerop (length (string-trim '(#\Space #\Tab) command)))
         (minibuffer-message minibuffer "LSP command cannot be empty")
-        (let* ((buffer (%selected-buffer))
+        (let* ((buffer (loom/application:%selected-buffer))
                (directory (%lsp-buffer-directory buffer))
                (root-uri (and directory (lsp-path-uri directory)))
                (new-session nil))
@@ -106,7 +108,7 @@
 (defun lsp-diagnostics ()
   "Refresh and display diagnostics for the selected file-backed buffer."
   (let* ((session (editor-state-lsp-session *editor-state*))
-         (buffer (%selected-buffer))
+         (buffer (loom/application:%selected-buffer))
          (minibuffer (editor-state-minibuffer *editor-state*)))
     (cond
       ((null session)
@@ -126,5 +128,7 @@
               (%lsp-diagnostics-text
                buffer
                (lsp-session-diagnostics session buffer)))
-             (window-set-buffer (%selected-window) diagnostics-buffer)
+             (loom/feature/window:window-set-buffer
+              (loom/application:%selected-window)
+              diagnostics-buffer)
              (minibuffer-message minibuffer "LSP diagnostics refreshed.")))))))

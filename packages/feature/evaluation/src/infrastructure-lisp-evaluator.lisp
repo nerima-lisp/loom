@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/evaluation)
 
 ;;; Evaluation is intentionally trusted, just like loading the user's init
 ;;; file.  The infrastructure boundary owns reader/eval and stream capture;

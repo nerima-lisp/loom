@@ -77,7 +77,7 @@ the degenerate-window tests are the ones that need them to differ."
     "draws the file-tree sidebar to the left of the buffer, offsetting the window area by its width"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi"))
            (file-tree (editor-state-file-tree state)))
-      (setf (loom::file-tree-child-lister file-tree)
+      (setf (loom/feature/file-tree::file-tree-child-lister file-tree)
             (lambda (path)
               (declare (ignore path))
               '(("/root/a.txt" . :file) ("/root/b.txt" . :file))))
@@ -140,7 +140,7 @@ the degenerate-window tests are the ones that need them to differ."
     "highlights the selected file-tree entry and truncates a name past the sidebar width"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi"))
            (file-tree (editor-state-file-tree state)))
-      (setf (loom::file-tree-child-lister file-tree)
+      (setf (loom/feature/file-tree::file-tree-child-lister file-tree)
             (lambda (path)
               (declare (ignore path))
               (list (cons "/root/a-very-long-file-name-indeed.txt" :file))))
@@ -170,7 +170,8 @@ the degenerate-window tests are the ones that need them to differ."
     "maps semantic tokens to styles while clipping at screen-cell boundaries"
     (let* ((renderer (make-loom-renderer 12 1))
            (line "(defun f あ)"))
-      (loom::%layout-draw-highlighted-line renderer line 0 0 12)
+      (loom/feature/syntax-highlighting::%layout-draw-highlighted-line
+       renderer line 0 0 12)
       (let ((screen (cl-tty-kit:renderer-screen
                      (loom::%loom-renderer-cl-tty-renderer renderer))))
         (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 12)
@@ -219,7 +220,7 @@ the degenerate-window tests are the ones that need them to differ."
                                        :height 4))
            (window (%layout-window state)))
       (buffer-set-point (window-buffer window) 2 0)
-      (setf (loom::window-leaf-height window) 0)
+      (setf (loom/feature/window::window-leaf-height window) 0)
       (setf (window-scroll-line window) 0)
       (loom::%layout-keep-point-visible window)
       (expect (window-scroll-line window) :to-equal 0))))

@@ -6,7 +6,7 @@
     (let ((*editor-state* (%fresh-editor-state "hllo")))
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 1)
-        (loom::self-insert-command #\e)
+        (loom:self-insert-command #\e)
         (expect (buffer-line buffer 0) :to-equal "hello"))))
 
   (it
@@ -53,6 +53,28 @@
         (expect (buffer-text buffer) :to-equal "one ")
         (expect (first (editor-state-kill-ring *editor-state*))
                 :to-equal "two"))))
+
+  (it
+    "kill-word with a negative prefix removes the previous word"
+    (let ((*editor-state* (%fresh-editor-state "one two"))
+          (loom:*current-prefix-argument* -1))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 7)
+        (loom::kill-word)
+        (expect (buffer-text buffer) :to-equal "one ")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "two"))))
+
+  (it
+    "backward-kill-word with a negative prefix removes the next word"
+    (let ((*editor-state* (%fresh-editor-state "one two"))
+          (loom:*current-prefix-argument* -1))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 0)
+        (loom::backward-kill-word)
+        (expect (buffer-text buffer) :to-equal " two")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "one"))))
 
   (it
     "kill-word is a no-op at the end of the buffer"
@@ -186,27 +208,27 @@
 (describe
   "install-default-keybindings"
   (it-each
-      (("C-x C-s" (((:control) . #\x) ((:control) . #\s)) loom::save-buffer)
-       ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom::write-file)
-       ("C-x k" (((:control) . #\x) (nil . #\k)) loom::kill-buffer)
-       ("C-x 0" (((:control) . #\x) (nil . #\0)) loom::delete-window)
-       ("C-x 1" (((:control) . #\x) (nil . #\1)) loom::delete-other-windows)
-       ("C-r" (((:control) . #\r)) loom::search-backward)
+      (("C-x C-s" (((:control) . #\x) ((:control) . #\s)) loom/feature/file-tree:save-buffer)
+       ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom/feature/file-tree:write-file)
+       ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/window:kill-buffer)
+       ("C-x 0" (((:control) . #\x) (nil . #\0)) loom/feature/window:delete-window)
+       ("C-x 1" (((:control) . #\x) (nil . #\1)) loom/feature/window:delete-other-windows)
+       ("C-r" (((:control) . #\r)) loom/feature/search::search-backward)
        ("M-f" (((:alt) . #\f)) loom::forward-word)
        ("Enter" ((nil . :enter)) loom::newline-command)
-       ("C-x 2" (((:control) . #\x) (nil . #\2)) loom::split-window-below)
+       ("C-x 2" (((:control) . #\x) (nil . #\2)) loom/feature/window:split-window-below)
        ("C-g" (((:control) . #\g)) loom::keyboard-quit))
       "binds ~A to its default command" (label key-sequence command)
     (declare (ignore label))
     (let ((keymap (make-keymap)))
-      (loom::install-default-keybindings keymap)
+      (loom/application:install-default-keybindings keymap)
       (expect (keymap-lookup keymap key-sequence) :to-be command)))
   (it
   "opens an empty buffer for an uncreated path and saves it"
   (host-kit:with-temporary-directory (dir)
     (%with-minibuffer-state (minibuffer ""
                              (path (merge-pathnames "created-by-find-file.txt" dir)))
-      (loom::find-file)
+      (loom/feature/file-tree:find-file)
       (funcall (loom::%minibuffer-on-confirm minibuffer) path)
       (let ((buffer (%selected-test-buffer)))
         (expect (buffer-name buffer) :to-equal "created-by-find-file.txt")
@@ -214,7 +236,7 @@
         (expect (buffer-text buffer) :to-equal "")
         (expect (host-kit:path-exists-p path) :to-be-falsy)
         (buffer-insert-string buffer "created")
-        (loom::save-buffer)
+        (loom/feature/file-tree:save-buffer)
         (expect (host-kit:read-file-string path) :to-equal "created")))))
   (it
     "loads an existing file's contents into the selected window"
@@ -222,7 +244,7 @@
       (%with-minibuffer-state (minibuffer ""
                                (path (merge-pathnames "existing.txt" dir)))
         (host-kit:write-file-string "already here" path)
-        (loom::find-file)
+        (loom/feature/file-tree:find-file)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (let ((buffer (%selected-test-buffer)))
           (expect (buffer-name buffer) :to-equal "existing.txt")
@@ -235,7 +257,7 @@
                                (path (merge-pathnames "alias.txt" dir)))
         (buffer-set-point original 0 5)
         (buffer-set-mark original 0 2)
-        (loom::write-file)
+        (loom/feature/file-tree:write-file)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (let ((new-buffer (%selected-test-buffer)))
           (expect (buffer-name new-buffer) :to-equal "alias.txt")
@@ -260,7 +282,7 @@
                                (buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 5)
         (buffer-set-mark buffer 0 2)
-        (loom::save-buffer)
+        (loom/feature/file-tree:save-buffer)
         ;; SAVE-BUFFER's path-less branch activated MINIBUFFER above rather
         ;; than saving directly; drive its stored ON-CONFIRM callback
         ;; ourselves with a path under a fresh temp directory, exactly as
@@ -278,7 +300,7 @@
       (let* ((existing-path (merge-pathnames "already-here.txt" dir)))
         (host-kit:write-file-string "old content" existing-path)
         (%with-minibuffer-state (minibuffer "hello")
-          (loom::save-buffer)
+          (loom/feature/file-tree:save-buffer)
           (funcall (loom::%minibuffer-on-confirm minibuffer) existing-path)
           (expect (loom::%minibuffer-message minibuffer)
                   :to-equal
@@ -302,13 +324,13 @@
     (%with-minibuffer-state (minibuffer "alpha ALPHA alpha")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 6)
-        (loom::search-forward)
+        (loom/feature/search::search-forward)
         (expect (minibuffer-prompt-string minibuffer) :to-equal "Search (regex): ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
         (expect (buffer-point-column buffer) :to-equal 12)
         (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
         (buffer-set-point buffer 0 17)
-        (loom::search-forward)
+        (loom/feature/search::search-forward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
         (expect (buffer-point-column buffer) :to-equal 0))))
   (it
@@ -316,7 +338,7 @@
     (%with-minibuffer-state (minibuffer "one two one")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 11)
-        (loom::search-backward)
+        (loom/feature/search::search-backward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "one")
         (expect buffer :to-have-point (cons 0 8))
         (expect (loom::%minibuffer-message minibuffer) :to-equal "Found"))))
@@ -325,7 +347,7 @@
     (%with-minibuffer-state (minibuffer "alpha")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 2)
-        (loom::search-backward)
+        (loom/feature/search::search-backward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
         (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
         (expect buffer :to-have-point (cons 0 2)))))
@@ -339,14 +361,14 @@
   (it
     "reports not found when the searched text does not occur anywhere"
     (%with-minibuffer-state (minibuffer "alpha")
-      (loom::search-forward)
+      (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty search string without moving point"
     (%with-minibuffer-state (minibuffer "alpha")
       (buffer-set-point (%selected-test-buffer) 0 2)
-      (loom::search-forward)
+      (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
       (expect (%selected-test-buffer) :to-have-point (cons 0 2))))
@@ -362,7 +384,7 @@
       ;; Point starts on line 1 (not the default line 0), so converting it to
       ;; a flat offset must walk past at least one earlier line's length.
       (buffer-set-point (%selected-test-buffer) 1 0)
-      (loom::search-forward)
+      (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "four")
       (expect (%selected-test-buffer) :to-have-point (cons 3 0))))
   (it
@@ -370,7 +392,7 @@
     (%with-minibuffer-state (minibuffer "red RED red")
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 4)
-        (loom::replace-string)
+        (loom/feature/search::replace-string)
         (expect (minibuffer-prompt-string minibuffer) :to-equal "Replace (regex): ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "red")
         (expect (minibuffer-prompt-string minibuffer) :to-equal "With: ")
@@ -382,14 +404,14 @@
   (it
     "reports not found when the text to replace does not occur anywhere"
     (%with-minibuffer-state (minibuffer "alpha")
-      (loom::replace-string)
+      (loom/feature/search::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty replacement target without searching"
     (%with-minibuffer-state (minibuffer "alpha")
-      (loom::replace-string)
+      (loom/feature/search::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
@@ -400,7 +422,7 @@
     ;; only because the search side is compiled as a regular expression rather
     ;; than looked up with CL:SEARCH.
     (%with-minibuffer-state (minibuffer "abc 1234 def")
-      (loom::search-forward)
+      (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "\\d+")
       (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
       (expect (%selected-test-buffer) :to-have-point (cons 0 4))))
@@ -410,7 +432,7 @@
     ;; come from the match itself; computing it as start plus (LENGTH OLD)
     ;; would delete the wrong span here.
     (%with-minibuffer-state (minibuffer "a    b  c")
-      (loom::replace-string)
+      (loom/feature/search::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "\\s+")
       (funcall (loom::%minibuffer-on-confirm minibuffer) " ")
       (expect (buffer-text (%selected-test-buffer)) :to-equal "a b c")
@@ -425,7 +447,7 @@
     ;; expressions needs no error handling of its own.
     (%with-minibuffer-state (minibuffer "abc"
                              (keymap-state (make-keymap-state (make-keymap))))
-      (loom::search-forward)
+      (loom/feature/search::search-forward)
       (%type-string minibuffer "(")
       (loom::%dispatch-key-event (%special-key :enter) keymap-state)
       (expect (loom::%minibuffer-message minibuffer)
@@ -438,20 +460,20 @@
     ;; deadline is proved to reach CL-REGEX-KIT by binding it to a value
     ;; CL-REGEX-KIT itself rejects, and watching both call sites refuse it.
     (let ((buffer (make-buffer :initial-content "abc 123"))
-          (loom::+regex-search-timeout-seconds+ -1))
+          (loom/feature/search::+regex-search-timeout-seconds+ -1))
       (signals type-error (buffer-search-forward buffer "\\d+"))
       (signals type-error
         (buffer-search-spans buffer "\\d+" 0))))
   (it-each
-      (("C-s" (((:control) . #\s)) loom::search-forward)
-       ("M-%" (((:alt) . #\%)) loom::replace-string)
+      (("C-s" (((:control) . #\s)) loom/feature/search::search-forward)
+       ("M-%" (((:alt) . #\%)) loom/feature/search::replace-string)
        ("C-w" (((:control) . #\w)) loom::kill-region)
        ("C-o" (((:control) . #\o)) loom::open-line)
        ("M-g g" (((:alt) . #\g) (nil . #\g)) loom::goto-line))
       "binds ~A to its default command" (label key-sequence command)
     (declare (ignore label))
     (let ((keymap (make-keymap)))
-      (loom::install-default-keybindings keymap)
+      (loom/application:install-default-keybindings keymap)
       (expect (keymap-lookup keymap key-sequence) :to-be command)))
   (it
     "moves to a one-based line entered in the minibuffer"

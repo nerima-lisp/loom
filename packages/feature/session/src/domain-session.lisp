@@ -5,7 +5,7 @@
 ;;;; deliberately contains no pathname objects, streams, or terminal handles.
 ;;;; Serialization and filesystem policy live in infrastructure/session-store.lisp;
 ;;;; conversion to and from EDITOR-STATE lives in application/commands-session.lisp.
-(in-package #:loom)
+(in-package #:loom/feature/session)
 
 (defstruct session-buffer-snapshot
   "Serializable state for one registered editor buffer."

@@ -4,7 +4,7 @@
 ;;;; domain value.  Input recording itself is completed by main.lisp after a
 ;;;; command succeeds, so command keys cannot accidentally become part of the
 ;;;; macro that they control.
-(in-package #:loom)
+(in-package #:loom/feature/keyboard-macro)
 
 (defun %keyboard-macro-for-editor ()
   "Return the current state's keyboard macro, creating it for old fixtures."
@@ -41,25 +41,25 @@
 (defun %replay-keyboard-macro-event (event keymap-state)
   (ecase (keyboard-macro-event-kind event)
     (:self-insert
-     (%record-undo-boundary-for-command t)
-     (let ((*current-prefix-argument*
-             (%consume-prefix-argument-for-editor)))
-       (self-insert-command (keyboard-macro-event-value event))))
+     (loom:record-undo-boundary-for-command t)
+     (let ((loom:*current-prefix-argument*
+             (loom:consume-prefix-argument-for-editor)))
+       (loom:self-insert-command (keyboard-macro-event-value event))))
     (:key
      (let* ((descriptor (keyboard-macro-event-value event))
-            (argument (%prefix-argument-for-editor))
+            (argument (loom:prefix-argument-for-editor))
             (prefix-action
-              (and (null (keymap-state-sequence keymap-state))
-                   (%prefix-argument-action descriptor argument))))
+              (and (null (loom:keymap-state-sequence keymap-state))
+                   (loom:prefix-argument-action descriptor argument))))
        (if prefix-action
-           (%apply-prefix-argument-action (car prefix-action)
-                                          (cdr prefix-action))
+           (loom:apply-prefix-argument-action (car prefix-action)
+                                               (cdr prefix-action))
            (progn
-             (%record-undo-boundary-for-command nil)
+             (loom:record-undo-boundary-for-command nil)
              (let ((dispatch-result nil))
                (unwind-protect
-                    (let ((*current-prefix-argument*
-                            (%prefix-argument-value-for-editor)))
+                    (let ((loom:*current-prefix-argument*
+                            (loom:prefix-argument-value-for-editor)))
                       (setf dispatch-result
                             (keymap-state-dispatch keymap-state descriptor)))
                  (unless (eq dispatch-result :pending)

@@ -82,6 +82,40 @@ BUFFER-LINE, not point/mark/undo state."
         (expect (> (length (get-output-stream-string output)) 0) :to-be-truthy)))))
 
 (describe
+  "loom-renderer drawing primitives"
+  (it
+    "writes, draws, clears, and presents a cursor"
+    (let ((renderer (make-loom-renderer 6 3)))
+      (expect (loom-renderer-width renderer) :to-equal 6)
+      (expect (loom-renderer-height renderer) :to-equal 3)
+      (expect (loom-renderer-write-string renderer 0 0 "x") :to-be renderer)
+      (expect (loom-renderer-draw-horizontal-line renderer 1 1 3)
+              :to-be renderer)
+      (expect (loom-renderer-draw-vertical-line renderer 4 0 3)
+              :to-be renderer)
+      (expect (cl-tty-kit:screen-to-string
+               (cl-tty-kit:renderer-screen
+                (loom::%loom-renderer-cl-tty-renderer renderer)))
+              :to-contain "x")
+      (expect (loom-renderer-clear renderer) :to-be renderer)
+      (expect (cl-tty-kit:screen-to-string
+               (cl-tty-kit:renderer-screen
+                (loom::%loom-renderer-cl-tty-renderer renderer)))
+              :to-equal (format nil "      ~%      ~%      "))
+      (let ((output (make-string-output-stream)))
+        (expect
+         (loom-renderer-present
+          renderer
+          :stream output
+          :cursor (loom-renderer-make-cursor renderer
+                                             :x 2
+                                             :y 1
+                                             :visible nil))
+         :to-be renderer)
+        (expect (> (length (get-output-stream-string output)) 0)
+                :to-be-truthy)))))
+
+(describe
   "loom-renderer-resize"
   (it
     "resizes the underlying cl-tty-kit renderer and returns the renderer"

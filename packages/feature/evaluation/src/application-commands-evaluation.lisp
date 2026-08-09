@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/evaluation)
 
 (defparameter *evaluation-buffer-name* "*Loom-Eval*")
 
@@ -35,7 +35,7 @@
              source
              (evaluation-result-text result)))
     (buffer-mark-saved buffer)
-    (window-set-buffer (%selected-window) buffer)
+    (loom/feature/window:window-set-buffer (%selected-window) buffer)
     (let ((minibuffer (editor-state-minibuffer *editor-state*)))
       (when minibuffer
         (minibuffer-message minibuffer (%evaluation-status-message result))))

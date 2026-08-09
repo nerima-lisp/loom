@@ -43,8 +43,8 @@ video so the current selection is visible. Entries beyond HEIGHT rows are
 simply not drawn -- no scrolling is attempted here, matching this file's
 \"plain sequential draw\" scope."
   (when (plusp width)
-    (let ((entries (file-tree-entries file-tree))
-          (selected (file-tree-selected-path file-tree)))
+    (let ((entries (loom/feature/file-tree:file-tree-entries file-tree))
+          (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
       (loop for (path . depth) in entries
             for row from 0 below height
             do (let* ((indent (make-string (* 2 depth) :initial-element #\Space))
@@ -67,24 +67,33 @@ right place on the shared screen. When a split produced more than one leaf, a
  minimal 1-cell separator line is drawn along the shared edge between any two
 horizontally- or vertically-adjacent leaves, so a user can tell the panes
 apart. Returns RENDERER."
-  (let ((leaves (window-tree-windows window-tree)))
+  (let ((leaves (loom/feature/window:window-tree-windows window-tree)))
     (dolist (leaf leaves)
-      (%layout-draw-buffer renderer (window-buffer leaf)
-                           (+ x-offset (window-x leaf)) (window-y leaf)
-                           (window-width leaf) (window-height leaf)
-                           :start-line (window-scroll-line leaf)))
+      (loom/feature/syntax-highlighting::%layout-draw-buffer
+       renderer (loom/feature/window:window-buffer leaf)
+       (+ x-offset (loom/feature/window:window-x leaf))
+       (loom/feature/window:window-y leaf)
+       (loom/feature/window:window-width leaf)
+       (loom/feature/window:window-height leaf)
+       :start-line (loom/feature/window:window-scroll-line leaf)))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw
       ;; a vertical rule just left of this leaf's own left edge.
-      (when (and (plusp (window-x leaf)) (plusp (window-height leaf)))
+      (when (and (plusp (loom/feature/window:window-x leaf))
+                 (plusp (loom/feature/window:window-height leaf)))
         (loom-renderer-draw-vertical-line
-         renderer (1- (+ x-offset (window-x leaf))) (window-y leaf) (window-height leaf)))
+         renderer (1- (+ x-offset (loom/feature/window:window-x leaf)))
+         (loom/feature/window:window-y leaf)
+         (loom/feature/window:window-height leaf)))
       ;; Likewise, a leaf whose Y is not 0 has a neighbor immediately above it
       ;; from a :HORIZONTAL split; draw a horizontal rule just above it.
-      (when (and (plusp (window-y leaf)) (plusp (window-width leaf)))
+      (when (and (plusp (loom/feature/window:window-y leaf))
+                 (plusp (loom/feature/window:window-width leaf)))
         (loom-renderer-draw-horizontal-line
-         renderer (+ x-offset (window-x leaf)) (1- (window-y leaf)) (window-width leaf))))
+         renderer (+ x-offset (loom/feature/window:window-x leaf))
+         (1- (loom/feature/window:window-y leaf))
+         (loom/feature/window:window-width leaf))))
   renderer))
 
 ;;; ---------------------------------------------------------------------
@@ -127,15 +136,16 @@ ROW, truncated to WIDTH columns."
       (loom-renderer-write-string renderer 0 row visible))))
 (defun %layout-keep-point-visible (window)
   "Adjust WINDOW's viewport so its buffer point remains in its rectangle."
-  (let ((height (window-height window)))
+  (let ((height (loom/feature/window:window-height window)))
     (when (plusp height)
-      (let ((point-line (buffer-point-line (window-buffer window)))
-            (scroll-line (window-scroll-line window)))
+      (let ((point-line (buffer-point-line (loom/feature/window:window-buffer window)))
+            (scroll-line (loom/feature/window:window-scroll-line window)))
         (cond
           ((< point-line scroll-line)
-           (setf (window-scroll-line window) point-line))
+           (setf (loom/feature/window:window-scroll-line window) point-line))
           ((>= point-line (+ scroll-line height))
-           (setf (window-scroll-line window) (- point-line (1- height)))))))))
+           (setf (loom/feature/window:window-scroll-line window)
+                 (- point-line (1- height)))))))))
 (defun %layout-file-tree-width (file-tree-visible-p width)
   "Return the column width the file-tree sidebar occupies in a WIDTH-column
 terminal: a 24-column strip when FILE-TREE-VISIBLE-P, narrowed to WIDTH on a
@@ -147,20 +157,24 @@ neither re-derives the cap."
   "Return the terminal cursor for EDITOR-STATE's selected window."
   (let* ((renderer (editor-state-renderer editor-state))
          (file-tree (editor-state-file-tree editor-state))
-         (x-offset (%layout-file-tree-width (and file-tree (file-tree-visible-p file-tree))
+         (x-offset (%layout-file-tree-width
+                    (and file-tree
+                         (loom/feature/file-tree:file-tree-visible-p file-tree))
                                             (loom-renderer-width renderer)))
-         (window (window-tree-selected-window (editor-state-window-tree editor-state)))
-         (width (window-width window))
-         (height (window-height window)))
+         (window (loom/feature/window:window-tree-selected-window
+                  (editor-state-window-tree editor-state)))
+         (width (loom/feature/window:window-width window))
+         (height (loom/feature/window:window-height window)))
     (if (or (zerop width) (zerop height))
         (loom-renderer-make-cursor renderer :visible nil)
-        (let ((buffer (window-buffer window)))
+        (let ((buffer (loom/feature/window:window-buffer window)))
           (loom-renderer-make-cursor
            renderer
-           :x (+ x-offset (window-x window)
+           :x (+ x-offset (loom/feature/window:window-x window)
                  (min (buffer-point-column buffer) (1- width)))
-           :y (+ (window-y window)
-                 (- (buffer-point-line buffer) (window-scroll-line window))))))))
+           :y (+ (loom/feature/window:window-y window)
+                 (- (buffer-point-line buffer)
+                    (loom/feature/window:window-scroll-line window))))))))
 (defun %layout-compute-regions (width height file-tree-visible-p)
   "Compute the row/column geometry COMPOSE-FRAME draws into, given the
 renderer's WIDTH/HEIGHT and whether the file-tree sidebar is visible.
@@ -196,7 +210,8 @@ caller's job to actually flush that screen to a terminal. Returns
          (width (loom-renderer-width renderer))
          (height (loom-renderer-height renderer))
          (file-tree (editor-state-file-tree editor-state))
-         (file-tree-visible (file-tree-visible-p file-tree))
+         (file-tree-visible
+           (loom/feature/file-tree:file-tree-visible-p file-tree))
          (window-tree (editor-state-window-tree editor-state)))
       (multiple-value-bind (content-height minibuffer-row shortcuts-row shortcuts-visible-p
                            file-tree-width window-area-width)
@@ -204,12 +219,15 @@ caller's job to actually flush that screen to a terminal. Returns
       (loom-renderer-clear renderer)
       (when file-tree-visible
         (%layout-draw-file-tree renderer file-tree file-tree-width content-height))
-      (window-tree-resize window-tree window-area-width content-height)
-      (dolist (window (window-tree-windows window-tree))
+      (loom/feature/window:window-tree-resize
+       window-tree window-area-width content-height)
+      (dolist (window (loom/feature/window:window-tree-windows window-tree))
         (%layout-keep-point-visible window))
       (%layout-draw-windows renderer window-tree file-tree-width)
       (when shortcuts-visible-p
         (%layout-draw-shortcuts renderer width shortcuts-row
-                                (window-buffer (window-tree-selected-window window-tree))))
+                                (loom/feature/window:window-buffer
+                                 (loom/feature/window:window-tree-selected-window
+                                  window-tree))))
       (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state) width minibuffer-row)
       editor-state)))

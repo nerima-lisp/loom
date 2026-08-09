@@ -4,7 +4,7 @@
 ;;;; validated session snapshot owned by domain/session.lisp. The store itself
 ;;;; remains an infrastructure concern; these commands only choose the state
 ;;;; to persist and install a fully rebuilt state after a successful read.
-(in-package #:loom)
+(in-package #:loom/feature/session)
 
 (defun %session-path-string (path)
   "Return PATH as a namestring, or NIL when PATH is NIL."
@@ -43,15 +43,18 @@
 (defun %session-snapshot-from-state ()
   "Return a validated snapshot of the current editor state."
   (let* ((tree (editor-state-window-tree *editor-state*))
-         (visible (mapcar #'window-buffer (window-tree-windows tree)))
+         (visible (mapcar #'loom/feature/window:window-buffer
+                          (loom/feature/window:window-tree-windows tree)))
          (buffers (remove-duplicates
                    (append (copy-list (%editor-buffers)) visible)
                    :test #'eq)))
     (validate-session-snapshot
      (make-session-snapshot
       :buffers (mapcar #'%session-buffer-snapshot buffers)
-      :layout (%session-indexed-layout (window-tree-layout tree) buffers)
-      :selected-window-index (window-tree-selected-index tree)))))
+      :layout (%session-indexed-layout
+               (loom/feature/window:window-tree-layout tree) buffers)
+      :selected-window-index
+      (loom/feature/window:window-tree-selected-index tree)))))
 
 (defun %restore-session-buffer (snapshot)
   "Build a fresh buffer from one validated session buffer SNAPSHOT."
@@ -93,10 +96,10 @@
                           (session-snapshot-buffers snapshot)))
          (layout (%restore-session-layout (session-snapshot-layout snapshot)
                                           buffers))
-         (tree (make-window-tree-from-layout
+         (tree (loom/feature/window:make-window-tree-from-layout
                 layout
-                (window-tree-width old-tree)
-                (window-tree-height old-tree)
+                (loom/feature/window:window-tree-width old-tree)
+                (loom/feature/window:window-tree-height old-tree)
                 :selected-index
                 (session-snapshot-selected-window-index snapshot))))
     (setf (editor-state-buffers *editor-state*) buffers

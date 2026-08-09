@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/evaluation)
 
 ;;; Evaluation results are kept as a small domain value object so that the
 ;;; application and presentation layers do not need to know how Lisp was run.

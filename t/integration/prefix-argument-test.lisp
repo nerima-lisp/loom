@@ -15,7 +15,7 @@
   (it
     "repeats self-insertion after C-u and an explicit digit"
     (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap))
            (buffer (%selected-test-buffer)))
       (setf (editor-state-keymap *editor-state*) keymap)
@@ -34,7 +34,7 @@
   (it
     "repeats movement in the negative direction"
     (let* ((*editor-state* (%fresh-editor-state "abcd" :with-minibuffer t))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap))
            (buffer (%selected-test-buffer)))
       (setf (editor-state-keymap *editor-state*) keymap)
@@ -55,7 +55,7 @@
   (it
     "keeps the prefix alive while a multi-chord key sequence is pending"
     (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap))
            (seen-prefix nil))
       (setf (editor-state-keymap *editor-state*) keymap)
@@ -63,7 +63,7 @@
        keymap
        (list (cons '(:control) #\x) (cons nil #\q))
        (lambda ()
-         (setf seen-prefix loom::*current-prefix-argument*)))
+         (setf seen-prefix loom:*current-prefix-argument*)))
       (flet ((dispatch (code &optional modifiers)
                (loom::%dispatch-key-event
                 (%prefix-event code modifiers)
@@ -72,7 +72,7 @@
         (dispatch #\x '(:control))
         (dispatch #\q))
       (expect seen-prefix :to-equal 4)
-      (expect (loom::keymap-state-sequence keymap-state) :to-be nil)
+      (expect (loom:keymap-state-sequence keymap-state) :to-be nil)
       (expect (prefix-argument-active-p
                (editor-state-prefix-argument *editor-state*))
               :to-be nil)))
@@ -80,7 +80,7 @@
   (it
     "replays prefix events in a keyboard macro"
     (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (macro (make-keyboard-macro))
            (buffer (%selected-test-buffer)))
       (setf (editor-state-keymap *editor-state*) keymap
@@ -100,8 +100,22 @@
        macro
        (make-keyboard-macro-event :kind :self-insert :value #\a))
       (keyboard-macro-stop-recording macro)
-      (loom::call-last-kbd-macro)
+      (loom/feature/keyboard-macro:call-last-kbd-macro)
       (expect (buffer-text buffer) :to-equal "aa")
       (expect (prefix-argument-active-p
                (editor-state-prefix-argument *editor-state*))
-              :to-be nil))))
+              :to-be nil)))
+
+  (it
+    "applies direct actions and reports the resulting prefix"
+    (%with-minibuffer-state (minibuffer "")
+      (loom:apply-prefix-argument-action :universal nil)
+      (loom:apply-prefix-argument-action :digit 2)
+      (loom:apply-prefix-argument-action :negative nil)
+      (expect (loom:prefix-argument-value-for-editor) :to-equal -2)
+      (loom::universal-argument)
+      (expect (loom:prefix-argument-value-for-editor) :to-equal -8)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal "Prefix argument: -8")
+      (signals error
+        (loom:apply-prefix-argument-action :unknown nil)))))

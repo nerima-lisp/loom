@@ -13,7 +13,7 @@
       (let ((path (merge-pathnames "notes.txt" directory)))
         (host-kit:write-file-string "before" path)
         (let* ((buffer (buffer-load path))
-               (keymap (loom::install-default-keybindings (make-keymap)))
+               (keymap (loom/application:install-default-keybindings (make-keymap)))
                (state (make-editor-state
                        :window-tree (make-window-tree buffer 80 24)
                        :minibuffer (make-minibuffer)

@@ -92,6 +92,10 @@
       url = "github:nerima-lisp/cl-boundary-kit/v2.3.0";
       flake = false;
     };
+    cl-json-kit = {
+      url = "github:nerima-lisp/cl-json-kit/v1.2.0";
+      flake = false;
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -116,15 +120,17 @@
       cl-concurrent-kit,
       cl-parser-kit,
       cl-boundary-kit,
+      cl-json-kit,
       treefmt-nix,
       ...
     }:
     let
       lib = nixpkgs.lib;
 
-      # Keep every tracked ASDF component, including split test files, in the
-      # filtered source passed to cl-nix-forge. The filter also keeps .git and
-      # generated output out of the source hash.
+      # Keep every tracked ASDF component, including split test files, and the
+      # complete MkDocs input tree in the filtered source passed to
+      # cl-nix-forge. The filter also keeps .git and generated output out of
+      # the source hash.
       sourceRoot = builtins.path {
         path = ./.;
         name = "loom-lisp-source";
@@ -132,7 +138,22 @@
           path: type:
           let
             pathName = builtins.baseNameOf (toString path);
-            sourceFile = lib.hasSuffix ".asd" (toString path) || lib.hasSuffix ".lisp" (toString path);
+            sourcePath = toString path;
+            sourceFile = builtins.any (suffix: lib.hasSuffix suffix sourcePath) [
+              ".asd"
+              ".lisp"
+              ".md"
+              ".yml"
+              ".yaml"
+              ".css"
+              ".svg"
+              ".png"
+              ".jpg"
+              ".jpeg"
+              ".gif"
+              ".webp"
+              ".ico"
+            ];
           in
           (
             type == "directory"
@@ -247,6 +268,10 @@
             source = cl-boundary-kit;
             dependencies = [ clHostKit ];
           };
+          clJsonKit = sibling {
+            name = "cl-json-kit";
+            source = cl-json-kit;
+          };
           clDateKit = sibling {
             name = "cl-date-kit";
             source = cl-date-kit;
@@ -302,6 +327,7 @@
           clRegexKit
           clBoundaryKit
           clConcurrentKit
+          clJsonKit
         ];
 
       lispCheckDependencies = ctx: [ (siblingsFor ctx).clWeave ];

@@ -3,7 +3,7 @@
 ;;;; Domain layer: a keyboard macro is an ordered value object made from
 ;;;; already-decoded key descriptors.  It contains no keymap or terminal
 ;;;; knowledge; replay is an application concern.
-(in-package #:loom)
+(in-package #:loom/feature/keyboard-macro)
 
 (defstruct (keyboard-macro-event
             (:constructor make-keyboard-macro-event (&key kind value)))

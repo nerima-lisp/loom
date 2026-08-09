@@ -41,11 +41,6 @@ modified-p, and undo-list state."
   (modified-p nil)
   (undo-list nil :type list))
 
-(defparameter +regex-search-timeout-seconds+ 1.0
-  "Deadline passed to CL-REGEX-KIT for every buffer search/replace match,
-bounding the event loop against a pathological pattern instead of letting it
-hang; see CL-REGEX-KIT:REGEX-TIMEOUT.")
-
 ;;; ---------------------------------------------------------------------
 ;;; Internal helpers
 ;;;

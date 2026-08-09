@@ -1,12 +1,12 @@
 ;;;; packages/feature/mode/src/application-major-mode.lisp
 ;;;;
 ;;;; User-facing mode selection and small mode-aware editing commands.
-(in-package #:loom)
+(in-package #:loom/feature/mode)
 
 (defun current-major-mode ()
   "Return the selected buffer's major mode, defaulting to FUNDAMENTAL."
-  (if (%selected-buffer)
-      (buffer-major-mode (%selected-buffer))
+  (if (loom/application:%selected-buffer)
+      (loom:buffer-major-mode (loom/application:%selected-buffer))
       :fundamental))
 
 (defun %major-mode-completion-candidates (input)
@@ -15,28 +15,33 @@
 
 (defun set-major-mode ()
   "Prompt for and apply a major mode to the selected buffer."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
+  (loom/application:with-prompts
+      (minibuffer (loom:editor-state-minibuffer
+                                    loom:*editor-state*)
+                 :on-cancel (loom:minibuffer-message minibuffer "Quit"))
       ((input "Major mode: "
                :completion-function #'%major-mode-completion-candidates))
     (let ((mode (major-mode-from-name input)))
-      (if (and mode (%selected-buffer))
+      (if (and mode (loom/application:%selected-buffer))
           (progn
-            (buffer-set-major-mode (%selected-buffer) mode)
-            (minibuffer-message minibuffer
+            (loom:buffer-set-major-mode
+             (loom/application:%selected-buffer)
+             mode)
+            (loom:minibuffer-message minibuffer
                                 (format nil "Mode: ~A" (major-mode-name mode))))
-          (minibuffer-message minibuffer
+          (loom:minibuffer-message minibuffer
                               (format nil "Unknown major mode: ~A" input))))))
 
 (defun indent-for-tab-command ()
   "Insert spaces until point reaches the selected mode's indentation stop."
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/application:%selected-buffer)))
     (when buffer
       (let* ((width (max 1 (major-mode-indentation-width
-                            (buffer-major-mode buffer))))
-             (column (buffer-point-column buffer))
+                            (loom:buffer-major-mode buffer))))
+             (column (loom:buffer-point-column buffer))
              (spaces (- width (mod column width))))
-        (buffer-insert-string buffer (make-string spaces :initial-element #\Space)))))
+        (loom:buffer-insert-string buffer
+                                   (make-string spaces :initial-element #\Space)))))
   nil)
 
 (defun %major-mode-line-indentation (line)
@@ -53,23 +58,24 @@
 
 (defun comment-line ()
   "Toggle the current line's comment marker according to its major mode."
-  (let* ((buffer (%selected-buffer))
-         (mode (and buffer (buffer-major-mode buffer)))
+  (let* ((buffer (loom/application:%selected-buffer))
+         (mode (and buffer (loom:buffer-major-mode buffer)))
          (prefix (and mode (major-mode-comment-prefix mode))))
     (cond
       ((null buffer) nil)
       ((null prefix)
-       (minibuffer-message (editor-state-minibuffer *editor-state*)
+       (loom:minibuffer-message (loom:editor-state-minibuffer
+                                  loom:*editor-state*)
                            (format nil "Mode ~A has no line comment syntax"
                                    (major-mode-name mode))))
       (t
-       (let* ((line-number (buffer-point-line buffer))
-              (line (buffer-line buffer line-number))
+       (let* ((line-number (loom:buffer-point-line buffer))
+              (line (loom:buffer-line buffer line-number))
               (indentation (%major-mode-line-indentation line))
               (prefix-end (+ indentation (length prefix)))
               (commented (%major-mode-comment-prefix-at
                            line indentation prefix))
-              (point-column (buffer-point-column buffer)))
+              (point-column (loom:buffer-point-column buffer)))
          (if commented
              (let* ((remove-end
                       (if (and (< prefix-end (length line))
@@ -82,15 +88,15 @@
                                       ((<= point-column remove-end)
                                        indentation)
                                       (t (- point-column removed-width)))))
-               (buffer-delete-region buffer line-number indentation
-                                     line-number remove-end)
-               (buffer-set-point buffer line-number new-column))
+               (loom:buffer-delete-region buffer line-number indentation
+                                          line-number remove-end)
+               (loom:buffer-set-point buffer line-number new-column))
              (let* ((insertion (format nil "~A " prefix))
                     (insertion-width (length insertion))
                     (new-column (if (>= point-column indentation)
                                     (+ point-column insertion-width)
                                     point-column)))
-               (buffer-set-point buffer line-number indentation)
-               (buffer-insert-string buffer insertion)
-               (buffer-set-point buffer line-number new-column)))))))
+               (loom:buffer-set-point buffer line-number indentation)
+               (loom:buffer-insert-string buffer insertion)
+               (loom:buffer-set-point buffer line-number new-column)))))))
   nil)

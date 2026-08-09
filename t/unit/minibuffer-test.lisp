@@ -186,7 +186,27 @@
          '("alpha")))
       (%type-string minibuffer "z")
       (minibuffer-handle-key minibuffer (%special-key :tab))
-      (expect (minibuffer-input-string minibuffer) :to-equal "z"))))
+      (expect (minibuffer-input-string minibuffer) :to-equal "z")))
+
+  (it
+    "rejects invalid completion functions and candidate results"
+    (let ((minibuffer (make-minibuffer)))
+      (signals error
+        (minibuffer-activate minibuffer "Prompt: " :completion-function 42))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :completion-function
+       (lambda (input)
+         (declare (ignore input))
+         42))
+      (signals error (minibuffer-complete minibuffer))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :completion-function
+       (lambda (input)
+         (declare (ignore input))
+         '("valid" 42)))
+      (signals error (minibuffer-complete minibuffer)))))
 
 (describe
   "minibuffer-message"

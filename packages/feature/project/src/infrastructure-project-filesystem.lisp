@@ -1,7 +1,7 @@
 ;;;; packages/feature/project/src/infrastructure-project-filesystem.lisp
 ;;;;
 ;;;; File-system adapters for the pure project domain.
-(in-package #:loom)
+(in-package #:loom/feature/project)
 
 (defun project-find-root (path)
   "Find PATH's nearest ancestor containing a project marker."
@@ -32,7 +32,8 @@
 (defun project-list-files (root)
   "Return regular files below ROOT, excluding generated/vendor directories."
   (labels ((walk (directory)
-             (loop for entry in (loom-fs-list-directory directory)
+             (loop for entry in
+                   (loom/feature/file-tree:loom-fs-list-directory directory)
                    for path = (car entry)
                    for kind = (cdr entry)
                    append (cond

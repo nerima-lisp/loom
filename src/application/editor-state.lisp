@@ -46,13 +46,10 @@ reach any of them through *EDITOR-STATE* alone."
   ;; call BUFFER-RECORD-UNDO-BOUNDARY: consecutive self-insertions (ordinary
   ;; typing) stay grouped into one undo step, matching Emacs's usual feel,
   ;; while switching to or from any other command starts a new undo group.
-  ;; Defaults to NIL so existing MAKE-EDITOR-STATE call sites (tests,
-  ;; %INITIALIZE-EDITOR-STATE) that never mention this slot keep working
-  ;; unchanged.
+  ;; Starts NIL for a new editor session.
   (last-command-self-insert-p nil)
-  ;; The optional application-owned language-server session.  Keeping this
-  ;; after the existing slots preserves all older positional MAKE-EDITOR-STATE
-  ;; call sites while allowing the render loop to drain LSP messages.
+  ;; The optional application-owned language-server session drained by the
+  ;; render loop.
   (lsp-session nil)
   ;; The Emacs-style named registers.  This is initialized by MAIN rather than
   ;; by the struct definition so tests and extensions may provide their own
@@ -60,9 +57,7 @@ reach any of them through *EDITOR-STATE* alone."
   (registers nil)
   ;; The currently defined keyboard macro and its recording/replay state.
   (keyboard-macro nil)
-  ;; The pending Emacs-style universal or numeric prefix argument.  Keeping
-  ;; this after the existing optional slots preserves older positional
-  ;; MAKE-EDITOR-STATE call sites.
+  ;; The pending Emacs-style universal or numeric prefix argument.
   (prefix-argument nil))
 
 (defvar *editor-state* nil

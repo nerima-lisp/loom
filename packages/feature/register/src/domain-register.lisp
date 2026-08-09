@@ -4,7 +4,7 @@
 ;;;; independent from buffers, minibuffers, and terminal I/O so the same
 ;;;; value object can be used by commands, session persistence, or a future
 ;;;; extension API.
-(in-package #:loom)
+(in-package #:loom/feature/register)
 
 (defstruct (register-value
             (:constructor %make-register-value (kind value)))

@@ -42,5 +42,6 @@ to *EDITOR-STATE* and to MINIBUFFER."
 %INITIALIZE-EDITOR-STATE\), for exercising the file-tree application
 commands \(commands-window.lisp\) against a real temporary directory."
   (let ((tree (make-file-tree root)))
-    (setf (loom::file-tree-child-lister tree) (function loom-fs-list-directory))
+    (setf (loom/feature/file-tree::file-tree-child-lister tree)
+          (function loom/feature/file-tree:loom-fs-list-directory))
     tree))

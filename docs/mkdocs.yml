@@ -1,14 +1,20 @@
 site_name: loom
-site_description: Terminal text editor with Emacs-like keybindings in Common Lisp.
+site_description: Terminal text editor with Emacs-like keybindings
 site_url: https://nerima-lisp.github.io/loom/
 repo_url: https://github.com/nerima-lisp/loom
 repo_name: nerima-lisp/loom
 edit_uri: edit/main/docs/src/
+copyright: MIT
 
 docs_dir: src
+site_dir: ../site
+use_directory_urls: true
+strict: true
 
 theme:
   name: material
+  language: en
+  favicon: assets/favicon.svg
   features:
     - navigation.sections
     - navigation.top
@@ -29,24 +35,53 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
 
+plugins:
+  - search
+
 markdown_extensions:
   - admonition
-  - toc:
-      permalink: true
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
-  - pymdownx.details
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
+  - pymdownx.smartsymbols
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+
+extra_css:
+  - assets/stylesheets/extra.css
 
 # Every page under docs/src/ must appear here: --strict fails the build on an
 # unlisted page. That is deliberate, so the nav cannot silently fall behind.
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Guide:
+      - Core Concepts: guide/core-concepts.md
   - Reference:
       - API: reference/api.md
       - Architecture: reference/architecture.md
   - Project:
+      - Development: project/development.md
       - Roadmap: project/roadmap.md
+
+not_in_nav: |
+  notes/

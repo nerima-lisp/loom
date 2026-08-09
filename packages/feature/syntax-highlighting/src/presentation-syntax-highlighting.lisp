@@ -4,7 +4,7 @@
 ;;;; styles.  The tokenizer stays in the domain layer; this file is the only
 ;;;; place that chooses the visual treatment for each token kind.
 
-(in-package #:loom)
+(in-package #:loom/feature/syntax-highlighting)
 
 (defparameter +layout-syntax-styles+
   '((:comment . (:fg 8))

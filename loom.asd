@@ -32,22 +32,36 @@ root source tree responsible for every feature."
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog" "cl-cli"
-               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit")
+               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-json-kit")
   :pathname "."
   :serial t
   :components
-  ;; File order, :serial t: package first; then domain (pure state/logic,
+  ;; File order, :serial t: package declarations first; then domain (pure state/logic,
   ;; no dependency on cl-tty-kit/cl-host-kit/cl-history-kit, so nothing
-  ;; below can forward-reference it); then infrastructure (adapters to
-  ;; those sibling libraries); then application (orchestrates domain +
+  ;; below can forward-reference it); then infrastructure (direct integration
+  ;; with those sibling libraries); then application (orchestrates domain +
   ;; infrastructure via *editor-state*); then presentation (composes
   ;; domain/application/infrastructure output for the screen); main last,
   ;; since it is the entry point everything else exists to be called from.
   ;; Path-prefixed :file names, not nested :module blocks, per nshell.asd's
   ;; precedent. Package-local filenames preserve the DDD layer in their
   ;; basename (for example, domain-buffer and application-commands-search),
-  ;; while this root list remains the composition root and load-order contract.
+  ;; and each feature owns its package declaration next to its source. This
+  ;; root list remains the composition root and load-order contract.
   ((:file "src/package")
+   (:file "packages/feature/mode/src/package")
+   (:file "packages/feature/syntax-highlighting/src/package")
+   (:file "packages/feature/project/src/package")
+   (:file "packages/feature/search/src/package")
+   (:file "packages/feature/window/src/package")
+   (:file "packages/feature/file-tree/src/package")
+   (:file "packages/feature/evaluation/src/package")
+   (:file "packages/feature/keyboard-macro/src/package")
+   (:file "packages/feature/register/src/package")
+   (:file "packages/feature/session/src/package")
+   (:file "packages/feature/user-init/src/package")
+   (:file "packages/feature/lsp/src/package")
+   (:file "src/package-user")
    (:file "packages/feature/mode/src/domain-major-mode")
    (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
    (:file "packages/feature/project/src/domain-project")
@@ -56,18 +70,20 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/domain-prefix-argument")
    (:file "packages/feature/search/src/domain-buffer-search")
    (:file "packages/feature/window/src/domain-window")
+   (:file "packages/feature/window/src/domain-window-operations")
    (:file "packages/feature/session/src/domain-session")
    (:file "packages/feature/evaluation/src/domain-evaluation")
    (:file "packages/feature/lsp/src/domain-lsp")
    (:file "src/domain/keymap")
    (:file "packages/feature/file-tree/src/domain-file-tree")
    (:file "src/infrastructure/terminal-renderer")
+   (:file "packages/feature/file-tree/src/infrastructure-filesystem-native")
    (:file "packages/feature/file-tree/src/infrastructure-filesystem")
    (:file "packages/feature/project/src/infrastructure-project-filesystem")
    (:file "packages/feature/session/src/infrastructure-session-store")
    (:file "packages/feature/user-init/src/infrastructure-user-init")
    (:file "packages/feature/evaluation/src/infrastructure-lisp-evaluator")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-json")
+   (:file "packages/feature/lsp/src/infrastructure-lsp-framing")
    (:file "packages/feature/lsp/src/infrastructure-lsp-process")
    (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime")
    (:file "packages/feature/register/src/domain-register")
@@ -75,6 +91,7 @@ root source tree responsible for every feature."
    (:file "src/application/editor-state")
    (:file "src/application/minibuffer")
    (:file "src/application/commands-internal")
+   (:file "src/application/command-registry")
    (:file "packages/feature/mode/src/application-major-mode")
    (:file "packages/feature/project/src/application-commands-project")
    (:file "packages/core/editor/src/application-commands-prefix-argument")
@@ -85,15 +102,20 @@ root source tree responsible for every feature."
    (:file "packages/feature/search/src/application-commands-search")
    (:file "packages/feature/file-tree/src/application-commands-file")
    (:file "packages/feature/window/src/application-commands-window")
+   (:file "packages/feature/file-tree/src/application-commands-file-tree")
    (:file "packages/feature/session/src/application-commands-session")
    (:file "packages/feature/evaluation/src/application-commands-evaluation")
    (:file "packages/feature/lsp/src/application-lsp-service")
    (:file "packages/feature/lsp/src/application-commands-lsp")
    (:file "src/application/commands-misc")
+   (:file "src/application/command-definitions")
    (:file "src/application/commands-keybindings")
    (:file "packages/feature/user-init/src/application-user-configuration")
    (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
    (:file "src/presentation/layout")
+   (:file "src/application/input-dispatch")
+   (:file "src/application/event-loop")
+   (:file "src/application/startup")
    (:file "src/main"))
   ;; The three build keys and the :perform below are exempt from the metadata
   ;; order above -- PACKAGE_STANDARD.md names cl-weave's identical trio and
@@ -167,6 +189,7 @@ root source tree responsible for every feature."
    (:file "t/unit/file-tree-test")
    (:file "t/unit/minibuffer-test")
    (:file "t/unit/evaluation-test")
+   (:file "t/unit/lsp-framing-test")
    (:file "t/unit/cli-test")
    (:file "t/integration/commands-test")
    (:file "t/integration/lsp-test")

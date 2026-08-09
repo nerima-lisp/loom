@@ -10,7 +10,7 @@
 ;;;;
 ;;;; A file tree is the collapsible sidebar file browser rooted at a directory,
 ;;;; backed by CL-HOST-KIT for filesystem access.
-(in-package #:loom)
+(in-package #:loom/feature/file-tree)
 
 ;;; This domain layer has no dependency on CL-HOST-KIT, so it cannot itself
 ;;; list a directory's children. Instead FILE-TREE carries a CHILD-LISTER

@@ -3,16 +3,41 @@
 (describe
   "keyboard macro commands"
   (it
+    "covers the explicit command lifecycle and empty replay"
+    (%with-minibuffer-state (minibuffer "")
+      (start-kbd-macro)
+      (expect (keyboard-macro-recording-p
+               (editor-state-keyboard-macro *editor-state*))
+              :to-be-truthy)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal
+              "Defining keyboard macro")
+      (end-kbd-macro)
+      (expect (keyboard-macro-recording-p
+               (editor-state-keyboard-macro *editor-state*))
+              :to-be nil)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal
+              "Keyboard macro defined")
+      (end-kbd-macro)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal
+              "No keyboard macro is being defined")
+      (call-last-kbd-macro)
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal
+              "Keyboard macro is empty")))
+
+  (it
     "records a self insertion and replays it through the key dispatch path"
     (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap))
            (buffer (%selected-test-buffer)))
       (setf (editor-state-keymap *editor-state*) keymap
             (editor-state-keyboard-macro *editor-state*)
-            (make-keyboard-macro))
+        (make-keyboard-macro))
         (flet ((dispatch (event)
-               (declare (ignore *editor-state*))
                (loom::%dispatch-key-event event keymap-state)))
         (buffer-set-point buffer 0 0)
         (dispatch (cl-tty-kit:make-key-event
@@ -35,4 +60,29 @@
                    :type :character :code #\x :modifiers '(:control)))
         (dispatch (cl-tty-kit:make-key-event
                    :type :character :code #\e :modifiers nil))
-        (expect (buffer-text buffer) :to-equal "aa")))))
+        (expect (buffer-text buffer) :to-equal "aa"))))
+
+  (it
+    "replays a bound key event through the keymap dispatcher"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((invoked nil)
+             (keymap (make-keymap))
+             (macro (make-keyboard-macro))
+             (descriptor (cons nil #\q)))
+        (keymap-define-key
+         keymap
+         (list descriptor)
+         (lambda ()
+           (setf invoked t)
+           :done))
+        (setf (editor-state-keymap *editor-state*) keymap
+              (editor-state-keyboard-macro *editor-state*) macro)
+        (keyboard-macro-start-recording macro)
+        (keyboard-macro-record-event
+         macro
+         (make-keyboard-macro-event :kind :key :value descriptor))
+        (keyboard-macro-stop-recording macro)
+        (call-last-kbd-macro)
+        (expect invoked :to-be-truthy)
+        (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+        (expect (keyboard-macro-replaying-p macro) :to-be nil)))))

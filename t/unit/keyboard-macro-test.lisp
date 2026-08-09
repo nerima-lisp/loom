@@ -58,4 +58,18 @@
       (keyboard-macro-record-event
        macro
        (make-keyboard-macro-event :kind :self-insert :value #\b))
-      (expect (keyboard-macro-events macro) :to-be nil))))
+      (expect (keyboard-macro-events macro) :to-be nil)))
+
+  (it
+    "drops all events and returns no event when removing from an empty macro"
+    (let ((macro (make-keyboard-macro)))
+      (keyboard-macro-start-recording macro)
+      (keyboard-macro-record-event
+       macro
+       (make-keyboard-macro-event :kind :self-insert :value #\a))
+      (keyboard-macro-begin-replay macro)
+      (expect (keyboard-macro-drop macro) :to-be-truthy)
+      (expect (keyboard-macro-events macro) :to-be nil)
+      (expect (keyboard-macro-recording-p macro) :to-be nil)
+      (expect (keyboard-macro-replaying-p macro) :to-be nil)
+      (expect (keyboard-macro-remove-last-event macro) :to-be nil))))

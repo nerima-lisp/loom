@@ -302,7 +302,7 @@ into that same file."))
   (column 0 :type buffer-offset))
 
 (defstruct (buffer-span
-            (:constructor %make-buffer-span (start end)))
+            (:constructor make-buffer-span (start end)))
   "A half-open character-offset span in a buffer."
   (start 0 :type buffer-offset)
   (end 0 :type buffer-offset))

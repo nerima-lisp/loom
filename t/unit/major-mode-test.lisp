@@ -20,7 +20,19 @@
     (expect (major-mode-from-name "bash") :to-be :shell)
     (expect (major-mode-from-name nil) :to-be nil)
     (expect (major-mode-known-p :rust) :to-be-truthy)
-    (expect (major-mode-known-p "unknown") :to-be-falsy))
+    (expect (major-mode-known-p "unknown") :to-be-falsy)
+    (expect (major-mode-from-name 'python) :to-be :python)
+    (expect (major-mode-from-name "Common Lisp") :to-be :common-lisp)
+    (expect (major-mode-from-name "plain text") :to-be :text)
+    (expect (major-mode-from-name 42) :to-be nil))
+
+  (it
+    "returns safe defaults for unknown mode metadata"
+    (expect (major-mode-name :unknown) :to-be nil)
+    (expect (major-mode-comment-prefix :unknown) :to-be nil)
+    (expect (major-mode-indentation-width :unknown) :to-equal 2)
+    (expect (major-mode-language-id :unknown) :to-be nil)
+    (expect (major-mode-keywords :unknown) :to-equal nil))
 
   (it
     "exposes the metadata used by editing and language features"
@@ -37,10 +49,27 @@
       (("source.lisp" :common-lisp)
        ("src/main.rs" :rust)
        ("scripts/run.sh" :shell)
+       ("docs/guide.md" :markdown)
+       ("docs/guide.markdown" :markdown)
+       ("config.json" :json)
+       ("notes.txt" :text)
+       ("Dockerfile" :shell)
+       ("Makefile" :shell)
+       ("LICENSE" :text)
+       ("COPYING" :text)
+       ("src\\lib/main.rs" :rust)
        ("README" :text)
-       ("notes.unknown" :fundamental))
+       ("notes.unknown" :fundamental)
+       ("file." :fundamental)
+       (42 :fundamental))
       "infers ~A as ~A" (path mode)
     (expect (major-mode-for-path path) :to-be mode)))
+
+(describe
+  "major-mode-for-path pathname input"
+  (it
+    "accepts pathname objects without touching the file system"
+    (expect (major-mode-for-path (pathname "src/main.rs")) :to-be :rust)))
 
 (describe
   "syntax-highlight-line-for-mode"
@@ -54,6 +83,15 @@
       (expect (%mode-token-texts line :python)
               :to-equal
               '("def" " " "answer" "(" ")" ":" " " "# note"))
+      (expect (apply #'concatenate 'string (%mode-token-texts line :python))
+              :to-equal line)))
+
+  (it
+    "classifies generic numbers, keywords, and strings"
+    (let ((line ":value 42 \"text\""))
+      (expect (%mode-token-kinds line :python)
+              :to-equal
+              '(:delimiter :plain :whitespace :number :whitespace :string))
       (expect (apply #'concatenate 'string (%mode-token-texts line :python))
               :to-equal line)))
 

@@ -4,7 +4,7 @@
 ;;;; not know how JSON is encoded or how a language server is launched; it
 ;;;; only keeps the positions, ranges, diagnostics, and open document state
 ;;;; that the application layer needs to present and synchronize.
-(in-package #:loom)
+(in-package #:loom/feature/lsp)
 
 (defstruct (lsp-position
             (:constructor make-lsp-position (line character)))

@@ -1,8 +1,8 @@
 ;;;; src/application/commands-misc.lisp
 ;;;;
-;;;; Application layer: the extended-command (M-x) registry, help, quit, and
-;;;; keyboard-quit commands (see application/commands-internal.lisp for the
-;;;; shared command-authoring convention every commands-*.lisp file follows).
+;;;; Application layer: help, quit, and keyboard-quit commands.
+;;;; The command catalogue is kept in application/command-definitions.lisp;
+;;;; the registry implementation is in application/command-registry.lisp.
 (in-package #:loom)
 
 ;; KEYBOARD-QUIT's own cancel path is narrower than it looks: a literal C-g
@@ -17,203 +17,28 @@
 ;; as Emacs's top-level C-g when there is nothing else to cancel.
 (defun keyboard-quit ()
   "Report a Quit message (C-g)."
-  (prefix-argument-reset (%prefix-argument-for-editor))
+  (prefix-argument-reset (prefix-argument-for-editor))
   (minibuffer-message (editor-state-minibuffer *editor-state*) "Quit"))
 
-(defmacro command-spec (name command &key keys)
-  "Describe COMMAND's M-x NAME and its optional default key sequence data."
-  (unless (or (null name) (stringp name))
-    (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
-  (unless (symbolp command)
-    (error "COMMAND-SPEC command must be a symbol: ~S" command))
-  `(list :name ,name :command ',command :keys ',keys))
+(defun execute-extended-command ()
+  "Prompt for a registered command and execute it (M-x)."
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((input "M-x "
+              :completion-function
+              #'loom/application:command-completion-candidates))
+    (let ((command (loom/application:find-extended-command input)))
+      (if command
+          (funcall command)
+          (minibuffer-message
+           minibuffer
+           (format nil "Unknown command: ~A" input))))))
 
-(defmacro define-command-specs (&body specs)
-  "Define the command registry from COMMAND-SPEC forms.
-
-Each spec provides an extended-command name and default key sequence data.
-NIL names describe keymap-only commands such as M-x itself. The explicit
-registry is used for lookup."
-  (let ((entries
-          (mapcar
-           (lambda (spec)
-             (unless (and (consp spec) (eq (first spec) 'command-spec))
-               (error "Expected a COMMAND-SPEC form, got: ~S" spec))
-             (destructuring-bind (operator name command &key keys) spec
-               (declare (ignore operator))
-               (unless (or (null name) (stringp name))
-                 (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
-               (unless (symbolp command)
-                 (error "COMMAND-SPEC command must be a symbol: ~S" command))
-               (list name command keys)))
-           specs)))
-    (let* ((names (remove nil (mapcar (function first) entries)))
-           (duplicate
-             (find-if (lambda (name)
-                        (> (count name names :test (function string-equal)) 1))
-                      names)))
-      (when duplicate
-        (error "Duplicate COMMAND-SPEC name: ~S" duplicate)))
-    `(progn
-       (defparameter *command-specs*
-         (list
-          ,@(mapcar
-             (lambda (entry)
-               (destructuring-bind (name command keys) entry
-                 `(list :name ,name :command ',command :keys ',keys)))
-             entries))))))
-
-(progn
-  (define-command-specs
-    (command-spec "universal-argument" universal-argument
-                  :keys ((:control #\u)))
-    (command-spec "forward-char" forward-char :keys ((:control #\f)))
-    (command-spec "backward-char" backward-char :keys ((:control #\b)))
-    (command-spec "next-line" next-line :keys ((:control #\n)))
-    (command-spec "previous-line" previous-line :keys ((:control #\p)))
-    (command-spec "forward-word" forward-word :keys ((:alt #\f)))
-    (command-spec "backward-word" backward-word :keys ((:alt #\b)))
-    (command-spec "move-beginning-of-line" move-beginning-of-line
-                  :keys ((:control #\a)))
-    (command-spec "move-end-of-line" move-end-of-line :keys ((:control #\e)))
-    (command-spec "beginning-of-buffer" beginning-of-buffer :keys ((:alt #\<)))
-    (command-spec "end-of-buffer" end-of-buffer :keys ((:alt #\>)))
-    (command-spec "scroll-up-command" scroll-up-command :keys ((:control #\v)))
-    (command-spec "scroll-down-command" scroll-down-command :keys ((:alt #\v)))
-    (command-spec "delete-char" delete-char :keys ((:control #\d)))
-    (command-spec "delete-backward-char" delete-backward-char
-                  :keys (:backspace))
-    (command-spec "newline" newline-command :keys (:enter))
-    (command-spec "open-line" open-line :keys ((:control #\o)))
-    (command-spec "kill-line" kill-line :keys ((:control #\k)))
-    (command-spec "kill-word" kill-word :keys ((:alt #\d)))
-    (command-spec "backward-kill-word" backward-kill-word
-                  :keys ((:alt :backspace)))
-    (command-spec "indent-for-tab-command" indent-for-tab-command
-                  :keys (:tab))
-    (command-spec "comment-line" comment-line
-                  :keys ((:alt #\;)))
-    (command-spec "kill-region" kill-region :keys ((:control #\w)))
-    (command-spec "yank" yank :keys ((:control #\y)))
-    (command-spec "set-mark-command" set-mark-command
-                  :keys ((:control #\Space)))
-    (command-spec "exchange-point-and-mark" exchange-point-and-mark
-                  :keys (((:control #\x) (:control #\x))))
-    (command-spec "mark-whole-buffer" mark-whole-buffer
-                  :keys (((:control #\x) #\h)))
-    (command-spec "undo" undo-command
-                  :keys (((:control #\x) #\u)))
-    (command-spec "search-forward" search-forward :keys ((:control #\s)))
-    (command-spec "search-backward" search-backward :keys ((:control #\r)))
-    (command-spec "replace-string" replace-string :keys ((:alt #\%)))
-    (command-spec "goto-line" goto-line :keys (((:alt #\g) #\g)))
-    (command-spec "find-file" find-file
-                  :keys (((:control #\x) (:control #\f))))
-    (command-spec "set-major-mode" set-major-mode)
-    (command-spec "project-find-file" project-find-file
-                  :keys (((:control #\x) #\p #\f)))
-    (command-spec "project-search" project-search
-                  :keys (((:control #\x) #\p #\s)))
-    (command-spec "project-root" project-root
-                  :keys (((:control #\x) #\p #\r)))
-    (command-spec "save-buffer" save-buffer
-                  :keys (((:control #\x) (:control #\s))))
-    (command-spec "write-file" write-file
-                  :keys (((:control #\x) (:control #\w))))
-    (command-spec "split-window-below" split-window-below
-                  :keys (((:control #\x) #\2)))
-    (command-spec "split-window-right" split-window-right
-                  :keys (((:control #\x) #\3)))
-    (command-spec "other-window" other-window
-                  :keys (((:control #\x) #\o)))
-    (command-spec "delete-window" delete-window
-                  :keys (((:control #\x) #\0)))
-    (command-spec "delete-other-windows" delete-other-windows
-                  :keys (((:control #\x) #\1)))
-    (command-spec "switch-to-buffer" switch-to-buffer
-                  :keys (((:control #\x) #\b)))
-    (command-spec "kill-buffer" kill-buffer
-                  :keys (((:control #\x) #\k)))
-    (command-spec "save-session" save-session
-                  :keys (((:control #\x) #\r #\S)))
-    (command-spec "load-session" load-session
-                  :keys (((:control #\x) #\r #\l)))
-    (command-spec "copy-to-register" copy-to-register
-                  :keys (((:control #\x) #\r #\s)))
-    (command-spec "insert-register" insert-register
-                  :keys (((:control #\x) #\r #\i)))
-    (command-spec "point-to-register" point-to-register
-                  :keys (((:control #\x) #\r #\Space)))
-    (command-spec "jump-to-register" jump-to-register
-                  :keys (((:control #\x) #\r #\j)))
-    (command-spec "start-kbd-macro" start-kbd-macro
-                  :keys (((:control #\x) #\( )))
-    (command-spec "end-kbd-macro" end-kbd-macro
-                  :keys (((:control #\x) #\) )))
-    (command-spec "call-last-kbd-macro" call-last-kbd-macro
-                  :keys (((:control #\x) #\e)))
-    (command-spec "eval-expression" eval-expression
-                  :keys ((:alt #\:)))
-    (command-spec "eval-buffer" eval-buffer
-                  :keys (((:control #\x) (:control #\e))))
-    (command-spec "lsp-start" lsp-start)
-    (command-spec "lsp-stop" lsp-stop)
-    (command-spec "lsp-diagnostics" lsp-diagnostics)
-    (command-spec "toggle-file-tree" toggle-file-tree
-                  :keys (((:control #\x) (:control #\t))))
-    (command-spec "file-tree-select-next" file-tree-select-next
-                  :keys (((:control #\c) #\n)))
-    (command-spec "file-tree-select-previous" file-tree-select-previous
-                  :keys (((:control #\c) #\p)))
-    (command-spec "file-tree-open-selected" file-tree-open-selected
-                  :keys (((:control #\c) #\o)))
-    (command-spec "file-tree-create-file" file-tree-create-file-command
-                  :keys (((:control #\c) #\c)))
-    (command-spec "file-tree-create-directory" file-tree-create-directory-command
-                  :keys (((:control #\c) #\d)))
-    (command-spec "file-tree-rename" file-tree-rename-command)
-    (command-spec "file-tree-delete" file-tree-delete-command)
-    (command-spec "keyboard-quit" keyboard-quit :keys ((:control #\g)))
-    (command-spec "help" help-command :keys ((:control #\h) :f1))
-    (command-spec "save-buffers-kill-terminal" save-buffers-kill-terminal
-                  :keys (((:control #\x) (:control #\c))))
-    (command-spec nil execute-extended-command :keys ((:alt #\x))))
-
-  (defun %extended-command-completion-candidates (input)
-    "Return all named command specs as candidates for INPUT."
-    (declare (ignore input))
-    (loop for spec in *command-specs*
-          for name = (getf spec :name)
-          when name collect name))
-
-  (defun %find-extended-command (input)
-    "Return the registered command named by INPUT, or NIL."
-    (let ((name (string-downcase (string-trim (quote (#\Space #\Tab)) input))))
-      (getf
-       (find-if (lambda (spec)
-                  (and (getf spec :name)
-                       (string= name (getf spec :name))))
-                *command-specs*)
-       :command)))
-
-  (defun execute-extended-command ()
-    "Prompt for a registered command and execute it (M-x)."
-    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                   :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((input "M-x "
-                :completion-function #'%extended-command-completion-candidates))
-      (let ((command (%find-extended-command input)))
-        (if command
-            (funcall command)
-            (minibuffer-message
-             minibuffer
-             (format nil "Unknown command: ~A" input))))))
-
-  (defun help-command ()
-    "Show a compact reference for the primary editor commands."
-    (minibuffer-message
-     (editor-state-minibuffer *editor-state*)
-     "Help: M-x Command  M-: Eval  C-x C-e Eval buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x k Kill  C-x r S Save session  C-x r l Load session  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  C-y Paste  C-x C-c Exit")))
+(defun help-command ()
+  "Show a compact reference for the primary editor commands."
+  (minibuffer-message
+   (editor-state-minibuffer *editor-state*)
+   "Help: M-x Command  M-: Eval  C-x C-e Eval buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x k Kill  C-x r S Save session  C-x r l Load session  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  C-y Paste  C-x C-c Exit"))
 
 ;; LOOM-QUIT carries no data: it exists only so src/main.lisp's event loop
 ;; can HANDLER-CASE on a type it, not a plain return value, to tell a real
@@ -230,8 +55,8 @@ src/main.lisp to exit cleanly."))
   (defun %quit-buffer-list ()
     "Return displayed buffers followed by hidden registered buffers."
     (let ((displayed
-            (mapcar (function window-buffer)
-                    (window-tree-windows
+            (mapcar (function loom/feature/window:window-buffer)
+                    (loom/feature/window:window-tree-windows
                      (editor-state-window-tree *editor-state*))))
           (registered (copy-list (%editor-buffers))))
       (remove-duplicates
@@ -239,7 +64,7 @@ src/main.lisp to exit cleanly."))
        :test (function eq))))
 
   ;; A CL-PROLOG rulebase keeps the quit-prompt answer table declarative.
-  ;; %FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
+  ;; FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
   (cl-prolog:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)
      (:when (and ?has-path (string-equal ?answer "s"))))

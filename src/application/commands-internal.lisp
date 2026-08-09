@@ -24,41 +24,54 @@
 ;;;; mapping from a keybinding to its behavior stays obvious from
 ;;;; domain/keymap.lisp alone.
 ;;;;
-;;;; None of the commands in this file or its siblings are exported from the
-;;;; LOOM package: they are invoked only from within the package itself, by
-;;;; INSTALL-DEFAULT-KEYBINDINGS and MAIN, which refer to them unqualified;
-;;;; tests reach them via LOOM:: qualification, the same precedent
-;;;; t/unit/file-tree-test.lisp already set for LOOM::FILE-TREE-CHILD-LISTER.
+;;;; The shared use-case primitives in this file belong to LOOM/APPLICATION.
+;;;; Feature commands use that explicit package directly, while the kernel
+;;;; package inherits the names for the command files that remain in the
+;;;; composition root.
 ;;;;
 ;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the WITH-PROMPTS macro below are
 ;;;; what every other commands-*.lisp file depends on, which is why this file
 ;;;; loads first among them: WITH-PROMPTS in particular must be defined before
 ;;;; any file that expands it is compiled, and its callers are spread across
 ;;;; the movement, search, file, window, and misc command files.
-(in-package #:loom)
+(in-package #:loom/application)
 
 (defun %selected-window ()
   "Return *EDITOR-STATE*'s currently selected window."
-  (window-tree-selected-window (editor-state-window-tree *editor-state*)))
+  (loom/feature/window:window-tree-selected-window
+   (loom:editor-state-window-tree loom:*editor-state*)))
 
 (defun %selected-buffer ()
   "Return the buffer displayed in *EDITOR-STATE*'s currently selected window."
-  (window-buffer (%selected-window)))
+  (loom/feature/window:window-buffer (%selected-window)))
 
 (defun %editor-buffers ()
   "Return the buffers known to the current editor session."
-  (editor-state-buffers *editor-state*))
+  (loom:editor-state-buffers loom:*editor-state*))
 
 (defun %register-buffer (buffer)
   "Add BUFFER to the current session's registry unless it is already present."
-  (pushnew buffer (editor-state-buffers *editor-state*) :test #'eq)
+  (pushnew buffer (loom:editor-state-buffers loom:*editor-state*) :test #'eq)
   buffer)
 
 (defun %unregister-buffer (buffer)
   "Remove BUFFER from the current session's registry."
-  (setf (editor-state-buffers *editor-state*)
-        (remove buffer (editor-state-buffers *editor-state*) :test #'eq))
+  (setf (loom:editor-state-buffers loom:*editor-state*)
+        (remove buffer
+                (loom:editor-state-buffers loom:*editor-state*)
+                :test #'eq))
   buffer)
+
+(defun %order-region (point-line point-column mark-line mark-column)
+  "Return the region bounds in buffer order.
+
+Positions are compared by line and then by column.  Keeping this pure
+ordering operation in the shared application package lets register commands
+reuse it without depending on the editor command implementation."
+  (if (or (< point-line mark-line)
+          (and (= point-line mark-line) (<= point-column mark-column)))
+      (values point-line point-column mark-line mark-column)
+      (values mark-line mark-column point-line point-column)))
 
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
   "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION) pair in
@@ -83,7 +96,7 @@ hand-nested pyramid of lambdas."
              (if bindings
                  (destructuring-bind (var prompt &key completion-function)
                      (first bindings)
-                   `(minibuffer-activate ,minibuffer-var ,prompt
+                   `(loom:minibuffer-activate ,minibuffer-var ,prompt
                                          :on-confirm (lambda (,var)
                                                        ,(expand-bindings (rest bindings)))
                                          ,@(when completion-function

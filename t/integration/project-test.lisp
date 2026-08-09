@@ -51,19 +51,84 @@
         (host-kit:write-file-string "" (merge-pathnames "flake.nix" root))
         (host-kit:write-file-string "print('needle')" main-path)
 
-        (loom::project-find-file)
+        (loom/feature/project::project-find-file)
         (expect (minibuffer-prompt-string minibuffer) :to-equal "Project file: ")
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :special :code :tab))
         (funcall (loom::%minibuffer-on-confirm minibuffer) "src/main.py")
         (expect (namestring (buffer-path (%selected-test-buffer)))
                 :to-equal
                 (namestring main-path))
         (expect (buffer-major-mode (%selected-test-buffer)) :to-be :python)
 
-        (loom::project-search)
+        (loom/feature/project::project-search)
         (expect (minibuffer-prompt-string minibuffer)
                 :to-equal
                 "Project search: ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "needle")
         (expect (loom::%minibuffer-message minibuffer)
                 :to-equal
-                "Matches: src/main.py:1")))))
+                "Matches: src/main.py:1")
+
+        (loom/feature/project::project-find-file)
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :special :code :control-g))
+        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+
+        (loom/feature/project::project-search)
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :special :code :control-g))
+        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+
+        (loom/feature/project::project-find-file)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "missing.py")
+        (expect (loom::%minibuffer-message minibuffer)
+                :to-equal
+                "File not found: missing.py")
+
+        (loom/feature/project::project-search)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "absent")
+        (expect (loom::%minibuffer-message minibuffer)
+                :to-equal
+                "No matches")
+
+        (loom/feature/project::project-root)
+        (expect (loom::%minibuffer-message minibuffer)
+                :to-contain
+                "Project root:"))))
+
+  (it
+    "reports missing project roots through every project command"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((path (merge-pathnames "plain.txt" directory))
+             (buffer (make-buffer :name "plain.txt"
+                                  :path path
+                                  :initial-content "plain"))
+             (*editor-state*
+               (make-editor-state
+                :window-tree (make-window-tree buffer 80 24)
+                :minibuffer (make-minibuffer)
+                :keymap (make-keymap)
+                :file-tree nil
+                :renderer nil
+                :buffers (list buffer)
+                :kill-ring nil)))
+        (host-kit:write-file-string "plain" path)
+        (loom/feature/project::project-root)
+        (expect (loom::%minibuffer-message
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal
+                "No project root found")
+        (loom/feature/project::project-find-file)
+        (expect (loom::%minibuffer-message
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal
+                "No project root found")
+        (loom/feature/project::project-search)
+        (expect (loom::%minibuffer-message
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal
+                "No project root found")))))

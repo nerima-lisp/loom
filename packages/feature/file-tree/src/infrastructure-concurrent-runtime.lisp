@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/file-tree)
 
 (defstruct (loom-concurrent-runtime
             (:constructor %make-loom-concurrent-runtime))
@@ -181,6 +181,7 @@ shutting down."
     (loop
       (multiple-value-bind (result ready closed)
           (cl-concurrent-kit:try-recv channel)
+        (declare (ignore closed))
         (cond
           (ready
            (incf count)

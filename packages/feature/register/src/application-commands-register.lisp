@@ -3,10 +3,10 @@
 ;;;; Application layer: Emacs-style register commands.  The domain register
 ;;;; bank owns values; these commands only obtain the current buffer/point and
 ;;;; coordinate asynchronous minibuffer prompts.
-(in-package #:loom)
+(in-package #:loom/feature/register)
 
 (defun %register-bank-for-editor ()
-  "Return the current state's register bank, creating it for older fixtures."
+  "Return the current state's register bank, creating it lazily when needed."
   (or (editor-state-registers *editor-state*)
       (setf (editor-state-registers *editor-state*)
             (make-register-bank))))

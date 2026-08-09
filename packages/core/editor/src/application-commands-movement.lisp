@@ -141,13 +141,14 @@
 
 (defun %scroll-window (delta)
   (let* ((window (%selected-window))
-         (buffer (window-buffer window))
-         (page (max 1 (1- (window-height window))))
+         (buffer (loom/feature/window:window-buffer window))
+         (page (max 1 (1- (loom/feature/window:window-height window))))
          (max-scroll (max 0 (- (buffer-line-count buffer)
-                               (max 1 (window-height window))))))
-    (setf (window-scroll-line window)
+                               (max 1 (loom/feature/window:window-height window))))))
+    (setf (loom/feature/window:window-scroll-line window)
           (max 0 (min max-scroll
-                      (+ (window-scroll-line window) (* delta page)))))))
+                      (+ (loom/feature/window:window-scroll-line window)
+                         (* delta page)))))))
 
 (defun scroll-up-command ()
   "Scroll down by roughly one page, repeating for the active prefix (C-v)."

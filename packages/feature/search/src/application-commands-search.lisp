@@ -12,7 +12,7 @@
 ;;;; as-is at each match: no $1-style capture-group expansion, which is what
 ;;;; keeps replacement a per-match delete+insert (and so one undo entry per
 ;;;; match) rather than a single whole-buffer rewrite.
-(in-package #:loom)
+(in-package #:loom/feature/search)
 
 (defun %perform-replacement (buffer old new start)
   "Replace every occurrence of regular expression OLD with the literal text

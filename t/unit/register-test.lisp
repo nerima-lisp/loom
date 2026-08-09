@@ -38,4 +38,12 @@
     "rejects negative positions"
     (let ((bank (make-register-bank)))
       (signals error (register-bank-put-position bank #\a -1 0))
-      (signals error (register-bank-put-position bank #\a 0 -1)))))
+      (signals error (register-bank-put-position bank #\a 0 -1))))
+
+  (it
+    "rejects non-character register names"
+    (let ((bank (make-register-bank)))
+      (signals error (register-bank-put-text bank "a" "hello"))
+      (signals error (register-bank-text bank "a"))
+      (signals error (register-bank-put-position bank "a" 0 0))
+      (signals error (register-bank-position bank "a")))))

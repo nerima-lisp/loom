@@ -5,7 +5,19 @@
 ;;; shadowed in favor of CL-WEAVE:DESCRIBE, per the cl-weave installation
 ;;; contract (see e.g. cl-host-kit/t/package.lisp, nshell/t/package.lisp).
 (defpackage #:loom/test
-  (:use #:cl #:loom)
+  (:use #:cl #:loom #:loom/application
+        #:loom/feature/mode
+        #:loom/feature/syntax-highlighting
+        #:loom/feature/project
+        #:loom/feature/search
+        #:loom/feature/file-tree
+        #:loom/feature/window
+        #:loom/feature/evaluation
+        #:loom/feature/keyboard-macro
+        #:loom/feature/register
+        #:loom/feature/session
+        #:loom/feature/user-init
+        #:loom/feature/lsp)
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
    #:it

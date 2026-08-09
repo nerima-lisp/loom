@@ -2,13 +2,13 @@
 ;;;;
 ;;;; Application-layer API for startup extensions. These operations validate
 ;;;; all user input before changing the command registry or live keymap.
-(in-package #:loom)
+(in-package #:loom/feature/user-init)
 
 (defun %resolve-user-command (command)
   "Resolve a user command name or callable designator."
   (cond
     ((stringp command)
-     (or (%find-extended-command command)
+     (or (loom/application:find-extended-command command)
          (error "Unknown user command: ~S" command)))
     ((functionp command)
      command)
@@ -29,7 +29,8 @@
       (unless key-form
         (error "User command key forms cannot be NIL."))
       (handler-case
-          (push (%defkeys-key-sequence key-form) normalized-keys)
+          (push (loom/application:defkeys-key-sequence key-form)
+                normalized-keys)
         (error (condition)
           (error "Invalid user command key form ~S: ~A"
                  key-form
@@ -41,7 +42,7 @@
   (find-if (lambda (spec)
              (and (getf spec :name)
                   (string-equal name (getf spec :name))))
-           *command-specs*))
+           loom/application:*command-specs*))
 
 (defun define-command (name command &key keys)
   "Register a user command NAME and optionally bind its default KEYS.
@@ -61,8 +62,8 @@ active, the new key sequences are also installed in its live keymap."
         (when (%user-command-name-in-use-p canonical-name)
           (error "User command name is already registered: ~S"
                  canonical-name))
-        (setf *command-specs*
-              (append *command-specs*
+        (setf loom/application:*command-specs*
+              (append loom/application:*command-specs*
                       (list (list :name canonical-name
                                   :command resolved-command
                                   :keys raw-keys))))

@@ -7,7 +7,7 @@
 ;;;;
 ;;;; Two fixtures, deliberately:
 ;;;;
-;;;;   The fake -- LOOM::*LOOM-FILESYSTEM* rebound to
+;;;;   The fake -- LOOM/FEATURE/FILE-TREE::*LOOM-FILESYSTEM* rebound to
 ;;;;   CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's in-memory filesystem. Fast, and
 ;;;;   it is what proves the boundary seam is real: if an operation still
 ;;;;   reached the disk directly, rebinding the variable would not redirect it
@@ -43,18 +43,22 @@ merge against the same root to land on the same entry."
   (merge-pathnames name #P"/loom-fake/"))
 
 (defmacro with-fake-filesystem (&body body)
-  "Run BODY with LOOM::*LOOM-FILESYSTEM* bound to a fresh in-memory filesystem."
-  `(let ((loom::*loom-filesystem* (cl-boundary-kit:make-test-filesystem)))
+  "Run BODY with the file-tree filesystem bound to a fresh in-memory filesystem."
+  `(let ((loom/feature/file-tree::*loom-filesystem*
+           (cl-boundary-kit:make-test-filesystem)))
      ,@body))
 
 (defun %fake-exists-p (path)
-  (cl-boundary-kit:filesystem-path-exists-p loom::*loom-filesystem* path))
+  (cl-boundary-kit:filesystem-path-exists-p
+   loom/feature/file-tree::*loom-filesystem* path))
 
 (defun %fake-read (path)
-  (cl-boundary-kit:filesystem-read-file loom::*loom-filesystem* path))
+  (cl-boundary-kit:filesystem-read-file
+   loom/feature/file-tree::*loom-filesystem* path))
 
 (defun %fake-write (path content)
-  (cl-boundary-kit:filesystem-store-file loom::*loom-filesystem* path content))
+  (cl-boundary-kit:filesystem-store-file
+   loom/feature/file-tree::*loom-filesystem* path content))
 
 (describe
   "file-tree-create-file"
@@ -97,7 +101,7 @@ merge against the same root to land on the same entry."
       (let ((path (%fake-path "subdir/")))
         (expect (file-tree-create-directory nil path) :to-equal path)
         (expect (cl-boundary-kit:filesystem-directory-exists-p
-                 loom::*loom-filesystem* path)
+                 loom/feature/file-tree::*loom-filesystem* path)
                 :to-be-truthy))))
 
   ;; The guarded contract: CL-BOUNDARY-KIT:FILESYSTEM-MAKE-DIRECTORY is
@@ -125,15 +129,18 @@ merge against the same root to land on the same entry."
       (let* ((parent-path (merge-pathnames "race-parent/" dir))
              (target-path (pathname (format nil "~Atarget [race]/"
                                              (namestring parent-path))))
-             (native-parent (loom::%native-namestring parent-path))
-             (original-directory-p (symbol-function 'loom::%native-directory-p))
-             (original-mkdir (symbol-function 'loom::%native-mkdir))
+             (native-parent
+               (loom/feature/file-tree::%native-namestring parent-path))
+             (original-directory-p
+               (symbol-function 'loom/feature/file-tree::%native-directory-p))
+             (original-mkdir
+               (symbol-function 'loom/feature/file-tree::%native-mkdir))
              (parent-checks 0))
         (host-kit:create-directory parent-path)
         (unwind-protect
              (progn
                (with-replaced-function
-                   (loom::%native-directory-p
+                   (loom/feature/file-tree::%native-directory-p
                     (lambda (native-path)
                       (if (string= native-path native-parent)
                           (if (= (incf parent-checks) 1)
@@ -141,7 +148,7 @@ merge against the same root to land on the same entry."
                               (funcall original-directory-p native-path))
                           (funcall original-directory-p native-path))))
                  (with-replaced-function
-                     (loom::%native-mkdir
+                     (loom/feature/file-tree::%native-mkdir
                       (lambda (native-path)
                         (if (string= native-path native-parent)
                             (error "simulated parent mkdir race")
@@ -149,30 +156,33 @@ merge against the same root to land on the same entry."
                    (expect (file-tree-create-directory nil target-path)
                            :to-equal target-path)))
                (expect parent-checks :to-equal 2)
-               (expect (loom::%native-directory-p
-                        (loom::%native-namestring target-path))
+               (expect (loom/feature/file-tree::%native-directory-p
+                        (loom/feature/file-tree::%native-namestring target-path))
                        :to-be-truthy))
-          (ignore-errors (loom::%native-delete-path parent-path))))))
+          (ignore-errors
+            (loom/feature/file-tree::%native-delete-path parent-path))))))
 
   (it
     "reports a target that appears after its existence check"
     (host-kit:with-temporary-directory (dir)
       (let ((target-path (pathname (format nil "~Atarget [appeared]/"
                                             (namestring dir)))))
-        (sb-posix:mkdir (loom::%native-namestring target-path) #o777)
+        (sb-posix:mkdir
+         (loom/feature/file-tree::%native-namestring target-path) #o777)
         (unwind-protect
              (progn
                (with-replaced-function
-                   (loom::%native-path-exists-p
+                   (loom/feature/file-tree::%native-path-exists-p
                     (lambda (path)
                       (declare (ignore path))
                       nil))
                  (signals error
                    (file-tree-create-directory nil target-path)))
-               (expect (loom::%native-directory-p
-                        (loom::%native-namestring target-path))
+               (expect (loom/feature/file-tree::%native-directory-p
+                        (loom/feature/file-tree::%native-namestring target-path))
                        :to-be-truthy))
-          (ignore-errors (loom::%native-delete-path target-path))))))
+          (ignore-errors
+            (loom/feature/file-tree::%native-delete-path target-path))))))
 
   (it
     "propagates a parent mkdir error when the path is still not a directory"
@@ -180,23 +190,26 @@ merge against the same root to land on the same entry."
       (let ((target-path (pathname (format nil "~Atarget [error]/"
                                             (namestring dir)))))
         (with-replaced-function
-            (loom::%native-directory-p
+            (loom/feature/file-tree::%native-directory-p
              (lambda (native-path)
                (declare (ignore native-path))
                nil))
           (signals error (file-tree-create-directory nil target-path)))
-        (expect (loom::%native-path-exists-p target-path) :to-be-falsy))))
+        (expect (loom/feature/file-tree::%native-path-exists-p target-path)
+                :to-be-falsy))))
 
 #+sbcl
 (describe
   "native filesystem path helpers"
   (it
     "joins child names without adding a root slash to an empty directory"
-    (expect (loom::%native-child-namestring "" "entry.txt")
+    (expect (loom/feature/file-tree::%native-child-namestring "" "entry.txt")
             :to-equal "entry.txt")
-    (expect (loom::%native-child-namestring "/tmp/" "entry.txt")
+    (expect
+     (loom/feature/file-tree::%native-child-namestring "/tmp/" "entry.txt")
             :to-equal "/tmp/entry.txt")
-    (expect (loom::%native-child-namestring "/tmp" "entry.txt")
+    (expect
+     (loom/feature/file-tree::%native-child-namestring "/tmp" "entry.txt")
             :to-equal "/tmp/entry.txt")))
 
 (describe

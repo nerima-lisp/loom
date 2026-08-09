@@ -9,7 +9,8 @@ Each package source filename carries its layer explicitly:
 
 - `domain-*` contains domain state and invariants.
 - `application-*` contains commands and use-case orchestration.
-- `infrastructure-*` contains external-process and filesystem adapters.
+- `infrastructure-*` contains direct external-process and filesystem
+  integrations.
 - `presentation-*` contains feature-specific rendering or styling.
 
 `loom.asd` is the single composition manifest and preserves the dependency

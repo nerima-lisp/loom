@@ -25,14 +25,14 @@
     (let ((expansion
             (macroexpand-1
              (quote
-               (loom::define-command-specs
-                 (loom::command-spec "forward-char" forward-char)
-                 (loom::command-spec "kill-line" kill-line))))))
+               (loom/application:define-command-specs
+                 (loom/application:command-spec "forward-char" forward-char)
+                 (loom/application:command-spec "kill-line" kill-line))))))
       (expect (first expansion) :to-equal (quote progn))
       (expect (first (second expansion)) :to-equal (quote defparameter))
       (expect (second (second expansion))
               :to-equal
-              (quote loom::*command-specs*))
+              (quote loom/application:*command-specs*))
       (expect (third (second expansion))
               :to-equal
               (quote
@@ -49,7 +49,7 @@
   (it "accepts a valid command-spec command"
     (let ((expansion
             (macroexpand-1
-             '(loom::command-spec "forward-char" forward-char))))
+             '(loom/application:command-spec "forward-char" forward-char))))
       (expect (first expansion) :to-be 'list)
       (expect (getf (rest expansion) :name) :to-equal "forward-char")
       (expect (getf (rest expansion) :command)
@@ -57,32 +57,52 @@
               (quote (quote forward-char)))))
   (it "rejects a non-string command-spec name"
     (signals error
-      (macroexpand-1 '(loom::command-spec 42 forward-char))))
+      (macroexpand-1 '(loom/application:command-spec 42 forward-char))))
   (it "rejects a non-symbol command-spec command"
     (signals error
-      (macroexpand-1 '(loom::command-spec "forward-char" 42))))
+      (macroexpand-1 '(loom/application:command-spec "forward-char" 42))))
   (it "rejects a non-command-spec registry entry"
     (signals error
-      (macroexpand-1 '(loom::define-command-specs (not-a-command-spec)))))
+      (macroexpand-1 '(loom/application:define-command-specs (not-a-command-spec)))))
   (it "rejects an atom registry entry"
     (signals error
-      (macroexpand-1 '(loom::define-command-specs 42))))
+      (macroexpand-1 '(loom/application:define-command-specs 42))))
   (it "rejects a non-string registry name"
     (signals error
       (macroexpand-1
-       '(loom::define-command-specs
-          (loom::command-spec 42 forward-char)))))
+       '(loom/application:define-command-specs
+          (loom/application:command-spec 42 forward-char)))))
   (it "rejects a non-symbol registry command"
     (signals error
       (macroexpand-1
-       '(loom::define-command-specs
-          (loom::command-spec "forward-char" 42)))))
+       '(loom/application:define-command-specs
+          (loom/application:command-spec "forward-char" 42)))))
   (it "rejects duplicate registry names case-insensitively"
     (signals error
       (macroexpand-1
-       '(loom::define-command-specs
-          (loom::command-spec "forward-char" forward-char)
-          (loom::command-spec "FORWARD-CHAR" backward-char))))))
+       '(loom/application:define-command-specs
+          (loom/application:command-spec "forward-char" forward-char)
+          (loom/application:command-spec "FORWARD-CHAR" backward-char))))))
+(describe
+  "command completion"
+  (it "filters candidates by a case-insensitive prefix"
+    (expect
+     (loom/application:command-completion-candidates "  FORWARD-C  ")
+     :to-equal
+     (list "forward-char")))
+  (it "returns all named commands for an empty prefix"
+    (let ((expected
+            (loop for spec in loom/application:*command-specs*
+                  for name = (getf spec :name)
+                  when name collect name)))
+      (expect (loom/application:command-completion-candidates "")
+              :to-equal
+              expected)))
+  (it "returns no candidates for an unknown prefix"
+    (expect
+     (loom/application:command-completion-candidates "does-not-exist")
+     :to-equal
+     nil)))
 (progn
   (describe "help command"
     (it "shows the primary command reference in the minibuffer"
@@ -97,7 +117,7 @@
         "binds ~A to help-command" (label key-sequence command)
       (declare (ignore label))
       (let ((keymap (make-keymap)))
-        (loom::install-default-keybindings keymap)
+        (loom/application:install-default-keybindings keymap)
         (expect (keymap-lookup keymap key-sequence) :to-be command))))
 
   (describe "execute-extended-command"
@@ -123,7 +143,7 @@
                 :to-equal "Unknown command: not-a-command")))
     (it "binds M-x to execute-extended-command"
       (let ((keymap (make-keymap)))
-        (loom::install-default-keybindings keymap)
+        (loom/application:install-default-keybindings keymap)
         (expect (keymap-lookup keymap (list (cons (quote (:alt)) #\x)))
                 :to-be (quote loom::execute-extended-command))))))
 (progn
@@ -173,23 +193,23 @@ reachability rather than on which of the two spellings was chosen."
     (it
       "resolves every keybound command through %find-extended-command"
       (let ((keymap (make-keymap)))
-        (loom::install-default-keybindings keymap)
+        (loom/application:install-default-keybindings keymap)
         (expect (remove-if
                  (lambda (command)
                    (or (member command +m-x-exempt-commands+)
                        (some (lambda (name)
-                               (eq (loom::%find-extended-command name) command))
+                               (eq (loom/application:find-extended-command name) command))
                              (%extended-command-names command))))
                  (%keymap-bound-commands keymap))
                 :to-equal (list))))
     (it
       "exempts execute-extended-command, which is itself the M-x prompt"
       (let ((keymap (make-keymap)))
-        (loom::install-default-keybindings keymap)
+        (loom/application:install-default-keybindings keymap)
         (expect (%keymap-bound-commands keymap)
                 :to-contain (quote loom::execute-extended-command)))
-      (expect (loom::%find-extended-command "execute-extended-command") :to-be nil)
-      (expect (loom::%find-extended-command "execute-extended") :to-be nil))))
+      (expect (loom/application:find-extended-command "execute-extended-command") :to-be nil)
+      (expect (loom/application:find-extended-command "execute-extended") :to-be nil))))
 (describe
   "file-tree commands"
   (it
@@ -197,13 +217,13 @@ reachability rather than on which of the two spellings was chosen."
     (let ((*editor-state* (%fresh-editor-state "")))
       (setf (editor-state-file-tree *editor-state*) (make-file-tree "/root/"))
       (expect (file-tree-visible-p (editor-state-file-tree *editor-state*)) :to-be-falsy)
-      (loom::toggle-file-tree)
+      (loom/feature/file-tree:toggle-file-tree)
       (expect (file-tree-visible-p (editor-state-file-tree *editor-state*)) :to-be-truthy)))
 
   (it
     "invalidates the file-tree runtime cache after a path mutation"
     (let ((runtime
-            (loom::make-loom-concurrent-runtime
+            (loom/feature/file-tree:make-loom-concurrent-runtime
              :directory-lister
              (lambda (path)
                (declare (ignore path))
@@ -214,19 +234,19 @@ reachability rather than on which of the two spellings was chosen."
                   (parent "/root/child/")
                   (entries '(("/root/child/file.txt" . :file))))
              (setf (editor-state-concurrent-runtime *editor-state*) runtime)
-             (loom::loom-concurrent-runtime-prime-directory runtime parent entries)
-             (loom::loom-concurrent-runtime-prime-directory runtime path entries)
-             (loom::%invalidate-file-tree-path path)
+             (loom/feature/file-tree:loom-concurrent-runtime-prime-directory runtime parent entries)
+             (loom/feature/file-tree:loom-concurrent-runtime-prime-directory runtime path entries)
+             (loom/feature/file-tree::%invalidate-file-tree-path path)
              (multiple-value-bind (cached present-p)
-                 (loom::loom-concurrent-runtime-directory-entries runtime parent)
+                 (loom/feature/file-tree:loom-concurrent-runtime-directory-entries runtime parent)
                (declare (ignore cached))
                (expect present-p :to-be nil))
              (multiple-value-bind (cached present-p)
-                 (loom::loom-concurrent-runtime-directory-entries runtime path)
+                 (loom/feature/file-tree:loom-concurrent-runtime-directory-entries runtime path)
                (declare (ignore cached))
                (expect present-p :to-be nil)))
         (ignore-errors
-          (loom::loom-concurrent-runtime-shutdown runtime)))))
+          (loom/feature/file-tree:loom-concurrent-runtime-shutdown runtime)))))
 
   (it
     "file-tree-select-next and file-tree-select-previous move the selection"
@@ -236,11 +256,11 @@ reachability rather than on which of the two spellings was chosen."
       (let ((*editor-state* (%fresh-editor-state "")))
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
         (let ((tree (editor-state-file-tree *editor-state*)))
-          (loom::file-tree-select-next)
+          (loom/feature/file-tree:file-tree-select-next)
           (let ((first (file-tree-selected-path tree)))
-            (loom::file-tree-select-next)
+            (loom/feature/file-tree:file-tree-select-next)
             (expect (equal (file-tree-selected-path tree) first) :to-be nil)
-            (loom::file-tree-select-previous)
+            (loom/feature/file-tree:file-tree-select-previous)
             (expect (file-tree-selected-path tree) :to-equal first))))))
 
   (it
@@ -249,8 +269,8 @@ reachability rather than on which of the two spellings was chosen."
       (host-kit:write-file-string "hello" (merge-pathnames "note.txt" dir))
       (let ((*editor-state* (%fresh-editor-state "")))
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
-        (loom::file-tree-select-next)
-        (loom::file-tree-open-selected)
+        (loom/feature/file-tree:file-tree-select-next)
+        (loom/feature/file-tree:file-tree-open-selected)
         (expect (buffer-name (%selected-test-buffer)) :to-equal "note.txt")
         (expect (member (%selected-test-buffer)
                         (editor-state-buffers *editor-state*))
@@ -260,20 +280,20 @@ reachability rather than on which of the two spellings was chosen."
     "file-tree-open-selected does nothing when no entry is selected"
     (let ((*editor-state* (%fresh-editor-state "")))
       (setf (editor-state-file-tree *editor-state*) (make-file-tree "/root/"))
-      (expect (loom::file-tree-open-selected) :to-be nil)))
+      (expect (loom/feature/file-tree:file-tree-open-selected) :to-be nil)))
 
   (it
     "file-tree-open-selected reports an entry that disappeared"
     (let ((*editor-state* (%fresh-editor-state ""))
           (tree (make-file-tree "/root/")))
       (setf (editor-state-file-tree *editor-state*) tree
-            (loom::file-tree-selection tree) "/root/vanished.txt")
+            (loom/feature/file-tree::file-tree-selection tree) "/root/vanished.txt")
       (with-replaced-function
           (file-tree-entry-kind
            (lambda (tree path)
              (declare (ignore tree path))
              nil))
-        (signals error (loom::file-tree-open-selected)))))
+        (signals error (loom/feature/file-tree:file-tree-open-selected)))))
 
   (it
     "file-tree-open-selected expands a directory entry instead of opening it"
@@ -282,9 +302,9 @@ reachability rather than on which of the two spellings was chosen."
       (let ((*editor-state* (%fresh-editor-state "")))
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
         (let ((tree (editor-state-file-tree *editor-state*)))
-          (loom::file-tree-select-next)
-          (loom::file-tree-open-selected)
-          (expect (gethash (file-tree-selected-path tree) (loom::file-tree-expanded tree))
+          (loom/feature/file-tree:file-tree-select-next)
+          (loom/feature/file-tree:file-tree-open-selected)
+          (expect (gethash (file-tree-selected-path tree) (loom/feature/file-tree::file-tree-expanded tree))
                   :to-be-truthy)))))
 
   (it
@@ -293,7 +313,7 @@ reachability rather than on which of the two spellings was chosen."
       (%with-minibuffer-state (minibuffer ""
                                (path (merge-pathnames "created.txt" dir)))
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
-        (loom::file-tree-create-file-command)
+        (loom/feature/file-tree:file-tree-create-file-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (expect (host-kit:path-exists-p path) :to-be-truthy))))
 
@@ -303,7 +323,7 @@ reachability rather than on which of the two spellings was chosen."
       (%with-minibuffer-state (minibuffer ""
                                (path (merge-pathnames "created-dir/" dir)))
         (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
-        (loom::file-tree-create-directory-command)
+        (loom/feature/file-tree:file-tree-create-directory-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) path)
         (expect (host-kit:path-exists-p path) :to-be-truthy))))
 
@@ -315,8 +335,8 @@ reachability rather than on which of the two spellings was chosen."
         (host-kit:write-file-string "content" old-path)
         (%with-minibuffer-state (minibuffer "")
           (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
-          (loom::file-tree-select-next)
-          (loom::file-tree-rename-command)
+          (loom/feature/file-tree:file-tree-select-next)
+          (loom/feature/file-tree:file-tree-rename-command)
           (funcall (loom::%minibuffer-on-confirm minibuffer) new-path)
           (expect (host-kit:path-exists-p old-path) :to-be-falsy)
           (expect (host-kit:path-exists-p new-path) :to-be-truthy)))))
@@ -328,6 +348,6 @@ reachability rather than on which of the two spellings was chosen."
         (host-kit:write-file-string "content" path)
         (let ((*editor-state* (%fresh-editor-state "")))
           (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
-          (loom::file-tree-select-next)
-          (loom::file-tree-delete-command)
+          (loom/feature/file-tree:file-tree-select-next)
+          (loom/feature/file-tree:file-tree-delete-command)
           (expect (host-kit:path-exists-p path) :to-be-falsy))))))

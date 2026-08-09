@@ -160,66 +160,66 @@
     (let* ((tree (make-window-tree :scratch 10 10))
            (original (window-tree-selected-window tree))
            (selected (window-split tree original :vertical))
-           (missing (loom::make-window-leaf :buffer :missing)))
+           (missing (loom/feature/window::make-window-leaf :buffer :missing)))
       (expect (window-delete tree missing) :to-be selected)
       (expect (window-tree-windows tree) :to-have-length 2)
       (expect (window-tree-selected-window tree) :to-be selected)))
 
   (it
     "handles leaf targets and direct split children"
-    (let* ((leaf (loom::make-window-leaf :buffer :leaf))
-           (other (loom::make-window-leaf :buffer :other))
-           (node (loom::make-window-split-node
+    (let* ((leaf (loom/feature/window::make-window-leaf :buffer :leaf))
+           (other (loom/feature/window::make-window-leaf :buffer :other))
+           (node (loom/feature/window::make-window-split-node
                    :direction :vertical
                    :children (list leaf other))))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node leaf other)
+          (loom/feature/window::%window-delete-node leaf other)
         (expect result :to-be leaf)
         (expect deleted :to-be-falsy))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node node leaf)
+          (loom/feature/window::%window-delete-node node leaf)
         (expect result :to-be other)
         (expect deleted :to-be-truthy))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node node other)
+          (loom/feature/window::%window-delete-node node other)
         (expect result :to-be leaf)
         (expect deleted :to-be-truthy))))
 
   (it
     "recurses through nested split nodes and reports missing targets"
-    (let* ((left (loom::make-window-leaf :buffer :left))
-           (middle (loom::make-window-leaf :buffer :middle))
-           (right (loom::make-window-leaf :buffer :right))
-           (nested (loom::make-window-split-node
+    (let* ((left (loom/feature/window::make-window-leaf :buffer :left))
+           (middle (loom/feature/window::make-window-leaf :buffer :middle))
+           (right (loom/feature/window::make-window-leaf :buffer :right))
+           (nested (loom/feature/window::make-window-split-node
                     :direction :horizontal
                     :children (list left middle)))
-           (root (loom::make-window-split-node
+           (root (loom/feature/window::make-window-split-node
                   :direction :vertical
                   :children (list nested right))))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node root left)
+          (loom/feature/window::%window-delete-node root left)
         (expect result :to-be root)
         (expect deleted :to-be-truthy)
-        (expect (first (loom::window-split-node-children root))
+        (expect (first (loom/feature/window::window-split-node-children root))
                 :to-be middle)))
-    (let* ((left (loom::make-window-leaf :buffer :left))
-           (middle (loom::make-window-leaf :buffer :middle))
-           (right (loom::make-window-leaf :buffer :right))
-           (nested (loom::make-window-split-node
+    (let* ((left (loom/feature/window::make-window-leaf :buffer :left))
+           (middle (loom/feature/window::make-window-leaf :buffer :middle))
+           (right (loom/feature/window::make-window-leaf :buffer :right))
+           (nested (loom/feature/window::make-window-split-node
                     :direction :horizontal
                     :children (list middle right)))
-           (root (loom::make-window-split-node
+           (root (loom/feature/window::make-window-split-node
                   :direction :vertical
                   :children (list left nested)))
-           (missing (loom::make-window-leaf :buffer :missing)))
+           (missing (loom/feature/window::make-window-leaf :buffer :missing)))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node root right)
+          (loom/feature/window::%window-delete-node root right)
         (expect result :to-be root)
         (expect deleted :to-be-truthy)
-        (expect (second (loom::window-split-node-children root))
+        (expect (second (loom/feature/window::window-split-node-children root))
                 :to-be middle))
       (multiple-value-bind (result deleted)
-          (loom::%window-delete-node root missing)
+          (loom/feature/window::%window-delete-node root missing)
         (expect result :to-be root)
         (expect deleted :to-be-falsy))))
 
@@ -236,3 +236,53 @@
       (expect (window-y bottom) :to-equal 0)
       (expect (window-width bottom) :to-equal 20)
       (expect (window-height bottom) :to-equal 10))))
+
+(describe
+  "window-tree layout persistence"
+  (it
+    "serializes and restores nested splits, scroll state, and selection"
+    (let* ((tree (make-window-tree :scratch 20 10))
+           (left (window-tree-selected-window tree))
+           (right (window-split tree left :vertical))
+           (bottom (window-split tree right :horizontal)))
+      (setf (window-scroll-line bottom) 3)
+      (window-tree-select-index tree 2)
+      (let* ((layout (window-tree-layout tree))
+             (restored (make-window-tree-from-layout
+                        layout 20 10
+                        :selected-index (window-tree-selected-index tree))))
+        (expect layout
+                :to-equal
+                '(:split :vertical
+                  (:leaf :scratch 0)
+                  (:split :horizontal
+                   (:leaf :scratch 0)
+                   (:leaf :scratch 3))))
+        (expect (window-tree-layout restored) :to-equal layout)
+        (expect (window-tree-selected-index restored) :to-equal 2)
+        (expect (window-scroll-line
+                 (third (window-tree-windows restored)))
+                :to-equal 3)
+        (expect (window-tree-select-index restored 0) :to-be restored)
+        (expect (window-tree-selected-index restored) :to-equal 0))))
+
+  (it
+    "rejects malformed layouts and invalid window selections"
+    (let ((tree (make-window-tree :scratch 10 10)))
+      (signals error (make-window-tree-from-layout 42 10 10))
+      (signals error (make-window-tree-from-layout '(:leaf :scratch) 10 10))
+      (signals error
+        (make-window-tree-from-layout
+         '(:split :vertical (:leaf :scratch 0)) 10 10))
+      (signals error
+        (make-window-tree-from-layout
+         '(:split :diagonal (:leaf :left 0) (:leaf :right 0)) 10 10))
+      (signals error (make-window-tree-from-layout '(:unknown) 10 10))
+      (signals error
+        (make-window-tree-from-layout '(:leaf :scratch 0) 10 10
+                                      :selected-index -1))
+      (signals error
+        (make-window-tree-from-layout '(:leaf :scratch 0) 10 10
+                                      :selected-index 1))
+      (signals error (window-tree-select-index tree 1))
+      (signals error (window-tree-select-index tree -1)))))

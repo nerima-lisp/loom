@@ -3,7 +3,13 @@
 ;;;; Domain layer: bounded regular-expression search over BUFFER's public text
 ;;;; and position APIs. The piece-table implementation remains in buffer.lisp;
 ;;;; this file owns search policy and span construction.
-(in-package #:loom)
+(in-package #:loom/feature/search)
+
+(defparameter +regex-search-timeout-seconds+ 1.0
+  "Deadline for each regex operation in the search feature.
+
+Keeping this policy beside the regex domain logic makes the core editor
+independent of search-engine concerns while still bounding the event loop.")
 
 (defun %scan-next-occurrence (text pattern start)
   "Return the domain-local regex match at or after START, with wrap-around."
@@ -20,8 +26,8 @@
   (let ((regex (cl-regex-kit:compile-regex pattern)))
     (flet ((spans-in (from to)
              (mapcar (lambda (match)
-                       (%make-buffer-span (cl-regex-kit:match-start match)
-                                          (cl-regex-kit:match-end match)))
+                       (make-buffer-span (cl-regex-kit:match-start match)
+                                         (cl-regex-kit:match-end match)))
                      (cl-regex-kit:all-matches regex text :start from :end to
                                                           :timeout +regex-search-timeout-seconds+))))
       (append (spans-in start (length text))
@@ -33,8 +39,8 @@
                                       pattern
                                       (buffer-point-offset buffer))))
     (when match
-      (%make-buffer-span (cl-regex-kit:match-start match)
-                         (cl-regex-kit:match-end match)))))
+      (make-buffer-span (cl-regex-kit:match-start match)
+                        (cl-regex-kit:match-end match)))))
 
 (defun buffer-search-backward (buffer pattern)
   "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once."

@@ -3,10 +3,10 @@
 ;;;; Project navigation and search commands.  The commands depend on the
 ;;;; project domain and filesystem adapter, while the editor state remains in
 ;;;; the src/<DDD> composition root.
-(in-package #:loom)
+(in-package #:loom/feature/project)
 
 (defun %project-start-path ()
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/application:%selected-buffer)))
     (or (and buffer (buffer-path buffer))
         (truename "."))))
 
@@ -26,7 +26,8 @@
         (let ((candidates
                 (mapcar (lambda (path) (project-relative-path root path))
                         (project-list-files root))))
-          (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+          (loom/application:with-prompts
+              (minibuffer (editor-state-minibuffer *editor-state*)
                          :on-cancel (minibuffer-message minibuffer "Quit"))
               ((relative-path
                  "Project file: "
@@ -36,8 +37,10 @@
             (let ((path (merge-pathnames relative-path root)))
               (if (probe-file path)
                   (let ((buffer (buffer-load path)))
-                    (%register-buffer buffer)
-                    (window-set-buffer (%selected-window) buffer))
+                    (loom/application:%register-buffer buffer)
+                    (loom/feature/window:window-set-buffer
+                     (loom/application:%selected-window)
+                                       buffer))
                   (minibuffer-message minibuffer
                                       (format nil "File not found: ~A"
                                               relative-path)))))))))
@@ -56,9 +59,10 @@
     (if (null root)
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No project root found")
-        (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                       :on-cancel (minibuffer-message minibuffer "Quit"))
-            ((query "Project search: "))
+        (loom/application:with-prompts
+            (minibuffer (editor-state-minibuffer *editor-state*)
+                        :on-cancel (minibuffer-message minibuffer "Quit"))
+          ((query "Project search: "))
           (let ((results (project-search-files root query)))
             (minibuffer-message
              minibuffer

@@ -1,7 +1,8 @@
 ;;;; t/integration/main-test.lisp
 ;;;;
-;;;; The :TOPLEVEL entry point's supporting logic (src/main.lisp) that does
-;;;; NOT itself require a real controlling terminal: raw octet reading
+;;;; The :TOPLEVEL entry point's supporting logic
+;;;; (src/application/input-dispatch.lisp, event-loop.lisp, and startup.lisp)
+;;;; that does NOT itself require a real controlling terminal: raw octet reading
 ;;;; (%READ-INPUT-OCTETS, against a real binary file stream bound to
 ;;;; *STANDARD-INPUT* -- READ-BYTE/LISTEN work identically on a file and a
 ;;;; terminal fd-stream), key-event routing (%KEY-EVENT->DESCRIPTOR,
@@ -32,7 +33,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
          (window-tree (make-window-tree buffer 80 24)))
     (make-editor-state :window-tree window-tree
                        :minibuffer (make-minibuffer)
-                       :keymap (loom::install-default-keybindings (make-keymap))
+                       :keymap (loom/application:install-default-keybindings (make-keymap))
                        :file-tree (make-file-tree "/root/")
                        :renderer (make-loom-renderer 80 24)
                        :kill-ring nil)))
@@ -106,7 +107,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
            (entries '(("/root/file.txt" . :file)))
            (calls 0)
            (runtime nil))
-      (setf (loom::file-tree-child-lister tree)
+      (setf (loom/feature/file-tree::file-tree-child-lister tree)
             (lambda (path)
               (incf calls)
               (when (equal path root)
@@ -115,11 +116,11 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (unwind-protect
            (progn
              (expect calls :to-equal 1)
-             (expect (funcall (loom::file-tree-child-lister tree) root)
+             (expect (funcall (loom/feature/file-tree::file-tree-child-lister tree) root)
                      :to-equal entries)
-             (expect (funcall (loom::file-tree-child-lister tree) "/uncached/")
+             (expect (funcall (loom/feature/file-tree::file-tree-child-lister tree) "/uncached/")
                      :to-be nil))
-        (loom-concurrent-runtime-shutdown runtime)))))
+        (loom/feature/file-tree:loom-concurrent-runtime-shutdown runtime)))))
 
 (describe
   "%key-event->descriptor"
@@ -151,7 +152,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (setf (loom::editor-state-last-command-self-insert-p *editor-state*) nil)
       (let ((buffer (%selected-test-buffer)))
         (buffer-insert-string buffer "x")
-        (loom::%record-undo-boundary-for-command t)
+        (loom:record-undo-boundary-for-command t)
         (buffer-insert-string buffer "y")
         (loom::undo-command)
         (expect (buffer-line buffer 0) :to-equal "xab"))))
@@ -162,7 +163,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
       (setf (loom::editor-state-last-command-self-insert-p *editor-state*) t)
       (let ((buffer (%selected-test-buffer)))
         (buffer-insert-string buffer "x")
-        (loom::%record-undo-boundary-for-command t)
+        (loom:record-undo-boundary-for-command t)
         (buffer-insert-string buffer "y")
         (loom::undo-command)
         (expect (buffer-line buffer 0) :to-equal ""))))
@@ -170,7 +171,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
   (it
     "updates last-command-self-insert-p for the next call"
     (let ((*editor-state* (%fresh-editor-state "")))
-      (loom::%record-undo-boundary-for-command t)
+      (loom:record-undo-boundary-for-command t)
       (expect (loom::editor-state-last-command-self-insert-p *editor-state*) :to-be t))))
 
 (describe
@@ -201,7 +202,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
   (it
     "dispatches a bound key through the keymap instead of self-inserting"
     (let* ((*editor-state* (%fresh-editor-state "hi"))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap)))
       (setf (editor-state-minibuffer *editor-state*) (make-minibuffer))
       (setf (editor-state-keymap *editor-state*) keymap)
@@ -214,7 +215,7 @@ keybindings, for exercising %RUN-EVENT-LOOP end to end."
   (it
     "does not self-insert a plain character while a prefix sequence is pending"
     (let* ((*editor-state* (%fresh-editor-state "hi"))
-           (keymap (loom::install-default-keybindings (make-keymap)))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
            (keymap-state (make-keymap-state keymap)))
       (setf (editor-state-minibuffer *editor-state*) (make-minibuffer))
       (setf (editor-state-keymap *editor-state*) keymap)

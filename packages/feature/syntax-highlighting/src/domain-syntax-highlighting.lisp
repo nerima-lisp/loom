@@ -3,7 +3,7 @@
 ;;;; Line-local Common Lisp lexical classification.  This module returns
 ;;;; semantic tokens without depending on terminal or rendering packages.
 
-(in-package #:loom)
+(in-package #:loom/feature/syntax-highlighting)
 
 (defstruct (syntax-token
             (:constructor %make-syntax-token (kind text))

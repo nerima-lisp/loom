@@ -70,7 +70,6 @@
                                 (incf column)))
                    (values line column))))
         (dotimes (_step 256)
-          (declare (ignore _step))
           (let ((kind (mod (next-random) 3))
                 (size (length reference)))
             (if (or (zerop size) (zerop kind))

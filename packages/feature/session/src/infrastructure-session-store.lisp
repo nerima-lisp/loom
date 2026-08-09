@@ -3,8 +3,8 @@
 ;;;; Infrastructure adapter for the domain session snapshot. The on-disk form
 ;;;; is deliberately plain, versioned s-expressions. Reading disables #. and
 ;;;; accepts only the exact keyword/plist shapes emitted by this file; writing
-;;;; uses a temporary sibling followed by the existing native rename adapter.
-(in-package #:loom)
+;;;; uses a temporary sibling followed by UIOP's overwrite-safe rename operation.
+(in-package #:loom/feature/session)
 
 (defparameter *loom-session-version* 1)
 
@@ -89,8 +89,7 @@
    :defaults target))
 
 (defun %session-rename (old-path new-path)
-  #+sbcl (%native-rename old-path new-path)
-  #-sbcl (rename-file old-path new-path))
+  (uiop:rename-file-overwriting-target old-path new-path))
 
 (defgeneric session-store-write (path snapshot)
   (:documentation

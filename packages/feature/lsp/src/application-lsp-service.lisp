@@ -4,7 +4,7 @@
 ;;;; values and process I/O stay behind the infrastructure protocols; this
 ;;;; file owns request IDs, document versions, diagnostics, and the lifecycle
 ;;;; visible to commands and the main event loop.
-(in-package #:loom)
+(in-package #:loom/feature/lsp)
 
 (defstruct (lsp-session
             (:constructor %make-lsp-session))
@@ -19,15 +19,6 @@
   (diagnostic-table (make-hash-table :test #'equal))
   last-error
   (closed-p nil))
-
-(defun %lsp-object (&rest entries)
-  (make-loom-json-object entries))
-
-(defun %lsp-array (&rest elements)
-  (make-loom-json-array elements))
-
-(defun %lsp-entry (key value)
-  (cons key value))
 
 (defun lsp-path-uri (path)
   "Return the file URI used for PATH by Loom's minimal LSP client.
@@ -61,25 +52,25 @@ the same trust boundary as user initialization and Lisp evaluation."
 
 (defun %lsp-send-object (session object)
   (lsp-transport-send (lsp-session-transport session)
-                      (loom-json-encode object)))
+                      (json-kit:stringify object)))
 
 (defun %lsp-send-notification (session method params)
   (%lsp-send-object
    session
-   (%lsp-object
-    (%lsp-entry "jsonrpc" "2.0")
-    (%lsp-entry "method" method)
-    (%lsp-entry "params" params))))
+   (json-kit:make-json-object
+    (list (cons "jsonrpc" "2.0")
+          (cons "method" method)
+          (cons "params" params)))))
 
 (defun %lsp-send-request (session method params)
   (let ((id (incf (lsp-session-next-id session))))
     (%lsp-send-object
      session
-     (%lsp-object
-      (%lsp-entry "jsonrpc" "2.0")
-      (%lsp-entry "id" id)
-      (%lsp-entry "method" method)
-      (%lsp-entry "params" params)))
+     (json-kit:make-json-object
+      (list (cons "jsonrpc" "2.0")
+            (cons "id" id)
+            (cons "method" method)
+            (cons "params" params))))
     id))
 
 (defun lsp-session-start (session)
@@ -92,18 +83,19 @@ the same trust boundary as user initialization and Lisp evaluation."
           (%lsp-send-request
            session
            "initialize"
-           (%lsp-object
-            (%lsp-entry "processId" +loom-json-null+)
-            (%lsp-entry "rootUri"
+           (json-kit:make-json-object
+            (list (cons "processId" json-kit:+json-null+)
+                  (cons "rootUri"
                         (or (lsp-session-root-uri session)
-                            +loom-json-null+))
-             (%lsp-entry "capabilities" (%lsp-object))))))
+                            json-kit:+json-null+))
+                  (cons "capabilities"
+                        (json-kit:make-json-object nil)))))))
   session)
 
 (defun %lsp-json-error-message (value)
   (cond
-    ((loom-json-object-p value)
-     (let ((message (loom-json-object-get value "message" nil)))
+    ((hash-table-p value)
+     (let ((message (gethash "message" value)))
        (if (stringp message)
            message
            (format nil "~S" value))))
@@ -112,7 +104,7 @@ the same trust boundary as user initialization and Lisp evaluation."
 
 (defun %lsp-value-present-p (object key)
   (multiple-value-bind (value present-p)
-      (loom-json-object-get object key nil)
+      (gethash key object)
     (values value present-p)))
 
 (defun %lsp-handle-initialize-response (session message)
@@ -125,7 +117,7 @@ the same trust boundary as user initialization and Lisp evaluation."
         (setf (lsp-session-pending-initialize-id session) nil)
         (if (and error-present-p
                  (not (or (null error-value)
-                          (eq error-value +loom-json-null+))))
+                          (eq error-value json-kit:+json-null+))))
             (setf (lsp-session-last-error session)
                   (%lsp-json-error-message error-value))
             (progn
@@ -134,38 +126,38 @@ the same trust boundary as user initialization and Lisp evaluation."
               (%lsp-send-notification
                session
                "initialized"
-               (%lsp-object))))))))
+               (json-kit:make-json-object nil))))))))
 
 (defun %lsp-parse-position (object)
-  (unless (loom-json-object-p object)
+  (unless (hash-table-p object)
     (error "LSP position is not an object: ~S" object))
-  (let ((line (loom-json-object-get object "line" nil))
-        (character (loom-json-object-get object "character" nil)))
+  (let ((line (gethash "line" object))
+        (character (gethash "character" object)))
     (unless (and (integerp line) (integerp character))
       (error "LSP position has invalid coordinates: ~S" object))
     (make-lsp-position line character)))
 
 (defun %lsp-parse-range (object)
-  (unless (loom-json-object-p object)
+  (unless (hash-table-p object)
     (error "LSP diagnostic range is not an object: ~S" object))
   (make-lsp-range
-   (%lsp-parse-position (loom-json-object-get object "start" nil))
-   (%lsp-parse-position (loom-json-object-get object "end" nil))))
+   (%lsp-parse-position (gethash "start" object))
+   (%lsp-parse-position (gethash "end" object))))
 
 (defun %lsp-optional-diagnostic-value (object key)
   (multiple-value-bind (value present-p)
       (%lsp-value-present-p object key)
-    (when (and present-p (not (eq value +loom-json-null+)))
+    (when (and present-p (not (eq value json-kit:+json-null+)))
       value)))
 
 (defun %lsp-parse-diagnostic (object)
-  (unless (loom-json-object-p object)
+  (unless (hash-table-p object)
     (error "LSP diagnostic is not an object: ~S" object))
-  (let ((message (loom-json-object-get object "message" nil)))
+  (let ((message (gethash "message" object)))
     (unless (stringp message)
       (error "LSP diagnostic has no message: ~S" object))
     (make-lsp-diagnostic
-     (%lsp-parse-range (loom-json-object-get object "range" nil))
+     (%lsp-parse-range (gethash "range" object))
      message
      :severity (let ((value (%lsp-optional-diagnostic-value object "severity")))
                  (and (integerp value) value))
@@ -174,20 +166,20 @@ the same trust boundary as user initialization and Lisp evaluation."
      :code (%lsp-optional-diagnostic-value object "code"))))
 
 (defun %lsp-handle-publish-diagnostics (session message)
-  (let* ((params (loom-json-object-get message "params" nil))
-         (uri (and (loom-json-object-p params)
-                   (loom-json-object-get params "uri" nil)))
-         (items (and (loom-json-object-p params)
-                     (loom-json-object-get params "diagnostics" nil))))
-    (unless (and (stringp uri) (loom-json-array-p items))
+  (let* ((params (gethash "params" message))
+         (uri (and (hash-table-p params)
+                   (gethash "uri" params)))
+         (items (and (hash-table-p params)
+                     (gethash "diagnostics" params))))
+    (unless (and (stringp uri) (listp items))
       (error "Malformed publishDiagnostics notification: ~S" message))
     (setf (gethash uri (lsp-session-diagnostic-table session))
-          (mapcar #'%lsp-parse-diagnostic (loom-json-array-elements items)))))
+          (mapcar #'%lsp-parse-diagnostic items))))
 
 (defun %lsp-handle-message (session message)
-  (unless (loom-json-object-p message)
+  (unless (hash-table-p message)
     (error "LSP message is not an object: ~S" message))
-  (let ((method (loom-json-object-get message "method" nil)))
+  (let ((method (gethash "method" message)))
     (cond
       ((and (stringp method)
             (string= method "textDocument/publishDiagnostics"))
@@ -202,7 +194,15 @@ the same trust boundary as user initialization and Lisp evaluation."
       (handler-case
           (let ((json (lsp-transport-receive (lsp-session-transport session))))
             (unless json (return))
-            (%lsp-handle-message session (loom-json-parse json)))
+            (%lsp-handle-message
+             session
+             (json-kit:parse
+              json
+              :object-type :hash-table
+              :array-type :list
+              :duplicate-key-policy :error
+              :null-value json-kit:+json-null+
+              :false-value nil)))
         (error (condition)
           (setf (lsp-session-last-error session) (format nil "~A" condition))
           (return)))))
@@ -210,7 +210,7 @@ the same trust boundary as user initialization and Lisp evaluation."
 
 (defun %lsp-buffer-uri (buffer-or-path)
   (cond
-    ((buffer-p buffer-or-path)
+    ((loom:buffer-p buffer-or-path)
      (and (buffer-path buffer-or-path)
           (lsp-path-uri (buffer-path buffer-or-path))))
     ((or (pathnamep buffer-or-path) (stringp buffer-or-path))
@@ -219,7 +219,7 @@ the same trust boundary as user initialization and Lisp evaluation."
 
 (defun lsp-session-sync-buffer (session buffer)
   "Send a full-text open or change notification for BUFFER."
-  (unless (buffer-p buffer)
+  (unless (loom:buffer-p buffer)
     (error "LSP buffer synchronization needs a BUFFER: ~S" buffer))
   (let ((uri (%lsp-buffer-uri buffer)))
     (when (and uri (lsp-session-initialized-p session))
@@ -232,17 +232,17 @@ the same trust boundary as user initialization and Lisp evaluation."
               (%lsp-send-notification
                session
                "textDocument/didChange"
-               (%lsp-object
-                (%lsp-entry
-                 "textDocument"
-                 (%lsp-object
-                  (%lsp-entry "uri" uri)
-                  (%lsp-entry "version"
-                              (lsp-document-version document))))
-                (%lsp-entry
-                 "contentChanges"
-                 (%lsp-array
-                  (%lsp-object (%lsp-entry "text" text)))))))
+               (json-kit:make-json-object
+                (list
+                 (cons "textDocument"
+                       (json-kit:make-json-object
+                        (list (cons "uri" uri)
+                              (cons "version"
+                                    (lsp-document-version document)))))
+                 (cons "contentChanges"
+                       (list
+                        (json-kit:make-json-object
+                         (list (cons "text" text)))))))))
             (let ((new-document
                     (make-lsp-document uri
                                        (%lsp-language-id (buffer-path buffer))
@@ -252,16 +252,16 @@ the same trust boundary as user initialization and Lisp evaluation."
               (%lsp-send-notification
                session
                "textDocument/didOpen"
-               (%lsp-object
-                (%lsp-entry
-                 "textDocument"
-                 (%lsp-object
-                  (%lsp-entry "uri" uri)
-                  (%lsp-entry "languageId"
-                              (lsp-document-language-id new-document))
-                  (%lsp-entry "version"
-                              (lsp-document-version new-document))
-                  (%lsp-entry "text" text)))))))))
+               (json-kit:make-json-object
+                (list
+                 (cons "textDocument"
+                       (json-kit:make-json-object
+                        (list (cons "uri" uri)
+                              (cons "languageId"
+                                    (lsp-document-language-id new-document))
+                              (cons "version"
+                                    (lsp-document-version new-document))
+                              (cons "text" text)))))))))))
   session))
 
 (defun lsp-session-refresh (session buffer)

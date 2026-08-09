@@ -138,14 +138,14 @@
     (let ((*editor-state* (%fresh-editor-state "hi")))
       (let ((tree (editor-state-window-tree *editor-state*)))
         (expect (length (window-tree-windows tree)) :to-equal 1)
-        (loom::split-window-below)
+        (loom/feature/window:split-window-below)
         (expect (length (window-tree-windows tree)) :to-equal 2))))
 
   (it
     "split-window-right adds a second window beside the first"
     (let ((*editor-state* (%fresh-editor-state "hi")))
       (let ((tree (editor-state-window-tree *editor-state*)))
-        (loom::split-window-right)
+        (loom/feature/window:split-window-right)
         (expect (length (window-tree-windows tree)) :to-equal 2))))
 
   (it
@@ -153,9 +153,9 @@
     (let ((*editor-state* (%fresh-editor-state "hi")))
       (let* ((tree (editor-state-window-tree *editor-state*))
              (original (window-tree-selected-window tree)))
-        (loom::split-window-below)
+        (loom/feature/window:split-window-below)
         (expect (eq (window-tree-selected-window tree) original) :to-be nil)
-        (loom::other-window)
+        (loom/feature/window:other-window)
         (expect (window-tree-selected-window tree) :to-be original))))
 
   (it
@@ -163,8 +163,8 @@
     (let ((*editor-state* (%fresh-editor-state "hi")))
       (let* ((tree (editor-state-window-tree *editor-state*))
              (original (window-tree-selected-window tree)))
-        (loom::split-window-below)
-        (loom::delete-window)
+        (loom/feature/window:split-window-below)
+        (loom/feature/window:delete-window)
         (expect (window-tree-windows tree) :to-have-length 1)
         (expect (window-tree-selected-window tree) :to-be original)
         (expect (window-width original) :to-equal 80)
@@ -174,10 +174,10 @@
     "delete-other-windows keeps the selected pane and restores the full layout"
     (let ((*editor-state* (%fresh-editor-state "hi")))
       (let* ((tree (editor-state-window-tree *editor-state*)))
-        (loom::split-window-right)
-        (loom::split-window-below)
+        (loom/feature/window:split-window-right)
+        (loom/feature/window:split-window-below)
         (let ((selected (window-tree-selected-window tree)))
-          (loom::delete-other-windows)
+          (loom/feature/window:delete-other-windows)
           (expect (window-tree-windows tree) :to-have-length 1)
           (expect (window-tree-selected-window tree) :to-be selected)
           (expect (window-x selected) :to-equal 0)
@@ -194,7 +194,7 @@
             (cons other (editor-state-buffers *editor-state*)))
       (window-set-buffer (window-split tree (window-tree-selected-window tree) :horizontal) other)
       (window-select-next tree)
-      (loom::switch-to-buffer)
+      (loom/feature/window:switch-to-buffer)
       (%type-string minibuffer "other.t")
       (minibuffer-handle-key minibuffer (%special-key :tab))
       (expect (minibuffer-input-string minibuffer) :to-equal "other.txt")
@@ -205,9 +205,16 @@
   (it
     "switch-to-buffer reports an unknown buffer name"
     (%with-minibuffer-state (minibuffer "selected")
-      (loom::switch-to-buffer)
+      (loom/feature/window:switch-to-buffer)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nope.txt")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "No such buffer: nope.txt"))))
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "No such buffer: nope.txt")))
+
+  (it
+    "cancels switch-to-buffer through the minibuffer key protocol"
+    (%with-minibuffer-state (minibuffer "selected")
+      (loom/feature/window:switch-to-buffer)
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
 
 (describe
   "buffer lifecycle commands"
@@ -224,7 +231,7 @@
               (cons other (editor-state-buffers *editor-state*)))
         (window-set-buffer selected other)
         (window-set-buffer (window-split tree selected :horizontal) other)
-        (loom::kill-buffer)
+        (loom/feature/window:kill-buffer)
         (%type-string minibuffer "other.t")
         (minibuffer-handle-key minibuffer (%special-key :tab))
         (expect (minibuffer-input-string minibuffer) :to-equal "other.txt")
@@ -240,7 +247,7 @@
     "creates and registers a scratch replacement when killing the last buffer"
     (%with-minibuffer-state (minibuffer "draft")
       (let ((original (%selected-test-buffer)))
-        (loom::kill-buffer)
+        (loom/feature/window:kill-buffer)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "*scratch*")
         (expect (find original (editor-state-buffers *editor-state*) :test #'eq)
                 :to-be nil)
@@ -260,7 +267,7 @@
            (window-tree-selected-window (editor-state-window-tree *editor-state*))
            buffer)
           (buffer-insert-string buffer "!")
-          (loom::kill-buffer)
+          (loom/feature/window:kill-buffer)
           (funcall (loom::%minibuffer-on-confirm minibuffer) "draft.txt")
           (expect (minibuffer-prompt-string minibuffer)
                   :to-equal "Save draft.txt? (s/d/c): ")
@@ -275,7 +282,7 @@
     (%with-minibuffer-state (minibuffer "draft")
       (let ((buffer (%selected-test-buffer)))
         (buffer-insert-string buffer "!")
-        (loom::kill-buffer)
+        (loom/feature/window:kill-buffer)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "*scratch*")
         (expect (minibuffer-prompt-string minibuffer)
                 :to-equal "Discard changes to *scratch*? (d/c): ")
@@ -283,8 +290,34 @@
         (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
                 :to-be buffer)
         (expect (buffer-modified-p buffer) :to-be t)
-        (loom::kill-buffer)
+        (loom/feature/window:kill-buffer)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "*scratch*")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "d")
         (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
                 :to-be nil)))))
+
+  (it
+    "reports an unknown buffer and can cancel the kill prompt"
+    (%with-minibuffer-state (minibuffer "selected")
+      (loom/feature/window:kill-buffer)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "missing")
+      (expect (loom::%minibuffer-message minibuffer)
+              :to-equal "No such buffer: missing")
+      (loom/feature/window:kill-buffer)
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")))
+
+  (it
+    "re-prompts on an invalid modified-buffer answer and cancels the nested prompt"
+    (%with-minibuffer-state (minibuffer "draft")
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-insert-string buffer "!")
+        (loom/feature/window:kill-buffer)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "*scratch*")
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "x")
+        (expect (minibuffer-prompt-string minibuffer)
+                :to-equal "Discard changes to *scratch*? (d/c): ")
+        (minibuffer-handle-key minibuffer (%special-key :control-g))
+        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
+                :to-be buffer))))

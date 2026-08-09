@@ -3,7 +3,7 @@
 ;;;; Pure major-mode metadata and path/name resolution.  Editing commands
 ;;;; consume this domain object, while buffer storage only keeps the selected
 ;;;; mode identity.
-(in-package #:loom)
+(in-package #:loom/feature/mode)
 
 (defparameter +major-mode-definitions+
   '((:fundamental
@@ -125,7 +125,7 @@
   (getf (%major-mode-definition mode) :language-id))
 
 (defun major-mode-keywords (mode)
-  (copy-list (or (getf (%major-mode-definition mode) :keywords) '())))
+  (copy-list (getf (%major-mode-definition mode) :keywords)))
 
 (defun major-mode-names ()
   "Return display names in the same order as the built-in mode catalog."
