@@ -5,8 +5,8 @@ implemented today from what is deliberately deferred.
 
 ## Implemented today
 
-- **Buffer editing** -- insert/delete, Emacs-style kill-ring/yank, multi-level
-  undo grouped by command boundary.
+- **Buffer editing** -- insert/delete, Emacs-style kill-ring/yank, numeric
+  prefix arguments, and multi-level undo grouped by command boundary.
 - **Movement** -- character/line motion, beginning/end of line.
 - **Emacs-style keybindings** -- `install-default-keybindings` installs the
   command registry's movement, editing, search, file, window, file-tree,
@@ -31,6 +31,24 @@ implemented today from what is deliberately deferred.
   prefetch uncached directory listings, while generation checks, cache
   invalidation, and render-lane draining prevent stale results from changing
   editor state. The default is four workers with a queue capacity of 64.
+- **Syntax highlighting** -- line-local Common Lisp highlighting is modeled as
+  a pure feature domain and rendered through the presentation boundary.
+- **Major modes and project navigation** -- buffers infer a mode from their
+  path, `M-x set-major-mode` can override it, and `C-x p f`, `C-x p s`, and
+  `C-x p r` find files, search project contents, and show the project root.
+- **Common Lisp evaluation** -- `M-:` and `C-x C-e` evaluate trusted forms in
+  `LOOM-USER` and append structured results or errors to `*Loom-Eval*`.
+- **LSP client slice** -- `lsp-start`, `lsp-stop`, and `lsp-diagnostics` use a
+  prompted stdio server, synchronize file-backed buffers, and render
+  `publishDiagnostics` messages in `*Loom-Diagnostics*`.
+- **User extension** -- `LOOM_INIT_FILE` or `~/.loom/init.lisp` can register
+  commands and keybindings before the terminal loop starts.
+- **Session and buffer lifecycle** -- explicit session save/load persists
+  buffers and window layout; `switch-to-buffer`, `kill-buffer`, and
+  case-insensitive minibuffer prefix completion manage the buffer registry.
+- **Registers and keyboard macros** -- named text/point registers and
+  record/replay keyboard macros are available through the `C-x r` and `C-x`
+  bindings.
 - **CLI** -- built on `cl-cli`; `--help`/`-h`, `--version`/`-V`, and one
   optional positional path are supported. A file opens in the first window,
   a directory becomes the file-tree root, and no path defaults to `.`. See
@@ -40,12 +58,20 @@ implemented today from what is deliberately deferred.
   system loads these components in order:
 
   ```text
-  package, protocol-test, buffer-test, terminal-renderer-test,
-  filesystem-test, window-test, keymap-test, file-tree-test,
-  minibuffer-test, commands-test, commands-movement-test,
-  commands-editing-test, commands-misc-test, commands-keybindings-test,
-  layout-test, main-test, concurrent-runtime-test, advanced-test,
-  unit/cli-test, integration/editor-flow-test
+  package, unit/protocol-test, unit/buffer-test,
+  unit/syntax-highlighting-test, unit/terminal-renderer-test,
+  unit/filesystem-test, unit/window-test, unit/keymap-test,
+  unit/file-tree-test, unit/minibuffer-test, unit/evaluation-test,
+  unit/cli-test, unit/register-test, unit/keyboard-macro-test,
+  unit/prefix-argument-test,
+  integration/commands-test, integration/lsp-test,
+  integration/commands-movement-test, integration/commands-editing-test,
+  integration/commands-misc-test, integration/commands-keybindings-test,
+  integration/register-test, integration/keyboard-macro-test,
+  integration/prefix-argument-test,
+  integration/user-init-test, integration/layout-test, integration/session-test,
+  integration/main-test, integration/concurrent-runtime-test,
+  integration/advanced-test, integration/editor-flow-test
   ```
 
   Run the integrated suite with
@@ -77,16 +103,18 @@ make the deferred editor features below complete.
 
 ## Not yet implemented
 
-These are future phases, not part of the MVP, and are called out explicitly
-so their absence does not read as a bug:
+These are follow-up phases rather than claims that the current editor is a
+complete Lem or Emacs replacement:
 
-- **Syntax highlighting.**
-- **An LSP client.**
-- **Extensibility via a user `init.lisp`.**
-- **Session/layout persistence** across launches.
-- **Buffer lifecycle management.** A session-wide buffer registry and
-  `switch-to-buffer` lookup are implemented; unregistering/`kill-buffer` and
-  completion UI remain future work.
+- **Richer LSP protocol support.** URI escaping, capability negotiation, and
+  the graceful shutdown/exit handshake are still deferred; the prompted server
+  command is trusted input.
+- **Broader editing surface.** Narrowing, region-aware kill/yank variants,
+  and a richer package/extension distribution story remain future work.
+- **Feature package isolation.** The filesystem and ASDF boundaries are now
+  package-by-feature, while the public Common Lisp symbols remain in `#:loom`
+  for compatibility. Splitting those symbols into independently loadable
+  namespaces is a later compatibility-sensitive step.
 
 ## Released changes
 

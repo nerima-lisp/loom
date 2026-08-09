@@ -7,43 +7,64 @@ directly when that package owns the operation.
 
 ```
 src/
-├── domain/          Editor state and pure logic: buffer text/point/mark/undo,
-│                    window-tree layout, keymap dispatch, and file-tree state.
-├── infrastructure/  Terminal rendering and filesystem operations.
-├── application/     Editor-state orchestration, minibuffer behavior, and
-│                    commands split by concern.
-├── presentation/    Screen composition from the current editor state.
-└── main.lisp        CLI definition and the raw-terminal event loop.
+├── domain/          Shared editor vocabulary and invariants, such as keymaps.
+├── application/     Shared editor-state, minibuffer, command registry, and
+│                    keybinding composition.
+├── infrastructure/  Shared terminal rendering boundary.
+├── presentation/    Shared screen composition from editor state.
+└── main.lisp        Composition root: CLI definition and raw-terminal loop.
+
+packages/
+├── core/editor/     Reusable buffer storage and movement/editing vocabulary.
+└── feature/<name>/  Complete feature slices, each with DDD-role filenames:
+                     domain-*, application-*, infrastructure-*, and
+                     presentation-*.
 ```
 
+The root `src/<DDD>` directories are the shared composition route. The
+package-by-feature slices under `packages/` hold the feature-owned code, while
+`loom.asd` is the explicit composition root that loads the files in dependency
+order. The Common Lisp public surface remains `#:loom` for compatibility; the
+filesystem and ASDF boundaries provide the package-by-feature organization.
+
 The piece-table representation and pure mutation/range helpers live in
-`src/domain/buffer-storage.lisp`; `src/domain/buffer.lisp` exposes the buffer
-protocol and position/span types over that state. Keeping these responsibilities
-separate makes the representation invariants independently testable without
-introducing an I/O boundary into the domain layer.
+`packages/core/editor/src/domain-buffer-storage.lisp`;
+`packages/core/editor/src/domain-buffer.lisp` exposes the buffer protocol and
+position/span types over that state. Keeping these responsibilities separate
+makes the representation invariants independently testable without introducing
+an I/O boundary into the domain layer.
 
 ## Boundaries
 
-`src/domain/` owns editor invariants and does not perform terminal or
-filesystem I/O. Its regular-expression search and replacement matching uses
+`src/domain/` owns shared editor invariants and does not perform terminal or
+filesystem I/O. Feature-specific domain invariants live beside their use cases
+under `packages/feature/<feature>/src/`. Search and replacement matching uses
 the pure computation provided by `cl-regex-kit`.
 
-`src/infrastructure/` owns terminal rendering and filesystem access. Normal
-filesystem operations use the `cl-boundary-kit` filesystem object
-`*loom-filesystem*`; tests rebind it to an in-memory fake. Two operations call
-`cl-host-kit` directly because their correctness depends on behavior that the
-boundary object does not provide: directory-entry classification and
-symlink-safe recursive deletion.
+`src/infrastructure/` owns the shared terminal-rendering boundary. Filesystem
+access, trusted Lisp evaluation in `LOOM-USER`, session persistence, and the LSP
+process boundary live in their feature packages. Normal filesystem operations
+use the `cl-boundary-kit` filesystem object `*loom-filesystem*`; tests rebind it
+to an in-memory fake. Two operations call `cl-host-kit` directly because their
+correctness depends on behavior that the boundary object does not provide:
+directory-entry classification and symlink-safe recursive deletion.
 
-`src/application/` owns the `editor-state` struct, the `*editor-state*`
-special variable, minibuffer state, and command functions. Minibuffer code
-calls `cl-tty-kit` and `cl-history-kit` directly, file commands use the
-filesystem packages directly, and the M-x registry uses the local
-`command-spec` table directly.
-There is no wrapper layer whose only purpose is to hide a package that already
-provides the required operation.
+`src/application/` owns the shared `editor-state` struct, the
+`*editor-state*` special variable, minibuffer state, command registry, and
+keybinding composition. Feature application files orchestrate their own
+domain and infrastructure boundaries. Minibuffer code calls `cl-tty-kit` and
+`cl-history-kit` directly, and the M-x registry uses the local `command-spec`
+table directly. There is no wrapper layer whose only purpose is to hide a
+package that already provides the required operation.
 
-`src/infrastructure/concurrent-runtime.lisp` owns the bounded asynchronous
+The LSP slice deliberately keeps its dependency boundary small: `lsp-json.lisp`
+implements JSON values/parser and `lsp-process.lisp` implements framed stdio
+transport without adding a third-party JSON dependency. `lsp-service.lisp`
+handles initialize, `didOpen`/`didChange`, and `publishDiagnostics`. URI
+escaping, capability negotiation, and the graceful shutdown/exit handshake are
+explicit follow-up work; the prompted server command is trusted input.
+
+`packages/feature/file-tree/src/infrastructure-concurrent-runtime.lisp` owns the bounded asynchronous
 directory-listing runtime. It uses `cl-concurrent-kit` workers, a bounded
 result channel, cache/pending/error tables, and per-directory generations.
 Workers perform listing only; `loom-concurrent-runtime-drain` applies results
@@ -51,22 +72,23 @@ on the render/event-loop lane, and invalidation advances a generation so stale
 results cannot overwrite newer state. The default runtime is four workers with
 a queue capacity of 64, so the in-flight bound is 68.
 
-Commands in `src/application/commands-*.lisp` are zero-argument functions
-that read and mutate `*editor-state*`, which lets keymaps store bare function
-designators. `commands-internal.lisp` supplies the continuation-based
-`with-prompts` flow used by prompts; the concern-specific command files and
-`commands-keybindings.lisp` keep the public command vocabulary separate from
-the prompt protocol.
+Commands in the shared application route and in
+`packages/feature/<feature>/src/application-*.lisp` are zero-argument
+functions that read and mutate `*editor-state*`, which lets keymaps store bare
+function designators. `commands-internal.lisp` supplies the
+continuation-based `with-prompts` flow used by prompts;
+`commands-keybindings.lisp` keeps the public keybinding vocabulary separate
+from the prompt protocol.
 
-`src/presentation/layout.lisp` composes the current state into screen
-regions. `src/main.lisp` owns argv parsing, raw terminal setup, event decoding,
-and dispatch to minibuffer, self-insert, or the global keymap.
+`src/presentation/layout.lisp` composes the current state into screen regions.
+`src/main.lisp` owns argv parsing, raw terminal setup, event decoding, and
+dispatch to minibuffer, self-insert, or the global keymap.
 
 ## Toolkit Foundation
 
 - **[cl-tty-kit](https://github.com/nerima-lisp/cl-tty-kit)** provides raw-mode
   terminal sessions, event decoding, and the double-buffered renderer used by
-  the event loop and `infrastructure/terminal-renderer.lisp`.
+  the event loop and `src/infrastructure/terminal-renderer.lisp`.
 - **[cl-boundary-kit](https://github.com/nerima-lisp/cl-boundary-kit)** provides
   the filesystem object used by buffer load/save and most file-tree mutations.
   Its test filesystem keeps those tests independent of a real directory.
@@ -94,6 +116,10 @@ The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
 timeouts. The Nix flake pins the runtime and test inputs and supplies the
 development shell used by the commands below.
 
+The LSP process transport uses UIOP and Common Lisp stream primitives directly,
+so it does not add a runtime JSON or process dependency to the toolkit
+foundation.
+
 ## Test Suite
 
 The `loom/test` ASDF system is run by the same script locally and in Nix:
@@ -105,12 +131,20 @@ nix develop -c sbcl --script run-tests.lisp
 The `loom/test` ASDF component order is:
 
 ```text
-package, protocol-test, buffer-test, terminal-renderer-test,
-filesystem-test, window-test, keymap-test, file-tree-test,
-minibuffer-test, commands-test, commands-movement-test,
-commands-editing-test, commands-misc-test, commands-keybindings-test,
-layout-test, main-test, concurrent-runtime-test, advanced-test,
-unit/cli-test, integration/editor-flow-test
+package, unit/protocol-test, unit/buffer-test,
+unit/syntax-highlighting-test, unit/terminal-renderer-test,
+unit/filesystem-test, unit/window-test, unit/keymap-test,
+unit/file-tree-test, unit/minibuffer-test, unit/evaluation-test,
+  unit/cli-test, unit/register-test, unit/keyboard-macro-test,
+  unit/prefix-argument-test,
+  integration/commands-test, integration/lsp-test,
+integration/commands-movement-test, integration/commands-editing-test,
+  integration/commands-misc-test, integration/commands-keybindings-test,
+  integration/register-test, integration/keyboard-macro-test,
+  integration/prefix-argument-test,
+integration/user-init-test, integration/layout-test, integration/session-test,
+integration/main-test, integration/concurrent-runtime-test,
+integration/advanced-test, integration/editor-flow-test
 ```
 
 The suite uses cl-weave's ordinary assertions and its advanced registrations:

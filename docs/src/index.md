@@ -12,13 +12,16 @@ nix run github:nerima-lisp/loom
 
 !!! note "Status: early development (0.1.x, MVP)"
 
-    Buffer editing, Emacs-style movement/kill-ring/yank/undo, window splits,
-    and a file-tree sidebar with real filesystem create/rename/delete are
-    implemented and tested. The file tree now uses a bounded concurrent
+    Buffer editing, Emacs-style movement/kill-ring/yank/undo and numeric
+    prefixes, window splits,
+    file-tree create/rename/delete, syntax highlighting, Common Lisp
+    evaluation, a user `init.lisp`, session persistence, and a minimal LSP
+    client, named registers, and keyboard macros are implemented and tested.
+    The file tree uses a bounded concurrent
     runtime: directory work is submitted to workers, while cache updates and
-    rendering remain on the editor's render lane. Syntax highlighting, an LSP
-    client, extensibility via a user `init.lisp`, and session/layout persistence
-    are future phases -- see the [roadmap](project/roadmap.md).
+    rendering remain on the editor's render lane. See the
+    [roadmap](project/roadmap.md) for the implemented surface and deferred
+    Lem/Emacs-scale features.
 
 ## Where to go next
 

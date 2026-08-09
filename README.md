@@ -20,17 +20,28 @@ provides the executor, channel, and promise primitives used by the bounded
 concurrent file-tree runtime.
 
 Implemented today: buffer editing (insert/delete/undo, Emacs-style
-movement/kill-ring/yank), regular-expression search and replace, a working
+movement/kill-ring/yank, numeric prefix arguments), regular-expression search and replace, a working
 raw-mode terminal event loop, multiple windows via horizontal/vertical splits
 (`C-x 2` / `C-x 3` / `C-x o`), and a file-tree sidebar (`C-x C-t`) backed by
 real filesystem create/rename/delete. See `install-default-keybindings` in
 `src/application/commands-keybindings.lisp` for the full keybinding set, and
 the `command-spec` and `define-command-specs` forms in
 `src/application/commands-misc.lisp` for the M-x registry (every keybound
-command is M-x-reachable; a regression test enforces this). Not yet implemented:
-syntax highlighting, an LSP client,
-extensibility via a user `init.lisp`, and session/layout persistence across
-launches -- these are future phases, not part of this MVP.
+command is M-x-reachable; a regression test enforces this). The session also
+maintains a buffer registry with `switch-to-buffer`, `kill-buffer`, and
+case-insensitive minibuffer prefix completion, plus line-local Common Lisp
+syntax highlighting rendered through the presentation layer. Explicit session
+save/load (`C-x r S` / `C-x r l`) persists buffers, cursor/mark state, modified
+flags, window layout, and the selected window. A user `init.lisp` can extend
+the command registry and active keymap at startup. Common Lisp evaluation is
+available through `M-:` (forms) and `C-x C-e` (the selected buffer), with
+results appended to `*Loom-Eval*`; evaluation is trusted code in `LOOM-USER`,
+like the user-init extension. A minimal LSP client is available through
+`M-x lsp-start`, `M-x lsp-stop`, and `M-x lsp-diagnostics`: it starts a prompted
+external server over stdio, synchronizes the selected file-backed buffer, and
+renders `publishDiagnostics` messages in `*Loom-Diagnostics*`. URI escaping,
+capability negotiation, and the graceful shutdown/exit handshake are deferred;
+the server command is trusted input.
 
 ## Quick start
 
@@ -68,6 +79,31 @@ LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/covera
 nix develop -c sbcl --script scripts/benchmark-concurrency.lisp
 ```
 
+## User init
+
+Loom loads an optional Common Lisp startup file after creating the editor
+state and before entering the terminal loop. Set `LOOM_INIT_FILE` to an
+explicit path; otherwise Loom checks `~/.loom/init.lisp`. The file is
+evaluated in the `loom-user` package, which uses both `cl` and `loom`, so
+exported editor APIs are available without an `in-package` form.
+
+The file is trusted Common Lisp code. If it signals an error, startup reports
+the error and exits. `define-command` adds a command to M-x and, when Loom is
+active, binds its `:keys` in the current keymap. `bind-key` changes only the
+current keymap:
+
+```lisp
+(defun hello-from-init ()
+  (minibuffer-message
+   (editor-state-minibuffer *editor-state*)
+   "Hello from init"))
+
+(define-command "hello-from-init" #'hello-from-init
+  :keys '(((:control #\c) #\i)))
+
+(bind-key '((:control #\x) (:control #\s)) "save-buffer")
+```
+
 Without Nix: put `loom` alongside checkouts of `cl-tty-kit`, `cl-host-kit`,
 `cl-history-kit`, `cl-prolog`, `cl-cli`, `cl-regex-kit` (and its own
 `cl-parser-kit` dependency), `cl-boundary-kit`, `cl-concurrent-kit`, and
@@ -100,8 +136,18 @@ or, from a REPL:
   and replace text is a `cl-regex-kit` regular expression, not a literal
   substring; the replacement text itself stays literal.
 - `C-r`: search backward.
+- `C-u`, `M-0` … `M-9`, `M--`: repeat the next command with a universal or
+  explicit numeric prefix, including movement, editing, and self-insert.
 - `C-x C-f`, `C-x C-s`, `C-x C-w`: open, save, or write the current buffer to a
   path.
+- `C-x r S`, `C-x r l`: save or load the complete editor session.
+- `C-x r s`, `C-x r i`, `C-x r SPC`, `C-x r j`: copy or insert text and save
+  or jump to named registers.
+- `C-x (`, `C-x )`, `C-x e`: start, stop, or replay a keyboard macro.
+- `M-:`, `C-x C-e`: evaluate forms or the selected buffer in `LOOM-USER`.
+- `M-x lsp-start`, `M-x lsp-stop`, `M-x lsp-diagnostics`: start or stop the
+  prompted LSP server and refresh diagnostics for the selected file-backed
+  buffer.
 - `C-x 2`, `C-x 3`, `C-x o`, `C-x 0`, `C-x 1`, `C-x b`: split, move between,
   delete, delete-other, or switch windows.
 - `C-x C-t`, `C-c n`, `C-c p`, `C-c o`, `C-c c`, `C-c d`: open the file tree,
@@ -121,41 +167,46 @@ the raw-terminal event loop until `C-x C-c` or end-of-input.
 
 - `loom.asd` -- the `loom` and `loom/test` ASDF systems.
 - `src/package.lisp` -- the single `#:loom` package and its export list.
-- `src/domain/` -- pure state/logic: buffer text/undo (including
-  `cl-regex-kit`-backed search/replace matching), window-tree layout, keymap
-  dispatch, and file-tree state. Domain code does not perform terminal or
-  filesystem I/O.
-- `src/infrastructure/` -- terminal rendering, filesystem access, and the
-  concurrent file-tree runtime. The runtime caches directory entries, bounds
-  submitted work, and applies worker results on the render lane.
-  `cl-boundary-kit` supplies the filesystem boundary used by the normal
+- `src/<DDD>/` -- the composition root and shared editor route. It contains
+  the remaining cross-feature domain, application, infrastructure, and
+  presentation code (`keymap`, `editor-state`, `minibuffer`, terminal
+  renderer, layout, and `main`).
+- `packages/README.md` -- the package-by-feature map and the rule for keeping
+  DDD roles explicit in package-local filenames.
+- `packages/core/editor/` -- reusable editing vocabulary: the buffer
+  piece-table/storage domain and the movement/editing application commands.
+- `packages/feature/<feature>/` -- complete feature slices for `file-tree`,
+  `search`, `window`, `session`, `evaluation`, `lsp`, `user-init`,
+  `syntax-highlighting`, `register`, and `keyboard-macro`. Each slice keeps
+  `domain-*`, `application-*`,
+  `infrastructure-*`, and `presentation-*` files together; `loom.asd` is the
+  composition boundary that loads them in dependency order. The files keep
+  the existing `#:loom` public API while the filesystem/build boundary is
+  package-by-feature.
+- `src/infrastructure/` -- the remaining shared infrastructure: terminal
+  rendering. Feature-owned infrastructure lives under its feature package;
+  the same applies to feature-owned application and presentation code.
+  `cl-boundary-kit` supplies the filesystem boundary used by normal file
   operations (`*loom-filesystem*` is rebound to an in-memory fake in tests),
-  while `cl-host-kit` is called directly for directory-entry classification
-  and symlink-safe recursive deletion.
-- `src/application/` -- orchestration: the shared `editor-state` struct and
-  `*editor-state*` special variable every command operates on, the
-  minibuffer, and the command/keybinding vocabulary, split by concern
-  (`commands-internal`, `-movement`, `-editing`, `-search`, `-file`,
-  `-window`, `-misc`, `-keybindings`). Commands call the usable
-  `cl-tty-kit`, `cl-history-kit`, and `cl-host-kit` APIs directly
-  where those operations belong; there is no wrapper layer that only hides a
-  package that already provides the needed operation.
+  while `cl-host-kit` is called directly where directory-entry classification
+  and symlink-safe recursive deletion require it.
+- `src/application/` -- shared orchestration: the `editor-state` struct,
+  `*editor-state*`, minibuffer, command registry, and keybinding composition.
+  Commands call usable toolkit APIs directly where those operations belong;
+  there is no wrapper layer that only hides a package that already provides
+  the needed operation.
 - `src/presentation/` -- screen composition (`compose-frame`): what to draw
   where, given the current `editor-state`.
 - `src/main.lisp` -- the `loom:main` entry point saved into the executable.
-- `t/` -- the ASDF `loom/test` suite, using
-  [`cl-weave`](https://github.com/nerima-lisp/cl-weave) and `cl-date-kit`.
-  `loom.asd` loads `package`, `protocol-test`, `buffer-test`,
-  `terminal-renderer-test`, `filesystem-test`, `window-test`, `keymap-test`,
-  `file-tree-test`, `minibuffer-test`, `commands-test`,
-  `commands-movement-test`, `commands-editing-test`, `commands-misc-test`,
-  `commands-keybindings-test`, `layout-test`, `main-test`,
-  `concurrent-runtime-test`, `advanced-test`, `unit/cli-test`, and
-  `integration/editor-flow-test` in serial order. `run-tests.lisp` loads this
-  same `loom/test` system before calling `loom/test:run-tests`.
-  `main-test` includes a real-PTY smoke test in addition to fake-terminal tests.
-  `t/e2e/loom-test.py` is outside ASDF and separately launches the built
-  executable through a Unix PTY to cover the process-level CLI and edit/save/exit
+- `t/unit/` -- focused domain, boundary, renderer, keymap, minibuffer, and
+  CLI tests; `t/integration/` -- command, feature, layout, session,
+  concurrent-runtime, and editor-flow tests; `t/e2e/` -- process-level tests.
+  The ASDF `loom/test` suite uses [`cl-weave`](https://github.com/nerima-lisp/cl-weave)
+  and `cl-date-kit`, and loads the unit and integration directories in serial
+  order. `run-tests.lisp` loads the same system before calling
+  `loom/test:run-tests`. `main-test` includes a real-PTY smoke test in addition
+  to fake-terminal tests. `t/e2e/loom-test.py` separately launches the built
+  executable through a Unix PTY to cover the external CLI and edit/save/exit
   path:
 
   ```sh
@@ -185,5 +236,5 @@ the raw-terminal event loop until `C-x C-c` or end-of-input.
   `checks.default` (the test suite), `checks.build`, `checks.formatting`,
   `checks.docs`, and `devShells.default`. It materializes the source root
   before the cl-nix-forge fileset filter so newly split files under
-  `src/application/` remain in the archive even when the Git source omits
+  `src/` and `packages/` remain in the archive even when the Git source omits
   untracked worktree files.
