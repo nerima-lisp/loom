@@ -7,9 +7,8 @@
 ;;;; draws it into the renderer's in-memory screen. This is deliberately a
 ;;;; plain, sequential draw with no compositing beyond "clear, then draw each
 ;;;; region once" -- infrastructure/terminal-renderer.lisp already owns the
-;;;; renderer plumbing (LOOM-RENDERER-DRAW-BUFFER and the other renderer
-;;;; capabilities); this file only owns the layout decisions on top of it, per
-;;;; the convention this file's header previously described.
+;;;; renderer plumbing and this file owns the layout decisions plus
+;;;; presentation styling on top of it.
 (in-package #:loom)
 
 ;;; ---------------------------------------------------------------------
@@ -61,7 +60,7 @@ simply not drawn -- no scrolling is attempted here, matching this file's
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window in WINDOW-TREE (already laid out by
 WINDOW-TREE-RESIZE against the window area's own width/height) via
-LOOM-RENDERER-DRAW-BUFFER, each leaf's rect offset horizontally by X-OFFSET
+%LAYOUT-DRAW-BUFFER, each leaf's rect offset horizontally by X-OFFSET
 columns -- the width consumed by a visible file-tree sidebar, so a leaf's own
 WINDOW-X/WINDOW-Y (relative to the window tree's own origin) land in the
 right place on the shared screen. When a split produced more than one leaf, a
@@ -70,10 +69,10 @@ horizontally- or vertically-adjacent leaves, so a user can tell the panes
 apart. Returns RENDERER."
   (let ((leaves (window-tree-windows window-tree)))
     (dolist (leaf leaves)
-      (loom-renderer-draw-buffer renderer (window-buffer leaf)
-                                  (+ x-offset (window-x leaf)) (window-y leaf)
-                                  (window-width leaf) (window-height leaf)
-                                  :start-line (window-scroll-line leaf)))
+      (%layout-draw-buffer renderer (window-buffer leaf)
+                           (+ x-offset (window-x leaf)) (window-y leaf)
+                           (window-width leaf) (window-height leaf)
+                           :start-line (window-scroll-line leaf)))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw
@@ -111,7 +110,7 @@ bottom of the screen: prompt+input while MINIBUFFER-ACTIVE-P, else the last
 transient status message set via MINIBUFFER-MESSAGE (read through the
 internal %MINIBUFFER-MESSAGE accessor -- the minibuffer protocol exposes a
 generic to *set* that message but none to read it back, so this file reaches
-past the exported protocol the same way t/file-tree-test.lisp reaches
+past the exported protocol the same way t/unit/file-tree-test.lisp reaches
 LOOM::FILE-TREE-CHILD-LISTER), else the empty string."
   (cond
     ((minibuffer-active-p minibuffer)

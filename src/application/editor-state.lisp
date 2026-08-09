@@ -49,7 +49,21 @@ reach any of them through *EDITOR-STATE* alone."
   ;; Defaults to NIL so existing MAKE-EDITOR-STATE call sites (tests,
   ;; %INITIALIZE-EDITOR-STATE) that never mention this slot keep working
   ;; unchanged.
-  (last-command-self-insert-p nil))
+  (last-command-self-insert-p nil)
+  ;; The optional application-owned language-server session.  Keeping this
+  ;; after the existing slots preserves all older positional MAKE-EDITOR-STATE
+  ;; call sites while allowing the render loop to drain LSP messages.
+  (lsp-session nil)
+  ;; The Emacs-style named registers.  This is initialized by MAIN rather than
+  ;; by the struct definition so tests and extensions may provide their own
+  ;; register bank when constructing EDITOR-STATE.
+  (registers nil)
+  ;; The currently defined keyboard macro and its recording/replay state.
+  (keyboard-macro nil)
+  ;; The pending Emacs-style universal or numeric prefix argument.  Keeping
+  ;; this after the existing optional slots preserves older positional
+  ;; MAKE-EDITOR-STATE call sites.
+  (prefix-argument nil))
 
 (defvar *editor-state* nil
   "The single, dynamically-bound EDITOR-STATE struct that every command

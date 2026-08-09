@@ -224,6 +224,171 @@ def _test_edit_save_exit(binary):
         _assert_exit_zero("edit/save/exit", output, code)
 
 
+def _test_keyboard_macro(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "macro.txt")
+        with open(path, "wb") as file:
+            file.write(b"\n")
+
+        with LoomProcess(binary, [path]) as process:
+            process.wait_for_output()
+            process.write(b"\x18\x28")  # C-x (
+            process.write(b"a")
+            process.write(b"\x18\x29")  # C-x )
+            process.write(b"\x18e")  # C-x e
+            process.write(b"\x18\x13")  # C-x C-s
+
+            deadline = time.monotonic() + TIMEOUT_SECONDS
+            while True:
+                process.pump()
+                with open(path, "rb") as file:
+                    if file.read() == b"aa\n":
+                        break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("C-x e did not replay the keyboard macro")
+                time.sleep(0.05)
+
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+        _assert_exit_zero("keyboard macro", output, code)
+
+
+def _test_numeric_prefix(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "prefix.txt")
+        with open(path, "wb") as file:
+            file.write(b"\n")
+
+        with LoomProcess(binary, [path]) as process:
+            process.wait_for_output()
+            process.write(b"\x15")  # C-u
+            process.write(b"2a")
+            process.write(b"\x18\x13")  # C-x C-s
+
+            deadline = time.monotonic() + TIMEOUT_SECONDS
+            while True:
+                process.pump()
+                with open(path, "rb") as file:
+                    if file.read() == b"aa\n":
+                        break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("C-u 2 a did not save two inserted characters")
+                time.sleep(0.05)
+
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+        _assert_exit_zero("numeric prefix", output, code)
+
+
+def _run_extended_command(process, command):
+    """Invoke COMMAND through the real M-x key path."""
+    process.write(b"\x1bx")
+    time.sleep(0.05)
+    process.write(command.encode("ascii") + b"\n")
+
+
+def _test_major_mode_editing(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "notes.txt")
+        with open(path, "wb") as file:
+            file.write(b"value\n")
+
+        with LoomProcess(binary, [path]) as process:
+            process.wait_for_output()
+            _run_extended_command(process, "set-major-mode")
+            process.write(b"Python\n")
+            process.write(b"\x09")  # TAB: Python's four-column indentation.
+            process.write(b"\x18\x13")  # C-x C-s
+
+            deadline = time.monotonic() + TIMEOUT_SECONDS
+            while True:
+                process.pump()
+                with open(path, "rb") as file:
+                    if file.read() == b"    value\n":
+                        break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("major mode indentation did not save")
+                time.sleep(0.05)
+
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+        _assert_exit_zero("major mode editing", output, code)
+
+
+def _test_project_find_file(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        source_directory = os.path.join(directory, "src")
+        os.mkdir(source_directory)
+        with open(os.path.join(directory, "flake.nix"), "wb") as file:
+            file.write(b"{}\n")
+        main_path = os.path.join(source_directory, "main.txt")
+        other_path = os.path.join(source_directory, "other.txt")
+        with open(main_path, "wb") as file:
+            file.write(b"main\n")
+        with open(other_path, "wb") as file:
+            file.write(b"other\n")
+
+        with LoomProcess(binary, [main_path]) as process:
+            process.wait_for_output()
+            process.write(b"\x18pf")  # C-x p f: project-find-file.
+            process.wait_for_output()
+            process.write(b"src/other.txt\n")
+            process.write(b"a")
+            process.write(b"\x18\x13")  # C-x C-s
+
+            deadline = time.monotonic() + TIMEOUT_SECONDS
+            while True:
+                process.pump()
+                with open(other_path, "rb") as file:
+                    if file.read() == b"aother\n":
+                        break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("project-find-file did not visit/save the file")
+                time.sleep(0.05)
+
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+        _assert_exit_zero("project find file", output, code)
+
+
+def _test_project_search(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        source_directory = os.path.join(directory, "src")
+        ignored_directory = os.path.join(directory, "target")
+        os.mkdir(source_directory)
+        os.mkdir(ignored_directory)
+        with open(os.path.join(directory, "flake.nix"), "wb") as file:
+            file.write(b"{}\n")
+        source_path = os.path.join(source_directory, "main.py")
+        with open(source_path, "wb") as file:
+            file.write(b"needle\n")
+        with open(os.path.join(ignored_directory, "generated.py"), "wb") as file:
+            file.write(b"needle\n")
+
+        with LoomProcess(binary, [source_path]) as process:
+            process.wait_for_output()
+            process.write(b"\x18ps")  # C-x p s: project-search.
+            process.wait_for_output()
+            process.write(b"needle\n")
+            time.sleep(0.05)
+            process.write(b"\x10")  # C-p: wake the loop and render the result.
+            search_output = bytearray()
+            deadline = time.monotonic() + TIMEOUT_SECONDS
+            while b"Matches:" not in search_output:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("project-search result was not rendered")
+                search_output.extend(process.wait_for_output(timeout=remaining))
+            process.write(b"\x18\x03")
+            output, code = process.wait()
+        output = bytes(search_output) + output
+        _assert_exit_zero("project search", output, code)
+        if b"Matches:" not in output or b"src/main.py:1" not in output:
+            raise AssertionError(
+                f"project search output missing the source match: {output!r}"
+            )
+
+
 def _binary_from_arguments():
     binary = os.environ.get("LOOM_BINARY")
     if binary is None and len(sys.argv) == 2:
@@ -246,6 +411,11 @@ def main():
         ("startup without path", _test_startup_without_path),
         ("startup directory", _test_startup_directory),
         ("edit/save/exit", _test_edit_save_exit),
+        ("keyboard macro", _test_keyboard_macro),
+        ("numeric prefix", _test_numeric_prefix),
+        ("major mode editing", _test_major_mode_editing),
+        ("project find file", _test_project_find_file),
+        ("project search", _test_project_search),
     ]
     for name, test in tests:
         test(binary)

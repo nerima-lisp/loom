@@ -48,6 +48,41 @@ Returns RENDERER.")
      x y string :style style)
     renderer))
 
+(defun %loom-renderer-character-advance (character)
+  (if (= (cl-tty-kit:char-width character) 2)
+      2
+      1))
+
+(defgeneric loom-renderer-string-width (renderer string)
+  (:documentation
+   "Return STRING's width in the screen-cell coordinates of RENDERER.")
+  (:method ((renderer loom-renderer) string)
+    (declare (ignore renderer))
+    (check-type string string)
+    (loop for character across string
+          sum (%loom-renderer-character-advance character))))
+
+(defgeneric loom-renderer-truncate-string (renderer string width)
+  (:documentation
+   "Return the longest prefix of STRING that fits WIDTH screen cells.")
+  (:method ((renderer loom-renderer) string width)
+    (check-type string string)
+    (check-type width (integer 0 *))
+    (let ((position 0)
+          (consumed 0)
+          (length (length string)))
+      (loop while (< position length)
+            for advance = (%loom-renderer-character-advance
+                           (char string position))
+            do (if (> (+ consumed advance) width)
+                   (return)
+                   (progn
+                     (incf consumed advance)
+                     (incf position))))
+      (if (= position length)
+          string
+          (subseq string 0 position)))))
+
 (defgeneric loom-renderer-draw-horizontal-line (renderer x y length)
   (:documentation
    "Draw a horizontal line of LENGTH cells at (X, Y) on RENDERER's screen.
@@ -96,9 +131,8 @@ to a terminal -- see LOOM-RENDERER-PRESENT. Returns RENDERER.")
         (let ((line-number (+ start-line row)))
           (when (< line-number line-count)
             (let* ((text (buffer-line buffer line-number))
-                   (visible (if (> (length text) width)
-                                (subseq text 0 width)
-                                text)))
+                   (visible (loom-renderer-truncate-string
+                             renderer text width)))
               (loom-renderer-write-string renderer x (+ y row) visible)))))
       renderer)))
 
@@ -110,9 +144,14 @@ CL-TTY-KIT:RENDERER-RENDER, and position the terminal cursor at CURSOR (a
 CL-TTY-KIT cursor object as created by CL-TTY-KIT:MAKE-CURSOR) when supplied.
 Returns RENDERER.")
   (:method ((renderer loom-renderer) &key stream cursor)
-    (cl-tty-kit:renderer-render (%loom-renderer-cl-tty-renderer renderer)
-                                 :stream (or stream *standard-output*)
-                                 :cursor cursor)
+    (let ((output-stream (or stream *standard-output*)))
+      (cl-tty-kit:renderer-render (%loom-renderer-cl-tty-renderer renderer)
+                                   :stream output-stream
+                                   :cursor cursor)
+      ;; Interactive terminal frames must be visible before the next input
+      ;; event.  CL-TTY-KIT writes the escape sequence diff but does not own
+      ;; the stream's buffering policy.
+      (finish-output output-stream))
     renderer))
 
 (defgeneric loom-renderer-resize (renderer width height)

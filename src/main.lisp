@@ -102,11 +102,14 @@ touches the selected window's buffer."
 
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT: to MINIBUFFER-HANDLE-KEY while the minibuffer
-is soliciting input; to SELF-INSERT-COMMAND for a plain, unmodified printable
-:CHARACTER event when KEYMAP-STATE has no prefix key already accumulated
+is soliciting input; to a prefix-argument action for C-u, digits, and sign
+input; to SELF-INSERT-COMMAND for a plain, unmodified printable :CHARACTER
+event when KEYMAP-STATE has no prefix key already accumulated
 \(KEYMAP-STATE-SEQUENCE null); otherwise to KEYMAP-STATE-DISPATCH via
 %KEY-EVENT->DESCRIPTOR. Also records undo-group boundaries on the
-buffer-editing paths (see %RECORD-UNDO-BOUNDARY-FOR-COMMAND).
+buffer-editing paths (see %RECORD-UNDO-BOUNDARY-FOR-COMMAND), and consumes a
+pending numeric prefix after a complete command rather than after a key that
+only begins a multi-key sequence.
 
 The invoked command (or, on the minibuffer path, its ON-CONFIRM callback via
 MINIBUFFER-HANDLE-KEY) runs inside a HANDLER-CASE on ERROR: an ordinary,
@@ -119,21 +122,65 @@ the whole process and discard every unsaved buffer. LOOM-QUIT
 does not inherit from CL:ERROR, so it passes straight through this
 HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
 \(LOOM-QUIT () ...\) clause for a clean exit."
-  (let ((minibuffer (editor-state-minibuffer *editor-state*)))
+  (let* ((minibuffer (editor-state-minibuffer *editor-state*))
+         (minibuffer-was-active (minibuffer-active-p minibuffer))
+         (macro (editor-state-keyboard-macro *editor-state*))
+         (descriptor (%key-event->descriptor event))
+         (prefix-argument (%prefix-argument-for-editor))
+         (prefix-action
+           (and (not minibuffer-was-active)
+                (null (keymap-state-sequence keymap-state))
+                (%prefix-argument-action descriptor prefix-argument)))
+         (recording-before
+           (and (not minibuffer-was-active)
+                macro
+                (keyboard-macro-recording-p macro)))
+         (self-insert-event-p
+           (and (not minibuffer-was-active)
+                (eq (cl-tty-kit:key-event-type event) :character)
+                (not (intersection '(:control :alt)
+                                   (cl-tty-kit:key-event-modifiers event)))
+                (null prefix-action)
+                (null (keymap-state-sequence keymap-state))))
+         (dispatched-p nil)
+         (dispatch-result nil))
     (handler-case
-        (cond
-          ((minibuffer-active-p minibuffer)
-           (minibuffer-handle-key minibuffer event))
-          ((and (eq (cl-tty-kit:key-event-type event) :character)
-                (not (intersection '(:control :alt) (cl-tty-kit:key-event-modifiers event)))
-                (null (keymap-state-sequence keymap-state)))
-           (%record-undo-boundary-for-command t)
-           (self-insert-command (cl-tty-kit:key-event-code event)))
-          (t
-           (%record-undo-boundary-for-command nil)
-           (keymap-state-dispatch keymap-state (%key-event->descriptor event))))
+        (progn
+          (cond
+            (minibuffer-was-active
+             (minibuffer-handle-key minibuffer event))
+            (prefix-action
+             (%apply-prefix-argument-action (car prefix-action)
+                                            (cdr prefix-action)))
+            (self-insert-event-p
+             (%record-undo-boundary-for-command t)
+             (let ((*current-prefix-argument*
+                     (%consume-prefix-argument-for-editor)))
+               (self-insert-command (cl-tty-kit:key-event-code event))))
+            (t
+             (%record-undo-boundary-for-command nil)
+             (unwind-protect
+                  (let ((*current-prefix-argument*
+                          (%prefix-argument-value-for-editor)))
+                    (setf dispatch-result
+                          (keymap-state-dispatch keymap-state descriptor)))
+               (unless (eq dispatch-result :pending)
+                 (prefix-argument-reset prefix-argument)))))
+          (setf dispatched-p t))
       (error (condition)
-        (minibuffer-message minibuffer (format nil "~A" condition))))))
+        (minibuffer-message minibuffer (format nil "~A" condition))))
+    (when (and dispatched-p
+               recording-before
+               macro
+               (keyboard-macro-recording-p macro)
+               (not (keyboard-macro-replaying-p macro)))
+      (keyboard-macro-record-event
+       macro
+       (make-keyboard-macro-event
+        :kind (if self-insert-event-p :self-insert :key)
+        :value (if self-insert-event-p
+                   (cl-tty-kit:key-event-code event)
+                   descriptor))))))
 (defun %dispatch-input-chunk (decoder buffer count keymap-state)
   "Decode the first COUNT octets of BUFFER through DECODER and route every key
 event they yield to %DISPATCH-KEY-EVENT with KEYMAP-STATE. A completely full
@@ -186,6 +233,10 @@ unchanged when the terminal size could not be read or has not changed."
                       runtime
                       (%file-tree-prefetch-paths
                        (editor-state-file-tree *editor-state*)))))
+                 (let ((session (editor-state-lsp-session *editor-state*))
+                       (buffer (%selected-buffer)))
+                   (when (and session (buffer-path buffer))
+                     (lsp-session-refresh session buffer)))
                  (compose-frame *editor-state*)
                  (loom-renderer-present (editor-state-renderer *editor-state*)
                                         :stream stream
@@ -249,7 +300,9 @@ parsed from argv, or NIL when none was given."
                                  :file-tree file-tree
                                  :renderer renderer
                                  :buffers (list initial-buffer)
-                                 :kill-ring nil))))))
+                                 :kill-ring nil
+                                 :registers (make-register-bank)
+                                 :keyboard-macro (make-keyboard-macro)))))))
 
 (defun %enable-concurrent-file-tree (state)
   "Replace STATE's synchronous file-tree lister with a cached runtime."
@@ -295,6 +348,7 @@ not."
   (unwind-protect
        (handler-case
            (progn
+             (load-user-init)
              (cl-tty-kit:with-terminal-session (stream :fd fd
                                                 :raw-mode t
                                                 :alternate-screen t
@@ -306,7 +360,10 @@ not."
            1))
     (let ((runtime (editor-state-concurrent-runtime *editor-state*)))
       (when runtime
-        (loom-concurrent-runtime-shutdown runtime)))))
+        (loom-concurrent-runtime-shutdown runtime)))
+    (let ((session (editor-state-lsp-session *editor-state*)))
+      (when session
+        (lsp-session-stop session)))))
 
 (defparameter *loom-app*
   (cl-cli:make-app

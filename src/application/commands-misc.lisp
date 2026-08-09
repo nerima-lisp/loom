@@ -17,6 +17,7 @@
 ;; as Emacs's top-level C-g when there is nothing else to cancel.
 (defun keyboard-quit ()
   "Report a Quit message (C-g)."
+  (prefix-argument-reset (%prefix-argument-for-editor))
   (minibuffer-message (editor-state-minibuffer *editor-state*) "Quit"))
 
 (defmacro command-spec (name command &key keys)
@@ -64,6 +65,8 @@ registry is used for lookup."
 
 (progn
   (define-command-specs
+    (command-spec "universal-argument" universal-argument
+                  :keys ((:control #\u)))
     (command-spec "forward-char" forward-char :keys ((:control #\f)))
     (command-spec "backward-char" backward-char :keys ((:control #\b)))
     (command-spec "next-line" next-line :keys ((:control #\n)))
@@ -86,6 +89,10 @@ registry is used for lookup."
     (command-spec "kill-word" kill-word :keys ((:alt #\d)))
     (command-spec "backward-kill-word" backward-kill-word
                   :keys ((:alt :backspace)))
+    (command-spec "indent-for-tab-command" indent-for-tab-command
+                  :keys (:tab))
+    (command-spec "comment-line" comment-line
+                  :keys ((:alt #\;)))
     (command-spec "kill-region" kill-region :keys ((:control #\w)))
     (command-spec "yank" yank :keys ((:control #\y)))
     (command-spec "set-mark-command" set-mark-command
@@ -102,6 +109,13 @@ registry is used for lookup."
     (command-spec "goto-line" goto-line :keys (((:alt #\g) #\g)))
     (command-spec "find-file" find-file
                   :keys (((:control #\x) (:control #\f))))
+    (command-spec "set-major-mode" set-major-mode)
+    (command-spec "project-find-file" project-find-file
+                  :keys (((:control #\x) #\p #\f)))
+    (command-spec "project-search" project-search
+                  :keys (((:control #\x) #\p #\s)))
+    (command-spec "project-root" project-root
+                  :keys (((:control #\x) #\p #\r)))
     (command-spec "save-buffer" save-buffer
                   :keys (((:control #\x) (:control #\s))))
     (command-spec "write-file" write-file
@@ -118,6 +132,33 @@ registry is used for lookup."
                   :keys (((:control #\x) #\1)))
     (command-spec "switch-to-buffer" switch-to-buffer
                   :keys (((:control #\x) #\b)))
+    (command-spec "kill-buffer" kill-buffer
+                  :keys (((:control #\x) #\k)))
+    (command-spec "save-session" save-session
+                  :keys (((:control #\x) #\r #\S)))
+    (command-spec "load-session" load-session
+                  :keys (((:control #\x) #\r #\l)))
+    (command-spec "copy-to-register" copy-to-register
+                  :keys (((:control #\x) #\r #\s)))
+    (command-spec "insert-register" insert-register
+                  :keys (((:control #\x) #\r #\i)))
+    (command-spec "point-to-register" point-to-register
+                  :keys (((:control #\x) #\r #\Space)))
+    (command-spec "jump-to-register" jump-to-register
+                  :keys (((:control #\x) #\r #\j)))
+    (command-spec "start-kbd-macro" start-kbd-macro
+                  :keys (((:control #\x) #\( )))
+    (command-spec "end-kbd-macro" end-kbd-macro
+                  :keys (((:control #\x) #\) )))
+    (command-spec "call-last-kbd-macro" call-last-kbd-macro
+                  :keys (((:control #\x) #\e)))
+    (command-spec "eval-expression" eval-expression
+                  :keys ((:alt #\:)))
+    (command-spec "eval-buffer" eval-buffer
+                  :keys (((:control #\x) (:control #\e))))
+    (command-spec "lsp-start" lsp-start)
+    (command-spec "lsp-stop" lsp-stop)
+    (command-spec "lsp-diagnostics" lsp-diagnostics)
     (command-spec "toggle-file-tree" toggle-file-tree
                   :keys (((:control #\x) (:control #\t))))
     (command-spec "file-tree-select-next" file-tree-select-next
@@ -138,6 +179,13 @@ registry is used for lookup."
                   :keys (((:control #\x) (:control #\c))))
     (command-spec nil execute-extended-command :keys ((:alt #\x))))
 
+  (defun %extended-command-completion-candidates (input)
+    "Return all named command specs as candidates for INPUT."
+    (declare (ignore input))
+    (loop for spec in *command-specs*
+          for name = (getf spec :name)
+          when name collect name))
+
   (defun %find-extended-command (input)
     "Return the registered command named by INPUT, or NIL."
     (let ((name (string-downcase (string-trim (quote (#\Space #\Tab)) input))))
@@ -152,7 +200,8 @@ registry is used for lookup."
     "Prompt for a registered command and execute it (M-x)."
     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                    :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((input "M-x "))
+        ((input "M-x "
+                :completion-function #'%extended-command-completion-candidates))
       (let ((command (%find-extended-command input)))
         (if command
             (funcall command)
@@ -164,7 +213,7 @@ registry is used for lookup."
     "Show a compact reference for the primary editor commands."
     (minibuffer-message
      (editor-state-minibuffer *editor-state*)
-     "Help: M-x Command  C-x C-s Save  C-x C-f Open  C-s Find  C-k Cut  C-y Paste  C-x C-c Exit")))
+     "Help: M-x Command  M-: Eval  C-x C-e Eval buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x k Kill  C-x r S Save session  C-x r l Load session  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  C-y Paste  C-x C-c Exit")))
 
 ;; LOOM-QUIT carries no data: it exists only so src/main.lisp's event loop
 ;; can HANDLER-CASE on a type it, not a plain return value, to tell a real
@@ -179,11 +228,15 @@ src/main.lisp to exit cleanly."))
 
 (progn
   (defun %quit-buffer-list ()
-    "Return each buffer displayed by the current window tree exactly once."
-    (remove-duplicates
-     (mapcar (function window-buffer)
-             (window-tree-windows (editor-state-window-tree *editor-state*)))
-     :test (function eq)))
+    "Return displayed buffers followed by hidden registered buffers."
+    (let ((displayed
+            (mapcar (function window-buffer)
+                    (window-tree-windows
+                     (editor-state-window-tree *editor-state*))))
+          (registered (copy-list (%editor-buffers))))
+      (remove-duplicates
+       (append displayed registered)
+       :test (function eq))))
 
   ;; A CL-PROLOG rulebase keeps the quit-prompt answer table declarative.
   ;; %FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
@@ -233,5 +286,5 @@ offers \"s\" in the first place, so an \"s\" answer there falls through to
              (lambda () (minibuffer-message minibuffer "Quit")))))))
 
   (defun save-buffers-kill-terminal ()
-    "Exit after resolving all modified displayed buffers."
+    "Exit after resolving all modified buffers in the session."
     (%continue-quit (%quit-buffer-list))))

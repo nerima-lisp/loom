@@ -18,11 +18,12 @@
   :description "Terminal text editor with Emacs-like keybindings"
   :long-description "loom is a terminal text editor for SBCL with Emacs-style
 keybindings, built on cl-tty-kit for terminal I/O and rendering, cl-host-kit
-for filesystem access, and cl-history-kit for minibuffer input recall. Its
-source is laid out package-by-feature under src/domain, src/infrastructure,
-src/application, and src/presentation (mirroring nshell's DDD layering):
-buffer editing, rendering, keymap dispatch, minibuffer, window management, and
-a file-tree sidebar are all implemented against that layering."
+for filesystem access, and cl-history-kit for minibuffer input recall. The
+composition root follows src/<DDD>, while reusable editing code lives in
+packages/core/editor and complete user-facing slices live in
+packages/feature/<feature>/src. Those package files retain explicit domain,
+application, infrastructure, and presentation boundaries without making the
+root source tree responsible for every feature."
   :author "takeokunn <bararararatty@gmail.com>"
   :maintainer "takeokunn <bararararatty@gmail.com>"
   :license "MIT"
@@ -32,7 +33,7 @@ a file-tree sidebar are all implemented against that layering."
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog" "cl-cli"
                "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit")
-  :pathname "src"
+  :pathname "."
   :serial t
   :components
   ;; File order, :serial t: package first; then domain (pure state/logic,
@@ -43,29 +44,57 @@ a file-tree sidebar are all implemented against that layering."
   ;; domain/application/infrastructure output for the screen); main last,
   ;; since it is the entry point everything else exists to be called from.
   ;; Path-prefixed :file names, not nested :module blocks, per nshell.asd's
-  ;; precedent.
-  ((:file "package")
-   (:file "domain/buffer-storage")
-   (:file "domain/buffer")
-   (:file "domain/buffer-search")
-   (:file "domain/window")
-   (:file "domain/keymap")
-   (:file "domain/file-tree")
-   (:file "infrastructure/terminal-renderer")
-   (:file "infrastructure/filesystem")
-   (:file "infrastructure/concurrent-runtime")
-   (:file "application/editor-state")
-   (:file "application/minibuffer")
-   (:file "application/commands-internal")
-   (:file "application/commands-movement")
-   (:file "application/commands-editing")
-   (:file "application/commands-search")
-   (:file "application/commands-file")
-   (:file "application/commands-window")
-   (:file "application/commands-misc")
-   (:file "application/commands-keybindings")
-   (:file "presentation/layout")
-   (:file "main"))
+  ;; precedent. Package-local filenames preserve the DDD layer in their
+  ;; basename (for example, domain-buffer and application-commands-search),
+  ;; while this root list remains the composition root and load-order contract.
+  ((:file "src/package")
+   (:file "packages/feature/mode/src/domain-major-mode")
+   (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
+   (:file "packages/feature/project/src/domain-project")
+   (:file "packages/core/editor/src/domain-buffer-storage")
+   (:file "packages/core/editor/src/domain-buffer")
+   (:file "packages/core/editor/src/domain-prefix-argument")
+   (:file "packages/feature/search/src/domain-buffer-search")
+   (:file "packages/feature/window/src/domain-window")
+   (:file "packages/feature/session/src/domain-session")
+   (:file "packages/feature/evaluation/src/domain-evaluation")
+   (:file "packages/feature/lsp/src/domain-lsp")
+   (:file "src/domain/keymap")
+   (:file "packages/feature/file-tree/src/domain-file-tree")
+   (:file "src/infrastructure/terminal-renderer")
+   (:file "packages/feature/file-tree/src/infrastructure-filesystem")
+   (:file "packages/feature/project/src/infrastructure-project-filesystem")
+   (:file "packages/feature/session/src/infrastructure-session-store")
+   (:file "packages/feature/user-init/src/infrastructure-user-init")
+   (:file "packages/feature/evaluation/src/infrastructure-lisp-evaluator")
+   (:file "packages/feature/lsp/src/infrastructure-lsp-json")
+   (:file "packages/feature/lsp/src/infrastructure-lsp-process")
+   (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime")
+   (:file "packages/feature/register/src/domain-register")
+   (:file "packages/feature/keyboard-macro/src/domain-keyboard-macro")
+   (:file "src/application/editor-state")
+   (:file "src/application/minibuffer")
+   (:file "src/application/commands-internal")
+   (:file "packages/feature/mode/src/application-major-mode")
+   (:file "packages/feature/project/src/application-commands-project")
+   (:file "packages/core/editor/src/application-commands-prefix-argument")
+   (:file "packages/core/editor/src/application-commands-movement")
+   (:file "packages/core/editor/src/application-commands-editing")
+   (:file "packages/feature/register/src/application-commands-register")
+   (:file "packages/feature/keyboard-macro/src/application-commands-keyboard-macro")
+   (:file "packages/feature/search/src/application-commands-search")
+   (:file "packages/feature/file-tree/src/application-commands-file")
+   (:file "packages/feature/window/src/application-commands-window")
+   (:file "packages/feature/session/src/application-commands-session")
+   (:file "packages/feature/evaluation/src/application-commands-evaluation")
+   (:file "packages/feature/lsp/src/application-lsp-service")
+   (:file "packages/feature/lsp/src/application-commands-lsp")
+   (:file "src/application/commands-misc")
+   (:file "src/application/commands-keybindings")
+   (:file "packages/feature/user-init/src/application-user-configuration")
+   (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
+   (:file "src/presentation/layout")
+   (:file "src/main"))
   ;; The three build keys and the :perform below are exempt from the metadata
   ;; order above -- PACKAGE_STANDARD.md names cl-weave's identical trio and
   ;; cl-tty-kit's :perform as "はどこに書いても構いません" -- and they sit here,
@@ -118,29 +147,45 @@ a file-tree sidebar are all implemented against that layering."
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("loom" "cl-weave" "cl-date-kit")
-  :pathname "t"
+  :pathname "."
   :serial t
   :components
-  ((:file "package")
-   (:file "protocol-test")
-   (:file "buffer-test")
-   (:file "terminal-renderer-test")
-   (:file "filesystem-test")
-   (:file "window-test")
-   (:file "keymap-test")
-   (:file "file-tree-test")
-   (:file "minibuffer-test")
-   (:file "commands-test")
-   (:file "commands-movement-test")
-   (:file "commands-editing-test")
-   (:file "commands-misc-test")
-   (:file "commands-keybindings-test")
-   (:file "layout-test")
-   (:file "main-test")
-   (:file "concurrent-runtime-test")
-   (:file "advanced-test")
-   (:file "unit/cli-test")
-   (:file "integration/editor-flow-test"))
+  ((:file "t/package")
+   (:file "t/test-helpers")
+   (:file "t/unit/protocol-test")
+   (:file "t/unit/buffer-test")
+   (:file "t/unit/syntax-highlighting-test")
+   (:file "t/unit/major-mode-test")
+   (:file "t/unit/project-test")
+   (:file "t/unit/terminal-renderer-test")
+   (:file "t/unit/filesystem-test")
+   (:file "t/unit/window-test")
+   (:file "t/unit/keymap-test")
+   (:file "t/unit/register-test")
+   (:file "t/unit/keyboard-macro-test")
+   (:file "t/unit/prefix-argument-test")
+   (:file "t/unit/file-tree-test")
+   (:file "t/unit/minibuffer-test")
+   (:file "t/unit/evaluation-test")
+   (:file "t/unit/cli-test")
+   (:file "t/integration/commands-test")
+   (:file "t/integration/lsp-test")
+   (:file "t/integration/commands-movement-test")
+   (:file "t/integration/commands-editing-test")
+   (:file "t/integration/major-mode-test")
+   (:file "t/integration/project-test")
+   (:file "t/integration/commands-misc-test")
+   (:file "t/integration/commands-keybindings-test")
+   (:file "t/integration/register-test")
+   (:file "t/integration/keyboard-macro-test")
+   (:file "t/integration/prefix-argument-test")
+   (:file "t/integration/user-init-test")
+   (:file "t/integration/layout-test")
+   (:file "t/integration/session-test")
+   (:file "t/integration/main-test")
+   (:file "t/integration/concurrent-runtime-test")
+   (:file "t/integration/advanced-test")
+   (:file "t/integration/editor-flow-test"))
   ;; Not HOST-KIT:SYMBOL-CALL or UIOP:SYMBOL-CALL: a .asd is read by the plain
   ;; CL reader before :depends-on is ever consulted, so any PKG:SYMBOL token
   ;; here must resolve against a package already in the image. FIND-SYMBOL /

@@ -28,7 +28,7 @@
 ;;;; LOOM package: they are invoked only from within the package itself, by
 ;;;; INSTALL-DEFAULT-KEYBINDINGS and MAIN, which refer to them unqualified;
 ;;;; tests reach them via LOOM:: qualification, the same precedent
-;;;; t/file-tree-test.lisp already set for LOOM::FILE-TREE-CHILD-LISTER.
+;;;; t/unit/file-tree-test.lisp already set for LOOM::FILE-TREE-CHILD-LISTER.
 ;;;;
 ;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the WITH-PROMPTS macro below are
 ;;;; what every other commands-*.lisp file depends on, which is why this file
@@ -54,11 +54,18 @@
   (pushnew buffer (editor-state-buffers *editor-state*) :test #'eq)
   buffer)
 
+(defun %unregister-buffer (buffer)
+  "Remove BUFFER from the current session's registry."
+  (setf (editor-state-buffers *editor-state*)
+        (remove buffer (editor-state-buffers *editor-state*) :test #'eq))
+  buffer)
+
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
-  "Prompt for each (VAR PROMPT-STRING) pair in BINDINGS in turn, binding VAR
-to the typed input, then run BODY with every VAR bound and MINIBUFFER-VAR
-bound to MINIBUFFER-FORM's value (evaluated once). ON-CANCEL, when supplied,
-is a form -- evaluated with MINIBUFFER-VAR in scope -- run if the user
+  "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION) pair in
+BINDINGS in turn, binding VAR to the typed input, then run BODY with every VAR
+bound and MINIBUFFER-VAR bound to MINIBUFFER-FORM's value (evaluated once).
+ON-CANCEL, when supplied, is a form -- evaluated with MINIBUFFER-VAR in scope
+-- run if the user
 cancels (C-g) at any prompt in the chain, not only the first; it is threaded
 into every generated MINIBUFFER-ACTIVATE's :ON-CANCEL, and the keyword is
 omitted entirely when ON-CANCEL is absent.
@@ -74,10 +81,14 @@ command reads top-to-bottom like ordinary sequential code instead of as a
 hand-nested pyramid of lambdas."
   (labels ((expand-bindings (bindings)
              (if bindings
-                 (destructuring-bind (var prompt) (first bindings)
+                 (destructuring-bind (var prompt &key completion-function)
+                     (first bindings)
                    `(minibuffer-activate ,minibuffer-var ,prompt
                                          :on-confirm (lambda (,var)
                                                        ,(expand-bindings (rest bindings)))
+                                         ,@(when completion-function
+                                             `(:completion-function
+                                               ,completion-function))
                                          ,@(when on-cancel
                                              `(:on-cancel (lambda () ,on-cancel)))))
                  `(progn ,@body))))
