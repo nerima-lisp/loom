@@ -11,9 +11,9 @@
 ;;;; otherwise a dirty sibling checkout could shadow pinned Nix inputs.
 ;;;;
 ;;;; :force :all is required, not :force t: :force t only forces recompiling
-;;;; loom/test itself, leaving loom (src/) loaded from cached, uninstrumented
-;;;; fasls -- sb-cover's coverage proclamation never reaches src/, and the
-;;;; report silently covers only test files.
+;;;; loom/test itself, leaving loom's source loaded from cached, uninstrumented
+;;;; fasls -- sb-cover's coverage proclamation never reaches the source files,
+;;;; and the report silently covers only test files.
 ;;;;
 ;;;; SB-EXT:WITH-TIMEOUT bounds the whole run at 1800s, matching
 ;;;; `flake.nix`'s own `checks.default` `timeoutSeconds`: :FORCE :ALL means
@@ -81,10 +81,13 @@
 (declaim (optimize sb-cover:store-coverage-data))
 
 (defun loom-source-file-p (file root)
-  "Return true when FILE belongs to Loom's own source tree."
-  (host-kit:pathname-within-p
-   (host-kit:ensure-pathname file)
-   (merge-pathnames #P"src/" root)))
+  "Return true when FILE belongs to Loom's source or package trees."
+  (let ((pathname (host-kit:ensure-pathname file)))
+    (some (lambda (directory)
+            (host-kit:pathname-within-p
+             pathname
+             (merge-pathnames directory root)))
+          '(#P"src/" #P"packages/"))))
 
 (let* ((script (or *load-truename*
                    (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
