@@ -70,32 +70,33 @@
     (minibuffer-message (editor-state-minibuffer *editor-state*)
                          (format nil "Killed ~A" (buffer-name buffer)))))
 
+(defun %kill-buffer-prompt-text (buffer)
+  "Return the confirmation prompt for modified BUFFER."
+  (if (buffer-path buffer)
+      (format nil "Save ~A? (s/d/c): " (buffer-name buffer))
+      (format nil "Discard changes to ~A? (d/c): " (buffer-name buffer))))
+
 (defun %prompt-kill-buffer (minibuffer buffer)
   "Ask how to handle modified BUFFER before killing it."
   (let ((has-path-p (not (null (buffer-path buffer)))))
-    (labels ((prompt ()
-               (minibuffer-activate
-                minibuffer
-                (if has-path-p
-                    (format nil "Save ~A? (s/d/c): " (buffer-name buffer))
-                    (format nil "Discard changes to ~A? (d/c): "
-                            (buffer-name buffer)))
-                :on-confirm
-                (lambda (answer)
-                  (cond
-                    ((and has-path-p (string-equal answer "s"))
-                     (buffer-save buffer)
-                     (%kill-buffer-now buffer))
-                    ((string-equal answer "d")
-                     (%kill-buffer-now buffer))
-                    ((string-equal answer "c")
-                     nil)
-                    (t
-                     (prompt))))
-                :on-cancel
-                (lambda ()
-                  (minibuffer-message minibuffer "Quit")))))
-      (prompt))))
+    (minibuffer-activate
+     minibuffer
+     (%kill-buffer-prompt-text buffer)
+     :on-confirm
+     (lambda (answer)
+       (cond
+         ((and has-path-p (string-equal answer "s"))
+          (buffer-save buffer)
+          (%kill-buffer-now buffer))
+         ((string-equal answer "d")
+          (%kill-buffer-now buffer))
+         ((string-equal answer "c")
+          nil)
+         (t
+          (%prompt-kill-buffer minibuffer buffer))))
+     :on-cancel
+     (lambda ()
+       (minibuffer-message minibuffer "Quit")))))
 
 (defun kill-buffer ()
   "Prompt for a buffer name and remove it from the session registry."
