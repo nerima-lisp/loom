@@ -130,6 +130,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/auto-save/src/application-commands-auto-save")
    (:file "packages/feature/terminal/src/application-commands-terminal")
    (:file "packages/feature/git/src/application-commands-git")
+   (:file "packages/feature/lsp/src/application-lsp-protocol")
    (:file "packages/feature/lsp/src/application-lsp-service")
    (:file "packages/feature/lsp/src/application-commands-lsp")
    (:file "src/application/commands-misc")
