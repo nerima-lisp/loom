@@ -207,14 +207,14 @@
     (%with-minibuffer-state (minibuffer "selected")
       (loom/feature/window:switch-to-buffer)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nope.txt")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "No such buffer: nope.txt")))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "No such buffer: nope.txt")))
 
   (it
     "cancels switch-to-buffer through the minibuffer key protocol"
     (%with-minibuffer-state (minibuffer "selected")
       (loom/feature/window:switch-to-buffer)
       (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit"))))
 
 (describe
   "buffer lifecycle commands"
@@ -301,11 +301,11 @@
     (%with-minibuffer-state (minibuffer "selected")
       (loom/feature/window:kill-buffer)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "missing")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "No such buffer: missing")
       (loom/feature/window:kill-buffer)
       (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")))
 
   (it
     "re-prompts on an invalid modified-buffer answer and cancels the nested prompt"
@@ -318,6 +318,6 @@
         (expect (minibuffer-prompt-string minibuffer)
                 :to-equal "Discard changes to *scratch*? (d/c): ")
         (minibuffer-handle-key minibuffer (%special-key :control-g))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
         (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
                 :to-be buffer))))

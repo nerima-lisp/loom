@@ -33,28 +33,46 @@ independent of search-engine concerns while still bounding the event loop.")
       (append (spans-in start (length text))
               (spans-in 0 start)))))
 
+(defun %visible-buffer-span (buffer span)
+  "Translate a local visible TEXT SPAN to BUFFER's absolute coordinates."
+  (let ((offset (buffer-narrow-start-offset buffer)))
+    (make-buffer-span (+ offset (buffer-span-start span))
+                      (+ offset (buffer-span-end span)))))
+
 (defun buffer-search-forward (buffer pattern)
   "Return the next BUFFER-SPAN for PATTERN from point, wrapping once, or NIL."
-  (let ((match (%scan-next-occurrence (buffer-text buffer)
-                                      pattern
-                                      (buffer-point-offset buffer))))
+  (let* ((text (buffer-visible-text buffer))
+         (offset (buffer-narrow-start-offset buffer))
+         (point (max 0 (min (length text)
+                            (- (buffer-point-offset buffer) offset))))
+         (match (%scan-next-occurrence text pattern point)))
     (when match
-      (make-buffer-span (cl-regex-kit:match-start match)
-                        (cl-regex-kit:match-end match)))))
+      (make-buffer-span (+ offset (cl-regex-kit:match-start match))
+                        (+ offset (cl-regex-kit:match-end match))))))
 
 (defun buffer-search-backward (buffer pattern)
   "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once."
   (unless (zerop (length pattern))
-    (let* ((spans (%search-spans-in-text (buffer-text buffer) pattern 0))
-           (point (buffer-point-offset buffer))
+    (let* ((text (buffer-visible-text buffer))
+           (offset (buffer-narrow-start-offset buffer))
+           (point (max 0 (min (length text)
+                              (- (buffer-point-offset buffer) offset))))
+           (spans (%search-spans-in-text text pattern 0))
            (prior (remove-if-not (lambda (span)
                                    (< (buffer-span-start span) point))
                                  spans)))
-      (or (car (last prior))
-          (car (last spans))))))
+      (let ((span (or (car (last prior))
+                      (car (last spans)))))
+        (when span
+          (%visible-buffer-span buffer span))))))
 
 (defun buffer-search-spans (buffer pattern start)
   "Return BUFFER-SPAN values for PATTERN, starting at START and wrapping once."
   (declare (type buffer-offset start))
   (unless (zerop (length pattern))
-    (%search-spans-in-text (buffer-text buffer) pattern start)))
+    (let* ((text (buffer-visible-text buffer))
+           (offset (buffer-narrow-start-offset buffer))
+           (local-start (max 0 (min (length text) (- start offset)))))
+      (mapcar (lambda (span)
+                (%visible-buffer-span buffer span))
+              (%search-spans-in-text text pattern local-start)))))

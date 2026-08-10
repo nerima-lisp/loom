@@ -97,7 +97,7 @@
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
       (minibuffer-handle-key minibuffer (%special-key :control-g))
       (expect (minibuffer-active-p minibuffer) :to-be-falsy)
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")))
 
   (it
     "cancelling replace-string's second prompt quits without replacing"
@@ -111,7 +111,7 @@
       (minibuffer-handle-key minibuffer (%special-key :enter))
       (expect (minibuffer-prompt-string minibuffer) :to-equal "With: ")
       (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
       (expect (buffer-text (%selected-test-buffer)) :to-equal "alpha alpha")))
 
   (it
@@ -122,7 +122,7 @@
         (loom/feature/file-tree:file-tree-create-file-command)
         (%type-string minibuffer (namestring (merge-pathnames "unwanted.txt" dir)))
         (minibuffer-handle-key minibuffer (%special-key :control-g))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
         (expect (host-kit:path-exists-p (merge-pathnames "unwanted.txt" dir))
                 :to-be-falsy))))
 
@@ -134,7 +134,7 @@
         (loom/feature/file-tree:file-tree-create-directory-command)
         (%type-string minibuffer (namestring (merge-pathnames "unwanted-dir/" dir)))
         (minibuffer-handle-key minibuffer (%special-key :control-g))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
         (expect (host-kit:path-exists-p (merge-pathnames "unwanted-dir/" dir))
                 :to-be-falsy))))
 
@@ -150,7 +150,7 @@
           (loom/feature/file-tree:file-tree-rename-command)
           (%type-string minibuffer (namestring new-path))
           (minibuffer-handle-key minibuffer (%special-key :control-g))
-          (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+          (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
           (expect (host-kit:path-exists-p old-path) :to-be-truthy)
           (expect (host-kit:path-exists-p new-path) :to-be-falsy)))))
 
@@ -161,4 +161,4 @@
       (loom::save-buffers-kill-terminal)
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
       (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit"))))

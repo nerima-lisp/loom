@@ -3,6 +3,50 @@
 ;;;; User-facing mode selection and small mode-aware editing commands.
 (in-package #:loom/feature/mode)
 
+(defparameter *major-mode-keymap-cache* (make-hash-table :test #'equal)
+  "Derived mode keymaps, keyed by registry version, mode, and global map.")
+
+(defun %major-mode-command-designator (command mode)
+  (cond
+    ((functionp command) command)
+    ((and (symbolp command)
+          (fboundp command)
+          (not (macro-function command)))
+     command)
+    (t
+     (error "Major mode ~S has a non-callable command binding: ~S"
+            mode command))))
+
+(defun %build-major-mode-keymap (mode fallback seen)
+  (when (member mode seen :test #'eq)
+    (error "Circular major-mode inheritance involving ~S" mode))
+  (let* ((parent-mode (major-mode-parent mode))
+         (parent-keymap
+           (if (and parent-mode (not (eq parent-mode mode)))
+               (%build-major-mode-keymap parent-mode fallback (cons mode seen))
+               fallback))
+         (keymap (loom:make-keymap :parent parent-keymap)))
+    (dolist (binding (major-mode-keybindings mode))
+      (loom:keymap-define-key
+       keymap
+       (loom/application:defkeys-key-sequence (car binding))
+       (%major-mode-command-designator (cdr binding) mode)))
+    keymap))
+
+(defun major-mode-keymap (mode fallback)
+  "Return MODE's local keymap layered over FALLBACK.
+
+FALLBACK is normally the editor's user/global keymap.  The returned object is
+cached while the mode registry and fallback object remain unchanged, so global
+bindings added after mode activation are still visible through the parent.
+"
+  (let ((key (or (major-mode-from-name mode) :fundamental)))
+    (or (gethash (list *major-mode-registry-version* key fallback)
+                 *major-mode-keymap-cache*)
+        (setf (gethash (list *major-mode-registry-version* key fallback)
+                       *major-mode-keymap-cache*)
+              (%build-major-mode-keymap key fallback nil)))))
+
 (defun current-major-mode ()
   "Return the selected buffer's major mode, defaulting to FUNDAMENTAL."
   (if (loom/application:%selected-buffer)

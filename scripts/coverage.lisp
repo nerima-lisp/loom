@@ -10,16 +10,15 @@
 ;;;; CL_SOURCE_REGISTRY is already set, those local roots are not prepended:
 ;;;; otherwise a dirty sibling checkout could shadow pinned Nix inputs.
 ;;;;
-;;;; :force :all is required, not :force t: :force t only forces recompiling
-;;;; loom/test itself, leaving loom's source loaded from cached, uninstrumented
-;;;; fasls -- sb-cover's coverage proclamation never reaches the source files,
-;;;; and the report silently covers only test files.
+;;;; Force the complete Loom load graph so every source component is compiled
+;;;; after sb-cover is enabled. ASDF's :force t is insufficient here: it can
+;;;; reload the root system while retaining cached direct components, which
+;;;; makes a report omit the package-owned source tree.
 ;;;;
 ;;;; SB-EXT:WITH-TIMEOUT bounds the whole run at 1800s, matching
-;;;; `flake.nix`'s own `checks.default` `timeoutSeconds`: :FORCE :ALL means
-;;;; every sibling dependency recompiles from scratch under sb-cover
-;;;; instrumentation, so this is the slowest entry point in the repo and the
-;;;; one most worth guarding against hanging forever when run via `nix
+;;;; `flake.nix`'s own `checks.default` `timeoutSeconds`: forcing both Loom
+;;;; systems is still slower than a cached test run, so this is the entry
+;;;; point most worth guarding against hanging forever when run via `nix
 ;;;; develop`'s `coverage` alias, which no external timeout wraps.
 
 (require :asdf)
@@ -106,6 +105,7 @@
        (setf passed-p
              (handler-case
                  (sb-ext:with-timeout 1800
+                   (asdf:load-system :loom :force :all)
                    (asdf:load-system :loom/test :force :all)
                    ;; Drive the cl-weave suite for its coverage side effects;
                    ;; the report is produced regardless of pass/fail.

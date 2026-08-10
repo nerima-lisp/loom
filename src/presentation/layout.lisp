@@ -57,6 +57,40 @@ simply not drawn -- no scrolling is attempted here, matching this file's
 ;;; Window-tree area
 ;;; ---------------------------------------------------------------------
 
+(defun %layout-draw-multiple-cursors
+    (renderer buffer x y width height scroll-line)
+  "Draw BUFFER's non-primary transient cursors inside one window rectangle.
+
+The cursor set stores buffer offsets, while the renderer needs a screen cell;
+the line text is therefore measured again for each visible cursor.  A reverse
+video glyph makes an extra cursor visible without changing the buffer text."
+  (when (and (plusp width) (plusp height))
+    (dolist (offset
+              (loom/feature/multiple-cursors:multiple-cursor-offsets-for-buffer
+               buffer))
+      (let ((position (buffer-visible-offset-position buffer offset)))
+        (when position
+          (let* ((line (buffer-position-line position))
+                 (column (buffer-position-column position))
+                 (row (- line scroll-line)))
+            (when (and (>= row 0)
+                       (< row height)
+                       (< line (buffer-visible-line-count buffer)))
+              (let* ((line-text (buffer-visible-line buffer line))
+                     (safe-column (min column (length line-text)))
+                     (prefix (subseq line-text 0 safe-column))
+                     (screen-column (loom-renderer-string-width renderer prefix))
+                     (glyph (if (< safe-column (length line-text))
+                                (string (char line-text safe-column))
+                                " ")))
+                (when (and (< screen-column width)
+                           (<= (+ screen-column
+                                  (loom-renderer-string-width renderer glyph))
+                               width))
+                  (loom-renderer-write-string
+                   renderer (+ x screen-column) (+ y row) glyph
+                   :style '(:reverse)))))))))))
+
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window in WINDOW-TREE (already laid out by
 WINDOW-TREE-RESIZE against the window area's own width/height) via
@@ -69,13 +103,20 @@ horizontally- or vertically-adjacent leaves, so a user can tell the panes
 apart. Returns RENDERER."
   (let ((leaves (loom/feature/window:window-tree-windows window-tree)))
     (dolist (leaf leaves)
-      (loom/feature/syntax-highlighting::%layout-draw-buffer
+      (loom/feature/syntax-highlighting:syntax-draw-buffer
        renderer (loom/feature/window:window-buffer leaf)
        (+ x-offset (loom/feature/window:window-x leaf))
        (loom/feature/window:window-y leaf)
        (loom/feature/window:window-width leaf)
        (loom/feature/window:window-height leaf)
-       :start-line (loom/feature/window:window-scroll-line leaf)))
+       :start-line (loom/feature/window:window-scroll-line leaf))
+      (%layout-draw-multiple-cursors
+       renderer (loom/feature/window:window-buffer leaf)
+       (+ x-offset (loom/feature/window:window-x leaf))
+       (loom/feature/window:window-y leaf)
+       (loom/feature/window:window-width leaf)
+       (loom/feature/window:window-height leaf)
+       (loom/feature/window:window-scroll-line leaf)))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw
@@ -104,28 +145,28 @@ apart. Returns RENDERER."
 ;;; Frame composition
 ;;; ---------------------------------------------------------------------
 (defparameter +layout-shortcut-line+ "C-h Help  C-x C-s Save  C-s Find  C-x C-c Exit")
-(defun %layout-draw-shortcuts (renderer width row buffer)
+(defun %layout-draw-shortcuts (renderer width row buffer &optional workspace-name)
   "Draw the persistent command reminder immediately above the minibuffer."
   (when (plusp width)
     (let* ((text (format nil "Ln ~D, Col ~D  ~A"
-                         (1+ (buffer-point-line buffer))
-                         (1+ (buffer-point-column buffer))
-                         +layout-shortcut-line+))
+                         (1+ (buffer-visible-point-line buffer))
+                         (1+ (buffer-visible-point-column buffer))
+                         (if workspace-name
+                             (format nil "Workspace: ~A  ~A"
+                                     workspace-name
+                                     +layout-shortcut-line+)
+                             +layout-shortcut-line+)))
            (visible (%layout-truncate-to-width text width)))
       (loom-renderer-write-string renderer 0 row visible :style '(:reverse)))))
 (defun %layout-minibuffer-line (minibuffer)
   "Return the single line of text MINIBUFFER should currently show at the
 bottom of the screen: prompt+input while MINIBUFFER-ACTIVE-P, else the last
-transient status message set via MINIBUFFER-MESSAGE (read through the
-internal %MINIBUFFER-MESSAGE accessor -- the minibuffer protocol exposes a
-generic to *set* that message but none to read it back, so this file reaches
-past the exported protocol the same way t/unit/file-tree-test.lisp reaches
-LOOM::FILE-TREE-CHILD-LISTER), else the empty string."
+transient status message set via MINIBUFFER-MESSAGE, else the empty string."
   (cond
     ((minibuffer-active-p minibuffer)
      (concatenate 'string (or (minibuffer-prompt-string minibuffer) "")
                   (minibuffer-input-string minibuffer)))
-    ((%minibuffer-message minibuffer))
+    ((minibuffer-message-string minibuffer))
     (t "")))
 (defun %layout-draw-minibuffer (renderer minibuffer width row)
   "Draw MINIBUFFER's current line (see %LAYOUT-MINIBUFFER-LINE) into RENDERER's
@@ -138,7 +179,8 @@ ROW, truncated to WIDTH columns."
   "Adjust WINDOW's viewport so its buffer point remains in its rectangle."
   (let ((height (loom/feature/window:window-height window)))
     (when (plusp height)
-      (let ((point-line (buffer-point-line (loom/feature/window:window-buffer window)))
+      (let ((point-line (buffer-visible-point-line
+                         (loom/feature/window:window-buffer window)))
             (scroll-line (loom/feature/window:window-scroll-line window)))
         (cond
           ((< point-line scroll-line)
@@ -171,9 +213,9 @@ neither re-derives the cap."
           (loom-renderer-make-cursor
            renderer
            :x (+ x-offset (loom/feature/window:window-x window)
-                 (min (buffer-point-column buffer) (1- width)))
+                 (min (buffer-visible-point-column buffer) (1- width)))
            :y (+ (loom/feature/window:window-y window)
-                 (- (buffer-point-line buffer)
+                 (- (buffer-visible-point-line buffer)
                     (loom/feature/window:window-scroll-line window))))))))
 (defun %layout-compute-regions (width height file-tree-visible-p)
   "Compute the row/column geometry COMPOSE-FRAME draws into, given the
@@ -212,7 +254,12 @@ caller's job to actually flush that screen to a terminal. Returns
          (file-tree (editor-state-file-tree editor-state))
          (file-tree-visible
            (loom/feature/file-tree:file-tree-visible-p file-tree))
-         (window-tree (editor-state-window-tree editor-state)))
+         (window-tree (editor-state-window-tree editor-state))
+         (workspace-manager (editor-state-workspaces editor-state))
+         (workspace-name
+           (and workspace-manager
+                (loom/feature/workspace:workspace-manager-current-name
+                 workspace-manager))))
       (multiple-value-bind (content-height minibuffer-row shortcuts-row shortcuts-visible-p
                            file-tree-width window-area-width)
         (%layout-compute-regions width height file-tree-visible)
@@ -228,6 +275,7 @@ caller's job to actually flush that screen to a terminal. Returns
         (%layout-draw-shortcuts renderer width shortcuts-row
                                 (loom/feature/window:window-buffer
                                  (loom/feature/window:window-tree-selected-window
-                                  window-tree))))
+                                  window-tree))
+                                workspace-name))
       (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state) width minibuffer-row)
       editor-state)))

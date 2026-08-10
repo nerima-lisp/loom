@@ -41,10 +41,10 @@
     # non-flake input has no inputs of its own, so it cannot contribute a
     # second nixpkgs to flake.lock at all.
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.5.0";
+      url = "github:nerima-lisp/cl-tty-kit/v1.6.0";
       flake = false;
     };
-    # cl-tty-kit v1.5.0's own `:depends-on` entries need these transitive
+    # cl-tty-kit v1.6.0's own `:depends-on` entries need these transitive
     # inputs, and `lispDerivation` resolves a system's dependencies only from
     # the `lispDependencies` it is handed, so they have to be spelled here
     # (see `siblingsFor` below) or the build stops with missing component

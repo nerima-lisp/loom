@@ -36,6 +36,10 @@
   "LSP session"
   (it "keeps lifecycle idempotent and records initialize failures"
     (signals error (make-lsp-session))
+    (let ((session (make-lsp-session :command "cat")))
+      (unwind-protect
+           (expect (lsp-session-p session) :to-be-truthy)
+        (lsp-session-stop session)))
     (let* ((transport (make-instance '%fake-lsp-transport))
            (session (make-lsp-session :transport transport)))
       (lsp-session-start session)
@@ -179,7 +183,7 @@
              (lsp-session-start session)
              (%fake-push-incoming
               transport
-              "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":null}")
+              "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{},\"error\":null}")
              (lsp-session-drain session)
              (expect (lsp-session-initialized-p session) :to-be-truthy)
              (expect (lsp-session-last-error session) :to-be nil)
@@ -190,6 +194,9 @@
     (expect (lsp-path-uri "/tmp/example.LISP")
             :to-equal
             "file:///tmp/example.LISP")
+    (expect (lsp-path-uri "/tmp/space name#x?y%z/日本語.lisp")
+            :to-equal
+            "file:///tmp/space%20name%23x%3Fy%25z/%E6%97%A5%E6%9C%AC%E8%AA%9E.lisp")
     (expect (mapcar #'lsp-diagnostic-severity-name '(1 2 3 4 99))
             :to-equal
             '("error" "warning" "info" "hint" "info")))
@@ -200,22 +207,84 @@
                                       :root-uri "file:///tmp")))
       (lsp-session-start session)
       (let* ((sent (%fake-sent-in-order transport))
-             (request (%parse-lsp-json (first sent))))
+             (request (%parse-lsp-json (first sent)))
+             (params (gethash "params" request))
+             (capabilities (gethash "capabilities" params))
+             (workspace (gethash "workspace" capabilities))
+             (text-document (gethash "textDocument" capabilities))
+             (synchronization (gethash "synchronization" text-document))
+             (diagnostics (gethash "publishDiagnostics" capabilities))
+             (workspace-folders (gethash "workspaceFolders" params))
+             (client-info (gethash "clientInfo" params)))
         (expect (gethash "method" request)
                 :to-equal "initialize")
         (expect (gethash "id" request)
-                :to-equal 1))
+                :to-equal 1)
+        (expect (gethash "name" client-info)
+                :to-equal "Loom")
+        (expect (gethash "version" client-info)
+                :to-equal "0.1.0")
+        (expect (gethash "workspaceFolders" workspace)
+                :to-be-truthy)
+        (expect (gethash "dynamicRegistration" synchronization)
+                :to-be-truthy)
+        (expect (gethash "relatedInformation" diagnostics)
+                :to-be-truthy)
+        (expect (gethash "uri" (first workspace-folders))
+                :to-equal
+                "file:///tmp")
+        (expect (gethash "name" (first workspace-folders))
+                :to-equal
+                "Loom workspace"))
       (%fake-push-incoming
        transport
-       "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}")
+       "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"capabilities\":{\"hoverProvider\":true},\"serverInfo\":{\"name\":\"fake\",\"version\":\"1\"}}}")
       (lsp-session-drain session)
       (expect (lsp-session-initialized-p session) :to-be-truthy)
+      (expect (gethash "hoverProvider"
+                       (lsp-session-server-capabilities session))
+              :to-be-truthy)
+      (expect (gethash "name" (lsp-session-server-info session))
+              :to-equal
+              "fake")
       (let* ((messages (%fake-sent-in-order transport))
              (initialized (%parse-lsp-json (second messages))))
         (expect (gethash "method" initialized)
                 :to-equal "initialized"))
+      (%fake-push-incoming
+       transport
+       "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}")
       (lsp-session-stop session)
-      (expect (%fake-closed-p transport) :to-be-truthy)))
+      (expect (%fake-closed-p transport) :to-be-truthy)
+      (let* ((messages (%fake-sent-in-order transport))
+             (shutdown (%parse-lsp-json (third messages)))
+             (exit (%parse-lsp-json (fourth messages))))
+        (expect messages :to-have-length 4)
+        (expect (gethash "method" shutdown)
+                :to-equal "shutdown")
+        (expect (gethash "id" shutdown)
+                :to-equal 2)
+        (expect (gethash "method" exit)
+                :to-equal "exit"))))
+  (it "falls back to exit when shutdown is not acknowledged"
+    (let* ((transport (make-instance '%fake-lsp-transport))
+           (session (make-lsp-session :transport transport)))
+      (lsp-session-start session)
+      (%fake-push-incoming
+       transport
+       "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}")
+      (lsp-session-drain session)
+      (lsp-session-stop session :timeout 0)
+      (let* ((messages (%fake-sent-in-order transport))
+             (shutdown (%parse-lsp-json (third messages)))
+             (exit (%parse-lsp-json (fourth messages))))
+        (expect messages :to-have-length 4)
+        (expect (gethash "method" shutdown)
+                :to-equal "shutdown")
+        (expect (gethash "method" exit)
+                :to-equal "exit")
+        (expect (lsp-session-last-error session) :to-be nil)
+        (expect (%fake-closed-p transport) :to-be-truthy))))
   (it "synchronizes a buffer and stores published diagnostics"
     (let* ((transport (make-instance '%fake-lsp-transport))
            (session (make-lsp-session :transport transport))
@@ -311,8 +380,54 @@
         (loom/feature/lsp::lsp-transport-send process "{\"ok\":false}"))
       (expect (loom/feature/lsp::lsp-transport-receive process)
               :to-be nil)
-      (expect (loom/feature/lsp::lsp-transport-close process)
+        (expect (loom/feature/lsp::lsp-transport-close process)
               :to-be process))))
+
+(describe
+  "LSP project discovery"
+  (it "uses the nearest .loom-lsp command and skips comments and blank lines"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (nested (merge-pathnames "nested/" directory))
+             (source (merge-pathnames "nested/main.lisp" directory))
+             (root-config (merge-pathnames ".loom-lsp" directory))
+             (nested-config (merge-pathnames ".loom-lsp" nested)))
+        (ensure-directories-exist source)
+        (host-kit:write-file-string
+         (format nil "# root command~%~%  root-server --stdio  ~%")
+         root-config)
+        (host-kit:write-file-string
+         (format nil " # nested comment~%~% nested-server --stdio ~%")
+         nested-config)
+        (multiple-value-bind (command root configuration)
+            (lsp-discover-command source)
+          (expect command :to-equal "nested-server --stdio")
+          (expect (namestring root)
+                  :to-equal
+                  (namestring (truename nested)))
+          (expect (namestring configuration)
+                  :to-equal
+                  (namestring (truename nested-config)))))))
+
+  (it "returns no discovery for missing or commandless configuration"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (source (merge-pathnames "main.lisp" directory))
+             (configuration (merge-pathnames ".loom-lsp" directory)))
+        (host-kit:write-file-string "source" source)
+        (multiple-value-bind (command root config)
+            (lsp-discover-command source)
+          (expect command :to-be nil)
+          (expect root :to-be nil)
+          (expect config :to-be nil))
+        (host-kit:write-file-string
+         (format nil "# comment~%~%  ~%")
+         configuration)
+        (multiple-value-bind (command root config)
+            (lsp-discover-command source)
+          (expect command :to-be nil)
+          (expect root :to-be nil)
+          (expect config :to-be nil))))))
 
 (describe
   "LSP commands"
@@ -348,7 +463,7 @@
                          :to-equal "*Loom-Diagnostics*")
                  (expect (buffer-text diagnostics-buffer)
                          :to-contain "bad")
-                 (expect (loom::%minibuffer-message
+                 (expect (loom:minibuffer-message-string
                           (editor-state-minibuffer state))
                          :to-equal "LSP diagnostics refreshed.")))
              (loom/feature/window:window-set-buffer
@@ -372,20 +487,20 @@
         (unwind-protect
              (progn
                (lsp-stop)
-               (expect (loom::%minibuffer-message minibuffer)
+               (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "No LSP session.")
                (setf (editor-state-lsp-session *editor-state*) session)
                (loom/feature/lsp:lsp-diagnostics)
-               (expect (loom::%minibuffer-message minibuffer)
+               (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "LSP diagnostics need a file-backed buffer.")
                (lsp-stop)
-               (expect (loom::%minibuffer-message minibuffer)
+               (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "LSP stopped.")
                (loom/feature/lsp:lsp-diagnostics)
-               (expect (loom::%minibuffer-message minibuffer)
+               (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "No LSP session."))
           (lsp-session-stop session)))))
@@ -394,7 +509,7 @@
     (%with-minibuffer-state (minibuffer "")
       (lsp-start)
       (funcall (loom::%minibuffer-on-confirm minibuffer) " ")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "LSP command cannot be empty"))
     (%with-minibuffer-state (minibuffer "")
@@ -408,7 +523,7 @@
                session))
           (lsp-start)
           (funcall (loom::%minibuffer-on-confirm minibuffer) "closed-server"))
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-contain
                 "LSP start failed:")
         (expect (%fake-closed-p transport) :to-be-truthy)))
@@ -460,12 +575,73 @@
                (expect (getf captured-arguments :root-uri)
                        :to-equal
                        "file:///tmp/")
-               (expect (loom::%minibuffer-message minibuffer)
+               (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "LSP started."))
           (lsp-session-stop old-session)
           (when new-session
-            (lsp-session-stop new-session))))))
+               (lsp-session-stop new-session))))))
+
+  (it "uses the discovered command and project root when RET confirms it"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (path (merge-pathnames "src/main.lisp" directory))
+             (configuration (merge-pathnames ".loom-lsp" directory)))
+        (ensure-directories-exist path)
+        (host-kit:write-file-string "(+ 1 2)" path)
+        (host-kit:write-file-string
+         (format nil "# project LSP~%~% fake-server --stdio ~%")
+         configuration)
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((buffer (make-buffer :name "main.lisp"
+                                      :path path
+                                      :initial-content "(+ 1 2)"))
+                 (window (window-tree-selected-window
+                          (editor-state-window-tree *editor-state*)))
+                 (transport (make-instance '%fake-lsp-transport))
+                 (original-make-session
+                   (symbol-function 'loom/feature/lsp::make-lsp-session))
+                 (new-session nil)
+                 (captured-arguments nil))
+            (unwind-protect
+                 (progn
+                   (window-set-buffer window buffer)
+                   (%register-buffer buffer)
+                   (with-replaced-function
+                       (loom/feature/lsp::make-lsp-session
+                        (lambda (&rest arguments)
+                          (setf captured-arguments arguments
+                                new-session
+                                (apply original-make-session
+                                       :transport transport
+                                       arguments))
+                          new-session))
+                     (lsp-start)
+                     (expect (minibuffer-prompt-string minibuffer)
+                             :to-equal
+                             "LSP command [RET for fake-server --stdio]: ")
+                     (funcall (loom::%minibuffer-on-confirm minibuffer) ""))
+                   (expect (getf captured-arguments :command)
+                           :to-equal
+                           "fake-server --stdio")
+                   (expect (getf captured-arguments :directory)
+                           :to-equal
+                           directory)
+                   (expect (getf captured-arguments :root-uri)
+                           :to-equal
+                           (lsp-path-uri directory))
+                   (let* ((request
+                            (%parse-lsp-json
+                             (first (%fake-sent-in-order transport))))
+                          (params (gethash "params" request)))
+                     (expect (gethash "rootUri" params)
+                             :to-equal
+                             (lsp-path-uri directory)))
+                   (expect (loom:minibuffer-message-string minibuffer)
+                           :to-equal
+                           "LSP started."))
+              (when new-session
+                (lsp-session-stop new-session))))))))
 
   (it "reports transport errors and renders optional diagnostic fields"
     (let* ((transport (make-instance '%fake-lsp-transport))
@@ -487,7 +663,7 @@
              (setf (editor-state-lsp-session state) session
                    (lsp-session-last-error session) "broken transport")
              (lsp-diagnostics)
-             (expect (loom::%minibuffer-message
+             (expect (loom:minibuffer-message-string
                       (editor-state-minibuffer state))
                      :to-equal
                      "LSP error: broken transport")

@@ -17,8 +17,8 @@
 (defun %layout-syntax-style (kind)
   (cdr (assoc kind +layout-syntax-styles+)))
 
-(defun %layout-draw-highlighted-line (renderer line x y width
-                                       &optional (mode :common-lisp))
+(defun syntax-draw-highlighted-line (renderer line x y width
+                                      &optional (mode :common-lisp))
   "Draw LINE at (X, Y), preserving token text and fitting WIDTH cells."
   (let ((column x)
         (remaining width))
@@ -36,15 +36,15 @@
             (decf remaining visible-width))))))
     renderer)
 
-(defun %layout-draw-buffer (renderer buffer x y width height &key (start-line 0))
+(defun syntax-draw-buffer (renderer buffer x y width height &key (start-line 0))
   "Draw BUFFER's visible lines with line-local syntax styles."
-  (let ((line-count (buffer-line-count buffer)))
+  (let ((line-count (buffer-visible-line-count buffer)))
     (dotimes (row height)
       (let ((line-number (+ start-line row)))
         (when (< line-number line-count)
-          (%layout-draw-highlighted-line
+          (syntax-draw-highlighted-line
            renderer
-           (buffer-line buffer line-number)
+           (buffer-visible-line buffer line-number)
            x
            (+ y row)
            width

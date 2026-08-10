@@ -55,7 +55,39 @@
     (let ((keymap (make-keymap)))
       (keymap-define-key keymap (list #\q) 'quit-command)
       (expect (keymap-lookup keymap (list (cons nil #\q))) :to-be 'quit-command)
-      (expect (keymap-lookup keymap (list #\q)) :to-be 'quit-command))))
+      (expect (keymap-lookup keymap (list #\q)) :to-be 'quit-command)))
+
+  (it
+    "falls back to a parent when the first chord is not local"
+    (let* ((parent (make-keymap))
+           (child (make-keymap :parent parent)))
+      (keymap-define-key parent (list *ctrl-s*) 'parent-save-command)
+      (expect (keymap-lookup child (list *ctrl-s*))
+              :to-be 'parent-save-command)))
+
+  (it
+    "lets a local binding shadow the same parent chord"
+    (let* ((parent (make-keymap))
+           (child (make-keymap :parent parent)))
+      (keymap-define-key parent (list *ctrl-s*) 'parent-save-command)
+      (keymap-define-key child (list *ctrl-s*) 'local-save-command)
+      (expect (keymap-lookup child (list *ctrl-s*))
+              :to-be 'local-save-command)))
+
+  (it
+    "lets a local prefix shadow the matching parent subtree"
+    (let* ((parent (make-keymap))
+           (child (make-keymap :parent parent)))
+      (keymap-define-key parent (list *ctrl-x*) 'parent-direct-command)
+      (keymap-define-key parent (list *ctrl-x* *ctrl-s*)
+                          'parent-save-command)
+      (keymap-define-key child (list *ctrl-x* *ctrl-s*)
+                          'local-save-command)
+      (expect (keymap-lookup child (list *ctrl-x*)) :to-equal :prefix)
+      (expect (keymap-lookup child (list *ctrl-x* *ctrl-s*))
+              :to-be 'local-save-command)
+      (expect (keymap-lookup child (list *ctrl-x* (cons nil #\q)))
+              :to-be nil))))
 
 (describe
   "keymap-state-dispatch"

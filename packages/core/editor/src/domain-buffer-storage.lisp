@@ -24,12 +24,17 @@ mark slots below state the same union once instead of repeating it."
 
 (defstruct (buffer (:constructor %make-buffer) (:conc-name %buffer-))
   "Internal representation of a loom buffer: a piece table plus point, mark,
-modified-p, and undo-list state."
+modified-p, read-only state, and undo/redo state."
   (name "*scratch*" :type string)
   (path nil)
   (original "" :type string)
   (add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0))
   (pieces nil :type list)
+  ;; Narrowing is represented as absolute offsets in the full piece-table
+  ;; text.  The end is exclusive; a widened buffer always has [0, full
+  ;; length], which lets edits keep the invariant without a separate flag.
+  (narrow-start-offset 0 :type integer)
+  (narrow-end-offset 0 :type integer)
   (point-line 0 :type integer)
   (point-column 0 :type integer)
   (mark-line nil :type %maybe-line/column)
@@ -38,8 +43,22 @@ modified-p, and undo-list state."
   ;; belongs to feature packages, keeping the core editor independent of
   ;; language packages.
   (major-mode :fundamental)
+  (read-only-p nil :type boolean)
   (modified-p nil)
-  (undo-list nil :type list))
+  (undo-list nil :type list)
+  (redo-list nil :type list))
+
+(define-condition buffer-read-only-error (error)
+  ((buffer :initarg :buffer :reader buffer-read-only-error-buffer))
+  (:report
+   (lambda (condition stream)
+     (format stream "Buffer ~A is read-only"
+             (%buffer-name (buffer-read-only-error-buffer condition))))))
+
+(defun %ensure-buffer-writable (buffer)
+  "Signal BUFFER-READ-ONLY-ERROR when BUFFER rejects text mutations."
+  (when (%buffer-read-only-p buffer)
+    (error 'buffer-read-only-error :buffer buffer)))
 
 ;;; ---------------------------------------------------------------------
 ;;; Internal helpers
@@ -94,6 +113,17 @@ directly observed."
   (with-output-to-string (stream)
     (dolist (piece (%buffer-pieces buffer))
       (write-string (%piece-text buffer piece) stream))))
+
+(defun %buffer-full-length (buffer)
+  "Return BUFFER's current full-text length without materializing its text."
+  (loop for piece in (%buffer-pieces buffer)
+        sum (%piece-length piece)))
+
+(defun %buffer-narrowed-p (buffer)
+  "Return true when BUFFER's visible region is smaller than its full text."
+  (let ((full-length (%buffer-full-length buffer)))
+    (or (plusp (%buffer-narrow-start-offset buffer))
+        (< (%buffer-narrow-end-offset buffer) full-length))))
 
 (defun %coalesce-pieces (pieces)
   "Merge adjacent slices from the same source, keeping metadata compact."
@@ -221,45 +251,75 @@ closing newline; both leave TEXT holding the answer."
                            (%position-to-offset buffer start-line start-column)
                            (%position-to-offset buffer end-line end-column)))
 
-(defun %do-insert (buffer line column text)
+(defun %do-insert (buffer line column text &key (clear-redo t))
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
 entry describing the inverse of this exact edit (a delete of the same
 span). Returns (values end-line end-column), the position just after the
-inserted text."
-  (multiple-value-bind (end-line end-column) (%raw-insert-at buffer line column text)
-    (setf (%buffer-modified-p buffer) t)
-    (push (list :delete line column text) (%buffer-undo-list buffer))
-    (values end-line end-column)))
+inserted text.
 
-(defun %do-delete (buffer start-line start-column end-line end-column)
+When CLEAR-REDO is true, discard explicit redo history because this is a
+new edit rather than an undo/redo replay."
+  (%ensure-buffer-writable buffer)
+  (let* ((was-narrowed (%buffer-narrowed-p buffer))
+         (old-length (%buffer-full-length buffer))
+         (text-length (length text)))
+    (multiple-value-bind (end-line end-column) (%raw-insert-at buffer line column text)
+      (if was-narrowed
+          (incf (%buffer-narrow-end-offset buffer) text-length)
+          (setf (%buffer-narrow-start-offset buffer) 0
+                (%buffer-narrow-end-offset buffer) (+ old-length text-length)))
+      (setf (%buffer-modified-p buffer) t)
+      (when clear-redo
+        (setf (%buffer-redo-list buffer) nil))
+      (push (list :delete line column text) (%buffer-undo-list buffer))
+      (values end-line end-column))))
+
+(defun %do-delete (buffer start-line start-column end-line end-column
+                   &key (clear-redo t))
   "Delete the region between the two positions, mark BUFFER modified, and
 push an undo entry describing the inverse of this exact edit (a
-re-insertion of the deleted text). Returns the deleted text."
-  (let ((text (%extract-region buffer start-line start-column end-line end-column)))
+re-insertion of the deleted text). Returns the deleted text.
+
+When CLEAR-REDO is true, discard explicit redo history because this is a
+new edit rather than an undo/redo replay."
+  (%ensure-buffer-writable buffer)
+  (let* ((start-offset (%position-to-offset buffer start-line start-column))
+         (end-offset (%position-to-offset buffer end-line end-column))
+         (text (%piece-table-range-text buffer start-offset end-offset))
+         (was-narrowed (%buffer-narrowed-p buffer))
+         (old-length (%buffer-full-length buffer))
+         (deleted-length (- end-offset start-offset)))
     (%raw-delete-region buffer start-line start-column end-line end-column)
+    (if was-narrowed
+        (decf (%buffer-narrow-end-offset buffer) deleted-length)
+        (setf (%buffer-narrow-start-offset buffer) 0
+              (%buffer-narrow-end-offset buffer) (- old-length deleted-length)))
     (setf (%buffer-modified-p buffer) t)
+    (when clear-redo
+      (setf (%buffer-redo-list buffer) nil))
     (push (list :insert start-line start-column text) (%buffer-undo-list buffer))
     text))
 
 (defun %apply-undo-entry (buffer entry)
-  "Apply ENTRY (as recorded by %DO-INSERT/%DO-DELETE) to BUFFER via those
-same low-level primitives, then leave point at the natural post-edit
-position (end of inserted text, or start of a deleted span). Because
-%DO-INSERT/%DO-DELETE always push a fresh undo entry describing whatever
-they just did, applying ENTRY here automatically records its own inverse on
-the very same undo list -- see BUFFER-UNDO for why that is exactly what
-makes the ring model work."
+  "Apply ENTRY to BUFFER and return the inverse action it records.
+
+The inverse is returned so BUFFER-UNDO can place it on the explicit redo
+stack. Replay does not clear redo history; ordinary edits still do."
   (destructuring-bind (kind line column text) entry
     (ecase kind
       (:insert
-       (multiple-value-bind (end-line end-column) (%do-insert buffer line column text)
+       (multiple-value-bind (end-line end-column)
+           (%do-insert buffer line column text :clear-redo nil)
          (setf (%buffer-point-line buffer) end-line
-               (%buffer-point-column buffer) end-column)))
+               (%buffer-point-column buffer) end-column))
+       (list :delete line column text))
       (:delete
        (multiple-value-bind (end-line end-column) (%advance-position line column text)
-         (%do-delete buffer line column end-line end-column)
+         (%do-delete buffer line column end-line end-column
+                     :clear-redo nil)
          (setf (%buffer-point-line buffer) line
-               (%buffer-point-column buffer) column))))))
+               (%buffer-point-column buffer) column))
+       (list :insert line column text)))))
 
 (defun %clamp-position (buffer line column)
   "Clamp (LINE, COLUMN) into BUFFER valid bounds."
@@ -268,3 +328,16 @@ makes the ring model work."
          (line-len (length (%line-at buffer clamped-line)))
          (clamped-column (max 0 (min column line-len))))
     (values clamped-line clamped-column)))
+
+(defun %offset-to-position-values (buffer offset)
+  "Return (VALUES LINE COLUMN) for OFFSET in BUFFER's full text."
+  (let ((remaining offset))
+    (loop for line below (%line-count buffer)
+          for line-length = (length (%line-at buffer line))
+          if (<= remaining line-length)
+            do (return (values line remaining))
+          do (decf remaining (1+ line-length))
+          finally (let ((last-line (1- (%line-count buffer))))
+                    (return
+                      (values last-line
+                              (length (%line-at buffer last-line))))))))

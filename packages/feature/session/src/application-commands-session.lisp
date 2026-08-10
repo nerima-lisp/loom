@@ -23,6 +23,31 @@
      :mark-column mark-column
      :modified-p (buffer-modified-p buffer))))
 
+(defun %session-bookmark-snapshot (bookmark)
+  "Convert one live bookmark to a serializable snapshot."
+  (make-session-bookmark-snapshot
+   :name (editor-bookmark-name bookmark)
+   :path (%session-path-string (editor-bookmark-path bookmark))
+   :buffer-name (or (editor-bookmark-buffer-name bookmark)
+                    (and (editor-bookmark-buffer bookmark)
+                         (buffer-name (editor-bookmark-buffer bookmark))))
+   :line (editor-bookmark-line bookmark)
+   :column (editor-bookmark-column bookmark)))
+
+(defun %session-bookmark-snapshots ()
+  "Return the current named bookmarks in deterministic order."
+  (let ((bookmarks (editor-state-bookmarks *editor-state*)))
+    (cond
+      ((null bookmarks) nil)
+      ((hash-table-p bookmarks)
+       (sort
+        (loop for bookmark being the hash-values of bookmarks
+              collect (%session-bookmark-snapshot bookmark))
+        #'string<
+        :key #'session-bookmark-snapshot-name))
+      (t
+       (error "session snapshot: bookmarks must be a hash table")))))
+
 (defun %session-indexed-layout (layout buffers)
   "Replace each buffer in LAYOUT with its index in BUFFERS."
   (case (first layout)
@@ -40,21 +65,65 @@
     (otherwise
      (error "session snapshot: unknown window layout node ~S" layout))))
 
+(defun %session-workspace-manager ()
+  "Return the live workspace manager, bridging pre-workspace test states."
+  (or (editor-state-workspaces *editor-state*)
+      (setf (editor-state-workspaces *editor-state*)
+            (loom/feature/workspace:make-workspace-manager
+             (editor-state-window-tree *editor-state*)))))
+
+(defun %session-workspace-live-buffers (manager)
+  "Return buffers displayed by every workspace in MANAGER."
+  (mapcan (lambda (workspace)
+            (mapcar #'loom/feature/window:window-buffer
+                    (loom/feature/window:window-tree-windows
+                     (loom/feature/workspace:workspace-window-tree workspace))))
+          (loom/feature/workspace:workspace-manager-workspaces manager)))
+
+(defun %session-workspace-snapshots (manager buffers)
+  "Convert every live workspace view to an indexed session snapshot."
+  (mapcar
+   (lambda (workspace)
+     (let ((tree (loom/feature/workspace:workspace-window-tree workspace)))
+       (make-session-workspace-snapshot
+        :name (loom/feature/workspace:workspace-name workspace)
+        :layout (%session-indexed-layout
+                 (loom/feature/window:window-tree-layout tree) buffers)
+        :selected-window-index
+        (loom/feature/window:window-tree-selected-index tree))))
+   (loom/feature/workspace:workspace-manager-workspaces manager)))
+
 (defun %session-snapshot-from-state ()
   "Return a validated snapshot of the current editor state."
-  (let* ((tree (editor-state-window-tree *editor-state*))
-         (visible (mapcar #'loom/feature/window:window-buffer
-                          (loom/feature/window:window-tree-windows tree)))
-         (buffers (remove-duplicates
-                   (append (copy-list (%editor-buffers)) visible)
-                   :test #'eq)))
-    (validate-session-snapshot
-     (make-session-snapshot
-      :buffers (mapcar #'%session-buffer-snapshot buffers)
-      :layout (%session-indexed-layout
-               (loom/feature/window:window-tree-layout tree) buffers)
-      :selected-window-index
-      (loom/feature/window:window-tree-selected-index tree)))))
+  (let* ((manager (%session-workspace-manager))
+         (current (loom/feature/workspace:workspace-manager-current manager))
+         (current-tree (editor-state-window-tree *editor-state*))
+         (current-index
+           (loom/feature/workspace:workspace-manager-current-index manager)))
+    ;; The visible editor tree is authoritative for the active workspace at
+    ;; the instant a save starts; inactive workspaces already own their trees.
+    (setf (loom/feature/workspace:workspace-window-tree current) current-tree)
+    (let* ((visible (%session-workspace-live-buffers manager))
+           (buffers (remove-duplicates
+                     (append (copy-list (%editor-buffers)) visible)
+                     :test #'eq))
+           (workspaces (%session-workspace-snapshots manager buffers))
+           (current-snapshot (nth current-index workspaces)))
+      (validate-session-snapshot
+       (make-session-snapshot
+        :buffers (mapcar #'%session-buffer-snapshot buffers)
+        :layout (session-workspace-snapshot-layout current-snapshot)
+        :selected-window-index
+        (session-workspace-snapshot-selected-window-index current-snapshot)
+        :recent-files (copy-list (editor-state-recent-files *editor-state*))
+        :bookmarks (%session-bookmark-snapshots)
+        :command-history
+        (if (editor-state-minibuffer *editor-state*)
+            (minibuffer-history-entries
+             (editor-state-minibuffer *editor-state*))
+            nil)
+        :workspaces workspaces
+        :current-workspace-index current-index)))))
 
 (defun %restore-session-buffer (snapshot)
   "Build a fresh buffer from one validated session buffer SNAPSHOT."
@@ -88,22 +157,93 @@
     (otherwise
      (error "session restore: unknown window layout node ~S" layout))))
 
+(defun %restore-session-bookmark-buffer (snapshot buffers)
+  "Find the restored buffer associated with bookmark SNAPSHOT."
+  (or (and (session-bookmark-snapshot-path snapshot)
+           (find (session-bookmark-snapshot-path snapshot)
+                 buffers
+                 :key (lambda (buffer)
+                        (%session-path-string (buffer-path buffer)))
+                 :test #'string=))
+      (and (session-bookmark-snapshot-buffer-name snapshot)
+           (find (session-bookmark-snapshot-buffer-name snapshot)
+                 buffers
+                 :key #'buffer-name
+                 :test #'string=))))
+
+(defun %restore-session-bookmarks (snapshots buffers)
+  "Build a named bookmark table and reconnect bookmarks to BUFFERS when possible."
+  (when snapshots
+    (let ((bookmarks (make-hash-table :test #'equal)))
+      (dolist (snapshot snapshots bookmarks)
+        (let ((buffer (%restore-session-bookmark-buffer snapshot buffers)))
+          (setf (gethash (session-bookmark-snapshot-name snapshot) bookmarks)
+                (make-editor-bookmark
+                 :name (session-bookmark-snapshot-name snapshot)
+                 :buffer buffer
+                 :path (and (session-bookmark-snapshot-path snapshot)
+                            (pathname (session-bookmark-snapshot-path snapshot)))
+                 :buffer-name (or (session-bookmark-snapshot-buffer-name snapshot)
+                                  (and buffer (buffer-name buffer)))
+                 :line (session-bookmark-snapshot-line snapshot)
+                 :column (session-bookmark-snapshot-column snapshot))))))))
+
+(defun %session-restorable-workspaces (snapshot buffers width height)
+  "Build fresh workspace views from SNAPSHOT and restored BUFFERS."
+  (let ((snapshots
+          (or (session-snapshot-workspaces snapshot)
+              (list (make-session-workspace-snapshot
+                     :name "main"
+                     :layout (session-snapshot-layout snapshot)
+                     :selected-window-index
+                     (session-snapshot-selected-window-index snapshot))))))
+    (mapcar
+     (lambda (workspace-snapshot)
+       (loom/feature/workspace:make-workspace
+        :name (session-workspace-snapshot-name workspace-snapshot)
+        :window-tree
+        (make-window-tree-from-layout
+         (%restore-session-layout
+          (session-workspace-snapshot-layout workspace-snapshot)
+          buffers)
+         width
+         height
+         :selected-index
+         (session-workspace-snapshot-selected-window-index
+          workspace-snapshot))))
+     snapshots)))
+
 (defun %restore-session-snapshot (snapshot)
   "Install SNAPSHOT after rebuilding every buffer and window in advance."
   (validate-session-snapshot snapshot)
   (let* ((old-tree (editor-state-window-tree *editor-state*))
          (buffers (mapcar #'%restore-session-buffer
                           (session-snapshot-buffers snapshot)))
-         (layout (%restore-session-layout (session-snapshot-layout snapshot)
-                                          buffers))
-         (tree (loom/feature/window:make-window-tree-from-layout
-                layout
-                (loom/feature/window:window-tree-width old-tree)
-                (loom/feature/window:window-tree-height old-tree)
-                :selected-index
-                (session-snapshot-selected-window-index snapshot))))
+         (width (loom/feature/window:window-tree-width old-tree))
+         (height (loom/feature/window:window-tree-height old-tree))
+         (workspaces (%session-restorable-workspaces
+                      snapshot buffers width height))
+         (manager
+           (loom/feature/workspace:make-workspace-manager-from-workspaces
+            workspaces
+            :current-index
+            (or (session-snapshot-current-workspace-index snapshot)
+                0)))
+         (tree (loom/feature/workspace:workspace-window-tree
+                (loom/feature/workspace:workspace-manager-current manager)))
+         (bookmarks (%restore-session-bookmarks
+                     (session-snapshot-bookmarks snapshot)
+                     buffers)))
     (setf (editor-state-buffers *editor-state*) buffers
+          (editor-state-recent-files *editor-state*)
+          (copy-list (session-snapshot-recent-files snapshot))
+          (editor-state-bookmarks *editor-state*) bookmarks
+          (editor-state-workspaces *editor-state*) manager
           (editor-state-window-tree *editor-state*) tree)
+    (when (editor-state-minibuffer *editor-state*)
+      (minibuffer-set-history-entries
+       (editor-state-minibuffer *editor-state*)
+       (session-snapshot-command-history snapshot)))
     tree))
 
 (defun %session-path-present-p (path)

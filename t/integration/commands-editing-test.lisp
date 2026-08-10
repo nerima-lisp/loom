@@ -115,7 +115,7 @@
     "reports when exchanging point and mark before setting the mark"
     (%with-minibuffer-state (minibuffer "hello")
       (loom::exchange-point-and-mark)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "The mark is not set")))
 
   (it
@@ -141,7 +141,7 @@
     "kill-region reports no active region when the mark is unset"
     (%with-minibuffer-state (minibuffer "hello")
       (loom::kill-region)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "The mark is not set now, so no region is active")))
 
   (it
@@ -181,6 +181,107 @@
         (buffer-set-point buffer 2 0)
         (loom::kill-region)
         (expect (buffer-text buffer) :to-equal "three")))))
+
+(describe
+  "narrowing commands"
+  (it "narrows mark-whole-buffer and widens through the command layer"
+    (%with-minibuffer-state (minibuffer "0123456789")
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 7)
+        (buffer-set-mark buffer 0 2)
+        (loom::narrow-to-region)
+        (expect (buffer-text buffer) :to-equal "0123456789")
+        (expect (buffer-visible-text buffer) :to-equal "23456")
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Narrowed to the active region")
+        (loom::mark-whole-buffer)
+        (expect buffer :to-have-point (cons 0 2))
+        (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+          (expect mark-line :to-equal 0)
+          (expect mark-column :to-equal 7))
+        (loom::widen)
+        (expect (buffer-visible-text buffer) :to-equal "0123456789")
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Widened buffer"))))
+
+  (it "keeps kill-line inside the narrowed region"
+    (let ((*editor-state* (%fresh-editor-state "abCDEFgh")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-narrow-to-region buffer 0 2 0 6)
+        (buffer-set-point buffer 0 4)
+        (loom::kill-line)
+        (expect (buffer-text buffer) :to-equal "abCDgh")
+        (expect (buffer-visible-text buffer) :to-equal "CD")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "EF")))))
+
+(describe
+  "narrowed search commands"
+  (it "does not return matches outside the visible region"
+    (let ((buffer (make-buffer :initial-content "foo hidden foo")))
+      (buffer-narrow-to-region buffer 0 4 0 10)
+      (buffer-set-point buffer 0 4)
+      (let ((span (buffer-search-forward buffer "hidden")))
+        (expect span :to-be-truthy)
+        (expect (buffer-span-start span) :to-equal 4)
+        (expect (buffer-span-end span) :to-equal 10))
+      (expect (buffer-search-forward buffer "foo") :to-be nil)
+      (expect (buffer-search-spans buffer "foo" 0) :to-be nil))))
+
+(describe
+  "kill ring commands"
+  (it
+    "copies a region without changing the buffer"
+    (let ((*editor-state* (%fresh-editor-state "hello world")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 0)
+        (buffer-set-mark buffer 0 5)
+        (loom::kill-ring-save)
+        (expect (buffer-text buffer) :to-equal "hello world")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "hello")
+        (expect (loom::editor-state-last-command-kill-p *editor-state*)
+                :to-be-falsy))))
+
+  (it
+    "coalesces adjacent region kills in their editing direction"
+    (let ((*editor-state* (%fresh-editor-state "abcdef")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 0)
+        (buffer-set-mark buffer 0 2)
+        (loom::kill-region)
+        (buffer-set-point buffer 0 0)
+        (buffer-set-mark buffer 0 1)
+        (loom::kill-region)
+        (expect (buffer-text buffer) :to-equal "def")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "abc")))
+    (let ((*editor-state* (%fresh-editor-state "abcdef")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 0)
+        (buffer-set-mark buffer 0 2)
+        (loom::kill-region)
+        (buffer-set-point buffer 0 1)
+        (buffer-set-mark buffer 0 0)
+        (loom::kill-region)
+        (expect (buffer-text buffer) :to-equal "def")
+        (expect (first (editor-state-kill-ring *editor-state*))
+                :to-equal "cab"))))
+
+  (it
+    "rotates yank-pop by replacing the previous yank"
+    (let ((*editor-state* (%fresh-editor-state "")))
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*)
+              '("one" "two" "three"))
+        (loom::yank)
+        (expect (buffer-text buffer) :to-equal "one")
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "two")
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "three")
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "one")))))
 (describe
   "kill-line and yank"
   (it
@@ -206,15 +307,42 @@
         (loom::undo-command)
         (expect (buffer-line buffer 0) :to-equal "hello")))))
 (describe
+  "redo-command"
+  (it
+    "redoes the most recent undone edit in the selected buffer"
+    (let ((*editor-state* (%fresh-editor-state "hello")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 5)
+        (buffer-insert-string buffer "!")
+        (loom::undo-command)
+        (loom::redo-command)
+        (expect (buffer-line buffer 0) :to-equal "hello!")))))
+(describe
+  "toggle-read-only"
+  (it
+    "toggles the selected buffer's mutation state"
+    (let ((*editor-state* (%fresh-editor-state "hello" :with-minibuffer t)))
+      (let ((buffer (%selected-test-buffer)))
+        (expect (buffer-read-only-p buffer) :to-be-falsy)
+        (expect (loom::toggle-read-only) :to-be buffer)
+        (expect (buffer-read-only-p buffer) :to-be-truthy)
+        (expect (loom::toggle-read-only) :to-be buffer)
+        (expect (buffer-read-only-p buffer) :to-be-falsy)))))
+(describe
   "install-default-keybindings"
   (it-each
       (("C-x C-s" (((:control) . #\x) ((:control) . #\s)) loom/feature/file-tree:save-buffer)
+       ("C-x C-u" (((:control) . #\x) ((:control) . #\u)) loom::undo-command)
+       ("C-x C-y" (((:control) . #\x) ((:control) . #\y)) loom::redo-command)
+       ("C-x C-q" (((:control) . #\x) ((:control) . #\q)) loom::toggle-read-only)
        ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom/feature/file-tree:write-file)
        ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/window:kill-buffer)
        ("C-x 0" (((:control) . #\x) (nil . #\0)) loom/feature/window:delete-window)
        ("C-x 1" (((:control) . #\x) (nil . #\1)) loom/feature/window:delete-other-windows)
        ("C-r" (((:control) . #\r)) loom/feature/search::search-backward)
        ("M-f" (((:alt) . #\f)) loom::forward-word)
+       ("M-w" (((:alt) . #\w)) loom::kill-ring-save)
+       ("M-y" (((:alt) . #\y)) loom::yank-pop)
        ("Enter" ((nil . :enter)) loom::newline-command)
        ("C-x 2" (((:control) . #\x) (nil . #\2)) loom/feature/window:split-window-below)
        ("C-g" (((:control) . #\g)) loom::keyboard-quit))
@@ -302,7 +430,7 @@
         (%with-minibuffer-state (minibuffer "hello")
           (loom/feature/file-tree:save-buffer)
           (funcall (loom::%minibuffer-on-confirm minibuffer) existing-path)
-          (expect (loom::%minibuffer-message minibuffer)
+          (expect (loom:minibuffer-message-string minibuffer)
                   :to-equal
                   (format nil "File exists: ~A (press C-x C-s again to overwrite)" existing-path))
           (expect (host-kit:read-file-string existing-path) :to-equal "old content"))))))
@@ -328,7 +456,7 @@
         (expect (minibuffer-prompt-string minibuffer) :to-equal "Search (regex): ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
         (expect (buffer-point-column buffer) :to-equal 12)
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
         (buffer-set-point buffer 0 17)
         (loom/feature/search::search-forward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
@@ -341,7 +469,7 @@
         (loom/feature/search::search-backward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "one")
         (expect buffer :to-have-point (cons 0 8))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Found"))))
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found"))))
   (it
     "reports not found when backward search does not find the pattern"
     (%with-minibuffer-state (minibuffer "alpha")
@@ -349,7 +477,7 @@
         (buffer-set-point buffer 0 2)
         (loom/feature/search::search-backward)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
         (expect buffer :to-have-point (cons 0 2)))))
   (it
     "wraps backward search to the last match when point is before every match"
@@ -363,14 +491,14 @@
     (%with-minibuffer-state (minibuffer "alpha")
       (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty search string without moving point"
     (%with-minibuffer-state (minibuffer "alpha")
       (buffer-set-point (%selected-test-buffer) 0 2)
       (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
       (expect (%selected-test-buffer) :to-have-point (cons 0 2))))
   (it
     "returns no spans for an empty search pattern at the domain boundary"
@@ -399,7 +527,7 @@
         (funcall (loom::%minibuffer-on-confirm minibuffer) "redred")
         (expect (buffer-text buffer) :to-equal "redred RED redred")
         (expect (buffer-point-column buffer) :to-equal 6)
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal "Replaced 2 occurrence(s)"))))
   (it
     "reports not found when the text to replace does not occur anywhere"
@@ -407,14 +535,14 @@
       (loom/feature/search::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")))
   (it
     "reports not found for an empty replacement target without searching"
     (%with-minibuffer-state (minibuffer "alpha")
       (loom/feature/search::replace-string)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "replacement")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Not found")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
       (expect (buffer-text (%selected-test-buffer)) :to-equal "alpha")))
   (it
     "moves point to a match only a regular expression describes"
@@ -424,7 +552,7 @@
     (%with-minibuffer-state (minibuffer "abc 1234 def")
       (loom/feature/search::search-forward)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "\\d+")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Found")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
       (expect (%selected-test-buffer) :to-have-point (cons 0 4))))
   (it
     "replaces variable-length matches rather than a fixed-length literal"
@@ -436,7 +564,7 @@
       (funcall (loom::%minibuffer-on-confirm minibuffer) "\\s+")
       (funcall (loom::%minibuffer-on-confirm minibuffer) " ")
       (expect (buffer-text (%selected-test-buffer)) :to-equal "a b c")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Replaced 2 occurrence(s)")))
   (it
     "reports a malformed search pattern in the minibuffer instead of crashing"
@@ -450,7 +578,7 @@
       (loom/feature/search::search-forward)
       (%type-string minibuffer "(")
       (loom::%dispatch-key-event (%special-key :enter) keymap-state)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-contain "Invalid regular expression")
       (expect (%selected-test-buffer) :to-have-point (cons 0 0))))
   (it
@@ -469,6 +597,14 @@
        ("M-%" (((:alt) . #\%)) loom/feature/search::replace-string)
        ("C-w" (((:control) . #\w)) loom::kill-region)
        ("C-o" (((:control) . #\o)) loom::open-line)
+       ("C-x n n" (((:control) . #\x)
+                   (nil . #\n)
+                   (nil . #\n))
+        loom::narrow-to-region)
+       ("C-x n w" (((:control) . #\x)
+                   (nil . #\n)
+                   (nil . #\w))
+        loom::widen)
        ("M-g g" (((:alt) . #\g) (nil . #\g)) loom::goto-line))
       "binds ~A to its default command" (label key-sequence command)
     (declare (ignore label))
@@ -487,14 +623,14 @@
     (%with-minibuffer-state (minibuffer (format nil "one~%two"))
       (loom::goto-line)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "0")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Line number must be positive")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Line number must be positive")
       (expect (buffer-point-line (%selected-test-buffer)) :to-equal 0)))
   (it
     "reports unparseable input without moving point"
     (%with-minibuffer-state (minibuffer (format nil "one~%two"))
       (loom::goto-line)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-number")
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Enter a line number")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Enter a line number")
       (expect (buffer-point-line (%selected-test-buffer)) :to-equal 0)))
   (progn
   (it

@@ -18,7 +18,7 @@
   (it "reports a Quit message"
     (%with-minibuffer-state (minibuffer "")
       (loom::keyboard-quit)
-      (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit"))))
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit"))))
 (describe
   "define-command-specs macroexpansion"
   (it "emits only the explicit command registry"
@@ -108,9 +108,9 @@
     (it "shows the primary command reference in the minibuffer"
       (%with-minibuffer-state (minibuffer "")
         (loom::help-command)
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
-                "Help: M-x Command  M-: Eval  C-x C-e Eval buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x k Kill  C-x r S Save session  C-x r l Load session  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  C-y Paste  C-x C-c Exit")))
+                "Help: M-x Command  M-: Eval  C-x C-e Eval buffer  M-! Pipe command  C-x g Git status  M-x git-diff  M-x git-diff-staged  M-x git-stage-file  M-x git-unstage-file  M-x format-current-buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x k Kill  C-x r S Save session  C-x r l Load session  C-x r f Recent file  C-x r m Set bookmark  C-x r b Jump bookmark  C-x r d Delete bookmark  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  M-w Copy  C-y Paste  C-x C-u Undo  C-x C-y Redo  M-y Yank previous  C-x C-c Exit")))
     (it-each
         (("C-h" (((:control) . #\h)) loom::help-command)
          ("F1" ((nil . :f1)) loom::help-command))
@@ -119,6 +119,55 @@
       (let ((keymap (make-keymap)))
         (loom/application:install-default-keybindings keymap)
         (expect (keymap-lookup keymap key-sequence) :to-be command))))
+
+  (describe "pipe-command"
+    (it "registers pipe-command for M-! and M-x"
+      (let ((keymap (make-keymap)))
+        (loom/application:install-default-keybindings keymap)
+        (expect (keymap-lookup keymap
+                               (list (cons (quote (:alt)) #\!)))
+                :to-be
+                (quote loom/feature/shell:pipe-command))
+        (expect (loom/application:find-extended-command "pipe-command")
+                :to-be
+                (quote loom/feature/shell:pipe-command)))))
+
+  (describe "format-current-buffer"
+    (it "registers format-current-buffer for M-x"
+      (expect (loom/application:find-extended-command
+               "format-current-buffer")
+              :to-be
+              (quote loom/feature/format:format-current-buffer))))
+
+  (describe "git-status"
+    (it "registers git-status for C-x g and M-x"
+      (let ((keymap (make-keymap)))
+        (loom/application:install-default-keybindings keymap)
+        (expect (keymap-lookup keymap
+                               (list (cons (quote (:control)) #\x) #\g))
+                :to-be
+                (quote loom/feature/git:git-status))
+        (expect (loom/application:find-extended-command "git-status")
+                :to-be
+                (quote loom/feature/git:git-status)))))
+
+  (describe "git-diff"
+    (it "registers git diff commands for M-x"
+      (expect (loom/application:find-extended-command "git-diff")
+              :to-be
+              (quote loom/feature/git:git-diff))
+      (expect (loom/application:find-extended-command "git-diff-staged")
+              :to-be
+              (quote loom/feature/git:git-diff-staged))))
+
+  (describe "git file operations"
+    (it "registers stage and unstage commands for M-x"
+      (expect (loom/application:find-extended-command "git-stage-file")
+              :to-be
+              (quote loom/feature/git:git-stage-file))
+      (expect (loom/application:find-extended-command "git-unstage-file")
+              :to-be
+              (quote loom/feature/git:git-unstage-file))))
 
   (describe "execute-extended-command"
     (it "resolves a registered command through the command-spec registry"
@@ -139,7 +188,7 @@
       (%with-minibuffer-state (minibuffer "hi")
         (loom::execute-extended-command)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-command")
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal "Unknown command: not-a-command")))
     (it "binds M-x to execute-extended-command"
       (let ((keymap (make-keymap)))
@@ -351,3 +400,46 @@ reachability rather than on which of the two spellings was chosen."
           (loom/feature/file-tree:file-tree-select-next)
           (loom/feature/file-tree:file-tree-delete-command)
           (expect (host-kit:path-exists-p path) :to-be-falsy))))))
+
+(describe
+  "recent files and bookmarks"
+  (it
+    "tracks existing files and visits a recent file"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "recent.txt" dir)))
+        (host-kit:write-file-string "recent" path)
+        (%with-minibuffer-state (minibuffer "")
+          (loom/feature/file-tree:find-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) path)
+          (expect (editor-state-recent-files *editor-state*)
+                  :to-equal (list (editor-path-string path)))
+          (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")
+          (loom/feature/file-tree:recent-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer)
+                   (editor-path-string path))
+          (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")))))
+
+  (it
+    "sets, jumps to, lists, and deletes a named bookmark"
+    (%with-minibuffer-state (minibuffer (format nil "one~%two~%three")
+                             (name "spot"))
+      (buffer-set-point (%selected-test-buffer) 1 2)
+      (loom::set-bookmark)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) name)
+      (let ((bookmark (gethash "spot"
+                               (editor-state-bookmarks *editor-state*))))
+        (expect (editor-bookmark-p bookmark) :to-be-truthy)
+        (expect (editor-bookmark-line bookmark) :to-equal 1)
+        (expect (editor-bookmark-column bookmark) :to-equal 2))
+      (buffer-set-point (%selected-test-buffer) 0 0)
+      (loom::jump-to-bookmark)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) name)
+      (expect (buffer-point-line (%selected-test-buffer)) :to-equal 1)
+      (expect (buffer-point-column (%selected-test-buffer)) :to-equal 2)
+      (loom::list-bookmarks)
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Bookmarks: spot")
+      (loom::delete-bookmark)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) name)
+      (expect (gethash "spot" (editor-state-bookmarks *editor-state*))
+              :to-be nil))))

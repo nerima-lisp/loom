@@ -15,11 +15,28 @@
    #:session-buffer-snapshot-mark-line
    #:session-buffer-snapshot-mark-column
    #:session-buffer-snapshot-modified-p
+   #:session-bookmark-snapshot
+   #:make-session-bookmark-snapshot
+   #:session-bookmark-snapshot-name
+   #:session-bookmark-snapshot-path
+   #:session-bookmark-snapshot-buffer-name
+   #:session-bookmark-snapshot-line
+   #:session-bookmark-snapshot-column
+   #:session-workspace-snapshot
+   #:make-session-workspace-snapshot
+   #:session-workspace-snapshot-name
+   #:session-workspace-snapshot-layout
+   #:session-workspace-snapshot-selected-window-index
    #:session-snapshot
    #:make-session-snapshot
    #:session-snapshot-buffers
    #:session-snapshot-layout
    #:session-snapshot-selected-window-index
+   #:session-snapshot-recent-files
+   #:session-snapshot-bookmarks
+   #:session-snapshot-command-history
+   #:session-snapshot-workspaces
+   #:session-snapshot-current-workspace-index
    #:validate-session-snapshot
    #:session-store-read
    #:session-store-write

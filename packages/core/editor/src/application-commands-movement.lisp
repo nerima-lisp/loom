@@ -7,28 +7,23 @@
 
 (defun %forward-char-once ()
   (let* ((buffer (%selected-buffer))
-         (line (buffer-point-line buffer))
-         (column (buffer-point-column buffer))
-         (line-len (length (buffer-line buffer line))))
-    (cond
-      ((< column line-len)
-       (buffer-set-point buffer line (1+ column)))
-      ((< line (1- (buffer-line-count buffer)))
-       (buffer-set-point buffer (1+ line) 0))
-      (t
-       (buffer-set-point buffer line column)))))
+         (point (buffer-point-offset buffer))
+         (end (buffer-narrow-end-offset buffer)))
+    (when (< point end)
+      (let ((position (buffer-offset-position buffer (1+ point))))
+        (buffer-set-point buffer
+                          (buffer-position-line position)
+                          (buffer-position-column position))))))
 
 (defun %backward-char-once ()
   (let* ((buffer (%selected-buffer))
-         (line (buffer-point-line buffer))
-         (column (buffer-point-column buffer)))
-    (cond
-      ((> column 0)
-       (buffer-set-point buffer line (1- column)))
-      ((> line 0)
-       (buffer-set-point buffer (1- line) (length (buffer-line buffer (1- line)))))
-      (t
-       (buffer-set-point buffer line column)))))
+         (point (buffer-point-offset buffer))
+         (start (buffer-narrow-start-offset buffer)))
+    (when (> point start)
+      (let ((position (buffer-offset-position buffer (1- point))))
+        (buffer-set-point buffer
+                          (buffer-position-line position)
+                          (buffer-position-column position))))))
 
 (defun forward-char ()
   "Move point forward, repeating for the active numeric prefix."
@@ -99,18 +94,22 @@
 
 (defun %forward-word-once ()
   (let* ((buffer (%selected-buffer))
-         (offset (%forward-word-offset (buffer-text buffer)
-                                       (buffer-point-offset buffer))))
-    (let ((position (buffer-offset-position buffer offset)))
+         (start (buffer-narrow-start-offset buffer))
+         (offset (%forward-word-offset
+                  (buffer-visible-text buffer)
+                  (- (buffer-point-offset buffer) start))))
+    (let ((position (buffer-offset-position buffer (+ start offset))))
       (buffer-set-point buffer
                         (buffer-position-line position)
                         (buffer-position-column position)))))
 
 (defun %backward-word-once ()
   (let* ((buffer (%selected-buffer))
-         (offset (%backward-word-offset (buffer-text buffer)
-                                        (buffer-point-offset buffer))))
-    (let ((position (buffer-offset-position buffer offset)))
+         (start (buffer-narrow-start-offset buffer))
+         (offset (%backward-word-offset
+                  (buffer-visible-text buffer)
+                  (- (buffer-point-offset buffer) start))))
+    (let ((position (buffer-offset-position buffer (+ start offset))))
       (buffer-set-point buffer
                         (buffer-position-line position)
                         (buffer-position-column position)))))
@@ -129,12 +128,18 @@
 
 (defun beginning-of-buffer ()
   "Move point to the beginning of the buffer (M-<)."
-  (buffer-set-point (%selected-buffer) 0 0))
+  (let* ((buffer (%selected-buffer))
+         (position (buffer-offset-position buffer
+                                           (buffer-narrow-start-offset buffer))))
+    (buffer-set-point buffer
+                      (buffer-position-line position)
+                      (buffer-position-column position))))
 
 (defun end-of-buffer ()
   "Move point to the end of the buffer (M->)."
   (let* ((buffer (%selected-buffer))
-         (position (buffer-offset-position buffer (length (buffer-text buffer)))))
+         (position (buffer-offset-position buffer
+                                           (buffer-narrow-end-offset buffer))))
     (buffer-set-point buffer
                       (buffer-position-line position)
                       (buffer-position-column position))))
@@ -143,7 +148,7 @@
   (let* ((window (%selected-window))
          (buffer (loom/feature/window:window-buffer window))
          (page (max 1 (1- (loom/feature/window:window-height window))))
-         (max-scroll (max 0 (- (buffer-line-count buffer)
+         (max-scroll (max 0 (- (buffer-visible-line-count buffer)
                                (max 1 (loom/feature/window:window-height window))))))
     (setf (loom/feature/window:window-scroll-line window)
           (max 0 (min max-scroll
@@ -171,8 +176,14 @@
         (let ((line (parse-integer input)))
           (if (plusp line)
               (let ((buffer (%selected-buffer)))
-                (buffer-set-point buffer (1- line) (buffer-point-column buffer))
-                (minibuffer-message minibuffer "Moved"))
+                (if (<= line (buffer-visible-line-count buffer))
+                    (let* ((start (buffer-offset-position
+                                   buffer (buffer-narrow-start-offset buffer)))
+                           (target-line (+ (buffer-position-line start)
+                                           (1- line))))
+                      (buffer-set-point buffer target-line (buffer-point-column buffer))
+                      (minibuffer-message minibuffer "Moved"))
+                    (minibuffer-message minibuffer "Line is outside the narrowed buffer")))
               (minibuffer-message minibuffer "Line number must be positive")))
       (parse-error ()
         (minibuffer-message minibuffer "Enter a line number")))))

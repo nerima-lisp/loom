@@ -110,6 +110,40 @@ results yet."
                  :condition condition))
           (error condition))))))
 
+(defun %prefetch-slot-available-p (runtime pending)
+  "Return true when RUNTIME can accept another directory task."
+  (and (not (loom-concurrent-runtime-closed-p runtime))
+       (< (hash-table-count pending)
+          (loom-concurrent-runtime-in-flight-limit runtime))))
+
+(defun %directory-state-present-p (table key)
+  "Return true when TABLE contains an entry for KEY, including a NIL value."
+  (nth-value 1 (gethash key table)))
+
+(defun %directory-prefetch-needed-p (cache errors pending key)
+  "Return true when KEY is neither cached, failed, nor already in flight."
+  (not (or (%directory-state-present-p cache key)
+           (%directory-state-present-p errors key)
+           (%directory-state-present-p pending key))))
+
+(defun %submit-directory-prefetch (runtime pending path key generation)
+  "Submit PATH and remove its pending marker when submission is rejected.
+
+Submission errors also clear the marker before being propagated to the caller,
+so a failed executor cannot leave the runtime believing a task is in flight."
+  (setf (gethash key pending) generation)
+  (handler-case
+      (multiple-value-bind (promise accepted-p)
+          (cl-concurrent-kit:try-submit
+           (loom-concurrent-runtime-executor runtime)
+           (%submit-directory-listing runtime path key generation))
+        (unless accepted-p
+          (remhash key pending))
+        (values promise accepted-p))
+    (error (condition)
+      (remhash key pending)
+      (error condition))))
+
 (defun loom-concurrent-runtime-prefetch (runtime paths)
   "Submit uncached PATHS and return promises plus the accepted task count.
 
@@ -122,57 +156,45 @@ shutting down."
         (cache (loom-concurrent-runtime-directory-cache runtime))
         (errors (loom-concurrent-runtime-errors runtime))
         (generation-table (loom-concurrent-runtime-generation runtime)))
-    (labels ((submit-path (path key generation)
-               (setf (gethash key pending) generation)
-               (handler-case
-                   (cl-concurrent-kit:try-submit
-                    (loom-concurrent-runtime-executor runtime)
-                    (%submit-directory-listing
-                     runtime path key generation))
-                 (error (condition)
-                   (remhash key pending)
-                   (error condition)))))
-      (dolist (path paths (values (nreverse promises) accepted))
-        (when (and (not (loom-concurrent-runtime-closed-p runtime))
-                   (< (hash-table-count pending)
-                      (loom-concurrent-runtime-in-flight-limit runtime)))
-          (let* ((key (%directory-key path))
-                 (generation (gethash key generation-table 0)))
-            (multiple-value-bind (cached cached-p) (gethash key cache)
-              (declare (ignore cached))
-              (let ((error-p (nth-value 1 (gethash key errors))))
-                (multiple-value-bind (pending-generation pending-p)
-                    (gethash key pending)
-                  (declare (ignore pending-generation))
-                  (unless (or cached-p error-p pending-p)
-                    (multiple-value-bind (promise accepted-p)
-                        (submit-path path key generation)
-                      (if accepted-p
-                          (progn
-                            (push promise promises)
-                            (incf accepted))
-                          (remhash key pending)))))))))))))
+    (dolist (path paths (values (nreverse promises) accepted))
+      (when (%prefetch-slot-available-p runtime pending)
+        (let* ((key (%directory-key path))
+               (generation (gethash key generation-table 0)))
+          (when (%directory-prefetch-needed-p cache errors pending key)
+            (multiple-value-bind (promise accepted-p)
+                (%submit-directory-prefetch
+                 runtime pending path key generation)
+              (when accepted-p
+                (push promise promises)
+                (incf accepted)))))))))
+
+(defun %clear-completed-directory-task (runtime key generation)
+  (let ((pending (loom-concurrent-runtime-pending runtime)))
+    (multiple-value-bind (pending-generation pending-p)
+        (gethash key pending)
+      (when (and pending-p (= pending-generation generation))
+        (remhash key pending)))))
+
+(defun %store-directory-result (runtime result)
+  (let ((key (getf result :key)))
+    (ecase (getf result :kind)
+      (:entries
+       (setf (gethash key
+                      (loom-concurrent-runtime-directory-cache runtime))
+             (getf result :entries))
+       (remhash key (loom-concurrent-runtime-errors runtime)))
+      (:error
+       (remhash key (loom-concurrent-runtime-directory-cache runtime))
+       (setf (gethash key (loom-concurrent-runtime-errors runtime))
+             (getf result :condition))))))
 
 (defun %apply-directory-result (runtime result)
   (let* ((key (getf result :key))
          (result-generation (getf result :generation))
-         (pending (loom-concurrent-runtime-pending runtime))
          (generation-table (loom-concurrent-runtime-generation runtime)))
-    (multiple-value-bind (pending-generation pending-p)
-        (gethash key pending)
-      (when (and pending-p (= pending-generation result-generation))
-        (remhash key pending)))
+    (%clear-completed-directory-task runtime key result-generation)
     (when (= (gethash key generation-table 0) result-generation)
-      (ecase (getf result :kind)
-        (:entries
-         (setf (gethash key
-                        (loom-concurrent-runtime-directory-cache runtime))
-               (getf result :entries))
-         (remhash key (loom-concurrent-runtime-errors runtime)))
-        (:error
-         (remhash key (loom-concurrent-runtime-directory-cache runtime))
-         (setf (gethash key (loom-concurrent-runtime-errors runtime))
-               (getf result :condition)))))))
+      (%store-directory-result runtime result))))
 
 (defun loom-concurrent-runtime-drain (runtime)
   "Apply all currently available worker results on the calling thread."

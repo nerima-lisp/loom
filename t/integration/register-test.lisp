@@ -40,11 +40,11 @@
         (minibuffer "hello")
       (loom/feature/register:copy-to-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "a")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "The mark is not set")
       (loom/feature/register:insert-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "b")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Register b does not contain text")))
 
   (it
@@ -53,30 +53,30 @@
         (minibuffer "hello")
       (loom/feature/register:copy-to-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "ab")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Register name must be exactly one character")
 
       (loom/feature/register:insert-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Register name must be exactly one character")
 
       (loom/feature/register:point-to-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "ab")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Register name must be exactly one character")
 
       (loom/feature/register:jump-to-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "ab")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Register name must be exactly one character")
 
       (loom/feature/register:jump-to-register)
       (funcall (loom::%minibuffer-on-confirm minibuffer) "z")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Register z does not contain a position"))))

@@ -5,7 +5,7 @@
 ;;;; user package; the application layer owns the extension API itself.
 (in-package #:loom/feature/user-init)
 
-(defun %configured-user-init-path (&optional (getenv (function uiop:getenv)))
+(defun %configured-user-init-path (&optional (getenv (function host-kit:getenv)))
   "Return the explicit or conventional path for the user init file."
   (let ((override (funcall getenv "LOOM_INIT_FILE")))
     (if (and override (plusp (length override)))

@@ -23,6 +23,7 @@
         (expect (buffer-line-count buffer) :to-equal 1)
         (expect (buffer-line buffer 0) :to-equal "")
         (expect buffer :to-have-point (cons 0 0))
+        (expect (buffer-read-only-p buffer) :to-be-falsy)
         (expect (buffer-modified-p buffer) :to-be-falsy))))
 
   (it
@@ -289,6 +290,65 @@
       (expect (buffer-line buffer 0) :to-equal "hello!"))))
 
 (describe
+  "buffer-redo"
+  (it
+    "replays a single undone edit and is then exhausted"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-point buffer 0 5)
+      (buffer-insert-string buffer "!")
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "hello")
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "hello!")
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "hello!")))
+
+  (it
+    "replays a whole undo group in original edit order"
+    (let ((buffer (make-buffer :initial-content "")))
+      (buffer-insert-string buffer "a")
+      (buffer-insert-string buffer "b")
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "")
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "ab")))
+
+  (it
+    "clears redo history after a new edit"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-point buffer 0 5)
+      (buffer-insert-string buffer "!")
+      (buffer-undo buffer)
+      (buffer-insert-string buffer "?")
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "hello?"))))
+
+(describe
+  "buffer read-only"
+  (it
+    "rejects text mutations and undo/redo without changing history"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-point buffer 0 5)
+      (buffer-insert-string buffer "!")
+      (buffer-undo buffer)
+      (buffer-set-read-only buffer t)
+      (expect (buffer-read-only-p buffer) :to-be-truthy)
+      (signals buffer-read-only-error
+        (buffer-insert-string buffer "x"))
+      (signals buffer-read-only-error
+        (buffer-delete-char buffer))
+      (signals buffer-read-only-error
+        (buffer-delete-region buffer 0 0 0 1))
+      (signals buffer-read-only-error
+        (buffer-undo buffer))
+      (signals buffer-read-only-error
+        (buffer-redo buffer))
+      (expect (buffer-text buffer) :to-equal "hello")
+      (buffer-set-read-only buffer nil)
+      (buffer-redo buffer)
+      (expect (buffer-text buffer) :to-equal "hello!"))))
+
+(describe
   "buffer-load / buffer-save"
   (it
     "loads a file's contents into a new buffer named after the file"
@@ -300,7 +360,21 @@
           (expect (buffer-path buffer) :to-equal path)
           (expect (buffer-line-count buffer) :to-equal 2)
           (expect (buffer-line buffer 0) :to-equal "line one")
+          (expect (buffer-read-only-p buffer) :to-be-falsy)
           (expect (buffer-modified-p buffer) :to-be-falsy)))))
+
+  (it
+    "marks a non-writable real file read-only"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "readonly.txt" dir)))
+        (host-kit:write-file-string "locked" path)
+        (sb-posix:chmod (namestring path) #o444)
+        (unwind-protect
+             (let ((buffer (buffer-load path)))
+               (expect (buffer-read-only-p buffer) :to-be-truthy)
+               (signals buffer-read-only-error
+                 (buffer-insert-string buffer "!")))
+          (sb-posix:chmod (namestring path) #o644)))))
 
   (it
     "saves buffer-text to buffer-path and clears modified-p"
@@ -313,6 +387,17 @@
         (buffer-save buffer)
         (expect (buffer-modified-p buffer) :to-be-falsy)
         (expect (host-kit:read-file-string path) :to-equal "hi there"))))
+
+  (it
+    "refuses to save a read-only buffer without changing the file"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "locked.txt" dir))
+             (buffer (make-buffer :path path :initial-content "new")))
+        (host-kit:write-file-string "old" path)
+        (buffer-set-read-only buffer t)
+        (signals buffer-read-only-error
+          (buffer-save buffer))
+        (expect (host-kit:read-file-string path) :to-equal "old"))))
 
   (it
     "signals an error saving a buffer with no path"
@@ -337,6 +422,86 @@
       (let ((position (buffer-offset-position buffer 9999)))
         (expect (buffer-position-line position) :to-equal 1)
         (expect (buffer-position-column position) :to-equal 3)))))
+
+(describe
+  "buffer narrowing"
+  (it "keeps the full text while exposing a half-open visible region"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 7)
+      (expect (buffer-text buffer) :to-equal "0123456789")
+      (expect (buffer-visible-text buffer) :to-equal "23456")
+      (expect (buffer-narrow-start-offset buffer) :to-equal 2)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 7)
+      (expect (buffer-narrowed-p buffer) :to-be-truthy)
+      (expect (buffer-visible-line-count buffer) :to-equal 1)
+      (expect (buffer-visible-line buffer 0) :to-equal "23456")
+      (expect (buffer-region-string buffer 0 0 0 4) :to-equal "23")))
+
+  (it "clamps point, mark, and nested narrowing to the visible region"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-set-point buffer 0 0)
+      (buffer-set-mark buffer 0 9)
+      (buffer-narrow-to-region buffer 0 2 0 8)
+      (let ((point-line (buffer-point-line buffer))
+            (point-column (buffer-point-column buffer)))
+        (expect point-line :to-equal 0)
+        (expect point-column :to-equal 2))
+      (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+        (expect mark-line :to-equal 0)
+        (expect mark-column :to-equal 8))
+      (buffer-narrow-to-region buffer 0 0 0 10)
+      (expect (buffer-narrow-start-offset buffer) :to-equal 2)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 8)
+      (buffer-narrow-to-region buffer 0 4 0 6)
+      (expect (buffer-narrow-start-offset buffer) :to-equal 4)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 6)
+      (let ((point-line (buffer-point-line buffer))
+            (point-column (buffer-point-column buffer)))
+        (expect point-line :to-equal 0)
+        (expect point-column :to-equal 4))))
+
+  (it "maps only offsets inside the visible region"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 7)
+      (let ((start (buffer-visible-offset-position buffer 2))
+            (end (buffer-visible-offset-position buffer 7)))
+        (expect (buffer-position-line start) :to-equal 0)
+        (expect (buffer-position-column start) :to-equal 0)
+        (expect (buffer-position-line end) :to-equal 0)
+        (expect (buffer-position-column end) :to-equal 5))
+      (expect (buffer-visible-offset-position buffer 1) :to-be nil)
+      (expect (buffer-visible-offset-position buffer 8) :to-be nil)))
+
+  (it "keeps narrowing bounds consistent across edit undo and redo"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 7)
+      (buffer-set-point buffer 0 4)
+      (buffer-insert-string buffer "X")
+      (expect (buffer-text buffer) :to-equal "0123X456789")
+      (expect (buffer-visible-text buffer) :to-equal "23X456")
+      (expect (buffer-narrow-start-offset buffer) :to-equal 2)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 8)
+      (buffer-undo buffer)
+      (expect (buffer-text buffer) :to-equal "0123456789")
+      (expect (buffer-visible-text buffer) :to-equal "23456")
+      (expect (buffer-narrow-end-offset buffer) :to-equal 7)
+      (buffer-redo buffer)
+      (expect (buffer-text buffer) :to-equal "0123X456789")
+      (expect (buffer-visible-text buffer) :to-equal "23X456")
+      (expect (buffer-narrow-end-offset buffer) :to-equal 8)))
+
+  (it "clamps deletion and region extraction without touching hidden text"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 8)
+      (buffer-set-point buffer 0 5)
+      (expect (buffer-delete-region buffer 0 0 0 3) :to-equal "2")
+      (expect (buffer-text buffer) :to-equal "013456789")
+      (expect (buffer-visible-text buffer) :to-equal "34567")
+      (expect (buffer-narrow-start-offset buffer) :to-equal 2)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 7)
+      (expect (buffer-delete-region buffer 0 7 0 9) :to-equal "")
+      (expect (buffer-text buffer) :to-equal "013456789")
+      (expect (buffer-narrow-end-offset buffer) :to-equal 7))))
 
 (describe
   "%raw-insert-at and %raw-delete-region"

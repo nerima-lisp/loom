@@ -40,6 +40,17 @@
    #:buffer-major-mode
    #:buffer-set-major-mode
    #:buffer-text
+   #:buffer-narrow-start-offset
+   #:buffer-narrow-end-offset
+   #:buffer-narrowed-p
+   #:buffer-visible-text
+   #:buffer-visible-line-count
+   #:buffer-visible-line
+   #:buffer-visible-point-line
+   #:buffer-visible-point-column
+   #:buffer-visible-offset-position
+   #:buffer-narrow-to-region
+   #:buffer-widen
    #:buffer-line-count
    #:buffer-line
    #:buffer-point-line
@@ -52,6 +63,10 @@
    #:buffer-delete-region
    #:buffer-region-string
    #:buffer-modified-p
+   #:buffer-read-only-p
+   #:buffer-set-read-only
+   #:buffer-read-only-error
+   #:buffer-read-only-error-buffer
    #:buffer-mark-saved
    #:buffer-mark-modified
    #:buffer-offset
@@ -65,6 +80,7 @@
    #:buffer-point-offset
    #:buffer-offset-position
    #:buffer-undo
+   #:buffer-redo
    #:buffer-record-undo-boundary
    #:buffer-load
    #:buffer-save
@@ -101,6 +117,9 @@
    #:minibuffer-complete
    #:minibuffer-handle-key
    #:minibuffer-message
+   #:minibuffer-message-string
+   #:minibuffer-history-entries
+   #:minibuffer-set-history-entries
 
    ;; Editor state (src/application/editor-state.lisp): the special variable
    ;; and struct that every command in src/application/commands-*.lisp operates on.
@@ -108,17 +127,48 @@
    #:editor-state
    #:make-editor-state
    #:editor-state-window-tree
+   #:editor-state-workspaces
    #:editor-state-minibuffer
    #:editor-state-keymap
    #:editor-state-file-tree
    #:editor-state-concurrent-runtime
    #:editor-state-renderer
    #:editor-state-buffers
+   #:editor-state-recent-files
+   #:editor-state-bookmarks
    #:editor-state-kill-ring
+   #:editor-state-last-yank-ranges
    #:editor-state-lsp-session
    #:editor-state-registers
    #:editor-state-keyboard-macro
+   #:editor-state-multiple-cursors
+   #:editor-state-auto-save-mode-p
+   #:editor-state-auto-save-buffers
+   #:editor-state-auto-save-last-run-at
+   #:editor-state-format-on-save-p
+   #:editor-state-format-command
+   #:editor-state-before-save-hooks
+   #:editor-state-after-save-hooks
+   #:editor-state-terminal-sessions
    #:editor-state-prefix-argument
+   #:editor-bookmark
+   #:editor-bookmark-p
+   #:make-editor-bookmark
+   #:editor-bookmark-name
+   #:editor-bookmark-buffer
+   #:editor-bookmark-path
+   #:editor-bookmark-buffer-name
+   #:editor-bookmark-line
+   #:editor-bookmark-column
+   #:editor-path-string
+   #:remember-recent-file
+   #:add-before-save-hook
+   #:remove-before-save-hook
+   #:run-before-save-hooks
+   #:add-after-save-hook
+   #:remove-after-save-hook
+   #:run-after-save-hooks
+   #:*editor-recent-file-limit*
    #:self-insert-command
    #:*current-prefix-argument*
    #:prefix-argument-for-editor

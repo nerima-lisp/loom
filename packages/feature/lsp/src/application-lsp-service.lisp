@@ -6,6 +6,9 @@
 ;;;; visible to commands and the main event loop.
 (in-package #:loom/feature/lsp)
 
+(defparameter *lsp-shutdown-timeout-seconds* 0.25
+  "Maximum time LSP shutdown waits for a response before sending EXIT.")
+
 (defstruct (lsp-session
             (:constructor %make-lsp-session))
   "The application state for one running Language Server Protocol session."
@@ -15,18 +18,41 @@
   (next-id 0 :type integer)
   pending-initialize-id
   (initialized-p nil)
+  server-capabilities
+  server-info
   (documents (make-hash-table :test #'equal))
   (diagnostic-table (make-hash-table :test #'equal))
+  pending-shutdown-id
+  (exit-sent-p nil)
   last-error
   (closed-p nil))
+
+(defun %lsp-uri-path-character-p (character)
+  (or (char= character #\/)
+      (or (and (char>= character #\0)
+               (char<= character #\9))
+          (and (char>= character #\A)
+               (char<= character #\Z))
+          (and (char>= character #\a)
+               (char<= character #\z)))
+      (find character "-._~:@!$&'()*+,;=" :test #'char=)))
+
+(defun %lsp-uri-escape-path (path)
+  (with-output-to-string (output)
+    (loop for character across path
+          do (if (%lsp-uri-path-character-p character)
+                 (write-char character output)
+                 (loop for octet across (%lsp-utf8-encode (string character))
+                       do (format output "%~2,'0X" octet))))))
 
 (defun lsp-path-uri (path)
   "Return the file URI used for PATH by Loom's minimal LSP client.
 
-PATH is normally an absolute pathname supplied by a file-backed buffer.  URI
-escaping is deliberately deferred to a later protocol slice; JSON escaping is
-still handled by the infrastructure JSON codec."
-  (format nil "file://~A" (namestring (pathname path))))
+PATH is normally an absolute pathname supplied by a file-backed buffer.  The
+path component is percent-encoded as UTF-8 while URI path separators and
+unreserved characters remain readable."
+  (format nil "file://~A"
+          (%lsp-uri-escape-path (namestring (pathname path)))))
 
 (defun %lsp-language-id (path)
   (let ((type (string-downcase (or (pathname-type (pathname path)) ""))))
@@ -54,42 +80,71 @@ the same trust boundary as user initialization and Lisp evaluation."
   (lsp-transport-send (lsp-session-transport session)
                       (json-kit:stringify object)))
 
-(defun %lsp-send-notification (session method params)
-  (%lsp-send-object
-   session
-   (json-kit:make-json-object
-    (list (cons "jsonrpc" "2.0")
-          (cons "method" method)
-          (cons "params" params)))))
+(defun %lsp-send-notification (session method &optional (params nil params-p))
+  (let ((fields (list (cons "jsonrpc" "2.0")
+                      (cons "method" method))))
+    (when params-p
+      (setf fields (append fields (list (cons "params" params)))))
+    (%lsp-send-object session (json-kit:make-json-object fields))))
 
-(defun %lsp-send-request (session method params)
+(defun %lsp-send-request (session method &optional (params nil params-p))
   (let ((id (incf (lsp-session-next-id session))))
-    (%lsp-send-object
-     session
-     (json-kit:make-json-object
-      (list (cons "jsonrpc" "2.0")
-            (cons "id" id)
-            (cons "method" method)
-            (cons "params" params))))
+    (let ((fields (list (cons "jsonrpc" "2.0")
+                        (cons "id" id)
+                        (cons "method" method))))
+      (when params-p
+        (setf fields (append fields (list (cons "params" params)))))
+      (%lsp-send-object session (json-kit:make-json-object fields)))
     id))
+
+(defun %lsp-client-capabilities ()
+  (json-kit:make-json-object
+   (list
+    (cons "workspace"
+          (json-kit:make-json-object
+           (list (cons "workspaceFolders" t))))
+    (cons "textDocument"
+          (json-kit:make-json-object
+           (list
+            (cons "synchronization"
+                  (json-kit:make-json-object
+                   (list (cons "dynamicRegistration" t)))))))
+    (cons "publishDiagnostics"
+          (json-kit:make-json-object
+           (list (cons "relatedInformation" t)))))))
+
+(defun %lsp-initialize-params (session)
+  (let ((root-uri (lsp-session-root-uri session)))
+    (json-kit:make-json-object
+     (append
+      (list (cons "processId" json-kit:+json-null+)
+            (cons "clientInfo"
+                  (json-kit:make-json-object
+                   (list (cons "name" "Loom")
+                         (cons "version" "0.1.0"))))
+            (cons "rootUri" (or root-uri json-kit:+json-null+))
+            (cons "capabilities" (%lsp-client-capabilities)))
+      (when root-uri
+        (list
+         (cons "workspaceFolders"
+               (list
+                (json-kit:make-json-object
+                 (list (cons "uri" root-uri)
+                       (cons "name" "Loom workspace")))))))))))
 
 (defun lsp-session-start (session)
   "Send the LSP initialize request for SESSION once."
   (when (lsp-session-closed-p session)
     (error "Cannot start a closed LSP session"))
+  (when (lsp-session-pending-shutdown-id session)
+    (error "Cannot start a stopping LSP session"))
   (unless (or (lsp-session-initialized-p session)
               (lsp-session-pending-initialize-id session))
     (setf (lsp-session-pending-initialize-id session)
           (%lsp-send-request
            session
            "initialize"
-           (json-kit:make-json-object
-            (list (cons "processId" json-kit:+json-null+)
-                  (cons "rootUri"
-                        (or (lsp-session-root-uri session)
-                            json-kit:+json-null+))
-                  (cons "capabilities"
-                        (json-kit:make-json-object nil)))))))
+           (%lsp-initialize-params session))))
   session)
 
 (defun %lsp-json-error-message (value)
@@ -107,11 +162,15 @@ the same trust boundary as user initialization and Lisp evaluation."
       (gethash key object)
     (values value present-p)))
 
-(defun %lsp-handle-initialize-response (session message)
-  (multiple-value-bind (id id-present-p)
+(defun %lsp-message-id-matches-p (message id)
+  (multiple-value-bind (message-id present-p)
       (%lsp-value-present-p message "id")
-    (when (and id-present-p
-               (eql id (lsp-session-pending-initialize-id session)))
+    (and present-p (eql message-id id))))
+
+(defun %lsp-handle-initialize-response (session message)
+  (when (%lsp-message-id-matches-p
+         message
+         (lsp-session-pending-initialize-id session))
       (multiple-value-bind (error-value error-present-p)
           (%lsp-value-present-p message "error")
         (setf (lsp-session-pending-initialize-id session) nil)
@@ -120,13 +179,61 @@ the same trust boundary as user initialization and Lisp evaluation."
                           (eq error-value json-kit:+json-null+))))
             (setf (lsp-session-last-error session)
                   (%lsp-json-error-message error-value))
-            (progn
-              (setf (lsp-session-initialized-p session) t
-                    (lsp-session-last-error session) nil)
-              (%lsp-send-notification
-               session
-               "initialized"
-               (json-kit:make-json-object nil))))))))
+            (multiple-value-bind (result result-present-p)
+                (%lsp-value-present-p message "result")
+              (if (and result-present-p (hash-table-p result))
+                  (multiple-value-bind (capabilities capabilities-present-p)
+                      (%lsp-value-present-p result "capabilities")
+                    (if (or (not capabilities-present-p)
+                            (eq capabilities json-kit:+json-null+)
+                            (hash-table-p capabilities))
+                        (multiple-value-bind (server-info server-info-present-p)
+                            (%lsp-value-present-p result "serverInfo")
+                          (if (or (not server-info-present-p)
+                                  (eq server-info json-kit:+json-null+)
+                                  (hash-table-p server-info))
+                              (progn
+                                (setf (lsp-session-initialized-p session) t
+                                      (lsp-session-server-capabilities session)
+                                      (if (hash-table-p capabilities)
+                                          capabilities
+                                          (json-kit:make-json-object nil))
+                                      (lsp-session-server-info session)
+                                      (and (hash-table-p server-info)
+                                           server-info)
+                                      (lsp-session-last-error session) nil)
+                                (%lsp-send-notification
+                                 session
+                                 "initialized"
+                                 (json-kit:make-json-object nil)))
+                              (setf (lsp-session-last-error session)
+                                    "LSP initialize result has invalid serverInfo")))
+                        (setf (lsp-session-last-error session)
+                              "LSP initialize result has invalid capabilities")))
+                  (setf (lsp-session-last-error session)
+                        "LSP initialize response has no object result")))))))
+
+(defun %lsp-finish-stop (session)
+  (unless (lsp-session-exit-sent-p session)
+    (ignore-errors (%lsp-send-notification session "exit"))
+    (setf (lsp-session-exit-sent-p session) t))
+  (setf (lsp-session-closed-p session) t)
+  (ignore-errors (lsp-transport-close (lsp-session-transport session)))
+  session)
+
+(defun %lsp-handle-shutdown-response (session message)
+  (when (%lsp-message-id-matches-p
+         message
+         (lsp-session-pending-shutdown-id session))
+    (setf (lsp-session-pending-shutdown-id session) nil)
+    (multiple-value-bind (error-value error-present-p)
+        (%lsp-value-present-p message "error")
+      (when (and error-present-p
+                 (not (or (null error-value)
+                          (eq error-value json-kit:+json-null+))))
+        (setf (lsp-session-last-error session)
+              (%lsp-json-error-message error-value))))
+    (%lsp-finish-stop session)))
 
 (defun %lsp-parse-position (object)
   (unless (hash-table-p object)
@@ -181,6 +288,11 @@ the same trust boundary as user initialization and Lisp evaluation."
     (error "LSP message is not an object: ~S" message))
   (let ((method (gethash "method" message)))
     (cond
+      ((and (lsp-session-pending-shutdown-id session)
+            (%lsp-message-id-matches-p
+             message
+             (lsp-session-pending-shutdown-id session)))
+       (%lsp-handle-shutdown-response session message))
       ((and (stringp method)
             (string= method "textDocument/publishDiagnostics"))
        (%lsp-handle-publish-diagnostics session message))
@@ -190,8 +302,8 @@ the same trust boundary as user initialization and Lisp evaluation."
 (defun lsp-session-drain (session)
   "Consume all currently available transport messages without blocking."
   (unless (lsp-session-closed-p session)
-    (loop
-      (handler-case
+    (loop while (not (lsp-session-closed-p session))
+          do (handler-case
           (let ((json (lsp-transport-receive (lsp-session-transport session))))
             (unless json (return))
             (%lsp-handle-message
@@ -270,7 +382,8 @@ the same trust boundary as user initialization and Lisp evaluation."
     (handler-case
         (progn
           (lsp-session-drain session)
-          (when (lsp-session-initialized-p session)
+          (when (and (not (lsp-session-closed-p session))
+                     (lsp-session-initialized-p session))
             (lsp-session-sync-buffer session buffer)))
       (error (condition)
         (setf (lsp-session-last-error session) (format nil "~A" condition)))))
@@ -281,9 +394,36 @@ the same trust boundary as user initialization and Lisp evaluation."
   (let ((uri (%lsp-buffer-uri buffer-or-path)))
     (copy-list (and uri (gethash uri (lsp-session-diagnostic-table session))))))
 
-(defun lsp-session-stop (session)
-  "Close SESSION and its transport.  The operation is idempotent."
+(defun %lsp-shutdown-deadline (timeout)
+  (+ (get-internal-real-time)
+     (ceiling (* (max 0 timeout) internal-time-units-per-second))))
+
+(defun lsp-session-stop (session &key (timeout *lsp-shutdown-timeout-seconds*))
+  "Gracefully stop SESSION, falling back to EXIT after TIMEOUT seconds.
+
+The operation is idempotent.  An initialized server receives a shutdown
+request and, when it acknowledges that request, the required exit
+notification.  A non-responsive or malformed server still receives EXIT
+before the transport is closed."
   (unless (lsp-session-closed-p session)
-    (setf (lsp-session-closed-p session) t)
-    (ignore-errors (lsp-transport-close (lsp-session-transport session))))
+    (if (not (lsp-session-initialized-p session))
+        (%lsp-finish-stop session)
+        (progn
+          (unless (lsp-session-pending-shutdown-id session)
+            (handler-case
+                (setf (lsp-session-pending-shutdown-id session)
+                      (%lsp-send-request session "shutdown"))
+              (error (condition)
+                (setf (lsp-session-last-error session)
+                      (format nil "~A" condition)))))
+          (let ((deadline (%lsp-shutdown-deadline timeout)))
+            (loop while (and (not (lsp-session-closed-p session))
+                             (lsp-session-pending-shutdown-id session)
+                             (< (get-internal-real-time) deadline))
+                  do (lsp-session-drain session)
+                     (when (and (not (lsp-session-closed-p session))
+                                (lsp-session-pending-shutdown-id session))
+                       (sleep 0.01))))
+          (unless (lsp-session-closed-p session)
+            (%lsp-finish-stop session)))))
   session)

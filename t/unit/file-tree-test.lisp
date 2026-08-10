@@ -3,9 +3,8 @@
 ;;;; Domain layer: the pure file-tree state generics (packages/feature/file-tree/src/domain-file-tree.lisp)
 ;;;; -- visibility, selection, expand/collapse, and FILE-TREE-ENTRIES'
 ;;;; lazy depth-first flattening. No real filesystem access: each test that
-;;;; needs children installs a fake CHILD-LISTER via the internal
-;;;; LOOM::FILE-TREE-CHILD-LISTER seam that infrastructure/filesystem.lisp is
-;;;; expected to override in the real editor.
+;;;; needs children installs a fake CHILD-LISTER via the public composition
+;;;; seam that infrastructure/filesystem.lisp uses in the real editor.
 (in-package #:loom/test)
 
 (defun %fake-lister (path)
@@ -42,7 +41,7 @@
   (it
     "always shows the root's direct children at depth 0"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-entries tree)
               :to-equal
               '(("/root/a.txt" . 0) ("/root/sub/" . 0)))))
@@ -50,7 +49,7 @@
   (it
     "reports the public kind of each reachable entry"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-entry-kind tree "/root/a.txt") :to-equal :file)
       (expect (file-tree-entry-kind tree "/root/sub/") :to-equal :directory)
       (expect (file-tree-entry-kind tree "/does/not/exist") :to-be nil)))
@@ -58,7 +57,7 @@
   (it
     "expands a directory to reveal its children one level deeper, lazily"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-toggle-expand tree "/root/sub/") :to-be-truthy)
       (expect (file-tree-entries tree)
               :to-equal
@@ -70,7 +69,7 @@
   (it
     "collapses back on a second toggle"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (file-tree-toggle-expand tree "/root/sub/")
       (expect (file-tree-toggle-expand tree "/root/sub/") :to-be-falsy)
       (expect (file-tree-entries tree)
@@ -80,19 +79,19 @@
   (it
     "signals an error when toggling a path that is a file, not a directory"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (signals error (file-tree-toggle-expand tree "/root/a.txt"))))
 
   (it
     "signals an error when toggling a path not present in the tree"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (signals error (file-tree-toggle-expand tree "/does/not/exist"))))
 
   (it
     "finds and expands a directory nested inside an already-expanded directory"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (file-tree-toggle-expand tree "/root/sub/")
       (expect (file-tree-toggle-expand tree "/root/sub/nested/") :to-be-truthy)
       (expect (file-tree-entries tree)
@@ -106,7 +105,7 @@
   (it
     "walks forward through visible entries and stops at the last one"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-move-selection tree :down) :to-equal "/root/a.txt")
       (expect (file-tree-move-selection tree :down) :to-equal "/root/sub/")
       ;; no-op at the end of the visible entry list
@@ -115,7 +114,7 @@
   (it
     "walks backward through visible entries and stops at the first one"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (file-tree-move-selection tree :down)
       (file-tree-move-selection tree :down)
       (expect (file-tree-move-selection tree :up) :to-equal "/root/a.txt")
@@ -126,13 +125,13 @@
   (it
     "moving :up with no prior selection selects the last visible entry"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-move-selection tree :up) :to-equal "/root/sub/")))
 
   (it
     "signals an error for an unknown direction"
     (let ((tree (make-file-tree "/root/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (file-tree-move-selection tree :down)
       (signals error (file-tree-move-selection tree :sideways))))
 
@@ -140,5 +139,16 @@
     "is a no-op on a tree with no visible entries"
     ;; %FAKE-LISTER's (T NIL) clause gives this root zero children.
     (let ((tree (make-file-tree "/nowhere/")))
-      (setf (loom/feature/file-tree::file-tree-child-lister tree) #'%fake-lister)
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
       (expect (file-tree-move-selection tree :down) :to-be-falsy))))
+
+(describe
+  "file-tree-prefetch-paths"
+  (it
+    "returns the root and currently expanded directories"
+    (let ((tree (make-file-tree "/root/")))
+      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
+      (file-tree-toggle-expand tree "/root/sub/")
+      (let ((paths (file-tree-prefetch-paths tree)))
+        (expect (first paths) :to-equal "/root/")
+        (expect (member "/root/sub/" paths :test #'equal) :to-be-truthy)))))

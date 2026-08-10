@@ -1,0 +1,97 @@
+(in-package #:loom/test)
+
+(describe
+  "shell command results"
+  (it "renders both process streams and the exit status"
+    (let ((result
+            (make-shell-command-result
+             :command "build"
+             :directory "/tmp/"
+             :output "stdout"
+             :error-output "stderr"
+             :exit-code 7)))
+      (expect (shell-command-result-success-p result) :to-be-falsy)
+      (expect (shell-command-result-text result)
+              :to-equal
+              (format nil
+                      "$ build~%Directory: /tmp/~%Output:~%stdout~%Error output:~%stderr~%Exit code: 7~%"))))
+  (it "runs a shell command and captures its streams and status"
+    (let ((result
+            (run-shell-command
+             "printf 'stdout'; printf 'stderr' >&2; exit 7"
+             :directory (uiop:getcwd))))
+      (expect (shell-command-result-output result) :to-equal "stdout")
+      (expect (shell-command-result-error-output result) :to-equal "stderr")
+      (expect (shell-command-result-exit-code result) :to-equal 7)
+      (expect (shell-command-result-directory result)
+              :to-equal
+              (namestring (truename (uiop:getcwd)))))))
+  (it "preserves the final component of a string directory"
+    (let* ((directory (truename (uiop:getcwd)))
+           (result (run-shell-command "pwd"
+                                      :directory (namestring directory))))
+      (expect (shell-command-result-output result)
+              :to-equal
+              (format nil "~A~%"
+                      (string-right-trim "/" (namestring directory))))
+      (expect (shell-command-result-directory result)
+              :to-equal
+              (namestring directory))
+      (expect (shell-command-result-exit-code result) :to-equal 0)))
+  (it "passes string input to process standard input"
+    (let ((result (run-shell-command "tr 'a-z' 'A-Z'"
+                                     :input "abc")))
+      (expect (shell-command-result-output result) :to-equal "ABC")
+      (expect (shell-command-result-error-output result) :to-equal "")
+      (expect (shell-command-result-exit-code result) :to-equal 0)))
+
+(describe
+  "pipe-command"
+  (it "runs in the selected file directory and displays a result buffer"
+    (let* ((directory (uiop:temporary-directory))
+           (source-path (merge-pathnames "loom-shell-source.txt" directory))
+           (state
+             (let ((buffer (make-buffer :name "source.txt"
+                                        :path source-path
+                                        :initial-content "source")))
+               (let ((tree (make-window-tree buffer 80 24)))
+                 (make-editor-state
+                  :window-tree tree
+                  :workspaces (make-workspace-manager tree :name "main")
+                  :minibuffer (make-minibuffer)
+                  :keymap (make-keymap)
+                  :file-tree nil
+                  :renderer nil
+                  :buffers (list buffer)
+                  :kill-ring nil)))))
+      (let ((*editor-state* state)
+            (minibuffer (editor-state-minibuffer state)))
+        (pipe-command)
+        (expect (minibuffer-prompt-string minibuffer)
+                :to-equal "Pipe command: ")
+        (funcall (loom::%minibuffer-on-confirm minibuffer)
+                 "printf 'stdout'; printf 'stderr' >&2; exit 3")
+        (let ((result (find "*Loom-Pipe-Command*"
+                            (editor-state-buffers state)
+                            :key #'buffer-name
+                            :test #'string=)))
+          (expect result :to-be-truthy)
+          (expect (buffer-text result) :to-contain "stdout")
+          (expect (buffer-text result) :to-contain "stderr")
+          (expect (buffer-text result) :to-contain "Exit code: 3")
+          (expect (buffer-text result) :to-contain
+                  (format nil "Directory: ~A" (namestring (truename directory))))
+          (expect (buffer-modified-p result) :to-be nil)
+          (expect (window-buffer
+                   (window-tree-selected-window
+                    (editor-state-window-tree state)))
+                  :to-be result)
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Pipe command exited with code 3")
+          (pipe-command)
+          (funcall (loom::%minibuffer-on-confirm minibuffer)
+                   "printf 'second'")
+          (expect (buffer-text result) :to-contain "$ printf 'second'")
+          (expect (buffer-text result) :to-contain "second")
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Pipe command finished successfully"))))))

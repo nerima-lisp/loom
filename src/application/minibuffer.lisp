@@ -98,6 +98,37 @@ used to drive Up/Down recall while the minibuffer is active.")
   (:method (&key history)
     (%make-minibuffer :history history)))
 
+(defgeneric minibuffer-history-entries (minibuffer)
+  (:documentation
+   "Return MINIBUFFER's recalled input strings, newest first.
+
+The returned list is independent of the underlying CL-HISTORY-KIT store and
+can therefore be used as a serializable session value.")
+  (:method (minibuffer)
+    (let ((history (%minibuffer-history minibuffer)))
+      (if history
+          (history-kit:history-entry-texts
+           (history-kit:history-entries history))
+          nil))))
+
+(defgeneric minibuffer-set-history-entries (minibuffer entries)
+  (:documentation
+   "Replace MINIBUFFER's recalled input strings with ENTRIES.
+
+ENTRIES must be a list of strings in newest-first order.  The underlying
+history object, when present, is cleared before the entries are installed.
+The minibuffer is returned.")
+  (:method (minibuffer entries)
+    (unless (and (listp entries) (every #'stringp entries))
+      (error "minibuffer history must be a proper list of strings: ~S"
+             entries))
+    (let ((history (%minibuffer-history minibuffer)))
+      (when history
+        (history-kit:history-clear history)
+        (dolist (entry (reverse entries))
+          (history-kit:history-add history entry))))
+    minibuffer))
+
 (defgeneric minibuffer-active-p (minibuffer)
   (:documentation
    "Return true if MINIBUFFER is currently prompting for input, i.e. between
@@ -252,3 +283,8 @@ MINIBUFFER-ACTIVE-P. Returns MINIBUFFER.")
   (:method (minibuffer text)
     (setf (%minibuffer-message minibuffer) text)
     minibuffer))
+
+(defgeneric minibuffer-message-string (minibuffer)
+  (:documentation "Return the minibuffer's current transient message, or NIL.")
+  (:method (minibuffer)
+    (%minibuffer-message minibuffer)))

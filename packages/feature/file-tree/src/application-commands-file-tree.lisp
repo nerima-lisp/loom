@@ -32,7 +32,8 @@
         (:directory (file-tree-toggle-expand tree path))
         (:file (let ((buffer (buffer-load path)))
                  (%register-buffer buffer)
-                 (window-set-buffer (%selected-window) buffer)))
+                 (window-set-buffer (%selected-window) buffer)
+                 (remember-recent-file path)))
         (otherwise (error "selected file-tree entry disappeared: ~S" path))))))
 
 (defun file-tree-create-file-command ()

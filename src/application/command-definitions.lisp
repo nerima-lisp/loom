@@ -37,15 +37,26 @@
   (command-spec "comment-line" loom/feature/mode:comment-line
                 :keys ((:alt #\;)))
   (command-spec "kill-region" kill-region :keys ((:control #\w)))
+  (command-spec "kill-ring-save" kill-ring-save :keys ((:alt #\w)))
+  (command-spec "copy-region-as-kill" copy-region-as-kill)
   (command-spec "yank" yank :keys ((:control #\y)))
+  (command-spec "yank-pop" yank-pop :keys ((:alt #\y)))
   (command-spec "set-mark-command" set-mark-command
                 :keys ((:control #\Space)))
   (command-spec "exchange-point-and-mark" exchange-point-and-mark
                 :keys (((:control #\x) (:control #\x))))
   (command-spec "mark-whole-buffer" mark-whole-buffer
                 :keys (((:control #\x) #\h)))
+  (command-spec "narrow-to-region" narrow-to-region
+                :keys (((:control #\x) #\n #\n)))
+  (command-spec "widen" widen
+                :keys (((:control #\x) #\n #\w)))
+  (command-spec "toggle-read-only" toggle-read-only
+                :keys (((:control #\x) (:control #\q))))
   (command-spec "undo" undo-command
-                :keys (((:control #\x) #\u)))
+                :keys (((:control #\x) (:control #\u))))
+  (command-spec "redo" redo-command
+                :keys (((:control #\x) (:control #\y))))
   (command-spec "search-forward" loom/feature/search:search-forward
                 :keys ((:control #\s)))
   (command-spec "search-backward" loom/feature/search:search-backward
@@ -64,6 +75,8 @@
                 :keys (((:control #\x) #\p #\r)))
   (command-spec "save-buffer" loom/feature/file-tree:save-buffer
                 :keys (((:control #\x) (:control #\s))))
+  (command-spec "auto-save-mode" loom/feature/auto-save:auto-save-mode)
+  (command-spec "toggle-auto-save" loom/feature/auto-save:toggle-auto-save)
   (command-spec "write-file" loom/feature/file-tree:write-file
                 :keys (((:control #\x) (:control #\w))))
   (command-spec "split-window-below" loom/feature/window:split-window-below
@@ -80,10 +93,38 @@
                 :keys (((:control #\x) #\b)))
   (command-spec "kill-buffer" loom/feature/window:kill-buffer
                 :keys (((:control #\x) #\k)))
+  (command-spec "new-workspace" loom/feature/workspace:new-workspace
+                :keys (((:control #\x) #\t #\2)))
+  (command-spec "switch-workspace" loom/feature/workspace:switch-workspace
+                :keys (((:control #\x) #\t #\o)))
+  (command-spec "kill-workspace" loom/feature/workspace:kill-workspace
+                :keys (((:control #\x) #\t #\k)))
+  (command-spec "next-workspace" loom/feature/workspace:next-workspace
+                :keys (((:control #\x) #\t #\n)))
+  (command-spec "previous-workspace" loom/feature/workspace:previous-workspace
+                :keys (((:control #\x) #\t #\p)))
+  (command-spec "multiple-cursors-add-next-line"
+                loom/feature/multiple-cursors:multiple-cursors-add-next-line
+                :keys (((:control #\x) #\m #\n)))
+  (command-spec "multiple-cursors-edit-lines"
+                loom/feature/multiple-cursors:multiple-cursors-edit-lines
+                :keys (((:control #\x) #\m #\l)))
+  (command-spec "multiple-cursors-clear"
+                loom/feature/multiple-cursors:multiple-cursors-clear
+                :keys (((:control #\x) #\m #\c)))
   (command-spec "save-session" loom/feature/session:save-session
                 :keys (((:control #\x) #\r #\S)))
   (command-spec "load-session" loom/feature/session:load-session
                 :keys (((:control #\x) #\r #\l)))
+  (command-spec "recent-file" loom/feature/file-tree:recent-file
+                :keys (((:control #\x) #\r #\f)))
+  (command-spec "set-bookmark" set-bookmark
+                :keys (((:control #\x) #\r #\m)))
+  (command-spec "jump-to-bookmark" jump-to-bookmark
+                :keys (((:control #\x) #\r #\b)))
+  (command-spec "delete-bookmark" delete-bookmark
+                :keys (((:control #\x) #\r #\d)))
+  (command-spec "list-bookmarks" list-bookmarks)
   (command-spec "copy-to-register" loom/feature/register:copy-to-register
                 :keys (((:control #\x) #\r #\s)))
   (command-spec "insert-register" loom/feature/register:insert-register
@@ -103,6 +144,22 @@
                 :keys ((:alt #\:)))
   (command-spec "eval-buffer" loom/feature/evaluation:eval-buffer
                 :keys (((:control #\x) (:control #\e))))
+  (command-spec "pipe-command" loom/feature/shell:pipe-command
+                :keys ((:alt #\!)))
+  (command-spec "terminal" loom/feature/terminal:terminal)
+  (command-spec "terminal-stop" loom/feature/terminal:terminal-stop)
+  (command-spec "git-status" loom/feature/git:git-status
+                :keys (((:control #\x) #\g)))
+  (command-spec "git-diff" loom/feature/git:git-diff)
+  (command-spec "git-diff-staged" loom/feature/git:git-diff-staged)
+  (command-spec "git-stage-file" loom/feature/git:git-stage-file)
+  (command-spec "git-unstage-file" loom/feature/git:git-unstage-file)
+  (command-spec "format-current-buffer"
+                loom/feature/format:format-current-buffer)
+  (command-spec "format-on-save-mode"
+                loom/feature/format:format-on-save-mode)
+  (command-spec "set-format-command"
+                loom/feature/format:set-format-command-command)
   (command-spec "lsp-start" loom/feature/lsp:lsp-start)
   (command-spec "lsp-stop" loom/feature/lsp:lsp-stop)
   (command-spec "lsp-diagnostics" loom/feature/lsp:lsp-diagnostics)

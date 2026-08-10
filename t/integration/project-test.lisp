@@ -67,7 +67,7 @@
                 :to-equal
                 "Project search: ")
         (funcall (loom::%minibuffer-on-confirm minibuffer) "needle")
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "Matches: src/main.py:1")
 
@@ -75,28 +75,28 @@
         (minibuffer-handle-key
          minibuffer
          (cl-tty-kit:make-key-event :type :special :code :control-g))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
 
         (loom/feature/project::project-search)
         (minibuffer-handle-key
          minibuffer
          (cl-tty-kit:make-key-event :type :special :code :control-g))
-        (expect (loom::%minibuffer-message minibuffer) :to-equal "Quit")
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
 
         (loom/feature/project::project-find-file)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "missing.py")
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "File not found: missing.py")
 
         (loom/feature/project::project-search)
         (funcall (loom::%minibuffer-on-confirm minibuffer) "absent")
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "No matches")
 
         (loom/feature/project::project-root)
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-contain
                 "Project root:"))))
 
@@ -118,17 +118,17 @@
                 :kill-ring nil)))
         (host-kit:write-file-string "plain" path)
         (loom/feature/project::project-root)
-        (expect (loom::%minibuffer-message
+        (expect (loom:minibuffer-message-string
                  (editor-state-minibuffer *editor-state*))
                 :to-equal
                 "No project root found")
         (loom/feature/project::project-find-file)
-        (expect (loom::%minibuffer-message
+        (expect (loom:minibuffer-message-string
                  (editor-state-minibuffer *editor-state*))
                 :to-equal
                 "No project root found")
         (loom/feature/project::project-search)
-        (expect (loom::%minibuffer-message
+        (expect (loom:minibuffer-message-string
                  (editor-state-minibuffer *editor-state*))
                 :to-equal
                 "No project root found")))))

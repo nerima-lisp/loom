@@ -8,8 +8,7 @@
 ;;;;
 ;;;; COMPOSE-FRAME itself is not exported from the LOOM package (see
 ;;;; src/presentation/layout.lisp), so it is reached here via LOOM::
-;;;; qualification, the same precedent t/unit/file-tree-test.lisp already set for
-;;;; LOOM::FILE-TREE-CHILD-LISTER.
+;;;; qualification for private layout orchestration helpers.
 (in-package #:loom/test)
 
 (defun %fresh-layout-state (&key name (content "") (width 40) (height 6)
@@ -61,6 +60,37 @@ the degenerate-window tests are the ones that need them to differ."
                         (cl-tty-kit:pad-string "status message" 40))))))
 
   (it
+    "draws non-primary multiple cursors as reverse-video cells"
+    (let* ((state (%fresh-layout-state
+                   :content (format nil "one~%two")
+                   :width 20
+                   :height 6))
+           (*editor-state* state)
+           (buffer (window-buffer (%layout-window state))))
+      (buffer-set-point buffer 0 1)
+      (expect (loom/feature/multiple-cursors:multiple-cursors-add-next-line)
+              :to-be t)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 3)
+                :to-equal "two")
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 1))
+                :to-equal '(:reverse)))))
+
+  (it
+    "shows the active workspace in the shortcut line"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
+           (tree (editor-state-window-tree state)))
+      (setf (editor-state-workspaces state)
+            (make-workspace-manager tree :name "notes"))
+      (loom::compose-frame state)
+      (expect (search "Workspace: notes"
+                      (cl-tty-kit:screen-row-string
+                       (%layout-screen state)
+                       4))
+              :to-be-truthy)))
+
+  (it
     "scrolls a selected window so its point remains visible"
     (let* ((state (%fresh-layout-state :content (format nil "one~%two~%three~%four~%five")
                                        :width 20
@@ -77,10 +107,11 @@ the degenerate-window tests are the ones that need them to differ."
     "draws the file-tree sidebar to the left of the buffer, offsetting the window area by its width"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi"))
            (file-tree (editor-state-file-tree state)))
-      (setf (loom/feature/file-tree::file-tree-child-lister file-tree)
-            (lambda (path)
-              (declare (ignore path))
-              '(("/root/a.txt" . :file) ("/root/b.txt" . :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       file-tree
+       (lambda (path)
+         (declare (ignore path))
+         '(("/root/a.txt" . :file) ("/root/b.txt" . :file))))
       (file-tree-toggle file-tree)
       (loom::compose-frame state)
       (let ((screen (%layout-screen state)))
@@ -140,10 +171,11 @@ the degenerate-window tests are the ones that need them to differ."
     "highlights the selected file-tree entry and truncates a name past the sidebar width"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi"))
            (file-tree (editor-state-file-tree state)))
-      (setf (loom/feature/file-tree::file-tree-child-lister file-tree)
-            (lambda (path)
-              (declare (ignore path))
-              (list (cons "/root/a-very-long-file-name-indeed.txt" :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       file-tree
+       (lambda (path)
+         (declare (ignore path))
+         (list (cons "/root/a-very-long-file-name-indeed.txt" :file))))
       (file-tree-toggle file-tree)
       (file-tree-move-selection file-tree :down)
       (loom::compose-frame state)
@@ -170,7 +202,7 @@ the degenerate-window tests are the ones that need them to differ."
     "maps semantic tokens to styles while clipping at screen-cell boundaries"
     (let* ((renderer (make-loom-renderer 12 1))
            (line "(defun f あ)"))
-      (loom/feature/syntax-highlighting::%layout-draw-highlighted-line
+      (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
        renderer line 0 0 12)
       (let ((screen (cl-tty-kit:renderer-screen
                      (loom::%loom-renderer-cl-tty-renderer renderer))))

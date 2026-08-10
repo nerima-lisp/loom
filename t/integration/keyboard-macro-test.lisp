@@ -9,22 +9,22 @@
       (expect (keyboard-macro-recording-p
                (editor-state-keyboard-macro *editor-state*))
               :to-be-truthy)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Defining keyboard macro")
       (end-kbd-macro)
       (expect (keyboard-macro-recording-p
                (editor-state-keyboard-macro *editor-state*))
               :to-be nil)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Keyboard macro defined")
       (end-kbd-macro)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "No keyboard macro is being defined")
       (call-last-kbd-macro)
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Keyboard macro is empty")))
 

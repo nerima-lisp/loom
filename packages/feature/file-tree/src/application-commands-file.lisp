@@ -14,6 +14,11 @@
                            (loom/feature/mode:major-mode-for-path path))
     buffer))
 
+(defun %recent-file-candidates (input)
+  "Return recent file paths suitable for minibuffer completion."
+  (declare (ignore input))
+  (copy-list (editor-state-recent-files *editor-state*)))
+
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.
 
@@ -22,11 +27,36 @@ an empty buffer associated with that path, so a later save creates the file."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((path "Find file: "))
-    (let ((buffer (if (probe-file path)
-                      (buffer-load path)
-                      (%make-file-buffer path))))
-      (%register-buffer buffer)
-      (loom/feature/window:window-set-buffer (%selected-window) buffer))))
+    (let ((existing-path (probe-file path)))
+      (when (and existing-path
+                 (host-kit:directory-pathname-p existing-path))
+        (return-from find-file
+          (minibuffer-message
+           (editor-state-minibuffer *editor-state*)
+           (format nil "Cannot open directory: ~A" path))))
+      (let ((buffer (if existing-path
+                        (buffer-load existing-path)
+                        (%make-file-buffer path))))
+        (%register-buffer buffer)
+        (loom/feature/window:window-set-buffer (%selected-window) buffer)
+        (when existing-path
+          (remember-recent-file existing-path))))))
+
+(defun recent-file ()
+  "Prompt from the recent-file list and visit the selected path."
+  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
+      ((path "Recent file: " :completion-function #'%recent-file-candidates))
+    (let ((existing-path (probe-file path)))
+      (if (and existing-path
+               (not (host-kit:directory-pathname-p existing-path)))
+          (let ((buffer (buffer-load existing-path)))
+            (%register-buffer buffer)
+            (loom/feature/window:window-set-buffer (%selected-window) buffer)
+            (remember-recent-file existing-path))
+          (minibuffer-message
+           (editor-state-minibuffer *editor-state*)
+           (format nil "Recent file is unavailable: ~A" path))))))
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
@@ -58,7 +88,9 @@ required second, explicit confirmation."
       (minibuffer-message
        (editor-state-minibuffer *editor-state*)
        (format nil "File exists: ~A (press C-x C-s again to overwrite)" path))
-      (buffer-save buffer)))
+      (progn
+        (buffer-save buffer)
+        (remember-recent-file path))))
 
 (defun %prompt-and-save-new-buffer (window buffer)
   "Prompt for a path and save BUFFER (which has none yet) under it.
@@ -85,7 +117,9 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
   (let* ((window (%selected-window))
          (buffer (loom/feature/window:window-buffer window)))
     (if (buffer-path buffer)
-        (buffer-save buffer)
+        (progn
+          (buffer-save buffer)
+          (remember-recent-file (buffer-path buffer)))
         (%prompt-and-save-new-buffer window buffer))))
 
 (defun write-file ()

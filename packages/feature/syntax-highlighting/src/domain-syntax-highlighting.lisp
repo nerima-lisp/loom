@@ -178,8 +178,6 @@ function's contract."
 (defun %syntax-generic-token-kind (text mode)
   (cond
     ((%syntax-number-token-p text) :number)
-    ((and (plusp (length text))
-          (char= (char text 0) #\:)) :keyword)
     ((member text (major-mode-keywords mode) :test #'string-equal) :keyword)
     (t :plain)))
 

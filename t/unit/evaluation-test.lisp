@@ -68,7 +68,17 @@
                           :test #'string=)))
         (expect result :to-be-truthy)
         (expect (buffer-text result)
-                :to-equal (format nil "loom-eval> (list :ok)~%=> (:OK)~%~%")))))
+                :to-equal (format nil "loom-eval> (list :ok)~%=> (:OK)~%~%")))
+      (loom/feature/evaluation:eval-expression)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "(list :again)")
+      (let ((result (find "*Loom-Eval*"
+                          (editor-state-buffers *editor-state*)
+                          :key #'buffer-name
+                          :test #'string=)))
+        (expect (buffer-text result)
+                :to-equal
+                (format nil
+                        "loom-eval> (list :ok)~%=> (:OK)~%~%~%loom-eval> (list :again)~%=> (:AGAIN)~%~%")))))
 
   (it "reports empty and multi-value evaluation results"
     (let ((empty (make-evaluation-result)))
@@ -101,7 +111,7 @@
       (eval-expression)
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
       (funcall (loom::%minibuffer-on-confirm minibuffer) "   ")
-      (expect (loom::%minibuffer-message minibuffer)
+      (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Evaluation source cannot be empty")))
 
   (it "reports evaluation errors through the command result"
@@ -115,5 +125,5 @@
         (expect result :to-be-truthy)
         (expect (buffer-text result)
                 :to-contain "Evaluation error: command boom")
-        (expect (loom::%minibuffer-message minibuffer)
+        (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal "Evaluation error: command boom"))))

@@ -77,7 +77,11 @@
 (let ((passed-p
         (handler-case
             (sb-ext:with-timeout 600
-                (asdf:load-system "loom/test")
+                ;; Force Loom's source tree to win over stale top-level FASLs,
+                ;; without recompiling read-only dependency sources in Nix's
+                ;; store.
+                (asdf:load-system "loom" :force t)
+                (asdf:load-system "loom/test" :force t)
                 (funcall (symbol-function (find-symbol "RUN-TESTS" :loom/test))))
           (sb-ext:timeout ()
             (format *error-output* "~&loom/test: timed out after 600s~%")

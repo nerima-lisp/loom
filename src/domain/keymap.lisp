@@ -38,22 +38,26 @@ accepted descriptor shapes."
 
 ;;; A keymap is a trie: KEYMAP-TABLE maps one normalized key descriptor to
 ;;; either a bound command (a function designator) or another hash-table
-;;; (making that prefix a :PREFIX node, per KEYMAP-LOOKUP). MAKE-KEYMAP's
-;;; default constructor name is overridden (%MAKE-KEYMAP) since it would
-;;; otherwise clash with the MAKE-KEYMAP generic function below; likewise for
-;;; KEYMAP-STATE and MAKE-KEYMAP-STATE.
+;;; (making that prefix a :PREFIX node, per KEYMAP-LOOKUP). A keymap may also
+;;; have a parent; a local first-chord binding shadows the corresponding
+;;; parent subtree, while an absent local first chord falls through. MAKE-
+;;; KEYMAP's default constructor name is overridden (%MAKE-KEYMAP) since it
+;;; would otherwise clash with the MAKE-KEYMAP generic function below;
+;;; likewise for KEYMAP-STATE and MAKE-KEYMAP-STATE.
 
 (defstruct (keymap (:constructor %make-keymap))
+  (parent nil)
   (table (make-hash-table :test #'equal)))
 
 (defstruct (keymap-state (:constructor %make-keymap-state))
   keymap
+  root-keymap
   (sequence nil))
 
-(defgeneric make-keymap ()
-  (:documentation "Create and return a new, empty keymap.")
-  (:method ()
-    (%make-keymap)))
+(defgeneric make-keymap (&key parent)
+  (:documentation "Create and return a new, empty keymap with optional PARENT.")
+  (:method (&key parent)
+    (%make-keymap :parent parent)))
 
 (defgeneric keymap-define-key (keymap key-sequence command)
   (:documentation
@@ -76,6 +80,30 @@ becomes a prefix key (see KEYMAP-LOOKUP). Returns KEYMAP.")
                    (setf (gethash key table) command)))
       keymap)))
 
+(defun %keymap-local-lookup (keymap key-sequence)
+  "Look up KEY-SEQUENCE locally, returning VALUE and a presence flag.
+
+The presence flag is true when the first chord exists locally, even when a
+later chord does not.  This makes a local prefix shadow the entire matching
+parent subtree, which is how mode-local prefix maps avoid surprising global
+fallbacks."
+  (when key-sequence
+    (let ((normalized (mapcar #'normalize-key-descriptor key-sequence))
+          (table (keymap-table keymap))
+          (local-p nil))
+      (loop for (key . rest) on normalized
+            do (multiple-value-bind (value present-p) (gethash key table)
+                 (unless present-p
+                   (return-from %keymap-local-lookup (values nil local-p)))
+                 (setf local-p t)
+                 (if rest
+                     (if (hash-table-p value)
+                         (setf table value)
+                         (return-from %keymap-local-lookup (values nil t)))
+                     (return-from %keymap-local-lookup
+                       (values (if (hash-table-p value) :prefix value) t))))
+            finally (return (values nil local-p))))))
+
 (defgeneric keymap-lookup (keymap key-sequence)
   (:documentation
    "Look up KEY-SEQUENCE (a list of key-event descriptors, as in
@@ -84,19 +112,12 @@ if KEY-SEQUENCE names a complete binding, the keyword :PREFIX if KEY-SEQUENCE
 is a strict prefix of one or more bindings, or NIL if KEY-SEQUENCE is bound
 to nothing.")
   (:method (keymap key-sequence)
-    (let ((normalized (mapcar #'normalize-key-descriptor key-sequence))
-          (table (keymap-table keymap)))
-      (loop for (key . rest) on normalized
-            do (let ((value (gethash key table)))
-                 (cond
-                   ((null value) (return-from keymap-lookup nil))
-                   (rest
-                    (if (hash-table-p value)
-                        (setf table value)
-                        (return-from keymap-lookup nil)))
-                   (t
-                    (return-from keymap-lookup (if (hash-table-p value) :prefix value)))))
-            finally (return nil)))))
+    (multiple-value-bind (value local-p)
+        (%keymap-local-lookup keymap key-sequence)
+      (if local-p
+          value
+          (and (keymap-parent keymap)
+               (keymap-lookup (keymap-parent keymap) key-sequence))))))
 
 (defgeneric make-keymap-state (keymap)
   (:documentation
@@ -104,7 +125,7 @@ to nothing.")
 in-progress prefix-key accumulation across successive KEYMAP-STATE-DISPATCH
 calls, starting with no keys accumulated.")
   (:method (keymap)
-    (%make-keymap-state :keymap keymap :sequence nil)))
+    (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil)))
 
 (defgeneric keymap-state-dispatch (state key-event)
   (:documentation

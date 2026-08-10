@@ -11,6 +11,9 @@
   (mapcar #'syntax-token-text
           (syntax-highlight-line-for-mode line mode)))
 
+(defun %loom-test-extension-command ()
+  :extension-command)
+
 (describe
   "major-mode catalog"
   (it
@@ -42,6 +45,76 @@
     (expect (major-mode-language-id :rust) :to-equal "rust")
     (expect (major-mode-keywords :python) :to-contain "def")
     (expect (major-mode-names) :to-contain "Markdown")))
+
+(describe
+  "extension-defined major modes"
+  (it
+    "registers aliases, metadata, path rules, and parent modes"
+    (unwind-protect
+         (progn
+           (expect
+            (register-major-mode
+             :loom-test-mode
+             :name "Loom Test"
+             :aliases '("lt")
+             :parent :python
+             :extensions '(".loomtest")
+             :filenames '("SpecialLoomFile")
+             :comment-prefix "!"
+             :indentation-width 3
+             :language-id "loom-test"
+             :keywords '("widget")
+             :keybindings
+             (list (cons '(:control #\x)
+                         #'%loom-test-extension-command)))
+            :to-be
+            :loom-test-mode)
+           (expect (major-mode-from-name "lt") :to-be :loom-test-mode)
+           (expect (major-mode-from-name "Loom Test") :to-be :loom-test-mode)
+           (expect (major-mode-parent :loom-test-mode) :to-be :python)
+           (expect (major-mode-for-path "src/main.loomtest")
+                   :to-be
+                   :loom-test-mode)
+           (expect (major-mode-for-path "/tmp/SpecialLoomFile")
+                   :to-be
+                   :loom-test-mode)
+           (expect (major-mode-comment-prefix :loom-test-mode)
+                   :to-equal
+                   "!")
+           (expect (major-mode-indentation-width :loom-test-mode)
+                   :to-equal
+                   3)
+           (expect (major-mode-language-id :loom-test-mode)
+                   :to-equal
+                   "loom-test")
+           (expect (major-mode-keywords :loom-test-mode)
+                   :to-equal
+                   '("widget"))
+           (expect (major-mode-keybindings :loom-test-mode)
+                   :to-equal
+                   (list (cons '(:control #\x)
+                               #'%loom-test-extension-command)))
+           (expect (major-mode-names) :to-contain "Loom Test")
+           (expect (unregister-major-mode :loom-test-mode)
+                   :to-be
+                   :loom-test-mode)
+           (expect (major-mode-known-p :loom-test-mode) :to-be-falsy))
+      (unregister-major-mode :loom-test-mode))))
+
+  (it
+    "rejects malformed extension metadata before registration"
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-name :name 42))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-keywords :keywords '(42)))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-aliases :aliases '("dup" "DUP")))
+     :to-be-truthy))
 
 (describe
   "major-mode-for-path"
@@ -94,6 +167,21 @@
               '(:delimiter :plain :whitespace :number :whitespace :string))
       (expect (apply #'concatenate 'string (%mode-token-texts line :python))
               :to-equal line)))
+
+  (it-each
+      ((:rust "fn main() { // note"
+        (:keyword :whitespace :plain :delimiter :delimiter :whitespace
+         :delimiter :whitespace :comment)
+        ("fn" " " "main" "(" ")" " " "{" " " "// note"))
+       (:unknown "42 \"text\""
+        (:number :whitespace :string)
+        ("42" " " "\"text\"")))
+      "uses ~A's generic syntax rules"
+      (mode line expected-kinds expected-texts)
+    (expect (%mode-token-kinds line mode) :to-equal expected-kinds)
+    (expect (%mode-token-texts line mode) :to-equal expected-texts)
+    (expect (apply #'concatenate 'string (%mode-token-texts line mode))
+            :to-equal line))
 
   (it
     "keeps Common Lisp on its reader-aware tokenizer"

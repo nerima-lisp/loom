@@ -146,6 +146,26 @@
       (expect (minibuffer-input-string minibuffer) :to-equal "ab"))))
 
 (describe
+  "minibuffer history snapshots"
+  (it
+    "exports and restores newest-first entries"
+    (let ((minibuffer (make-minibuffer
+                       :history (history-kit:make-history))))
+      (minibuffer-set-history-entries minibuffer '("new" "old"))
+      (expect (minibuffer-history-entries minibuffer)
+              :to-equal '("new" "old"))
+      (minibuffer-set-history-entries minibuffer '("latest"))
+      (expect (minibuffer-history-entries minibuffer)
+              :to-equal '("latest"))))
+
+  (it
+    "rejects non-string history entries"
+    (signals error
+             (minibuffer-set-history-entries
+              (make-minibuffer :history (history-kit:make-history))
+              '("ok" 42)))))
+
+(describe
   "minibuffer completion"
   (it
     "passes current input to the completion function and completes a unique candidate"

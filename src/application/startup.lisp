@@ -42,10 +42,14 @@ parsed from argv, or NIL when none was given."
              (minibuffer (make-minibuffer :history (history-kit:make-history)))
              (file-tree (loom/feature/file-tree:make-file-tree file-tree-root))
              (renderer (make-loom-renderer width height)))
-        (setf (loom/feature/file-tree::file-tree-child-lister file-tree)
-              (function loom/feature/file-tree:loom-fs-list-directory))
+        (loom/feature/file-tree:file-tree-install-child-lister
+         file-tree
+         (function loom/feature/file-tree:loom-fs-list-directory))
         (setf *editor-state*
               (make-editor-state :window-tree window-tree
+                                 :workspaces
+                                 (loom/feature/workspace:make-workspace-manager
+                                  window-tree :name "main")
                                  :minibuffer minibuffer
                                  :keymap keymap
                                  :file-tree file-tree
@@ -54,24 +58,37 @@ parsed from argv, or NIL when none was given."
                                  :kill-ring nil
                                  :registers (loom/feature/register:make-register-bank)
                                  :keyboard-macro
-                                 (loom/feature/keyboard-macro:make-keyboard-macro)))))))
+                                 (loom/feature/keyboard-macro:make-keyboard-macro)
+                                 :auto-save-mode-p nil
+                                 :auto-save-buffers nil
+                                 :auto-save-last-run-at nil
+                                 :format-on-save-p nil
+                                 :format-command nil
+                                 :before-save-hooks
+                                 (list #'loom/feature/format:format-before-save)
+                                 :after-save-hooks
+                                 (list #'loom/feature/auto-save:delete-auto-save-file)
+                                 :terminal-sessions nil))
+        (when startup-file
+          (remember-recent-file startup-file))))))
 
 (defun %enable-concurrent-file-tree (state)
   "Replace STATE's synchronous file-tree lister with a cached runtime."
   (let* ((tree (editor-state-file-tree state))
-         (lister (loom/feature/file-tree::file-tree-child-lister tree))
-         (root (loom/feature/file-tree::file-tree-root-path tree))
+         (lister (loom/feature/file-tree:file-tree-child-lister tree))
+         (root (first (loom/feature/file-tree:file-tree-prefetch-paths tree)))
          (initial-entries (funcall lister root))
          (runtime (loom/feature/file-tree:make-loom-concurrent-runtime
                    :directory-lister lister)))
     (loom/feature/file-tree:loom-concurrent-runtime-prime-directory
      runtime root initial-entries)
-    (setf (loom/feature/file-tree::file-tree-child-lister tree)
-          (lambda (path)
-            (multiple-value-bind (entries present-p)
-                (loom/feature/file-tree:loom-concurrent-runtime-directory-entries
-                 runtime path)
-              (if present-p entries nil))))
+    (loom/feature/file-tree:file-tree-install-child-lister
+     tree
+     (lambda (path)
+       (multiple-value-bind (entries present-p)
+           (loom/feature/file-tree:loom-concurrent-runtime-directory-entries
+            runtime path)
+         (if present-p entries nil))))
     (setf (editor-state-concurrent-runtime state) runtime)
     runtime))
 

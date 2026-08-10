@@ -14,6 +14,10 @@
    #:file-tree-entry-kind
    #:file-tree-move-selection
    #:file-tree-toggle-expand
+   ;; Infrastructure composition API
+   #:file-tree-child-lister
+   #:file-tree-install-child-lister
+   #:file-tree-prefetch-paths
    #:file-tree-create-file
    #:file-tree-create-directory
    #:file-tree-rename
@@ -39,5 +43,6 @@
    #:file-tree-rename-command
    #:file-tree-delete-command
    #:find-file
+   #:recent-file
    #:save-buffer
    #:write-file))

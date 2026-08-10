@@ -9,4 +9,6 @@
    #:syntax-token-kind
    #:syntax-token-text
    #:syntax-highlight-line
-   #:syntax-highlight-line-for-mode))
+   #:syntax-highlight-line-for-mode
+   #:syntax-draw-highlighted-line
+   #:syntax-draw-buffer))

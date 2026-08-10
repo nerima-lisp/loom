@@ -12,12 +12,19 @@
         #:loom/feature/search
         #:loom/feature/file-tree
         #:loom/feature/window
+        #:loom/feature/workspace
         #:loom/feature/evaluation
+        #:loom/feature/shell
+        #:loom/feature/format
+        #:loom/feature/auto-save
+        #:loom/feature/terminal
+        #:loom/feature/git
         #:loom/feature/keyboard-macro
         #:loom/feature/register
         #:loom/feature/session
         #:loom/feature/user-init
-        #:loom/feature/lsp)
+        #:loom/feature/lsp
+        #:loom/feature/multiple-cursors)
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
    #:it

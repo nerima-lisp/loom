@@ -126,11 +126,11 @@ the rectangle whose top-left corner is (X, Y) and which is WIDTH columns by
 HEIGHT rows, all in screen-cell coordinates. Does not itself flush anything
 to a terminal -- see LOOM-RENDERER-PRESENT. Returns RENDERER.")
   (:method ((renderer loom-renderer) buffer x y width height &key (start-line 0))
-    (let ((line-count (buffer-line-count buffer)))
+    (let ((line-count (buffer-visible-line-count buffer)))
       (dotimes (row height)
         (let ((line-number (+ start-line row)))
           (when (< line-number line-count)
-            (let* ((text (buffer-line buffer line-number))
+            (let* ((text (buffer-visible-line buffer line-number))
                    (visible (loom-renderer-truncate-string
                              renderer text width)))
               (loom-renderer-write-string renderer x (+ y row) visible)))))

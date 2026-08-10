@@ -41,8 +41,11 @@
    #:lsp-session-diagnostics
    #:lsp-session-stop
    #:lsp-session-initialized-p
+   #:lsp-session-server-capabilities
+   #:lsp-session-server-info
    #:lsp-session-last-error
    #:lsp-path-uri
+   #:lsp-discover-command
    ;; Application API
    #:lsp-start
    #:lsp-stop

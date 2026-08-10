@@ -14,7 +14,13 @@
    #:major-mode-keywords
    #:major-mode-names
    #:major-mode-for-path
+   #:major-mode-parent
+   #:major-mode-keybindings
+   #:major-mode-definition
+   #:register-major-mode
+   #:unregister-major-mode
    ;; Application API
+   #:major-mode-keymap
    #:current-major-mode
    #:set-major-mode
    #:indent-for-tab-command

@@ -22,15 +22,41 @@ unchanged when the terminal size could not be read or has not changed."
     (if (and width height (or (/= width last-width) (/= height last-height)))
         (progn
           (loom-renderer-resize renderer width height)
+          (loom/feature/terminal:resize-terminal-sessions
+           width height *editor-state*)
           (values width height))
         (values last-width last-height))))
 
-(defun %file-tree-prefetch-paths (tree)
-  "Return TREE's root and currently expanded directories for prefetching."
-  (cons (loom/feature/file-tree::file-tree-root-path tree)
-        (loop for path being the hash-keys of
-                         (loom/feature/file-tree::file-tree-expanded tree)
-              collect path)))
+(defparameter *event-loop-poll-interval* 0.05
+  "Maximum seconds between background terminal and auto-save polls.
+
+The interval is only used while there is background work that needs a
+periodic turn.  With no live terminal session or auto-save target, the loop
+keeps its original blocking read behavior.")
+
+(defun %event-loop-background-work-p ()
+  "Whether the event loop must wake up without a keyboard byte."
+  (or (some #'loom/feature/terminal:terminal-session-alive-p
+            (editor-state-terminal-sessions *editor-state*))
+      (editor-state-auto-save-mode-p *editor-state*)
+      (editor-state-auto-save-buffers *editor-state*)))
+
+(defun %wait-for-editor-input ()
+  "Wait for input, or return NIL after the background poll interval.
+
+CL-TTY-KIT's descriptor wait lets PTY output and auto-save timers make
+progress even when the user is idle.  Non-file streams used by tests and
+embedding callers do not have a descriptor; those retain the old blocking
+read semantics instead of making the event loop depend on a particular
+stream implementation."
+  (if (not (%event-loop-background-work-p))
+      t
+      (handler-case
+          (cl-tty-kit:fd-wait
+           (cl-tty-kit:stream-fd *standard-input*)
+           :input
+           *event-loop-poll-interval*)
+        (error () t))))
 
 (defun %run-event-loop (stream)
   "Run the main input and render loop, writing frames to STREAM.
@@ -43,12 +69,13 @@ resizes, then redraws the frame."
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*))))
     (multiple-value-bind (last-width last-height) (%initial-terminal-size)
       (labels ((render-frame ()
+                 (loom/feature/terminal:poll-terminal-sessions *editor-state*)
                  (let ((runtime (editor-state-concurrent-runtime *editor-state*)))
                    (when runtime
                      (loom/feature/file-tree:loom-concurrent-runtime-drain runtime)
                      (loom/feature/file-tree:loom-concurrent-runtime-prefetch
                       runtime
-                      (%file-tree-prefetch-paths
+                      (loom/feature/file-tree:file-tree-prefetch-paths
                        (editor-state-file-tree *editor-state*)))))
                  (let ((session (editor-state-lsp-session *editor-state*))
                        (buffer (%selected-buffer)))
@@ -59,15 +86,21 @@ resizes, then redraws the frame."
                                         :stream stream
                                         :cursor (editor-cursor *editor-state*)))
                (read-and-dispatch ()
-                 ;; NIL once *STANDARD-INPUT* hits EOF, which is what ends the
-                 ;; LOOP below; LOOM-QUIT ends it by unwinding instead.
-                 (let ((count (%read-input-octets buf)))
-                   (when count
-                     (%dispatch-input-chunk decoder buf count keymap-state)
-                     t))))
+                 (if (%wait-for-editor-input)
+                     ;; NIL once *STANDARD-INPUT* hits EOF, which is what ends
+                     ;; the LOOP below; LOOM-QUIT ends it by unwinding instead.
+                     (let ((count (%read-input-octets buf)))
+                       (when count
+                         (%dispatch-input-chunk decoder buf count keymap-state)
+                         t))
+                     ;; A timeout is a productive iteration: RENDER-FRAME
+                     ;; polls PTYs and runs the normal background work below.
+                     :timeout)))
         (render-frame)
         (handler-case
-            (loop while (read-and-dispatch)
+            (loop for status = (read-and-dispatch)
+                  while status
+                  do (loom/feature/auto-save:maybe-auto-save)
                   do (multiple-value-setq (last-width last-height)
                        (%poll-terminal-resize (editor-state-renderer *editor-state*)
                                               last-width last-height))

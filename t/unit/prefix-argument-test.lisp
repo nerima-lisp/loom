@@ -42,4 +42,31 @@
       (prefix-argument-digit argument 0)
       (expect (prefix-argument-value argument) :to-equal 0)
       (expect (prefix-argument-explicit-p argument) :to-be t)
-      (expect (prefix-argument-active-p argument) :to-be t))))
+      (expect (prefix-argument-active-p argument) :to-be t)))
+
+  (it
+    "starts and toggles a negative argument while inactive"
+    (let ((argument (make-prefix-argument)))
+      (prefix-argument-negative argument)
+      (expect (prefix-argument-value argument) :to-equal -1)
+      (expect (prefix-argument-active-p argument) :to-be t)
+      (expect (prefix-argument-explicit-p argument) :to-be nil)
+      (prefix-argument-negative argument)
+      (expect (prefix-argument-value argument) :to-equal 1)))
+
+  (it-each
+      (((( :control) . #\u) nil (:universal))
+       (((:alt) . #\3) nil (:digit . 3))
+       (((:alt) . #\-) nil (:negative))
+       ((nil . #\3) t (:digit . 3))
+       ((nil . #\3) nil nil)
+       ((nil . #\-) t (:negative))
+       (((:control) . #\-) nil nil)
+       ((nil . #\a) t nil))
+      "classifies prefix descriptor ~S"
+      (descriptor active expected)
+    (let ((argument (make-prefix-argument)))
+      (when active
+        (prefix-argument-universal argument))
+      (expect (prefix-argument-action descriptor argument)
+              :to-equal expected))))

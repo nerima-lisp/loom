@@ -14,6 +14,7 @@ which do; see %WITH-MINIBUFFER-STATE."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (tree (make-window-tree buffer 80 24)))
     (make-editor-state :window-tree tree
+                        :workspaces (make-workspace-manager tree :name "main")
                         :minibuffer (and with-minibuffer (make-minibuffer))
                         :keymap (make-keymap)
                         :file-tree nil
@@ -40,8 +41,9 @@ to *EDITOR-STATE* and to MINIBUFFER."
   "Build a FILE-TREE rooted at ROOT with a real, disk-backed child-lister
 \(LOOM-FS-LIST-DIRECTORY, the same one MAIN wires up in
 %INITIALIZE-EDITOR-STATE\), for exercising the file-tree application
-commands \(commands-window.lisp\) against a real temporary directory."
+  commands \(commands-window.lisp\) against a real temporary directory."
   (let ((tree (make-file-tree root)))
-    (setf (loom/feature/file-tree::file-tree-child-lister tree)
-          (function loom/feature/file-tree:loom-fs-list-directory))
+    (loom/feature/file-tree:file-tree-install-child-lister
+     tree
+     (function loom/feature/file-tree:loom-fs-list-directory))
     tree))

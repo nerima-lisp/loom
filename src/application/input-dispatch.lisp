@@ -94,6 +94,89 @@ touches the selected window's buffer."
     (buffer-record-undo-boundary (%selected-buffer)))
   (setf (editor-state-last-command-self-insert-p *editor-state*) self-insert-p))
 
+(defparameter +yank-command-names+ '(yank yank-pop)
+  "Commands that may consume or rotate the last-yank transient state.")
+
+(defparameter +kill-command-names+
+  '(kill-line kill-word backward-kill-word kill-region)
+  "Commands whose adjacent invocations may coalesce in the kill ring.")
+
+(defun %dispatch-key-event-action
+    (event keymap-state minibuffer minibuffer-was-active descriptor
+     prefix-argument prefix-action terminal-event-p self-insert-event-p
+     command)
+  "Run the selected action for EVENT and return true after dispatching it.
+
+The caller computes routing facts before entering the error handler.  Keeping
+the action branches here makes the event boundary responsible for error
+reporting and macro bookkeeping, while this helper owns command-specific
+state such as undo boundaries and the dynamic prefix argument."
+  (cond
+    (minibuffer-was-active
+     (minibuffer-handle-key minibuffer event))
+    (terminal-event-p
+     (loom/feature/terminal:terminal-handle-key-event event))
+    (prefix-action
+     (apply-prefix-argument-action (car prefix-action)
+                                   (cdr prefix-action)))
+    (self-insert-event-p
+     (record-undo-boundary-for-command t)
+     (%clear-last-yank)
+     (setf (editor-state-last-command-kill-p *editor-state*) nil)
+     (let ((*current-prefix-argument*
+             (consume-prefix-argument-for-editor)))
+       (self-insert-command (cl-tty-kit:key-event-code event))))
+    (t
+     (unless (or (eq command :prefix)
+                 (member command +yank-command-names+ :test #'eq)
+                 (loom/feature/multiple-cursors:multiple-cursors-preserving-command-p
+                  command))
+       (%clear-last-yank)
+       (loom/feature/multiple-cursors:multiple-cursors-reset))
+     (record-undo-boundary-for-command nil)
+     (let ((dispatch-result nil))
+       (unwind-protect
+            (let ((*current-prefix-argument*
+                    (prefix-argument-value-for-editor)))
+              (setf dispatch-result
+                    (keymap-state-dispatch keymap-state descriptor)))
+         (unless (eq dispatch-result :pending)
+           (prefix-argument-reset prefix-argument)))
+       (unless (eq dispatch-result :pending)
+         (setf (editor-state-last-command-kill-p *editor-state*)
+               (and (member command +kill-command-names+ :test #'eq) t))))))
+  t)
+
+(defun %record-keyboard-macro-event
+    (macro event descriptor self-insert-event-p)
+  "Record the already-dispatched EVENT in MACRO."
+  (loom/feature/keyboard-macro:keyboard-macro-record-event
+   macro
+   (loom/feature/keyboard-macro:make-keyboard-macro-event
+    :kind (if self-insert-event-p :self-insert :key)
+    :value (if self-insert-event-p
+               (cl-tty-kit:key-event-code event)
+               descriptor))))
+
+(defun %refresh-active-keymap (keymap-state)
+  "Layer the selected buffer's major-mode map over the state root map.
+
+The root map remains the user/global map captured when KEYMAP-STATE was
+created. Switching buffers or major modes therefore changes only the active
+layer and clears a partially entered prefix sequence; global bindings remain
+available through the mode map's parent."
+  (let* ((root (or (keymap-state-root-keymap keymap-state)
+                   (keymap-state-keymap keymap-state)))
+         (buffer (and *editor-state* (%selected-buffer)))
+         (active (if buffer
+                     (loom/feature/mode:major-mode-keymap
+                      (buffer-major-mode buffer) root)
+                     root)))
+    (unless (eq active (keymap-state-keymap keymap-state))
+      (setf (keymap-state-sequence keymap-state) nil))
+    (setf (keymap-state-keymap keymap-state) active)
+    active))
+
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT: to MINIBUFFER-HANDLE-KEY while the minibuffer
 is soliciting input; to a prefix-argument action for C-u, digits, and sign
@@ -116,6 +199,7 @@ the whole process and discard every unsaved buffer. LOOM-QUIT
 does not inherit from CL:ERROR, so it passes straight through this
 HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
 \(LOOM-QUIT () ...\) clause for a clean exit."
+  (%refresh-active-keymap keymap-state)
   (let* ((minibuffer (editor-state-minibuffer *editor-state*))
          (minibuffer-was-active (minibuffer-active-p minibuffer))
          (macro (editor-state-keyboard-macro *editor-state*))
@@ -129,38 +213,35 @@ HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
            (and (not minibuffer-was-active)
                 macro
                 (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)))
+         (terminal-input-event-p
+           (and (not minibuffer-was-active)
+                (loom/feature/terminal:terminal-input-event-p event)
+                (null (keymap-state-sequence keymap-state))))
          (self-insert-event-p
            (and (not minibuffer-was-active)
                 (eq (cl-tty-kit:key-event-type event) :character)
                 (not (intersection '(:control :alt)
                                    (cl-tty-kit:key-event-modifiers event)))
                 (null prefix-action)
-                (null (keymap-state-sequence keymap-state))))
-         (dispatched-p nil)
-         (dispatch-result nil))
+                (null (keymap-state-sequence keymap-state))
+                (not terminal-input-event-p)))
+         (command
+           (and (not minibuffer-was-active)
+                (not self-insert-event-p)
+                (keymap-lookup
+                 (keymap-state-keymap keymap-state)
+                 (append (keymap-state-sequence keymap-state)
+                         (list descriptor)))))
+         (terminal-event-p
+           (and terminal-input-event-p
+                (null command)))
+         (dispatched-p nil))
     (handler-case
-        (progn
-          (cond
-            (minibuffer-was-active
-             (minibuffer-handle-key minibuffer event))
-            (prefix-action
-             (apply-prefix-argument-action (car prefix-action)
-                                           (cdr prefix-action)))
-            (self-insert-event-p
-             (record-undo-boundary-for-command t)
-             (let ((*current-prefix-argument*
-                     (consume-prefix-argument-for-editor)))
-               (self-insert-command (cl-tty-kit:key-event-code event))))
-            (t
-             (record-undo-boundary-for-command nil)
-             (unwind-protect
-                  (let ((*current-prefix-argument*
-                          (prefix-argument-value-for-editor)))
-                    (setf dispatch-result
-                          (keymap-state-dispatch keymap-state descriptor)))
-               (unless (eq dispatch-result :pending)
-                 (prefix-argument-reset prefix-argument)))))
-          (setf dispatched-p t))
+        (setf dispatched-p
+              (%dispatch-key-event-action
+               event keymap-state minibuffer minibuffer-was-active descriptor
+               prefix-argument prefix-action terminal-event-p
+               self-insert-event-p command))
       (error (condition)
         (minibuffer-message minibuffer (format nil "~A" condition))))
     (when (and dispatched-p
@@ -168,13 +249,8 @@ HANDLER-CASE untouched and still reaches %RUN-EVENT-LOOP's own
                macro
                (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)
                (not (loom/feature/keyboard-macro:keyboard-macro-replaying-p macro)))
-      (loom/feature/keyboard-macro:keyboard-macro-record-event
-       macro
-       (loom/feature/keyboard-macro:make-keyboard-macro-event
-        :kind (if self-insert-event-p :self-insert :key)
-        :value (if self-insert-event-p
-                   (cl-tty-kit:key-event-code event)
-                   descriptor))))))
+      (%record-keyboard-macro-event
+       macro event descriptor self-insert-event-p))))
 
 (defun %dispatch-input-chunk (decoder buffer count keymap-state)
   "Decode the first COUNT octets of BUFFER through DECODER and route every key

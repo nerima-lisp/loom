@@ -34,6 +34,14 @@ Tests rebind this to CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's in-memory fake.")
   #-sbcl
   nil)
 
+(defun %native-file-writable-p (path)
+  #+sbcl
+  (not (null
+        (ignore-errors
+          (zerop (sb-posix:access (%native-namestring path) sb-posix:w-ok)))))
+  #-sbcl
+  nil)
+
 #+sbcl
 (defun %native-create-file (path)
   (let ((fd (sb-posix:open (%native-namestring path)

@@ -48,5 +48,29 @@
               '("#| hidden |#" " " "(" "quote" " " "\"unfinished"))))
 
   (it
+    "keeps escaped strings and delimiter character literals intact"
+    (let ((line "\"a\\\"b\" #\\; #\\("))
+      (expect (%syntax-token-kinds line)
+              :to-equal
+              '(:string :whitespace :character :whitespace :character))
+      (expect (%syntax-token-texts line)
+              :to-equal
+              '("\"a\\\"b\"" " " "#\\;" " " "#\\("))
+      (expect (apply #'concatenate 'string (%syntax-token-texts line))
+              :to-equal
+              line)))
+
+  (it
+    "keeps an unterminated block comment local to the line"
+    (let ((line "#| unfinished")
+          (tokens (syntax-highlight-line "#| unfinished")))
+      (expect (mapcar #'syntax-token-kind tokens)
+              :to-equal
+              '(:comment))
+      (expect (mapcar #'syntax-token-text tokens)
+              :to-equal
+              (list line))))
+
+  (it
     "returns no tokens for an empty line"
     (expect (syntax-highlight-line "") :to-be nil)))

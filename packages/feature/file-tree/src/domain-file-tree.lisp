@@ -21,7 +21,7 @@
 ;;; directory as childless, so a FILE-TREE is usable standalone (e.g. in
 ;;; tests) with no filesystem access at all. The infrastructure layer
 ;;; overrides it post-construction with the infrastructure lister, e.g.
-;;;   (setf (file-tree-child-lister tree) #'loom-fs-list-directory)
+;;;   (file-tree-install-child-lister tree #'loom-fs-list-directory)
 ;;; Expand/collapse state is a hash-table of currently-expanded directory
 ;;; paths (EQUAL-keyed, so string or pathname paths both work as long as a
 ;;; given tree is consistent about which it uses).
@@ -48,6 +48,23 @@ usable in isolation, e.g. in domain-layer tests."
   (expanded (make-hash-table :test #'equal))
   selection
   (child-lister #'%default-child-lister))
+
+(defgeneric file-tree-install-child-lister (tree lister)
+  (:documentation
+   "Install LISTER as TREE's child-directory provider and return TREE.
+LISTER receives one pathname and returns the children for that directory.")
+  (:method (tree lister)
+    (setf (file-tree-child-lister tree) lister)
+    tree))
+
+(defgeneric file-tree-prefetch-paths (tree)
+  (:documentation
+   "Return TREE's root and currently expanded directories for prefetching.")
+  (:method (tree)
+    (cons (file-tree-root-path tree)
+          (loop for path being the hash-keys of
+                  (file-tree-expanded tree)
+                collect path))))
 
 (defun %file-tree-flatten (tree path depth)
   "Return the depth-first flattening of PATH's children (at DEPTH) and, for

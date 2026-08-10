@@ -62,37 +62,56 @@
   (or (lsp-session-last-error session) "unknown LSP error"))
 
 (defun lsp-start ()
-  "Prompt for an LSP command and start a session for the selected buffer."
-  (loom/application:with-prompts
-      (minibuffer (editor-state-minibuffer *editor-state*)
-                       :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((command "LSP command: "))
-    (if (zerop (length (string-trim '(#\Space #\Tab) command)))
-        (minibuffer-message minibuffer "LSP command cannot be empty")
-        (let* ((buffer (loom/application:%selected-buffer))
-               (directory (%lsp-buffer-directory buffer))
-               (root-uri (and directory (lsp-path-uri directory)))
-               (new-session nil))
-          (handler-case
-              (progn
-                (setf new-session
-                      (make-lsp-session :command command
-                                        :directory directory
-                                        :root-uri root-uri))
-                (lsp-session-start new-session)
-                (let ((old-session
-                        (editor-state-lsp-session *editor-state*)))
-                  (setf (editor-state-lsp-session *editor-state*)
-                        new-session)
-                  (when old-session
-                    (lsp-session-stop old-session)))
-                (minibuffer-message minibuffer "LSP started."))
-            (error (condition)
-              (when new-session
-                (lsp-session-stop new-session))
-              (minibuffer-message
-               minibuffer
-               (format nil "LSP start failed: ~A" condition))))))))
+  "Start an LSP session, offering the project-local command when available.
+
+`.loom-lsp` is discovered before the prompt.  Pressing RET accepts the first
+usable command line from that file; typing a command continues to override
+the discovered value explicitly."
+  (let* ((buffer (loom/application:%selected-buffer))
+         (path (or (buffer-path buffer) (truename ".")))
+         (discovered-command nil)
+         (discovered-root nil))
+    (multiple-value-setq (discovered-command discovered-root)
+      (lsp-discover-command path))
+    (loom/application:with-prompts
+        (minibuffer (editor-state-minibuffer *editor-state*)
+                         :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((typed-command
+           (if discovered-command
+               (format nil "LSP command [RET for ~A]: " discovered-command)
+               "LSP command: ")))
+      (let ((command
+              (or (and typed-command
+                       (let ((trimmed
+                               (string-trim '(#\Space #\Tab) typed-command)))
+                         (unless (zerop (length trimmed)) trimmed)))
+                  discovered-command)))
+        (if (null command)
+            (minibuffer-message minibuffer "LSP command cannot be empty")
+            (let* ((directory (or discovered-root
+                                  (%lsp-buffer-directory buffer)))
+                   (root-uri (and directory (lsp-path-uri directory)))
+                   (new-session nil))
+              (handler-case
+                  (progn
+                    (setf new-session
+                          (make-lsp-session :command command
+                                            :directory directory
+                                            :root-uri root-uri))
+                    (lsp-session-start new-session)
+                    (let ((old-session
+                            (editor-state-lsp-session *editor-state*)))
+                      (setf (editor-state-lsp-session *editor-state*)
+                            new-session)
+                      (when old-session
+                        (lsp-session-stop old-session)))
+                    (minibuffer-message minibuffer "LSP started."))
+                (error (condition)
+                  (when new-session
+                    (lsp-session-stop new-session))
+                  (minibuffer-message
+                   minibuffer
+                   (format nil "LSP start failed: ~A" condition))))))))))
 
 (defun lsp-stop ()
   "Stop the current LSP session, if one exists."

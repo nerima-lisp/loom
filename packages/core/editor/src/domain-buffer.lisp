@@ -9,7 +9,7 @@
 ;;;; infrastructure/filesystem.lisp instead, since they are I/O rather than
 ;;;; pure buffer state -- see that file's header comment.
 ;;;;
-;;;; A buffer owns text content, point, mark, modification/undo state, and an
+;;;; A buffer owns text content, point, mark, modification/undo/redo state, and an
 ;;;; optional backing file path. Piece-table representation and mutation
 ;;;; helpers live in buffer-storage.lisp; callers only ever see the operations
 ;;;; below.
@@ -23,7 +23,7 @@
 
 (defgeneric make-buffer (&key name path initial-content)
   (:documentation
-   "Create and return a new, empty-undo-history buffer.")
+   "Create and return a new buffer with empty undo and redo history.")
   (:method (&key name path initial-content)
     (let ((original (or initial-content "")))
       (%make-buffer :name (or name "*scratch*")
@@ -33,13 +33,17 @@
                     :pieces (if (plusp (length original))
                                 (list (%make-piece :source :original :start 0 :length (length original)))
                                 nil)
+                    :narrow-start-offset 0
+                    :narrow-end-offset (length original)
                     :point-line 0
                     :point-column 0
                     :mark-line nil
                     :mark-column nil
                     :major-mode :fundamental
+                    :read-only-p nil
                     :modified-p nil
-                    :undo-list nil))))
+                    :undo-list nil
+                    :redo-list nil))))
 
 (defgeneric buffer-name (buffer)
   (:documentation "Return BUFFER's display name, as a string.")
@@ -72,6 +76,177 @@ interpret the identity; feature packages provide its semantics.")
   (:method (buffer)
     (%pieces-text buffer)))
 
+(defgeneric buffer-narrow-start-offset (buffer)
+  (:documentation
+   "Return the absolute, inclusive start offset of BUFFER's visible region." )
+  (:method (buffer)
+    (%buffer-narrow-start-offset buffer)))
+
+(defgeneric buffer-narrow-end-offset (buffer)
+  (:documentation
+   "Return the absolute, exclusive end offset of BUFFER's visible region." )
+  (:method (buffer)
+    (%buffer-narrow-end-offset buffer)))
+
+(defgeneric buffer-narrowed-p (buffer)
+  (:documentation "Return true when BUFFER is displaying a narrowed region.")
+  (:method (buffer)
+    (%buffer-narrowed-p buffer)))
+
+(defgeneric buffer-visible-text (buffer)
+  (:documentation
+   "Return the text in BUFFER's current visible region, excluding hidden text.")
+  (:method (buffer)
+    (subseq (buffer-text buffer)
+            (%buffer-narrow-start-offset buffer)
+            (%buffer-narrow-end-offset buffer))))
+
+(defun %text-offset-to-position-values (text offset)
+  "Return LINE and COLUMN for OFFSET in TEXT, clamped to TEXT's bounds."
+  (let ((bounded-offset (max 0 (min offset (length text))))
+        (line 0)
+        (line-start 0))
+    (loop for newline = (position #\Newline text :start line-start)
+          do (cond
+               ((null newline)
+                (return (values line (- bounded-offset line-start))))
+               ((<= bounded-offset newline)
+                (return (values line (- bounded-offset line-start))))
+               (t
+                (incf line)
+                (setf line-start (1+ newline)))))))
+
+(defun %visible-lines (buffer)
+  "Return BUFFER's visible text split into lines without trailing newlines."
+  (let ((text (buffer-visible-text buffer))
+        (start 0)
+        (lines nil))
+    (loop for newline = (position #\Newline text :start start)
+          do (if newline
+                 (progn
+                   (push (subseq text start newline) lines)
+                   (setf start (1+ newline)))
+                 (progn
+                   (push (subseq text start) lines)
+                   (return (nreverse lines)))))))
+
+(defgeneric buffer-visible-line-count (buffer)
+  (:documentation "Return the number of lines in BUFFER's visible region.")
+  (:method (buffer)
+    (length (%visible-lines buffer))))
+
+(defgeneric buffer-visible-line (buffer line-number)
+  (:documentation
+   "Return the zero-based LINE-NUMBER text in BUFFER's visible region.")
+  (:method (buffer line-number)
+    (let ((lines (%visible-lines buffer)))
+      (unless (and (>= line-number 0) (< line-number (length lines)))
+        (error "buffer-visible-line: line-number ~D out of range [0,~D)"
+               line-number (length lines)))
+      (nth line-number lines))))
+
+(defgeneric buffer-visible-point-line (buffer)
+  (:documentation "Return point's zero-based line within BUFFER's visible region.")
+  (:method (buffer)
+    (multiple-value-bind (line column)
+        (%text-offset-to-position-values
+         (buffer-visible-text buffer)
+         (- (buffer-point-offset buffer) (%buffer-narrow-start-offset buffer)))
+      (declare (ignore column))
+      line)))
+
+(defgeneric buffer-visible-point-column (buffer)
+  (:documentation "Return point's zero-based column within BUFFER's visible region.")
+  (:method (buffer)
+    (multiple-value-bind (line column)
+        (%text-offset-to-position-values
+         (buffer-visible-text buffer)
+         (- (buffer-point-offset buffer) (%buffer-narrow-start-offset buffer)))
+      (declare (ignore line))
+      column)))
+
+(defun %clamp-offset-to-narrowing (buffer offset)
+  (max (%buffer-narrow-start-offset buffer)
+       (min offset (%buffer-narrow-end-offset buffer))))
+
+(defun %region-offsets-within-narrowing
+    (buffer start-line start-column end-line end-column)
+  (values
+   (%clamp-offset-to-narrowing
+    buffer
+    (%position-to-offset buffer start-line start-column))
+   (%clamp-offset-to-narrowing
+    buffer
+    (%position-to-offset buffer end-line end-column))))
+
+(defun %set-buffer-point-from-offset (buffer offset)
+  (multiple-value-bind (line column)
+      (%offset-to-position-values buffer offset)
+    (setf (%buffer-point-line buffer) line
+          (%buffer-point-column buffer) column)))
+
+(defun %set-buffer-mark-from-offset (buffer offset)
+  (multiple-value-bind (line column)
+      (%offset-to-position-values buffer offset)
+    (setf (%buffer-mark-line buffer) line
+          (%buffer-mark-column buffer) column)))
+
+(defgeneric buffer-narrow-to-region
+    (buffer start-line start-column end-line end-column)
+  (:documentation
+   "Limit BUFFER's visible and editable region to the half-open region
+between the two zero-based positions. Point and mark are clamped into the
+new region. Returns BUFFER.")
+  (:method (buffer start-line start-column end-line end-column)
+    (when (or (< end-line start-line)
+              (and (= end-line start-line) (< end-column start-column)))
+      (error "buffer-narrow-to-region: end position (~D,~D) precedes start position (~D,~D)"
+             end-line end-column start-line start-column))
+    (multiple-value-bind (normalized-start-line normalized-start-column)
+        (%clamp-position buffer start-line start-column)
+      (multiple-value-bind (normalized-end-line normalized-end-column)
+          (%clamp-position buffer end-line end-column)
+        (let* ((start-offset
+                 (%position-to-offset buffer normalized-start-line normalized-start-column))
+               (end-offset
+                 (%position-to-offset buffer normalized-end-line normalized-end-column))
+               ;; A nested narrowing may only make the visible region
+               ;; smaller.  Clamp both endpoints before replacing the
+               ;; restriction so a caller cannot widen hidden text by
+               ;; passing a full-buffer position.
+               (visible-start (%buffer-narrow-start-offset buffer))
+               (visible-end (%buffer-narrow-end-offset buffer))
+               (start-offset (max visible-start
+                                   (min start-offset visible-end)))
+               (end-offset (max visible-start
+                                 (min end-offset visible-end)))
+               (point-offset
+                 (%position-to-offset buffer
+                                      (%buffer-point-line buffer)
+                                      (%buffer-point-column buffer)))
+               (mark-offset
+                 (and (%buffer-mark-line buffer)
+                      (%position-to-offset buffer
+                                           (%buffer-mark-line buffer)
+                                           (%buffer-mark-column buffer)))))
+          (setf (%buffer-narrow-start-offset buffer) start-offset
+                (%buffer-narrow-end-offset buffer) end-offset)
+          (%set-buffer-point-from-offset
+           buffer
+           (max start-offset (min point-offset end-offset)))
+          (when mark-offset
+            (%set-buffer-mark-from-offset
+             buffer
+             (max start-offset (min mark-offset end-offset)))))))
+    buffer))
+
+(defgeneric buffer-widen (buffer)
+  (:documentation "Make all of BUFFER's full text visible and editable. Returns BUFFER.")
+  (:method (buffer)
+    (setf (%buffer-narrow-start-offset buffer) 0
+          (%buffer-narrow-end-offset buffer) (%buffer-full-length buffer))
+    buffer))
+
 (defgeneric buffer-line-count (buffer)
   (:documentation "Return the number of lines in BUFFER; an empty buffer has one line.")
   (:method (buffer)
@@ -103,8 +278,11 @@ or signalling an error on an out-of-range position at the implementation's
 discretion. Returns BUFFER.")
   (:method (buffer line column)
     (multiple-value-bind (clamped-line clamped-column) (%clamp-position buffer line column)
-      (setf (%buffer-point-line buffer) clamped-line
-            (%buffer-point-column buffer) clamped-column))
+      (let ((offset
+              (%clamp-offset-to-narrowing
+               buffer
+               (%position-to-offset buffer clamped-line clamped-column))))
+        (%set-buffer-point-from-offset buffer offset)))
     buffer))
 
 (defgeneric buffer-mark (buffer)
@@ -120,8 +298,11 @@ zero-based, or (VALUES NIL NIL) if no mark is currently set.")
 BUFFER.")
   (:method (buffer line column)
     (multiple-value-bind (clamped-line clamped-column) (%clamp-position buffer line column)
-      (setf (%buffer-mark-line buffer) clamped-line
-            (%buffer-mark-column buffer) clamped-column))
+      (let ((offset
+              (%clamp-offset-to-narrowing
+               buffer
+               (%position-to-offset buffer clamped-line clamped-column))))
+        (%set-buffer-mark-from-offset buffer offset)))
     buffer))
 
 (defgeneric buffer-insert-string (buffer string)
@@ -130,6 +311,7 @@ BUFFER.")
 inserted text. Marks BUFFER as modified and records undo information.
 Returns BUFFER.")
   (:method (buffer string)
+    (%ensure-buffer-writable buffer)
     (unless (zerop (length string))
       (multiple-value-bind (end-line end-column)
           (%do-insert buffer (%buffer-point-line buffer) (%buffer-point-column buffer) string)
@@ -170,9 +352,13 @@ end-of-line. A no-op at the very end of the buffer."
 (defgeneric buffer-delete-char (buffer &key backward)
   (:documentation "Delete one character next to point, returning BUFFER.")
   (:method (buffer &key backward)
-    (if backward
-        (%delete-char-backward buffer)
-        (%delete-char-forward buffer))
+    (%ensure-buffer-writable buffer)
+    (let ((point-offset (buffer-point-offset buffer)))
+      (if backward
+          (unless (<= point-offset (%buffer-narrow-start-offset buffer))
+            (%delete-char-backward buffer))
+          (unless (>= point-offset (%buffer-narrow-end-offset buffer))
+            (%delete-char-forward buffer))))
     buffer))
 
 (defgeneric buffer-delete-region (buffer start-line start-column end-line end-column)
@@ -187,10 +373,22 @@ string.")
               (and (= end-line start-line) (< end-column start-column)))
       (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
              end-line end-column start-line start-column))
-    (let ((text (%do-delete buffer start-line start-column end-line end-column)))
-      (setf (%buffer-point-line buffer) start-line
-            (%buffer-point-column buffer) start-column)
-      text)))
+    (%ensure-buffer-writable buffer)
+    (multiple-value-bind (start-offset end-offset)
+        (%region-offsets-within-narrowing
+         buffer start-line start-column end-line end-column)
+      (if (= start-offset end-offset)
+          ""
+          (multiple-value-bind (normalized-start-line normalized-start-column)
+              (%offset-to-position-values buffer start-offset)
+            (multiple-value-bind (normalized-end-line normalized-end-column)
+                (%offset-to-position-values buffer end-offset)
+              (let ((text
+                      (%do-delete buffer
+                                  normalized-start-line normalized-start-column
+                                  normalized-end-line normalized-end-column)))
+                (%set-buffer-point-from-offset buffer start-offset)
+                text)))))))
 
 (defgeneric buffer-region-string (buffer start-line start-column end-line end-column)
   (:documentation
@@ -198,7 +396,14 @@ string.")
 (START-LINE, START-COLUMN) and (END-LINE, END-COLUMN) positions (end
 exclusive), as a string.")
   (:method (buffer start-line start-column end-line end-column)
-    (%extract-region buffer start-line start-column end-line end-column)))
+    (when (or (< end-line start-line)
+              (and (= end-line start-line) (< end-column start-column)))
+      (error "buffer-region-string: end position (~D,~D) precedes start position (~D,~D)"
+             end-line end-column start-line start-column))
+    (multiple-value-bind (start-offset end-offset)
+        (%region-offsets-within-narrowing
+         buffer start-line start-column end-line end-column)
+      (%piece-table-range-text buffer start-offset end-offset))))
 
 (defgeneric buffer-modified-p (buffer)
   (:documentation
@@ -206,6 +411,18 @@ exclusive), as a string.")
 or last saved.")
   (:method (buffer)
     (%buffer-modified-p buffer)))
+
+(defgeneric buffer-read-only-p (buffer)
+  (:documentation "Return true when BUFFER rejects text mutations.")
+  (:method (buffer)
+    (%buffer-read-only-p buffer)))
+
+(defgeneric buffer-set-read-only (buffer read-only-p)
+  (:documentation
+   "Set whether BUFFER rejects text mutations and return BUFFER.")
+  (:method (buffer read-only-p)
+    (setf (%buffer-read-only-p buffer) (not (null read-only-p)))
+    buffer))
 
 (defgeneric buffer-mark-saved (buffer)
   (:documentation
@@ -227,33 +444,45 @@ invariant without manufacturing an undo entry or changing point.")
 
 (defgeneric buffer-undo (buffer)
   (:documentation
-   "Undo the most recent change group in BUFFER, Emacs ring-style: there is
-no separate redo command, and repeated calls to BUFFER-UNDO keep walking
-further back through history. Once the history is exhausted, further calls
-are a no-op (or signal, at the implementation's discretion). Returns BUFFER.")
-  ;; Ring model, not a stack with a separate redo: BUFFER's undo-list is a
-  ;; single flat list of entries with :BOUNDARY markers spliced in by
-  ;; BUFFER-RECORD-UNDO-BOUNDARY, most-recent edit first (each edit is
-  ;; pushed onto the front by %DO-INSERT/%DO-DELETE). One BUFFER-UNDO call
-  ;; pops entries off the front -- most-recent-first, which is exactly the
-  ;; order needed to unwind them correctly -- until it hits a :BOUNDARY (or
-  ;; the list ends), consuming that terminating marker too, and applies each
-  ;; popped entry's inverse via %APPLY-UNDO-ENTRY. Applying an inverse edit
-  ;; goes through %DO-INSERT/%DO-DELETE, the very same primitives ordinary
-  ;; edits use, so it *also* pushes a fresh undo entry -- the inverse of the
-  ;; inverse, i.e. a redo of the original edit -- onto the front of the same
-  ;; list, right where the just-undone group used to be. Crucially, no new
-  ;; :BOUNDARY is pushed after that: the list is left exactly as if the
-  ;; freshly-pushed redo entries had always been there, so the very next
-  ;; BUFFER-UNDO call pops them first and undoes them, i.e. replays the
-  ;; original edits forward. That "undo of an undo" toggle is what lets
-  ;; repeated calls keep making progress -- forward, then back, then forward
-  ;; again -- without ever branching into a separate redo structure; it is
-  ;; all just one list, mutated by the same two primitives every edit uses.
+   "Undo the most recent change group in BUFFER, Emacs ring-style: repeated
+calls to BUFFER-UNDO keep walking through the inverse history. The inverse
+group is also made available to BUFFER-REDO. Once the history is exhausted,
+further calls are a no-op (or signal, at the implementation's discretion).
+Returns BUFFER.")
+  ;; BUFFER-UNDO keeps the existing ring behavior: its undo-list is a flat,
+  ;; most-recent-first sequence of edit entries and :BOUNDARY markers. The
+  ;; popped group's inverses are applied through the same mutation primitives
+  ;; as ordinary edits, so the inverse-of-the-inverse remains on the undo ring
+  ;; and the next BUFFER-UNDO call continues the ring-style walk. In parallel,
+  ;; the returned inverse actions are copied to the explicit redo-list. Replay
+  ;; passes CLEAR-REDO false, while ordinary edits clear redo history and start
+  ;; a new branch.
   (:method (buffer)
+    (%ensure-buffer-writable buffer)
     (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
                         until (or (null entry) (eq entry :boundary))
                         collect entry)))
+      (when group
+        ;; Put the boundary below this group's entries.  Since GROUP is
+        ;; consumed newest-first, pushing each inverse reverses it back into
+        ;; the original edit order for BUFFER-REDO.
+        (push :boundary (%buffer-redo-list buffer))
+        (dolist (entry group)
+          (push (%apply-undo-entry buffer entry)
+                (%buffer-redo-list buffer)))))
+    buffer))
+
+(defgeneric buffer-redo (buffer)
+  (:documentation
+  "Redo the most recently undone change group in BUFFER.
+
+Redo is a no-op when no explicit redo history remains. A subsequent normal
+edit clears the redo history. Returns BUFFER.")
+  (:method (buffer)
+    (%ensure-buffer-writable buffer)
+    (let ((group (loop for entry = (pop (%buffer-redo-list buffer))
+                       until (or (null entry) (eq entry :boundary))
+                       collect entry)))
       (dolist (entry group)
         (%apply-undo-entry buffer entry)))
     buffer))
@@ -307,6 +536,20 @@ into that same file."))
   (start 0 :type buffer-offset)
   (end 0 :type buffer-offset))
 
+(defgeneric buffer-visible-offset-position (buffer offset)
+  (:documentation
+   "Return the visible-region BUFFER-POSITION for absolute OFFSET, or NIL
+when OFFSET is outside BUFFER's current visible region. The region end is
+accepted as the position just after its last visible character.")
+  (:method (buffer offset)
+    (when (and (<= (%buffer-narrow-start-offset buffer) offset)
+               (<= offset (%buffer-narrow-end-offset buffer)))
+      (multiple-value-bind (line column)
+          (%text-offset-to-position-values
+           (buffer-visible-text buffer)
+           (- offset (%buffer-narrow-start-offset buffer)))
+        (%make-buffer-position line column)))))
+
 (defun buffer-point-offset (buffer)
   "Return BUFFER's point as an offset in BUFFER-TEXT."
   (let ((offset (buffer-point-column buffer)))
@@ -317,13 +560,6 @@ into that same file."))
 (defun buffer-offset-position (buffer offset)
   "Return the BUFFER-POSITION corresponding to OFFSET in BUFFER-TEXT."
   (declare (type buffer-offset offset))
-  (loop for line below (buffer-line-count buffer)
-        for line-length = (length (buffer-line buffer line))
-        if (<= offset line-length)
-          do (return (%make-buffer-position line offset))
-        do (decf offset (1+ line-length))
-        finally (let ((last-line (1- (buffer-line-count buffer))))
-                  (return
-                    (%make-buffer-position
-                     last-line
-                     (length (buffer-line buffer last-line)))))))
+  (multiple-value-bind (line column)
+      (%offset-to-position-values buffer offset)
+    (%make-buffer-position line column)))
