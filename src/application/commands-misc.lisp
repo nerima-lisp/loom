@@ -188,30 +188,43 @@ offers \"s\" in the first place, so an \"s\" answer there falls through to
           ?action)
         :retry))
 
+  (defun %quit-prompt-text (buffer)
+    "Return the confirmation prompt for modified BUFFER."
+    (if (buffer-path buffer)
+        (format nil "Save ~A? (s/d/c): " (buffer-name buffer))
+        (format nil "Discard changes to ~A? (d/c): " (buffer-name buffer))))
+
+  (defun %continue-quit-prompt (buffers buffer next)
+    "Activate the quit prompt for BUFFER and continue with NEXT.
+NEXT receives the remaining buffer list after a save or discard, or the
+original list when the answer is invalid."
+    (let* ((has-path-p (and (buffer-path buffer) t))
+           (minibuffer (editor-state-minibuffer *editor-state*)))
+      (minibuffer-activate
+       minibuffer
+       (%quit-prompt-text buffer)
+       :on-confirm
+       (lambda (answer)
+         (ecase (%quit-answer-action answer has-path-p)
+           (:save-and-continue
+            (buffer-save buffer)
+            (funcall next (remove buffer buffers :count 1 :test (function eq))))
+           (:discard-and-continue
+            (funcall next (remove buffer buffers :count 1 :test (function eq))))
+           (:cancel nil)
+           (:retry (funcall next buffers))))
+       :on-cancel
+       (lambda () (minibuffer-message minibuffer "Quit")))))
+
   (defun %continue-quit (buffers)
     "Prompt for the next modified buffer in BUFFERS, or signal LOOM-QUIT."
     (let ((buffer (find-if (function buffer-modified-p) buffers)))
       (if (null buffer)
           (signal (quote loom-quit))
-          (let* ((has-path-p (and (buffer-path buffer) t))
-                 (minibuffer (editor-state-minibuffer *editor-state*))
-                 (prompt (if has-path-p
-                             (format nil "Save ~A? (s/d/c): " (buffer-name buffer))
-                             (format nil "Discard changes to ~A? (d/c): " (buffer-name buffer)))))
-            (minibuffer-activate
-             minibuffer prompt
-             :on-confirm
-             (lambda (answer)
-               (ecase (%quit-answer-action answer has-path-p)
-                 (:save-and-continue
-                  (buffer-save buffer)
-                  (%continue-quit (remove buffer buffers :count 1 :test (function eq))))
-                 (:discard-and-continue
-                  (%continue-quit (remove buffer buffers :count 1 :test (function eq))))
-                 (:cancel nil)
-                 (:retry (%continue-quit buffers))))
-             :on-cancel
-             (lambda () (minibuffer-message minibuffer "Quit")))))))
+          (%continue-quit-prompt
+           buffers buffer
+           (lambda (next-buffers)
+             (%continue-quit next-buffers))))))
 
   (defun save-buffers-kill-terminal ()
     "Exit after resolving all modified buffers in the session."
