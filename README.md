@@ -5,8 +5,9 @@
 [![Documentation](https://img.shields.io/badge/docs-MkDocs%20Material-0a7a5a)](https://nerima-lisp.github.io/loom/)
 
 `loom` is a terminal text editor for SBCL with Emacs-style keybindings. It
-combines raw-mode terminal editing, window management, feature slices, and a
-bounded concurrent file-tree runtime.
+combines raw-mode editing, window management, interactive PTY terminal sessions,
+shell commands, Git status, diff, and staging commands, code-formatting integration,
+auto-save, feature slices, and a bounded concurrent file-tree runtime.
 
 The full documentation is published at
 [nerima-lisp.github.io/loom](https://nerima-lisp.github.io/loom/).
@@ -20,6 +21,8 @@ nix run github:nerima-lisp/loom -- path/to/file.lisp
 ```
 
 Omit the path to start with the current directory as the file-tree root.
+Use `M-x terminal` for a PTY-backed child process and `M-x auto-save-mode` to
+enable sidecar auto-save for modified file-backed buffers.
 
 ## Install
 

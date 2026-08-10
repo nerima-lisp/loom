@@ -6,17 +6,22 @@ implemented today from what is deliberately deferred.
 ## Implemented today
 
 - **Buffer editing** -- insert/delete, Emacs-style kill-ring/yank, numeric
-  prefix arguments, and multi-level undo grouped by command boundary.
+  prefix arguments, multi-level undo grouped by command boundary, and
+  restriction-aware narrowing/widening (`C-x n n` / `C-x n w`), plus
+  read-only buffers with an interactive toggle (`C-x C-q`).
 - **Movement** -- character/line motion, beginning/end of line.
 - **Emacs-style keybindings** -- `install-default-keybindings` installs the
   command registry's movement, editing, search, file, window, file-tree,
-  help, keyboard-quit, and quit bindings, including the `C-x`/`C-c` prefix
-  sequences. The bindings live in
+  session, register, recent-file, bookmark, shell, help, keyboard-quit, and quit
+  bindings, including the `C-x`/`C-c` prefix sequences. The bindings live in
   [`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp),
   and the declarative catalogue lives in
   [`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp).
 - **Window management** -- horizontal/vertical splits (`C-x 2` / `C-x 3`),
   window selection (`C-x o`), per-window buffer switching (`C-x b`).
+- **Named workspaces** -- create, switch, cycle, and kill independent window
+  trees with `C-x t 2`, `C-x t o`, `C-x t n`, `C-x t p`, and `C-x t k`; the
+  active workspace is shown in the shortcut line and persisted by sessions.
 - **File-tree sidebar** (`C-x C-t`) -- navigate, and create/rename/delete
   files and directories on disk, using `cl-boundary-kit` for normal
   operations and direct `cl-host-kit` calls where filesystem guarantees
@@ -33,6 +38,9 @@ implemented today from what is deliberately deferred.
   `cl-history-kit` directly.
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
+- **Interactive PTY terminals** -- `M-x terminal` starts a child process,
+  translates editor key events into terminal input, polls output, handles
+  resize, and exposes a read-only transcript plus a bounded ANSI screen model.
 - **Bounded concurrent file-tree runtime** -- `cl-concurrent-kit` workers
   prefetch uncached directory listings, while generation checks, cache
   invalidation, and render-lane draining prevent stale results from changing
@@ -44,14 +52,44 @@ implemented today from what is deliberately deferred.
   `C-x p r` find files, search project contents, and show the project root.
 - **Common Lisp evaluation** -- `M-:` and `C-x C-e` evaluate trusted forms in
   `LOOM-USER` and append structured results or errors to `*Loom-Eval*`.
+- **Shell command integration** -- `M-!` and `M-x pipe-command` run a command
+  in the selected file's directory and append captured standard output,
+  standard error, and the exit code to `*Loom-Pipe-Command*`.
+- **Code formatting** -- `M-x format-current-buffer` sends the complete buffer
+  to an external command and applies successful output as one undoable edit,
+  preserving point and mark offsets.
+- **Git status, staging, and diff integration** -- `C-x g` runs concise
+  branch-aware status from the current project root; `M-x git-diff` and
+  `M-x git-diff-staged` display working-tree and index patches; and
+  `M-x git-stage-file` / `M-x git-unstage-file` prompt for a repository path
+  before changing the index. All captured status and diff output, including
+  stderr and exit status, remains visible in read-only result buffers, while
+  staging commands report their exit status in the minibuffer.
+- **Auto-save** -- `M-x auto-save-mode` enables global automatic saving and
+  `M-x toggle-auto-save` enables it for the selected buffer; modified writable
+  file-backed buffers are written to `#file-name#` sidecars from the event loop
+  without clearing their normal modified state.
 - **LSP client slice** -- `lsp-start`, `lsp-stop`, and `lsp-diagnostics` use a
-  prompted stdio server, synchronize file-backed buffers, and render
-  `publishDiagnostics` messages in `*Loom-Diagnostics*`.
+  project-local `.loom-lsp` command when available (while allowing an
+  explicit prompt override), negotiate initialization capabilities,
+  synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
+  `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
+  `shutdown`/`exit` handshake with a timeout fallback.
+- **Multiple cursors (line-oriented slice)** -- `C-x m n` adds the next-line
+  cursor, `C-x m l` creates cursors across the point/mark lines, and `C-x m c`
+  clears them. Self-insert fans text out to every cursor and the renderer
+  marks secondary cursors with a reverse-video cell.
 - **User extension** -- `LOOM_INIT_FILE` or `~/.loom/init.lisp` can register
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists
-  buffers and window layout; `switch-to-buffer`, `kill-buffer`, and
-  case-insensitive minibuffer prefix completion manage the buffer registry.
+  buffers, named workspace layouts, recent files, named bookmarks, and
+  M-x/minibuffer command history. Session v4 continues to read v1 through v3
+  files;
+  `switch-to-buffer`, `kill-buffer`, and case-insensitive minibuffer prefix
+  completion manage the buffer registry.
+- **Recent files and named bookmarks** -- `C-x r f` opens the bounded,
+  canonical recent-file list; `C-x r m`, `C-x r b`, `C-x r d`, and M-x
+  `list-bookmarks` set, jump to, delete, and list named bookmarks.
 - **Registers and keyboard macros** -- named text/point registers and
   record/replay keyboard macros are available through the `C-x r` and `C-x`
   bindings.
@@ -79,11 +117,16 @@ make the deferred editor features below complete.
 These are follow-up phases rather than claims that the current editor is a
 complete Lem or Emacs replacement:
 
-- **Richer LSP protocol support.** URI escaping, capability negotiation, and
-  the graceful shutdown/exit handshake are still deferred; the prompted server
-  command is trusted input.
-- **Broader editing surface.** Narrowing, region-aware kill/yank variants,
-  and a richer package/extension distribution story remain future work.
+- **Richer LSP protocol surface.** The discovered or prompted server command
+  remains trusted input; dynamic registration and requests beyond the current
+  diagnostics/document-sync slice remain future work.
+- **Broader editing surface.** A richer package/extension distribution story
+  and editing commands beyond the current region-aware kill/yank slice remain
+  future work.
+- **Full VT terminal emulation and desktop/editor integrations.** Complete
+  terminal compatibility beyond the bounded common-ANSI screen model,
+  interactive terminal application integrations, richer Git staging and diff
+  UI, and additional language modes remain future work.
 
 ## Released changes
 

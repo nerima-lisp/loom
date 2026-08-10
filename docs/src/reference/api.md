@@ -208,7 +208,8 @@ Set `buffer`'s mark to `(line, column)`, clamped. Returns `buffer`.
 ```
 
 Insert `string` into `buffer` at point, moving point to just after it. Marks
-`buffer` modified and records undo information. Returns `buffer`.
+`buffer` modified, records undo information, and clears any explicit redo
+history. Returns `buffer`.
 
 ### `buffer-delete-char`
 
@@ -246,6 +247,23 @@ exclusive).
 
 Return true if `buffer` has unsaved changes since it was created, loaded, or
 last saved.
+
+### `buffer-read-only-p`
+
+```lisp
+(loom:buffer-read-only-p buffer)
+```
+
+Return true when `buffer` rejects text mutations, including undo and redo.
+
+### `buffer-set-read-only`
+
+```lisp
+(loom:buffer-set-read-only buffer read-only-p)
+```
+
+Set whether `buffer` rejects text mutations and return `buffer`. The interactive
+`C-x C-q` command toggles this state for the selected buffer.
 
 ### `buffer-mark-saved`
 
@@ -355,6 +373,15 @@ Undo the most recent change group in `buffer`, Emacs ring-style: repeated
 calls keep walking back through history, and once exhausted further calls
 are a no-op. Returns `buffer`.
 
+### `buffer-redo`
+
+```lisp
+(loom:buffer-redo buffer)
+```
+
+Redo the most recently explicitly undone change group in `buffer`. A normal
+edit clears the explicit redo history. Returns `buffer`.
+
 ### `buffer-record-undo-boundary`
 
 ```lisp
@@ -373,7 +400,7 @@ distinct groups that `buffer-undo` steps between independently. Returns
 
 Read the file at `path` and return a new buffer whose `buffer-path` is
 `path`, initial text is the file's contents, and `buffer-name` is derived
-from the filename.
+from the filename. A file that is not writable is loaded as a read-only buffer.
 
 ### `buffer-save`
 
@@ -382,7 +409,8 @@ from the filename.
 ```
 
 Write `buffer`'s contents to `buffer-path`. Signals an error if `buffer` has
-no associated path. Clears `buffer-modified-p` on success. Returns `buffer`.
+no associated path or is read-only. Clears `buffer-modified-p` on success.
+Returns `buffer`.
 
 ## Renderer
 
@@ -502,10 +530,13 @@ Returns `renderer`.
 ### `make-keymap`
 
 ```lisp
-(loom:make-keymap)
+(loom:make-keymap &key parent)
 ```
 
-Create and return a new, empty keymap.
+Create and return a new, empty keymap. When `parent` is supplied, lookups
+fall through to that keymap. A locally defined first chord shadows the
+corresponding parent subtree, so a mode can replace a complete prefix while
+the rest of the global bindings remain available.
 
 ### `keymap-define-key`
 
@@ -554,6 +585,10 @@ Return the key-event sequence currently accumulated by `state`.
 Feed one `key-event` into `state`: returns `:pending` while accumulating a
 prefix key, invokes and returns the bound command's value once a complete
 sequence resolves, or returns `nil` and resets on an unbound sequence.
+
+The input dispatcher layers the selected buffer's major-mode keymap over the
+editor's top-level keymap before dispatching each event. This keeps global
+bindings available while allowing a mode-local binding to take precedence.
 
 ## Minibuffer
 
@@ -627,6 +662,33 @@ cancels. A no-op when inactive. Returns `minibuffer`.
 
 Display `text` as a transient status message; unlike `minibuffer-activate`,
 does not solicit input or affect `minibuffer-active-p`. Returns `minibuffer`.
+
+### `minibuffer-message-string`
+
+```lisp
+(loom:minibuffer-message-string minibuffer)
+```
+
+Return the current transient status message, or `NIL` when none is active.
+
+### `minibuffer-history-entries`
+
+```lisp
+(loom:minibuffer-history-entries minibuffer)
+```
+
+Return the minibuffer's recalled input strings in newest-first order as a
+serializable list.
+
+### `minibuffer-set-history-entries`
+
+```lisp
+(loom:minibuffer-set-history-entries minibuffer entries)
+```
+
+Replace the minibuffer's recalled input strings with the newest-first list of
+strings in `entries`. Signals an error when `entries` is not a proper list of
+strings.
 
 ## Window
 
@@ -874,6 +936,35 @@ Remove `buffer` from the window tree's buffer set and return the updated tree.
 Create and return a new file tree rooted at `root-path`; initially not
 visible, every directory starts collapsed.
 
+### `file-tree-child-lister`
+
+```lisp
+(loom/feature/file-tree:file-tree-child-lister tree)
+```
+
+Return the function used to provide `tree`'s direct children. The function
+accepts one path and returns `(child-path . kind)` conses.
+
+### `file-tree-install-child-lister`
+
+```lisp
+(loom/feature/file-tree:file-tree-install-child-lister tree lister)
+```
+
+Install `lister` as `tree`'s child provider and return `tree`. This is the
+composition boundary between the pure file-tree state and filesystem or
+cached directory data.
+
+### `file-tree-prefetch-paths`
+
+```lisp
+(loom/feature/file-tree:file-tree-prefetch-paths tree)
+```
+
+Return the root path followed by the currently expanded directory paths. The
+concurrent file-tree runtime uses this list to decide which directories to
+prefetch.
+
 ### `file-tree-visible-p`
 
 ```lisp
@@ -1064,6 +1155,41 @@ Save the selected buffer and return the resulting buffer.
 
 Write the selected buffer to `path` and return the buffer.
 
+## Auto-save feature
+
+Public symbols from `loom/feature/auto-save`.
+
+### `auto-save-path`
+
+Return the `#file-name#` sidecar pathname for a file path.
+
+### `auto-save-eligible-p`
+
+Return true when a buffer has a file path, is modified, and is writable.
+
+### `write-auto-save-file`
+
+Write text to an auto-save sidecar pathname without changing buffer state.
+
+### `auto-save-buffer-to-file`
+
+Write an eligible buffer to its sidecar and leave its normal modified state
+unchanged.
+
+### `auto-save-mode`, `toggle-auto-save`
+
+Enable or disable automatic saving globally or for the selected buffer.
+
+### `delete-auto-save-file`
+
+Delete the sidecar for a file after a normal save. Missing sidecars are
+ignored.
+
+### `auto-save-current-buffer`, `maybe-auto-save`
+
+Run an explicit auto-save pass or run the interval-gated pass used by the event
+loop.
+
 ## Editor state
 
 ### `*editor-state*`
@@ -1079,13 +1205,14 @@ reads and mutates. Bound by loom's entry point before any command runs, and
 ### `editor-state`
 
 The struct type of `*editor-state*`: the window layout, minibuffer, top-level
-keymap, file-tree sidebar, active renderer, and shared kill ring for one
+keymap, file-tree sidebar, active renderer, shared kill ring, named workspace
+manager, auto-save state, after-save hooks, and terminal sessions for one
 running loom session.
 
 ### `make-editor-state`
 
 ```lisp
-(loom:make-editor-state &key window-tree minibuffer keymap file-tree renderer kill-ring)
+(loom:make-editor-state &key window-tree minibuffer keymap file-tree renderer kill-ring workspaces auto-save-mode-p auto-save-buffers auto-save-last-run-at after-save-hooks terminal-sessions)
 ```
 
 Construct an `editor-state`.
@@ -1098,6 +1225,15 @@ Construct an `editor-state`.
 
 Return `state`'s `window-tree-*` protocol object laying out every visible
 buffer.
+
+### `editor-state-workspaces`
+
+```lisp
+(loom:editor-state-workspaces state)
+```
+
+Return `state`'s named workspace manager. Each workspace owns an independent
+window tree over the shared buffer registry.
 
 ### `editor-state-minibuffer`
 
@@ -1139,6 +1275,19 @@ Return the file-tree concurrent runtime attached to `state`, or `nil`.
 
 Return `state`'s `loom-renderer-*` protocol object used to draw each frame.
 
+### `editor-state-after-save-hooks`
+
+Return the hooks run after a normal buffer save.
+
+### `add-after-save-hook`, `remove-after-save-hook`, `run-after-save-hooks`
+
+Register, unregister, or dispatch after-save hooks for an editor state. Hooks
+receive the saved buffer.
+
+### `editor-state-terminal-sessions`
+
+Return the PTY-backed terminal sessions owned by `state`.
+
 ### `editor-state-kill-ring`
 
 ```lisp
@@ -1155,6 +1304,46 @@ recent first, that `C-y`/`M-y` consume.
 ```
 
 Return the buffers currently owned by `state`.
+
+### `editor-state-recent-files`
+
+```lisp
+(loom:editor-state-recent-files state)
+```
+
+Return canonical file paths in most-recent-first order. The list is bounded by
+`loom:*editor-recent-file-limit*`.
+
+### `editor-state-bookmarks`
+
+```lisp
+(loom:editor-state-bookmarks state)
+```
+
+Return the hash table of named `editor-bookmark` values attached to `state`.
+
+### `editor-bookmark`
+
+`editor-bookmark` stores a bookmark name, its buffer or file identity, and a
+line/column position. Use `make-editor-bookmark` to construct one and the
+`editor-bookmark-*` accessors to inspect it.
+
+### `editor-path-string`
+
+```lisp
+(loom:editor-path-string path)
+```
+
+Return the stable string representation used for recent-file and bookmark
+paths, or `nil` when `path` is absent.
+
+### `remember-recent-file`
+
+```lisp
+(loom:remember-recent-file path)
+```
+
+Record `path` at the front of the current state's bounded recent-file list.
 
 ### `editor-state-lsp-session`
 
@@ -1497,6 +1686,22 @@ Return the language identifier associated with a major mode.
 
 Return the syntax keyword table for a major mode.
 
+### `major-mode-parent`
+
+Return a mode's parent mode, or `nil` for an unknown mode. Built-in and
+extension-defined modes without an explicit parent use `:fundamental`.
+
+### `major-mode-keybindings`
+
+Return a copy of a mode's local keybinding specifications. Each specification
+is a `(key-form . command)` pair; the command is a function designator or a
+fbound, non-macro symbol.
+
+### `major-mode-definition`
+
+Return a copy of a mode's complete metadata definition, including its parent,
+file associations, syntax metadata, and local keybindings.
+
 ### `major-mode-names`
 
 Return the registered major-mode names.
@@ -1504,6 +1709,35 @@ Return the registered major-mode names.
 ### `major-mode-for-path`
 
 Infer and return a major mode for a pathname.
+
+### `register-major-mode`
+
+```lisp
+(loom/feature/mode:register-major-mode
+ mode &key name aliases parent extensions filenames comment-prefix
+ indentation-width language-id keywords keybindings)
+```
+
+Register an extension-defined major mode and return its canonical keyword.
+`aliases`, `extensions`, and `filenames` participate in name and pathname
+inference; extensions may be written with or without a leading dot. The
+optional `parent` supplies inherited mode-local bindings and defaults to
+`:fundamental`.
+
+### `unregister-major-mode`
+
+Remove a dynamically registered mode and return its canonical keyword. Built-in
+modes cannot be removed, and an unknown mode returns `nil`.
+
+### `major-mode-keymap`
+
+```lisp
+(loom/feature/mode:major-mode-keymap mode fallback)
+```
+
+Return the mode-local keymap layered over `fallback`, recursively including
+registered parent modes. The result is cached until the mode registry or
+fallback changes.
 
 ### `current-major-mode`
 
@@ -1548,6 +1782,24 @@ Tokenize and return highlighted spans for one source line.
 ### `syntax-highlight-line-for-mode`
 
 Tokenize one source line using an explicitly supplied major mode.
+
+### `syntax-draw-highlighted-line`
+
+```lisp
+(loom/feature/syntax-highlighting:syntax-draw-highlighted-line
+ renderer line x y width &optional mode)
+```
+
+Draw one highlighted source line through the renderer.
+
+### `syntax-draw-buffer`
+
+```lisp
+(loom/feature/syntax-highlighting:syntax-draw-buffer
+ renderer buffer x y width height &key start-line)
+```
+
+Draw the visible portion of `buffer` with line-local syntax styles.
 
 ## Project feature
 
@@ -1692,6 +1944,154 @@ Evaluate one interactive Lisp expression.
 ### `eval-buffer`
 
 Evaluate the contents of the selected buffer.
+
+## Shell feature
+
+Public symbols from `loom/feature/shell`.
+
+### `shell-command-result`
+
+The captured result value for one shell command invocation.
+
+### `make-shell-command-result`
+
+Construct a shell command result with its command, directory, output streams,
+and exit code.
+
+### `shell-command-result-command`, `shell-command-result-directory`
+
+Return the command string and canonical working directory.
+
+### `shell-command-result-output`, `shell-command-result-error-output`
+
+Return captured standard output and standard error separately.
+
+### `shell-command-result-exit-code`
+
+Return the process exit code.
+
+### `shell-command-result-success-p`
+
+Return true when the process exit code is zero.
+
+### `shell-command-result-text`
+
+Render the result for a command-result buffer.
+
+### `run-shell-command`
+
+Run a shell command in an optional directory and return a captured result.
+When supplied, `:input` is sent to standard input. Non-zero exit status is
+represented in the result instead of signaled.
+
+### `pipe-command`
+
+Interactively prompt for a shell command, run it in the selected file's
+directory, and append the result to `*Loom-Pipe-Command*`.
+
+## Format feature
+
+Public symbols from `loom/feature/format`.
+
+### `format-buffer-with-command`
+
+Send the complete selected buffer text to a formatter command and replace the
+buffer only when the command exits successfully. The formatter runs in the
+buffer's file directory when available; point and mark are restored by their
+text offsets and the replacement is undoable as one edit.
+
+Read-only and narrowed buffers are rejected before the command is started.
+
+### `format-current-buffer`
+
+Prompt for a formatter command and format the selected buffer.
+
+## Git feature
+
+Public symbols from `loom/feature/git`.
+
+### `git-status-command`
+
+Return the concise branch-aware status command used by the Git feature.
+
+### `run-git-status`
+
+Run Git status in a directory and return its captured shell command result.
+
+### `git-status`
+
+Run status from the current project root and display the captured result in the
+read-only `*Loom-Git-Status*` buffer.
+
+### `git-diff-command`
+
+Return `git diff` for the working tree or `git diff --cached` for the index.
+
+### `run-git-diff`
+
+Run the working-tree or staged Git diff in a directory and return its captured
+shell command result.
+
+### `git-diff`, `git-diff-staged`
+
+Display the working-tree or staged diff from the current project root in the
+read-only `*Loom-Git-Diff*` buffer. Captured output includes standard output,
+standard error, and the process exit status.
+
+### `git-stage-command`, `git-unstage-command`
+
+Build shell-quoted `git add -- PATH` and `git restore --staged -- PATH`
+commands for a repository path.
+
+### `run-git-stage`, `run-git-unstage`
+
+Run the corresponding index operation in a directory and return its captured
+shell command result.
+
+### `git-stage-file`, `git-unstage-file`
+
+Prompt for a repository path, run the corresponding index operation from the
+current project root, and report the result in the minibuffer.
+
+## Terminal feature
+
+Public symbols from `loom/feature/terminal`.
+
+### `terminal-session`
+
+The PTY-backed child-process session object. It records the program, arguments,
+directory, terminal buffer, raw output, a bounded ANSI screen model, liveness,
+and exit code.
+
+### `start-terminal-session`, `terminal-session-poll`, `terminal-session-send`,
+`terminal-session-resize`, `stop-terminal-session`
+
+Start, poll, write to, resize, or stop a terminal session. Polling updates the
+session's ANSI-stripped transcript buffer and bounded screen model, and closes
+the PTY after process exit.
+
+### `terminal-screen`, `make-terminal-screen`, `terminal-screen-feed`,
+`terminal-screen-text`, `terminal-screen-resize`
+
+Create and inspect the bounded ANSI screen model. It supports common
+cursor-addressed movement, line and character erasure, cursor save/restore, and
+minimal alternate-screen switching; it is not a complete VT compatibility
+layer.
+
+### `poll-terminal-sessions`, `resize-terminal-sessions`
+
+Poll or resize all sessions in an editor state.
+
+### `terminal-input-event-p`, `terminal-handle-key-event`
+
+Recognize and translate terminal input events, including characters, paste,
+control keys, and supported special keys.
+
+### `terminal`, `terminal-stop`
+
+Interactive commands for starting a PTY session in the selected context and
+stopping the session shown by the selected terminal buffer. The selected
+terminal presents the transcript and the bounded ANSI screen model.
 
 ## Keyboard-macro feature
 
@@ -1845,6 +2245,145 @@ Store the selected buffer's point in a named register.
 
 Move point to the position stored in a named register.
 
+## Multiple-cursors feature
+
+Public symbols from `loom/feature/multiple-cursors`.
+
+### `multiple-cursor-set`
+
+The transient multiple-cursor set value type.
+
+### `multiple-cursor-set-p`
+
+Return true when an object is a multiple-cursor set.
+
+### `make-multiple-cursor-set`
+
+Construct a normalized cursor set for a buffer from non-negative buffer
+offsets. `primary-offset` selects the cursor restored as the editor point.
+
+### `multiple-cursor-set-buffer`
+
+Return the buffer associated with a multiple-cursor set.
+
+### `multiple-cursor-set-offsets`
+
+Return the sorted buffer offsets in a multiple-cursor set.
+
+### `multiple-cursor-set-primary-offset`
+
+Return the offset used as the primary editor point.
+
+### `multiple-cursors-active-p`
+
+Return true when the current editor state has a multiple-cursor set,
+optionally restricted to a buffer.
+
+### `multiple-cursors-reset`
+
+Clear the transient multiple-cursor set.
+
+### `multiple-cursor-offsets-for-buffer`
+
+Return the non-primary cursor offsets for a buffer.
+
+### `multiple-cursors-preserving-command-p`
+
+Return true when a command is allowed to preserve the active cursor set.
+
+### `multiple-cursors-add-next-line`
+
+Add a cursor on the next line at the current column.
+
+### `multiple-cursors-edit-lines`
+
+Create cursors on every line between point and mark, inclusive.
+
+### `multiple-cursors-clear`
+
+Clear the active multiple-cursor set.
+
+### `multiple-cursors-apply-insert`
+
+Insert text at every active cursor in a buffer and translate the cursor
+offsets to the resulting buffer positions.
+
+## Workspace feature
+
+Public symbols from `loom/feature/workspace`.
+
+### `workspace`
+
+The value type for one named workspace and its independent window tree.
+
+### `make-workspace`
+
+Construct a workspace from a non-empty name and a window tree.
+
+### `workspace-name`
+
+Return a workspace's name.
+
+### `workspace-window-tree`
+
+Return the window tree owned by a workspace.
+
+### `workspace-manager`
+
+The ordered collection of named workspaces and its active index.
+
+### `make-workspace-manager`
+
+Construct a manager with one initial workspace around a window tree.
+
+### `make-workspace-manager-from-workspaces`
+
+Construct a manager from an ordered list of workspaces and an active index.
+
+### `workspace-manager-workspaces`
+
+Return the manager's ordered workspace list.
+
+### `workspace-manager-current-index`
+
+Return the active workspace index.
+
+### `workspace-manager-current`
+
+Return the active workspace.
+
+### `workspace-manager-current-name`
+
+Return the active workspace name.
+
+### `workspace-manager-create`
+
+Create and append a uniquely named workspace without changing the active
+workspace.
+
+### `workspace-manager-switch-index`
+
+Make the workspace at an index active.
+
+### `workspace-manager-switch-name`
+
+Make the uniquely named workspace active.
+
+### `workspace-manager-next` / `workspace-manager-previous`
+
+Cycle through workspaces, wrapping at either end.
+
+### `workspace-manager-delete`
+
+Delete a named workspace; the final remaining workspace cannot be deleted.
+
+### `new-workspace`, `switch-workspace`, `next-workspace`,
+`previous-workspace`, `kill-workspace`
+
+Interactive commands for creating, selecting, cycling, and deleting
+workspaces. They operate on `*editor-state*` and preserve each workspace's
+window tree.
+
 ## Session feature
 
 Public symbols from `loom/feature/session`.
@@ -1889,6 +2428,48 @@ Return a snapshot's mark column.
 
 Return whether a snapshot's buffer was modified.
 
+### `session-bookmark-snapshot`
+
+The serializable value type for one named bookmark. It stores the name, path,
+buffer name, line, and column.
+
+### `make-session-bookmark-snapshot`
+
+Construct a bookmark snapshot for session persistence.
+
+### `session-workspace-snapshot`
+
+The serializable value type for one named workspace, including its layout and
+selected-window index.
+
+### `make-session-workspace-snapshot`
+
+Construct a workspace snapshot for session persistence.
+
+### `session-workspace-snapshot-name`
+
+Return a workspace snapshot's name.
+
+### `session-workspace-snapshot-layout`
+
+Return a workspace snapshot's serialized window layout.
+
+### `session-workspace-snapshot-selected-window-index`
+
+Return a workspace snapshot's selected-window index.
+
+### `session-snapshot-recent-files`
+
+Return the recent-file paths in a session snapshot.
+
+### `session-snapshot-bookmarks`
+
+Return the bookmark snapshots in a session snapshot.
+
+### `session-snapshot-command-history`
+
+Return the M-x/minibuffer command history in newest-first order.
+
 ### `session-snapshot`
 
 The session-snapshot value type.
@@ -1909,13 +2490,23 @@ Return the window layout in a session snapshot.
 
 Return the selected-window index in a session snapshot.
 
+### `session-snapshot-workspaces`
+
+Return the named workspace snapshots in a session snapshot.
+
+### `session-snapshot-current-workspace-index`
+
+Return the active workspace index in a session snapshot.
+
 ### `validate-session-snapshot`
 
 Validate a session snapshot and return it or signal an invalid snapshot.
 
 ### `session-store-read`
 
-Read a serialized session snapshot from the session store.
+Read a serialized session snapshot from the session store. The current format
+is version 4; version 1 through version 3 files are accepted, with collections
+introduced by later versions defaulting to empty values.
 
 ### `session-store-write`
 
@@ -2083,7 +2674,9 @@ Return diagnostics currently associated with a session.
 
 ### `lsp-session-stop`
 
-Stop the language-server process for a session.
+Stop the language-server process for a session. An initialized session sends
+`shutdown` and then `exit`; if the response does not arrive before the
+shutdown timeout, it sends the `exit` fallback.
 
 ### `lsp-session-initialized-p`
 
@@ -2093,9 +2686,27 @@ Return true when the language server completed initialization.
 
 Return the last error recorded by an LSP session, or `nil`.
 
+### `lsp-session-server-capabilities`
+
+Return the server capability object received during initialization, or an
+empty object when the server did not provide one.
+
+### `lsp-session-server-info`
+
+Return the optional server information object received during initialization,
+or `nil`.
+
 ### `lsp-path-uri`
 
-Convert a pathname to an LSP file URI.
+Convert a pathname to an LSP file URI, percent-encoding non-URI-safe path
+characters as UTF-8.
+
+### `lsp-discover-command`
+
+Find the nearest ancestor `.loom-lsp` for a pathname and return its first
+non-empty, non-comment command line, the project root, and the configuration
+pathname as three values. Return three `nil` values when no usable
+configuration exists.
 
 ### `lsp-start`
 
