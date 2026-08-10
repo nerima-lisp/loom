@@ -31,6 +31,15 @@
         (expect (buffer-text buffer) :to-equal "keep")
         (expect (buffer-point-column buffer) :to-equal 2)
         (expect (buffer-modified-p buffer) :to-be nil))))
+  (it "reports the public buffer predicate for non-buffer inputs"
+    (let ((condition nil))
+      (handler-case
+          (format-buffer-with-command "printf bad" :not-a-buffer)
+        (type-error (caught)
+          (setf condition caught)))
+      (expect condition :to-be-truthy)
+      (expect (type-error-expected-type condition)
+              :to-equal '(satisfies loom:buffer-p)))))
   (it "rejects read-only and narrowed buffers before invoking the command"
     (let ((read-only (make-buffer :initial-content "read-only"))
           (narrowed (make-buffer :initial-content "one\ntwo")))
@@ -39,7 +48,7 @@
         (format-buffer-with-command "printf bad" read-only))
       (buffer-narrow-to-region narrowed 0 0 0 3)
       (signals error
-        (format-buffer-with-command "printf bad" narrowed))))))
+        (format-buffer-with-command "printf bad" narrowed)))))
 
 (describe
   "format-current-buffer"
