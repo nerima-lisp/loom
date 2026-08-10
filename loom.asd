@@ -84,6 +84,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/evaluation/src/domain-evaluation")
    (:file "packages/feature/auto-save/src/domain-auto-save")
    (:file "packages/feature/terminal/src/domain-terminal")
+   (:file "packages/feature/terminal/src/domain-terminal-session")
    (:file "packages/feature/shell/src/domain-shell")
    (:file "packages/feature/git/src/domain-git")
    (:file "packages/feature/lsp/src/domain-lsp")
