@@ -70,6 +70,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/multiple-cursors/src/package")
    (:file "src/package-user")
    (:file "packages/feature/mode/src/domain-major-mode")
+   (:file "packages/feature/mode/src/domain-major-mode-path")
    (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
    (:file "packages/feature/project/src/domain-project")
    (:file "packages/core/editor/src/domain-buffer-storage")
