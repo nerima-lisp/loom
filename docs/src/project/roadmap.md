@@ -83,8 +83,9 @@ implemented today from what is deliberately deferred.
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists
   buffers, named workspace layouts, recent files, named bookmarks, and
-  M-x/minibuffer command history. Session v4 continues to read v1 through v3
-  files;
+  M-x/minibuffer command history in the canonical v5 format; the reader
+  accepts only the v5 envelope and has no compatibility path for pre-v5
+  session files.
   `switch-to-buffer`, `kill-buffer`, and case-insensitive minibuffer prefix
   completion manage the buffer registry.
 - **Recent files and named bookmarks** -- `C-x r f` opens the bounded,
