@@ -30,8 +30,6 @@
    #:session-snapshot
    #:make-session-snapshot
    #:session-snapshot-buffers
-   #:session-snapshot-layout
-   #:session-snapshot-selected-window-index
    #:session-snapshot-recent-files
    #:session-snapshot-bookmarks
    #:session-snapshot-command-history

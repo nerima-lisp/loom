@@ -4,6 +4,14 @@
 ;;;; application round-trip that rebuilds buffers and window layout.
 (in-package #:loom/test)
 
+(defun %session-test-workspace (&key (name "main")
+                                      (layout '(:leaf 0 0))
+                                      (selected-window-index 0))
+  (make-session-workspace-snapshot
+   :name name
+   :layout layout
+   :selected-window-index selected-window-index))
+
 (defun %session-test-snapshot ()
   "Return a small snapshot with every persisted buffer field populated."
   (make-session-snapshot
@@ -17,17 +25,17 @@
               :mark-line 0
               :mark-column 1
               :modified-p t))
-   :layout '(:leaf 0 4)
-   :selected-window-index 0
-    :recent-files (list "one.lisp" "two.lisp")
-    :bookmarks (list
-                (make-session-bookmark-snapshot
-                 :name "spot"
-                 :path "one.lisp"
-                 :buffer-name "*scratch*"
-                 :line 1
-                 :column 2))
-    :command-history (list "M-x find-file" "M-x")))
+   :recent-files (list "one.lisp" "two.lisp")
+   :bookmarks (list
+               (make-session-bookmark-snapshot
+                :name "spot"
+                :path "one.lisp"
+                :buffer-name "*scratch*"
+                :line 1
+                :column 2))
+   :command-history (list "M-x find-file" "M-x")
+   :workspaces (list (%session-test-workspace :layout '(:leaf 0 4)))
+   :current-workspace-index 0))
 
 (describe
   "session-store"
@@ -39,12 +47,13 @@
         (expect (session-store-write path snapshot) :to-be snapshot)
         (expect (host-kit:path-exists-p path) :to-be-truthy)
         (let ((restored (session-store-read path)))
-          (expect (session-snapshot-layout restored) :to-equal '(:leaf 0 4))
-          (expect (session-snapshot-selected-window-index restored)
-                  :to-equal 0)
-          (expect (mapcar #'session-workspace-snapshot-name
-                          (session-snapshot-workspaces restored))
-                  :to-equal '("main"))
+          (let ((workspace (first (session-snapshot-workspaces restored))))
+            (expect (session-workspace-snapshot-layout workspace)
+                    :to-equal '(:leaf 0 4))
+            (expect (session-workspace-snapshot-selected-window-index workspace)
+                    :to-equal 0)
+            (expect (session-workspace-snapshot-name workspace)
+                    :to-equal "main"))
           (expect (session-snapshot-current-workspace-index restored) :to-equal 0)
           (expect (session-snapshot-recent-files restored)
                   :to-equal '("one.lisp" "two.lisp"))
@@ -72,7 +81,7 @@
   (it
     "round-trips multiple named workspaces and their active view"
     (host-kit:with-temporary-directory (directory)
-      (let* ((path (merge-pathnames "workspace-v4.sexp" directory))
+      (let* ((path (merge-pathnames "workspace-v5.sexp" directory))
              (buffer
                (make-session-buffer-snapshot
                 :name "*workspace*"
@@ -96,16 +105,13 @@
              (snapshot
                (make-session-snapshot
                 :buffers (list buffer)
-                :layout (session-workspace-snapshot-layout notes)
-                :selected-window-index
-                (session-workspace-snapshot-selected-window-index notes)
                 :recent-files nil
                 :bookmarks nil
                 :command-history nil
                 :workspaces (list main notes)
                 :current-workspace-index 1)))
         (session-store-write path snapshot)
-        (expect (search ":LOOM-SESSION 4"
+        (expect (search ":LOOM-SESSION 5"
                         (string-upcase (host-kit:read-file-string path)))
                 :to-be-truthy)
         (let ((restored (session-store-read path)))
@@ -124,7 +130,7 @@
     (host-kit:with-temporary-directory (directory)
       (let ((path (merge-pathnames "unsafe.sexp" directory)))
         (host-kit:write-file-string
-         "(:loom-session 1 :buffers #.(list) :layout (:leaf 0 0) :selected-window-index 0)"
+         "(:loom-session 5 :buffers () :recent-files () :bookmarks () :command-history () :workspaces ((:name \"main\" :layout (:leaf 0 0) :selected-window-index 0)) :current-workspace-index 0 #.(list))"
          path)
         (signals error (session-store-read path)))))
 
@@ -133,11 +139,7 @@
     (host-kit:with-temporary-directory (directory)
       (let* ((path (merge-pathnames "session.sexp" directory))
              (temporary (merge-pathnames "session.sexp.tmp" directory))
-             (snapshot
-               (make-session-snapshot
-                :buffers nil
-                :layout '(:leaf 0 0)
-                :selected-window-index 0)))
+             (snapshot (%session-test-snapshot)))
         (host-kit:write-file-string "previous session" path)
         (with-replaced-function
             (loom/feature/session::%session-temporary-path
@@ -166,8 +168,11 @@
                     :modified-p nil))
            (snapshot (make-session-snapshot
                       :buffers (list buffer)
-                      :layout '(:leaf 0 0)
-                      :selected-window-index 0)))
+                      :recent-files nil
+                      :bookmarks nil
+                      :command-history nil
+                      :workspaces (list (%session-test-workspace))
+                      :current-workspace-index 0)))
       (expect (validate-session-snapshot snapshot) :to-be snapshot)))
 
   (it
@@ -189,24 +194,33 @@
               :mark-line mark-line
               :mark-column mark-column
               :modified-p modified-p)))
-      (flet ((snapshot (value)
+      (flet ((snapshot (value &key (recent-files nil)
+                                      (bookmarks nil)
+                                      (command-history nil)
+                                      (layout '(:leaf 0 0))
+                                      (selected-index 0))
                (make-session-snapshot
                 :buffers (list value)
-                :layout '(:leaf 0 0)
-                :selected-window-index 0)))
+                :recent-files recent-files
+                :bookmarks bookmarks
+                :command-history command-history
+                :workspaces (list (%session-test-workspace
+                                   :layout layout
+                                   :selected-window-index selected-index))
+                :current-workspace-index 0)))
         (signals error (validate-session-snapshot nil))
         (signals error
                  (validate-session-snapshot
                   (make-session-snapshot
                    :buffers nil
-                   :layout '(:leaf 0 0)
-                   :selected-window-index 0)))
+                   :recent-files nil
+                   :bookmarks nil
+                   :command-history nil
+                   :workspaces (list (%session-test-workspace))
+                   :current-workspace-index 0)))
         (signals error
                  (validate-session-snapshot
-                  (make-session-snapshot
-                   :buffers (list "not a buffer")
-                   :layout '(:leaf 0 0)
-                   :selected-window-index 0)))
+                  (snapshot "not a buffer")))
         (signals error (validate-session-snapshot
                         (snapshot (buffer :name nil))))
         (signals error (validate-session-snapshot
@@ -225,31 +239,21 @@
                         (snapshot (buffer :modified-p :maybe))))
         (signals error
                  (validate-session-snapshot
-                  (make-session-snapshot
-                   :buffers (list (buffer))
-                   :layout '(:leaf 0 0)
-                   :selected-window-index 0
-                   :recent-files (list 42))))
+                  (snapshot (buffer) :recent-files (list 42))))
         (signals error
                  (validate-session-snapshot
-                  (make-session-snapshot
-                   :buffers (list (buffer))
-                   :layout '(:leaf 0 0)
-                   :selected-window-index 0
+                  (snapshot
+                   (buffer)
                    :bookmarks
                    (list (make-session-bookmark-snapshot
                           :name ""
                           :path nil
                           :buffer-name nil
                           :line 0
-                           :column 0)))))
+                          :column 0)))))
         (signals error
                  (validate-session-snapshot
-                  (make-session-snapshot
-                   :buffers (list (buffer))
-                   :layout '(:leaf 0 0)
-                   :selected-window-index 0
-                   :command-history (list "ok" 42)))))))
+                  (snapshot (buffer) :command-history (list "ok" 42)))))))
 
   (it
     "rejects malformed layouts and selected window indexes"
@@ -265,8 +269,13 @@
       (flet ((snapshot (layout &optional (selected-index 0))
                (make-session-snapshot
                 :buffers (list buffer)
-                :layout layout
-                :selected-window-index selected-index)))
+                :recent-files nil
+                :bookmarks nil
+                :command-history nil
+                :workspaces (list (%session-test-workspace
+                                   :layout layout
+                                   :selected-window-index selected-index))
+                :current-workspace-index 0)))
         (signals error (validate-session-snapshot
                         (snapshot "not a list")))
         (signals error (validate-session-snapshot
@@ -299,76 +308,88 @@
                  (validate-session-snapshot
                   (make-session-snapshot
                    :buffers (list buffer)
-                   :layout '(:split :horizontal
-                             (:leaf 0 0)
-                             (:leaf 0 0))
-                   :selected-window-index 2))))))
+                   :recent-files nil
+                   :bookmarks nil
+                   :command-history nil
+                   :workspaces (list (%session-test-workspace
+                                      :layout '(:split :horizontal
+                                                (:leaf 0 0)
+                                                (:leaf 0 0))
+                                      :selected-window-index 2))
+                   :current-workspace-index 0))))))
 
   (it
-    "rejects unsupported versions, extra forms, and invalid plist shapes"
+    "accepts only the canonical v5 envelope and rejects invalid plist shapes"
     (host-kit:with-temporary-directory (directory)
       (let* ((valid-buffer-form
                "(:name \"*x*\" :path nil :text \"\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil)")
+             (valid-workspace-form
+               "(:name \"main\" :layout (:leaf 0 0) :selected-window-index 0)")
              (valid-form
                (format nil
-                       "(:loom-session 1 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0)"
-                       valid-buffer-form)))
-        (let ((legacy-path (merge-pathnames "legacy.sexp" directory)))
-          (host-kit:write-file-string valid-form legacy-path)
-          (let ((legacy (session-store-read legacy-path)))
-            (expect (session-snapshot-recent-files legacy) :to-equal nil)
-            (expect (session-snapshot-bookmarks legacy) :to-equal nil)
-            (expect (session-snapshot-command-history legacy) :to-equal nil)))
+                       "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                       valid-buffer-form
+                       valid-workspace-form)))
         (flet ((reject (name contents)
                  (let ((path (merge-pathnames name directory)))
                    (host-kit:write-file-string contents path)
                    (signals error (session-store-read path)))))
           (reject "empty.sexp" "")
-          (reject "unsupported-version.sexp"
-                  (format nil
-                          "(:loom-session 5 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0)"
-                          valid-buffer-form))
-          (let ((v2-path (merge-pathnames "v2.sexp" directory)))
-            (host-kit:write-file-string
-             (format nil
-                     "(:loom-session 2 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0 :recent-files (\"recent.lisp\") :bookmarks ())"
-                     valid-buffer-form)
-             v2-path)
-            (let ((v2 (session-store-read v2-path)))
-              (expect (session-snapshot-recent-files v2)
-                      :to-equal '("recent.lisp"))
-              (expect (session-snapshot-bookmarks v2) :to-equal nil)
-              (expect (session-snapshot-command-history v2) :to-equal nil)))
+          (dolist (version '(1 2 3 4 6))
+            (reject (format nil "unsupported-version-~D.sexp" version)
+                    (format nil
+                            "(:loom-session ~D :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                            version
+                            valid-buffer-form
+                            valid-workspace-form)))
           (reject "bad-command-history.sexp"
                   (format nil
-                          "(:loom-session 3 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0 :recent-files () :bookmarks () :command-history (42))"
-                          valid-buffer-form))
+                          "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history (42) :workspaces (~A) :current-workspace-index 0)"
+                          valid-buffer-form
+                          valid-workspace-form))
           (reject "trailing.sexp"
                   (format nil "~A~%~A" valid-form valid-form))
           (reject "duplicate-field.sexp"
                   (format nil
-                          "(:loom-session 1 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0 :selected-window-index 0)"
-                          valid-buffer-form))
+                          "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0 :current-workspace-index 0)"
+                          valid-buffer-form
+                          valid-workspace-form))
           (reject "missing-field.sexp"
                   (format nil
-                          "(:loom-session 1 :buffers (~A) :selected-window-index 0)"
-                          valid-buffer-form))
+                          "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A)"
+                          valid-buffer-form
+                          valid-workspace-form))
           (reject "extra-field.sexp"
                   (format nil
-                          "(:loom-session 1 :buffers (~A) :layout (:leaf 0 0) :selected-window-index 0 :unexpected t)"
-                          valid-buffer-form))
+                          "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0 :unexpected t)"
+                          valid-buffer-form
+                          valid-workspace-form))
           (reject "bad-buffers.sexp"
-                  "(:loom-session 1 :buffers \"not a list\" :layout (:leaf 0 0) :selected-window-index 0)")
+                  (format nil
+                          "(:loom-session 5 :buffers \"not a list\" :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))
           (reject "bad-buffer-value.sexp"
-                  "(:loom-session 1 :buffers (42) :layout (:leaf 0 0) :selected-window-index 0)")
+                  (format nil
+                          "(:loom-session 5 :buffers (42) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))
           (reject "odd-buffer-plist.sexp"
-                  "(:loom-session 1 :buffers ((:name)) :layout (:leaf 0 0) :selected-window-index 0)")
+                  (format nil
+                          "(:loom-session 5 :buffers ((:name)) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))
           (reject "non-keyword-buffer-plist.sexp"
-                  "(:loom-session 1 :buffers ((name \"*x*\")) :layout (:leaf 0 0) :selected-window-index 0)")
+                  (format nil
+                          "(:loom-session 5 :buffers ((name \"*x*\")) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))
           (reject "bad-buffer-fields.sexp"
-                  "(:loom-session 1 :buffers ((:name \"*x*\" :path nil :text \"\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil :modified-p nil)) :layout (:leaf 0 0) :selected-window-index 0)")
-          (reject "bad-top-level.sexp"
-                  "(:loom-session 1 :buffers () :layout (:leaf 0 0) :selected-window-index 0)")))))
+                  (format nil
+                          "(:loom-session 5 :buffers ((:name \"*x*\" :path nil :text \"\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil :modified-p nil)) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))
+          (reject "bad-workspace-value.sexp"
+                  "(:loom-session 5 :buffers ((:name \"*x*\" :path nil :text \"\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil)) :recent-files () :bookmarks () :command-history () :workspaces (42) :current-workspace-index 0)")
+          (reject "empty-buffers.sexp"
+                  (format nil
+                          "(:loom-session 5 :buffers () :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-workspace-form))))))
 
 (describe
   "session application round-trip"

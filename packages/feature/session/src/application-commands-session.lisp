@@ -66,7 +66,7 @@
      (error "session snapshot: unknown window layout node ~S" layout))))
 
 (defun %session-workspace-manager ()
-  "Return the live workspace manager, bridging pre-workspace test states."
+  "Return the live workspace manager, creating one for an uninitialized state."
   (or (editor-state-workspaces *editor-state*)
       (setf (editor-state-workspaces *editor-state*)
             (loom/feature/workspace:make-workspace-manager
@@ -107,14 +107,10 @@
            (buffers (remove-duplicates
                      (append (copy-list (%editor-buffers)) visible)
                      :test #'eq))
-           (workspaces (%session-workspace-snapshots manager buffers))
-           (current-snapshot (nth current-index workspaces)))
+           (workspaces (%session-workspace-snapshots manager buffers)))
       (validate-session-snapshot
        (make-session-snapshot
         :buffers (mapcar #'%session-buffer-snapshot buffers)
-        :layout (session-workspace-snapshot-layout current-snapshot)
-        :selected-window-index
-        (session-workspace-snapshot-selected-window-index current-snapshot)
         :recent-files (copy-list (editor-state-recent-files *editor-state*))
         :bookmarks (%session-bookmark-snapshots)
         :command-history
@@ -190,13 +186,7 @@
 
 (defun %session-restorable-workspaces (snapshot buffers width height)
   "Build fresh workspace views from SNAPSHOT and restored BUFFERS."
-  (let ((snapshots
-          (or (session-snapshot-workspaces snapshot)
-              (list (make-session-workspace-snapshot
-                     :name "main"
-                     :layout (session-snapshot-layout snapshot)
-                     :selected-window-index
-                     (session-snapshot-selected-window-index snapshot))))))
+  (let ((snapshots (session-snapshot-workspaces snapshot)))
     (mapcar
      (lambda (workspace-snapshot)
        (loom/feature/workspace:make-workspace
@@ -227,8 +217,7 @@
            (loom/feature/workspace:make-workspace-manager-from-workspaces
             workspaces
             :current-index
-            (or (session-snapshot-current-workspace-index snapshot)
-                0)))
+            (session-snapshot-current-workspace-index snapshot)))
          (tree (loom/feature/workspace:workspace-window-tree
                 (loom/feature/workspace:workspace-manager-current manager)))
          (bookmarks (%restore-session-bookmarks

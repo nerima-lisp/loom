@@ -6,13 +6,7 @@
 ;;;; uses a temporary sibling followed by cl-host-kit's overwrite-safe move.
 (in-package #:loom/feature/session)
 
-(defparameter *loom-session-version* 4)
-
-(defparameter *loom-session-legacy-version* 1)
-
-(defparameter *loom-session-older-version* 2)
-
-(defparameter *loom-session-previous-version* 3)
+(defparameter *loom-session-version* 5)
 
 (defun %session-plist-value (plist key)
   (loop for tail on plist by #'cddr
@@ -33,184 +27,120 @@
   value)
 
 (defparameter *loom-session-top-level-keys*
-  '(:loom-session :buffers :layout :selected-window-index :recent-files
-    :bookmarks :command-history :workspaces :current-workspace-index))
+  '(:loom-session :buffers :recent-files :bookmarks :command-history
+    :workspaces :current-workspace-index))
 
-(defparameter *loom-session-previous-top-level-keys*
-  '(:loom-session :buffers :layout :selected-window-index :recent-files
-    :bookmarks :command-history))
+(defmacro define-session-plist-codec (name constructor &body fields)
+  "Define a fixed-shape plist serializer and reader for a session value.
 
-(defparameter *loom-session-older-top-level-keys*
-  '(:loom-session :buffers :layout :selected-window-index :recent-files
-    :bookmarks))
+FIELDS is a sequence of (:KEY ACCESSOR) declarations. Keeping the shape in
+one macro invocation makes the serialized data contract visible and prevents
+the writer and reader from drifting apart as fields are added."
+  (unless (and (symbolp name)
+               (symbolp constructor)
+               (every (lambda (field)
+                       (and (listp field)
+                            (= (length field) 2)
+                            (keywordp (first field))
+                            (symbolp (second field))))
+                      fields))
+    (error "Invalid session plist codec declaration: ~S ~S ~S"
+           name constructor fields))
+  (let* ((stem (string-upcase (symbol-name name)))
+         (keys (intern (format nil "*LOOM-SESSION-~A-KEYS*" stem)
+                       *package*))
+         (serializer (intern (format nil "%SESSION-SEXP-~A" stem)
+                             *package*))
+         (reader (intern (format nil "%SESSION-~A-FROM-SEXP" stem)
+                         *package*))
+         (key-list (mapcar #'first fields)))
+    `(progn
+       (defparameter ,keys ',key-list)
+       (defun ,serializer (object)
+         (list
+          ,@(mapcan (lambda (field)
+                      (list (first field)
+                            `(,(second field) object)))
+                    fields)))
+       (defun ,reader (value)
+         (%validate-session-plist value ,keys
+                                  ,(format nil "session ~A" name))
+         (,constructor
+          ,@(mapcan (lambda (field)
+                      (list (first field)
+                            `(%session-plist-value value ,(first field))))
+                    fields))))))
 
-(defparameter *loom-session-legacy-top-level-keys*
-  '(:loom-session :buffers :layout :selected-window-index))
+(define-session-plist-codec buffer make-session-buffer-snapshot
+  (:name session-buffer-snapshot-name)
+  (:path session-buffer-snapshot-path)
+  (:text session-buffer-snapshot-text)
+  (:point-line session-buffer-snapshot-point-line)
+  (:point-column session-buffer-snapshot-point-column)
+  (:mark-line session-buffer-snapshot-mark-line)
+  (:mark-column session-buffer-snapshot-mark-column)
+  (:modified-p session-buffer-snapshot-modified-p))
 
-(defparameter *loom-session-buffer-keys*
-  '(:name :path :text :point-line :point-column :mark-line :mark-column
-    :modified-p))
+(define-session-plist-codec bookmark make-session-bookmark-snapshot
+  (:name session-bookmark-snapshot-name)
+  (:path session-bookmark-snapshot-path)
+  (:buffer-name session-bookmark-snapshot-buffer-name)
+  (:line session-bookmark-snapshot-line)
+  (:column session-bookmark-snapshot-column))
 
-(defparameter *loom-session-bookmark-keys*
-  '(:name :path :buffer-name :line :column))
-
-(defparameter *loom-session-workspace-keys*
-  '(:name :layout :selected-window-index))
-
-(defun %session-sexp-buffer (buffer)
-  (list :name (session-buffer-snapshot-name buffer)
-        :path (session-buffer-snapshot-path buffer)
-        :text (session-buffer-snapshot-text buffer)
-        :point-line (session-buffer-snapshot-point-line buffer)
-        :point-column (session-buffer-snapshot-point-column buffer)
-        :mark-line (session-buffer-snapshot-mark-line buffer)
-        :mark-column (session-buffer-snapshot-mark-column buffer)
-        :modified-p (session-buffer-snapshot-modified-p buffer)))
-
-(defun %session-sexp-bookmark (bookmark)
-  (list :name (session-bookmark-snapshot-name bookmark)
-        :path (session-bookmark-snapshot-path bookmark)
-        :buffer-name (session-bookmark-snapshot-buffer-name bookmark)
-        :line (session-bookmark-snapshot-line bookmark)
-        :column (session-bookmark-snapshot-column bookmark)))
-
-(defun %session-sexp-workspace (workspace)
-  (list :name (session-workspace-snapshot-name workspace)
-        :layout (session-workspace-snapshot-layout workspace)
-        :selected-window-index
-        (session-workspace-snapshot-selected-window-index workspace)))
-
-(defun %session-effective-workspaces (snapshot)
-  "Return SNAPSHOT's workspaces, normalizing the pre-workspace API."
-  (or (session-snapshot-workspaces snapshot)
-      (list (make-session-workspace-snapshot
-             :name "main"
-             :layout (session-snapshot-layout snapshot)
-             :selected-window-index
-             (session-snapshot-selected-window-index snapshot)))))
+(define-session-plist-codec workspace make-session-workspace-snapshot
+  (:name session-workspace-snapshot-name)
+  (:layout session-workspace-snapshot-layout)
+  (:selected-window-index session-workspace-snapshot-selected-window-index))
 
 (defun %session-sexp (snapshot)
   (validate-session-snapshot snapshot)
-  (let* ((workspaces (%session-effective-workspaces snapshot))
-         (current-index (or (session-snapshot-current-workspace-index snapshot)
-                            0))
-         (current-workspace (nth current-index workspaces)))
-    (list :loom-session *loom-session-version*
-          :buffers (mapcar #'%session-sexp-buffer
-                           (session-snapshot-buffers snapshot))
-          ;; Keep the active layout fields for readers of the v3 shape and
-          ;; make the v4 envelope self-describing for older tooling.
-          :layout (session-workspace-snapshot-layout current-workspace)
-          :selected-window-index
-          (session-workspace-snapshot-selected-window-index current-workspace)
-          :recent-files (session-snapshot-recent-files snapshot)
-          :bookmarks (mapcar #'%session-sexp-bookmark
-                             (session-snapshot-bookmarks snapshot))
-          :command-history (session-snapshot-command-history snapshot)
-          :workspaces (mapcar #'%session-sexp-workspace workspaces)
-          :current-workspace-index current-index)))
-
-(defun %session-buffer-from-sexp (value)
-  (%validate-session-plist value *loom-session-buffer-keys* "session buffer")
-  (make-session-buffer-snapshot
-   :name (%session-plist-value value :name)
-   :path (%session-plist-value value :path)
-   :text (%session-plist-value value :text)
-   :point-line (%session-plist-value value :point-line)
-   :point-column (%session-plist-value value :point-column)
-   :mark-line (%session-plist-value value :mark-line)
-   :mark-column (%session-plist-value value :mark-column)
-   :modified-p (%session-plist-value value :modified-p)))
-
-(defun %session-bookmark-from-sexp (value)
-  (%validate-session-plist value *loom-session-bookmark-keys* "session bookmark")
-  (make-session-bookmark-snapshot
-   :name (%session-plist-value value :name)
-   :path (%session-plist-value value :path)
-   :buffer-name (%session-plist-value value :buffer-name)
-   :line (%session-plist-value value :line)
-   :column (%session-plist-value value :column)))
-
-(defun %session-workspace-from-sexp (value)
-  (%validate-session-plist value *loom-session-workspace-keys*
-                           "session workspace")
-  (make-session-workspace-snapshot
-   :name (%session-plist-value value :name)
-   :layout (%session-plist-value value :layout)
-   :selected-window-index
-   (%session-plist-value value :selected-window-index)))
+  (list :loom-session *loom-session-version*
+        :buffers (mapcar #'%session-sexp-buffer
+                         (session-snapshot-buffers snapshot))
+        :recent-files (session-snapshot-recent-files snapshot)
+        :bookmarks (mapcar #'%session-sexp-bookmark
+                           (session-snapshot-bookmarks snapshot))
+        :command-history (session-snapshot-command-history snapshot)
+        :workspaces (mapcar #'%session-sexp-workspace
+                            (session-snapshot-workspaces snapshot))
+        :current-workspace-index
+        (session-snapshot-current-workspace-index snapshot)))
 
 (defun %session-from-sexp (value)
+  (%validate-session-plist value *loom-session-top-level-keys* "session")
   (let ((version (%session-plist-value value :loom-session)))
-    (unless (member version (list *loom-session-legacy-version*
-                                  *loom-session-older-version*
-                                  *loom-session-previous-version*
-                                  *loom-session-version*)
-                    :test #'eql)
-      (error "session: unsupported version ~S"
-             version))
-    (let* ((legacy-p (= version *loom-session-legacy-version*))
-           (older-p (= version *loom-session-older-version*))
-           (previous-p (= version *loom-session-previous-version*)))
-      (%validate-session-plist
-       value
-       (cond
-         (legacy-p *loom-session-legacy-top-level-keys*)
-         (older-p *loom-session-older-top-level-keys*)
-         (previous-p *loom-session-previous-top-level-keys*)
-         (t *loom-session-top-level-keys*))
-       "session")
-      (let ((serialized-buffers (%session-plist-value value :buffers)))
-        (unless (listp serialized-buffers)
-          (error "session: :buffers must be a proper list"))
-        (let* ((recent-files (if legacy-p
-                                 nil
-                                 (%session-plist-value value :recent-files)))
-               (bookmarks (if legacy-p
-                              nil
-                              (%session-plist-value value :bookmarks)))
-               (command-history
-                 (if (or previous-p (= version *loom-session-version*))
-                     (%session-plist-value value :command-history)
-                     nil))
-               (layout (%session-plist-value value :layout))
-               (selected-index
-                 (%session-plist-value value :selected-window-index)))
-          (unless (listp recent-files)
-            (error "session: :recent-files must be a proper list"))
-          (unless (listp bookmarks)
-            (error "session: :bookmarks must be a proper list"))
-          (unless (and (listp command-history)
-                       (every #'stringp command-history))
-            (error "session: :command-history must be a list of strings"))
-          (let* ((buffers (mapcar #'%session-buffer-from-sexp
-                                  serialized-buffers))
-                 (workspaces
-                   (if (= version *loom-session-version*)
-                       (let ((serialized-workspaces
-                               (%session-plist-value value :workspaces)))
-                         (unless (listp serialized-workspaces)
-                           (error "session: :workspaces must be a proper list"))
-                         (mapcar #'%session-workspace-from-sexp
-                                 serialized-workspaces))
-                       (list (make-session-workspace-snapshot
-                              :name "main"
-                              :layout layout
-                              :selected-window-index selected-index))))
-                 (current-index
-                   (if (= version *loom-session-version*)
-                       (%session-plist-value value :current-workspace-index)
-                       0)))
-            (validate-session-snapshot
-             (make-session-snapshot
-              :buffers buffers
-              :layout layout
-              :selected-window-index selected-index
-              :recent-files recent-files
-              :bookmarks (mapcar #'%session-bookmark-from-sexp bookmarks)
-              :command-history command-history
-              :workspaces workspaces
-              :current-workspace-index current-index))))))))
+    (unless (eql version *loom-session-version*)
+      (error "session: unsupported version ~S" version))
+    (let ((serialized-buffers (%session-plist-value value :buffers))
+          (recent-files (%session-plist-value value :recent-files))
+          (serialized-bookmarks (%session-plist-value value :bookmarks))
+          (command-history (%session-plist-value value :command-history))
+          (serialized-workspaces (%session-plist-value value :workspaces))
+          (current-index
+            (%session-plist-value value :current-workspace-index)))
+      (unless (listp serialized-buffers)
+        (error "session: :buffers must be a proper list"))
+      (unless (and (listp recent-files)
+                   (every #'stringp recent-files))
+        (error "session: :recent-files must be a list of strings"))
+      (unless (listp serialized-bookmarks)
+        (error "session: :bookmarks must be a proper list"))
+      (unless (and (listp command-history)
+                   (every #'stringp command-history))
+        (error "session: :command-history must be a list of strings"))
+      (unless (listp serialized-workspaces)
+        (error "session: :workspaces must be a proper list"))
+      (validate-session-snapshot
+       (make-session-snapshot
+        :buffers (mapcar #'%session-buffer-from-sexp serialized-buffers)
+        :recent-files recent-files
+        :bookmarks (mapcar #'%session-bookmark-from-sexp
+                           serialized-bookmarks)
+        :command-history command-history
+        :workspaces (mapcar #'%session-workspace-from-sexp
+                            serialized-workspaces)
+        :current-workspace-index current-index)))))
 
 (defun %session-temporary-path (target)
   (make-pathname

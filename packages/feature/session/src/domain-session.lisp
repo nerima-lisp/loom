@@ -29,8 +29,7 @@
 (defstruct session-workspace-snapshot
   "Serializable state for one named workspace.
 
-LAYOUT uses the indexes of SESSION-SNAPSHOT-BUFFERS, just like the legacy
-single-workspace layout."
+LAYOUT uses the indexes of SESSION-SNAPSHOT-BUFFERS."
   name
   layout
   selected-window-index)
@@ -38,18 +37,15 @@ single-workspace layout."
 (defstruct session-snapshot
   "Validated, serializable state for one Loom editing session.
 
-LAYOUT is a nested (:LEAF BUFFER-INDEX SCROLL-LINE) /
-(:SPLIT DIRECTION CHILD-1 CHILD-2) description. Buffer indexes refer to the
-order of SESSION-SNAPSHOT-BUFFERS, and SELECTED-WINDOW-INDEX refers to the
-depth-first order of leaves in LAYOUT."
+WORKSPACES contains the named workspace views. Each workspace's LAYOUT is a
+nested (:LEAF BUFFER-INDEX SCROLL-LINE) / (:SPLIT DIRECTION CHILD-1 CHILD-2)
+description. Buffer indexes refer to the order of SESSION-SNAPSHOT-BUFFERS,
+and each workspace's SELECTED-WINDOW-INDEX refers to the depth-first order of
+leaves in its LAYOUT."
   buffers
-  layout
-  selected-window-index
   recent-files
   bookmarks
   command-history
-  ;; NIL keeps snapshots made by the pre-workspace API source-compatible. The
-  ;; store normalizes such snapshots to one workspace when it serializes them.
   workspaces
   current-workspace-index)
 
@@ -150,6 +146,46 @@ depth-first order of leaves in LAYOUT."
              selected-index)))
   workspace)
 
+(defun %validate-session-metadata (snapshot)
+  "Validate the session collections that do not describe window trees."
+  (let ((recent-files (session-snapshot-recent-files snapshot))
+        (bookmarks (session-snapshot-bookmarks snapshot))
+        (command-history (session-snapshot-command-history snapshot)))
+    (unless (and (listp recent-files)
+                 (every #'%session-nonempty-string-p recent-files))
+      (error "validate-session-snapshot: recent files must be a list of non-empty strings"))
+    (unless (and (listp bookmarks)
+                 (every #'%validate-session-bookmark bookmarks))
+      (error "validate-session-snapshot: bookmarks must be a list of valid snapshots"))
+    (let ((names (mapcar #'session-bookmark-snapshot-name bookmarks)))
+      (unless (= (length names)
+                 (length (remove-duplicates names :test #'string=)))
+        (error "validate-session-snapshot: bookmark names must be unique: ~S"
+               names)))
+    (unless (and (listp command-history)
+                 (every #'stringp command-history))
+      (error "validate-session-snapshot: command history must be a list of strings")))
+  snapshot)
+
+(defun %validate-session-workspaces (snapshot buffer-count)
+  "Validate workspace views and the active workspace index."
+  (let ((workspaces (session-snapshot-workspaces snapshot)))
+    (unless (and (listp workspaces) (plusp (length workspaces)))
+      (error "validate-session-snapshot: workspaces must be a non-empty list"))
+    (dolist (workspace workspaces)
+      (%validate-session-workspace workspace buffer-count))
+    (let ((names (mapcar #'session-workspace-snapshot-name workspaces))
+          (current-index (session-snapshot-current-workspace-index snapshot)))
+      (unless (= (length names)
+                 (length (remove-duplicates names :test #'string-equal)))
+        (error "validate-session-snapshot: workspace names must be unique: ~S"
+               names))
+      (unless (and (%session-nonnegative-integer-p current-index)
+                   (< current-index (length workspaces)))
+        (error "validate-session-snapshot: current workspace index ~S is out of range"
+               current-index))))
+  snapshot)
+
 (defgeneric validate-session-snapshot (snapshot)
   (:documentation
    "Validate SNAPSHOT's shape and cross-references, returning SNAPSHOT.
@@ -165,51 +201,6 @@ state is replaced.")
         (error "validate-session-snapshot: a session needs one or more buffers"))
       (dolist (buffer buffers)
         (%validate-session-buffer buffer))
-      (unless (listp (session-snapshot-layout snapshot))
-        (error "validate-session-snapshot: layout is not a proper list"))
-      (let ((window-count
-              (%validate-session-layout (session-snapshot-layout snapshot)
-                                        (length buffers)))
-            (selected-index (session-snapshot-selected-window-index snapshot)))
-        (unless (and (%session-nonnegative-integer-p selected-index)
-                     (< selected-index window-count))
-          (error "validate-session-snapshot: selected window index ~S is out of range"
-                 selected-index)))
-      (let ((recent-files (session-snapshot-recent-files snapshot))
-            (bookmarks (session-snapshot-bookmarks snapshot))
-            (command-history (session-snapshot-command-history snapshot)))
-        (unless (and (listp recent-files)
-                     (every #'%session-nonempty-string-p recent-files))
-          (error "validate-session-snapshot: recent files must be a list of non-empty strings"))
-        (unless (and (listp bookmarks)
-                     (every #'%validate-session-bookmark bookmarks))
-          (error "validate-session-snapshot: bookmarks must be a list of valid snapshots"))
-        (let ((names (mapcar #'session-bookmark-snapshot-name bookmarks)))
-          (unless (= (length names)
-                     (length (remove-duplicates names :test #'string=)))
-            (error "validate-session-snapshot: bookmark names must be unique: ~S"
-                   names)))
-        (unless (and (listp command-history)
-                     (every #'stringp command-history))
-          (error "validate-session-snapshot: command history must be a list of strings"))
-        (let ((workspaces (session-snapshot-workspaces snapshot)))
-          ;; A NIL value is the compatibility representation used by callers
-          ;; that construct the old single-workspace snapshot directly.
-          (unless (or (null workspaces)
-                      (and (listp workspaces) (plusp (length workspaces))))
-            (error "validate-session-snapshot: workspaces must be a non-empty list"))
-          (when workspaces
-            (dolist (workspace workspaces)
-              (%validate-session-workspace workspace (length buffers)))
-            (let ((names (mapcar #'session-workspace-snapshot-name workspaces))
-                  (current-index
-                    (session-snapshot-current-workspace-index snapshot)))
-              (unless (= (length names)
-                         (length (remove-duplicates names :test #'string-equal)))
-                (error "validate-session-snapshot: workspace names must be unique: ~S"
-                       names))
-              (unless (and (%session-nonnegative-integer-p current-index)
-                           (< current-index (length workspaces)))
-                (error "validate-session-snapshot: current workspace index ~S is out of range"
-                       current-index))))))
+      (%validate-session-metadata snapshot)
+      (%validate-session-workspaces snapshot (length buffers))
       snapshot)))
