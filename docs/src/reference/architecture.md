@@ -83,20 +83,20 @@ hide a package that already provides the required operation.
 
 The session feature serializes those editor-state collections alongside
 buffers, named workspaces, and each workspace's window layout and selection.
-Its version-4 format preserves recent paths, bookmark positions, and
-M-x/minibuffer command history. The reader accepts version-1 through version-3
-files with collections introduced by later versions absent, keeping older
-session files loadable.
+Its canonical v5 format preserves recent paths, bookmark positions, and
+M-x/minibuffer command history. The reader accepts only the v5 envelope and
+does not provide a compatibility reader for pre-v5 session layouts.
 
 The LSP slice deliberately keeps its dependency boundary small:
 `application-commands-lsp.lisp` owns interactive commands,
-`application-lsp-service.lisp` handles initialize/capability negotiation,
-UTF-8 percent-encoded file URIs, `didOpen`/`didChange`,
-`publishDiagnostics`, and the graceful `shutdown`/`exit` handshake, and
-`infrastructure-lsp-process.lisp` owns framed stdio transport. Pure UTF-8 and
-`Content-Length` framing is isolated in `infrastructure-lsp-framing.lisp`, so
-the process adapter only owns child process lifecycle and asynchronous stream
-reading. JSON messages are parsed and constructed through `cl-json-kit`.
+`application-lsp-service.lisp` owns the session lifecycle, URI conversion,
+document synchronization, diagnostic refresh, and shutdown timeout, while
+`application-lsp-protocol.lisp` owns JSON-RPC encoding, initialization and
+capability messages, response/diagnostic parsing, and nonblocking dispatch.
+`infrastructure-lsp-process.lisp` owns child-process lifecycle and stdio
+transport. Pure UTF-8 and `Content-Length` framing is isolated in
+`infrastructure-lsp-framing.lisp`, and JSON messages are parsed and
+constructed through `cl-json-kit`.
 `lsp-discover-command` searches the current path's ancestor directories for
 the nearest `.loom-lsp`; its first non-empty, non-comment line is the trusted
 server command. `lsp-start` presents that command as the default, while an
@@ -131,13 +131,15 @@ exits remain visible as result data or minibuffer status, so an uncommitted or
 non-repository directory does not turn process status into an editor failure.
 
 The terminal feature owns PTY-backed child-process sessions. Its domain object
-keeps the process, selected buffer, raw transcript, liveness, and exit code;
-the infrastructure layer starts, reads, writes, resizes, and closes the PTY;
-and the application layer translates key events and exposes `terminal` and
+`domain-terminal.lisp` owns the bounded `terminal-screen` model and ANSI
+rendering parser, while `domain-terminal-session.lisp` owns the running PTY
+process, selected buffer, raw output, liveness, and exit state. The
+infrastructure layer starts, reads, writes, resizes, and closes the PTY; the
+application layer translates key events and exposes `terminal` and
 `terminal-stop`. The event loop polls output and resize state alongside normal
-rendering. The presentation keeps the raw transcript and a bounded ANSI screen
-model, covering common cursor movement, erasure, cursor save/restore, and
-minimal alternate-screen switching; it is not a full VT terminal emulator.
+rendering. The presentation renders the screen model, which covers common
+cursor movement, erasure, cursor save/restore, and minimal alternate-screen
+switching; it is not a full VT terminal emulator.
 
 The auto-save feature keeps its sidecar naming and eligibility rules in
 `domain-auto-save.lisp`; `infrastructure-auto-save.lisp` writes the complete
@@ -165,20 +167,22 @@ used by prompts, while `commands-keybindings.lisp` installs the default
 bindings separately from the prompt protocol.
 
 `packages/feature/mode/src/domain-major-mode.lisp` keeps built-in mode
-metadata alongside the extension-defined mode registry. Extensions register
-file associations, syntax metadata, parent modes, and local keybindings with
-`register-major-mode`. `application-major-mode.lisp` materializes those local
-bindings as keymaps whose parents are the registered parent mode and then the
-editor's global keymap. `input-dispatch.lisp` refreshes this layered map when
-dispatching, so changing a buffer's mode reroutes subsequent input while
-preserving global fallback. A local first chord shadows the matching parent
-subtree; unrelated parent bindings continue to resolve.
+metadata alongside the extension-defined mode registry. The pure
+`domain-major-mode-path.lisp` module normalizes paths and performs basename,
+extension, registry, and default matching without filesystem access.
+Extensions register file associations, syntax metadata, parent modes, and
+local keybindings with `register-major-mode`. `application-major-mode.lisp`
+materializes those local bindings as keymaps whose parents are the registered
+parent mode and then the editor's global keymap. `input-dispatch.lisp` refreshes
+this layered map when dispatching, so changing a buffer's mode reroutes
+subsequent input while preserving global fallback. A local first chord shadows
+the matching parent subtree; unrelated parent bindings continue to resolve.
 
 The workspace feature keeps an ordered `workspace-manager` in editor state.
 Each named workspace owns an independent window tree while buffers remain in
 the session-wide registry. Workspace commands synchronize the active tree
 before switching, and the presentation layer includes the active workspace
-name in the shortcut/status line. Session v4 persists every workspace's
+name in the shortcut/status line. Session v5 persists every workspace's
 layout and selected window.
 
 The multiple-cursors feature keeps a transient `multiple-cursor-set` in
@@ -188,7 +192,7 @@ self-insert path edits from right to left and translates every stored offset
 afterward; the layout draws non-primary cursors as reverse-video cells. The
 dispatcher preserves the set only for cursor-management commands and
 self-insert, clearing it when another editing command takes over. Multiple
-cursors are intentionally transient and are not serialized into session v4.
+cursors are intentionally transient and are not serialized into session v5.
 
 `src/presentation/layout.lisp` composes the current state into screen regions.
 `src/application/startup.lisp` is the composition root for argv parsing,
@@ -284,7 +288,7 @@ Branch coverage does not establish full expression coverage; the generated
 report is the source of truth for uncovered forms. SB-COVER is process-local,
 so top-level declarations and the child-process-only `loom:main` path can
 remain unexecuted in the report; those forms are reported rather than hidden.
-`nix flake check --print-build-logs` additionally runs the test, package,
+`nix flake check --all-systems --print-build-logs` additionally runs the test, package,
 formatter, and strict MkDocs documentation checks.
 
 The concurrency benchmark compares synchronous directory listing with the

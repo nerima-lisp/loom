@@ -44,7 +44,7 @@ development contract and should be changed only with a measured reason.
 Run the full CI-equivalent check, including the strict MkDocs build, with:
 
 ```sh
-nix flake check --print-build-logs
+nix flake check --all-systems --print-build-logs
 ```
 
 ## Coverage
