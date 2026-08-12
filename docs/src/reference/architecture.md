@@ -66,9 +66,14 @@ correctness depends on behavior that the boundary object does not provide:
 directory-entry classification and symlink-safe recursive deletion.
 Session persistence also uses cl-host-kit's overwrite-safe move after a
 temporary sibling is complete, and user-init configuration reads the
-environment through the same package. The native pathname helpers are isolated in
-`infrastructure-filesystem-native.lisp`; `infrastructure-filesystem.lisp`
-retains the file-tree and buffer-facing boundary methods.
+environment through the same package. The native pathname helpers, native
+mutations, native file I/O, and symlink-safe native deletion are isolated in
+`infrastructure-filesystem-native-{paths,mutations,io,delete}.lisp`; the
+disk-backed file-tree child lister lives in
+`infrastructure-file-tree-directory-listing.lisp`, the file-tree mutation
+methods live in `infrastructure-file-tree-filesystem.lisp`, and the
+buffer-facing boundary methods live in
+`infrastructure-buffer-filesystem.lisp`.
 
 `src/application/` owns the shared `editor-state` struct, the
 `*editor-state*` special variable, minibuffer state, command registry, and
@@ -79,7 +84,11 @@ commands create, resolve, list, and delete bookmarks. Feature application
 files orchestrate their own domain and infrastructure boundaries. Minibuffer code calls `cl-tty-kit` and
 `cl-history-kit` directly, and the M-x registry uses the local command
 specifications directly. There is no wrapper layer whose only purpose is to
-hide a package that already provides the required operation.
+hide a package that already provides the required operation. `make-editor-state`
+also establishes the workspace invariant: when a caller does not supply a
+manager, the initial window tree is installed as the named `main` workspace.
+Commands therefore require a manager instead of reconstructing one through a
+legacy fallback.
 
 The session feature serializes those editor-state collections alongside
 buffers, named workspaces, and each workspace's window layout and selection.
@@ -89,10 +98,13 @@ does not provide a compatibility reader for pre-v5 session layouts.
 
 The LSP slice deliberately keeps its dependency boundary small:
 `application-commands-lsp.lisp` owns interactive commands,
-`application-lsp-service.lisp` owns the session lifecycle, URI conversion,
-document synchronization, diagnostic refresh, and shutdown timeout, while
-`application-lsp-protocol.lisp` owns JSON-RPC encoding, initialization and
-capability messages, response/diagnostic parsing, and nonblocking dispatch.
+`application-lsp-session-state.lisp` owns session state plus URI/language
+helpers, `application-lsp-session-sync.lisp` owns document synchronization
+and diagnostic lookup, `application-lsp-session-lifecycle.lisp` owns startup,
+refresh, and shutdown orchestration, `application-lsp-protocol-send.lisp`
+owns JSON-RPC encoding, `application-lsp-protocol-initialize.lisp` owns
+initialize/capability messages, and the helper/receive slices own
+response/diagnostic parsing plus nonblocking dispatch.
 `infrastructure-lsp-process.lisp` owns child-process lifecycle and stdio
 transport. Pure UTF-8 and `Content-Length` framing is isolated in
 `infrastructure-lsp-framing.lisp`, and JSON messages are parsed and
@@ -181,9 +193,10 @@ the matching parent subtree; unrelated parent bindings continue to resolve.
 The workspace feature keeps an ordered `workspace-manager` in editor state.
 Each named workspace owns an independent window tree while buffers remain in
 the session-wide registry. Workspace commands synchronize the active tree
-before switching, and the presentation layer includes the active workspace
-name in the shortcut/status line. Session v5 persists every workspace's
-layout and selected window.
+before switching or deletion; creation appends a named workspace in the domain
+layer and the application layer explicitly activates it afterward. The
+presentation layer includes the active workspace name in the shortcut/status
+line. Session v5 persists every workspace's layout and selected window.
 
 The multiple-cursors feature keeps a transient `multiple-cursor-set` in
 editor state. It stores sorted buffer offsets plus one primary offset, so the
@@ -207,7 +220,7 @@ trampoline.
 
 - **[cl-tty-kit](https://github.com/nerima-lisp/cl-tty-kit)** provides raw-mode
   terminal sessions, event decoding, and the double-buffered renderer used by
-  the event loop and `src/infrastructure/terminal-renderer.lisp`.
+  the event loop and the terminal-renderer infrastructure files.
 - **[cl-boundary-kit](https://github.com/nerima-lisp/cl-boundary-kit)** provides
   the filesystem object used by buffer load/save and most file-tree mutations.
   Its test filesystem keeps those tests independent of a real directory.
@@ -237,6 +250,11 @@ The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
 `cl-weave` and `cl-date-kit`; the latter is used by the concurrency tests and
 benchmark timeouts. The Nix flake pins the runtime and test inputs and supplies
 the development shell used by the commands below.
+
+The development shell also supplies `paredit`, the structural Common Lisp
+inspector and rewriter. Its `paredit-lint` flake check parses the source set
+before packaging, keeping syntax validation separate from formatter and
+behavioral test checks.
 
 The LSP process transport intentionally uses UIOP and Common Lisp binary stream
 primitives directly because it needs unsigned-byte `Content-Length` framing;

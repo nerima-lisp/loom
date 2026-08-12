@@ -16,6 +16,11 @@ tree is organized by shared editor layers and feature packages; see the
 [architecture](../reference/architecture.md) page for the composition
 boundaries.
 
+It also provides `cl-weave` for the test DSL and `paredit` for structural
+Common Lisp inspection and editing. The flake's `paredit-lint` check parses the
+Lisp source set before packaging, so the same structural syntax gate is
+available locally and in CI.
+
 ## Verification
 
 Run the focused commands directly when iterating:
@@ -24,6 +29,7 @@ Run the focused commands directly when iterating:
 nix build
 nix develop -c sbcl --script run-tests.lisp
 nix fmt -- --ci
+paredit inspect workspace --output json .
 ```
 
 `loom/test` loads the Lisp unit and integration tiers declared in `loom.asd` in
