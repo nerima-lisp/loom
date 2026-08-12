@@ -1,0 +1,94 @@
+(in-package #:loom/feature/terminal)
+
+(defun %terminal-screen-handle-escape (screen character)
+  (case character
+    (#\[
+     (setf (terminal-screen-parser-state screen) :csi
+           (terminal-screen-csi-parameters screen) ""
+           (terminal-screen-csi-private screen) nil))
+    (#\]
+     (setf (terminal-screen-parser-state screen) :osc))
+    (#\7
+     (%terminal-screen-save-cursor screen)
+     (setf (terminal-screen-parser-state screen) :ground))
+    (#\8
+     (%terminal-screen-restore-cursor screen)
+     (setf (terminal-screen-parser-state screen) :ground))
+    (#\D
+     (%terminal-screen-line-feed screen)
+     (setf (terminal-screen-parser-state screen) :ground))
+    (#\E
+     (%terminal-screen-next-line screen)
+     (setf (terminal-screen-parser-state screen) :ground))
+    (#\M
+     (if (plusp (terminal-screen-cursor-row screen))
+         (decf (terminal-screen-cursor-row screen))
+         (%terminal-screen-scroll-down screen))
+     (setf (terminal-screen-parser-state screen) :ground))
+    (#\c
+     (%terminal-screen-clear-all screen)
+     (setf (terminal-screen-parser-state screen) :ground))
+    (otherwise
+     (setf (terminal-screen-parser-state screen) :ground))))
+
+(defun %terminal-screen-feed-character (screen character)
+  (case (terminal-screen-parser-state screen)
+    (:ground
+     (case character
+       (#\Esc (setf (terminal-screen-parser-state screen) :escape))
+       (#\Return (%terminal-screen-carriage-return screen))
+       (#\Newline (%terminal-screen-line-feed screen))
+       (#\Backspace
+        (setf (terminal-screen-cursor-column screen)
+              (max 0 (1- (terminal-screen-cursor-column screen)))
+              (terminal-screen-wrap-pending screen) nil))
+       (#\Tab
+        (setf (terminal-screen-cursor-column screen)
+              (min (1- (terminal-screen-width screen))
+                   (* 8
+                      (1+ (floor (terminal-screen-cursor-column screen)
+                                 8))))
+              (terminal-screen-wrap-pending screen) nil))
+       (#\Bell nil)
+       (otherwise
+        (when (and (>= (char-code character) 32)
+                   (/= (char-code character) 127))
+          (%terminal-screen-write-character screen character)))))
+    (:escape
+     (%terminal-screen-handle-escape screen character))
+    (:csi
+     (cond
+       ((and (zerop (length (terminal-screen-csi-parameters screen)))
+             (char= character #\?))
+        (setf (terminal-screen-csi-private screen) t))
+       ((<= 64 (char-code character) 126)
+        (%terminal-screen-csi screen character)
+        (setf (terminal-screen-parser-state screen) :ground))
+       ((or (digit-char-p character)
+            (char= character #\;)
+            (char= character #\:))
+        (setf (terminal-screen-csi-parameters screen)
+              (concatenate 'string
+                           (terminal-screen-csi-parameters screen)
+                           (string character))))
+       (t
+        (setf (terminal-screen-parser-state screen) :ground))))
+    (:osc
+     (cond
+       ((char= character #\Bell)
+        (setf (terminal-screen-parser-state screen) :ground))
+       ((char= character #\Esc)
+        (setf (terminal-screen-parser-state screen) :osc-escape))))
+    (:osc-escape
+     (setf (terminal-screen-parser-state screen) :ground)))
+  screen)
+
+(defun terminal-screen-feed (screen text)
+  "Apply terminal TEXT to SCREEN and return SCREEN.
+
+The parser keeps partial escape sequences between calls, which is important
+because PTY reads may split a CSI sequence across several chunks."
+  (check-type text string)
+  (loop for character across text
+        do (%terminal-screen-feed-character screen character))
+  screen)

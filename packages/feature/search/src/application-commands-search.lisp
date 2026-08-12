@@ -52,35 +52,32 @@ expansion."
           (minibuffer-message minibuffer (format nil "Replaced ~D occurrence(s)" count))
           (minibuffer-message minibuffer "Not found")))))
 
-(defun search-forward ()
-  "Prompt for a regular expression and move point to its next match. The
-pattern is case-sensitive unless it opens with the inline (?i) flag."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((pattern "Search (regex): "))
-    (let* ((buffer (%selected-buffer))
-           (span (buffer-search-forward buffer pattern)))
-      (if span
-          (let ((position
-                  (buffer-offset-position buffer (buffer-span-start span))))
-            (buffer-set-point buffer
-                              (buffer-position-line position)
-                              (buffer-position-column position))
-          (minibuffer-message minibuffer "Found"))
-          (minibuffer-message minibuffer "Not found")))))
+(defmacro %define-search-command (name prompt search-fn docstring)
+  `(defun ,name ()
+     ,docstring
+     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                    :on-cancel (minibuffer-message minibuffer "Quit"))
+         ((pattern ,prompt))
+       (let* ((buffer (%selected-buffer))
+              (span (,search-fn buffer pattern)))
+         (if span
+             (let ((position
+                     (buffer-offset-position buffer (buffer-span-start span))))
+               (buffer-set-point buffer
+                                 (buffer-position-line position)
+                                 (buffer-position-column position))
+               (minibuffer-message minibuffer "Found"))
+             (minibuffer-message minibuffer "Not found"))))))
 
-(defun search-backward ()
-  "Prompt for a regular expression and move point to its previous match."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((pattern "Search backward (regex): "))
-    (let* ((buffer (%selected-buffer))
-           (span (buffer-search-backward buffer pattern)))
-      (if span
-          (let ((position
-                  (buffer-offset-position buffer (buffer-span-start span))))
-            (buffer-set-point buffer
-                              (buffer-position-line position)
-                              (buffer-position-column position))
-            (minibuffer-message minibuffer "Found"))
-          (minibuffer-message minibuffer "Not found")))))
+(%define-search-command
+ search-forward
+ "Search (regex): "
+ buffer-search-forward
+ "Prompt for a regular expression and move point to its next match. The
+pattern is case-sensitive unless it opens with the inline (?i) flag.")
+
+(%define-search-command
+ search-backward
+ "Search backward (regex): "
+ buffer-search-backward
+ "Prompt for a regular expression and move point to its previous match.")

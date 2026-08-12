@@ -22,82 +22,66 @@
   (minibuffer-message minibuffer (format nil "~A" condition))
   nil)
 
-(defun copy-to-register ()
+(defmacro %define-register-command (name prompt docstring &body body)
+  `(defun ,name ()
+     ,docstring
+     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                    :on-cancel (minibuffer-message minibuffer "Quit"))
+         ((input ,prompt))
+       (handler-case
+           (let ((name (%parse-register-name input)))
+             ,@body)
+         (error (condition)
+           (%register-input-error minibuffer condition))))))
+
+(%define-register-command copy-to-register "Copy region to register: "
   "Copy the active region to a named register without changing the buffer."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((input "Copy region to register: "))
-    (handler-case
-        (let ((name (%parse-register-name input))
-              (buffer (%selected-buffer)))
-          (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-            (if (null mark-line)
-                (minibuffer-message minibuffer "The mark is not set")
-                (multiple-value-bind (start-line start-column end-line end-column)
-                    (%order-region (buffer-point-line buffer)
-                                   (buffer-point-column buffer)
-                                   mark-line mark-column)
-                  (register-bank-put-text
-                   (%register-bank-for-editor)
-                   name
-                   (buffer-region-string buffer
-                                         start-line start-column
-                                         end-line end-column))
-                  (minibuffer-message
-                   minibuffer
-                   (format nil "Copied region to register ~A" name))))))
-      (error (condition)
-        (%register-input-error minibuffer condition)))))
+  (let ((buffer (%selected-buffer)))
+    (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+      (if (null mark-line)
+          (minibuffer-message minibuffer "The mark is not set")
+          (multiple-value-bind (start-line start-column end-line end-column)
+              (%order-region (buffer-point-line buffer)
+                             (buffer-point-column buffer)
+                             mark-line mark-column)
+            (register-bank-put-text
+             (%register-bank-for-editor)
+             name
+             (buffer-region-string buffer
+                                   start-line start-column
+                                   end-line end-column))
+            (minibuffer-message
+             minibuffer
+             (format nil "Copied region to register ~A" name)))))))
 
-(defun insert-register ()
+(%define-register-command insert-register "Insert register: "
   "Insert the text stored in a named register at point."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((input "Insert register: "))
-    (handler-case
-        (let* ((name (%parse-register-name input))
-               (text (register-bank-text (%register-bank-for-editor) name)))
-          (if text
-              (buffer-insert-string (%selected-buffer) text)
-              (minibuffer-message
-               minibuffer
-               (format nil "Register ~A does not contain text" name))))
-      (error (condition)
-        (%register-input-error minibuffer condition)))))
+  (let ((text (register-bank-text (%register-bank-for-editor) name)))
+    (if text
+        (buffer-insert-string (%selected-buffer) text)
+        (minibuffer-message
+         minibuffer
+         (format nil "Register ~A does not contain text" name)))))
 
-(defun point-to-register ()
+(%define-register-command point-to-register "Point to register: "
   "Store the selected buffer's current point in a named register."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((input "Point to register: "))
-    (handler-case
-        (let ((name (%parse-register-name input))
-              (buffer (%selected-buffer)))
-          (register-bank-put-position
-           (%register-bank-for-editor)
-           name
-           (buffer-point-line buffer)
-           (buffer-point-column buffer))
+  (let ((buffer (%selected-buffer)))
+    (register-bank-put-position
+     (%register-bank-for-editor)
+     name
+     (buffer-point-line buffer)
+     (buffer-point-column buffer))
+    (minibuffer-message
+     minibuffer
+     (format nil "Point stored in register ~A" name))))
+
+(%define-register-command jump-to-register "Jump to register: "
+  "Move point to the position stored in a named register."
+  (let ((buffer (%selected-buffer)))
+    (multiple-value-bind (line column)
+        (register-bank-position (%register-bank-for-editor) name)
+      (if line
+          (buffer-set-point buffer line column)
           (minibuffer-message
            minibuffer
-           (format nil "Point stored in register ~A" name)))
-      (error (condition)
-        (%register-input-error minibuffer condition)))))
-
-(defun jump-to-register ()
-  "Move point to the position stored in a named register."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((input "Jump to register: "))
-    (handler-case
-        (let ((name (%parse-register-name input))
-              (buffer (%selected-buffer)))
-          (multiple-value-bind (line column)
-              (register-bank-position (%register-bank-for-editor) name)
-            (if line
-                (buffer-set-point buffer line column)
-                (minibuffer-message
-                 minibuffer
-                 (format nil "Register ~A does not contain a position" name)))))
-      (error (condition)
-        (%register-input-error minibuffer condition)))))
+           (format nil "Register ~A does not contain a position" name))))))

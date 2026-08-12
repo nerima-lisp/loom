@@ -32,6 +32,15 @@
     cl-weave = {
       url = "github:nerima-lisp/cl-weave/v1.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.paredit-cli.follows = "paredit-cli";
+    };
+
+    # Structural Common Lisp parser/rewriter used by the development shell
+    # and the source-level syntax gate below. Keep it explicit instead of
+    # relying on cl-weave's test-only transitive input.
+    paredit-cli = {
+      url = "github:nerima-lisp/paredit-cli/v1.6.0";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # loom's runtime dependencies. We only need each one's source tree (built
@@ -109,6 +118,7 @@
       nixpkgs,
       cl-nix-forge,
       cl-weave,
+      paredit-cli,
       cl-tty-kit,
       cl-codec-kit,
       cl-host-kit,
@@ -373,11 +383,14 @@
       # Markdown formatter would churn the whole docs tree.
       treefmt.evalModule = treefmt-nix.lib.evalModule;
 
-      # The cl-weave CLI, which the suite's own reporter is documented
-      # against. Interactive only: the generated shell is built from the
-      # check-enabled derivation, so `lispCheckDependencies` (cl-weave's
-      # source, for the registry) are already on it.
-      devShellPackages = ctx: [ cl-weave.packages.${ctx.system}.default ];
+      # The cl-weave CLI and paredit's structural editor, both of which are
+      # documented contributor tools. Interactive only: the generated shell
+      # is built from the check-enabled derivation, so cl-weave's source for
+      # the registry is already on it.
+      devShellPackages = ctx: [
+        cl-weave.packages.${ctx.system}.default
+        paredit-cli.packages.${ctx.system}.default
+      ];
 
       overrideOutputs = ctx: {
         # The generated shell, plus the aliases this repository's
@@ -394,7 +407,8 @@
             echo "loom development environment"
             echo "  test     - Run the full loom suite (cl-weave, loom/test)"
             echo "  coverage - Run the test suite and write HTML coverage to coverage/"
-            echo "  sbcl     - Interactive Common Lisp (with cl-weave)"
+            echo "  sbcl     - Interactive Common Lisp (with cl-weave and paredit)"
+            echo "  paredit  - Inspect and structurally edit Lisp source"
             echo ""
           '';
         });
@@ -419,6 +433,14 @@
       extraOutputs = ctx: {
         # Verify the delivered package compiles and the image dumps.
         checks.build = ctx.executable;
+
+        # Parse every filtered Lisp source file with the same structural tool
+        # contributors use in the development shell. This catches unbalanced
+        # forms and malformed reader structure before compilation.
+        checks.paredit-lint = paredit-cli.lib.${ctx.system}.mkLintCheck {
+          inherit (ctx) src;
+          name = "loom-paredit-lint";
+        };
       };
     };
 }

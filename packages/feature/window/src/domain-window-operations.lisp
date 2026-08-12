@@ -1,9 +1,21 @@
 ;;;; packages/feature/window/src/domain-window-operations.lisp
 ;;;;
-;;;; Window-tree operations: split, select, delete, buffer switching, and
-;;;; resize. These operations depend on the data model and layout protocol in
-;;;; domain-window.lisp, but remain separate from that representation.
+;;;; Window-tree split, selection, buffer, and resize operations. Window
+;;;; deletion lives in domain-window-deletion.lisp so tree surgery remains
+;;;; isolated from the rest of the mutation protocol.
 (in-package #:loom/feature/window)
+
+(defun %window-replace (node target replacement)
+  "Return NODE with the subtree EQ to TARGET replaced by REPLACEMENT,
+mutating WINDOW-SPLIT-NODE children in place as it descends."
+  (cond
+    ((eq node target) replacement)
+    ((window-split-node-p node)
+     (setf (window-split-node-children node)
+           (mapcar (lambda (child) (%window-replace child target replacement))
+                   (window-split-node-children node)))
+     node)
+    (t node)))
 
 (defgeneric window-split (tree window direction)
   (:documentation
@@ -50,69 +62,6 @@ last (C-x o). Returns the newly selected window.")
         (setf (window-tree-selected tree) next)
         next))))
 
-(defun %window-first-leaf (node)
-  "Return the first leaf below NODE in depth-first order."
-  (if (window-leaf-p node)
-      node
-      (%window-first-leaf (first (window-split-node-children node)))))
-
-(defun %window-delete-node (node target)
-  "Return NODE with TARGET removed, plus whether TARGET was found."
-  (if (window-leaf-p node)
-      (values node nil)
-      (let* ((children (window-split-node-children node))
-             (first-child (first children))
-             (second-child (second children)))
-        (cond
-          ((eq first-child target)
-           (values second-child t))
-          ((eq second-child target)
-           (values first-child t))
-          (t
-           (multiple-value-bind (new-first deleted-first)
-               (%window-delete-node first-child target)
-             (if deleted-first
-                 (progn
-                   (setf (first children) new-first)
-                   (values node t))
-                 (multiple-value-bind (new-second deleted-second)
-                     (%window-delete-node second-child target)
-                   (when deleted-second
-                     (setf (second children) new-second))
-                   (values node deleted-second)))))))))
-
-(defgeneric window-delete (tree window)
-  (:documentation
-   "Delete WINDOW from TREE when another window remains. Returns the
-selected window after the deletion; deleting the sole window is a no-op.")
-  (:method (tree window)
-    (let ((selected (window-tree-selected tree)))
-      (when (> (length (window-tree-windows tree)) 1)
-        (multiple-value-bind (new-root deleted)
-            (%window-delete-node (window-tree-root tree) window)
-          (when deleted
-            (setf (window-tree-root tree) new-root
-                  (window-tree-selected tree)
-                  (if (eq selected window)
-                      (%window-first-leaf new-root)
-                      selected))
-            (%window-layout (window-tree-root tree)
-                            0 0
-                            (window-tree-width tree)
-                            (window-tree-height tree)))))
-      (window-tree-selected tree))))
-
-(defgeneric window-delete-other-windows (tree window)
-  (:documentation
-   "Delete every window in TREE except WINDOW and return WINDOW.")
-  (:method (tree window)
-    (setf (window-tree-root tree) window
-          (window-tree-selected tree) window)
-    (%window-layout window 0 0
-                    (window-tree-width tree)
-                    (window-tree-height tree))
-    window))
-
 (defgeneric window-buffer (window)
   (:documentation "Return the buffer currently displayed in WINDOW.")
   (:method (window)
@@ -138,30 +87,6 @@ previously displayed. Returns WINDOW.")
    "Set WINDOW's zero-based first visible buffer LINE.")
   (:method (line window)
     (setf (window-leaf-scroll-line window) (max 0 line))))
-
-(defgeneric window-x (window)
-  (:documentation
-   "Return WINDOW's left edge, in terminal columns, relative to its window
-tree's origin.")
-  (:method (window)
-    (window-leaf-x window)))
-
-(defgeneric window-y (window)
-  (:documentation
-   "Return WINDOW's top edge, in terminal rows, relative to its window
-tree's origin.")
-  (:method (window)
-    (window-leaf-y window)))
-
-(defgeneric window-width (window)
-  (:documentation "Return WINDOW's width in terminal columns.")
-  (:method (window)
-    (window-leaf-width window)))
-
-(defgeneric window-height (window)
-  (:documentation "Return WINDOW's height in terminal rows.")
-  (:method (window)
-    (window-leaf-height window)))
 
 (defgeneric window-tree-resize (tree width height)
   (:documentation

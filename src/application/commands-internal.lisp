@@ -29,11 +29,10 @@
 ;;;; package inherits the names for the command files that remain in the
 ;;;; composition root.
 ;;;;
-;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the WITH-PROMPTS macro below are
-;;;; what every other commands-*.lisp file depends on, which is why this file
-;;;; loads first among them: WITH-PROMPTS in particular must be defined before
-;;;; any file that expands it is compiled, and its callers are spread across
-;;;; the movement, search, file, window, and misc command files.
+;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the other helpers below are shared
+;;;; by command entry points throughout the tree. Prompt composition macros
+;;;; live in commands-prompts.lisp so their compile/load order is explicit and
+;;;; independent from editor-state helper functions.
 (in-package #:loom/application)
 
 (defun %selected-window ()
@@ -41,9 +40,25 @@
   (loom/feature/window:window-tree-selected-window
    (loom:editor-state-window-tree loom:*editor-state*)))
 
+(defun %selected-window-tree ()
+  "Return *EDITOR-STATE*'s current window tree."
+  (loom:editor-state-window-tree loom:*editor-state*))
+
 (defun %selected-buffer ()
   "Return the buffer displayed in *EDITOR-STATE*'s currently selected window."
   (loom/feature/window:window-buffer (%selected-window)))
+
+(defmacro define-selected-buffer-command (name docstring target)
+  "Define NAME as a zero-argument command forwarding the selected buffer to TARGET."
+  `(defun ,name ()
+     ,docstring
+     (,target (%selected-buffer))))
+
+(defmacro define-selected-tree-window-command (name docstring target &rest arguments)
+  "Define NAME as a zero-argument command forwarding the selected tree and window to TARGET."
+  `(defun ,name ()
+     ,docstring
+     (,target (%selected-window-tree) (%selected-window) ,@arguments)))
 
 (defun %editor-buffers ()
   "Return the buffers known to the current editor session."
@@ -72,38 +87,3 @@ reuse it without depending on the editor command implementation."
           (and (= point-line mark-line) (<= point-column mark-column)))
       (values point-line point-column mark-line mark-column)
       (values mark-line mark-column point-line point-column)))
-
-(defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
-  "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION) pair in
-BINDINGS in turn, binding VAR to the typed input, then run BODY with every VAR
-bound and MINIBUFFER-VAR bound to MINIBUFFER-FORM's value (evaluated once).
-ON-CANCEL, when supplied, is a form -- evaluated with MINIBUFFER-VAR in scope
--- run if the user
-cancels (C-g) at any prompt in the chain, not only the first; it is threaded
-into every generated MINIBUFFER-ACTIVATE's :ON-CANCEL, and the keyword is
-omitted entirely when ON-CANCEL is absent.
-
-MINIBUFFER-ACTIVATE returns immediately; the typed answer only arrives later,
-asynchronously, through its :ON-CONFIRM callback. A second, dependent prompt
-therefore cannot be issued until the first one's callback runs -- the
-continuation-passing chain REPLACE-STRING needs (prompt for the text to
-replace, THEN prompt for its replacement) is unavoidable by construction.
-WITH-PROMPTS is that chain written once, as a macro that expands BINDINGS
-into nested MINIBUFFER-ACTIVATE/:ON-CONFIRM continuations, so a multi-prompt
-command reads top-to-bottom like ordinary sequential code instead of as a
-hand-nested pyramid of lambdas."
-  (labels ((expand-bindings (bindings)
-             (if bindings
-                 (destructuring-bind (var prompt &key completion-function)
-                     (first bindings)
-                   `(loom:minibuffer-activate ,minibuffer-var ,prompt
-                                         :on-confirm (lambda (,var)
-                                                       ,(expand-bindings (rest bindings)))
-                                         ,@(when completion-function
-                                             `(:completion-function
-                                               ,completion-function))
-                                         ,@(when on-cancel
-                                             `(:on-cancel (lambda () ,on-cancel)))))
-                 `(progn ,@body))))
-    `(let ((,minibuffer-var ,minibuffer-form))
-       ,(expand-bindings bindings))))
