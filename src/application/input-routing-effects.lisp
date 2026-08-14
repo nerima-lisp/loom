@@ -36,7 +36,8 @@
         (prefix-argument-reset prefix-argument)))
     (unless (eq dispatch-result :pending)
       (setf (editor-state-last-command-kill-p *editor-state*)
-            (and (member command +kill-command-names+ :test #'eq) t)))))
+            (and (member command +kill-command-names+ :test #'eq) t)))
+    dispatch-result))
 
 (defun %record-keyboard-macro-event
     (macro event descriptor self-insert-event-p)

@@ -20,6 +20,7 @@
            (bookmarks (make-hash-table :test #'equal))
            (state (make-editor-state
                    :window-tree tree
+                   :workspaces (make-workspace-manager tree :name "main")
                    :minibuffer (make-minibuffer
                                 :history (history-kit:make-history))
                    :keymap (make-keymap)

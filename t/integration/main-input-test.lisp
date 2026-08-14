@@ -14,7 +14,7 @@
         (with-open-file (*standard-input* path :direction :input
                                           :element-type '(unsigned-byte 8))
           (let ((buf (make-array 10 :element-type '(unsigned-byte 8))))
-            (expect (loom::%read-input-octets buf) :to-equal 3)
+            (expect (loom::%read-input-octets buf *standard-input*) :to-equal 3)
             (expect (aref buf 0) :to-equal 1)
             (expect (aref buf 1) :to-equal 2)
             (expect (aref buf 2) :to-equal 3))))))
@@ -27,13 +27,13 @@
         (with-open-file (*standard-input* path :direction :input
                                           :element-type '(unsigned-byte 8))
           (let ((buf (make-array 10 :element-type '(unsigned-byte 8))))
-            (expect (loom::%read-input-octets buf) :to-be nil))))))
+            (expect (loom::%read-input-octets buf *standard-input*) :to-be nil))))))
 
   (it
     "stops draining when a readable stream reaches EOF"
     (let ((*standard-input* (make-instance '%eof-after-listen-stream))
           (buf (make-array 1 :element-type '(unsigned-byte 8))))
-      (expect (loom::%drain-buffered-octets buf 0) :to-equal 0)))
+      (expect (loom::%drain-buffered-octets buf 0 *standard-input*) :to-equal 0)))
 
   (it
     "stops filling the buffer at its capacity even if more input is available"
@@ -46,7 +46,7 @@
         (with-open-file (*standard-input* path :direction :input
                                           :element-type '(unsigned-byte 8))
           (let ((buf (make-array 2 :element-type '(unsigned-byte 8))))
-            (expect (loom::%read-input-octets buf) :to-equal 2)))))))
+            (expect (loom::%read-input-octets buf *standard-input*) :to-equal 2)))))))
 
 (describe
   "%enable-concurrent-file-tree"

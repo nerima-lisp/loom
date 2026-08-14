@@ -71,17 +71,17 @@ the same order it was received instead of being reduced to a styled string."
   "Resize SCREEN while retaining the top-left visible content."
   (%terminal-ensure-dimension width "width")
   (%terminal-ensure-dimension height "height")
-  (let ((old-width (terminal-screen-width screen))
-        (old-height (terminal-screen-height screen)))
-    (declare (ignore old-width old-height))
+  (let ((rows (%terminal-copy-rows (terminal-screen-rows screen)
+                                   width
+                                   height))
+        (main-rows (and (terminal-screen-main-rows screen)
+                        (%terminal-copy-rows
+                         (terminal-screen-main-rows screen)
+                         width
+                         height))))
     (setf (terminal-screen-width screen) width
           (terminal-screen-height screen) height
-          (terminal-screen-rows screen)
-          (%terminal-copy-rows (terminal-screen-rows screen) width height))
-    (when (terminal-screen-main-rows screen)
-      (setf (terminal-screen-main-rows screen)
-            (%terminal-copy-rows (terminal-screen-main-rows screen)
-                                 width
-                                 height)))
+          (terminal-screen-rows screen) rows
+          (terminal-screen-main-rows screen) main-rows)
     (%terminal-screen-clamp-cursor screen))
   screen)

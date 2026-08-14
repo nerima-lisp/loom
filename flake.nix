@@ -79,7 +79,7 @@
       flake = false;
     };
     cl-regex-kit = {
-      url = "github:nerima-lisp/cl-regex-kit/v0.3.0";
+      url = "github:nerima-lisp/cl-regex-kit/v2.0.0";
       flake = false;
     };
     cl-date-kit = {
@@ -90,9 +90,9 @@
       url = "github:nerima-lisp/cl-concurrent-kit/v0.6.1";
       flake = false;
     };
-    # Not a dependency loom names anywhere: cl-regex-kit's own
-    # `:depends-on ("cl-parser-kit")` needs it, same transitive-edge
-    # situation cl-codec-kit is in above for cl-tty-kit.
+    # cl-regex-kit's v2 :depends-on includes cl-parser-kit in addition to
+    # cl-concurrent-kit, which loom also names directly. Keep the parser edge
+    # explicit here so its ASDF component is available during the build.
     cl-parser-kit = {
       url = "github:nerima-lisp/cl-parser-kit/v1.1.1";
       flake = false;
@@ -200,6 +200,15 @@
         mainProgram = "loom";
       };
 
+      # Coverage is a separate derivation because it force-compiles the full
+      # source graph with SB-COVER enabled and writes an HTML report. Keep its
+      # timeout independent from the ordinary test gate: report generation
+      # must not inherit a shorter interactive-test budget.
+      coverage-timeout-seconds = 1800;
+      coverage-entry-point-text = ''
+        (load "scripts/coverage.lisp")
+      '';
+
       # loom's runtime toolkit family, each built from its pinned checkout as
       # an SBCL lisp library. Built here rather than taken from each
       # sibling's own `packages.<system>` because the tags this repository
@@ -271,7 +280,10 @@
           clRegexKit = sibling {
             name = "cl-regex-kit";
             source = cl-regex-kit;
-            dependencies = [ clParserKit ];
+            dependencies = [
+              clConcurrentKit
+              clParserKit
+            ];
           };
           clBoundaryKit = sibling {
             name = "cl-boundary-kit";
@@ -393,6 +405,19 @@
       ];
 
       overrideOutputs = ctx: {
+        # The preset's script check copies the complete build directory into
+        # its output.  The test run compiles FASLs in that directory, and
+        # their compiler metadata is not a package artifact (nor stable
+        # across two otherwise identical builds).  Keep the check as a pure
+        # pass/fail gate and do not publish the mutable test worktree.
+        checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            runHook postInstall
+          '';
+        });
+
         # The generated shell, plus the aliases this repository's
         # README documents. Appended to the preset's own shellHook rather
         # than replacing it, so the CL_SOURCE_REGISTRY it exports (the
@@ -433,6 +458,20 @@
       extraOutputs = ctx: {
         # Verify the delivered package compiles and the image dumps.
         checks.build = ctx.executable;
+
+        # Expose the same isolated coverage derivation as a buildable package
+        # and as a flake check. `ctx.cl.mkCoverageReport` supplies the package
+        # source registry and both runtime/check dependency closures.
+        packages.coverage = ctx.cl.mkCoverageReport {
+          drv = ctx.package;
+          entryPointText = coverage-entry-point-text;
+          timeoutSeconds = coverage-timeout-seconds;
+        };
+        checks.coverage = ctx.cl.mkCoverageReport {
+          drv = ctx.package;
+          entryPointText = coverage-entry-point-text;
+          timeoutSeconds = coverage-timeout-seconds;
+        };
 
         # Parse every filtered Lisp source file with the same structural tool
         # contributors use in the development shell. This catches unbalanced

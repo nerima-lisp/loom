@@ -10,4 +10,6 @@
     (signals error (make-terminal-screen :width 2 :height 0))
     (let ((screen (make-terminal-screen :width 2 :height 2)))
       (signals error (terminal-screen-resize screen 0 2))
-      (signals error (terminal-screen-resize screen 2 0)))))
+      (signals error (terminal-screen-resize screen 2 0))
+      (expect (terminal-screen-width screen) :to-equal 2)
+      (expect (terminal-screen-height screen) :to-equal 2))))

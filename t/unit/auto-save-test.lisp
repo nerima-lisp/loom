@@ -95,3 +95,58 @@
           (expect (auto-save-enabled-p buffer) :to-be-truthy)
           (expect (toggle-auto-save) :to-be nil)
           (expect (auto-save-enabled-p buffer) :to-be-falsy))))))
+
+(describe
+  "automatic save command boundaries"
+  (it "reports a selected-buffer auto-save and skips an ineligible buffer"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((path (merge-pathnames "notes.txt" directory))
+             (buffer (make-buffer :name "notes.txt"
+                                  :path path
+                                  :initial-content "draft")))
+        (%with-minibuffer-state (minibuffer "text")
+          (let ((state *editor-state*))
+            (setf (editor-state-buffers state) (list buffer))
+            (window-set-buffer (%selected-window) buffer)
+            (expect (auto-save-current-buffer) :to-be nil)
+            (expect (minibuffer-message-string minibuffer)
+                    :to-equal "Auto-save skipped")
+            (buffer-mark-modified buffer)
+            (auto-save-mode t)
+            (expect (auto-save-current-buffer) :to-equal (auto-save-path path))
+            (expect (minibuffer-message-string minibuffer)
+                    :to-equal "Auto-saved notes.txt"))))))
+  (it "handles auto-save without an active editor state"
+    (let ((*editor-state* nil))
+      (signals error (auto-save-mode t))
+      (expect (maybe-auto-save :force t) :to-be nil))))
+
+(describe
+  "automatic save error boundaries"
+  (it "reports an error from the selected-buffer auto-save"
+    (%with-minibuffer-state (minibuffer "text")
+      (with-replaced-function
+          (loom/feature/auto-save::auto-save-buffer
+           (lambda (&rest arguments)
+             (declare (ignore arguments))
+             (error "sidecar unavailable")))
+        (expect (auto-save-current-buffer) :to-be nil)
+        (expect (minibuffer-message-string minibuffer)
+                :to-contain "Auto-save error: sidecar unavailable"))))
+  (it "continues a pass when one enabled buffer cannot be saved"
+    (%with-minibuffer-state (minibuffer "text")
+      (let* ((state *editor-state*)
+             (selected (%selected-test-buffer))
+             (other (make-buffer :name "other" :initial-content "draft")))
+        (setf (editor-state-buffers state) (list selected other))
+        (auto-save-mode t)
+        (with-replaced-function
+            (loom/feature/auto-save::auto-save-buffer
+             (lambda (buffer)
+               (if (eq buffer selected)
+                   (error "selected sidecar unavailable")
+                   "other.sidecar")))
+          (expect (maybe-auto-save :force t :now 100)
+                  :to-equal (list "other.sidecar"))
+          (expect (minibuffer-message-string minibuffer)
+                  :to-contain "Auto-save error for"))))))

@@ -32,6 +32,7 @@
       (cond
         ((and (char>= downcase #\a) (char<= downcase #\z))
          (code-char (1+ (- (char-code downcase) (char-code #\a)))))
+        ((char= character #\Space) (code-char 0))
         ((char= character #\@) (code-char 0))
         ((char= character #\[) (code-char 27))
         ((char= character #\\) (code-char 28))
@@ -52,7 +53,9 @@
 (defun %terminal-event-payload (event)
   (case (cl-tty-kit:key-event-type event)
     (:character
-     (let* ((text (or (cl-tty-kit:key-event-text event)
+     (let* ((event-text (cl-tty-kit:key-event-text event))
+            (text (if (and event-text (plusp (length event-text)))
+                      event-text
                       (string (cl-tty-kit:key-event-code event))))
             (modifiers (cl-tty-kit:key-event-modifiers event))
             (control (member :control modifiers :test #'eq))
@@ -69,8 +72,7 @@
                     (concatenate 'string (string (code-char 27)) payload)
                     payload))))))
     (:paste
-     (let ((code (cl-tty-kit:key-event-code event)))
-       (if (stringp code) code (princ-to-string code))))
+     (cl-tty-kit:key-event-code event))
     (:special
      (let ((payload (or (%terminal-special-payload
                          (cl-tty-kit:key-event-code event))

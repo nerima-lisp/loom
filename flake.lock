@@ -218,16 +218,16 @@
     "cl-regex-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1785657461,
-        "narHash": "sha256-LrkoyjywOJe41VBljKpxklZ0EDu+Nm90BGCRf/Ydwh0=",
+        "lastModified": 1786517019,
+        "narHash": "sha256-l8Yv7qmf+1VCTjEQ1RQCtV3HFztLiKdM5OMs08jaIjA=",
         "owner": "nerima-lisp",
         "repo": "cl-regex-kit",
-        "rev": "9a2aec907bfd08556bc4ab6e319010a61d34a107",
+        "rev": "308375445bafcafdbc32d2347154d13ee765c4c4",
         "type": "github"
       },
       "original": {
         "owner": "nerima-lisp",
-        "ref": "v0.3.0",
+        "ref": "v2.0.0",
         "repo": "cl-regex-kit",
         "type": "github"
       }

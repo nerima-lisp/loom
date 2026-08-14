@@ -5,7 +5,9 @@
 
 (defun %dispatch-key-event-action
     (event keymap-state decision)
-  "Run the selected routing action for EVENT and return true once handled."
+  "Run the selected routing action for EVENT and return its dispatch outcome.
+The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
+:HANDLED for an action that was selected even when its command returns NIL."
   (let ((minibuffer (input-routing-decision-minibuffer decision))
         (minibuffer-was-active
           (input-routing-decision-minibuffer-was-active decision))
@@ -20,18 +22,26 @@
         (command (input-routing-decision-command decision)))
     (cond
       (minibuffer-was-active
-       (minibuffer-handle-key minibuffer event))
+       (minibuffer-handle-key minibuffer event)
+       :handled)
       (terminal-event-p
-     (loom/feature/terminal:terminal-handle-key-event event))
+       (loom/feature/terminal:terminal-handle-key-event event)
+       :handled)
       (prefix-action
        (apply-prefix-argument-action (car prefix-action)
-                                     (cdr prefix-action)))
+                                     (cdr prefix-action))
+       :handled)
       (self-insert-event-p
-       (%dispatch-self-insert-event event))
+       (%dispatch-self-insert-event event)
+       :handled)
       (t
-       (%dispatch-keymap-command
-        keymap-state descriptor prefix-argument command)))
-    t))
+       (let ((dispatch-result
+               (%dispatch-keymap-command
+                keymap-state descriptor prefix-argument command)))
+         (cond
+           ((eq dispatch-result :pending) :pending)
+           ((null command) nil)
+           (t :handled))))))
 
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT to the minibuffer, prefix logic, self-insert,
@@ -49,7 +59,7 @@ the minibuffer instead of unwinding the event loop; LOOM-QUIT still escapes
         (minibuffer-message
          (input-routing-decision-minibuffer decision)
          (format nil "~A" condition))))
-    (when (and dispatched-p
+    (when (and (eq dispatched-p :handled)
                (input-routing-decision-recording-before decision)
                macro
                (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)

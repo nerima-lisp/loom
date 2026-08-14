@@ -16,6 +16,12 @@ tree is organized by shared editor layers and feature packages; see the
 [architecture](../reference/architecture.md) page for the composition
 boundaries.
 
+Nix pins the library revisions in `flake.lock`, while `loom.asd` remains
+versionless. When upgrading a library, inspect its ASDF `:depends-on` list and
+keep the corresponding sibling inputs explicit in `flake.nix`; this keeps the
+development shell, package build, and test system on the same dependency
+graph.
+
 It also provides `cl-weave` for the test DSL and `paredit` for structural
 Common Lisp inspection and editing. The flake's `paredit-lint` check parses the
 Lisp source set before packaging, so the same structural syntax gate is
@@ -61,11 +67,13 @@ Coverage is generated outside the checkout:
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
-The report covers Loom's `src/` and `packages/` trees. Record SB-COVER's
-expression and branch totals separately; branch coverage does not establish
-full expression coverage. SB-COVER is process-local, so top-level declarations
-and the child-process-only `loom:main` path can remain unexecuted in the
-report. Those forms are reported rather than hidden.
+The cl-weave runner covers Loom's `src/` and `packages/` trees and writes
+`coverage.data` plus the HTML report under the selected coverage directory.
+It rejects a no-test run and an empty source-expression selection. Record
+SB-COVER's expression and branch totals separately; branch coverage does not
+establish full expression coverage. SB-COVER is process-local, so top-level
+declarations and the child-process-only `loom:main` path can remain unexecuted
+in the report. Those forms are reported rather than hidden.
 
 ## REPL workflow
 

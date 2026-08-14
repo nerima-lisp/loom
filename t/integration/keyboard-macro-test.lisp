@@ -86,3 +86,20 @@
         (expect invoked :to-be-truthy)
         (expect (minibuffer-active-p minibuffer) :to-be-falsy)
         (expect (keyboard-macro-replaying-p macro) :to-be nil)))))
+
+  (it
+    "keeps recording when a modified key is unbound"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((keymap (make-keymap))
+             (keymap-state (make-keymap-state keymap))
+             (macro (make-keyboard-macro)))
+        (declare (ignore minibuffer))
+        (setf (editor-state-keymap *editor-state*) keymap
+              (editor-state-keyboard-macro *editor-state*) macro)
+        (keyboard-macro-start-recording macro)
+        (loom::%dispatch-key-event
+         (cl-tty-kit:make-key-event
+          :type :character :code #\q :modifiers '(:control))
+         keymap-state)
+        (expect (keyboard-macro-events macro) :to-be nil)
+        (expect (keyboard-macro-recording-p macro) :to-be-truthy))))

@@ -30,7 +30,7 @@
     (getf
      (find-if (lambda (spec)
                 (and (getf spec :name)
-                     (string= name (getf spec :name))))
+                     (string-equal name (getf spec :name))))
               *command-specs*)
      :command)))
 

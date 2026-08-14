@@ -39,6 +39,14 @@
                 :to-be-falsy))))
 
   (it
+    "reports an unset mark when copying a region"
+    (%with-minibuffer-state (minibuffer "hello")
+      (loom::kill-ring-save)
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal
+              "The mark is not set now, so no region is active")))
+
+  (it
     "coalesces adjacent region kills in their editing direction"
     (%expect-region-kill ("abcdef" 0 2 "cdef" "ab")
       (let ((buffer (%selected-test-buffer)))

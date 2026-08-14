@@ -22,4 +22,14 @@
         (:self-insert (loom:self-insert-command #\e))
         (:delete-char (loom::delete-char))
         (:delete-backward-char (loom::delete-backward-char)))
-      (expect (buffer-line buffer 0) :to-equal expected-line))))
+      (expect (buffer-line buffer 0) :to-equal expected-line)))
+
+  (it "does not insert or open lines for a zero prefix"
+    (let ((*editor-state* (%fresh-editor-state "hello"))
+          (loom:*current-prefix-argument* 0))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 2)
+        (loom::newline-command)
+        (loom::open-line)
+        (expect (buffer-text buffer) :to-equal "hello")
+        (expect buffer :to-have-point (cons 0 2)))))

@@ -8,13 +8,23 @@
      :to-equal
      (list "forward-char")))
   (it "returns all named commands for an empty prefix"
-    (let ((expected
-            (loop for spec in loom/application:*command-specs*
-                  for name = (getf spec :name)
-                  when name collect name)))
+    (let ((loom/application:*command-specs*
+            (list (list :name "alpha" :command 'alpha-command :keys nil)
+                  (list :name nil :command 'keymap-only-command :keys nil)
+                  (list :name "Beta" :command 'beta-command :keys nil))))
       (expect (loom/application:command-completion-candidates "")
               :to-equal
-              expected)))
+              (list "alpha" "Beta"))))
+  (it "finds a named command without exposing keymap-only entries"
+    (let ((loom/application:*command-specs*
+            (list (list :name nil :command 'keymap-only-command :keys nil)
+                  (list :name "Alpha" :command 'alpha-command :keys nil))))
+      (expect (loom/application:find-extended-command "  alpha ")
+              :to-be
+              'alpha-command)
+      (expect (loom/application:find-extended-command "keymap-only-command")
+              :to-be
+              nil)))
   (it "returns no candidates for an unknown prefix"
     (expect
      (loom/application:command-completion-candidates "does-not-exist")

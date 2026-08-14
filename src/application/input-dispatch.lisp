@@ -12,36 +12,36 @@
 ;;; CL-TTY-KIT:DECODE-INPUT-CHUNK accepts either a string or an octet vector
 ;;; (see infrastructure/terminal-renderer.lisp's sibling library,
 ;;; input-decode.lisp, for that contract), so this reads octets directly off
-;;; *STANDARD-INPUT* via READ-BYTE rather than going through a character
+;;; the supplied input stream via READ-BYTE rather than going through a character
 ;;; decode first -- SBCL's stdin fd-stream is bivalent (READ-BYTE and
 ;;; READ-CHAR both work on it), and reading octets sidesteps ever needing to
-;;; worry about *STANDARD-INPUT*'s external-format matching what the terminal
+;;; worry about the input stream's external-format matching what the terminal
 ;;; actually sent.
 ;;; ---------------------------------------------------------------------
 
-(defun %drain-buffered-octets (buffer start-count)
-  "Read the octets already waiting on *STANDARD-INPUT* into BUFFER, filling it
+(defun %drain-buffered-octets (buffer start-count input-stream)
+  "Read the octets already waiting on INPUT-STREAM into BUFFER, filling it
 from index START-COUNT onwards and stopping at (LENGTH BUFFER) octets or as
 soon as LISTEN reports nothing more is buffered -- so this never blocks.
 Returns the resulting octet count."
   (loop with count = start-count
-        while (and (< count (length buffer)) (listen *standard-input*))
-        do (let ((byte (read-byte *standard-input* nil nil)))
+        while (and (< count (length buffer)) (listen input-stream))
+        do (let ((byte (read-byte input-stream nil nil)))
              (unless byte (loop-finish))
              (setf (aref buffer count) byte)
              (incf count))
         finally (return count)))
 
-(defun %read-input-octets (buffer)
-  "Block until at least one octet is available on *STANDARD-INPUT*, then
+(defun %read-input-octets (buffer input-stream)
+  "Block until at least one octet is available on INPUT-STREAM, then
 drain any additional octets already buffered (checked via LISTEN, so this
 never blocks a second time) into BUFFER, up to (LENGTH BUFFER) octets total.
 Returns the number of octets actually placed in BUFFER, or NIL at
 end-of-file (no octet was read at all)."
-  (let ((first (read-byte *standard-input* nil nil)))
+  (let ((first (read-byte input-stream nil nil)))
     (when first
       (setf (aref buffer 0) first)
-      (%drain-buffered-octets buffer 1))))
+      (%drain-buffered-octets buffer 1 input-stream))))
 
 (defun %dispatch-input-chunk (decoder buffer count keymap-state)
   "Decode the first COUNT octets of BUFFER through DECODER and route every key

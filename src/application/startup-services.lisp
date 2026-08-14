@@ -42,7 +42,7 @@ exit status for the CLI boundary."
                                            :raw-mode t
                                            :alternate-screen t
                                            :hide-cursor nil)
-          (%run-event-loop stream))
+          (%run-event-loop stream *standard-input*))
         0)
     (error (condition)
       (format *error-output* "~&loom: ~A~%" condition)

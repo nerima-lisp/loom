@@ -13,7 +13,8 @@
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
-              (loom::%run-event-loop (make-string-output-stream))))
+              (loom::%run-event-loop (make-string-output-stream)
+                                     *standard-input*)))
           (expect (buffer-line (window-buffer (window-tree-selected-window
                                                (editor-state-window-tree *editor-state*)))
                                0)
@@ -29,7 +30,8 @@
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
-              (loom::%run-event-loop (make-string-output-stream))))
+              (loom::%run-event-loop (make-string-output-stream)
+                                     *standard-input*)))
           (expect (length (buffer-line (window-buffer (window-tree-selected-window
                                                        (editor-state-window-tree *editor-state*)))
                                        0))
@@ -46,4 +48,5 @@
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
-              (loom::%run-event-loop (make-string-output-stream)))))))))
+              (loom::%run-event-loop (make-string-output-stream)
+                                     *standard-input*)))))))))

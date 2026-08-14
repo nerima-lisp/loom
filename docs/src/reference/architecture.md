@@ -299,11 +299,13 @@ the documented command:
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
-The report's SB-COVER expression and branch totals are recorded separately.
-The report is restricted to Loom's `src/` and `packages/` trees, so the
-package-by-feature implementation is included in the measurement.
-Branch coverage does not establish full expression coverage; the generated
-report is the source of truth for uncovered forms. SB-COVER is process-local,
+The cl-weave runner writes `coverage.data` and an HTML report under the selected
+coverage directory. It rejects a no-test run and an empty source-expression
+selection. The report's SB-COVER expression and branch totals are recorded
+separately. The report is restricted to Loom's `src/` and `packages/` trees, so
+the package-by-feature implementation is included in the measurement. Branch
+coverage does not establish full expression coverage; the generated report is
+the source of truth for uncovered forms. SB-COVER is process-local,
 so top-level declarations and the child-process-only `loom:main` path can
 remain unexecuted in the report; those forms are reported rather than hidden.
 `nix flake check --all-systems --print-build-logs` additionally runs the test, package,

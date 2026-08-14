@@ -39,7 +39,7 @@ keeps its original blocking read behavior.")
       (editor-state-auto-save-mode-p *editor-state*)
       (editor-state-auto-save-buffers *editor-state*)))
 
-(defun %wait-for-editor-input ()
+(defun %wait-for-editor-input (input-stream)
   "Wait for input, or return NIL after the background poll interval.
 
 CL-TTY-KIT's descriptor wait lets PTY output and auto-save timers make
@@ -51,7 +51,7 @@ stream implementation."
       t
       (handler-case
           (cl-tty-kit:fd-wait
-           (cl-tty-kit:stream-fd *standard-input*)
+           (cl-tty-kit:stream-fd input-stream)
            :input
            *event-loop-poll-interval*)
         (error () t))))

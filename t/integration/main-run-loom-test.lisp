@@ -27,8 +27,8 @@
               (let ((*error-output* (make-string-output-stream)))
                 (with-replaced-function
                     (loom::%run-event-loop
-                     (lambda (stream)
-                       (declare (ignore stream))
+                     (lambda (output-stream input-stream)
+                       (declare (ignore output-stream input-stream))
                        (error "event loop failed")))
                   (expect (loom::%run-loom invocation :fd fd) :to-equal 1))
                 (expect (get-output-stream-string *error-output*)

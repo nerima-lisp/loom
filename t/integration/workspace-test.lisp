@@ -30,6 +30,12 @@
                   second-tree)
           (expect (window-tree-windows second-tree) :to-have-length 2)))))
 
+  (it "rejects an editor state without its required workspace manager"
+    (let ((*editor-state* (%fresh-editor-state "one")))
+      (setf (editor-state-workspaces *editor-state*) nil)
+      (signals error
+        (loom/feature/workspace::%workspace-manager))))
+
   (it "reactivates the surviving workspace on delete and refuses the final one"
     (let ((*editor-state* (%fresh-editor-state "one")))
       (let ((first-tree (editor-state-window-tree *editor-state*)))
@@ -83,6 +89,12 @@
           (expect (loom:minibuffer-message-string minibuffer)
                   :to-equal
                   "No such workspace: missing"))))
+
+  (it "cancels workspace switching through the minibuffer protocol"
+    (%with-minibuffer-state (minibuffer "one")
+      (switch-workspace)
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (minibuffer-message-string minibuffer) :to-equal "Quit")))
 
   (it-each
       (("new workspace"

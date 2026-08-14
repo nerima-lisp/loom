@@ -31,12 +31,11 @@
                (loom/application:define-command-specs
                  (loom/application:command-spec "forward-char" forward-char)
                  (loom/application:command-spec "kill-line" kill-line))))))
-      (expect (first expansion) :to-equal (quote progn))
-      (expect (first (second expansion)) :to-equal (quote defparameter))
-      (expect (second (second expansion))
+      (expect (first expansion) :to-equal (quote defparameter))
+      (expect (second expansion)
               :to-equal
               (quote loom/application:*command-specs*))
-      (expect (third (second expansion))
+      (expect (third expansion)
               :to-equal
               (quote
                 (list
@@ -50,7 +49,7 @@
                         :keys (quote nil)
                         :help nil
                         :help-order nil))))
-      (expect (third expansion) :to-be nil))))
+      (expect (fourth expansion) :to-be nil))))
 
 (describe
   "define-command-spec-catalog"

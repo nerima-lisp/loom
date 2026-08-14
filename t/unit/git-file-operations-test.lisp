@@ -97,3 +97,60 @@
             (expect (minibuffer-message-string minibuffer)
                     :to-equal
                     "Git unstaged README.md"))))))
+
+  (it "reports a failed stage operation"
+    (%with-minibuffer-state (minibuffer "")
+      (let ((result
+              (make-shell-command-result
+               :command "git add -- README.md"
+               :directory "/repo/"
+               :output ""
+               :error-output "not found"
+               :exit-code 2)))
+        (with-replaced-function
+            (loom/feature/git:run-git-stage
+             (lambda (path &key directory)
+               (declare (ignore path directory))
+               result))
+          (git-stage-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) "README.md")
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Git stage exited with status 2")))))
+
+  (it "cancels a blank path without invoking Git"
+    (%with-minibuffer-state (minibuffer "")
+      (let ((called nil))
+        (with-replaced-function
+            (loom/feature/git:run-git-stage
+             (lambda (&rest arguments)
+               (declare (ignore arguments))
+               (setf called t)))
+          (git-stage-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer)
+                   (format nil "  ~C " #\Tab))
+          (expect called :to-be-falsy)
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Git stage cancelled")))))
+
+  (it "reports an unstage error and supports prompt cancellation"
+    (%with-minibuffer-state (minibuffer "")
+      (let ((result (make-shell-command-result
+                     :command "git restore --staged -- README.md"
+                     :directory "/repo/"
+                     :output ""
+                     :error-output "failed"
+                     :exit-code 3)))
+        (with-replaced-function
+            (loom/feature/git:run-git-unstage
+             (lambda (path &key directory)
+               (declare (ignore path directory))
+               result))
+          (git-unstage-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) "README.md")
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Git unstage exited with status 3"))))
+    (%with-minibuffer-state (minibuffer "")
+      (git-unstage-file)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "   ")
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Git unstage cancelled")))
