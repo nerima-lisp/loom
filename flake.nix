@@ -398,6 +398,19 @@
             echo ""
           '';
         });
+
+        # LOOM_SANDBOXED_CHECK tells the suite it is running inside this
+        # sandboxed derivation (t/test-helpers.lisp's %SANDBOXED-CHECK-P), so
+        # the handful of tests that spawn a real child process over a PTY or
+        # a pipe can SKIP -- visibly, in cl-weave's own "N skipped" count --
+        # instead of hanging or failing. The Nix Linux build sandbox does not
+        # reliably deliver real child-process I/O; see ci.yml's "a real
+        # PTY/TTY" note for the org-level statement of that limitation.
+        # `apps.test` and the dev shell's `test` alias do not set this, so
+        # the same tests run for real everywhere else.
+        checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
+          LOOM_SANDBOXED_CHECK = "1";
+        });
       };
 
       # Granularity lives here, NOT in extra GitHub Actions jobs: `nix flake

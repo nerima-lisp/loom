@@ -37,6 +37,16 @@ to *EDITOR-STATE* and to MINIBUFFER."
   "Return the buffer displayed in the fresh editor state's sole window."
   (window-buffer (window-tree-selected-window (editor-state-window-tree *editor-state*))))
 
+(defun %sandboxed-check-p ()
+  "True inside `checks.default`'s Nix sandbox, where LOOM_SANDBOXED_CHECK is
+set (see flake.nix's `overrideOutputs`).  A test that spawns a real child
+process and waits on its output depends on OS-level PTY/pipe delivery that
+the Nix Linux build sandbox does not reliably provide -- see
+.github/workflows/ci.yml's \"a real PTY/TTY\" note -- so such a test should
+SKIP rather than hang or fail there, while still running everywhere else
+\(a plain `sbcl --script run-tests.lisp`, `nix develop`'s `test` alias\)."
+  (uiop:getenvp "LOOM_SANDBOXED_CHECK"))
+
 (defun %fresh-file-tree (root)
   "Build a FILE-TREE rooted at ROOT with a real, disk-backed child-lister
 \(LOOM-FS-LIST-DIRECTORY, the same one MAIN wires up in

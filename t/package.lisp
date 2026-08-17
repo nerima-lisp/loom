@@ -31,6 +31,7 @@
    #:it-each
    #:expect
    #:signals
+   #:skip
    #:run-all
    #:defmatcher
    #:with-soft-assertions

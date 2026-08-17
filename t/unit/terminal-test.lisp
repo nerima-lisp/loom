@@ -82,6 +82,8 @@
      (format nil "~C~C[A" (code-char 27) (code-char 27))))
 
   (it "captures output from a real child process attached to a PTY"
+    (when (%sandboxed-check-p)
+      (skip "no PTY/TTY inside the Nix sandbox; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
     (let* ((state (%fresh-editor-state ""))
            (session
              (start-terminal-session
