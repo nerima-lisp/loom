@@ -31,7 +31,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog" "cl-cli"
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli"
                "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-json-kit")
   :pathname "."
   :serial t

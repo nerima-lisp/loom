@@ -61,8 +61,8 @@
       url = "github:nerima-lisp/cl-history-kit/v1.0.4";
       flake = false;
     };
-    cl-prolog = {
-      url = "github:nerima-lisp/cl-prolog/v1.4.3";
+    cl-prolog-kit = {
+      url = "github:nerima-lisp/cl-prolog-kit/v1.5.0";
       flake = false;
     };
     cl-cli = {
@@ -113,7 +113,7 @@
       cl-codec-kit,
       cl-host-kit,
       cl-history-kit,
-      cl-prolog,
+      cl-prolog-kit,
       cl-cli,
       cl-regex-kit,
       cl-date-kit,
@@ -244,8 +244,8 @@
             source = cl-history-kit;
           };
           clProlog = sibling {
-            name = "cl-prolog";
-            source = cl-prolog;
+            name = "cl-prolog-kit";
+            source = cl-prolog-kit;
           };
           # cl-cli's own :depends-on is uiop (already in SBCL) plus
           # cl-host-kit on SBCL, so clHostKit above covers it.

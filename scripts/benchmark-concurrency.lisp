@@ -30,7 +30,7 @@
        (sibling-names '("cl-tty-kit"
                         "cl-host-kit"
                         "cl-history-kit"
-                        "cl-prolog"
+                        "cl-prolog-kit"
                         "cl-cli"
                         "cl-regex-kit"
                         "cl-boundary-kit"

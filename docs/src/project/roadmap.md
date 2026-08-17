@@ -34,7 +34,7 @@ implemented today from what is deliberately deferred.
   [`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp)
   and the lookup implementation in
   [`src/application/command-registry.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-registry.lisp);
-  quit confirmation uses `cl-prolog`, and minibuffer history uses
+  quit confirmation uses `cl-prolog-kit`, and minibuffer history uses
   `cl-history-kit` directly.
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
