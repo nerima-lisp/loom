@@ -166,9 +166,9 @@ src/main.lisp to exit cleanly."))
        (append displayed registered)
        :test (function eq))))
 
-  ;; A CL-PROLOG rulebase keeps the quit-prompt answer table declarative.
+  ;; A CL-PROLOG-KIT rulebase keeps the quit-prompt answer table declarative.
   ;; FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
-  (cl-prolog:define-rulebase *quit-answer-rulebase*
+  (cl-prolog-kit:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)
      (:when (and ?has-path (string-equal ?answer "s"))))
     ((quit-action ?answer ?has-path :discard-and-continue)
@@ -183,7 +183,7 @@ shows for one modified buffer: :SAVE-AND-CONTINUE, :DISCARD-AND-CONTINUE,
 buffer with no path, whose prompt (\"Discard changes... (d/c)\") never
 offers \"s\" in the first place, so an \"s\" answer there falls through to
 :RETRY exactly as a genuinely unrecognized answer would."
-    (or (cl-prolog:with-prolog-query (?action)
+    (or (cl-prolog-kit:with-prolog-query (?action)
             (*quit-answer-rulebase* `(quit-action ,answer ,has-path-p ?action))
           ?action)
         :retry))

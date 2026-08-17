@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Mirrors nshell's scripts/coverage.lisp and run-tests.lisp's own
 ;;;; source-registry setup: inside `nix develop` the sibling systems
-;;;; (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog, cl-cli, cl-weave)
+;;;; (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog-kit, cl-cli, cl-weave)
 ;;;; are already on the ASDF source registry; for a plain ghq checkout only
 ;;;; the sibling roots required by loom are registered. When
 ;;;; CL_SOURCE_REGISTRY is already set, those local roots are not prepended:
@@ -49,7 +49,7 @@
        (sibling-names '("cl-tty-kit"
                         "cl-host-kit"
                         "cl-history-kit"
-                        "cl-prolog"
+                        "cl-prolog-kit"
                         "cl-cli"
                         "cl-regex-kit"
                         "cl-boundary-kit"

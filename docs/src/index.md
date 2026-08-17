@@ -2,7 +2,7 @@
 
 A terminal text editor for SBCL with Emacs-style keybindings. Its direct
 runtime dependencies include `cl-tty-kit`, `cl-host-kit`, `cl-history-kit`,
-`cl-prolog`, `cl-cli`, `cl-regex-kit`, `cl-boundary-kit`,
+`cl-prolog-kit`, `cl-cli`, `cl-regex-kit`, `cl-boundary-kit`,
 `cl-concurrent-kit`, and `cl-json-kit`.
 
 ```sh

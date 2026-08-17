@@ -61,8 +61,8 @@
       url = "github:nerima-lisp/cl-history-kit/v1.0.4";
       flake = false;
     };
-    cl-prolog = {
-      url = "github:nerima-lisp/cl-prolog/v1.4.3";
+    cl-prolog-kit = {
+      url = "github:nerima-lisp/cl-prolog-kit/v1.5.0";
       flake = false;
     };
     cl-cli = {
@@ -113,7 +113,7 @@
       cl-codec-kit,
       cl-host-kit,
       cl-history-kit,
-      cl-prolog,
+      cl-prolog-kit,
       cl-cli,
       cl-regex-kit,
       cl-date-kit,
@@ -244,8 +244,8 @@
             source = cl-history-kit;
           };
           clProlog = sibling {
-            name = "cl-prolog";
-            source = cl-prolog;
+            name = "cl-prolog-kit";
+            source = cl-prolog-kit;
           };
           # cl-cli's own :depends-on is uiop (already in SBCL) plus
           # cl-host-kit on SBCL, so clHostKit above covers it.
@@ -397,6 +397,19 @@
             echo "  sbcl     - Interactive Common Lisp (with cl-weave)"
             echo ""
           '';
+        });
+
+        # LOOM_SANDBOXED_CHECK tells the suite it is running inside this
+        # sandboxed derivation (t/test-helpers.lisp's %SANDBOXED-CHECK-P), so
+        # the handful of tests that spawn a real child process over a PTY or
+        # a pipe can SKIP -- visibly, in cl-weave's own "N skipped" count --
+        # instead of hanging or failing. The Nix Linux build sandbox does not
+        # reliably deliver real child-process I/O; see ci.yml's "a real
+        # PTY/TTY" note for the org-level statement of that limitation.
+        # `apps.test` and the dev shell's `test` alias do not set this, so
+        # the same tests run for real everywhere else.
+        checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
+          LOOM_SANDBOXED_CHECK = "1";
         });
       };
 

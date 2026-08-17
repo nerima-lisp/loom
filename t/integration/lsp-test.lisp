@@ -34,12 +34,16 @@
 
 (describe
   "LSP session"
-  (it "keeps lifecycle idempotent and records initialize failures"
-    (signals error (make-lsp-session))
+  (it "spawns a real LSP session over a child process command"
+    (when (%sandboxed-check-p)
+      (skip "spawns a real \"cat\" child process; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
     (let ((session (make-lsp-session :command "cat")))
       (unwind-protect
            (expect (lsp-session-p session) :to-be-truthy)
-        (lsp-session-stop session)))
+        (lsp-session-stop session))))
+
+  (it "keeps lifecycle idempotent and records initialize failures"
+    (signals error (make-lsp-session))
     (let* ((transport (make-instance '%fake-lsp-transport))
            (session (make-lsp-session :transport transport)))
       (lsp-session-start session)
@@ -364,6 +368,8 @@
              (expect (lsp-session-last-error session) :to-be nil))
         (lsp-session-stop session))))
   (it "round-trips a framed message through a child process"
+    (when (%sandboxed-check-p)
+      (skip "spawns a real \"cat\" child process; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
     (let ((process (loom/feature/lsp::make-lsp-process "cat"))
           (received nil))
       (unwind-protect

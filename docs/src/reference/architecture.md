@@ -216,7 +216,7 @@ trampoline.
   overwrite-safe session-file moves, and user-init environment lookup.
 - **[cl-history-kit](https://github.com/nerima-lisp/cl-history-kit)** stores
   minibuffer history for find-file, save-buffer, and file-tree prompts.
-- **[cl-prolog](https://github.com/nerima-lisp/cl-prolog)** evaluates the
+- **[cl-prolog-kit](https://github.com/nerima-lisp/cl-prolog-kit)** evaluates the
   `with-prolog-query` rulebase used by quit-prompt resolution. The
   `define-command-specs` macro also emits an inspectable command rulebase, but
   runtime M-x name lookup intentionally uses its explicit registry.
@@ -232,7 +232,7 @@ trampoline.
   operation used by the concurrent file-tree runtime.
 
 The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
-`cl-host-kit`, `cl-history-kit`, `cl-prolog`, `cl-cli`, `cl-regex-kit`,
+`cl-host-kit`, `cl-history-kit`, `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`,
 `cl-boundary-kit`, `cl-json-kit`, and `cl-concurrent-kit`. The test system adds
 `cl-weave` and `cl-date-kit`; the latter is used by the concurrency tests and
 benchmark timeouts. The Nix flake pins the runtime and test inputs and supplies
