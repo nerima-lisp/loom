@@ -2514,8 +2514,8 @@ Validate a session snapshot and return it or signal an invalid snapshot.
 ### `session-store-read`
 
 Read a serialized session snapshot from the session store. The current format
-is version 4; version 1 through version 3 files are accepted, with collections
-introduced by later versions defaulting to empty values.
+is version 5; the reader accepts only the v5 envelope and signals an error for
+any other version, including pre-v5 session files.
 
 ### `session-store-write`
 
