@@ -38,7 +38,7 @@
   (it-each ((#\@ :nul)
             (#\[ :escape)
             (#\_ :unit-separator)
-            (#\Space nil))
+            (#\Space :nul))
       "maps control character ~S to ~S"
     (character expected-tag)
     (let ((expected-code
@@ -56,7 +56,7 @@
            (loom/feature/terminal::%terminal-control-character character)
            :to-be nil))))
 
-  (it-each ((:character #\a nil "" :none)
+  (it-each ((:character #\a nil "" "a")
             (:character #\@ (:control) nil (:string 0))
             (:paste "pasted" nil nil "pasted")
             (:special :page-down nil nil (:escape-sequence "[6~"))

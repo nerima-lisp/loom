@@ -262,7 +262,7 @@
             name = "cl-history-kit";
             source = cl-history-kit;
           };
-          clProlog = sibling {
+          clPrologKit = sibling {
             name = "cl-prolog-kit";
             source = cl-prolog-kit;
           };
@@ -344,7 +344,7 @@
           clTtyKit
           clHostKit
           clHistoryKit
-          clProlog
+          clPrologKit
           clCli
           clRegexKit
           clBoundaryKit

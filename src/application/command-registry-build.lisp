@@ -72,18 +72,17 @@ NIL names describe keymap-only commands such as M-x itself. The explicit
 registry is used for lookup."
   (let ((entries (%validate-command-spec-entries
                   (%collect-command-spec-entries specs))))
-    `(progn
-       (defparameter *command-specs*
-         (list
-          ,@(mapcar
-             (lambda (entry)
-               (destructuring-bind (name command keys help help-order) entry
-                 `(list :name ,name
-                        :command ',command
-                        :keys ',keys
-                        :help ,help
-                        :help-order ,help-order)))
-             entries))))))
+    `(defparameter *command-specs*
+       (list
+        ,@(mapcar
+           (lambda (entry)
+             (destructuring-bind (name command keys help help-order) entry
+               `(list :name ,name
+                      :command ',command
+                      :keys ',keys
+                      :help ,help
+                      :help-order ,help-order)))
+           entries)))))
 
 (defmacro define-command-spec-catalog (&rest spec-blocks)
   "Define the command registry from declarative SPEC-BLOCK variables."
