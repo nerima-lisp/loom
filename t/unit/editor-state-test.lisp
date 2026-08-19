@@ -72,4 +72,25 @@
       (run-after-save-hooks buffer state)
       (expect (reverse events)
               :to-equal
-              (list (list :first buffer))))))
+              (list (list :first buffer)))))
+
+  (it "deduplicates registration and returns the hook from removal"
+    (let* ((state (make-editor-state))
+           (hook (lambda (buffer) buffer)))
+      (add-before-save-hook hook state)
+      (add-before-save-hook hook state)
+      (expect (editor-state-before-save-hooks state) :to-equal (list hook))
+      (expect (remove-before-save-hook hook state) :to-be hook)
+      (expect (editor-state-before-save-hooks state) :to-be nil)
+      (expect (remove-after-save-hook hook state) :to-be hook)))
+
+  (it "tolerates an absent state when running after-save hooks"
+    (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
+           (state (make-editor-state :window-tree (make-window-tree buffer 80 24)))
+           (calls 0))
+      (add-after-save-hook (lambda (saved-buffer)
+                             (declare (ignore saved-buffer))
+                             (incf calls))
+                           state)
+      (expect (run-after-save-hooks buffer nil) :to-be buffer)
+      (expect calls :to-equal 0))))

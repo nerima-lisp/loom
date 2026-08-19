@@ -405,19 +405,6 @@
       ];
 
       overrideOutputs = ctx: {
-        # The preset's script check copies the complete build directory into
-        # its output.  The test run compiles FASLs in that directory, and
-        # their compiler metadata is not a package artifact (nor stable
-        # across two otherwise identical builds).  Keep the check as a pure
-        # pass/fail gate and do not publish the mutable test worktree.
-        checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
-          installPhase = ''
-            runHook preInstall
-            mkdir -p "$out"
-            runHook postInstall
-          '';
-        });
-
         # The generated shell, plus the aliases this repository's
         # README documents. Appended to the preset's own shellHook rather
         # than replacing it, so the CL_SOURCE_REGISTRY it exports (the
@@ -438,6 +425,12 @@
           '';
         });
 
+        # The preset's script check copies the complete build directory into
+        # its output.  The test run compiles FASLs in that directory, and
+        # their compiler metadata is not a package artifact (nor stable
+        # across two otherwise identical builds).  Keep the check as a pure
+        # pass/fail gate and do not publish the mutable test worktree.
+        #
         # LOOM_SANDBOXED_CHECK tells the suite it is running inside this
         # sandboxed derivation (t/test-helpers.lisp's %SANDBOXED-CHECK-P), so
         # the handful of tests that spawn a real child process over a PTY or
@@ -448,6 +441,11 @@
         # `apps.test` and the dev shell's `test` alias do not set this, so
         # the same tests run for real everywhere else.
         checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            runHook postInstall
+          '';
           LOOM_SANDBOXED_CHECK = "1";
         });
       };

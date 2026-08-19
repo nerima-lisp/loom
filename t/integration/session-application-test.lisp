@@ -6,6 +6,12 @@
 
 (describe
   "session application round-trip"
+  (it "rejects an editor state without its required workspace manager"
+    (let ((*editor-state* (%fresh-editor-state "one")))
+      (setf (editor-state-workspaces *editor-state*) nil)
+      (signals error
+        (loom/feature/session::%session-workspace-manager))))
+
   (it
     "restores registered buffers, point, mark, modified state, scroll, and selection"
     (let* ((one (make-buffer :name "*one*" :initial-content "one"))
