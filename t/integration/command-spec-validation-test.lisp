@@ -70,7 +70,7 @@
                     "movement"
                   (loom/application:command-spec "forward-char" forward-char)
                   (loom/application:command-spec "kill-line" kill-line))))))
-      (expect (third (second expansion))
+      (expect (third expansion)
               :to-equal
               '(list
                 (list :name "forward-char"
