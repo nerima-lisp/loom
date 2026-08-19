@@ -32,4 +32,4 @@
         (loom::newline-command)
         (loom::open-line)
         (expect (buffer-text buffer) :to-equal "hello")
-        (expect buffer :to-have-point (cons 0 2)))))
+        (expect buffer :to-have-point (cons 0 2))))))

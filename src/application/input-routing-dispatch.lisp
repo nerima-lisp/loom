@@ -41,7 +41,7 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
          (cond
            ((eq dispatch-result :pending) :pending)
            ((null command) nil)
-           (t :handled))))))
+           (t :handled)))))))
 
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT to the minibuffer, prefix logic, self-insert,

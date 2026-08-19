@@ -49,4 +49,4 @@
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*)))))))))
+                                     *standard-input*))))))))
