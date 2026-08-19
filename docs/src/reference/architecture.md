@@ -105,13 +105,13 @@ refresh, and shutdown orchestration, `application-lsp-protocol-send.lisp`
 owns JSON-RPC encoding, `application-lsp-protocol-initialize.lisp` owns
 initialize/capability messages, and the helper/receive slices own
 response/diagnostic parsing plus nonblocking dispatch.
-`infrastructure-lsp-process.lisp` owns child-process lifecycle and stdio
+`infrastructure-lsp-transport.lisp` owns child-process lifecycle and stdio
 transport. Pure UTF-8 and `Content-Length` framing is isolated in
 `infrastructure-lsp-framing.lisp`, and JSON messages are parsed and
 constructed through `cl-json-kit`.
-`lsp-discover-command` searches the current path's ancestor directories for
-the nearest `.loom-lsp`; its first non-empty, non-comment line is the trusted
-server command. `lsp-start` presents that command as the default, while an
+`lsp-discover-command`, in `infrastructure-lsp-discovery.lisp`, searches the
+current path's ancestor directories for the nearest `.loom-lsp`; its first
+non-empty, non-comment line is the trusted server command. `lsp-start` presents that command as the default, while an
 explicit prompt value overrides it. Dynamic registration and requests beyond
 the current diagnostics/document-sync slice remain outside this boundary.
 
@@ -160,8 +160,13 @@ buffer text without changing the buffer's normal modified state, and
 gating. The event loop invokes the pass after input dispatch, so auto-save does
 not introduce a second writer thread into the editor state.
 
-`packages/feature/file-tree/src/infrastructure-concurrent-runtime.lisp` owns the bounded asynchronous
-directory-listing runtime. It uses `cl-concurrent-kit` workers, a bounded
+The bounded asynchronous directory-listing runtime is split across
+`packages/feature/file-tree/src/infrastructure-concurrent-runtime-state.lisp`
+(the runtime struct, directory cache, and generation bookkeeping),
+`infrastructure-concurrent-runtime-prefetch.lisp` (submitting uncached
+directories to `cl-concurrent-kit` workers), and
+`infrastructure-concurrent-runtime-results.lisp` (draining and applying
+worker results, plus shutdown). It uses `cl-concurrent-kit` workers, a bounded
 result channel, cache/pending/error tables, and per-directory generations.
 Workers perform listing only; `loom-concurrent-runtime-drain` applies results
 on the render/event-loop lane, and invalidation advances a generation so stale
@@ -178,8 +183,10 @@ specification storage, completion candidates, and M-x lookup.
 used by prompts, while `commands-keybindings.lisp` installs the default
 bindings separately from the prompt protocol.
 
-`packages/feature/mode/src/domain-major-mode.lisp` keeps built-in mode
-metadata alongside the extension-defined mode registry. The pure
+`packages/feature/mode/src/domain-major-mode-definitions.lisp` keeps built-in
+mode metadata alongside the extension-defined mode registry state;
+`domain-major-mode.lisp` holds the read-side lookup API over that state, and
+`domain-major-mode-registry.lisp` holds registration and validation. The pure
 `domain-major-mode-path.lisp` module normalizes paths and performs basename,
 extension, registry, and default matching without filesystem access.
 Extensions register file associations, syntax metadata, parent modes, and
@@ -308,8 +315,10 @@ coverage does not establish full expression coverage; the generated report is
 the source of truth for uncovered forms. SB-COVER is process-local,
 so top-level declarations and the child-process-only `loom:main` path can
 remain unexecuted in the report; those forms are reported rather than hidden.
-`nix flake check --all-systems --print-build-logs` additionally runs the test, package,
-formatter, and strict MkDocs documentation checks.
+`nix flake check --all-systems --print-build-logs` additionally runs the test
+(`checks.default`), package (`checks.build`), formatter (`checks.formatting`),
+paredit structural syntax (`checks.paredit-lint`), coverage (`checks.coverage`),
+and strict MkDocs documentation (`checks.docs`) checks.
 
 The concurrency benchmark compares synchronous directory listing with the
 runtime's bounded prefetch/drain path over eight synthetic directory paths. It

@@ -53,11 +53,20 @@ example has a 40-second timeout. Coverage has a 1,800-second outer timeout;
 the PTY suite gives each interaction 10 seconds. These limits are part of the
 development contract and should be changed only with a measured reason.
 
-Run the full CI-equivalent check, including the strict MkDocs build, with:
+Run the full CI-equivalent check, including the test suite, package build,
+formatter, paredit structural syntax check, coverage, and the strict MkDocs
+build, with:
 
 ```sh
 nix flake check --all-systems --print-build-logs
 ```
+
+`checks.default` and `checks.coverage` both build inside the same PTY-less Nix
+sandbox, so both set `LOOM_SANDBOXED_CHECK`; tests that spawn a real child
+process over a PTY or a pipe skip visibly (in cl-weave's "N skipped" count)
+rather than hanging inside that sandbox. `apps.test` and the development
+shell's `test` alias do not set it, so the same tests run for real outside Nix
+builds.
 
 ## Coverage
 
