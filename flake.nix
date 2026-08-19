@@ -153,6 +153,7 @@
               ".asd"
               ".lisp"
               ".md"
+              ".nix"
               ".yml"
               ".yaml"
               ".css"
