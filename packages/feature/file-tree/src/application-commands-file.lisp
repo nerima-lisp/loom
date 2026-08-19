@@ -1,6 +1,6 @@
 ;;;; packages/feature/file-tree/src/application-commands-file.lisp
 ;;;;
-;;;; Application layer: file-open/save commands (see
+;;;; Application layer: file-open/recent commands (see
 ;;;; application/commands-internal.lisp for the shared command-authoring
 ;;;; convention every commands-*.lisp file follows).
 (in-package #:loom/feature/file-tree)
@@ -19,6 +19,16 @@
   (declare (ignore input))
   (copy-list (editor-state-recent-files *editor-state*)))
 
+(defun %show-buffer-in-selected-window (buffer)
+  "Register BUFFER and display it in the selected window."
+  (%register-buffer buffer)
+  (loom/feature/window:window-set-buffer (%selected-window) buffer))
+
+(defun %visit-existing-file (path)
+  "Load PATH, display it in the selected window, and refresh recency."
+  (%show-buffer-in-selected-window (buffer-load path))
+  (remember-recent-file path))
+
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.
 
@@ -34,13 +44,9 @@ an empty buffer associated with that path, so a later save creates the file."
           (minibuffer-message
            (editor-state-minibuffer *editor-state*)
            (format nil "Cannot open directory: ~A" path))))
-      (let ((buffer (if existing-path
-                        (buffer-load existing-path)
-                        (%make-file-buffer path))))
-        (%register-buffer buffer)
-        (loom/feature/window:window-set-buffer (%selected-window) buffer)
-        (when existing-path
-          (remember-recent-file existing-path))))))
+      (if existing-path
+          (%visit-existing-file existing-path)
+          (%show-buffer-in-selected-window (%make-file-buffer path))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."
@@ -50,92 +56,7 @@ an empty buffer associated with that path, so a later save creates the file."
     (let ((existing-path (probe-file path)))
       (if (and existing-path
                (not (host-kit:directory-pathname-p existing-path)))
-          (let ((buffer (buffer-load existing-path)))
-            (%register-buffer buffer)
-            (loom/feature/window:window-set-buffer (%selected-window) buffer)
-            (remember-recent-file existing-path))
+          (%visit-existing-file existing-path)
           (minibuffer-message
            (editor-state-minibuffer *editor-state*)
            (format nil "Recent file is unavailable: ~A" path))))))
-
-(defun %transfer-point-and-mark (old-buffer new-buffer)
-  "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
-
-MAKE-BUFFER always starts point/mark at (0,0); without this, a path-less
-first save (see SAVE-BUFFER) would silently relocate the user's cursor to
-the top of the buffer. Undo history has no public transfer mechanism
-anywhere in the buffer protocol (MAKE-BUFFER/BUFFER-TEXT do not expose
-one), so that part of OLD-BUFFER's state is a known, documented loss."
-  (buffer-set-point new-buffer (buffer-point-line old-buffer) (buffer-point-column old-buffer))
-  (multiple-value-bind (mark-line mark-column) (buffer-mark old-buffer)
-    (when (and mark-line mark-column)
-      (buffer-set-mark new-buffer mark-line mark-column))))
-
-(defun %save-buffer-or-warn-overwrite (buffer path)
-  "Save BUFFER to PATH via BUFFER-SAVE, unless PATH already names an
-existing, unrelated file.
-
-BUFFER-SAVE's real method (infrastructure/filesystem.lisp) writes via
-HOST-KIT:WRITE-FILE-STRING with default :IF-EXISTS :SUPERSEDE semantics,
-which would silently clobber such a file, so HOST-KIT:FILE-EXISTS-P
-(exported by cl-host-kit) guards it: on a hit, warn instead of writing
-rather than building a general confirmation-dialog subsystem -- BUFFER is
-already installed in its window with PATH attached by the caller, so the
-user's very next C-x C-s goes through SAVE-BUFFER's ordinary
-already-has-a-path fast path and writes for real, which serves as the
-required second, explicit confirmation."
-  (if (host-kit:file-exists-p path)
-      (minibuffer-message
-       (editor-state-minibuffer *editor-state*)
-       (format nil "File exists: ~A (press C-x C-s again to overwrite)" path))
-      (progn
-        (buffer-save buffer)
-        (remember-recent-file path))))
-
-(defun %prompt-and-save-new-buffer (window buffer)
-  "Prompt for a path and save BUFFER (which has none yet) under it.
-
-The buffer protocol exposes no operation to attach a path to an existing
-buffer after the fact (BUFFER-PATH has no SETF method); instead of reaching
-into domain/buffer.lisp's internal %BUFFER-PATH slot, this builds a fresh
-buffer carrying the same text and the new path via the public
-MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
-%TRANSFER-POINT-AND-MARK and %SAVE-BUFFER-OR-WARN-OVERWRITE)."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((path "Save file: "))
-    (let ((new-buffer (%make-file-buffer path
-                                         :name (buffer-name buffer)
-                                         :initial-content (buffer-text buffer))))
-      (%transfer-point-and-mark buffer new-buffer)
-      (%register-buffer new-buffer)
-      (loom/feature/window:window-set-buffer window new-buffer)
-      (%save-buffer-or-warn-overwrite new-buffer path))))
-
-(defun save-buffer ()
-  "Save the selected buffer, prompting for a path first if it has none."
-  (let* ((window (%selected-window))
-         (buffer (loom/feature/window:window-buffer window)))
-    (if (buffer-path buffer)
-        (progn
-          (buffer-save buffer)
-          (remember-recent-file (buffer-path buffer)))
-        (%prompt-and-save-new-buffer window buffer))))
-
-(defun write-file ()
-  "Write the selected buffer to a new prompted path.
-
-The selected window visits a fresh buffer carrying the original text and
-point/mark, leaving the previous buffer in the session registry as a separate
-buffer, like Emacs's C-x C-w visit behavior."
-  (let* ((window (%selected-window))
-         (buffer (loom/feature/window:window-buffer window)))
-    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                   :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((path "Write file: "))
-      (let ((new-buffer (%make-file-buffer path
-                                           :initial-content (buffer-text buffer))))
-        (%transfer-point-and-mark buffer new-buffer)
-        (%register-buffer new-buffer)
-        (loom/feature/window:window-set-buffer window new-buffer)
-        (%save-buffer-or-warn-overwrite new-buffer path)))))

@@ -49,6 +49,10 @@ The command specification type used by the command registry.
 
 Define or replace command specifications in the declarative command catalogue.
 
+### `define-command-spec-catalog`
+
+Compose command specifications from predeclared grouped catalog variables.
+
 ### `*command-specs*`
 
 The variable holding the currently registered command specifications.
@@ -728,7 +732,7 @@ Return the serializable layout description of `tree`.
 ### `make-window-tree-from-layout`
 
 ```lisp
-(loom:make-window-tree-from-layout layout buffers width height)
+(loom:make-window-tree-from-layout layout width height &key selected-index)
 ```
 
 Reconstruct a window tree from `layout`, resolving its leaf buffers from
@@ -1215,7 +1219,9 @@ running loom session.
 (loom:make-editor-state &key window-tree minibuffer keymap file-tree renderer kill-ring workspaces auto-save-mode-p auto-save-buffers auto-save-last-run-at after-save-hooks terminal-sessions)
 ```
 
-Construct an `editor-state`.
+Construct an `editor-state`. If `workspaces` is omitted, the supplied
+`window-tree` becomes the named `main` workspace. Supplying `workspaces` is
+useful when restoring a session or constructing multiple named views.
 
 ### `editor-state-window-tree`
 
@@ -2382,7 +2388,10 @@ Delete a named workspace; the final remaining workspace cannot be deleted.
 
 Interactive commands for creating, selecting, cycling, and deleting
 workspaces. They operate on `*editor-state*` and preserve each workspace's
-window tree.
+window tree. `new-workspace` captures the selected buffer into a new workspace
+and activates it, `switch-workspace` prompts by workspace name, and
+`kill-workspace` deletes the active workspace while activating the surviving
+selection.
 
 ## Session feature
 

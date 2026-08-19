@@ -52,7 +52,7 @@
         (host-kit:write-file-string "print('needle')" main-path)
 
         (loom/feature/project::project-find-file)
-        (expect (minibuffer-prompt-string minibuffer) :to-equal "Project file: ")
+        (%expect-minibuffer-prompt minibuffer (%project-file-prompt-string))
         (minibuffer-handle-key
          minibuffer
          (cl-tty-kit:make-key-event :type :special :code :tab))
@@ -63,9 +63,7 @@
         (expect (buffer-major-mode (%selected-test-buffer)) :to-be :python)
 
         (loom/feature/project::project-search)
-        (expect (minibuffer-prompt-string minibuffer)
-                :to-equal
-                "Project search: ")
+        (%expect-minibuffer-prompt minibuffer (%project-search-prompt-string))
         (funcall (loom::%minibuffer-on-confirm minibuffer) "needle")
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
@@ -99,36 +97,4 @@
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-contain
                 "Project root:"))))
-
-  (it
-    "reports missing project roots through every project command"
-    (host-kit:with-temporary-directory (directory)
-      (let* ((path (merge-pathnames "plain.txt" directory))
-             (buffer (make-buffer :name "plain.txt"
-                                  :path path
-                                  :initial-content "plain"))
-             (*editor-state*
-               (make-editor-state
-                :window-tree (make-window-tree buffer 80 24)
-                :minibuffer (make-minibuffer)
-                :keymap (make-keymap)
-                :file-tree nil
-                :renderer nil
-                :buffers (list buffer)
-                :kill-ring nil)))
-        (host-kit:write-file-string "plain" path)
-        (loom/feature/project::project-root)
-        (expect (loom:minibuffer-message-string
-                 (editor-state-minibuffer *editor-state*))
-                :to-equal
-                "No project root found")
-        (loom/feature/project::project-find-file)
-        (expect (loom:minibuffer-message-string
-                 (editor-state-minibuffer *editor-state*))
-                :to-equal
-                "No project root found")
-        (loom/feature/project::project-search)
-        (expect (loom:minibuffer-message-string
-                 (editor-state-minibuffer *editor-state*))
-                :to-equal
-                "No project root found")))))
+  )

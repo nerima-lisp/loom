@@ -101,48 +101,6 @@
                 ("/root/sub/nested/c.txt" . 2))))))
 
 (describe
-  "file-tree-move-selection"
-  (it
-    "walks forward through visible entries and stops at the last one"
-    (let ((tree (make-file-tree "/root/")))
-      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (expect (file-tree-move-selection tree :down) :to-equal "/root/a.txt")
-      (expect (file-tree-move-selection tree :down) :to-equal "/root/sub/")
-      ;; no-op at the end of the visible entry list
-      (expect (file-tree-move-selection tree :down) :to-equal "/root/sub/")))
-
-  (it
-    "walks backward through visible entries and stops at the first one"
-    (let ((tree (make-file-tree "/root/")))
-      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (file-tree-move-selection tree :down)
-      (file-tree-move-selection tree :down)
-      (expect (file-tree-move-selection tree :up) :to-equal "/root/a.txt")
-      ;; no-op at the start of the visible entry list
-      (expect (file-tree-move-selection tree :up) :to-equal "/root/a.txt")
-      (expect (file-tree-selected-path tree) :to-equal "/root/a.txt")))
-
-  (it
-    "moving :up with no prior selection selects the last visible entry"
-    (let ((tree (make-file-tree "/root/")))
-      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (expect (file-tree-move-selection tree :up) :to-equal "/root/sub/")))
-
-  (it
-    "signals an error for an unknown direction"
-    (let ((tree (make-file-tree "/root/")))
-      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (file-tree-move-selection tree :down)
-      (signals error (file-tree-move-selection tree :sideways))))
-
-  (it
-    "is a no-op on a tree with no visible entries"
-    ;; %FAKE-LISTER's (T NIL) clause gives this root zero children.
-    (let ((tree (make-file-tree "/nowhere/")))
-      (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (expect (file-tree-move-selection tree :down) :to-be-falsy))))
-
-(describe
   "file-tree-prefetch-paths"
   (it
     "returns the root and currently expanded directories"

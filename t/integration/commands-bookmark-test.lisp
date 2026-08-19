@@ -1,0 +1,87 @@
+(in-package #:loom/test)
+
+(defun %run-bookmark-command (command minibuffer input)
+  "Invoke COMMAND and confirm its minibuffer prompt with INPUT."
+  (funcall command)
+  (funcall (loom::%minibuffer-on-confirm minibuffer) input))
+
+(describe
+  "recent files and bookmarks"
+  (it
+    "tracks existing files and visits a recent file"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "recent.txt" dir)))
+        (host-kit:write-file-string "recent" path)
+        (%with-minibuffer-state (minibuffer "")
+          (loom/feature/file-tree:find-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) path)
+          (expect (editor-state-recent-files *editor-state*)
+                  :to-equal (list (editor-path-string path)))
+          (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")
+          (loom/feature/file-tree:recent-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer)
+                   (editor-path-string path))
+          (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")))))
+
+  (it
+    "sets, jumps to, lists, and deletes a named bookmark"
+    (%with-minibuffer-state (minibuffer (format nil "one~%two~%three")
+                             (name "spot"))
+      (buffer-set-point (%selected-test-buffer) 1 2)
+      (%run-bookmark-command #'loom::set-bookmark minibuffer name)
+      (let ((bookmark (gethash "spot"
+                               (editor-state-bookmarks *editor-state*))))
+        (expect (editor-bookmark-p bookmark) :to-be-truthy)
+        (expect (editor-bookmark-line bookmark) :to-equal 1)
+        (expect (editor-bookmark-column bookmark) :to-equal 2))
+      (buffer-set-point (%selected-test-buffer) 0 0)
+      (%run-bookmark-command #'loom::jump-to-bookmark minibuffer name)
+      (expect (buffer-point-line (%selected-test-buffer)) :to-equal 1)
+      (expect (buffer-point-column (%selected-test-buffer)) :to-equal 2)
+      (loom::list-bookmarks)
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Bookmarks: spot")
+      (%run-bookmark-command #'loom::delete-bookmark minibuffer name)
+      (expect (gethash "spot" (editor-state-bookmarks *editor-state*))
+              :to-be nil)))
+
+  (it
+    "rejects an empty bookmark name after trimming minibuffer whitespace"
+    (%with-minibuffer-state (minibuffer "bookmark body")
+      (%run-bookmark-command
+       #'loom::set-bookmark minibuffer (format nil " ~C " #\Tab))
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Bookmark name cannot be empty")
+      (expect (hash-table-count (loom::%bookmark-table)) :to-equal 0)))
+
+  (it-each
+      (("jump" loom::jump-to-bookmark)
+       ("delete" loom::delete-bookmark))
+      "reports a missing bookmark for ~A" (label command)
+    (declare (ignore label))
+    (%with-minibuffer-state (minibuffer "bookmark body")
+      (%run-bookmark-command command minibuffer "missing")
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Unknown bookmark: missing")))
+
+  (it
+    "reports an unavailable bookmark target when its file no longer exists"
+    (let* ((path #P"/tmp/loom-nonexistent-bookmark-target.txt")
+           (bookmark (make-editor-bookmark
+                      :name "gone"
+                      :path (editor-path-string path)
+                      :buffer-name "vanished.txt"
+                      :line 0
+                      :column 0)))
+      (%with-minibuffer-state (minibuffer "")
+        (setf (gethash "gone" (loom::%bookmark-table)) bookmark)
+        (%run-bookmark-command #'loom::jump-to-bookmark minibuffer "gone")
+        (expect (minibuffer-message-string minibuffer)
+                :to-equal "Bookmark target is unavailable: gone"))))
+
+  (it
+    "reports when no bookmarks are available to list"
+    (%with-minibuffer-state (minibuffer "")
+      (loom::list-bookmarks)
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "No bookmarks"))))

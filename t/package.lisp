@@ -42,7 +42,8 @@
 
 (defun run-tests ()
   "Run every registered spec, signalling on any failure so ASDF's TEST-OP fails."
-  (unless (run-all :reporter :spec :timeout-ms 40000)
+  (unless (run-all :reporter :spec :timeout-ms 40000
+                   :pass-with-no-tests nil)
     (error "loom test suite failed"))
   (format t "~&loom/test: successful completion with 0 failures~%")
   t)

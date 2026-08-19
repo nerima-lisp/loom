@@ -15,13 +15,43 @@
     (when runtime
       (loom-concurrent-runtime-invalidate-path runtime path))))
 
-(defun file-tree-select-next ()
-  "Move the file-tree selection to the next visible entry."
-  (file-tree-move-selection (editor-state-file-tree *editor-state*) :down))
+(defmacro %define-file-tree-selection-command (name docstring direction)
+  "Define NAME as a zero-argument file-tree selection command."
+  `(defun ,name ()
+     ,docstring
+     (file-tree-move-selection (editor-state-file-tree *editor-state*) ,direction)))
 
-(defun file-tree-select-previous ()
-  "Move the file-tree selection to the previous visible entry."
-  (file-tree-move-selection (editor-state-file-tree *editor-state*) :up))
+(defmacro %define-file-tree-prompted-mutation-command
+    (name docstring prompt mutation-operator)
+  "Define NAME as a prompted file-tree mutation command for PROMPT."
+  `(defun ,name ()
+     ,docstring
+     (let ((tree (editor-state-file-tree *editor-state*)))
+       (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                      :on-cancel (minibuffer-message minibuffer "Quit"))
+           ((path ,prompt))
+         (,mutation-operator tree path)
+         (%invalidate-file-tree-path path)))))
+
+(defmacro %define-file-tree-selected-path-command
+    (name docstring path-binding &body body)
+  "Define NAME as a zero-argument file-tree command over the selected path."
+  `(defun ,name ()
+     ,docstring
+     (let* ((tree (editor-state-file-tree *editor-state*))
+            (,path-binding (file-tree-selected-path tree)))
+       (when ,path-binding
+         ,@body))))
+
+(%define-file-tree-selection-command
+ file-tree-select-next
+ "Move the file-tree selection to the next visible entry."
+ :down)
+
+(%define-file-tree-selection-command
+ file-tree-select-previous
+ "Move the file-tree selection to the previous visible entry."
+ :up)
 
 (defun file-tree-open-selected ()
   "Open the selected entry as a buffer, or toggle it if it is a directory."
@@ -30,41 +60,31 @@
     (when path
       (case (file-tree-entry-kind tree path)
         (:directory (file-tree-toggle-expand tree path))
-        (:file (let ((buffer (buffer-load path)))
-                 (%register-buffer buffer)
-                 (window-set-buffer (%selected-window) buffer)
-                 (remember-recent-file path)))
+        (:file (%visit-existing-file path))
         (otherwise (error "selected file-tree entry disappeared: ~S" path))))))
 
-(defun file-tree-create-file-command ()
-  "Prompt for a path and create a new empty file there."
-  (let ((tree (editor-state-file-tree *editor-state*)))
-    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                   :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((path "Create file: "))
-      (file-tree-create-file tree path)
-      (%invalidate-file-tree-path path))))
+(%define-file-tree-prompted-mutation-command
+ file-tree-create-file-command
+ "Prompt for a path and create a new empty file there."
+ "Create file: "
+ file-tree-create-file)
 
-(defun file-tree-create-directory-command ()
-  "Prompt for a path and create a new empty directory there."
-  (let ((tree (editor-state-file-tree *editor-state*)))
-    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                   :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((path "Create directory: "))
-      (file-tree-create-directory tree path)
-      (%invalidate-file-tree-path path))))
+(%define-file-tree-prompted-mutation-command
+ file-tree-create-directory-command
+ "Prompt for a path and create a new empty directory there."
+ "Create directory: "
+ file-tree-create-directory)
 
-(defun file-tree-rename-command ()
-  "Prompt for a new path and rename the selected entry to it."
-  (let* ((tree (editor-state-file-tree *editor-state*))
-         (old-path (file-tree-selected-path tree)))
-    (when old-path
-      (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                     :on-cancel (minibuffer-message minibuffer "Quit"))
-          ((new-path (format nil "Rename ~A to: " old-path)))
-        (file-tree-rename tree old-path new-path)
-        (%invalidate-file-tree-path old-path)
-        (%invalidate-file-tree-path new-path)))))
+(%define-file-tree-selected-path-command
+ file-tree-rename-command
+ "Prompt for a new path and rename the selected entry to it."
+ old-path
+ (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                :on-cancel (minibuffer-message minibuffer "Quit"))
+     ((new-path (format nil "Rename ~A to: " old-path)))
+   (file-tree-rename tree old-path new-path)
+   (%invalidate-file-tree-path old-path)
+   (%invalidate-file-tree-path new-path)))
 
 ;; No confirmation prompt: unlike create/rename, delete needs no typed input,
 ;; only a yes/no confirmation, and the minibuffer protocol as it stands
@@ -72,10 +92,9 @@
 ;; prompt, not a dedicated y-or-n-p; a free-text "type anything to confirm"
 ;; prompt would not actually reduce accidental deletes over just deleting
 ;; directly, so this deletes the selection immediately.
-(defun file-tree-delete-command ()
-  "Delete the selected file-tree entry from disk."
-  (let* ((tree (editor-state-file-tree *editor-state*))
-         (path (file-tree-selected-path tree)))
-    (when path
-      (file-tree-delete tree path)
-      (%invalidate-file-tree-path path))))
+(%define-file-tree-selected-path-command
+ file-tree-delete-command
+ "Delete the selected file-tree entry from disk."
+ path
+ (file-tree-delete tree path)
+ (%invalidate-file-tree-path path))

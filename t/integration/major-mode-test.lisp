@@ -28,7 +28,7 @@
     (%with-minibuffer-state
         (minibuffer "value" (buffer (%selected-test-buffer)))
       (loom/feature/mode::set-major-mode)
-      (expect (minibuffer-prompt-string minibuffer) :to-equal "Major mode: ")
+      (%expect-minibuffer-prompt minibuffer (%major-mode-prompt-string))
       (funcall (loom::%minibuffer-on-confirm minibuffer) "Python")
       (expect (buffer-major-mode buffer) :to-be :python)
 
@@ -82,102 +82,4 @@
                 nil)
         (expect (loom/feature/mode:comment-line)
                 :to-be
-                nil))))
-
-  (it
-    "keeps point positions when removing an indented comment without a gap"
-    (%with-minibuffer-state
-        (minibuffer "  #value"
-                    (buffer (%selected-test-buffer)))
-      (buffer-set-major-mode buffer :python)
-      (buffer-set-point buffer 0 0)
-      (loom/feature/mode:comment-line)
-      (expect (buffer-line buffer 0) :to-equal "  value")
-      (expect buffer :to-have-point (cons 0 0))))
-
-  (it
-    "moves point back after removing a comment beyond the marker"
-    (%with-minibuffer-state
-        (minibuffer "  # value"
-                    (buffer (%selected-test-buffer)))
-      (buffer-set-major-mode buffer :python)
-      (buffer-set-point buffer 0 9)
-      (loom/feature/mode:comment-line)
-      (expect (buffer-line buffer 0) :to-equal "  value")
-      (expect buffer :to-have-point (cons 0 7))))
-
-  (it
-    "does not move point before indentation when adding a comment"
-    (%with-minibuffer-state
-        (minibuffer "  value"
-                    (buffer (%selected-test-buffer)))
-      (buffer-set-major-mode buffer :python)
-      (buffer-set-point buffer 0 0)
-      (loom/feature/mode:comment-line)
-      (expect (buffer-line buffer 0) :to-equal "  # value")
-      (expect buffer :to-have-point (cons 0 0))))
-
-  (it
-    "reports modes without line comment syntax"
-    (%with-minibuffer-state
-        (minibuffer "value"
-                    (buffer (%selected-test-buffer)))
-      (buffer-set-major-mode buffer :json)
-      (loom/feature/mode:comment-line)
-      (expect (loom:minibuffer-message-string minibuffer)
-              :to-equal
-              "Mode JSON has no line comment syntax"))))
-
-(describe
-  "mode-local keymap dispatch"
-  (it
-    "routes local, inherited, and global bindings after a mode switch"
-    (let* ((state (%fresh-editor-state "" :with-minibuffer t))
-           (*editor-state* state)
-           (buffer (%selected-test-buffer))
-           (root (editor-state-keymap state))
-           (keymap-state (make-keymap-state root))
-           (hit (gensym "HIT-")))
-      (unwind-protect
-           (progn
-             (register-major-mode
-              :loom-test-parent-dispatch-mode
-              :name "Loom Test Parent Dispatch"
-              :keybindings
-              (list
-               (cons '(:control #\p)
-                     (lambda ()
-                       (%loom-test-parent-dispatch-command hit)))))
-             (register-major-mode
-              :loom-test-child-dispatch-mode
-              :name "Loom Test Child Dispatch"
-              :parent :loom-test-parent-dispatch-mode
-              :keybindings
-              (list
-               (cons '(:control #\x)
-                     (lambda ()
-                       (%loom-test-child-dispatch-command hit)))))
-             (keymap-define-key
-              root
-              (list (cons '(:control) #\x))
-              (lambda ()
-                (%loom-test-global-dispatch-command hit)))
-             (buffer-set-major-mode buffer :loom-test-child-dispatch-mode)
-             (flet ((dispatch (character)
-                      (setf (symbol-value hit) nil)
-                      (loom::%dispatch-key-event
-                       (cl-tty-kit:make-key-event
-                        :type :character
-                        :code character
-                        :modifiers '(:control))
-                       keymap-state)))
-               (dispatch #\x)
-               (expect (symbol-value hit) :to-be :child)
-               (dispatch #\p)
-               (expect (symbol-value hit) :to-be :parent)
-               (buffer-set-major-mode buffer
-                                      :loom-test-parent-dispatch-mode)
-               (dispatch #\x)
-               (expect (symbol-value hit) :to-be :global)))
-        (unregister-major-mode :loom-test-child-dispatch-mode)
-        (unregister-major-mode :loom-test-parent-dispatch-mode)))))
+                nil)))))

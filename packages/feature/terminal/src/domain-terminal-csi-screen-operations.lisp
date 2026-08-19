@@ -1,0 +1,73 @@
+(in-package #:loom/feature/terminal)
+
+(defun %terminal-screen-delete-characters (screen count)
+  (let* ((row (aref (terminal-screen-rows screen)
+                    (terminal-screen-cursor-row screen)))
+         (column (terminal-screen-cursor-column screen))
+         (width (terminal-screen-width screen))
+         (count (%terminal-clamp count 0 (- width column))))
+    (when (plusp count)
+      (replace row row
+               :start1 column
+               :end1 (- width count)
+               :start2 (+ column count)
+               :end2 width)
+      (loop for current from (- width count) below width
+            do (setf (char row current) #\Space))))
+  (setf (terminal-screen-wrap-pending screen) nil)
+  screen)
+
+(defun %terminal-screen-insert-characters (screen count)
+  (let* ((row (aref (terminal-screen-rows screen)
+                    (terminal-screen-cursor-row screen)))
+         (column (terminal-screen-cursor-column screen))
+         (width (terminal-screen-width screen))
+         (count (%terminal-clamp count 0 (- width column))))
+    (when (plusp count)
+      (replace row row
+               :start1 (+ column count)
+               :end1 width
+               :start2 column
+               :end2 (- width count))
+      (loop for current from column below (+ column count)
+            do (setf (char row current) #\Space))))
+  (setf (terminal-screen-wrap-pending screen) nil)
+  screen)
+
+(defun %terminal-screen-erase-characters (screen count)
+  (let* ((row (aref (terminal-screen-rows screen)
+                    (terminal-screen-cursor-row screen)))
+         (column (terminal-screen-cursor-column screen))
+         (end (min (terminal-screen-width screen) (+ column count))))
+    (loop for current from column below end
+          do (setf (char row current) #\Space)))
+  (setf (terminal-screen-wrap-pending screen) nil)
+  screen)
+
+(defun %terminal-screen-insert-lines (screen count)
+  (let* ((height (terminal-screen-height screen))
+         (width (terminal-screen-width screen))
+         (row (terminal-screen-cursor-row screen))
+         (count (%terminal-clamp count 0 (- height row)))
+         (rows (terminal-screen-rows screen)))
+    (when (plusp count)
+      (loop for current from (1- height) downto (+ row count)
+            do (replace (aref rows current)
+                        (aref rows (- current count))))
+      (loop for current from row below (+ row count)
+            do (setf (aref rows current) (%terminal-blank-row width)))))
+  screen)
+
+(defun %terminal-screen-delete-lines (screen count)
+  (let* ((height (terminal-screen-height screen))
+         (width (terminal-screen-width screen))
+         (row (terminal-screen-cursor-row screen))
+         (count (%terminal-clamp count 0 (- height row)))
+         (rows (terminal-screen-rows screen)))
+    (when (plusp count)
+      (loop for current from row below (- height count)
+            do (replace (aref rows current)
+                        (aref rows (+ current count))))
+      (loop for current from (- height count) below height
+            do (setf (aref rows current) (%terminal-blank-row width)))))
+  screen)

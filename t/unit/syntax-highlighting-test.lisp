@@ -74,3 +74,20 @@
   (it
     "returns no tokens for an empty line"
     (expect (syntax-highlight-line "") :to-be nil)))
+
+(describe
+  "syntax-highlight-line-for-mode"
+  (it
+    "uses major-mode metadata for non-Common Lisp tokenization"
+    (let ((line "fn main() { 42 } // note"))
+      (expect (mapcar #'syntax-token-kind
+                      (syntax-highlight-line-for-mode line :rust))
+              :to-equal
+              '(:keyword :whitespace :plain :delimiter :delimiter
+                :whitespace :delimiter :whitespace :number :whitespace
+                :delimiter :whitespace :comment))
+      (expect (mapcar #'syntax-token-text
+                      (syntax-highlight-line-for-mode line :rust))
+              :to-equal
+              '("fn" " " "main" "(" ")" " " "{" " " "42" " " "}" " "
+                "// note")))))

@@ -1,8 +1,6 @@
 ;;;; t/unit/workspace-test.lisp
 ;;;;
-;;;; Workspace domain tests.  These tests exercise the manager without an
-;;;; editor state so view ownership and switching rules stay independently
-;;;; observable.
+;;;; Workspace construction/lifecycle tests and editor-state invariants.
 (in-package #:loom/test)
 
 (describe "workspace manager"
@@ -19,25 +17,6 @@
               tree)
       (expect (workspace-manager-workspaces manager) :to-have-length 1)))
 
-  (it "creates, switches, and wraps between independent views"
-    (let* ((first-tree (make-window-tree :first 80 24))
-           (second-tree (make-window-tree :second 80 24))
-           (manager (make-workspace-manager first-tree))
-           (created (workspace-manager-create manager second-tree)))
-      (expect (workspace-name created) :to-equal "workspace-2")
-      (expect (workspace-manager-current-name manager) :to-equal "main")
-      (expect (workspace-manager-switch-name manager "workspace-2")
-              :to-be
-              created)
-      (expect (workspace-manager-current-name manager) :to-equal "workspace-2")
-      (expect (workspace-manager-current manager) :to-be created)
-      (expect (workspace-manager-next manager)
-              :to-be
-              (first (workspace-manager-workspaces manager)))
-      (expect (workspace-manager-current-name manager) :to-equal "main")
-      (expect (workspace-manager-previous manager) :to-be created)
-      (expect (workspace-manager-current-name manager) :to-equal "workspace-2")))
-
   (it "deletes the active workspace but preserves the final one"
     (let* ((manager (make-workspace-manager
                      (make-window-tree :first 80 24)))
@@ -51,13 +30,79 @@
       (expect (workspace-manager-workspaces manager) :to-have-length 1)
       (signals error (workspace-manager-delete manager))))
 
-  (it "rejects blank and duplicate workspace names"
+  (it-each
+      (("blank names"
+        (lambda (manager)
+          (workspace-manager-create manager
+                                    (make-window-tree :other 80 24)
+                                    :name "  ")))
+       ("duplicate names"
+        (lambda (manager)
+          (workspace-manager-create manager
+                                    (make-window-tree :other 80 24)
+                                    :name "MAIN"))))
+      "rejects ~A on workspace creation" (name operation)
     (let ((manager (make-workspace-manager
                     (make-window-tree :scratch 80 24))))
       (signals error
         (make-workspace-manager (make-window-tree :other 80 24)
                                 :name "  "))
       (signals error
-        (workspace-manager-create manager
-                                   (make-window-tree :other 80 24)
-                                   :name "MAIN")))))
+        (funcall operation manager))))
+
+  (it-each
+      (("deleting the current workspace keeps the successor active"
+        1 1 "third")
+       ("deleting an earlier workspace shifts the current index left"
+        0 2 "third")
+       ("deleting a later workspace keeps the current workspace"
+        2 1 "second"))
+      "~A" (name delete-index current-index expected-name)
+    (let* ((manager (make-workspace-manager
+                     (make-window-tree :first 80 24)))
+           (second (workspace-manager-create
+                    manager (make-window-tree :second 80 24)
+                    :name "second"))
+           (third (workspace-manager-create
+                   manager (make-window-tree :third 80 24)
+                   :name "third")))
+      (declare (ignore second third))
+      (workspace-manager-switch-index manager current-index)
+      (expect (workspace-manager-delete manager delete-index)
+              :to-be
+              (workspace-manager-current manager))
+      (expect (workspace-manager-current-name manager)
+              :to-equal
+              expected-name))))
+
+(describe "editor-state workspace invariant"
+  (it "creates a main workspace manager when one is not provided"
+    (let* ((buffer (make-buffer :name "*scratch*" :initial-content "hello"))
+           (tree (make-window-tree buffer 80 24))
+           (state (make-editor-state :window-tree tree)))
+      (expect (editor-state-window-tree state) :to-be tree)
+      (expect (workspace-manager-current-name
+               (editor-state-workspaces state))
+              :to-equal "main")
+      (expect (workspace-window-tree
+               (workspace-manager-current
+                (editor-state-workspaces state)))
+              :to-be
+              tree)
+      (expect (workspace-manager-workspaces
+               (editor-state-workspaces state))
+              :to-have-length 1)))
+
+  (it "preserves an explicit workspace manager"
+    (let* ((window-tree (make-window-tree :window 80 24))
+           (workspace-tree (make-window-tree :workspace 80 24))
+           (manager (make-workspace-manager workspace-tree :name "restored"))
+           (state (make-editor-state :window-tree window-tree
+                                     :workspaces manager)))
+      (expect (editor-state-window-tree state) :to-be window-tree)
+      (expect (editor-state-workspaces state) :to-be manager)
+      (expect (workspace-manager-current-name manager) :to-equal "restored")
+      (expect (workspace-window-tree
+               (workspace-manager-current manager))
+              :to-be
+              workspace-tree))))

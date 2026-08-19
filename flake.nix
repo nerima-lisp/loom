@@ -32,6 +32,15 @@
     cl-weave = {
       url = "github:nerima-lisp/cl-weave/v1.3.0";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.paredit-cli.follows = "paredit-cli";
+    };
+
+    # Structural Common Lisp parser/rewriter used by the development shell
+    # and the source-level syntax gate below. Keep it explicit instead of
+    # relying on cl-weave's test-only transitive input.
+    paredit-cli = {
+      url = "github:nerima-lisp/paredit-cli/v1.6.0";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # loom's runtime dependencies. We only need each one's source tree (built
@@ -70,7 +79,7 @@
       flake = false;
     };
     cl-regex-kit = {
-      url = "github:nerima-lisp/cl-regex-kit/v0.3.0";
+      url = "github:nerima-lisp/cl-regex-kit/v2.0.0";
       flake = false;
     };
     cl-date-kit = {
@@ -81,9 +90,9 @@
       url = "github:nerima-lisp/cl-concurrent-kit/v0.6.1";
       flake = false;
     };
-    # Not a dependency loom names anywhere: cl-regex-kit's own
-    # `:depends-on ("cl-parser-kit")` needs it, same transitive-edge
-    # situation cl-codec-kit is in above for cl-tty-kit.
+    # cl-regex-kit's v2 :depends-on includes cl-parser-kit in addition to
+    # cl-concurrent-kit, which loom also names directly. Keep the parser edge
+    # explicit here so its ASDF component is available during the build.
     cl-parser-kit = {
       url = "github:nerima-lisp/cl-parser-kit/v1.1.1";
       flake = false;
@@ -109,6 +118,7 @@
       nixpkgs,
       cl-nix-forge,
       cl-weave,
+      paredit-cli,
       cl-tty-kit,
       cl-codec-kit,
       cl-host-kit,
@@ -143,6 +153,7 @@
               ".asd"
               ".lisp"
               ".md"
+              ".nix"
               ".yml"
               ".yaml"
               ".css"
@@ -189,6 +200,15 @@
         platforms = systems;
         mainProgram = "loom";
       };
+
+      # Coverage is a separate derivation because it force-compiles the full
+      # source graph with SB-COVER enabled and writes an HTML report. Keep its
+      # timeout independent from the ordinary test gate: report generation
+      # must not inherit a shorter interactive-test budget.
+      coverage-timeout-seconds = 1800;
+      coverage-entry-point-text = ''
+        (load "scripts/coverage.lisp")
+      '';
 
       # loom's runtime toolkit family, each built from its pinned checkout as
       # an SBCL lisp library. Built here rather than taken from each
@@ -243,7 +263,7 @@
             name = "cl-history-kit";
             source = cl-history-kit;
           };
-          clProlog = sibling {
+          clPrologKit = sibling {
             name = "cl-prolog-kit";
             source = cl-prolog-kit;
           };
@@ -261,7 +281,10 @@
           clRegexKit = sibling {
             name = "cl-regex-kit";
             source = cl-regex-kit;
-            dependencies = [ clParserKit ];
+            dependencies = [
+              clConcurrentKit
+              clParserKit
+            ];
           };
           clBoundaryKit = sibling {
             name = "cl-boundary-kit";
@@ -322,7 +345,7 @@
           clTtyKit
           clHostKit
           clHistoryKit
-          clProlog
+          clPrologKit
           clCli
           clRegexKit
           clBoundaryKit
@@ -373,11 +396,14 @@
       # Markdown formatter would churn the whole docs tree.
       treefmt.evalModule = treefmt-nix.lib.evalModule;
 
-      # The cl-weave CLI, which the suite's own reporter is documented
-      # against. Interactive only: the generated shell is built from the
-      # check-enabled derivation, so `lispCheckDependencies` (cl-weave's
-      # source, for the registry) are already on it.
-      devShellPackages = ctx: [ cl-weave.packages.${ctx.system}.default ];
+      # The cl-weave CLI and paredit's structural editor, both of which are
+      # documented contributor tools. Interactive only: the generated shell
+      # is built from the check-enabled derivation, so cl-weave's source for
+      # the registry is already on it.
+      devShellPackages = ctx: [
+        cl-weave.packages.${ctx.system}.default
+        paredit-cli.packages.${ctx.system}.default
+      ];
 
       overrideOutputs = ctx: {
         # The generated shell, plus the aliases this repository's
@@ -394,11 +420,18 @@
             echo "loom development environment"
             echo "  test     - Run the full loom suite (cl-weave, loom/test)"
             echo "  coverage - Run the test suite and write HTML coverage to coverage/"
-            echo "  sbcl     - Interactive Common Lisp (with cl-weave)"
+            echo "  sbcl     - Interactive Common Lisp (with cl-weave and paredit)"
+            echo "  paredit  - Inspect and structurally edit Lisp source"
             echo ""
           '';
         });
 
+        # The preset's script check copies the complete build directory into
+        # its output.  The test run compiles FASLs in that directory, and
+        # their compiler metadata is not a package artifact (nor stable
+        # across two otherwise identical builds).  Keep the check as a pure
+        # pass/fail gate and do not publish the mutable test worktree.
+        #
         # LOOM_SANDBOXED_CHECK tells the suite it is running inside this
         # sandboxed derivation (t/test-helpers.lisp's %SANDBOXED-CHECK-P), so
         # the handful of tests that spawn a real child process over a PTY or
@@ -409,6 +442,11 @@
         # `apps.test` and the dev shell's `test` alias do not set this, so
         # the same tests run for real everywhere else.
         checks.default = ctx.generated.checks.default.overrideAttrs (previous: {
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            runHook postInstall
+          '';
           LOOM_SANDBOXED_CHECK = "1";
         });
       };
@@ -419,6 +457,39 @@
       extraOutputs = ctx: {
         # Verify the delivered package compiles and the image dumps.
         checks.build = ctx.executable;
+
+        # Expose the same isolated coverage derivation as a buildable package
+        # and as a flake check. `ctx.cl.mkCoverageReport` supplies the package
+        # source registry and both runtime/check dependency closures. Both
+        # build inside the same PTY-less Nix sandbox as `checks.default`, so
+        # they need the same LOOM_SANDBOXED_CHECK skip signal (see that
+        # check's comment above).
+        packages.coverage =
+          (ctx.cl.mkCoverageReport {
+            drv = ctx.package;
+            entryPointText = coverage-entry-point-text;
+            timeoutSeconds = coverage-timeout-seconds;
+          }).overrideAttrs
+            (previous: {
+              LOOM_SANDBOXED_CHECK = "1";
+            });
+        checks.coverage =
+          (ctx.cl.mkCoverageReport {
+            drv = ctx.package;
+            entryPointText = coverage-entry-point-text;
+            timeoutSeconds = coverage-timeout-seconds;
+          }).overrideAttrs
+            (previous: {
+              LOOM_SANDBOXED_CHECK = "1";
+            });
+
+        # Parse every filtered Lisp source file with the same structural tool
+        # contributors use in the development shell. This catches unbalanced
+        # forms and malformed reader structure before compilation.
+        checks.paredit-lint = paredit-cli.lib.${ctx.system}.mkLintCheck {
+          inherit (ctx) src;
+          name = "loom-paredit-lint";
+        };
       };
     };
 }
