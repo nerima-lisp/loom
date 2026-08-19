@@ -464,20 +464,24 @@
         # build inside the same PTY-less Nix sandbox as `checks.default`, so
         # they need the same LOOM_SANDBOXED_CHECK skip signal (see that
         # check's comment above).
-        packages.coverage = (ctx.cl.mkCoverageReport {
-          drv = ctx.package;
-          entryPointText = coverage-entry-point-text;
-          timeoutSeconds = coverage-timeout-seconds;
-        }).overrideAttrs (previous: {
-          LOOM_SANDBOXED_CHECK = "1";
-        });
-        checks.coverage = (ctx.cl.mkCoverageReport {
-          drv = ctx.package;
-          entryPointText = coverage-entry-point-text;
-          timeoutSeconds = coverage-timeout-seconds;
-        }).overrideAttrs (previous: {
-          LOOM_SANDBOXED_CHECK = "1";
-        });
+        packages.coverage =
+          (ctx.cl.mkCoverageReport {
+            drv = ctx.package;
+            entryPointText = coverage-entry-point-text;
+            timeoutSeconds = coverage-timeout-seconds;
+          }).overrideAttrs
+            (previous: {
+              LOOM_SANDBOXED_CHECK = "1";
+            });
+        checks.coverage =
+          (ctx.cl.mkCoverageReport {
+            drv = ctx.package;
+            entryPointText = coverage-entry-point-text;
+            timeoutSeconds = coverage-timeout-seconds;
+          }).overrideAttrs
+            (previous: {
+              LOOM_SANDBOXED_CHECK = "1";
+            });
 
         # Parse every filtered Lisp source file with the same structural tool
         # contributors use in the development shell. This catches unbalanced
