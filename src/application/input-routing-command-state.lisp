@@ -30,7 +30,7 @@ existing behavior rather than tightening it as a side effect of an unrelated
 change.")
 
 (defparameter +kill-command-names+
-  '(kill-line kill-word backward-kill-word kill-region)
+  '(kill-line kill-word backward-kill-word kill-region kill-sexp)
   "Commands whose adjacent invocations may coalesce in the kill ring.")
 
 (defun %refresh-active-keymap (keymap-state)

@@ -14,7 +14,12 @@ is a :CONTROL-<letter> keyword with no separate modifier, while kitty CSI-u
 decodes the same combo as a :CHARACTER event carrying the letter plus an
 explicit :CONTROL modifier. INSTALL-DEFAULT-KEYBINDINGS binds the latter
 shape, so a :SPECIAL :CONTROL-<letter> event is rewritten into it here. Every
-other event passes through verbatim, wrapped as (MODIFIERS . CODE)."
+other event passes through verbatim, wrapped as (MODIFIERS . CODE).
+
+The rewrite keeps whatever modifiers the event already carried. An ESC-prefixed
+Ctrl+letter -- how a plain terminal reports C-M-f -- arrives as :SPECIAL
+:CONTROL-F with :ALT, and discarding that :ALT would make it indistinguishable
+from a bare C-f."
   (let ((type (cl-tty-kit:key-event-type event))
         (code (cl-tty-kit:key-event-code event))
         (modifiers (cl-tty-kit:key-event-modifiers event)))
@@ -23,5 +28,6 @@ other event passes through verbatim, wrapped as (MODIFIERS . CODE)."
              (let ((name (symbol-name code)))
                (and (= (length name) 9)
                     (string= "CONTROL-" name :end2 8))))
-        (cons '(:control) (char-downcase (char (symbol-name code) 8)))
+        (cons (adjoin :control modifiers)
+              (char-downcase (char (symbol-name code) 8)))
         (cons modifiers code))))

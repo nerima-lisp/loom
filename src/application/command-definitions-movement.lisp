@@ -11,6 +11,16 @@
       (command-spec "backward-char" backward-char :keys ((:control #\b)))
       (command-spec "next-line" next-line :keys ((:control #\n)))
       (command-spec "previous-line" previous-line :keys ((:control #\p)))
+      (command-spec "forward-sexp" forward-sexp
+                    :keys ((:control :alt #\f)))
+      (command-spec "backward-sexp" backward-sexp
+                    :keys ((:control :alt #\b)))
+      (command-spec "backward-up-list" backward-up-list
+                    :keys ((:control :alt #\u)))
+      (command-spec "down-list" down-list
+                    :keys ((:control :alt #\d)))
+      (command-spec "kill-sexp" kill-sexp
+                    :keys ((:control :alt #\k)))
       (command-spec "forward-word" forward-word :keys ((:alt #\f)))
       (command-spec "backward-word" backward-word :keys ((:alt #\b)))
       (command-spec "move-beginning-of-line" move-beginning-of-line

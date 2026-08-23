@@ -234,6 +234,20 @@ is what keeps a jump costing the window's height rather than the distance
 `line-move-visual` default, and carry their goal column in cells so a
 full-width character does not shift it.
 
+Structural motion needs to know which parentheses are structure.
+`packages/core/editor/src/application-sexp-motion.lisp` classifies the whole
+visible text in one left-to-right pass -- reader state is what decides a
+character's class, so there is no reading one in isolation -- and marks strings,
+`;` and `#| |#` comments, and the payload of a `#\` character literal as
+something other than code. `forward-sexp` and its siblings, `kill-sexp`, and
+`%layout-draw-matching-paren` all work against that classification, which is why
+a parenthesis inside a string is stepped over as part of its atom rather than
+counted, and why an unbalanced form is shown no partner at all instead of a
+wrong one. `C-M-` chords made the key-form shape variable-length, so
+`defkeys-chord` validates modifiers and code explicitly rather than relying on
+a fixed arity, and `%key-event->descriptor` keeps the `:alt` an ESC-prefixed
+Ctrl+letter carries instead of discarding it.
+
 Incremental search is the one prompt that acts while it is still being typed.
 `minibuffer-activate`'s `on-change` hook fires after every edit to the input and
 `on-key` gets first refusal on each key event, which is what keeps `C-s` inside

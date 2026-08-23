@@ -209,18 +209,20 @@ draws nothing rather than clipping to the wrong row."
 (defun %layout-draw-span (renderer window x-offset span style)
   "Redraw the buffer text SPAN covers in STYLE, one logical line at a time."
   (let* ((buffer (loom/feature/window:window-buffer window))
-         (start (buffer-offset-position buffer (buffer-span-start span)))
-         (end (buffer-offset-position buffer (buffer-span-end span)))
-         (first-line (buffer-position-line start))
-         (last-line (buffer-position-line end)))
-    (loop for line from first-line to last-line
-          do (%layout-draw-line-run
-              renderer window x-offset line
-              (if (= line first-line) (buffer-position-column start) 0)
-              (if (= line last-line)
-                  (buffer-position-column end)
-                  (length (%layout-visible-line buffer line)))
-              style))))
+         (start (buffer-visible-offset-position buffer
+                                                (buffer-span-start span)))
+         (end (buffer-visible-offset-position buffer (buffer-span-end span))))
+    (when (and start end)
+      (let ((first-line (buffer-position-line start))
+            (last-line (buffer-position-line end)))
+        (loop for line from first-line to last-line
+              do (%layout-draw-line-run
+                  renderer window x-offset line
+                  (if (= line first-line) (buffer-position-column start) 0)
+                  (if (= line last-line)
+                      (buffer-position-column end)
+                      (length (%layout-visible-line buffer line)))
+                  style))))))
 
 (defun %layout-draw-isearch (renderer window x-offset)
   "Highlight the active incremental search's matches inside WINDOW.
@@ -241,6 +243,37 @@ that never matched."
                                  +layout-isearch-current-style+
                                  +layout-isearch-match-style+)))))))
 
+;;; ---------------------------------------------------------------------
+;;; Matching parenthesis
+;;; ---------------------------------------------------------------------
+
+(defparameter +layout-matching-paren-style+ '(:bold (:bg 5) (:fg 0))
+  "Style marking the parenthesis at point and the one it pairs with.")
+
+(defun %layout-draw-matching-paren (renderer window x-offset)
+  "Mark the parenthesis point is adjacent to, together with its partner.
+
+Nothing is drawn when point is next to no parenthesis, and nothing when the
+text does not balance: pointing at a parenthesis that is not actually the
+partner is worse than saying nothing, because it reads as confirmation."
+  (let* ((buffer (loom/feature/window:window-buffer window))
+         (start (buffer-narrow-start-offset buffer))
+         (text (buffer-visible-text buffer))
+         (offset (max 0 (min (length text)
+                             (- (buffer-point-offset buffer) start)))))
+    (multiple-value-bind (paren match) (%matching-paren-offset text offset)
+      (when (and paren match)
+        (dolist (local (list paren match))
+          (let ((position (buffer-visible-offset-position
+                           buffer (+ start local))))
+            (when position
+              (%layout-draw-line-run
+               renderer window x-offset
+               (buffer-position-line position)
+               (buffer-position-column position)
+               (1+ (buffer-position-column position))
+               +layout-matching-paren-style+))))))))
+
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window in WINDOW-TREE (already laid out by
 WINDOW-TREE-RESIZE against the window area's own width/height) via
@@ -254,6 +287,7 @@ apart. Returns RENDERER."
   (let ((leaves (loom/feature/window:window-tree-windows window-tree)))
     (dolist (leaf leaves)
       (%layout-draw-window-buffer renderer leaf x-offset)
+      (%layout-draw-matching-paren renderer leaf x-offset)
       (%layout-draw-isearch renderer leaf x-offset))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)

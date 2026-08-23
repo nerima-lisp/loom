@@ -75,6 +75,12 @@ implemented today from what is deliberately deferred.
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
   `shutdown`/`exit` handshake with a timeout fallback.
+- **S-expression motion** -- `C-M-f` and `C-M-b` move by expression, `C-M-u`
+  and `C-M-d` cross the enclosing parentheses, and `C-M-k` kills the expression
+  after point. Parentheses inside a string, a comment, or a `#\` character
+  literal are text rather than structure, and the parenthesis beside point is
+  marked together with its partner -- or with nothing at all when the form does
+  not balance.
 - **Incremental search** -- `C-s` and `C-r` move point to the next match on
   every keystroke, highlight all matches with the current one distinguished,
   advance or turn around on a further `C-s`/`C-r`, keep point on RET while
