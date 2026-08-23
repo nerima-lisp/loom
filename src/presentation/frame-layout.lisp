@@ -32,7 +32,7 @@ SHORTCUTS-VISIBLE-P FILE-TREE-WIDTH WINDOW-AREA-WIDTH), leaving COMPOSE-FRAME
 itself to only sequence the draw calls against them."
   (let* ((shortcuts-visible-p (> height 1))
          (content-height (max 0 (- height (if shortcuts-visible-p 2 1))))
-         (minibuffer-row (max 0 (1- height)))
+         (minibuffer-row (%layout-minibuffer-row height))
          (shortcuts-row (max 0 (1- minibuffer-row)))
          (file-tree-width (%layout-file-tree-width file-tree-visible-p width))
          (window-area-width (max 0 (- width file-tree-width))))

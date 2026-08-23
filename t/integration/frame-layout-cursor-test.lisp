@@ -88,4 +88,54 @@
                                       :renderer-width 40
                                       :renderer-height 6)))
       (expect (cl-tty-kit:cursor-visible-p (loom::editor-cursor state))
-              :to-be nil))))
+              :to-be nil)))
+
+  (it-each
+      (("あいう" 3 6)
+       ("あいう" 1 2)
+       ("aあb" 2 3)
+       ("hello" 3 3)
+       ("" 0 0))
+      "places point in ~S at character ~D on screen column ~D"
+      (content column expected)
+    (let ((state (%fresh-layout-state :content content)))
+      (buffer-set-point (window-buffer (%layout-window state)) 0 column)
+      (expect (cl-tty-kit:cursor-x (loom::editor-cursor state))
+              :to-equal expected))))
+
+(describe
+  "editor-cursor with an active minibuffer"
+  (it
+    "follows full-width minibuffer input instead of staying in the window"
+    (let* ((state (%fresh-layout-state :content "hello"))
+           (minibuffer (editor-state-minibuffer state)))
+      (buffer-set-point (window-buffer (%layout-window state)) 0 1)
+      (minibuffer-activate minibuffer "検索: ")
+      (dolist (character '(#\あ #\い))
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :character :code character)))
+      (expect (minibuffer-input-string minibuffer) :to-equal "あい")
+      (let ((cursor (loom::editor-cursor state)))
+        (expect (cl-tty-kit:cursor-x cursor) :to-equal 10)
+        (expect (cl-tty-kit:cursor-y cursor) :to-equal 5))))
+
+  (it
+    "sits immediately after the prompt before anything is typed"
+    (let* ((state (%fresh-layout-state :content "hello"))
+           (minibuffer (editor-state-minibuffer state)))
+      (minibuffer-activate minibuffer "Find file: ")
+      (let ((cursor (loom::editor-cursor state)))
+        (expect (cl-tty-kit:cursor-x cursor) :to-equal 11)
+        (expect (cl-tty-kit:cursor-y cursor) :to-equal 5)))))
+
+(describe
+  "shortcut line column indicator"
+  (it
+    "reports Col in screen cells rather than characters"
+    (let ((state (%fresh-layout-state :name "*scratch*" :content "あいう")))
+      (buffer-set-point (window-buffer (%layout-window state)) 0 2)
+      (loom::compose-frame state)
+      (expect (search "Ln 1, Col 5"
+                      (cl-tty-kit:screen-row-string (%layout-screen state) 4))
+              :to-be-truthy))))

@@ -12,6 +12,29 @@ fixed-width region, so each of them clips through here rather than repeating
 the SUBSEQ."
   (if (> (length text) width) (subseq text 0 width) text))
 
+(defun %layout-screen-column (renderer text column)
+  "Return the screen column COLUMN characters into TEXT.
+
+A buffer position is a character count; a terminal position is a cell count,
+and a full-width character occupies two cells. Every consumer that has to turn
+one into the other -- cursor placement, the Ln/Col indicator -- resolves it
+here, so a line cannot yield two different columns depending on who asked.
+COLUMN outside TEXT clamps to its ends rather than erroring, because point may
+sit past the end of a line the renderer has already clipped."
+  (loom-renderer-string-width
+   renderer
+   (subseq text 0 (min (max column 0) (length text)))))
+
+(defun %layout-buffer-point-screen-column (renderer buffer)
+  "Return the screen column of BUFFER's point within its own visible line."
+  (let ((line (buffer-visible-point-line buffer)))
+    (%layout-screen-column
+     renderer
+     (if (< line (buffer-visible-line-count buffer))
+         (buffer-visible-line buffer line)
+         "")
+     (buffer-visible-point-column buffer))))
+
 ;;; ---------------------------------------------------------------------
 ;;; Window-tree area
 ;;; ---------------------------------------------------------------------
