@@ -24,24 +24,6 @@
                         (cl-tty-kit:pad-string "status message" 40))))))
 
   (it
-    "draws non-primary multiple cursors as reverse-video cells"
-    (let* ((state (%fresh-layout-state
-                   :content (format nil "one~%two")
-                   :width 20
-                   :height 6))
-           (*editor-state* state)
-           (buffer (window-buffer (%layout-window state))))
-      (buffer-set-point buffer 0 1)
-      (expect (loom/feature/multiple-cursors:multiple-cursors-add-next-line)
-              :to-be t)
-      (loom::compose-frame state)
-      (let ((screen (%layout-screen state)))
-        (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 3)
-                :to-equal "two")
-        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 1))
-                :to-equal '(:reverse)))))
-
-  (it
     "shows the active workspace in the shortcut line"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
            (tree (editor-state-window-tree state)))

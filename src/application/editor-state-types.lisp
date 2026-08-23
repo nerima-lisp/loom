@@ -24,7 +24,7 @@
                       (last-command-kill-p nil)
                       (last-command-self-insert-p nil) (lsp-session nil)
                       (registers nil) (keyboard-macro nil)
-                      (multiple-cursors nil) (auto-save-mode-p nil)
+                      (auto-save-mode-p nil)
                       (auto-save-buffers nil) (auto-save-last-run-at nil)
                       (format-on-save-p nil) (format-command nil)
                       (before-save-hooks nil) (after-save-hooks nil)
@@ -94,8 +94,6 @@ reach any of them through *EDITOR-STATE* alone."
   (registers nil)
   ;; The currently defined keyboard macro and its recording/replay state.
   (keyboard-macro nil)
-  ;; The transient multiple-cursor set used by line-oriented editing commands.
-  (multiple-cursors nil)
   ;; Global and per-buffer automatic-save state.  The event loop checks this
   ;; state after input dispatch without changing a buffer's normal modified
   ;; status.

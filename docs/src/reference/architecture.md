@@ -205,15 +205,6 @@ layer and the application layer explicitly activates it afterward. The
 presentation layer includes the active workspace name in the shortcut/status
 line. Session v5 persists every workspace's layout and selected window.
 
-The multiple-cursors feature keeps a transient `multiple-cursor-set` in
-editor state. It stores sorted buffer offsets plus one primary offset, so the
-line-oriented commands can add cursors without changing buffer text. The
-self-insert path edits from right to left and translates every stored offset
-afterward; the layout draws non-primary cursors as reverse-video cells. The
-dispatcher preserves the set only for cursor-management commands and
-self-insert, clearing it when another editing command takes over. Multiple
-cursors are intentionally transient and are not serialized into session v5.
-
 `src/presentation/layout.lisp` composes the current state into screen regions.
 `src/application/startup.lisp` is the composition root for argv parsing,
 editor-state construction, terminal-session setup, and asynchronous resource
@@ -282,9 +273,9 @@ source of truth as unit and integration coverage evolves. The current suite
 includes focused tests for buffers, keymaps, rendering, filesystems,
 minibuffers, syntax highlighting, major modes, projects, evaluation, shell
 command results, formatting, Git status and diff, terminal sessions, auto-save, the CLI,
-registers, keyboard macros, prefixes, multiple cursors, and the file tree.
+registers, keyboard macros, prefixes, and the file tree.
 Integration coverage includes commands, LSP, editing and movement, major
-modes, projects, layout, multiple-cursor rendering, sessions, user
+modes, projects, layout, sessions, user
 initialization, shell command registration, the concurrent runtime, and editor
 flows.
 

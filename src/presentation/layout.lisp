@@ -16,40 +16,6 @@ the SUBSEQ."
 ;;; Window-tree area
 ;;; ---------------------------------------------------------------------
 
-(defun %layout-draw-multiple-cursors
-    (renderer buffer x y width height scroll-line)
-  "Draw BUFFER's non-primary transient cursors inside one window rectangle.
-
-The cursor set stores buffer offsets, while the renderer needs a screen cell;
-the line text is therefore measured again for each visible cursor.  A reverse
-video glyph makes an extra cursor visible without changing the buffer text."
-  (when (and (plusp width) (plusp height))
-    (dolist (offset
-              (loom/feature/multiple-cursors:multiple-cursor-offsets-for-buffer
-               buffer))
-      (let ((position (buffer-visible-offset-position buffer offset)))
-        (when position
-          (let* ((line (buffer-position-line position))
-                 (column (buffer-position-column position))
-                 (row (- line scroll-line)))
-            (when (and (>= row 0)
-                       (< row height)
-                       (< line (buffer-visible-line-count buffer)))
-              (let* ((line-text (buffer-visible-line buffer line))
-                     (safe-column (min column (length line-text)))
-                     (prefix (subseq line-text 0 safe-column))
-                     (screen-column (loom-renderer-string-width renderer prefix))
-                     (glyph (if (< safe-column (length line-text))
-                                (string (char line-text safe-column))
-                                " ")))
-                (when (and (< screen-column width)
-                           (<= (+ screen-column
-                                  (loom-renderer-string-width renderer glyph))
-                               width))
-                  (loom-renderer-write-string
-                   renderer (+ x screen-column) (+ y row) glyph
-                   :style '(:reverse)))))))))))
-
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window in WINDOW-TREE (already laid out by
 WINDOW-TREE-RESIZE against the window area's own width/height) via
@@ -68,14 +34,7 @@ apart. Returns RENDERER."
        (loom/feature/window:window-y leaf)
        (loom/feature/window:window-width leaf)
        (loom/feature/window:window-height leaf)
-       :start-line (loom/feature/window:window-scroll-line leaf))
-      (%layout-draw-multiple-cursors
-       renderer (loom/feature/window:window-buffer leaf)
-       (+ x-offset (loom/feature/window:window-x leaf))
-       (loom/feature/window:window-y leaf)
-       (loom/feature/window:window-width leaf)
-       (loom/feature/window:window-height leaf)
-       (loom/feature/window:window-scroll-line leaf)))
+       :start-line (loom/feature/window:window-scroll-line leaf)))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw

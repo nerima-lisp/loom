@@ -48,7 +48,7 @@
       editor-state-bookmarks editor-state-kill-ring
       editor-state-last-yank-ranges editor-state-lsp-session
       editor-state-registers editor-state-keyboard-macro
-      editor-state-multiple-cursors editor-state-auto-save-mode-p
+      editor-state-auto-save-mode-p
       editor-state-auto-save-buffers editor-state-auto-save-last-run-at
       editor-state-format-on-save-p editor-state-format-command
       editor-state-before-save-hooks editor-state-after-save-hooks

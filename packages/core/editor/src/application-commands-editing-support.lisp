@@ -4,28 +4,18 @@
 (in-package #:loom)
 
 (defun %delete-char-forward-once ()
-  (let ((buffer (%selected-buffer)))
-    (unless (loom/feature/multiple-cursors:multiple-cursors-apply-delete
-             buffer)
-      (buffer-delete-char buffer))))
+  (buffer-delete-char (%selected-buffer)))
 
 (defun %delete-char-backward-once ()
-  (let ((buffer (%selected-buffer)))
-    (unless (loom/feature/multiple-cursors:multiple-cursors-apply-delete
-             buffer
-             :backward t)
-      (buffer-delete-char buffer :backward t))))
+  (buffer-delete-char (%selected-buffer) :backward t))
 
 (defun %self-insert-character (char)
   (%clear-last-yank)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (let ((count (%command-prefix-count)))
     (when (plusp count)
-      (let* ((buffer (%selected-buffer))
-             (text (make-string count :initial-element char)))
-        (unless (loom/feature/multiple-cursors:multiple-cursors-apply-insert
-                 buffer text)
-          (buffer-insert-string buffer text))))))
+      (buffer-insert-string (%selected-buffer)
+                            (make-string count :initial-element char)))))
 
 (defun %insert-newlines (count)
   (loop repeat count

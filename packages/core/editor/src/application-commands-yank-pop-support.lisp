@@ -67,8 +67,6 @@ buffer coordinates and retain the original range order."
          (primary-range (nth primary-index new-ranges))
          (primary-position
            (buffer-offset-position buffer (cdr primary-range))))
-    (loom/feature/multiple-cursors:multiple-cursors-update-after-yank-pop
-     buffer ranges new-ranges)
     (buffer-set-point buffer
                       (buffer-position-line primary-position)
                       (buffer-position-column primary-position))

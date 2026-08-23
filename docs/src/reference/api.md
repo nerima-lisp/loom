@@ -2251,69 +2251,6 @@ Store the selected buffer's point in a named register.
 
 Move point to the position stored in a named register.
 
-## Multiple-cursors feature
-
-Public symbols from `loom/feature/multiple-cursors`.
-
-### `multiple-cursor-set`
-
-The transient multiple-cursor set value type.
-
-### `multiple-cursor-set-p`
-
-Return true when an object is a multiple-cursor set.
-
-### `make-multiple-cursor-set`
-
-Construct a normalized cursor set for a buffer from non-negative buffer
-offsets. `primary-offset` selects the cursor restored as the editor point.
-
-### `multiple-cursor-set-buffer`
-
-Return the buffer associated with a multiple-cursor set.
-
-### `multiple-cursor-set-offsets`
-
-Return the sorted buffer offsets in a multiple-cursor set.
-
-### `multiple-cursor-set-primary-offset`
-
-Return the offset used as the primary editor point.
-
-### `multiple-cursors-active-p`
-
-Return true when the current editor state has a multiple-cursor set,
-optionally restricted to a buffer.
-
-### `multiple-cursors-reset`
-
-Clear the transient multiple-cursor set.
-
-### `multiple-cursor-offsets-for-buffer`
-
-Return the non-primary cursor offsets for a buffer.
-
-### `multiple-cursors-preserving-command-p`
-
-Return true when a command is allowed to preserve the active cursor set.
-
-### `multiple-cursors-add-next-line`
-
-Add a cursor on the next line at the current column.
-
-### `multiple-cursors-edit-lines`
-
-Create cursors on every line between point and mark, inclusive.
-
-### `multiple-cursors-clear`
-
-Clear the active multiple-cursor set.
-
-### `multiple-cursors-apply-insert`
-
-Insert text at every active cursor in a buffer and translate the cursor
-offsets to the resulting buffer positions.
-
 ## Workspace feature
 
 Public symbols from `loom/feature/workspace`.

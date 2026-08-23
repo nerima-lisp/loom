@@ -5,15 +5,6 @@
 
 (define-command-spec-groups *tooling-command-spec-groups*
   (command-spec-group "tooling"
-      (command-spec "multiple-cursors-add-next-line"
-                    loom/feature/multiple-cursors:multiple-cursors-add-next-line
-                    :keys (((:control #\x) #\m #\n)))
-      (command-spec "multiple-cursors-edit-lines"
-                    loom/feature/multiple-cursors:multiple-cursors-edit-lines
-                    :keys (((:control #\x) #\m #\l)))
-      (command-spec "multiple-cursors-clear"
-                    loom/feature/multiple-cursors:multiple-cursors-clear
-                    :keys (((:control #\x) #\m #\c)))
       (command-spec "pipe-command" loom/feature/shell:pipe-command
                     :keys ((:alt #\!))
                     :help "M-! Pipe command"

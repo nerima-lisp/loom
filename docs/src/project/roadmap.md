@@ -75,10 +75,6 @@ implemented today from what is deliberately deferred.
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
   `shutdown`/`exit` handshake with a timeout fallback.
-- **Multiple cursors (line-oriented slice)** -- `C-x m n` adds the next-line
-  cursor, `C-x m l` creates cursors across the point/mark lines, and `C-x m c`
-  clears them. Self-insert fans text out to every cursor and the renderer
-  marks secondary cursors with a reverse-video cell.
 - **User extension** -- `LOOM_INIT_FILE` or `~/.loom/init.lisp` can register
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists
