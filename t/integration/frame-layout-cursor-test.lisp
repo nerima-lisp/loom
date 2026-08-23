@@ -60,8 +60,52 @@
       (buffer-set-point (window-buffer window) 2 0)
       (setf (loom/feature/window::window-leaf-height window) 0)
       (setf (window-scroll-line window) 0)
-      (loom::%layout-keep-point-visible window)
-      (expect (window-scroll-line window) :to-equal 0))))
+      (loom::%layout-keep-point-visible (editor-state-renderer state) window)
+      (expect (window-scroll-line window) :to-equal 0)))
+
+  (it-each
+      ((0 25 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+       (0 19 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+       (25 5 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+       (6 10 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+       (0 12 5 "あああああああああああああああ"))
+      "from scroll column ~D, point at character ~D scrolls to ~D"
+      (scroll-column column expected content)
+    (let* ((state (%fresh-layout-state :content content :width 20 :height 6))
+           (window (%layout-window state)))
+      (setf (window-scroll-column window) scroll-column)
+      (buffer-set-point (window-buffer window) 0 column)
+      (loom::%layout-keep-point-visible (editor-state-renderer state) window)
+      (expect (window-scroll-column window) :to-equal expected))))
+
+(describe
+  "editor-cursor with a horizontally scrolled window"
+  (it
+    "reports the cursor relative to the window's scroll column"
+    (let* ((state (%fresh-layout-state
+                   :content "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   :width 20
+                   :height 6))
+           (window (%layout-window state)))
+      (buffer-set-point (window-buffer window) 0 25)
+      (loom::compose-frame state)
+      (expect (window-scroll-column window) :to-equal 6)
+      (expect (cl-tty-kit:cursor-x (loom::editor-cursor state))
+              :to-equal 19)))
+
+  (it
+    "brings a point left of the viewport back into view"
+    (let* ((state (%fresh-layout-state
+                   :content "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   :width 20
+                   :height 6))
+           (window (%layout-window state)))
+      (setf (window-scroll-column window) 12)
+      (buffer-set-point (window-buffer window) 0 3)
+      (loom::compose-frame state)
+      (expect (window-scroll-column window) :to-equal 3)
+      (expect (cl-tty-kit:cursor-x (loom::editor-cursor state))
+              :to-equal 0))))
 
 (describe
   "editor-cursor"

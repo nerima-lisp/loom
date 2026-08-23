@@ -57,7 +57,8 @@ apart. Returns RENDERER."
        (loom/feature/window:window-y leaf)
        (loom/feature/window:window-width leaf)
        (loom/feature/window:window-height leaf)
-       :start-line (loom/feature/window:window-scroll-line leaf)))
+       :start-line (loom/feature/window:window-scroll-line leaf)
+       :start-column (loom/feature/window:window-scroll-column leaf)))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw

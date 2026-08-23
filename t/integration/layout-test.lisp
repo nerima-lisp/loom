@@ -51,6 +51,26 @@ the degenerate-window tests are the ones that need them to differ."
                 :to-equal '((:fg 4)))))))
 
 (describe
+  "syntax-highlighted horizontal scrolling"
+  (it-each
+      (("あいうえお" 0 "あ い  ")
+       ("あいうえお" 2 "い う  ")
+       ("あいうえお" 3 " う え ")
+       ("abc def" 0 "abc d")
+       ("abc def" 2 "c def")
+       ("abc def" 7 "     "))
+      "draws ~S scrolled ~D cells right as ~S"
+      (line start-column expected)
+    (let ((renderer (make-loom-renderer 5 1)))
+      (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
+       renderer line 0 0 5 :common-lisp start-column)
+      (expect (cl-tty-kit:screen-row-string
+               (cl-tty-kit:renderer-screen
+                (loom::%loom-renderer-cl-tty-renderer renderer))
+               0 :start 0 :end 5)
+              :to-equal expected))))
+
+(describe
   "zero-width and zero-height draw regions"
   ;; COMPOSE-FRAME never derives a zero WIDTH/HEIGHT for these from a real
   ;; terminal in current tests, so each drawing helper is reached directly

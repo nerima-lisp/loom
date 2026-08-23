@@ -21,6 +21,7 @@
    #:window-buffer
    #:window-set-buffer
    #:window-scroll-line
+   #:window-scroll-column
    #:window-x
    #:window-y
    #:window-width

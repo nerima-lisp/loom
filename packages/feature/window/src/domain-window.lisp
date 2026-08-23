@@ -33,7 +33,12 @@
   y
   width
   height
-  (scroll-line 0))
+  (scroll-line 0)
+  ;; The horizontal viewport offset, in screen cells rather than characters.
+  ;; Unlike SCROLL-LINE this stays out of WINDOW-TREE-LAYOUT: the layout
+  ;; description is what sessions persist, and the v5 envelope has no
+  ;; compatibility path for a fourth leaf element (NFR-004).
+  (scroll-column 0))
 
 (defstruct window-split-node
   direction ; :HORIZONTAL or :VERTICAL

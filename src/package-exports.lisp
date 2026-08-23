@@ -31,6 +31,7 @@
       buffer-redo buffer-record-undo-boundary buffer-load buffer-save
       make-loom-renderer loom-renderer-width loom-renderer-height
       loom-renderer-string-width loom-renderer-truncate-string
+      loom-renderer-clip-index
       loom-renderer-write-string loom-renderer-draw-horizontal-line
       loom-renderer-draw-vertical-line loom-renderer-clear
       loom-renderer-make-cursor loom-renderer-draw-buffer

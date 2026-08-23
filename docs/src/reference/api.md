@@ -859,10 +859,23 @@ Return `window`'s height in terminal rows.
 ### `window-scroll-line`
 
 ```lisp
-(loom:window-scroll-line window amount)
+(loom:window-scroll-line window)
+(setf (loom:window-scroll-line window) line)
 ```
 
-Scroll `window`'s displayed buffer by `amount` lines and return `window`.
+Return or set `window`'s zero-based first visible buffer line.
+
+### `window-scroll-column`
+
+```lisp
+(loom:window-scroll-column window)
+(setf (loom:window-scroll-column window) column)
+```
+
+Return or set `window`'s leftmost visible screen column. This counts terminal
+cells rather than buffer characters, so it stays comparable with the two cells
+a full-width character occupies. Unlike `window-scroll-line` it is not part of
+`window-tree-layout`, so a session restore starts every window unscrolled.
 
 ### `window-tree-resize`
 

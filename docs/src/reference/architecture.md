@@ -206,6 +206,17 @@ presentation layer includes the active workspace name in the shortcut/status
 line. Session v5 persists every workspace's layout and selected window.
 
 `src/presentation/layout.lisp` composes the current state into screen regions.
+A buffer position is a character count while a screen position is a cell
+count, and a full-width character occupies two cells, so
+`%layout-screen-column` is the single conversion between them: cursor
+placement, the `Ln`/`Col` indicator, and horizontal viewport following all go
+through it rather than each measuring the line again. Each window carries a
+`window-scroll-column` in cells alongside its `window-scroll-line` in lines;
+`%layout-keep-point-visible` maintains both, and drawing clips through
+`loom-renderer-clip-index` so a scrolled line never begins inside a
+full-width character. That column stays out of `window-tree-layout`, so
+session v5 is unaffected.
+
 `src/application/startup.lisp` is the composition root for argv parsing,
 editor-state construction, terminal-session setup, and asynchronous resource
 shutdown. `src/application/event-loop.lisp` owns frame rendering, resize

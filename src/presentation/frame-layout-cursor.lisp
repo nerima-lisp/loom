@@ -56,8 +56,8 @@ position when a prompt is up, otherwise point in the selected window."
               (loom-renderer-make-cursor
                renderer
                :x (+ x-offset (loom/feature/window:window-x window)
-                     (min (%layout-buffer-point-screen-column renderer buffer)
-                          (1- width)))
+                     (- (%layout-buffer-point-screen-column renderer buffer)
+                        (loom/feature/window:window-scroll-column window)))
                :y (+ (loom/feature/window:window-y window)
                      (- (buffer-visible-point-line buffer)
                         (loom/feature/window:window-scroll-line window)))))))))

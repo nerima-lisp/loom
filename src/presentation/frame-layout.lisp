@@ -10,19 +10,33 @@
 ;;; Frame composition
 ;;; ---------------------------------------------------------------------
 
-(defun %layout-keep-point-visible (window)
-  "Adjust WINDOW's viewport so its buffer point remains in its rectangle."
-  (let ((height (loom/feature/window:window-height window)))
+(defun %layout-keep-point-visible (renderer window)
+  "Adjust WINDOW's viewport so its buffer point remains in its rectangle.
+
+Vertical following counts buffer lines; horizontal following counts screen
+cells, because that is the unit the point's column becomes once a full-width
+character is in front of it. RENDERER is what supplies that measurement."
+  (let ((height (loom/feature/window:window-height window))
+        (width (loom/feature/window:window-width window))
+        (buffer (loom/feature/window:window-buffer window)))
     (when (plusp height)
-      (let ((point-line (buffer-visible-point-line
-                         (loom/feature/window:window-buffer window)))
+      (let ((point-line (buffer-visible-point-line buffer))
             (scroll-line (loom/feature/window:window-scroll-line window)))
         (cond
           ((< point-line scroll-line)
            (setf (loom/feature/window:window-scroll-line window) point-line))
           ((>= point-line (+ scroll-line height))
            (setf (loom/feature/window:window-scroll-line window)
-                 (- point-line (1- height)))))))))
+                 (- point-line (1- height)))))))
+    (when (plusp width)
+      (let ((point-column (%layout-buffer-point-screen-column renderer buffer))
+            (scroll-column (loom/feature/window:window-scroll-column window)))
+        (cond
+          ((< point-column scroll-column)
+           (setf (loom/feature/window:window-scroll-column window) point-column))
+          ((>= point-column (+ scroll-column width))
+           (setf (loom/feature/window:window-scroll-column window)
+                 (- point-column (1- width)))))))))
 
 (defun %layout-compute-regions (width height file-tree-visible-p)
   "Compute the row/column geometry COMPOSE-FRAME draws into, given the
@@ -77,7 +91,7 @@ EDITOR-STATE."
       (loom/feature/window:window-tree-resize
        window-tree window-area-width content-height)
       (dolist (window (loom/feature/window:window-tree-windows window-tree))
-        (%layout-keep-point-visible window))
+        (%layout-keep-point-visible renderer window))
       (%layout-draw-windows renderer window-tree file-tree-width)
       (when shortcuts-visible-p
         (%layout-draw-shortcuts renderer width shortcuts-row

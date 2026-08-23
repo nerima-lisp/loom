@@ -71,6 +71,26 @@ BUFFER-LINE, not point/mark/undo state."
               :to-equal ""))))
 
 (describe
+  "loom-renderer-clip-index"
+  (it-each
+      (("aあb" 0 0 0)
+       ("aあb" 1 1 0)
+       ("aあb" 2 2 1)
+       ("aあb" 3 2 0)
+       ("aあb" 4 3 0)
+       ("aあb" 9 3 0)
+       ("abc" 2 2 0)
+       ("" 0 0 0)
+       ("" 3 0 0))
+      "clips ~S at column ~D to character ~D after ~D blank cells"
+      (text start-column expected-index expected-blank)
+    (let ((renderer (make-loom-renderer 8 1)))
+      (multiple-value-bind (index blank)
+          (loom-renderer-clip-index renderer text start-column)
+        (expect index :to-equal expected-index)
+        (expect blank :to-equal expected-blank)))))
+
+(describe
   "loom-renderer-present"
   (it
     "flushes to the given stream and returns the renderer"
