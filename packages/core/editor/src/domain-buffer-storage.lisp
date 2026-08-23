@@ -43,6 +43,11 @@ modified-p, read-only state, and undo/redo state."
   ;; belongs to feature packages, keeping the core editor independent of
   ;; language packages.
   (major-mode :fundamental)
+  ;; :DEFAULT defers to the major mode; T and NIL are explicit user choices.
+  ;; Like MAJOR-MODE this is an opaque display preference the core buffer never
+  ;; interprets -- resolving :DEFAULT needs mode metadata, which lives in a
+  ;; feature package.
+  (truncate-lines :default)
   (read-only-p nil :type boolean)
   (modified-p nil)
   (undo-list nil :type list)

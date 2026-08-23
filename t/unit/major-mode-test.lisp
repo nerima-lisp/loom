@@ -69,7 +69,26 @@
     (expect (major-mode-comment-prefix mode) :to-equal comment-prefix)
     (expect (major-mode-language-id mode) :to-equal language-id)
     (expect (major-mode-indentation-width mode) :to-equal 2)
-    (expect (major-mode-keywords mode) :to-contain keyword)))
+    (expect (major-mode-keywords mode) :to-contain keyword))
+
+  (it-each
+      ((:common-lisp t)
+       (:emacs-lisp t)
+       (:nix t)
+       (:typescript t)
+       (:typescript-react t)
+       (:python t)
+       (:rust t)
+       (:shell t)
+       (:json t)
+       (:fundamental t)
+       (:markdown nil)
+       (:org nil)
+       (:text nil)
+       (:unknown t))
+      "resolves ~A's truncate-lines default as ~A"
+      (mode expected)
+    (expect (major-mode-truncate-lines-p mode) :to-be expected)))
 
 (describe
   "major-mode-for-path"

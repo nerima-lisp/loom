@@ -71,6 +71,38 @@ BUFFER-LINE, not point/mark/undo state."
               :to-equal ""))))
 
 (describe
+  "loom-renderer-wrap-segments"
+  (it-each
+      (("" 5 ((0 . 0)))
+       ("abc" 5 ((0 . 3)))
+       ("abcde" 5 ((0 . 5)))
+       ("abcdef" 5 ((0 . 5) (5 . 6)))
+       ("abcdefghijk" 5 ((0 . 5) (5 . 10) (10 . 11)))
+       ("あいうえお" 5 ((0 . 2) (2 . 4) (4 . 5)))
+       ("あいうえお" 4 ((0 . 2) (2 . 4) (4 . 5)))
+       ("aあb" 3 ((0 . 2) (2 . 3)))
+       ("あ" 1 ((0 . 1)))
+       ("abc" 0 ((0 . 3))))
+      "wraps ~S at width ~D into ~S"
+      (text width expected)
+    (expect (loom-renderer-wrap-segments (make-loom-renderer 8 1) text width)
+            :to-equal expected)))
+
+(describe
+  "loom-renderer-segment-cells / loom-renderer-segment-column"
+  (it
+    "carries a goal column across rows in cells, clamped to the shorter row"
+    (let ((renderer (make-loom-renderer 8 1)))
+      (expect (loom-renderer-segment-cells renderer "あいうえお" '(2 . 4) 3)
+              :to-equal 2)
+      (expect (loom-renderer-segment-column renderer "あいうえお" '(2 . 4) 2)
+              :to-equal 3)
+      (expect (loom-renderer-segment-column renderer "あいうえお" '(4 . 5) 4)
+              :to-equal 5)
+      (expect (loom-renderer-segment-column renderer "あいうえお" '(0 . 2) 3)
+              :to-equal 1))))
+
+(describe
   "loom-renderer-clip-index"
   (it-each
       (("aあb" 0 0 0)

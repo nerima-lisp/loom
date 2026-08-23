@@ -42,6 +42,32 @@ bindings added after mode activation are still visible through the parent.
           (loom:minibuffer-message minibuffer
                               (format nil "Unknown major mode: ~A" input))))))
 
+(defun buffer-truncate-lines-p (buffer)
+  "Return true when BUFFER's long lines should be truncated rather than wrapped.
+
+The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode.
+The setting belongs to the buffer rather than the window so the same file shown
+in two windows cannot disagree with itself."
+  (let ((value (loom:buffer-truncate-lines buffer)))
+    (if (eq value :default)
+        (major-mode-truncate-lines-p (loom:buffer-major-mode buffer))
+        value)))
+
+(defun toggle-truncate-lines ()
+  "Flip the selected buffer between truncating and wrapping long lines.
+
+The flip resolves the mode default first and then stores the opposite as an
+explicit choice, so the first toggle always visibly changes something instead
+of setting :DEFAULT's own value."
+  (let ((buffer (loom/application:%selected-buffer)))
+    (when buffer
+      (let ((truncate (not (buffer-truncate-lines-p buffer))))
+        (loom:buffer-set-truncate-lines buffer truncate)
+        (loom:minibuffer-message
+         (loom:editor-state-minibuffer loom:*editor-state*)
+         (if truncate "Truncate long lines" "Wrap long lines")))))
+  nil)
+
 (defun indent-for-tab-command ()
   "Insert spaces until point reaches the selected mode's indentation stop."
   (let ((buffer (loom/application:%selected-buffer)))

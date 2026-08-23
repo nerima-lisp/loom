@@ -134,6 +134,28 @@ Return the major-mode object currently associated with `buffer`, or `nil`.
 
 Associate `mode` with `buffer` and return `buffer`.
 
+### `buffer-truncate-lines`
+
+```lisp
+(loom:buffer-truncate-lines buffer)
+```
+
+Return `buffer`'s line-display preference: `t` to truncate long lines, `nil` to
+wrap them, or `:default` to follow the major mode. Resolving `:default` to a
+boolean needs mode metadata, so use
+`loom/feature/mode:buffer-truncate-lines-p` for the answer a renderer wants.
+
+### `buffer-set-truncate-lines`
+
+```lisp
+(loom:buffer-set-truncate-lines buffer value)
+```
+
+Set `buffer`'s line-display preference to `t`, `nil`, or `:default`, and return
+`buffer`. The setting belongs to the buffer rather than a window, so the same
+file shown in two windows cannot disagree with itself. It is not persisted in a
+session.
+
 ### `buffer-text`
 
 ```lisp
@@ -459,6 +481,44 @@ Return the terminal display width of `string`.
 ```
 
 Return `string` truncated to at most `width` terminal columns.
+
+### `loom-renderer-clip-index`
+
+```lisp
+(loom:loom-renderer-clip-index renderer string start-column)
+```
+
+Return `(values index leading-blank)` for the first character of `string` fully
+visible past `start-column` terminal columns. `leading-blank` is `1` when a
+full-width character straddles `start-column`, since half a character cannot be
+drawn and that cell is left empty.
+
+### `loom-renderer-wrap-segments`
+
+```lisp
+(loom:loom-renderer-wrap-segments renderer string width)
+```
+
+Return the `(start . end)` character ranges that fill successive `width`-column
+rows, always at least one, never ending inside a full-width character.
+
+### `loom-renderer-segment-cells`
+
+```lisp
+(loom:loom-renderer-segment-cells renderer string segment column)
+```
+
+Return how many terminal columns into `segment` the character `column` sits.
+This is the goal column a vertical move carries between wrapped rows.
+
+### `loom-renderer-segment-column`
+
+```lisp
+(loom:loom-renderer-segment-column renderer string segment cells)
+```
+
+Return the character column `cells` columns into `segment`, clamped to the
+segment's end.
 
 ### `loom-renderer-write-string`
 
@@ -876,6 +936,18 @@ Return or set `window`'s leftmost visible screen column. This counts terminal
 cells rather than buffer characters, so it stays comparable with the two cells
 a full-width character occupies. Unlike `window-scroll-line` it is not part of
 `window-tree-layout`, so a session restore starts every window unscrolled.
+
+### `window-scroll-sub-row`
+
+```lisp
+(loom:window-scroll-sub-row window)
+(setf (loom:window-scroll-sub-row window) row)
+```
+
+Return or set which wrapped segment of `window-scroll-line` occupies the
+window's first row. Only a wrapping buffer leaves it at anything but `0`, and
+like `window-scroll-column` it is transient rather than part of
+`window-tree-layout`.
 
 ### `window-tree-resize`
 
@@ -1705,6 +1777,17 @@ Return the language identifier associated with a major mode.
 
 Return the syntax keyword table for a major mode.
 
+### `major-mode-truncate-lines-p`
+
+Return true when a mode displays long lines truncated rather than wrapped. Code
+modes truncate; `markdown`, `org`, and `text` wrap. A mode that declares nothing
+truncates, which is what loom did before the setting existed.
+
+### `buffer-truncate-lines-p`
+
+Return true when a buffer's long lines should be truncated. Only a buffer whose
+`loom:buffer-truncate-lines` is `:default` consults its major mode.
+
 ### `major-mode-parent`
 
 Return a mode's parent mode, or `nil` for an unknown mode. Built-in and
@@ -1765,6 +1848,13 @@ Return the major mode currently active in the selected buffer.
 ### `set-major-mode`
 
 Set the selected buffer's major mode and return the mode.
+
+### `toggle-truncate-lines`
+
+Flip the selected buffer between truncating and wrapping long lines
+(`M-x toggle-truncate-lines`). The flip resolves the mode default first and
+stores the opposite as an explicit choice, so the first toggle always changes
+something and a later mode change no longer overrides it.
 
 ### `indent-for-tab-command`
 

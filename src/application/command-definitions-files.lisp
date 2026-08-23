@@ -10,6 +10,8 @@
                     :help "C-x C-f Open"
                     :help-order 15)
       (command-spec "set-major-mode" loom/feature/mode:set-major-mode)
+      (command-spec "toggle-truncate-lines"
+                    loom/feature/mode:toggle-truncate-lines)
       (command-spec "project-find-file" loom/feature/project:project-find-file
                     :keys (((:control #\x) #\p #\f)))
       (command-spec "project-search" loom/feature/project:project-search

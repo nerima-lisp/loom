@@ -75,6 +75,11 @@ implemented today from what is deliberately deferred.
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
   `shutdown`/`exit` handshake with a timeout fallback.
+- **Line display** -- a window follows point horizontally in screen cells for a
+  truncating buffer and wraps a long logical line across several rows for a
+  wrapping one. The major mode picks the default -- code truncates, Markdown,
+  Org, and plain text wrap -- and `M-x toggle-truncate-lines` overrides it per
+  buffer. `next-line` and `previous-line` move by screen row.
 - **User extension** -- `LOOM_INIT_FILE` or `~/.loom/init.lisp` can register
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists

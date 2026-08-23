@@ -14,12 +14,16 @@
   "Move point backward, repeating for the active numeric prefix.")
 
 (define-repeating-command next-line
-    %next-line-once %previous-line-once
-  "Move point down, repeating for the active numeric prefix.")
+    %next-visual-line-once %previous-visual-line-once
+  "Move point down one screen row, repeating for the active numeric prefix.
+
+In a wrapping buffer a screen row is one wrapped segment, so the move follows
+what the user can see, matching Emacs's LINE-MOVE-VISUAL default. A truncating
+buffer draws one row per logical line, which makes the two the same thing.")
 
 (define-repeating-command previous-line
-    %previous-line-once %next-line-once
-  "Move point up, repeating for the active numeric prefix.")
+    %previous-visual-line-once %next-visual-line-once
+  "Move point up one screen row, repeating for the active numeric prefix.")
 
 (define-current-line-boundary-command move-beginning-of-line
     0

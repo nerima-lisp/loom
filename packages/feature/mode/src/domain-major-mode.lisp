@@ -72,6 +72,17 @@
 (defun major-mode-language-id (mode)
   (getf (%major-mode-definition mode) :language-id))
 
+(defun major-mode-truncate-lines-p (mode)
+  "Return true when MODE displays long lines truncated rather than wrapped.
+
+Code modes truncate, because a wrapped line breaks the column alignment the
+code was written with; prose modes wrap. A mode that declares nothing, and an
+unknown mode, truncate: that is what loom did before the setting existed, and
+it is the safer answer for a file whose content is unknown. The absent case
+cannot be read off GETF's NIL, since NIL is also a mode's explicit choice."
+  (let ((value (getf (%major-mode-definition mode) :truncate-lines :absent)))
+    (if (eq value :absent) t value)))
+
 (defun major-mode-keywords (mode)
   (copy-list (getf (%major-mode-definition mode) :keywords)))
 

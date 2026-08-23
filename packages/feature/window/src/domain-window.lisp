@@ -38,7 +38,11 @@
   ;; Unlike SCROLL-LINE this stays out of WINDOW-TREE-LAYOUT: the layout
   ;; description is what sessions persist, and the v5 envelope has no
   ;; compatibility path for a fourth leaf element (NFR-004).
-  (scroll-column 0))
+  (scroll-column 0)
+  ;; Which wrapped segment of SCROLL-LINE sits on the window's first row. Only
+  ;; a wrapping buffer ever leaves this at anything but 0, and like
+  ;; SCROLL-COLUMN it is transient viewport state rather than layout.
+  (scroll-sub-row 0))
 
 (defstruct window-split-node
   direction ; :HORIZONTAL or :VERTICAL

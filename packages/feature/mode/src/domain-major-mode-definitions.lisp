@@ -24,12 +24,14 @@
      :name "Fundamental"
      :comment-prefix nil
      :indentation-width 2
+     :truncate-lines t
      :language-id "plaintext"
      :keywords ())
     (:common-lisp
      :name "Common Lisp"
      :comment-prefix ";"
      :indentation-width 2
+     :truncate-lines t
      :language-id "commonlisp"
      :keywords ("and" "block" "case" "catch" "defclass" "defconstant"
                  "defgeneric" "defmacro" "defmethod" "defpackage"
@@ -47,6 +49,7 @@
      :name "Python"
      :comment-prefix "#"
      :indentation-width 4
+     :truncate-lines t
      :language-id "python"
      :keywords ("and" "as" "assert" "async" "await" "break" "case"
                  "class" "continue" "def" "del" "elif" "else" "except"
@@ -57,6 +60,7 @@
      :name "Rust"
      :comment-prefix "//"
      :indentation-width 4
+     :truncate-lines t
      :language-id "rust"
      :keywords ("as" "async" "await" "break" "const" "continue" "crate"
                  "dyn" "else" "enum" "extern" "fn" "for" "if" "impl"
@@ -67,6 +71,7 @@
      :name "Shell"
      :comment-prefix "#"
      :indentation-width 2
+     :truncate-lines t
      :language-id "shellscript"
      :keywords ("case" "do" "done" "elif" "else" "esac" "fi" "for"
                  "function" "if" "in" "select" "then" "until" "while"))
@@ -74,6 +79,7 @@
      :name "Emacs Lisp"
      :comment-prefix ";"
      :indentation-width 2
+     :truncate-lines t
      :language-id "emacs-lisp"
      :keywords ("and" "catch" "cl-defmacro" "cl-defun" "cond"
                  "condition-case" "defcustom" "defface" "defgroup"
@@ -88,6 +94,7 @@
      :name "Nix"
      :comment-prefix "#"
      :indentation-width 2
+     :truncate-lines t
      :language-id "nix"
      :keywords ("abort" "assert" "baseNameOf" "builtins" "derivation"
                  "dirOf" "else" "false" "fetchTarball" "fetchurl" "if"
@@ -98,24 +105,28 @@
      :name "TypeScript"
      :comment-prefix "//"
      :indentation-width 2
+     :truncate-lines t
      :language-id "typescript"
      :keywords ,+typescript-keywords+)
     (:typescript-react
      :name "TypeScript React"
      :comment-prefix "//"
      :indentation-width 2
+     :truncate-lines t
      :language-id "typescriptreact"
      :keywords ,+typescript-keywords+)
     (:markdown
      :name "Markdown"
      :comment-prefix "#"
      :indentation-width 2
+     :truncate-lines nil
      :language-id "markdown"
      :keywords ())
     (:org
      :name "Org"
      :comment-prefix "#"
      :indentation-width 2
+     :truncate-lines nil
      :language-id "org"
      :keywords ("CANCELLED" "CLOSED" "DEADLINE" "DONE" "NEXT"
                  "SCHEDULED" "TODO" "WAITING"))
@@ -123,12 +134,14 @@
      :name "JSON"
      :comment-prefix nil
      :indentation-width 2
+     :truncate-lines t
      :language-id "json"
      :keywords ())
     (:text
      :name "Text"
      :comment-prefix nil
      :indentation-width 2
+     :truncate-lines nil
      :language-id "plaintext"
      :keywords ()))
   "The built-in major modes and the metadata consumed by editor features.")

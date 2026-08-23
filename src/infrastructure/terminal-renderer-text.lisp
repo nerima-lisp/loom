@@ -20,6 +20,81 @@
     (loop for character across string
           sum (%loom-renderer-character-advance character))))
 
+(defgeneric loom-renderer-wrap-segments (renderer string width)
+  (:documentation
+   "Split STRING into the character ranges filling successive WIDTH-cell rows.
+
+Returns a list of (START . END) character indices with at least one element, so
+an empty line still occupies a row. No range ends inside a full-width
+character. A WIDTH of 1 still takes one full-width character per range rather
+than none: a range that consumed nothing would not terminate the walk, and a
+half-drawn character is what the caller clips away anyway. WIDTH 0 yields the
+whole string as one range, which is what a zero-width window draws: nothing.")
+  (:method ((renderer loom-renderer) string width)
+    (check-type string string)
+    (check-type width (integer 0 *))
+    (let ((length (length string)))
+      (if (or (zerop length) (zerop width))
+          (list (cons 0 length))
+          (let ((segments '())
+                (start 0))
+            (loop while (< start length)
+                  do (let ((end start)
+                           (consumed 0))
+                       (loop while (< end length)
+                             for advance = (%loom-renderer-character-advance
+                                            (char string end))
+                             do (when (and (> (+ consumed advance) width)
+                                           (> end start))
+                                  (return))
+                                (incf consumed advance)
+                                (incf end)
+                                (when (>= consumed width)
+                                  (return)))
+                       (push (cons start end) segments)
+                       (setf start end)))
+            (nreverse segments))))))
+
+(defun %loom-segment-index (segments column)
+  "Return the index of the LOOM-RENDERER-WRAP-SEGMENTS range holding COLUMN.
+
+A column at or past the end of the last range belongs to that range: point may
+legitimately sit one character past the end of a line."
+  (or (position-if (lambda (segment)
+                     (and (<= (car segment) column) (< column (cdr segment))))
+                   segments)
+      (max 0 (1- (length segments)))))
+
+(defgeneric loom-renderer-segment-cells (renderer string segment column)
+  (:documentation
+   "Return how many cells into SEGMENT of STRING the character COLUMN sits.
+
+This is the goal column a vertical move carries from one wrapped row to the
+next, so it is measured in cells rather than characters.")
+  (:method ((renderer loom-renderer) string segment column)
+    (let* ((start (car segment))
+           (end (max start (min column (length string)))))
+      (loom-renderer-string-width renderer (subseq string start end)))))
+
+(defgeneric loom-renderer-segment-column (renderer string segment cells)
+  (:documentation
+   "Return the character column CELLS cells into SEGMENT of STRING.
+
+The result is clamped to SEGMENT's end, which is what makes a vertical move
+onto a shorter row land at that row's end rather than past it.")
+  (:method ((renderer loom-renderer) string segment cells)
+    (let* ((start (car segment))
+           (end (cdr segment))
+           (index start)
+           (consumed 0))
+      (loop while (< index end)
+            for advance = (%loom-renderer-character-advance (char string index))
+            do (when (> (+ consumed advance) cells)
+                 (return))
+               (incf consumed advance)
+               (incf index))
+      index)))
+
 (defgeneric loom-renderer-clip-index (renderer string start-column)
   (:documentation
    "Locate STRING's first character visible past START-COLUMN screen cells.

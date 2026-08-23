@@ -63,3 +63,44 @@
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Mode JSON has no line comment syntax"))))
+
+(describe
+  "toggle-truncate-lines"
+  (it-each
+      ((:markdown nil)
+       (:org nil)
+       (:text nil)
+       (:common-lisp t)
+       (:nix t))
+      "starts ~A at truncate-lines ~A"
+      (mode expected)
+    (%with-minibuffer-state
+        (minibuffer "value" (buffer (%selected-test-buffer)))
+      (buffer-set-major-mode buffer mode)
+      (expect (loom:buffer-truncate-lines buffer) :to-be :default)
+      (expect (loom/feature/mode:buffer-truncate-lines-p buffer)
+              :to-be expected)))
+
+  (it
+    "flips away from the mode default and stays flipped"
+    (%with-minibuffer-state
+        (minibuffer "value" (buffer (%selected-test-buffer)))
+      (buffer-set-major-mode buffer :markdown)
+      (loom/feature/mode:toggle-truncate-lines)
+      (expect (loom/feature/mode:buffer-truncate-lines-p buffer) :to-be t)
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Truncate long lines")
+      (loom/feature/mode:toggle-truncate-lines)
+      (expect (loom/feature/mode:buffer-truncate-lines-p buffer) :to-be nil)
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Wrap long lines")))
+
+  (it
+    "keeps an explicit choice when the major mode changes"
+    (%with-minibuffer-state
+        (minibuffer "value" (buffer (%selected-test-buffer)))
+      (buffer-set-major-mode buffer :markdown)
+      (loom/feature/mode:toggle-truncate-lines)
+      (buffer-set-major-mode buffer :common-lisp)
+      (expect (loom:buffer-truncate-lines buffer) :to-be t)
+      (expect (loom/feature/mode:buffer-truncate-lines-p buffer) :to-be t))))

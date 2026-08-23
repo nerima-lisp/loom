@@ -12,6 +12,8 @@
    #:major-mode-indentation-width
    #:major-mode-language-id
    #:major-mode-keywords
+   #:major-mode-truncate-lines-p
+   #:buffer-truncate-lines-p
    #:major-mode-names
    #:major-mode-for-path
    #:major-mode-parent
@@ -24,4 +26,5 @@
    #:current-major-mode
    #:set-major-mode
    #:indent-for-tab-command
-   #:comment-line))
+   #:comment-line
+   #:toggle-truncate-lines))

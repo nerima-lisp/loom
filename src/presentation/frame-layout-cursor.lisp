@@ -35,6 +35,34 @@ that %LAYOUT-DRAW-MINIBUFFER draws."
        :x (min column (max 0 (1- width)))
        :y (%layout-minibuffer-row (loom-renderer-height renderer))))))
 
+(defun %truncated-point-cell (renderer window buffer)
+  "Return point's (COLUMN ROW) inside a window drawing one row per line."
+  (values (- (%layout-buffer-point-screen-column renderer buffer)
+             (loom/feature/window:window-scroll-column window))
+          (- (buffer-visible-point-line buffer)
+             (loom/feature/window:window-scroll-line window))))
+
+(defun %wrapped-point-cell (renderer window buffer width)
+  "Return point's (COLUMN ROW) inside a window that wraps long lines.
+
+The row is counted from the window's own (line, segment) origin, which
+%LAYOUT-KEEP-WRAPPED-POINT-VISIBLE has already moved to keep point on screen;
+the walk is therefore bounded by the window height."
+  (let* ((line (buffer-visible-point-line buffer))
+         (text (%layout-visible-line buffer line))
+         (column (buffer-visible-point-column buffer))
+         (segments (loom-renderer-wrap-segments renderer text width))
+         (index (%loom-segment-index segments column))
+         (segment (nth index segments)))
+    (values (loom-renderer-segment-cells renderer text segment column)
+            (or (%layout-rows-between
+                 renderer buffer width
+                 (loom/feature/window:window-scroll-line window)
+                 (loom/feature/window:window-scroll-sub-row window)
+                 line index
+                 (loom/feature/window:window-height window))
+                0))))
+
 (defun editor-cursor (editor-state)
   "Return the terminal cursor for EDITOR-STATE: the active minibuffer's input
 position when a prompt is up, otherwise point in the selected window."
@@ -53,11 +81,11 @@ position when a prompt is up, otherwise point in the selected window."
         (if (or (zerop width) (zerop height))
             (loom-renderer-make-cursor renderer :visible nil)
             (let ((buffer (loom/feature/window:window-buffer window)))
-              (loom-renderer-make-cursor
-               renderer
-               :x (+ x-offset (loom/feature/window:window-x window)
-                     (- (%layout-buffer-point-screen-column renderer buffer)
-                        (loom/feature/window:window-scroll-column window)))
-               :y (+ (loom/feature/window:window-y window)
-                     (- (buffer-visible-point-line buffer)
-                        (loom/feature/window:window-scroll-line window)))))))))
+              (multiple-value-bind (column row)
+                  (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+                      (%truncated-point-cell renderer window buffer)
+                      (%wrapped-point-cell renderer window buffer width))
+                (loom-renderer-make-cursor
+                 renderer
+                 :x (+ x-offset (loom/feature/window:window-x window) column)
+                 :y (+ (loom/feature/window:window-y window) row))))))))

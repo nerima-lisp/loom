@@ -74,7 +74,8 @@ previously displayed. Returns WINDOW.")
   (:method (window buffer)
     (setf (window-leaf-buffer window) buffer
           (window-leaf-scroll-line window) 0
-          (window-leaf-scroll-column window) 0)
+          (window-leaf-scroll-column window) 0
+          (window-leaf-scroll-sub-row window) 0)
     window))
 
 (defgeneric window-scroll-line (window)
@@ -103,6 +104,18 @@ with the column a full-width character occupies.")
    "Set WINDOW's leftmost visible screen COLUMN.")
   (:method (column window)
     (setf (window-leaf-scroll-column window) (max 0 column))))
+
+(defgeneric window-scroll-sub-row (window)
+  (:documentation
+   "Return which wrapped segment of WINDOW's scroll line is on its first row.")
+  (:method (window)
+    (window-leaf-scroll-sub-row window)))
+
+(defgeneric (setf window-scroll-sub-row) (row window)
+  (:documentation
+   "Set which wrapped segment of WINDOW's scroll line is on its first ROW.")
+  (:method (row window)
+    (setf (window-leaf-scroll-sub-row window) (max 0 row))))
 
 (defgeneric window-tree-resize (tree width height)
   (:documentation

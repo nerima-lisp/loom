@@ -217,6 +217,23 @@ through it rather than each measuring the line again. Each window carries a
 full-width character. That column stays out of `window-tree-layout`, so
 session v5 is unaffected.
 
+A buffer chooses between truncating and wrapping through
+`loom:buffer-truncate-lines`, which is `t`, `nil`, or `:default`;
+`loom/feature/mode:buffer-truncate-lines-p` resolves `:default` from the mode's
+own `:truncate-lines`, so code modes truncate and `markdown`, `org`, and `text`
+wrap. The setting is on the buffer rather than the window, which is what keeps
+one file shown in two windows from disagreeing with itself, and it is not
+persisted into a session. A wrapping window's viewport is a
+(`window-scroll-line`, `window-scroll-sub-row`) pair rather than a line, and a
+wrapped row is drawn as the same logical line offset to the screen column its
+segment begins on -- the truncating path's clipping rule, reused rather than
+restated. Because point can be far from the viewport, the follower walks back
+from point by the window height instead of forward from the old position, which
+is what keeps a jump costing the window's height rather than the distance
+(NFR-001). `next-line` and `previous-line` move by screen row, matching Emacs's
+`line-move-visual` default, and carry their goal column in cells so a
+full-width character does not shift it.
+
 `src/application/startup.lisp` is the composition root for argv parsing,
 editor-state construction, terminal-session setup, and asynchronous resource
 shutdown. `src/application/event-loop.lisp` owns frame rendering, resize
