@@ -49,9 +49,13 @@
                     '(("lisp" . :common-lisp)
                       ("cl" . :common-lisp)
                       ("common lisp" . :common-lisp)
+                      ("el" . :emacs-lisp)
+                      ("elisp" . :emacs-lisp)
                       ("sh" . :shell)
                       ("bash" . :shell)
                       ("zsh" . :shell)
+                      ("ts" . :typescript)
+                      ("tsx" . :typescript-react)
                       ("plain text" . :text))
                         :test #'string=)))))
 

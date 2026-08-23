@@ -44,7 +44,32 @@
     (expect (major-mode-indentation-width :python) :to-equal 4)
     (expect (major-mode-language-id :rust) :to-equal "rust")
     (expect (major-mode-keywords :python) :to-contain "def")
-    (expect (major-mode-names) :to-contain "Markdown")))
+    (expect (major-mode-names) :to-contain "Markdown"))
+
+  (it
+    "resolves the daily-driver target languages by short alias"
+    (expect (major-mode-from-name "elisp") :to-be :emacs-lisp)
+    (expect (major-mode-from-name "el") :to-be :emacs-lisp)
+    (expect (major-mode-from-name "Emacs Lisp") :to-be :emacs-lisp)
+    (expect (major-mode-from-name "ts") :to-be :typescript)
+    (expect (major-mode-from-name "tsx") :to-be :typescript-react)
+    (expect (major-mode-from-name "nix") :to-be :nix)
+    (expect (major-mode-from-name "org") :to-be :org))
+
+  (it-each
+      ((:emacs-lisp "Emacs Lisp" ";" "emacs-lisp" "defcustom")
+       (:nix "Nix" "#" "nix" "inherit")
+       (:typescript "TypeScript" "//" "typescript" "interface")
+       (:typescript-react "TypeScript React" "//" "typescriptreact"
+        "interface")
+       (:org "Org" "#" "org" "TODO"))
+      "exposes ~A metadata"
+      (mode name comment-prefix language-id keyword)
+    (expect (major-mode-name mode) :to-equal name)
+    (expect (major-mode-comment-prefix mode) :to-equal comment-prefix)
+    (expect (major-mode-language-id mode) :to-equal language-id)
+    (expect (major-mode-indentation-width mode) :to-equal 2)
+    (expect (major-mode-keywords mode) :to-contain keyword)))
 
 (describe
   "major-mode-for-path"
@@ -55,6 +80,14 @@
        ("docs/guide.md" :markdown)
        ("docs/guide.markdown" :markdown)
        ("config.json" :json)
+       ("flake.nix" :nix)
+       ("src/app.ts" :typescript)
+       ("src/app.mts" :typescript)
+       ("src/app.cts" :typescript)
+       ("src/App.tsx" :typescript-react)
+       ("init.el" :emacs-lisp)
+       ("notes.org" :org)
+       ("NOTES.ORG" :org)
        ("notes.txt" :text)
        ("Dockerfile" :shell)
        ("Makefile" :shell)

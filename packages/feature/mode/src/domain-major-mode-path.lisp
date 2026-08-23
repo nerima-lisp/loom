@@ -45,14 +45,21 @@
       ((and extension
             (member extension '("lisp" "lsp" "cl") :test #'string=))
        :common-lisp)
+      ((and extension (string= extension "el")) :emacs-lisp)
       ((and extension (string= extension "py")) :python)
       ((and extension (string= extension "rs")) :rust)
+      ((and extension (string= extension "nix")) :nix)
+      ((and extension (string= extension "tsx")) :typescript-react)
+      ((and extension
+            (member extension '("ts" "mts" "cts") :test #'string=))
+       :typescript)
       ((and extension
             (member extension '("sh" "bash" "zsh") :test #'string=))
        :shell)
       ((and extension
             (member extension '("md" "markdown") :test #'string=))
        :markdown)
+      ((and extension (string= extension "org")) :org)
       ((and extension (string= extension "json")) :json)
       ((and extension (string= extension "txt")) :text)
       ((member basename '("dockerfile" "makefile") :test #'string=) :shell)

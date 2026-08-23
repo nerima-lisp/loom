@@ -42,6 +42,46 @@
     (expect (apply #'concatenate 'string (%mode-token-texts line mode))
             :to-equal line))
 
+  (it-each
+      ((:nix "let x = 1; # note"
+        (:keyword :whitespace :plain :whitespace :plain :whitespace
+         :number :delimiter :whitespace :comment)
+        ("let" " " "x" " " "=" " " "1" ";" " " "# note"))
+       (:typescript "const x = 1; // note"
+        (:keyword :whitespace :plain :whitespace :plain :whitespace
+         :number :delimiter :whitespace :comment)
+        ("const" " " "x" " " "=" " " "1" ";" " " "// note"))
+       (:typescript-react "const x = 1; // note"
+        (:keyword :whitespace :plain :whitespace :plain :whitespace
+         :number :delimiter :whitespace :comment)
+        ("const" " " "x" " " "=" " " "1" ";" " " "// note"))
+       (:emacs-lisp "(defun run () ; note"
+        (:delimiter :keyword :whitespace :plain :whitespace :delimiter
+         :delimiter :whitespace :comment)
+        ("(" "defun" " " "run" " " "(" ")" " " "; note"))
+       (:org "* TODO task # note"
+        (:plain :whitespace :keyword :whitespace :plain :whitespace
+         :comment)
+        ("*" " " "TODO" " " "task" " " "# note")))
+      "colors ~A keywords and comments from mode metadata"
+      (mode line expected-kinds expected-texts)
+    (expect (%mode-token-kinds line mode) :to-equal expected-kinds)
+    (expect (%mode-token-texts line mode) :to-equal expected-texts)
+    (expect (apply #'concatenate 'string (%mode-token-texts line mode))
+            :to-equal line))
+
+  (it
+    "keeps Emacs Lisp on its own vocabulary rather than Common Lisp's"
+    (let ((line "(defcustom loom-x 1)"))
+      (expect (%mode-token-kinds line :emacs-lisp)
+              :to-equal
+              '(:delimiter :keyword :whitespace :plain :whitespace :number
+                :delimiter))
+      (expect (%mode-token-kinds line :common-lisp)
+              :to-equal
+              '(:delimiter :plain :whitespace :plain :whitespace :number
+                :delimiter))))
+
   (it
     "keeps Common Lisp on its reader-aware tokenizer"
     (expect (%mode-token-kinds "(defun run ()) ; note" :common-lisp)

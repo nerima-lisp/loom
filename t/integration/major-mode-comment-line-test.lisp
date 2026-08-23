@@ -38,6 +38,21 @@
       (expect (buffer-line buffer 0) :to-equal "  # value")
       (expect buffer :to-have-point (cons 0 0))))
 
+  (it-each
+      ((:nix "# value")
+       (:typescript "// value")
+       (:typescript-react "// value")
+       (:emacs-lisp "; value")
+       (:org "# value"))
+      "inserts ~A's comment prefix"
+      (mode expected)
+    (%with-minibuffer-state
+        (minibuffer "value" (buffer (%selected-test-buffer)))
+      (buffer-set-major-mode buffer mode)
+      (buffer-set-point buffer 0 0)
+      (loom/feature/mode:comment-line)
+      (expect (buffer-line buffer 0) :to-equal expected)))
+
   (it
     "reports modes without line comment syntax"
     (%with-minibuffer-state
