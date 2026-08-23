@@ -8,7 +8,19 @@
    #:buffer-search-forward
    #:buffer-search-backward
    #:buffer-search-spans
+   #:make-isearch-session
+   #:isearch-session-buffer
+   #:isearch-session-origin-offset
+   #:isearch-session-direction
+   #:isearch-session-pattern
+   #:isearch-session-match
+   #:isearch-session-matches
+   #:isearch-session-failed-p
+   #:isearch-apply-pattern
+   #:isearch-repeat
    ;; Application API
    #:replace-string
    #:search-forward
-   #:search-backward))
+   #:search-backward
+   #:isearch-forward
+   #:isearch-backward))

@@ -234,6 +234,17 @@ is what keeps a jump costing the window's height rather than the distance
 `line-move-visual` default, and carry their goal column in cells so a
 full-width character does not shift it.
 
+Incremental search is the one prompt that acts while it is still being typed.
+`minibuffer-activate`'s `on-change` hook fires after every edit to the input and
+`on-key` gets first refusal on each key event, which is what keeps `C-s` inside
+an active prompt from being typed into the pattern; both normalize the two
+terminal encodings of Ctrl+letter through the same `%key-event->descriptor` the
+global keymap routes through. The session itself lives in
+`editor-state-isearch` rather than in the command's closure, because the
+renderer has to read it: `%layout-draw-isearch` repaints every match, and the
+one point sits on in a second style, using the same row and column geometry the
+buffer text was drawn with. It is transient and never reaches session v5.
+
 `src/application/startup.lisp` is the composition root for argv parsing,
 editor-state construction, terminal-session setup, and asynchronous resource
 shutdown. `src/application/event-loop.lisp` owns frame rendering, resize

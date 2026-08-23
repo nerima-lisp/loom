@@ -692,12 +692,30 @@ Return the text typed into `minibuffer` so far, or `""` when inactive.
 ### `minibuffer-activate`
 
 ```lisp
-(loom:minibuffer-activate minibuffer prompt &key on-confirm on-cancel)
+(loom:minibuffer-activate minibuffer prompt
+                          &key on-confirm on-cancel on-change on-key
+                               completion-function)
 ```
 
 Begin an interactive input session, displaying `prompt`. `on-confirm` is
 called with the final input string on confirm (e.g. RET); `on-cancel` on
-cancel (e.g. C-g). Returns `minibuffer`.
+cancel (e.g. C-g). `on-change` is called with the current input after every
+edit to it, which is what lets a prompt act while it is still being typed
+rather than only at RET. `on-key` is called with each key event before it is
+classified, and consumes the event by returning true — that is how a caller
+keeps a chord like `C-s` from being typed into the input. Returns
+`minibuffer`.
+
+### `minibuffer-set-prompt`
+
+```lisp
+(loom:minibuffer-set-prompt minibuffer prompt)
+```
+
+Replace an active minibuffer's prompt without disturbing its input. A prompt
+that reports state cannot use `minibuffer-message` for it, because the message
+line is the same screen row the active prompt occupies. Inactive minibuffers
+ignore this.
 
 ### `minibuffer-complete`
 
@@ -1460,6 +1478,17 @@ Return the register bank attached to `state`.
 
 Return the keyboard-macro state attached to `state`.
 
+### `editor-state-isearch`
+
+```lisp
+(loom:editor-state-isearch state)
+```
+
+Return the incremental-search session that is live while its prompt is up, or
+`nil`. The renderer reads it to highlight matches, which is why it lives here
+rather than inside the search command. Transient, and not persisted into a
+session.
+
 ### `editor-state-prefix-argument`
 
 ```lisp
@@ -1986,17 +2015,62 @@ Search backward from the current buffer position.
 
 Return all matching spans for a buffer search.
 
+### `make-isearch-session`
+
+```lisp
+(loom/feature/search:make-isearch-session buffer origin-offset
+                                          &key direction)
+```
+
+Start an incremental-search session over `buffer`, remembering `origin-offset`
+as the point `C-g` returns to.
+
+### `isearch-apply-pattern`
+
+Search for a new pattern from the session's current search offset and return
+the session. A longer pattern searches from the same offset, so the match grows
+in place. The empty pattern the prompt opens with is not a failure.
+
+### `isearch-repeat`
+
+Advance the session to the next match in `:forward` or `:backward`, wrapping
+once. A repeat on a failed pattern leaves the session where it is, so point
+stops moving.
+
+### `isearch-session-match` / `isearch-session-matches`
+
+Return the span point currently sits on, and every span the pattern matches in
+buffer order. The renderer draws the two differently.
+
+### `isearch-session-buffer` / `isearch-session-origin-offset` / `isearch-session-direction` / `isearch-session-pattern` / `isearch-session-failed-p`
+
+The rest of the session's readable state.
+
 ### `replace-string`
 
 Replace matching text in the selected buffer.
 
+### `isearch-forward`
+
+Search forward as the pattern is typed (`C-s`). Each keystroke moves point to
+the next match, a further `C-s` advances and `C-r` turns around, RET keeps
+point and files the pattern in the minibuffer history, and `C-g` returns point
+to where the search started. A failing pattern says so in the prompt and stops
+moving point.
+
+### `isearch-backward`
+
+Search backward as the pattern is typed (`C-r`). See `isearch-forward`.
+
 ### `search-forward`
 
-Run the interactive forward-search command.
+Run the non-incremental forward-search command, which reads a whole pattern
+before moving. Available as `M-x search-forward`; `C-s` runs `isearch-forward`.
 
 ### `search-backward`
 
-Run the interactive backward-search command.
+Run the non-incremental backward-search command. Available as
+`M-x search-backward`; `C-r` runs `isearch-backward`.
 
 ## Evaluation feature
 

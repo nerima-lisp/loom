@@ -52,6 +52,20 @@ ran off the end of the history, both leave the input untouched."
     (when recalled
       (setf (%minibuffer-input minibuffer) recalled))))
 
+(defun %minibuffer-consume-key (minibuffer key-event)
+  "Offer KEY-EVENT to MINIBUFFER's ON-KEY hook and return true when it took it."
+  (let ((on-key (%minibuffer-on-key minibuffer)))
+    (and on-key (funcall on-key key-event) t)))
+
+(defun %minibuffer-notify-change (minibuffer)
+  "Tell MINIBUFFER's ON-CHANGE hook that the input text just changed.
+
+Only the branches that actually edit the input call this; confirm and cancel do
+not, because by then the session they would notify is already over."
+  (let ((on-change (%minibuffer-on-change minibuffer)))
+    (when on-change
+      (funcall on-change (%minibuffer-input minibuffer)))))
+
 (defgeneric minibuffer-handle-key (minibuffer key-event)
   (:documentation
    "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) to an
@@ -64,7 +78,8 @@ Tab invokes MINIBUFFER-COMPLETE,
 and C-g invokes ON-CANCEL and deactivates MINIBUFFER. Has no effect if
 MINIBUFFER is not active. Returns MINIBUFFER.")
   (:method (minibuffer key-event)
-    (when (%minibuffer-active-p minibuffer)
+    (when (and (%minibuffer-active-p minibuffer)
+               (not (%minibuffer-consume-key minibuffer key-event)))
       (let* ((type (cl-tty-kit:key-event-type key-event))
              (code (cl-tty-kit:key-event-code key-event))
              (history (%minibuffer-history minibuffer))
@@ -78,10 +93,17 @@ MINIBUFFER is not active. Returns MINIBUFFER.")
            (let ((input (%minibuffer-input minibuffer)))
              (when (plusp (length input))
                (setf (%minibuffer-input minibuffer)
-                     (subseq input 0 (1- (length input)))))))
-          (:history-previous (%minibuffer-recall-history minibuffer :previous))
-          (:history-next (%minibuffer-recall-history minibuffer :next))
-          (:complete (minibuffer-complete minibuffer))
+                     (subseq input 0 (1- (length input))))))
+           (%minibuffer-notify-change minibuffer))
+          (:history-previous
+           (%minibuffer-recall-history minibuffer :previous)
+           (%minibuffer-notify-change minibuffer))
+          (:history-next
+           (%minibuffer-recall-history minibuffer :next)
+           (%minibuffer-notify-change minibuffer))
+          (:complete
+           (minibuffer-complete minibuffer)
+           (%minibuffer-notify-change minibuffer))
           (:confirm
            (let ((input (%minibuffer-input minibuffer))
                  (on-confirm (%minibuffer-on-confirm minibuffer)))
@@ -93,7 +115,8 @@ MINIBUFFER is not active. Returns MINIBUFFER.")
           (:character
            (setf (%minibuffer-input minibuffer)
                  (concatenate 'string (%minibuffer-input minibuffer)
-                              (string code))))
+                              (string code)))
+           (%minibuffer-notify-change minibuffer))
           (t
            nil))))
     minibuffer))

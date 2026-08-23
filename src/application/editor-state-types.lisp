@@ -23,7 +23,7 @@
                       (last-yank-ring-index nil) (last-yank-repeat-count nil)
                       (last-command-kill-p nil)
                       (last-command-self-insert-p nil) (lsp-session nil)
-                      (registers nil) (keyboard-macro nil)
+                      (registers nil) (keyboard-macro nil) (isearch nil)
                       (auto-save-mode-p nil)
                       (auto-save-buffers nil) (auto-save-last-run-at nil)
                       (format-on-save-p nil) (format-command nil)
@@ -94,6 +94,11 @@ reach any of them through *EDITOR-STATE* alone."
   (registers nil)
   ;; The currently defined keyboard macro and its recording/replay state.
   (keyboard-macro nil)
+  ;; The incremental-search session that is live only while its minibuffer
+  ;; prompt is up. The renderer reads it to highlight matches, which is why it
+  ;; sits here rather than in the search command's own closure. Transient, and
+  ;; deliberately not persisted into a session.
+  (isearch nil)
   ;; Global and per-buffer automatic-save state.  The event loop checks this
   ;; state after input dispatch without changing a buffer's normal modified
   ;; status.

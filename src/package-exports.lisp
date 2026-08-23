@@ -42,7 +42,8 @@
       keymap-state-sequence keymap-state-dispatch
       make-minibuffer minibuffer-active-p minibuffer-prompt-string
       minibuffer-input-string minibuffer-activate minibuffer-complete
-      minibuffer-handle-key minibuffer-message minibuffer-message-string
+      minibuffer-handle-key minibuffer-set-prompt
+      minibuffer-message minibuffer-message-string
       minibuffer-history-entries minibuffer-set-history-entries
       *editor-state* editor-state make-editor-state editor-state-window-tree
       editor-state-workspaces editor-state-minibuffer editor-state-keymap
@@ -51,7 +52,7 @@
       editor-state-bookmarks editor-state-kill-ring
       editor-state-last-yank-ranges editor-state-lsp-session
       editor-state-registers editor-state-keyboard-macro
-      editor-state-auto-save-mode-p
+      editor-state-isearch editor-state-auto-save-mode-p
       editor-state-auto-save-buffers editor-state-auto-save-last-run-at
       editor-state-format-on-save-p editor-state-format-command
       editor-state-before-save-hooks editor-state-after-save-hooks

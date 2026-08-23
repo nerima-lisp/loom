@@ -14,7 +14,7 @@
        ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/window:kill-buffer)
        ("C-x 0" (((:control) . #\x) (nil . #\0)) loom/feature/window:delete-window)
        ("C-x 1" (((:control) . #\x) (nil . #\1)) loom/feature/window:delete-other-windows)
-       ("C-r" (((:control) . #\r)) loom/feature/search::search-backward)
+       ("C-r" (((:control) . #\r)) loom/feature/search::isearch-backward)
        ("M-f" (((:alt) . #\f)) loom::forward-word)
        ("M-w" (((:alt) . #\w)) loom::kill-ring-save)
        ("M-y" (((:alt) . #\y)) loom::yank-pop)
