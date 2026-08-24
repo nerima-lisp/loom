@@ -21,6 +21,20 @@
                     :keys ((:control :alt #\d)))
       (command-spec "kill-sexp" kill-sexp
                     :keys ((:control :alt #\k)))
+      (command-spec "forward-slurp-sexp" forward-slurp-sexp
+                    :keys ((:control :right)))
+      (command-spec "forward-barf-sexp" forward-barf-sexp
+                    :keys ((:control :left)))
+      (command-spec "backward-slurp-sexp" backward-slurp-sexp
+                    :keys ((:control :alt :left)))
+      (command-spec "backward-barf-sexp" backward-barf-sexp
+                    :keys ((:control :alt :right)))
+      (command-spec "wrap-round" wrap-round
+                    :keys ((:alt #\()))
+      (command-spec "splice-sexp" splice-sexp
+                    :keys ((:alt #\s)))
+      (command-spec "raise-sexp" raise-sexp
+                    :keys ((:alt #\r)))
       (command-spec "forward-word" forward-word :keys ((:alt #\f)))
       (command-spec "backward-word" backward-word :keys ((:alt #\b)))
       (command-spec "move-beginning-of-line" move-beginning-of-line

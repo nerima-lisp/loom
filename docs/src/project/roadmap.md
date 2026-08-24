@@ -81,6 +81,12 @@ implemented today from what is deliberately deferred.
   literal are text rather than structure, and the parenthesis beside point is
   marked together with its partner -- or with nothing at all when the form does
   not balance.
+- **Structural editing** -- `C-<right>` and `C-<left>` slurp and barf forward,
+  `C-M-<left>` and `C-M-<right>` do the same backward, `M-(` wraps the next
+  expression, `M-s` splices the enclosing list away and `M-r` raises the
+  expression at point out of it. A delimiter is moved rather than deleted and
+  retyped, so an operation cannot leave the parentheses unbalanced, and each
+  one is a single undo step.
 - **Incremental search** -- `C-s` and `C-r` move point to the next match on
   every keystroke, highlight all matches with the current one distinguished,
   advance or turn around on a further `C-s`/`C-r`, keep point on RET while

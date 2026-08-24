@@ -248,6 +248,17 @@ wrong one. `C-M-` chords made the key-form shape variable-length, so
 a fixed arity, and `%key-event->descriptor` keeps the `:alt` an ESC-prefixed
 Ctrl+letter carries instead of discarding it.
 
+The structural editing commands in
+`packages/core/editor/src/application-structural-editing.lisp` are expressed as
+lists of edits against the visible text rather than as a rewritten region: a
+whole-region replacement would move every mark in the buffer, and moving a
+single delimiter is what keeps parentheses balanced by construction. The edits
+are applied highest-offset-first, so each one runs while the offsets still
+ahead of it describe the text they were computed against, and they land in one
+undo group because the dispatcher records the only boundary before the command
+starts. An operation that finds nothing to act on returns no edits and leaves
+the buffer alone rather than half-applying.
+
 Incremental search is the one prompt that acts while it is still being typed.
 `minibuffer-activate`'s `on-change` hook fires after every edit to the input and
 `on-key` gets first refusal on each key event, which is what keeps `C-s` inside
