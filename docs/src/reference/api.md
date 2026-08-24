@@ -2814,6 +2814,11 @@ Return the last error recorded by an LSP session, or `nil`.
 Return the server capability object received during initialization, or an
 empty object when the server did not provide one.
 
+### `lsp-session-capability`
+
+Return the advertised capability named `name`, or `nil` when the server did
+not advertise it or explicitly disabled it.
+
 ### `lsp-session-server-info`
 
 Return the optional server information object received during initialization,
@@ -2823,6 +2828,11 @@ or `nil`.
 
 Convert a pathname to an LSP file URI, percent-encoding non-URI-safe path
 characters as UTF-8.
+
+### `lsp-uri-path`
+
+Convert a `file://` URI back to its UTF-8 pathname. Return `nil` for a URI
+with another scheme or an unusable path.
 
 ### `lsp-discover-command`
 
@@ -2842,6 +2852,43 @@ Stop LSP support for the current editor context.
 ### `lsp-diagnostics`
 
 Return diagnostics for the selected buffer.
+
+### `lsp-request-completion`
+
+Request completion at a document position. The request is not sent when the
+server does not advertise `completionProvider`; the callback receives the
+decoded completion items or an error message.
+
+### `lsp-request-definition`
+
+Request the definition at a document position. The request is not sent when
+the server does not advertise `definitionProvider`; the callback receives
+decoded locations or an error message.
+
+### `lsp-completion-item`
+
+Represent one completion candidate. `lsp-completion-item-label` is displayed,
+while `lsp-completion-item-text` prefers `insertText` when present and falls
+back to the label. `detail` and `kind` preserve optional server metadata.
+
+### `lsp-location`
+
+Represent a definition target as a URI and an LSP range.
+
+### `lsp-completion-at-point`
+
+Request and display completion candidates at point. `C-M-i` opens the popup;
+`C-n` / `C-p` or the arrow keys move selection, and RET or TAB inserts it.
+
+### `lsp-find-definition`
+
+Request the definition at point and visit the returned local file. Bound to
+`M-.`.
+
+### `lsp-pop-definition`
+
+Return point to the origin of the most recent definition jump. Bound to
+`M-,`.
 
 The complete export contract remains
 [`src/package.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package.lisp).

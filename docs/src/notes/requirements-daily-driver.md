@@ -33,8 +33,9 @@ syntax-highlighting、user-init、core/editor。いずれも作者が使用中�
 
 ### 2.3 LSP スライスの扱い
 
-現行 1,128 LOC は diagnostics と document-sync のみを提供する。Nix と TypeScript を
-書く以上、**撤去ではなく拡張**する。ただし優先度は最下位（第 6 章）。
+初期の LSP スライスは diagnostics と document-sync のみを提供していた。Nix と
+TypeScript を書く以上、**撤去ではなく拡張**する。現在は補完と定義ジャンプまでを
+含むが、優先度は最下位（第 6 章）とする。
 
 ## 3. 機能要件
 
@@ -294,7 +295,8 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 ### FR-010: LSP 補完と定義ジャンプ
 
 **優先度: optional**（Nix / TypeScript の編集品質を上げるが、無くても編集自体は可能）
-**証拠: inferred**（現行 LSP スライスの範囲から）
+**実装状況: 実装と unit / integration テストケースを追加済み**
+**証拠: verified**（補完ポップアップ、capability gate、定義ジャンプと復帰の実装を確認）
 
 **受け入れ基準**
 
@@ -302,9 +304,10 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 - `textDocument/definition` の結果位置へジャンプする。ジャンプ元へ戻れる。
 - サーバが当該 capability を宣言しない場合、その旨を伝えて何もしない。
 
-**依存**: 補完候補の表示 UI が現時点で存在しない。ミニバッファ補完
-（`src/application/minibuffer-completion.lisp`）は前方一致のコマンド名補完であり、
-バッファ内ポップアップとは別物である。この UI 実装が本要件の主コストである。
+**実装範囲**: 補完候補の表示・選択 UI、capability gate 付きの request / response、
+同一ファイルの定義ジャンプ、ジャンプ元への復帰を含む。ミニバッファ補完
+（`src/application/minibuffer-completion.lisp`）とは別に、バッファ内ポップアップを
+`src/application/completion-popup.lisp` が提供する。
 
 ---
 
@@ -350,6 +353,7 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 | 7 | FR-008 / FR-009 / FR-010 | optional。段階 6 までで日常使用が成立した後に、実際の不足感で優先順位を再判断する |
 
 段階 1〜6 の完了をもって「日常使用に載る」と判定する。
+FR-010 は本更新で実装済みとし、FR-009 と追加の LSP プロトコル拡張は引き続き別課題とする。
 
 ## 7. 実現性
 
@@ -365,9 +369,10 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 - **未確認の制約** — SWANK に必要なソケット層は存在しない。`src` と `packages` を
   `socket` / `usocket` / `sb-bsd-sockets` で検索して一致ゼロ。FR-009 は
   新規 infrastructure 境界を伴う。第 8 章に未解決事項として記録。
-- **未確認の制約** — 補完候補のポップアップ UI は存在しない。既存のミニバッファ補完
-  （`src/application/minibuffer-completion.lisp`）は用途が異なる。FR-010 の主コストは
-  プロトコルではなくこの UI である。
+- **確認済み** — 補完候補のポップアップ UI は
+  `src/application/completion-popup.lisp` と
+  `src/application/completion-popup-input.lisp` に分離され、LSP の候補表示と選択に
+  利用される。protocol の response decode と capability gate は LSP feature 内にある。
 
 ## 8. 未解決事項
 
@@ -407,4 +412,5 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 | FR-007 | integration | `C-M-f` / `C-M-b` / `C-M-u` / `C-M-d` / `C-M-k` のキーバインド経路 |
 | FR-008 | unit | 各操作の前後で括弧対応が保たれること。単一 undo 単位であること |
 | FR-009 | integration | 接続・切断・接続失敗時にセッションが壊れないこと |
-| FR-010 | integration | capability 未宣言サーバに対して何もしないこと |
+| FR-010 | unit | completion / definition response の decode、候補の insert text、URI の復号、capability gate |
+| FR-010 | integration | completion request と popup の選択・dismiss、同一ファイルの定義ジャンプと `M-,` の復帰、capability 未宣言時の無送信 |

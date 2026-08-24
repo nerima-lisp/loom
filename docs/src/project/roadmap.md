@@ -74,7 +74,10 @@ implemented today from what is deliberately deferred.
   explicit prompt override), negotiate initialization capabilities,
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
-  `shutdown`/`exit` handshake with a timeout fallback.
+  `shutdown`/`exit` handshake with a timeout fallback. `lsp-completion-at-point`
+  (`C-M-i`) requests completion and presents a capability-gated candidate
+  popup; `lsp-find-definition` (`M-.`) jumps to a returned local file and
+  `lsp-pop-definition` (`M-,`) returns to the jump origin.
 - **S-expression motion** -- `C-M-f` and `C-M-b` move by expression, `C-M-u`
   and `C-M-d` cross the enclosing parentheses, and `C-M-k` kills the expression
   after point. Parentheses inside a string, a comment, or a `#\` character
@@ -138,7 +141,8 @@ complete Lem or Emacs replacement:
 
 - **Richer LSP protocol surface.** The discovered or prompted server command
   remains trusted input; dynamic registration and requests beyond the current
-  diagnostics/document-sync slice remain future work.
+  completion, definition, diagnostics, and document-sync slice remain future
+  work.
 - **Broader editing surface.** A richer package/extension distribution story
   and editing commands beyond the current region-aware kill/yank slice remain
   future work.

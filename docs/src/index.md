@@ -14,9 +14,9 @@ nix run github:nerima-lisp/loom
     Buffer editing, Emacs-style movement/kill-ring/yank/undo and numeric
     prefixes, window splits,
     file-tree create/rename/delete, syntax highlighting, Common Lisp
-    evaluation, a user `init.lisp`, session persistence, and a minimal LSP
-    client, named registers, and keyboard macros are implemented in the
-    current source.
+    evaluation, a user `init.lisp`, session persistence, a minimal LSP client
+    with diagnostics, completion, and definition navigation, named registers,
+    and keyboard macros are implemented in the current source.
     The file tree uses a bounded concurrent
     runtime: directory work is submitted to workers, while cache updates and
     rendering remain on the editor's render lane. See the

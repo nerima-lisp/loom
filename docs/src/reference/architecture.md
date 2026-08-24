@@ -98,22 +98,32 @@ does not provide a compatibility reader for pre-v5 session layouts.
 
 The LSP slice deliberately keeps its dependency boundary small:
 `application-commands-lsp.lisp` owns interactive commands,
-`application-lsp-session-state.lisp` owns session state plus URI/language
-helpers, `application-lsp-session-sync.lisp` owns document synchronization
-and diagnostic lookup, `application-lsp-session-lifecycle.lisp` owns startup,
+`application-commands-lsp-navigation.lisp` owns completion and definition
+navigation, `application-lsp-session-state.lisp` owns session state,
+pending requests, and URI/language helpers, and
+`application-lsp-session-sync.lisp` owns document synchronization and
+diagnostic lookup. `application-lsp-session-lifecycle.lisp` owns startup,
 refresh, and shutdown orchestration, `application-lsp-protocol-send.lisp`
 owns JSON-RPC encoding, `application-lsp-protocol-initialize.lisp` owns
-initialize/capability messages, and the helper/receive slices own
-response/diagnostic parsing plus nonblocking dispatch.
+initialize/capability messages, `application-lsp-request-decode.lisp` parses
+completion and definition results, `application-lsp-requests.lisp` builds
+capability-gated requests and registers callbacks, and
+`application-lsp-protocol-routing.lisp` dispatches pending responses.
+The helper/receive slices own diagnostic parsing and nonblocking dispatch.
 `infrastructure-lsp-transport.lisp` owns child-process lifecycle and stdio
 transport. Pure UTF-8 and `Content-Length` framing is isolated in
 `infrastructure-lsp-framing.lisp`, and JSON messages are parsed and
 constructed through `cl-json-kit`.
+The editor-agnostic candidate state and key handling live in
+`src/application/completion-popup.lisp` and
+`src/application/completion-popup-input.lisp`; presentation only draws the
+bounded popup around its buffer anchor.
 `lsp-discover-command`, in `infrastructure-lsp-discovery.lisp`, searches the
 current path's ancestor directories for the nearest `.loom-lsp`; its first
 non-empty, non-comment line is the trusted server command. `lsp-start` presents that command as the default, while an
 explicit prompt value overrides it. Dynamic registration and requests beyond
-the current diagnostics/document-sync slice remain outside this boundary.
+the current completion/definition/diagnostics/document-sync slice remain
+outside this boundary.
 
 The shell feature keeps process execution and presentation data separate:
 `domain-shell.lisp` defines the captured command result,
