@@ -36,4 +36,8 @@
     ((%lsp-publish-diagnostics-message-p message)
      (%lsp-handle-publish-diagnostics session message))
     ((%lsp-initialize-response-message-p session message)
-     (%lsp-handle-initialize-response session message))))
+     (%lsp-handle-initialize-response session message))
+    ;; Last, so the lifecycle responses above keep their dedicated handling
+    ;; even if an id ever collided with a user-driven request.
+    ((%lsp-pending-response-p session message)
+     (%lsp-handle-pending-response session message))))

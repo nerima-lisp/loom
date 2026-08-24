@@ -29,6 +29,17 @@
   (%show-buffer-in-selected-window (buffer-load path))
   (remember-recent-file path))
 
+(defun visit-file (path)
+  "Show the buffer for an existing PATH in the selected window.
+
+The public form of what FIND-FILE does once it has a path, for callers that
+already know which file to open -- a definition jump, for one -- and have no
+prompt to run. Returns the buffer, or NIL when PATH does not exist."
+  (let ((existing (probe-file path)))
+    (when existing
+      (%visit-existing-file existing)
+      (%selected-buffer))))
+
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.
 

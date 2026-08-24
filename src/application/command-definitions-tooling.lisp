@@ -43,4 +43,13 @@
                     :help-order 12)
       (command-spec "lsp-diagnostics" loom/feature/lsp:lsp-diagnostics
                     :help "M-x lsp-diagnostics"
-                    :help-order 13)))
+                    :help-order 13)
+      (command-spec "lsp-completion-at-point"
+                    loom/feature/lsp:lsp-completion-at-point
+                    :keys ((:control :alt #\i)))
+      (command-spec "lsp-find-definition"
+                    loom/feature/lsp:lsp-find-definition
+                    :keys ((:alt #\.)))
+      (command-spec "lsp-pop-definition"
+                    loom/feature/lsp:lsp-pop-definition
+                    :keys ((:alt #\,)))))

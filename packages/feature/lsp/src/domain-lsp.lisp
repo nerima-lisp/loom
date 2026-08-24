@@ -37,6 +37,30 @@
     (4 "hint")
     (otherwise "info")))
 
+(defstruct (lsp-completion-item
+            (:constructor make-lsp-completion-item
+                (label &key insert-text detail kind)))
+  "One candidate from a textDocument/completion response.
+
+LABEL is what the user reads; INSERT-TEXT is what goes into the buffer, and is
+allowed to differ -- a server may label a function `foo(...)' while inserting
+only `foo'. LSP-COMPLETION-ITEM-TEXT resolves which to use."
+  label
+  insert-text
+  detail
+  kind)
+
+(defun lsp-completion-item-text (item)
+  "Return the text ITEM inserts: its insertText when it has one, else its label."
+  (or (lsp-completion-item-insert-text item)
+      (lsp-completion-item-label item)))
+
+(defstruct (lsp-location
+            (:constructor make-lsp-location (uri range)))
+  "A document location returned by textDocument/definition."
+  uri
+  range)
+
 (defstruct (lsp-document
             (:constructor make-lsp-document
                 (uri language-id version text)))

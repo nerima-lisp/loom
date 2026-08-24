@@ -274,6 +274,96 @@ partner is worse than saying nothing, because it reads as confirmation."
                (1+ (buffer-position-column position))
                +layout-matching-paren-style+))))))))
 
+;;; ---------------------------------------------------------------------
+;;; Completion popup
+;;; ---------------------------------------------------------------------
+
+(defparameter +layout-completion-rows+ 8
+  "Most candidate rows drawn at once, so a long list cannot cover the buffer.")
+
+(defparameter +layout-completion-width+ 40
+  "Widest the popup grows, in screen cells.")
+
+(defparameter +layout-completion-style+ '((:bg 4) (:fg 7))
+  "Style for a candidate the user has not selected.")
+
+(defparameter +layout-completion-selected-style+ '(:bold (:bg 6) (:fg 0))
+  "Style for the highlighted candidate.")
+
+(defun %layout-completion-rows (renderer completion)
+  "Return the labels to draw and the index of the selected one among them.
+
+A list longer than the popup is scrolled so the selection stays visible, which
+is why the window into it starts from the selection rather than from zero."
+  (let* ((items (editor-completion-items completion))
+         (count (length items))
+         (visible (min count +layout-completion-rows+))
+         (index (editor-completion-index completion))
+         (first (max 0 (min (- index (floor visible 2)) (- count visible))))
+         (labels (loop for offset below visible
+                       collect (editor-completion-item-label
+                                (nth (+ first offset) items)))))
+    (values (mapcar (lambda (label)
+                      (loom-renderer-truncate-string
+                       renderer label +layout-completion-width+))
+                    labels)
+            (- index first))))
+
+(defun %layout-completion-origin (renderer window completion height)
+  "Return the (COLUMN ROW) the popup's first row occupies, or NIL when the
+anchor is off screen.
+
+The popup sits under its anchor unless it would run off the bottom, in which
+case it sits above -- a list drawn past the last row would simply not appear."
+  (multiple-value-bind (column row)
+      (%layout-buffer-cell renderer window
+                           (loom/feature/window:window-buffer window)
+                           (editor-completion-line completion)
+                           (editor-completion-column completion))
+    (let* ((items (min (length (editor-completion-items completion))
+                       +layout-completion-rows+))
+           (below (1+ row))
+           (above (- row items)))
+      (when (and (<= 0 row) (< row height) (<= 0 column))
+        (cond ((<= (+ below items) height) (values column below))
+              ((<= 0 above) (values column above))
+              (t nil))))))
+
+(defun %layout-draw-completion (renderer window x-offset)
+  "Draw the active completion popup when it belongs to WINDOW's buffer."
+  (let ((completion (and *editor-state*
+                         (editor-state-completion *editor-state*))))
+    (when (and completion
+               (eq (editor-completion-buffer completion)
+                   (loom/feature/window:window-buffer window))
+               (editor-completion-items completion))
+      (let ((width (loom/feature/window:window-width window))
+            (height (loom/feature/window:window-height window)))
+        (when (and (plusp width) (plusp height))
+          (multiple-value-bind (rows selected)
+              (%layout-completion-rows renderer completion)
+            (multiple-value-bind (column row)
+                (%layout-completion-origin renderer window completion height)
+              (when column
+                (let* ((x (+ x-offset (loom/feature/window:window-x window)
+                             (min column (1- width))))
+                       (y (loom/feature/window:window-y window))
+                       (cells (min (- width (min column (1- width)))
+                                   (loop for text in rows
+                                         maximize (loom-renderer-string-width
+                                                   renderer text)))))
+                  (loop for text in rows
+                        for offset from 0
+                        do (loom-renderer-write-string
+                            renderer x (+ y row offset)
+                            (cl-tty-kit:pad-string
+                             (loom-renderer-truncate-string
+                              renderer text cells)
+                             cells)
+                            :style (if (= offset selected)
+                                       +layout-completion-selected-style+
+                                       +layout-completion-style+))))))))))))
+
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window in WINDOW-TREE (already laid out by
 WINDOW-TREE-RESIZE against the window area's own width/height) via
@@ -288,7 +378,8 @@ apart. Returns RENDERER."
     (dolist (leaf leaves)
       (%layout-draw-window-buffer renderer leaf x-offset)
       (%layout-draw-matching-paren renderer leaf x-offset)
-      (%layout-draw-isearch renderer leaf x-offset))
+      (%layout-draw-isearch renderer leaf x-offset)
+      (%layout-draw-completion renderer leaf x-offset))
     (dolist (leaf leaves)
       ;; A leaf whose X is not 0 (relative to the window-tree's own origin)
       ;; has a neighbor immediately to its left from a :VERTICAL split; draw

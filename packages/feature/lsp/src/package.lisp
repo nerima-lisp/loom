@@ -49,4 +49,24 @@
    ;; Application API
    #:lsp-start
    #:lsp-stop
-   #:lsp-diagnostics))
+   #:lsp-diagnostics
+   #:lsp-completion-at-point
+   #:lsp-find-definition
+   #:lsp-pop-definition
+   #:lsp-session-capability
+   #:lsp-request-completion
+   #:lsp-request-definition
+   #:lsp-uri-path
+   #:lsp-completion-item
+   #:make-lsp-completion-item
+   #:lsp-completion-item-p
+   #:lsp-completion-item-label
+   #:lsp-completion-item-insert-text
+   #:lsp-completion-item-detail
+   #:lsp-completion-item-kind
+   #:lsp-completion-item-text
+   #:lsp-location
+   #:make-lsp-location
+   #:lsp-location-p
+   #:lsp-location-uri
+   #:lsp-location-range))

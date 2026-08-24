@@ -52,7 +52,13 @@
       editor-state-bookmarks editor-state-kill-ring
       editor-state-last-yank-ranges editor-state-lsp-session
       editor-state-registers editor-state-keyboard-macro
-      editor-state-isearch editor-state-auto-save-mode-p
+      editor-state-isearch editor-state-completion editor-state-jump-origins
+      make-editor-completion editor-completion-buffer editor-completion-line
+      editor-completion-column editor-completion-items
+      editor-completion-index editor-completion-selected
+      editor-completion-move editor-completion-item-label
+      editor-completion-item-text
+      editor-state-auto-save-mode-p
       editor-state-auto-save-buffers editor-state-auto-save-last-run-at
       editor-state-format-on-save-p editor-state-format-command
       editor-state-before-save-hooks editor-state-after-save-hooks

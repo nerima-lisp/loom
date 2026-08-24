@@ -24,7 +24,8 @@
                       (last-command-kill-p nil)
                       (last-command-self-insert-p nil) (lsp-session nil)
                       (registers nil) (keyboard-macro nil) (isearch nil)
-                      (auto-save-mode-p nil)
+                      (jump-origins nil)
+                      (completion nil) (auto-save-mode-p nil)
                       (auto-save-buffers nil) (auto-save-last-run-at nil)
                       (format-on-save-p nil) (format-command nil)
                       (before-save-hooks nil) (after-save-hooks nil)
@@ -99,6 +100,13 @@ reach any of them through *EDITOR-STATE* alone."
   ;; sits here rather than in the search command's own closure. Transient, and
   ;; deliberately not persisted into a session.
   (isearch nil)
+  ;; The in-buffer candidate list, live only while the user is choosing from
+  ;; it. Like ISEARCH it sits here because the renderer draws it; transient,
+  ;; and not persisted into a session.
+  (completion nil)
+  ;; Where definition jumps came from, most recent first, so LSP-POP-DEFINITION
+  ;; can return point across buffers. Transient like the rest of this group.
+  (jump-origins nil)
   ;; Global and per-buffer automatic-save state.  The event loop checks this
   ;; state after input dispatch without changing a buffer's normal modified
   ;; status.

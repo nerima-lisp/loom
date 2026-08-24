@@ -43,6 +43,7 @@
    #:file-tree-rename-command
    #:file-tree-delete-command
    #:find-file
+   #:visit-file
    #:recent-file
    #:save-buffer
    #:write-file))
