@@ -47,6 +47,7 @@
                     :mark-line nil
                     :mark-column nil
                     :major-mode :fundamental
+                    :truncate-lines :default
                     :read-only-p nil
                     :modified-p nil
                     :undo-list nil
@@ -76,6 +77,24 @@ interpret the identity; feature packages provide its semantics.")
    "Set BUFFER's opaque major-mode identity to MODE and return BUFFER." )
   (:method (buffer mode)
     (setf (%buffer-major-mode buffer) mode)
+    buffer))
+
+(defgeneric buffer-truncate-lines (buffer)
+  (:documentation
+   "Return BUFFER's line-display preference: T, NIL, or :DEFAULT.
+
+:DEFAULT means the major mode decides. As with BUFFER-MAJOR-MODE the core
+buffer stores the value without interpreting it; resolving :DEFAULT to a
+boolean needs mode metadata and belongs to a feature package.")
+  (:method (buffer)
+    (%buffer-truncate-lines buffer)))
+
+(defgeneric buffer-set-truncate-lines (buffer value)
+  (:documentation
+   "Set BUFFER's line-display preference to T, NIL, or :DEFAULT.")
+  (:method (buffer value)
+    (check-type value (member t nil :default))
+    (setf (%buffer-truncate-lines buffer) value)
     buffer))
 
 (defgeneric buffer-text (buffer)

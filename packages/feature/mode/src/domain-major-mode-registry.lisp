@@ -8,7 +8,7 @@
 (defun register-major-mode
     (mode &key name aliases (parent :fundamental) extensions filenames
             comment-prefix (indentation-width 2) language-id keywords
-            keybindings)
+            keybindings (truncate-lines t))
   "Register an extension-defined major mode and return its canonical key.
 
 KEYBINDINGS is an alist of (KEY-FORM . COMMAND) entries.  KEY-FORM uses the
@@ -39,6 +39,7 @@ same single- and multi-chord notation accepted by the global key binding API.
                              :filenames normalized-filenames
                              :comment-prefix comment-prefix
                              :indentation-width indentation-width
+                             :truncate-lines (and truncate-lines t)
                              :language-id (or language-id
                                                (string-downcase
                                                 (symbol-name key)))

@@ -7,10 +7,8 @@
   "Clear transient editor state before dispatching COMMAND when needed."
   (unless (or (eq command :prefix)
               (member command +yank-command-names+ :test #'eq)
-              (loom/feature/multiple-cursors:multiple-cursors-preserving-command-p
-               command))
-    (%clear-last-yank)
-    (loom/feature/multiple-cursors:multiple-cursors-reset)))
+              (member command +yank-preserving-command-names+ :test #'eq))
+    (%clear-last-yank)))
 
 (defun %dispatch-self-insert-event (event)
   "Execute EVENT as a self-insert command in the current editor state."

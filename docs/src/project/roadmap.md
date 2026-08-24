@@ -75,10 +75,22 @@ implemented today from what is deliberately deferred.
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
   `shutdown`/`exit` handshake with a timeout fallback.
-- **Multiple cursors (line-oriented slice)** -- `C-x m n` adds the next-line
-  cursor, `C-x m l` creates cursors across the point/mark lines, and `C-x m c`
-  clears them. Self-insert fans text out to every cursor and the renderer
-  marks secondary cursors with a reverse-video cell.
+- **S-expression motion** -- `C-M-f` and `C-M-b` move by expression, `C-M-u`
+  and `C-M-d` cross the enclosing parentheses, and `C-M-k` kills the expression
+  after point. Parentheses inside a string, a comment, or a `#\` character
+  literal are text rather than structure, and the parenthesis beside point is
+  marked together with its partner -- or with nothing at all when the form does
+  not balance.
+- **Incremental search** -- `C-s` and `C-r` move point to the next match on
+  every keystroke, highlight all matches with the current one distinguished,
+  advance or turn around on a further `C-s`/`C-r`, keep point on RET while
+  filing the pattern in the minibuffer history, and return point to where the
+  search began on `C-g`. `M-x search-forward` keeps the non-incremental form.
+- **Line display** -- a window follows point horizontally in screen cells for a
+  truncating buffer and wraps a long logical line across several rows for a
+  wrapping one. The major mode picks the default -- code truncates, Markdown,
+  Org, and plain text wrap -- and `M-x toggle-truncate-lines` overrides it per
+  buffer. `next-line` and `previous-line` move by screen row.
 - **User extension** -- `LOOM_INIT_FILE` or `~/.loom/init.lisp` can register
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists

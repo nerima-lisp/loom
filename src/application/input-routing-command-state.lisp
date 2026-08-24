@@ -18,8 +18,19 @@ while switching to any other command starts a new group."
 (defparameter +yank-command-names+ '(yank yank-pop)
   "Commands that may consume or rotate the last-yank transient state.")
 
+(defparameter +yank-preserving-command-names+
+  '(delete-char delete-backward-char)
+  "Commands that leave the last-yank transient state intact.
+
+A forward delete after a yank leaves point at the yank's end offset, which is
+the whole of %VALID-YANK-POP-CONTEXT-P's freshness test, so YANK-POP still has
+a live range to rotate through. Emacs would instead require the immediately
+preceding command to be a yank; keeping these two listed preserves loom's
+existing behavior rather than tightening it as a side effect of an unrelated
+change.")
+
 (defparameter +kill-command-names+
-  '(kill-line kill-word backward-kill-word kill-region)
+  '(kill-line kill-word backward-kill-word kill-region kill-sexp)
   "Commands whose adjacent invocations may coalesce in the kill ring.")
 
 (defun %refresh-active-keymap (keymap-state)

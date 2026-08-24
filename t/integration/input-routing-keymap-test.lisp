@@ -5,7 +5,7 @@
 (describe
   "%dispatch-key-event"
   (it
-    "dispatches multiple-cursor selection and self-insert through default keys"
+    "dispatches self-insert through the default keymap at point only"
     (let* ((state (%fresh-editor-state (format nil "one~%two~%three")))
            (*editor-state* state)
            (keymap (loom/application:install-default-keybindings (make-keymap)))
@@ -15,18 +15,9 @@
             (editor-state-keymap state) keymap)
       (buffer-set-point buffer 0 1)
       (loom::%dispatch-key-event
-       (cl-tty-kit:make-key-event :type :character :code #\x :modifiers '(:control))
-       keymap-state)
-      (loom::%dispatch-key-event
-       (cl-tty-kit:make-key-event :type :character :code #\m)
-       keymap-state)
-      (loom::%dispatch-key-event
-       (cl-tty-kit:make-key-event :type :character :code #\n)
-       keymap-state)
-      (loom::%dispatch-key-event
        (cl-tty-kit:make-key-event :type :character :code #\X)
        keymap-state)
-      (expect (buffer-text buffer) :to-equal (format nil "oXne~%tXwo~%three"))
+      (expect (buffer-text buffer) :to-equal (format nil "oXne~%two~%three"))
       (expect (buffer-point-line buffer) :to-equal 0)
       (expect (buffer-point-column buffer) :to-equal 2)))
 

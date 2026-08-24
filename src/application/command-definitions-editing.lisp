@@ -53,11 +53,13 @@
                     :keys (((:control #\x) (:control #\y)))
                     :help "C-x C-y Redo"
                     :help-order 35)
-      (command-spec "search-forward" loom/feature/search:search-forward
+      (command-spec "isearch-forward" loom/feature/search:isearch-forward
                     :keys ((:control #\s))
                     :help "C-s Find"
                     :help-order 30)
-      (command-spec "search-backward" loom/feature/search:search-backward
+      (command-spec "isearch-backward" loom/feature/search:isearch-backward
                     :keys ((:control #\r)))
+      (command-spec "search-forward" loom/feature/search:search-forward)
+      (command-spec "search-backward" loom/feature/search:search-backward)
       (command-spec "replace-string" loom/feature/search:replace-string
                     :keys ((:alt #\%)))))

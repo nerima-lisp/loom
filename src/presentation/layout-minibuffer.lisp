@@ -10,7 +10,7 @@
   (when (plusp width)
     (let* ((text (format nil "Ln ~D, Col ~D  ~A"
                          (1+ (buffer-visible-point-line buffer))
-                         (1+ (buffer-visible-point-column buffer))
+                         (1+ (%layout-buffer-point-screen-column renderer buffer))
                          (if workspace-name
                              (format nil "Workspace: ~A  ~A"
                                      workspace-name

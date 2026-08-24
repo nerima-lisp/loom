@@ -134,6 +134,28 @@ Return the major-mode object currently associated with `buffer`, or `nil`.
 
 Associate `mode` with `buffer` and return `buffer`.
 
+### `buffer-truncate-lines`
+
+```lisp
+(loom:buffer-truncate-lines buffer)
+```
+
+Return `buffer`'s line-display preference: `t` to truncate long lines, `nil` to
+wrap them, or `:default` to follow the major mode. Resolving `:default` to a
+boolean needs mode metadata, so use
+`loom/feature/mode:buffer-truncate-lines-p` for the answer a renderer wants.
+
+### `buffer-set-truncate-lines`
+
+```lisp
+(loom:buffer-set-truncate-lines buffer value)
+```
+
+Set `buffer`'s line-display preference to `t`, `nil`, or `:default`, and return
+`buffer`. The setting belongs to the buffer rather than a window, so the same
+file shown in two windows cannot disagree with itself. It is not persisted in a
+session.
+
 ### `buffer-text`
 
 ```lisp
@@ -460,6 +482,44 @@ Return the terminal display width of `string`.
 
 Return `string` truncated to at most `width` terminal columns.
 
+### `loom-renderer-clip-index`
+
+```lisp
+(loom:loom-renderer-clip-index renderer string start-column)
+```
+
+Return `(values index leading-blank)` for the first character of `string` fully
+visible past `start-column` terminal columns. `leading-blank` is `1` when a
+full-width character straddles `start-column`, since half a character cannot be
+drawn and that cell is left empty.
+
+### `loom-renderer-wrap-segments`
+
+```lisp
+(loom:loom-renderer-wrap-segments renderer string width)
+```
+
+Return the `(start . end)` character ranges that fill successive `width`-column
+rows, always at least one, never ending inside a full-width character.
+
+### `loom-renderer-segment-cells`
+
+```lisp
+(loom:loom-renderer-segment-cells renderer string segment column)
+```
+
+Return how many terminal columns into `segment` the character `column` sits.
+This is the goal column a vertical move carries between wrapped rows.
+
+### `loom-renderer-segment-column`
+
+```lisp
+(loom:loom-renderer-segment-column renderer string segment cells)
+```
+
+Return the character column `cells` columns into `segment`, clamped to the
+segment's end.
+
 ### `loom-renderer-write-string`
 
 ```lisp
@@ -632,12 +692,30 @@ Return the text typed into `minibuffer` so far, or `""` when inactive.
 ### `minibuffer-activate`
 
 ```lisp
-(loom:minibuffer-activate minibuffer prompt &key on-confirm on-cancel)
+(loom:minibuffer-activate minibuffer prompt
+                          &key on-confirm on-cancel on-change on-key
+                               completion-function)
 ```
 
 Begin an interactive input session, displaying `prompt`. `on-confirm` is
 called with the final input string on confirm (e.g. RET); `on-cancel` on
-cancel (e.g. C-g). Returns `minibuffer`.
+cancel (e.g. C-g). `on-change` is called with the current input after every
+edit to it, which is what lets a prompt act while it is still being typed
+rather than only at RET. `on-key` is called with each key event before it is
+classified, and consumes the event by returning true — that is how a caller
+keeps a chord like `C-s` from being typed into the input. Returns
+`minibuffer`.
+
+### `minibuffer-set-prompt`
+
+```lisp
+(loom:minibuffer-set-prompt minibuffer prompt)
+```
+
+Replace an active minibuffer's prompt without disturbing its input. A prompt
+that reports state cannot use `minibuffer-message` for it, because the message
+line is the same screen row the active prompt occupies. Inactive minibuffers
+ignore this.
 
 ### `minibuffer-complete`
 
@@ -859,10 +937,35 @@ Return `window`'s height in terminal rows.
 ### `window-scroll-line`
 
 ```lisp
-(loom:window-scroll-line window amount)
+(loom:window-scroll-line window)
+(setf (loom:window-scroll-line window) line)
 ```
 
-Scroll `window`'s displayed buffer by `amount` lines and return `window`.
+Return or set `window`'s zero-based first visible buffer line.
+
+### `window-scroll-column`
+
+```lisp
+(loom:window-scroll-column window)
+(setf (loom:window-scroll-column window) column)
+```
+
+Return or set `window`'s leftmost visible screen column. This counts terminal
+cells rather than buffer characters, so it stays comparable with the two cells
+a full-width character occupies. Unlike `window-scroll-line` it is not part of
+`window-tree-layout`, so a session restore starts every window unscrolled.
+
+### `window-scroll-sub-row`
+
+```lisp
+(loom:window-scroll-sub-row window)
+(setf (loom:window-scroll-sub-row window) row)
+```
+
+Return or set which wrapped segment of `window-scroll-line` occupies the
+window's first row. Only a wrapping buffer leaves it at anything but `0`, and
+like `window-scroll-column` it is transient rather than part of
+`window-tree-layout`.
 
 ### `window-tree-resize`
 
@@ -1375,6 +1478,17 @@ Return the register bank attached to `state`.
 
 Return the keyboard-macro state attached to `state`.
 
+### `editor-state-isearch`
+
+```lisp
+(loom:editor-state-isearch state)
+```
+
+Return the incremental-search session that is live while its prompt is up, or
+`nil`. The renderer reads it to highlight matches, which is why it lives here
+rather than inside the search command. Transient, and not persisted into a
+session.
+
 ### `editor-state-prefix-argument`
 
 ```lisp
@@ -1692,6 +1806,17 @@ Return the language identifier associated with a major mode.
 
 Return the syntax keyword table for a major mode.
 
+### `major-mode-truncate-lines-p`
+
+Return true when a mode displays long lines truncated rather than wrapped. Code
+modes truncate; `markdown`, `org`, and `text` wrap. A mode that declares nothing
+truncates, which is what loom did before the setting existed.
+
+### `buffer-truncate-lines-p`
+
+Return true when a buffer's long lines should be truncated. Only a buffer whose
+`loom:buffer-truncate-lines` is `:default` consults its major mode.
+
 ### `major-mode-parent`
 
 Return a mode's parent mode, or `nil` for an unknown mode. Built-in and
@@ -1752,6 +1877,13 @@ Return the major mode currently active in the selected buffer.
 ### `set-major-mode`
 
 Set the selected buffer's major mode and return the mode.
+
+### `toggle-truncate-lines`
+
+Flip the selected buffer between truncating and wrapping long lines
+(`M-x toggle-truncate-lines`). The flip resolves the mode default first and
+stores the opposite as an explicit choice, so the first toggle always changes
+something and a later mode change no longer overrides it.
 
 ### `indent-for-tab-command`
 
@@ -1883,17 +2015,62 @@ Search backward from the current buffer position.
 
 Return all matching spans for a buffer search.
 
+### `make-isearch-session`
+
+```lisp
+(loom/feature/search:make-isearch-session buffer origin-offset
+                                          &key direction)
+```
+
+Start an incremental-search session over `buffer`, remembering `origin-offset`
+as the point `C-g` returns to.
+
+### `isearch-apply-pattern`
+
+Search for a new pattern from the session's current search offset and return
+the session. A longer pattern searches from the same offset, so the match grows
+in place. The empty pattern the prompt opens with is not a failure.
+
+### `isearch-repeat`
+
+Advance the session to the next match in `:forward` or `:backward`, wrapping
+once. A repeat on a failed pattern leaves the session where it is, so point
+stops moving.
+
+### `isearch-session-match` / `isearch-session-matches`
+
+Return the span point currently sits on, and every span the pattern matches in
+buffer order. The renderer draws the two differently.
+
+### `isearch-session-buffer` / `isearch-session-origin-offset` / `isearch-session-direction` / `isearch-session-pattern` / `isearch-session-failed-p`
+
+The rest of the session's readable state.
+
 ### `replace-string`
 
 Replace matching text in the selected buffer.
 
+### `isearch-forward`
+
+Search forward as the pattern is typed (`C-s`). Each keystroke moves point to
+the next match, a further `C-s` advances and `C-r` turns around, RET keeps
+point and files the pattern in the minibuffer history, and `C-g` returns point
+to where the search started. A failing pattern says so in the prompt and stops
+moving point.
+
+### `isearch-backward`
+
+Search backward as the pattern is typed (`C-r`). See `isearch-forward`.
+
 ### `search-forward`
 
-Run the interactive forward-search command.
+Run the non-incremental forward-search command, which reads a whole pattern
+before moving. Available as `M-x search-forward`; `C-s` runs `isearch-forward`.
 
 ### `search-backward`
 
-Run the interactive backward-search command.
+Run the non-incremental backward-search command. Available as
+`M-x search-backward`; `C-r` runs `isearch-backward`.
 
 ## Evaluation feature
 
@@ -2250,69 +2427,6 @@ Store the selected buffer's point in a named register.
 ### `jump-to-register`
 
 Move point to the position stored in a named register.
-
-## Multiple-cursors feature
-
-Public symbols from `loom/feature/multiple-cursors`.
-
-### `multiple-cursor-set`
-
-The transient multiple-cursor set value type.
-
-### `multiple-cursor-set-p`
-
-Return true when an object is a multiple-cursor set.
-
-### `make-multiple-cursor-set`
-
-Construct a normalized cursor set for a buffer from non-negative buffer
-offsets. `primary-offset` selects the cursor restored as the editor point.
-
-### `multiple-cursor-set-buffer`
-
-Return the buffer associated with a multiple-cursor set.
-
-### `multiple-cursor-set-offsets`
-
-Return the sorted buffer offsets in a multiple-cursor set.
-
-### `multiple-cursor-set-primary-offset`
-
-Return the offset used as the primary editor point.
-
-### `multiple-cursors-active-p`
-
-Return true when the current editor state has a multiple-cursor set,
-optionally restricted to a buffer.
-
-### `multiple-cursors-reset`
-
-Clear the transient multiple-cursor set.
-
-### `multiple-cursor-offsets-for-buffer`
-
-Return the non-primary cursor offsets for a buffer.
-
-### `multiple-cursors-preserving-command-p`
-
-Return true when a command is allowed to preserve the active cursor set.
-
-### `multiple-cursors-add-next-line`
-
-Add a cursor on the next line at the current column.
-
-### `multiple-cursors-edit-lines`
-
-Create cursors on every line between point and mark, inclusive.
-
-### `multiple-cursors-clear`
-
-Clear the active multiple-cursor set.
-
-### `multiple-cursors-apply-insert`
-
-Insert text at every active cursor in a buffer and translate the cursor
-offsets to the resulting buffer positions.
 
 ## Workspace feature
 

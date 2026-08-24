@@ -14,6 +14,8 @@
         (%minibuffer-input minibuffer) ""
         (%minibuffer-on-confirm minibuffer) nil
         (%minibuffer-on-cancel minibuffer) nil
+        (%minibuffer-on-change minibuffer) nil
+        (%minibuffer-on-key minibuffer) nil
         (%minibuffer-completion-function minibuffer) nil)
   (let ((history (%minibuffer-history minibuffer)))
     (when history
@@ -21,19 +23,29 @@
   minibuffer)
 
 (defgeneric minibuffer-activate (minibuffer prompt &key on-confirm on-cancel
+                                                   on-change on-key
                                                    completion-function)
   (:documentation
    "Begin an interactive input session in MINIBUFFER, displaying PROMPT and
 accepting keystrokes via MINIBUFFER-HANDLE-KEY. ON-CONFIRM, when supplied, is
 a function of one argument (the final input string) called when the user
 confirms the input (e.g. RET). ON-CANCEL, when supplied, is a function of
-zero arguments called when the user cancels (e.g. C-g). COMPLETION-FUNCTION,
-when supplied, is a function of the current input string that returns a list
-of candidate strings for Tab completion. Returns MINIBUFFER.")
-  (:method (minibuffer prompt &key on-confirm on-cancel completion-function)
-    (when (and completion-function (not (functionp completion-function)))
-      (error "COMPLETION-FUNCTION must be a function or NIL: ~S"
-             completion-function))
+zero arguments called when the user cancels (e.g. C-g). ON-CHANGE, when
+supplied, is a function of the current input string called after every edit to
+it, which is what lets a prompt act while it is still being typed rather than
+only at RET. ON-KEY, when supplied, is a function of one key event called
+before MINIBUFFER-HANDLE-KEY classifies it; returning true consumes the event,
+which is how a caller keeps a chord like C-s from being typed into the input.
+COMPLETION-FUNCTION, when supplied, is a function of the current input string
+that returns a list of candidate strings for Tab completion. Returns
+MINIBUFFER.")
+  (:method (minibuffer prompt &key on-confirm on-cancel on-change on-key
+                                completion-function)
+    (dolist (entry (list (cons completion-function ":completion-function")
+                         (cons on-change ":on-change")
+                         (cons on-key ":on-key")))
+      (when (and (car entry) (not (functionp (car entry))))
+        (error "~A must be a function or NIL: ~S" (cdr entry) (car entry))))
     (let ((history (%minibuffer-history minibuffer)))
       (when history
         (history-kit:history-reset-navigation history)))
@@ -42,8 +54,23 @@ of candidate strings for Tab completion. Returns MINIBUFFER.")
           (%minibuffer-input minibuffer) ""
           (%minibuffer-on-confirm minibuffer) on-confirm
           (%minibuffer-on-cancel minibuffer) on-cancel
+          (%minibuffer-on-change minibuffer) on-change
+          (%minibuffer-on-key minibuffer) on-key
           (%minibuffer-completion-function minibuffer) completion-function
           (%minibuffer-message minibuffer) nil)
+    minibuffer))
+
+(defgeneric minibuffer-set-prompt (minibuffer prompt)
+  (:documentation
+   "Replace an active MINIBUFFER's PROMPT without disturbing its input.
+
+A prompt that reports state -- incremental search saying it is now failing --
+has to change mid-session, and it cannot use MINIBUFFER-MESSAGE for that: the
+message line is the same row the active prompt occupies. Inactive minibuffers
+ignore this. Returns MINIBUFFER.")
+  (:method (minibuffer prompt)
+    (when (%minibuffer-active-p minibuffer)
+      (setf (%minibuffer-prompt minibuffer) prompt))
     minibuffer))
 
 (defgeneric minibuffer-message (minibuffer text)

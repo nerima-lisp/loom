@@ -18,25 +18,41 @@
   (cdr (assoc kind +layout-syntax-styles+)))
 
 (defun syntax-draw-highlighted-line (renderer line x y width
-                                      &optional (mode :common-lisp))
-  "Draw LINE at (X, Y), preserving token text and fitting WIDTH cells."
-  (let ((column x)
-        (remaining width))
-    (dolist (token (syntax-highlight-line-for-mode line mode))
-      (when (plusp remaining)
-        (let* ((text (syntax-token-text token))
-               (visible (loom-renderer-truncate-string
-                         renderer text remaining))
-               (visible-width (loom-renderer-string-width renderer visible)))
-          (unless (zerop (length visible))
-            (loom-renderer-write-string
-             renderer column y visible
-             :style (%layout-syntax-style (syntax-token-kind token)))
-            (incf column visible-width)
-            (decf remaining visible-width))))))
-    renderer)
+                                      &optional (mode :common-lisp)
+                                                (start-column 0))
+  "Draw LINE at (X, Y), preserving token text and fitting WIDTH cells.
 
-(defun syntax-draw-buffer (renderer buffer x y width height &key (start-line 0))
+START-COLUMN scrolls the viewport right by that many screen cells. The line is
+still tokenized whole -- clipping the text first would change what the
+tokenizer sees, turning a cut string literal into something else -- and each
+token is then sliced at the character index LOOM-RENDERER-CLIP-INDEX reports,
+so no token is measured twice and no full-width character is drawn in half."
+  (multiple-value-bind (start-index leading-blank)
+      (loom-renderer-clip-index renderer line start-column)
+    (let ((column (+ x leading-blank))
+          (remaining (max 0 (- width leading-blank)))
+          (character-index 0))
+      (dolist (token (syntax-highlight-line-for-mode line mode))
+        (let* ((text (syntax-token-text token))
+               (end (+ character-index (length text))))
+          (when (and (plusp remaining) (> end start-index))
+            (let* ((slice (if (> start-index character-index)
+                              (subseq text (- start-index character-index))
+                              text))
+                   (visible (loom-renderer-truncate-string
+                             renderer slice remaining))
+                   (visible-width (loom-renderer-string-width renderer visible)))
+              (unless (zerop (length visible))
+                (loom-renderer-write-string
+                 renderer column y visible
+                 :style (%layout-syntax-style (syntax-token-kind token)))
+                (incf column visible-width)
+                (decf remaining visible-width))))
+          (setf character-index end)))))
+  renderer)
+
+(defun syntax-draw-buffer (renderer buffer x y width height
+                           &key (start-line 0) (start-column 0))
   "Draw BUFFER's visible lines with line-local syntax styles."
   (let ((line-count (buffer-visible-line-count buffer)))
     (dotimes (row height)
@@ -48,5 +64,6 @@
            x
            (+ y row)
            width
-           (buffer-major-mode buffer))))))
+           (buffer-major-mode buffer)
+           start-column)))))
   renderer)

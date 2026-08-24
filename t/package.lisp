@@ -23,8 +23,7 @@
         #:loom/feature/register
         #:loom/feature/session
         #:loom/feature/user-init
-        #:loom/feature/lsp
-        #:loom/feature/multiple-cursors)
+        #:loom/feature/lsp)
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
    #:it

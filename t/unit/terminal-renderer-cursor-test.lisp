@@ -13,6 +13,26 @@
         (expect (cl-tty-kit:renderer-height cl-tty-renderer) :to-equal 2)))))
 
 (describe
+  "%layout-screen-column"
+  (it-each
+      (("" 0 0)
+       ("hello" 0 0)
+       ("hello" 3 3)
+       ("hello" 5 5)
+       ("hello" 9 5)
+       ("hello" -1 0)
+       ("あいう" 0 0)
+       ("あいう" 1 2)
+       ("あいう" 3 6)
+       ("aあb" 1 1)
+       ("aあb" 2 3)
+       ("aあb" 3 4))
+      "measures ~S at character ~D as screen column ~D"
+      (text column expected)
+    (expect (loom::%layout-screen-column (make-loom-renderer 40 6) text column)
+            :to-equal expected)))
+
+(describe
   "loom-renderer-make-cursor"
   (it
     "creates a visible cursor at the origin by default"

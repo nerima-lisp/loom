@@ -6,7 +6,7 @@
 (describe
   "search keybindings and goto-line"
   (it-each
-      (("C-s" (((:control) . #\s)) loom/feature/search::search-forward)
+      (("C-s" (((:control) . #\s)) loom/feature/search::isearch-forward)
        ("M-%" (((:alt) . #\%)) loom/feature/search::replace-string)
        ("C-w" (((:control) . #\w)) loom::kill-region)
        ("C-o" (((:control) . #\o)) loom::open-line)

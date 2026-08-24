@@ -28,6 +28,12 @@
   (input "")
   (on-confirm nil)
   (on-cancel nil)
+  ;; ON-CHANGE turns a prompt that reads a finished string into one that
+  ;; reacts per keystroke, which is the whole difference between search and
+  ;; incremental search. ON-KEY gets first refusal on a key event, so a caller
+  ;; can claim a chord that would otherwise be typed into the input.
+  (on-change nil)
+  (on-key nil)
   (completion-function nil)
   (history nil)
   (message nil))

@@ -205,16 +205,60 @@ layer and the application layer explicitly activates it afterward. The
 presentation layer includes the active workspace name in the shortcut/status
 line. Session v5 persists every workspace's layout and selected window.
 
-The multiple-cursors feature keeps a transient `multiple-cursor-set` in
-editor state. It stores sorted buffer offsets plus one primary offset, so the
-line-oriented commands can add cursors without changing buffer text. The
-self-insert path edits from right to left and translates every stored offset
-afterward; the layout draws non-primary cursors as reverse-video cells. The
-dispatcher preserves the set only for cursor-management commands and
-self-insert, clearing it when another editing command takes over. Multiple
-cursors are intentionally transient and are not serialized into session v5.
-
 `src/presentation/layout.lisp` composes the current state into screen regions.
+A buffer position is a character count while a screen position is a cell
+count, and a full-width character occupies two cells, so
+`%layout-screen-column` is the single conversion between them: cursor
+placement, the `Ln`/`Col` indicator, and horizontal viewport following all go
+through it rather than each measuring the line again. Each window carries a
+`window-scroll-column` in cells alongside its `window-scroll-line` in lines;
+`%layout-keep-point-visible` maintains both, and drawing clips through
+`loom-renderer-clip-index` so a scrolled line never begins inside a
+full-width character. That column stays out of `window-tree-layout`, so
+session v5 is unaffected.
+
+A buffer chooses between truncating and wrapping through
+`loom:buffer-truncate-lines`, which is `t`, `nil`, or `:default`;
+`loom/feature/mode:buffer-truncate-lines-p` resolves `:default` from the mode's
+own `:truncate-lines`, so code modes truncate and `markdown`, `org`, and `text`
+wrap. The setting is on the buffer rather than the window, which is what keeps
+one file shown in two windows from disagreeing with itself, and it is not
+persisted into a session. A wrapping window's viewport is a
+(`window-scroll-line`, `window-scroll-sub-row`) pair rather than a line, and a
+wrapped row is drawn as the same logical line offset to the screen column its
+segment begins on -- the truncating path's clipping rule, reused rather than
+restated. Because point can be far from the viewport, the follower walks back
+from point by the window height instead of forward from the old position, which
+is what keeps a jump costing the window's height rather than the distance
+(NFR-001). `next-line` and `previous-line` move by screen row, matching Emacs's
+`line-move-visual` default, and carry their goal column in cells so a
+full-width character does not shift it.
+
+Structural motion needs to know which parentheses are structure.
+`packages/core/editor/src/application-sexp-motion.lisp` classifies the whole
+visible text in one left-to-right pass -- reader state is what decides a
+character's class, so there is no reading one in isolation -- and marks strings,
+`;` and `#| |#` comments, and the payload of a `#\` character literal as
+something other than code. `forward-sexp` and its siblings, `kill-sexp`, and
+`%layout-draw-matching-paren` all work against that classification, which is why
+a parenthesis inside a string is stepped over as part of its atom rather than
+counted, and why an unbalanced form is shown no partner at all instead of a
+wrong one. `C-M-` chords made the key-form shape variable-length, so
+`defkeys-chord` validates modifiers and code explicitly rather than relying on
+a fixed arity, and `%key-event->descriptor` keeps the `:alt` an ESC-prefixed
+Ctrl+letter carries instead of discarding it.
+
+Incremental search is the one prompt that acts while it is still being typed.
+`minibuffer-activate`'s `on-change` hook fires after every edit to the input and
+`on-key` gets first refusal on each key event, which is what keeps `C-s` inside
+an active prompt from being typed into the pattern; both normalize the two
+terminal encodings of Ctrl+letter through the same `%key-event->descriptor` the
+global keymap routes through. The session itself lives in
+`editor-state-isearch` rather than in the command's closure, because the
+renderer has to read it: `%layout-draw-isearch` repaints every match, and the
+one point sits on in a second style, using the same row and column geometry the
+buffer text was drawn with. It is transient and never reaches session v5.
+
 `src/application/startup.lisp` is the composition root for argv parsing,
 editor-state construction, terminal-session setup, and asynchronous resource
 shutdown. `src/application/event-loop.lisp` owns frame rendering, resize
@@ -282,9 +326,9 @@ source of truth as unit and integration coverage evolves. The current suite
 includes focused tests for buffers, keymaps, rendering, filesystems,
 minibuffers, syntax highlighting, major modes, projects, evaluation, shell
 command results, formatting, Git status and diff, terminal sessions, auto-save, the CLI,
-registers, keyboard macros, prefixes, multiple cursors, and the file tree.
+registers, keyboard macros, prefixes, and the file tree.
 Integration coverage includes commands, LSP, editing and movement, major
-modes, projects, layout, multiple-cursor rendering, sessions, user
+modes, projects, layout, sessions, user
 initialization, shell command registration, the concurrent runtime, and editor
 flows.
 

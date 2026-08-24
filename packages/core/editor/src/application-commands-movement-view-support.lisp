@@ -38,4 +38,81 @@
     (setf (loom/feature/window:window-scroll-line window)
           (max 0 (min max-scroll
                       (+ (loom/feature/window:window-scroll-line window)
-                         (* delta page)))))))
+                         (* delta page)))))
+    ;; The scroll line just moved, so whichever segment of the old line was on
+    ;; the first row means nothing now. A wrapping window's own point-following
+    ;; pass re-derives the pair on the next frame.
+    (setf (loom/feature/window:window-scroll-sub-row window) 0)))
+
+(defun %visual-line-segments (renderer buffer line width)
+  (loom-renderer-wrap-segments renderer (buffer-line buffer line) width))
+
+(defun %visual-line-move-context ()
+  "Return (VALUES RENDERER BUFFER WINDOW WIDTH) when the selected window wraps.
+
+Returns NIL when the buffer truncates instead, or when there is no measurable
+window: the caller then falls back to logical line movement, which is what
+truncation makes screen rows and logical lines mean anyway."
+  (let* ((window (and *editor-state* (%selected-window)))
+         (buffer (and window (loom/feature/window:window-buffer window)))
+         (renderer (and *editor-state* (editor-state-renderer *editor-state*)))
+         (width (and window (loom/feature/window:window-width window))))
+    (when (and window buffer renderer (plusp width)
+               (not (loom/feature/mode:buffer-truncate-lines-p buffer)))
+      (values renderer buffer window width))))
+
+(defun %move-point-into-segment (renderer buffer line segment goal)
+  "Put point on LINE at the character GOAL cells into SEGMENT."
+  (buffer-set-point buffer line
+                    (loom-renderer-segment-column
+                     renderer (buffer-line buffer line) segment goal)))
+
+(defun %visual-line-move (direction)
+  "Move point one screen row DIRECTION -- :NEXT or :PREVIOUS -- and return true.
+
+Returns NIL when the buffer is not wrapping, so the ordinary logical movement
+runs instead. Within a wrapped logical line the move stays on that line and
+changes segment; at either end of it the move crosses to the neighbouring
+logical line's first or last segment. The goal column is carried in cells so a
+full-width character does not shift the column under a vertical move."
+  (multiple-value-bind (renderer buffer window width) (%visual-line-move-context)
+    (declare (ignore window))
+    (when renderer
+      (let* ((line (buffer-point-line buffer))
+             (text (buffer-line buffer line))
+             (column (buffer-point-column buffer))
+             (segments (loom-renderer-wrap-segments renderer text width))
+             (index (%loom-segment-index segments column))
+             (goal (loom-renderer-segment-cells
+                    renderer text (nth index segments) column)))
+        (ecase direction
+          (:next
+           (if (< (1+ index) (length segments))
+               (%move-point-into-segment renderer buffer line
+                                         (nth (1+ index) segments) goal)
+               (let ((next-line (1+ line)))
+                 (if (< next-line (buffer-line-count buffer))
+                     (%move-point-into-segment
+                      renderer buffer next-line
+                      (first (%visual-line-segments
+                              renderer buffer next-line width))
+                      goal)
+                     (buffer-set-point buffer line (length text))))))
+          (:previous
+           (if (plusp index)
+               (%move-point-into-segment renderer buffer line
+                                         (nth (1- index) segments) goal)
+               (let ((previous-line (1- line)))
+                 (when (>= previous-line 0)
+                   (%move-point-into-segment
+                    renderer buffer previous-line
+                    (car (last (%visual-line-segments
+                                renderer buffer previous-line width)))
+                    goal))))))
+        t))))
+
+(defun %next-visual-line-once ()
+  (or (%visual-line-move :next) (%next-line-once)))
+
+(defun %previous-visual-line-once ()
+  (or (%visual-line-move :previous) (%previous-line-once)))

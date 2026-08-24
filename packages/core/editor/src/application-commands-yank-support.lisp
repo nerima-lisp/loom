@@ -19,16 +19,10 @@
           (editor-state-last-command-kill-p *editor-state*) nil)))
 
 (defun %yank-insert-ranges (buffer inserted)
-  (multiple-value-bind (handled ranges primary-start primary-end)
-      (loom/feature/multiple-cursors:multiple-cursors-apply-insert
-       buffer inserted)
-    (declare (ignore primary-start primary-end))
-    (if handled
-        ranges
-        (let ((start (buffer-point-offset buffer))
-              (inserted-length (length inserted)))
-          (buffer-insert-string buffer inserted)
-          (list (cons start (+ start inserted-length)))))))
+  (let ((start (buffer-point-offset buffer))
+        (inserted-length (length inserted)))
+    (buffer-insert-string buffer inserted)
+    (list (cons start (+ start inserted-length)))))
 
 (defun %perform-yank (buffer text count)
   (let ((ranges (%yank-insert-ranges buffer (%repeat-kill-text text count))))
