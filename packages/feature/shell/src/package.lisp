@@ -14,5 +14,6 @@
    #:shell-command-result-exit-code
    #:shell-command-result-success-p
    #:shell-command-result-text
+   #:*shell-command-timeout-seconds*
    #:run-shell-command
    #:pipe-command))
