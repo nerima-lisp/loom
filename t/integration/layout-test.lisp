@@ -103,6 +103,67 @@ the degenerate-window tests are the ones that need them to differ."
       (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
 
 (describe
+  "incremental-search layout drawing"
+  (it
+    "highlights matches and distinguishes the current match"
+    (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "o")
+      (setf (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                :to-equal '((:fg 0) (:bg 6)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 6 0))
+                :to-equal '((:fg 0) (:bg 3)))))))
+
+  (it
+    "does not paint a search session onto a different buffer"
+    (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+           (window (%layout-window state))
+           (session (make-isearch-session (make-buffer :initial-content "one") 0)))
+      (isearch-apply-pattern session "o")
+      (setf (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
+              :to-be nil)))
+
+  (it
+    "leaves the screen unchanged when no search session is active"
+    (let* ((state (%fresh-layout-state :content "one two" :width 20 :height 1))
+           (screen (%layout-screen state))
+           (before (cl-tty-kit:screen-row-string screen 0)))
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) (%layout-window state) 0))
+      (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before)))
+
+  (it
+    "highlights a match on the wrapped row where its text is displayed"
+    (let* ((state (%fresh-layout-state :content "abcdef" :width 3 :height 2))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (buffer-set-truncate-lines buffer nil)
+      (isearch-apply-pattern session "de")
+      (setf (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 1))
+                :to-equal '((:fg 0) (:bg 6)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 1))
+                :to-equal '((:fg 0) (:bg 6))))))
+
+(describe
   "%layout-path-label"
   (it
     "returns a pathname's last path component"
@@ -110,3 +171,34 @@ the degenerate-window tests are the ones that need them to differ."
   (it
     "returns a directory pathname's last component without a trailing slash"
     (expect (loom::%layout-path-label #P"/root/sub/") :to-equal "sub")))
+
+(describe
+  "wrapped layout coordinate helpers"
+  (it
+    "counts rows across wrapped logical lines and enforces its limit"
+    (let* ((renderer (make-loom-renderer 3 4))
+           (buffer (make-buffer :initial-content (format nil "abcdef~%xy"))))
+      (expect (loom::%layout-segment-count renderer buffer 0 3)
+              :to-equal 2)
+      (expect (loom::%layout-rows-between renderer buffer 3 0 0 1 0 2)
+              :to-equal 2)
+      (expect (loom::%layout-rows-between renderer buffer 3 0 0 1 0 1)
+              :to-be nil)))
+  (it
+    "returns no distance when the target precedes the origin"
+    (let* ((renderer (make-loom-renderer 3 4))
+           (buffer (make-buffer :initial-content "abcdef")))
+      (expect (loom::%layout-rows-between renderer buffer 3 1 0 0 0 2)
+              :to-be nil)
+      (expect (loom::%layout-rows-between renderer buffer 3 0 1 0 0 2)
+              :to-be nil)))
+  (it
+    "moves backward across wrapped segments and stops at buffer origin"
+    (let* ((renderer (make-loom-renderer 3 4))
+           (buffer (make-buffer :initial-content (format nil "abcdef~%xy"))))
+      (multiple-value-bind (line row)
+          (loom::%layout-row-back renderer buffer 3 1 0 1)
+        (expect (list line row) :to-equal '(0 1)))
+      (multiple-value-bind (line row)
+          (loom::%layout-row-back renderer buffer 3 0 0 5)
+        (expect (list line row) :to-equal '(0 0))))))
