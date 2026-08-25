@@ -33,4 +33,6 @@
 
 (defmacro define-command-spec-groups (variable-name &body groups)
   "Define VARIABLE-NAME as declarative COMMAND-SPEC-GROUP forms."
+  (%validate-command-spec-entries
+   (%collect-command-spec-entries groups))
   `(defparameter ,variable-name ',groups))

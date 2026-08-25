@@ -19,8 +19,18 @@
                  '((loom/application:command-spec-group
                        "movement"
                      (loom/application:command-spec
-                         "forward-char"
+                       "forward-char"
                        forward-char))))))))
+(describe
+  "define-command-spec-groups validation"
+  (it "rejects malformed groups during macroexpansion"
+    (signals error
+      (macroexpand-1
+       '(loom/application:define-command-spec-groups
+         *sample-command-spec-groups*
+         (loom/application:command-spec-group
+             "movement"
+           (not-a-command-spec)))))))
 
 (describe
   "define-command-specs macroexpansion"
