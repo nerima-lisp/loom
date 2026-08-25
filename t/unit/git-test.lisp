@@ -4,60 +4,55 @@
     "git command execution"
   (it "runs status in the requested directory"
       (let ((result
-              (make-shell-command-result
-               :command "git status --short --branch"
-               :directory "/repo/"
-               :output ""
-               :error-output ""
-               :exit-code 0))
+              (make-test-git-result
+               :stdout ""
+               :stderr ""
+               :status 0))
             command
-            captured-directory)
+            captured-directory
+            captured-timeout)
         (with-replaced-function
-            (loom/feature/shell:run-shell-command
-             (lambda (candidate-command &key directory)
-               (setf command candidate-command
-                     captured-directory directory)
+            (vcs-kit:run-git
+             (lambda (repository subcommand arguments &key directory timeout)
+               (setf command (list repository subcommand arguments)
+                     captured-directory directory
+                     captured-timeout timeout)
                result))
           (expect (run-git-status :directory "/repo/") :to-be result)
-          (expect command :to-equal "git status --short --branch")
-          (expect captured-directory :to-equal "/repo/"))))
+          (expect command :to-equal '(nil "status" ("--short" "--branch")))
+          (expect captured-directory :to-equal "/repo/")
+          (expect captured-timeout :to-equal *git-command-timeout-seconds*))))
 
     (it "runs the requested kind of diff in the requested directory"
       (let ((result
-              (make-shell-command-result
-               :command "git diff --cached"
-               :directory "/repo/"
-               :output ""
-               :error-output ""
-               :exit-code 0))
+              (make-test-git-result
+               :stdout ""
+               :stderr ""
+               :status 0))
             command
-            captured-directory)
+            captured-directory
+            captured-timeout)
         (with-replaced-function
-            (loom/feature/shell:run-shell-command
-             (lambda (candidate-command &key directory)
-               (setf command candidate-command
-                     captured-directory directory)
+            (vcs-kit:run-git
+             (lambda (repository subcommand arguments &key directory timeout)
+               (setf command (list repository subcommand arguments)
+                     captured-directory directory
+                     captured-timeout timeout)
                result))
           (expect (run-git-diff :directory "/repo/" :staged t) :to-be result)
-          (expect command :to-equal "git diff --cached")
-          (expect captured-directory :to-equal "/repo/")))))
+          (expect command :to-equal '(nil "diff" ("--cached")))
+          (expect captured-directory :to-equal "/repo/")
+          (expect captured-timeout :to-equal *git-command-timeout-seconds*)))))
 
 (describe
     "git status"
-  (it "builds a concise branch-aware status command"
-    (expect (git-status-command)
-            :to-equal
-            "git status --short --branch"))
-
   (it "displays captured status in a read-only result buffer"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git status --short --branch"
-               :directory "/repo/"
-               :output (format nil "## main~% M README.md~%")
-               :error-output ""
-               :exit-code 0)))
+              (make-test-git-result
+               :stdout (format nil "## main~% M README.md~%")
+               :stderr ""
+               :status 0)))
         (with-replaced-function
             (loom/feature/git:run-git-status
              (lambda (&key directory)
@@ -74,12 +69,10 @@
                   "Git status refreshed"))))))
   (it "reports a failed status command"
     (%with-minibuffer-state (minibuffer "")
-      (let ((result (make-shell-command-result
-                     :command "git status --short --branch"
-                     :directory "/repo/"
-                     :output ""
-                     :error-output "not a repository"
-                     :exit-code 128)))
+      (let ((result (make-test-git-result
+                     :stdout ""
+                     :stderr "not a repository"
+                     :status 128)))
         (with-replaced-function
             (loom/feature/git:run-git-status
              (lambda (&key directory)
@@ -90,18 +83,14 @@
                   :to-equal "Git status exited with status 128")))))
   (it "reuses the existing status result buffer"
     (%with-minibuffer-state (minibuffer "")
-      (let ((first-result (make-shell-command-result
-                           :command "git status --short --branch"
-                           :directory "/repo/"
-                           :output (format nil "first~%")
-                           :error-output ""
-                           :exit-code 0))
-            (second-result (make-shell-command-result
-                            :command "git status --short --branch"
-                            :directory "/repo/"
-                            :output (format nil "second~%")
-                            :error-output ""
-                            :exit-code 0)))
+      (let ((first-result (make-test-git-result
+                           :stdout (format nil "first~%")
+                           :stderr ""
+                           :status 0))
+            (second-result (make-test-git-result
+                            :stdout (format nil "second~%")
+                            :stderr ""
+                            :status 0)))
         (with-replaced-function
             (loom/feature/git:run-git-status
              (let ((results (list first-result second-result)))
@@ -126,23 +115,13 @@
 
 (describe
     "git diff"
-  (it "builds working-tree and staged diff commands"
-    (expect (git-diff-command)
-            :to-equal
-            "git diff")
-    (expect (git-diff-command :staged t)
-            :to-equal
-            "git diff --cached"))
-
   (it "displays a captured working-tree diff in a read-only result buffer"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git diff"
-               :directory "/repo/"
-               :output (format nil "diff --git a/README.md b/README.md~%")
-               :error-output ""
-               :exit-code 0)))
+              (make-test-git-result
+               :stdout (format nil "diff --git a/README.md b/README.md~%")
+               :stderr ""
+               :status 0)))
         (with-replaced-function
             (loom/feature/git:run-git-diff
              (lambda (&key directory staged)
@@ -161,12 +140,10 @@
   (it "displays a captured staged diff and passes the staged selector"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git diff --cached"
-               :directory "/repo/"
-               :output (format nil "diff --cached~%")
-               :error-output ""
-               :exit-code 0)))
+              (make-test-git-result
+               :stdout (format nil "diff --cached~%")
+               :stderr ""
+               :status 0)))
         (with-replaced-function
             (loom/feature/git:run-git-diff
              (lambda (&key directory staged)
@@ -179,12 +156,10 @@
                 "Git staged diff refreshed"))))
   (it "reports a failed diff command"
     (%with-minibuffer-state (minibuffer "")
-      (let ((result (make-shell-command-result
-                     :command "git diff"
-                     :directory "/repo/"
-                     :output ""
-                     :error-output "diff failed"
-                     :exit-code 1)))
+      (let ((result (make-test-git-result
+                     :stdout ""
+                     :stderr "diff failed"
+                     :status 1)))
         (with-replaced-function
             (loom/feature/git:run-git-diff
              (lambda (&key directory staged)
