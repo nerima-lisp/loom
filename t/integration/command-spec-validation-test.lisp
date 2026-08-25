@@ -13,6 +13,22 @@
               (quote (quote forward-char)))
       (expect (getf (rest expansion) :help) :to-be nil)
       (expect (getf (rest expansion) :help-order) :to-be nil)))
+  (it "preserves valid help metadata"
+    (let ((expansion
+            (macroexpand-1
+             '(loom/application:command-spec
+               "forward-char" forward-char
+               :help "Move forward"
+               :help-order 10))))
+      (expect (getf (rest expansion) :help) :to-equal "Move forward")
+      (expect (getf (rest expansion) :help-order) :to-equal 10)))
+  (it "rejects invalid optional command metadata"
+    (dolist (form
+              '((loom/application:command-spec
+                 "forward-char" forward-char :help 42)
+                (loom/application:command-spec
+                 "forward-char" forward-char :help-order "first")))
+      (signals error (macroexpand-1 form))))
   (it "rejects a non-string command-spec name"
     (signals error
       (macroexpand-1 '(loom/application:command-spec 42 forward-char))))

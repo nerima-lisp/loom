@@ -9,15 +9,7 @@
 ;;;; a plain, ordinary function of zero arguments that reads and mutates
 ;;;; *EDITOR-STATE* (see application/editor-state.lisp) and the protocol
 ;;;; operations declared in domain/, infrastructure/, and application/ when
-;;;; invoked, e.g.:
-;;;;
-;;;;   (defun forward-char ()
-;;;;     "Move point forward one character in the selected window's buffer."
-;;;;     (let ((window (window-tree-selected-window
-;;;;                    (editor-state-window-tree *editor-state*))))
-;;;;       (buffer-set-point (window-buffer window) ...)))
-;;;;
-;;;; A keymap binds a key sequence directly to such a function (see
+;;;; invoked. A keymap binds a key sequence directly to such a function (see
 ;;;; KEYMAP-DEFINE-KEY), so command names are the vocabulary keymap bindings
 ;;;; are written against. Commands are named after their Emacs equivalents
 ;;;; where one exists (FORWARD-CHAR, KILL-LINE, SAVE-BUFFER, ...) so the
