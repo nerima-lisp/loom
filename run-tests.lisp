@@ -67,16 +67,15 @@
                  sibling-directories))
      :inherit-configuration)))
 
-(asdf:load-system "cl-host-kit")
-
-;; Warn rather than abort on compile-file warnings: the suite's own
-;; failures are the signal this script reports, and a style warning in a
-;; dependency should not masquerade as a test failure.
-(setf asdf:*compile-file-warnings-behaviour* :warn
-      asdf:*compile-file-failure-behaviour* :error)
 (let ((passed-p
         (handler-case
             (sb-ext:with-timeout 600
+                (asdf:load-system "cl-host-kit")
+                ;; Warn rather than abort on compile-file warnings: the suite's own
+                ;; failures are the signal this script reports, and a style warning in a
+                ;; dependency should not masquerade as a test failure.
+                (setf asdf:*compile-file-warnings-behaviour* :warn
+                      asdf:*compile-file-failure-behaviour* :error)
                 ;; Force Loom's source tree to win over stale top-level FASLs,
                 ;; without recompiling read-only dependency sources in Nix's
                 ;; store.

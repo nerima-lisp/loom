@@ -32,7 +32,8 @@ root source tree responsible for every feature."
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli"
-               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-json-kit")
+               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-json-kit"
+               "cl-vcs-kit")
   :pathname "."
   :serial t
   :components
@@ -338,7 +339,12 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("loom" "cl-weave" "cl-date-kit")
+  ;; Test sources use these systems directly. Keep those edges explicit so
+  ;; the test system remains loadable if loom's implementation dependencies
+  ;; are reduced or rearranged.
+  :depends-on ("loom" "cl-weave" "cl-date-kit" "cl-codec-kit"
+               "cl-parser-kit" "cl-regex-kit" "cl-boundary-kit"
+               "cl-concurrent-kit" "cl-vcs-kit" "cl-process-kit")
   :pathname "."
   :serial t
   :components
