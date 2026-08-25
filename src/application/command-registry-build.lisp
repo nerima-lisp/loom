@@ -11,14 +11,7 @@
     (error "Expected a COMMAND-SPEC form, got: ~S" spec))
   (destructuring-bind (operator name command &key keys help help-order) spec
     (declare (ignore operator))
-    (unless (or (null name) (stringp name))
-      (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
-    (unless (symbolp command)
-      (error "COMMAND-SPEC command must be a symbol: ~S" command))
-    (unless (or (null help) (stringp help))
-      (error "COMMAND-SPEC help must be a string or NIL: ~S" help))
-    (unless (or (null help-order) (integerp help-order))
-      (error "COMMAND-SPEC help-order must be an integer or NIL: ~S" help-order))
+    (%validate-command-metadata name command help help-order)
     (list name command keys help help-order)))
 
 (defun %collect-command-spec-entries (specs)
@@ -57,6 +50,15 @@
              :help-order help-order)))
    entries))
 
+(defun %command-spec-entry-form (entry)
+  "Return the source form that constructs one runtime registry entry."
+  (destructuring-bind (name command keys help help-order) entry
+    `(list :name ,name
+           :command ',command
+           :keys ',keys
+           :help ,help
+           :help-order ,help-order)))
+
 (defun build-command-specs (&rest spec-blocks)
   "Return validated runtime registry entries from declarative SPEC-BLOCKS."
   (%emit-command-spec-entries
@@ -74,14 +76,7 @@ registry is used for lookup."
                   (%collect-command-spec-entries specs))))
     `(defparameter *command-specs*
        (list
-        ,@(mapcar
-           (lambda (entry)
-             (destructuring-bind (name command keys help help-order) entry
-               `(list :name ,name
-                      :command ',command
-                      :keys ',keys
-                      :help ,help
-                      :help-order ,help-order)))
+        ,@(mapcar #'%command-spec-entry-form
            entries)))))
 
 (defmacro define-command-spec-catalog (&rest spec-blocks)
