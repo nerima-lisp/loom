@@ -8,6 +8,9 @@
        ("format-current-buffer"
         loom/feature/format:format-current-buffer
         nil)
+       ("auto-save-current-buffer"
+        loom/feature/auto-save:auto-save-current-buffer
+        nil)
        ("git-status"
         loom/feature/git:git-status
         (((:control) . #\x) (nil . #\g)))

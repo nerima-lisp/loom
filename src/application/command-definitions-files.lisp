@@ -24,6 +24,8 @@
                     :help-order 14)
       (command-spec "auto-save-mode" loom/feature/auto-save:auto-save-mode)
       (command-spec "toggle-auto-save" loom/feature/auto-save:toggle-auto-save)
+      (command-spec "auto-save-current-buffer"
+                    loom/feature/auto-save:auto-save-current-buffer)
       (command-spec "write-file" loom/feature/file-tree:write-file
                     :keys (((:control #\x) (:control #\w))))
       (command-spec "recent-file" loom/feature/file-tree:recent-file

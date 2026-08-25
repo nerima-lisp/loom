@@ -95,6 +95,14 @@
           (expect (auto-save-enabled-p buffer) :to-be-truthy)
           (expect (toggle-auto-save) :to-be nil)
           (expect (auto-save-enabled-p buffer) :to-be-falsy))))))
+  (it "toggles global mode when no explicit value is supplied"
+    (%with-minibuffer-state (minibuffer "text")
+      (let ((state *editor-state*))
+        (expect (editor-state-auto-save-mode-p state) :to-be-falsy)
+        (expect (auto-save-mode) :to-be-truthy)
+        (expect (editor-state-auto-save-mode-p state) :to-be-truthy)
+        (expect (auto-save-mode) :to-be-falsy)
+        (expect (editor-state-auto-save-mode-p state) :to-be-falsy))))
 
 (describe
   "automatic save command boundaries"
@@ -120,6 +128,13 @@
     (let ((*editor-state* nil))
       (signals error (auto-save-mode t))
       (expect (maybe-auto-save :force t) :to-be nil))))
+
+(describe
+  "automatic save selection boundaries"
+  (it "rejects toggling a buffer when no selected buffer is active"
+    (%with-minibuffer-state (minibuffer "text")
+      (window-set-buffer (%selected-window) nil)
+      (signals error (toggle-auto-save)))))
 
 (describe
   "automatic save error boundaries"
