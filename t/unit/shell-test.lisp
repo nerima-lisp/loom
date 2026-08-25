@@ -1,6 +1,20 @@
 (in-package #:loom/test)
 
 (describe
+  "shell command timeouts"
+  (it "returns a structured timeout result"
+    (let ((result (run-shell-command "sleep 2"
+                                     :timeout-seconds 0.01)))
+      (expect (shell-command-result-success-p result) :to-be-falsy)
+      (expect (shell-command-result-exit-code result) :to-equal 124)
+      (expect (shell-command-result-error-output result)
+              :to-contain "timed out")))
+  (it "rejects invalid command options"
+    (signals type-error (run-shell-command 42))
+    (signals type-error (run-shell-command "true" :timeout-seconds -1))
+    (signals type-error (run-shell-command "true" :input 42))))
+
+(describe
   "shell command results"
   (it "renders both process streams and the exit status"
     (let ((result
@@ -38,6 +52,16 @@
               :to-equal
               (namestring directory))
       (expect (shell-command-result-exit-code result) :to-equal 0)))
+  (it "normalizes pathname directories and the default directory"
+    (let ((directory (truename (uiop:getcwd))))
+      (expect (namestring (loom/feature/shell::%shell-directory-pathname
+                           directory))
+              :to-equal
+              (namestring directory))
+      (expect (namestring (loom/feature/shell::%shell-directory-pathname
+                           nil))
+              :to-equal
+              (namestring (truename (uiop:getcwd))))))
   (it "passes string input to process standard input"
     (let ((result (run-shell-command "tr 'a-z' 'A-Z'"
                                      :input "abc")))

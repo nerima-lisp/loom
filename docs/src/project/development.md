@@ -65,6 +65,11 @@ example has a 120-second timeout. Coverage has a 1,800-second outer timeout;
 the PTY suite gives each interaction 10 seconds. These limits are part of the
 development contract and should be changed only with a measured reason.
 
+Feature code that invokes an external command uses `run-shell-command`, which
+has a 30-second default timeout. Callers can pass `:timeout-seconds` when a
+command needs a different bounded duration; a timeout is returned as a
+structured result with exit code 124.
+
 Git commands use `cl-vcs-kit` directly with an argv list and structured
 process results; Git paths are not assembled into shell command strings.
 
