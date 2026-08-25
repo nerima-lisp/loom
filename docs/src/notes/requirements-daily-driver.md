@@ -263,7 +263,10 @@ babel などの機能実装は含まない。
 ### FR-008: 構造編集（paredit 相当）
 
 **優先度: optional**（FR-007 があれば日常使用は成立する。編集速度の向上が目的）
-**証拠: assumed**
+**実装状況: 実装と unit / integration テストケースを追加済み**
+**証拠: verified**（`packages/core/editor/src/application-structural-editing.lisp` の
+forward/backward slurp・barf・wrap-round・splice・raise の実装、および
+`command-definitions-movement.lisp` でのキーバインド登録を確認）
 
 - slurp / barf / wrap / splice / raise を提供する。
 - 操作の前後で括弧の対応が保たれる。
@@ -309,6 +312,12 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 （`src/application/minibuffer-completion.lisp`）とは別に、バッファ内ポップアップを
 `src/application/completion-popup.lisp` が提供する。
 
+**既知の粗さ**: `initialize` の `languageId` は major-mode の `:language-id` を
+経由せず、`application-lsp-session-state.lisp` の `%lsp-language-id` がファイル
+拡張子をそのまま languageId にする（例: `.ts` → `"ts"`）。モード側の
+`:language-id` は正しく設定されているが LSP はそれを読んでいない。将来
+languageId が拡張子と乖離するモードを追加する際は先に直す必要がある。
+
 ---
 
 ## 4. 非機能要件
@@ -327,7 +336,9 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
   ため、形式を変える場合はバージョンを上げ、旧形式の扱いを明示すること。
 - **NFR-005（層の遵守）**: 表示幅とカーソル幾何は presentation / infrastructure に
   留め、`packages/core/editor` の domain 層に端末依存の概念を持ち込まないこと。
-  現行の依存契約テスト（`t/unit/dependency-contract-test.lisp`）で守られる。
+  `t/unit/dependency-contract-test.lisp` は loom.asd と flake.nix の依存宣言が
+  一致することのみを検査しており、層の境界そのものは機械的な gate を持たない規約
+  であることに注意する。
 
 ## 5. 技術判断と根拠
 
@@ -353,7 +364,7 @@ SWANK には流用できない。**新しい infrastructure 境界の追加が�
 | 7 | FR-008 / FR-009 / FR-010 | optional。段階 6 までで日常使用が成立した後に、実際の不足感で優先順位を再判断する |
 
 段階 1〜6 の完了をもって「日常使用に載る」と判定する。
-FR-010 は本更新で実装済みとし、FR-009 と追加の LSP プロトコル拡張は引き続き別課題とする。
+FR-008 と FR-010 は本更新で実装済みとし、FR-009 と追加の LSP プロトコル拡張は引き続き別課題とする。
 
 ## 7. 実現性
 
