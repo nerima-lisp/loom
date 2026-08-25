@@ -85,3 +85,39 @@
       (loom::%raw-delete-region buffer 0 2 0 2)
       (expect (buffer-line buffer 0) :to-equal "hello")
       (expect (length (loom::%buffer-pieces buffer)) :to-equal 1))))
+
+(describe
+  "piece-table position helpers"
+  (cl-weave:it-property
+      "splits every generated character into one line"
+      ((character (cl-weave:gen-character :alphabet "abc")))
+    (let ((lines (loom::%split-newlines (string character))))
+      (expect lines :to-equal (list (string character)))))
+
+  (cl-weave:it-property
+      "advances a point by generated single-line text"
+      ((column (cl-weave:gen-integer :min 0 :max 32))
+       (character (cl-weave:gen-character :alphabet "abc")))
+    (multiple-value-bind (line end-column)
+        (loom::%advance-position 2 column (string character))
+      (expect line :to-equal 2)
+      (expect end-column :to-equal (1+ column))))
+
+  (it
+    "preserves empty lines around generated newlines"
+    (dolist (text (list ""
+                        (string #\Newline)
+                        (format nil "a~%")
+                        (format nil "~%a")
+                        (format nil "a~%~%b")))
+      (expect (length (loom::%split-newlines text))
+              :to-equal (1+ (count #\Newline text)))))
+
+  (it
+    "advances across multiple generated lines"
+    (let ((text (format nil "a~%b")))
+    (multiple-value-bind (line column)
+        (loom::%advance-position 3 4 text)
+      (expect line :to-equal (+ 3 (count #\Newline text)))
+      (expect column :to-equal
+              (length (subseq text (1+ (or (position #\Newline text :from-end t) -1)))))))))
