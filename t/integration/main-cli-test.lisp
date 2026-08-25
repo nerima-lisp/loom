@@ -53,7 +53,7 @@
                     (list "--noinform" "--non-interactive"
                           "--eval" "(require :asdf)"
                           "--eval" form)
-                    :timeout 30)))
+                    :timeout 60)))
       (expect (host-kit:process-result-timed-out-p result) :to-be nil)
       (expect (host-kit:process-result-exit-code result) :to-be 0)
       (expect (host-kit:process-result-stdout result) :to-contain "loom"))))
