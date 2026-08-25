@@ -3,7 +3,7 @@
 ;;;; Fixed-shape plist helpers for session snapshot serialization.
 (in-package #:loom/feature/session)
 
-(defparameter *loom-session-version* 5)
+(defconstant +loom-session-version+ 5)
 
 (defun %session-plist-value (plist key)
   (loop for tail on plist by #'cddr
@@ -23,7 +23,7 @@
       (error "~A: unexpected or duplicate fields in ~S" context value)))
   value)
 
-(defparameter *loom-session-top-level-keys*
+(defparameter +loom-session-top-level-keys+
   '(:loom-session :buffers :recent-files :bookmarks :command-history
     :workspaces :current-workspace-index))
 
