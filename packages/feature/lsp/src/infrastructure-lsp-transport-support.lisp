@@ -20,6 +20,8 @@
                     (setf buffer
                           (make-array (- (length buffer) used)
                                       :element-type '(unsigned-byte 8)
+                                      :adjustable t
+                                      :fill-pointer (- (length buffer) used)
                                       :initial-contents (subseq buffer used))))
                    (t (return))))))
     (ignore-errors

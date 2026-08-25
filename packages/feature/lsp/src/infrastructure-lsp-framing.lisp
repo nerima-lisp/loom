@@ -32,6 +32,8 @@ error; an incomplete frame is a normal result for a streaming reader."
            (body-length (%lsp-content-length header)))
       (unless body-length
         (error "LSP frame has no Content-Length header"))
+      (when (minusp body-length)
+        (error "LSP frame has a negative Content-Length: ~D" body-length))
       (let* ((body-start (+ header-end 4))
              (body-end (+ body-start body-length)))
         (when (> body-end (length octets))

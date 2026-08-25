@@ -2,6 +2,19 @@
 
 (describe
   "LSP framing"
+  (cl-weave:it-each
+      (("{}")
+       ("{\"message\":\"hello\"}")
+       ("{\"message\":\"日本語🙂\"}"))
+      "round-trips JSON body ~S"
+      (json)
+    (let ((frame (loom/feature/lsp::loom-lsp-frame-encode json)))
+      (multiple-value-bind (decoded consumed status)
+          (loom/feature/lsp::loom-lsp-frame-decode frame)
+        (expect decoded :to-equal json)
+        (expect consumed :to-equal (length frame))
+        (expect status :to-be :complete))))
+
   (it "frames and decodes UTF-8 JSON"
     (let* ((json "{\"jsonrpc\":\"2.0\",\"result\":\"日本語\"}")
            (frame (loom/feature/lsp::loom-lsp-frame-encode json)))
@@ -22,7 +35,26 @@
         (loom/feature/lsp::loom-lsp-frame-decode #())
       (expect decoded :to-be nil)
       (expect consumed :to-equal 0)
-      (expect status :to-be :incomplete)))
+        (expect status :to-be :incomplete)))
+
+  (it "consumes exactly one frame from a stream"
+    (let* ((first (loom/feature/lsp::loom-lsp-frame-encode "first"))
+           (second (loom/feature/lsp::loom-lsp-frame-encode "second"))
+           (stream (make-array (+ (length first) (length second))
+                               :element-type '(unsigned-byte 8))))
+      (replace stream first)
+      (replace stream second :start1 (length first))
+      (multiple-value-bind (decoded consumed status)
+          (loom/feature/lsp::loom-lsp-frame-decode stream)
+        (expect decoded :to-equal "first")
+        (expect consumed :to-equal (length first))
+        (expect status :to-be :complete)
+        (multiple-value-bind (next-decoded next-consumed next-status)
+            (loom/feature/lsp::loom-lsp-frame-decode
+             (subseq stream consumed))
+          (expect next-decoded :to-equal "second")
+          (expect next-consumed :to-equal (length second))
+          (expect next-status :to-be :complete)))))
 
   (it "rejects malformed headers and invalid UTF-8"
     (let* ((accent (string (code-char #xE9)))
@@ -73,6 +105,10 @@
       (signals error
         (loom/feature/lsp::loom-lsp-frame-decode
          (%lsp-raw-frame (format nil "Content-Length: nope~A~A" crlf crlf)
+                         #())))
+      (signals error
+        (loom/feature/lsp::loom-lsp-frame-decode
+         (%lsp-raw-frame (format nil "Content-Length: -1~A~A" crlf crlf)
                          #())))
       (multiple-value-bind (decoded consumed status)
           (loom/feature/lsp::loom-lsp-frame-decode
