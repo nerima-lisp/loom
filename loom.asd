@@ -189,6 +189,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/application-commands-prefix-argument-support")
   (:file "packages/core/editor/src/application-commands-prefix-argument")
    (:file "packages/core/editor/src/application-word-motion")
+   (:file "packages/core/editor/src/application-sexp-syntax")
    (:file "packages/core/editor/src/application-sexp-motion")
    (:file "packages/core/editor/src/application-structural-editing")
    (:file "packages/core/editor/src/application-commands-movement-support")
