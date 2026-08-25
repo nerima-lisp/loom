@@ -98,10 +98,13 @@ when undoing that insertion by deleting the span back out. Must agree with
 how %RAW-INSERT-AT itself computes its returned end position, since
 %APPLY-UNDO-ENTRY relies on that agreement to reconstruct spans it never
 directly observed."
-  (let ((segments (%split-newlines text)))
-    (if (= (length segments) 1)
+  (let* ((segments (%split-newlines text))
+         (line-count (length segments)))
+    (if (= line-count 1)
         (values line (+ column (length (first segments))))
-        (values (+ line (1- (length segments))) (length (car (last segments)))))))
+        (let ((last-line (car (last segments))))
+          (values (+ line (1- line-count))
+                  (length last-line))))))
 
 (defun %buffer-full-length (buffer)
   "Return BUFFER's current full-text length without materializing its text."
