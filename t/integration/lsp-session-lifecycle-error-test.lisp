@@ -31,6 +31,18 @@
       (%fake-push-and-drain transport session "not-json")
       (expect (lsp-session-last-error session) :to-be-truthy)))
 
+  (it "rejects restarting a session while shutdown is pending"
+    (%with-initialized-fake-lsp-session ((transport session))
+      (setf (loom/feature/lsp::lsp-session-pending-shutdown-id session) 99)
+      (signals error (lsp-session-start session))))
+
+  (it "refreshes safely before initialization and after shutdown"
+    (%with-fake-lsp-session ((transport session))
+      (lsp-session-refresh session nil)
+      (lsp-session-stop session)
+      (lsp-session-refresh session nil)
+      (expect (lsp-session-last-error session) :to-be nil)))
+
   (it "handles initialize response variants"
     (dolist (response-and-expected
               '(("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":\"server down\"}"
@@ -51,4 +63,25 @@
        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{},\"error\":null}")
       (expect (lsp-session-initialized-p session) :to-be-truthy)
       (expect (lsp-session-last-error session) :to-be nil)
-      (expect (%fake-sent-in-order transport) :to-have-length 2))))
+      (expect (%fake-sent-in-order transport) :to-have-length 2)))
+
+  (it "records malformed initialize result shapes"
+    (dolist (result
+              '("42"
+                "{\"capabilities\":42}"
+                "{\"serverInfo\":42}"
+                "{\"capabilities\":{},\"serverInfo\":[]}"))
+      (%with-started-fake-lsp-session ((transport session))
+        (%fake-push-initialize-response transport result)
+        (lsp-session-drain session)
+        (expect (lsp-session-initialized-p session) :to-be nil)
+        (expect (lsp-session-last-error session) :to-be-truthy))))
+
+  (it "records shutdown response errors before finishing"
+    (%with-initialized-fake-lsp-session ((transport session))
+      (%fake-push-incoming
+       transport
+       "{\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":-1,\"message\":\"busy\"}}")
+      (lsp-session-stop session)
+      (expect (lsp-session-last-error session) :to-equal "busy")
+      (expect (%fake-closed-p transport) :to-be-truthy))))
