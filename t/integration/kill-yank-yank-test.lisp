@@ -19,6 +19,56 @@
         (expect (buffer-text buffer) :to-equal "one"))))
 
   (it
+    "reports that yank-pop has no previous yank"
+    (%with-minibuffer-state (minibuffer "")
+      (loom::yank-pop)
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Previous command was not a yank")))
+
+  (it
+    "invalidates yank-pop after the point moves"
+    (%with-minibuffer-state (minibuffer "one two")
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*) '("x" "y"))
+        (loom::yank)
+        (buffer-set-point buffer 0 0)
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "xone two")
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Previous command was not a yank"))))
+
+  (it
+    "rejects an incomplete previous yank context"
+    (%with-minibuffer-state (minibuffer "one two")
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*) '("x" "y"))
+        (loom::yank)
+        (setf (editor-state-last-yank-ranges *editor-state*) nil)
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "xone two")
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Previous command was not a yank"))))
+
+  (it
+    "keeps yank-pop ranges ordered when an earlier range shifts later text"
+    (let ((*editor-state* (%fresh-editor-state "aXXbYYc")))
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*) '("Z")
+              (loom::editor-state-last-yank-buffer *editor-state*) buffer
+              (loom::editor-state-last-yank-start-offset *editor-state*) 1
+              (loom::editor-state-last-yank-end-offset *editor-state*) 6
+              (editor-state-last-yank-ranges *editor-state*)
+                '((1 . 3) (4 . 6))
+              (loom::editor-state-last-yank-ring-index *editor-state*) 0
+              (loom::editor-state-last-yank-repeat-count *editor-state*) 1)
+        (buffer-set-point buffer 0 6)
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "aZbZc")
+        (expect (buffer-point-offset buffer) :to-equal 2)
+        (expect (editor-state-last-yank-ranges *editor-state*)
+                :to-equal '((1 . 2) (3 . 4))))))
+
+  (it
     "kills from point to end of line and yanks it back at a new position"
     (let ((*editor-state* (%fresh-editor-state "hello world")))
       (let ((buffer (%selected-test-buffer)))
