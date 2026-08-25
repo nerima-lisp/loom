@@ -22,7 +22,7 @@
 ;;; directory as childless, so a FILE-TREE is usable standalone (e.g. in
 ;;; tests) with no filesystem access at all. The infrastructure layer
 ;;; overrides it post-construction with the infrastructure lister, e.g.
-;;;   (file-tree-install-child-lister tree #'loom-fs-list-directory)
+;;; The infrastructure layer installs LOOM-FS-LIST-DIRECTORY as the lister.
 ;;; Expand/collapse state is a hash-table of currently-expanded directory
 ;;; paths (EQUAL-keyed, so string or pathname paths both work as long as a
 ;;; given tree is consistent about which it uses).
