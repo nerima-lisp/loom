@@ -7,14 +7,14 @@
              (result (run-git-status :directory directory))
              (buffer (%replace-git-result-buffer
                       (%git-result-buffer *git-status-buffer-name*)
-                      (shell-command-result-text result))))
+                      (git-result-text result))))
         (window-set-buffer (%selected-window) buffer)
         (minibuffer-message
          (editor-state-minibuffer *editor-state*)
-         (if (shell-command-result-success-p result)
+         (if (vcs-kit:process-success-p result)
              "Git status refreshed"
              (format nil "Git status exited with status ~D"
-                     (shell-command-result-exit-code result))))
+                     (vcs-kit:process-result-exit-code result))))
         result)
     (error (condition)
       (minibuffer-message
@@ -29,16 +29,16 @@
              (result (run-git-diff :directory directory :staged staged))
              (buffer (%replace-git-result-buffer
                       (%git-result-buffer *git-diff-buffer-name*)
-                      (shell-command-result-text result))))
+                      (git-result-text result))))
         (window-set-buffer (%selected-window) buffer)
         (minibuffer-message
          (editor-state-minibuffer *editor-state*)
-         (if (shell-command-result-success-p result)
+         (if (vcs-kit:process-success-p result)
              (if staged
                  "Git staged diff refreshed"
                  "Git diff refreshed")
              (format nil "Git diff exited with status ~D"
-                     (shell-command-result-exit-code result))))
+                     (vcs-kit:process-result-exit-code result))))
         result)
     (error (condition)
       (minibuffer-message

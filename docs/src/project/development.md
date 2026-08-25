@@ -65,6 +65,9 @@ example has a 120-second timeout. Coverage has a 1,800-second outer timeout;
 the PTY suite gives each interaction 10 seconds. These limits are part of the
 development contract and should be changed only with a measured reason.
 
+Git commands use `cl-vcs-kit` directly with an argv list and structured
+process results; Git paths are not assembled into shell command strings.
+
 Run the full CI-equivalent check, including the test suite, package build,
 formatter, paredit structural syntax check, coverage, and the strict MkDocs
 build, with:

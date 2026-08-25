@@ -20,7 +20,7 @@
   (unwind-protect
        (progn
          (buffer-set-read-only buffer nil)
-         (unless (zerop (length (buffer-text buffer)))
+         (unless (string= (buffer-text buffer) "")
            (let* ((end (buffer-offset-position
                         buffer
                         (length (buffer-text buffer))))
@@ -35,8 +35,9 @@
 (defun %git-path-present-p (path)
   "Return true when PATH contains a non-whitespace character."
   (and (stringp path)
-       (plusp (length (string-trim '(#\Space #\Tab #\Newline #\Return)
-                                   path)))))
+       (not (string= (string-trim '(#\Space #\Tab #\Newline #\Return)
+                                  path)
+                    ""))))
 
 (defun %git-file-operation (operation path minibuffer)
   "Run OPERATION for PATH and report its result in MINIBUFFER."
@@ -47,9 +48,7 @@
          (past-tense (ecase operation
                        (:stage "staged")
                        (:unstage "unstaged"))))
-    (if (not (%git-path-present-p path))
-        (minibuffer-message minibuffer
-                            (format nil "Git ~A cancelled" verb))
+    (if (%git-path-present-p path)
         (handler-case
             (let* ((directory (%git-status-directory))
                    (result (ecase operation
@@ -58,14 +57,16 @@
                               (run-git-unstage path :directory directory)))))
               (minibuffer-message
                minibuffer
-               (if (shell-command-result-success-p result)
+               (if (vcs-kit:process-success-p result)
                    (format nil "Git ~A ~A" past-tense path)
                    (format nil "Git ~A exited with status ~D"
                            verb
-                           (shell-command-result-exit-code result))))
+                           (vcs-kit:process-result-exit-code result))))
               result)
           (error (condition)
             (minibuffer-message
              minibuffer
              (format nil "Git ~A error: ~A" verb condition))
-            nil)))))
+            nil))
+        (minibuffer-message minibuffer
+                            (format nil "Git ~A cancelled" verb)))))

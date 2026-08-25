@@ -94,3 +94,13 @@ SKIP rather than hang or fail there, while still running everywhere else
      ,@(mapcar (lambda (name)
                  `(unregister-major-mode ,name))
                mode-names)))
+
+(defun make-test-git-result (&key (arguments nil) (stdout "") (stderr "")
+                                  (status 0))
+  (process-kit:make-process-result
+   :program "git"
+   :arguments arguments
+   :status :exited
+   :exit-code status
+   :stdout stdout
+   :stderr stderr))
