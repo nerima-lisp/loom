@@ -2,8 +2,8 @@
 ;;;;
 ;;;; Read-side major-mode resolution and metadata accessors.  Built-in
 ;;;; definitions and registry state live in
-;;;; domain-major-mode-definitions.lisp; mutation and validation live in
-;;;; domain-major-mode-registry.lisp.
+;;;; domain-major-mode-definitions.lisp; registry state, mutation, and
+;;;; validation live in the registry support and registry files.
 (in-package #:loom/feature/mode)
 
 (defun %major-mode-token (value)

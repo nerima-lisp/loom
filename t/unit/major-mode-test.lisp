@@ -17,6 +17,18 @@
 (describe
   "major-mode catalog"
   (it
+    "matches comment prefixes without evaluating absent prefixes"
+    (expect (loom/feature/mode::%major-mode-comment-prefix-at
+             "  # note" 2 "#")
+            :to-be-truthy)
+    (expect (loom/feature/mode::%major-mode-comment-prefix-at
+             "  text" 2 "#")
+            :to-be nil)
+    (expect (loom/feature/mode::%major-mode-comment-prefix-at
+             "plain" 0 nil)
+            :to-be nil))
+
+  (it
     "resolves display names and common aliases"
     (expect (major-mode-from-name "Python") :to-be :python)
     (expect (major-mode-from-name "lisp") :to-be :common-lisp)
@@ -90,6 +102,18 @@
       (mode expected)
     (expect (major-mode-truncate-lines-p mode) :to-be expected)))
 
+  (it
+    "keeps every built-in mode metadata contract consistent"
+    (dolist (entry loom/feature/mode::+major-mode-definitions+)
+      (let ((mode (car entry)))
+        (expect (major-mode-known-p mode) :to-be-truthy)
+        (expect (major-mode-name mode) :to-be-truthy)
+        (expect (typep (major-mode-indentation-width mode) 'integer)
+                :to-be-truthy)
+        (expect (major-mode-language-id mode) :to-be-truthy)
+        (expect (typep (major-mode-keywords mode) 'list) :to-be-truthy)
+        (expect (typep (major-mode-definition mode) 'list) :to-be-truthy))))
+
 (describe
   "major-mode-for-path"
   (it-each
@@ -125,3 +149,15 @@
   (it
     "accepts pathname objects without touching the file system"
     (expect (major-mode-for-path (pathname "src/main.rs")) :to-be :rust)))
+
+(describe
+  "major-mode path boundary cases"
+  (it
+    "normalizes trailing separators and both path separator styles"
+    (expect (major-mode-for-path "src\\\\main.rs\\\\") :to-be :rust)
+    (expect (major-mode-for-path "src/main.rs/") :to-be :rust))
+
+  (it
+    "keeps hidden files and trailing dots without inventing extensions"
+    (expect (major-mode-for-path ".profile") :to-be :fundamental)
+    (expect (major-mode-for-path "README.") :to-be :fundamental)))

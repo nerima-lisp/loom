@@ -41,7 +41,7 @@
       (length line)))
 
 (defun %major-mode-comment-prefix-at (line indentation prefix)
-  (let ((end (+ indentation (length prefix))))
-    (and prefix
-         (<= end (length line))
-         (string= prefix line :start2 indentation :end2 end))))
+  (and prefix
+       (let ((end (+ indentation (length prefix))))
+         (and (<= end (length line))
+              (string= prefix line :start2 indentation :end2 end)))))

@@ -86,3 +86,11 @@ SKIP rather than hang or fail there, while still running everywhere else
                             (lambda ()
                               (values ,width ,height)))
      ,@body))
+
+(defmacro %with-registered-major-modes (mode-names &body body)
+  "Run BODY and unregister each extension-defined major mode afterward."
+  `(unwind-protect
+       (progn ,@body)
+     ,@(mapcar (lambda (name)
+                 `(unregister-major-mode ,name))
+               mode-names)))

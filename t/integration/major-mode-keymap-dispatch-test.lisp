@@ -56,3 +56,34 @@
                (expect (symbol-value hit) :to-be :global)))
         (unregister-major-mode :loom-test-child-dispatch-mode)
         (unregister-major-mode :loom-test-parent-dispatch-mode)))))
+
+  (it
+    "rejects invalid mode commands and circular inheritance"
+    (%with-registered-major-modes
+        (:loom-test-invalid-command-mode
+         :loom-test-cycle-a
+         :loom-test-cycle-b)
+      (register-major-mode
+       :loom-test-invalid-command-mode
+       :name "Loom Test Invalid Command"
+       :keybindings (list (cons '(:control #\i) 42)))
+      (signals error
+        (loom/feature/mode:major-mode-keymap
+         :loom-test-invalid-command-mode
+         (make-keymap)))
+      (register-major-mode
+       :loom-test-cycle-a
+       :name "Loom Test Cycle A"
+       :parent :fundamental)
+      (register-major-mode
+       :loom-test-cycle-b
+       :name "Loom Test Cycle B"
+       :parent :loom-test-cycle-a)
+      (setf (getf (gethash :loom-test-cycle-a
+                           loom/feature/mode::*registered-major-modes*)
+                   :parent)
+            :loom-test-cycle-b)
+      (signals error
+        (loom/feature/mode:major-mode-keymap
+         :loom-test-cycle-a
+         (make-keymap)))))
