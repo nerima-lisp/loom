@@ -36,15 +36,6 @@
           do (incf position))
     position))
 
-(defun %syntax-atom-end (line start)
-  (let ((position start))
-    (loop while (and (< position (length line))
-                     (not (%syntax-whitespace-p (char line position)))
-                     (not (char= (char line position) #\;))
-                     (not (%syntax-delimiter-p (char line position))))
-          do (incf position))
-    position))
-
 (defun %syntax-string-end (line start)
   (let ((escaped nil))
     (loop for position from (1+ start) below (length line)
@@ -56,22 +47,6 @@
                    ((char= character #\")
                     (return (1+ position))))
           finally (return (length line)))))
-
-(defun %syntax-block-comment-end (line start)
-  (let ((end (search "|#" line :start2 (+ start 2))))
-    (if end
-        (+ end 2)
-        (length line))))
-
-(defun %syntax-character-literal-end (line start)
-  (let ((literal-start (+ start 2)))
-    (if (>= literal-start (length line))
-        (length line)
-        (let ((character (char line literal-start)))
-          (if (or (char= character #\;)
-                  (%syntax-delimiter-p character))
-              (1+ literal-start)
-              (%syntax-atom-end line literal-start))))))
 
 (defun %syntax-number-token-p (text)
   (let* ((length (length text))
