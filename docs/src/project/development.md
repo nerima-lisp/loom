@@ -70,6 +70,9 @@ has a 30-second default timeout. Callers can pass `:timeout-seconds` when a
 command needs a different bounded duration; a timeout is returned as a
 structured result with exit code 124.
 
+Git commands use `cl-vcs-kit` directly with an argv list and structured
+process results; Git paths are not assembled into shell command strings.
+
 Run the full CI-equivalent check, including the test suite, package build,
 formatter, paredit structural syntax check, coverage, and the strict MkDocs
 build, with:

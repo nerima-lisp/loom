@@ -2,50 +2,42 @@
 
 (describe
     "git file operations"
-  (it "quotes repository paths before building stage commands"
-    (expect (git-stage-command "src/file name's.txt")
-            :to-equal
-            "git add -- 'src/file name'\\''s.txt'")
-    (expect (git-unstage-command "src/file name's.txt")
-            :to-equal
-            "git restore --staged -- 'src/file name'\\''s.txt'"))
-
   (it "runs stage and unstage with the requested directory"
     (let ((result
-            (make-shell-command-result
-             :command "git operation"
-             :directory "/repo/"
-             :output ""
-             :error-output ""
-             :exit-code 0))
+            (make-test-git-result
+             :stdout ""
+             :stderr ""
+             :status 0))
           command
-          captured-directory)
+          captured-directory
+          captured-timeout)
       (with-replaced-function
-          (loom/feature/shell:run-shell-command
-           (lambda (candidate-command &key directory)
-             (setf command candidate-command
-                   captured-directory directory)
+          (vcs-kit:run-git
+           (lambda (repository subcommand arguments &key directory timeout)
+             (setf command (list repository subcommand arguments)
+                   captured-directory directory
+                   captured-timeout timeout)
              result))
         (expect (run-git-stage "README.md" :directory "/repo/")
                 :to-be
                 result)
-        (expect command :to-equal "git add -- 'README.md'")
+        (expect command :to-equal '(nil "add" ("--" "README.md")))
         (expect captured-directory :to-equal "/repo/")
+        (expect captured-timeout :to-equal *git-command-timeout-seconds*)
         (expect (run-git-unstage "README.md" :directory "/repo/")
                 :to-be
                 result)
-        (expect command :to-equal "git restore --staged -- 'README.md'")
-        (expect captured-directory :to-equal "/repo/")))))
+        (expect command :to-equal '(nil "restore" ("--staged" "--" "README.md")))
+        (expect captured-directory :to-equal "/repo/")
+        (expect captured-timeout :to-equal *git-command-timeout-seconds*)))))
 
   (it "prompts for a path before staging it"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git add -- 'README.md'"
-               :directory "/repo/"
-               :output ""
-               :error-output ""
-               :exit-code 0))
+              (make-test-git-result
+               :stdout ""
+               :stderr ""
+               :status 0))
             path
             captured-directory)
         (with-replaced-function
@@ -72,12 +64,10 @@
   (it "prompts for a path before unstaging it"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git restore --staged -- README.md"
-               :directory "/repo/"
-               :output ""
-               :error-output ""
-               :exit-code 0))
+              (make-test-git-result
+               :stdout ""
+               :stderr ""
+               :status 0))
             path
             captured-directory)
         (with-replaced-function
@@ -101,12 +91,10 @@
   (it "reports a failed stage operation"
     (%with-minibuffer-state (minibuffer "")
       (let ((result
-              (make-shell-command-result
-               :command "git add -- README.md"
-               :directory "/repo/"
-               :output ""
-               :error-output "not found"
-               :exit-code 2)))
+              (make-test-git-result
+               :stdout ""
+               :stderr "not found"
+               :status 2)))
         (with-replaced-function
             (loom/feature/git:run-git-stage
              (lambda (path &key directory)
@@ -134,12 +122,10 @@
 
   (it "reports an unstage error and supports prompt cancellation"
     (%with-minibuffer-state (minibuffer "")
-      (let ((result (make-shell-command-result
-                     :command "git restore --staged -- README.md"
-                     :directory "/repo/"
-                     :output ""
-                     :error-output "failed"
-                     :exit-code 3)))
+      (let ((result (make-test-git-result
+                     :stdout ""
+                     :stderr "failed"
+                     :status 3)))
         (with-replaced-function
             (loom/feature/git:run-git-unstage
              (lambda (path &key directory)
