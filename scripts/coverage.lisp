@@ -17,9 +17,9 @@
 ;;;;
 ;;;; SB-EXT:WITH-TIMEOUT bounds the whole run at 1800s, matching
 ;;;; `flake.nix`'s own `checks.default` `timeoutSeconds`: forcing both Loom
-;;;; systems is still slower than a cached test run, so this is the entry
-;;;; point most worth guarding against hanging forever when run via `nix
-;;;; develop`'s `coverage` alias, which no external timeout wraps.
+;;;; systems is still slower than a cached test run. The development alias
+;;;; adds an OS-level timeout as well, so a stuck child process cannot outlive
+;;;; the Lisp-level guard.
 
 (require :asdf)
 
@@ -121,7 +121,9 @@
                (handler-case
                    (sb-ext:with-timeout 1800
                      (progress "loading loom")
-                     (asdf:load-system :loom)
+                     ;; Recompile Loom's local components so SB-COVER sees
+                     ;; the current source instead of an ASDF-cached FASL.
+                     (asdf:load-system :loom :force t)
                      (progress "loading loom/test")
                      (asdf:load-system :loom/test)
                      ;; cl-weave owns test execution and coverage collection;
@@ -138,7 +140,15 @@
                                        :reporter :spec
                                        :stream *standard-output*
                                        :pass-with-no-tests nil
-                                       :timeout-ms 40000
+                                       ;; Coverage instrumentation makes the
+                                       ;; subprocess-based CLI integration
+                                       ;; test substantially slower than the
+                                       ;; normal test run.
+                                       :timeout-ms 120000
+                                       ;; Coverage is intentionally deterministic:
+                                       ;; subprocess-backed tests must not race
+                                       ;; with parallel workers during teardown.
+                                       :max-workers 1
                                        :coverage t
                                        :coverage-include-pathnames source-pathnames))
                             (statistics

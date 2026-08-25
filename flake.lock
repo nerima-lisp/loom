@@ -136,6 +136,23 @@
         "type": "github"
       }
     },
+    "cl-log-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785930087,
+        "narHash": "sha256-zFbU9a8KLHThzQRn7jqSL0SoTj7ImeP3Q5lJmsOzBQM=",
+        "owner": "nerima-lisp",
+        "repo": "cl-log-kit",
+        "rev": "580ebe23e4106edb8dcc89c0d4732f585c17e3f9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v2.2.0",
+        "repo": "cl-log-kit",
+        "type": "github"
+      }
+    },
     "cl-nix-forge": {
       "inputs": {
         "nixpkgs": [
@@ -198,6 +215,23 @@
         "type": "github"
       }
     },
+    "cl-process-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785674951,
+        "narHash": "sha256-D6h2Z+SnxqF9GV+Bf5mxmiLxlg9VFn8K0uh0bM7oWh8=",
+        "owner": "nerima-lisp",
+        "repo": "cl-process-kit",
+        "rev": "44fc4281e5f7e97d662180aa15e23349b7ed7a5d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v3.2.0",
+        "repo": "cl-process-kit",
+        "type": "github"
+      }
+    },
     "cl-prolog-kit": {
       "flake": false,
       "locked": {
@@ -246,6 +280,23 @@
         "owner": "nerima-lisp",
         "ref": "v1.6.1",
         "repo": "cl-tty-kit",
+        "type": "github"
+      }
+    },
+    "cl-vcs-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786359167,
+        "narHash": "sha256-CXbyJBaB36mOSsAXh4AgVag47JaLz2WXCxQjjgfzXmY=",
+        "owner": "nerima-lisp",
+        "repo": "cl-vcs-kit",
+        "rev": "ceca9962b105c98c763e2f6fac178c4537bb2497",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v0.2.0",
+        "repo": "cl-vcs-kit",
         "type": "github"
       }
     },
@@ -340,11 +391,14 @@
         "cl-history-kit": "cl-history-kit",
         "cl-host-kit": "cl-host-kit",
         "cl-json-kit": "cl-json-kit",
+        "cl-log-kit": "cl-log-kit",
         "cl-nix-forge": "cl-nix-forge",
         "cl-parser-kit": "cl-parser-kit",
+        "cl-process-kit": "cl-process-kit",
         "cl-prolog-kit": "cl-prolog-kit",
         "cl-regex-kit": "cl-regex-kit",
         "cl-tty-kit": "cl-tty-kit",
+        "cl-vcs-kit": "cl-vcs-kit",
         "cl-weave": "cl-weave",
         "nixpkgs": "nixpkgs",
         "paredit-cli": "paredit-cli",

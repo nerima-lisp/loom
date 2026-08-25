@@ -22,10 +22,22 @@ keep the corresponding sibling inputs explicit in `flake.nix`; this keeps the
 development shell, package build, and test system on the same dependency
 graph.
 
+Only release-tagged sibling packages are admitted to the production dependency
+graph. A newer repository is evaluated separately, but remains out of `flake.nix`
+until it publishes a release tag and its API is covered by a focused integration
+test; this keeps upgrades reproducible and prevents an unstable package from
+entering the build through a transitive dependency.
+
 It also provides `cl-weave` for the test DSL and `paredit` for structural
 Common Lisp inspection and editing. The flake's `paredit-lint` check parses the
 Lisp source set before packaging, so the same structural syntax gate is
 available locally and in CI.
+
+The test system declares every package used directly by its tests, including
+the `cl-weave` generators and package-specific integration helpers. Keep these
+ASDF edges explicit when rearranging implementation dependencies; tests should
+not become loadable only because an unrelated production dependency currently
+re-exports them.
 
 ## Verification
 
@@ -49,7 +61,7 @@ LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
 The ordinary test process has a 600-second outer timeout and each cl-weave
-example has a 40-second timeout. Coverage has a 1,800-second outer timeout;
+example has a 120-second timeout. Coverage has a 1,800-second outer timeout;
 the PTY suite gives each interaction 10 seconds. These limits are part of the
 development contract and should be changed only with a measured reason.
 

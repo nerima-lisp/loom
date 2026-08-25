@@ -105,6 +105,18 @@
       url = "github:nerima-lisp/cl-json-kit/v1.2.0";
       flake = false;
     };
+    cl-log-kit = {
+      url = "github:nerima-lisp/cl-log-kit/v2.2.0";
+      flake = false;
+    };
+    cl-process-kit = {
+      url = "github:nerima-lisp/cl-process-kit/v3.2.0";
+      flake = false;
+    };
+    cl-vcs-kit = {
+      url = "github:nerima-lisp/cl-vcs-kit/v0.2.0";
+      flake = false;
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -131,6 +143,9 @@
       cl-parser-kit,
       cl-boundary-kit,
       cl-json-kit,
+      cl-log-kit,
+      cl-process-kit,
+      cl-vcs-kit,
       treefmt-nix,
       ...
     }:
@@ -307,6 +322,34 @@
               clDateKit
             ];
           };
+          clLogKit = sibling {
+            name = "cl-log-kit";
+            source = cl-log-kit;
+            dependencies = [
+              clDateKit
+              clConcurrentKit
+              clHostKit
+            ];
+          };
+          clProcessKit = sibling {
+            name = "cl-process-kit";
+            source = cl-process-kit;
+            dependencies = [
+              clBoundaryKit
+              clLogKit
+              clCodecKit
+              clConcurrentKit
+            ];
+          };
+          clVcsKit = sibling {
+            name = "cl-vcs-kit";
+            source = cl-vcs-kit;
+            dependencies = [
+              clProcessKit
+              clHostKit
+              clLogKit
+            ];
+          };
           # cl-weave is a dependency of `loom/test` only (see loom.asd), so it
           # is built here for `lispCheckDependencies` below; it must not enter
           # the delivered binary's closure.
@@ -351,6 +394,7 @@
           clBoundaryKit
           clConcurrentKit
           clJsonKit
+          clVcsKit
         ];
 
       lispCheckDependencies = ctx: [ (siblingsFor ctx).clWeave ];
@@ -415,7 +459,7 @@
           shellHook = previous.shellHook + ''
             export LOOM_ROOT=$PWD
             alias test='cd "$LOOM_ROOT" && sbcl --script "$LOOM_ROOT/run-tests.lisp"'
-            alias coverage='cd "$LOOM_ROOT" && LOOM_COVERAGE_DIR="$LOOM_ROOT/coverage" sbcl --script "$LOOM_ROOT/scripts/coverage.lisp"'
+            alias coverage='cd "$LOOM_ROOT" && LOOM_COVERAGE_DIR="$LOOM_ROOT/coverage" timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s sbcl --script "$LOOM_ROOT/scripts/coverage.lisp"'
             echo ""
             echo "loom development environment"
             echo "  test     - Run the full loom suite (cl-weave, loom/test)"
@@ -455,6 +499,18 @@
       # check` evaluates each attribute as its own derivation, in parallel,
       # with build caching.
       extraOutputs = ctx: {
+        # Make the documented test derivation addressable through both
+        # `nix run .#test` and `nix build .#test`. It is the same isolated
+        # check as `checks.default`, with the same child-process skips.
+        packages.test = ctx.generated.checks.default.overrideAttrs (previous: {
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            runHook postInstall
+          '';
+          LOOM_SANDBOXED_CHECK = "1";
+        });
+
         # Verify the delivered package compiles and the image dumps.
         checks.build = ctx.executable;
 

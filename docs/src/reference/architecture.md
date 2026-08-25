@@ -318,9 +318,11 @@ trampoline.
 
 The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
 `cl-host-kit`, `cl-history-kit`, `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`,
-`cl-boundary-kit`, `cl-json-kit`, and `cl-concurrent-kit`. The test system adds
-`cl-weave` and `cl-date-kit`; the latter is used by the concurrency tests and
-benchmark timeouts. The Nix flake pins the runtime and test inputs and supplies
+`cl-boundary-kit`, `cl-json-kit`, `cl-concurrent-kit`, and `cl-vcs-kit`. The
+test system adds `cl-weave`, `cl-date-kit`, `cl-codec-kit`, `cl-parser-kit`,
+`cl-regex-kit`, `cl-boundary-kit`, `cl-concurrent-kit`, `cl-process-kit`, and
+`cl-vcs-kit`; these are explicit because the tests exercise their public
+protocols and test fixtures. The Nix flake pins the runtime and test inputs and supplies
 the development shell used by the commands below.
 
 The development shell also supplies `paredit`, the structural Common Lisp
