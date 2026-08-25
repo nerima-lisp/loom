@@ -39,6 +39,14 @@ ASDF edges explicit when rearranging implementation dependencies; tests should
 not become loadable only because an unrelated production dependency currently
 re-exports them.
 
+## Worktree workflow
+
+The `main` branch is the integration point for completed work. Before
+integrating a worktree, inspect its staged, unstaged, and untracked files and
+compare its commits with `main`. Integrate only a complete work unit, then
+remove the worktree after confirming that `main` contains it. Empty or
+duplicate worktrees should be removed without creating an additional branch.
+
 ## Verification
 
 Run the focused commands directly when iterating:
