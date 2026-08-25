@@ -35,7 +35,7 @@
 ;;; disk-backed tree src/main.lisp builds is a single SETF (see
 ;;; %INITIALIZE-EDITOR-STATE):
 ;;;
-;;;   (file-tree-install-child-lister file-tree #'loom-fs-list-directory)
+;;; The editor initialization path installs LOOM-FS-LIST-DIRECTORY here.
 ;;; ---------------------------------------------------------------------
 (defun loom-fs-list-directory (path)
   "Return the direct children of the directory at PATH as a list of

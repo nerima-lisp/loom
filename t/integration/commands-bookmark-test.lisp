@@ -24,6 +24,30 @@
           (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")))))
 
   (it
+    "rejects a directory in find-file without replacing the current buffer"
+    (host-kit:with-temporary-directory (dir)
+      (%with-minibuffer-state (minibuffer "existing")
+        (let ((buffer (%selected-test-buffer)))
+          (loom/feature/file-tree:find-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) dir)
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal (format nil "Cannot open directory: ~A" dir))
+          (expect (%selected-test-buffer) :to-be buffer)))))
+
+  (it
+    "reports a recent file that disappeared before it was visited"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "gone.txt" dir)))
+        (%with-minibuffer-state (minibuffer "existing")
+          (setf (editor-state-recent-files *editor-state*)
+                (list (editor-path-string path)))
+          (loom/feature/file-tree:recent-file)
+          (funcall (loom::%minibuffer-on-confirm minibuffer)
+                   (editor-path-string path))
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal (format nil "Recent file is unavailable: ~A" path)))))))
+
+  (it
     "sets, jumps to, lists, and deletes a named bookmark"
     (%with-minibuffer-state (minibuffer (format nil "one~%two~%three")
                              (name "spot"))
@@ -80,8 +104,27 @@
                 :to-equal "Bookmark target is unavailable: gone"))))
 
   (it
+    "reloads a bookmark target from its existing file and completes prefixes"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "bookmark-target.txt" dir)))
+        (host-kit:write-file-string "loaded" path)
+        (%with-minibuffer-state (minibuffer "bookmark body")
+          (setf (gethash "alpha" (loom::%bookmark-table))
+                (make-editor-bookmark
+                 :name "alpha"
+                 :path (editor-path-string path)
+                 :line 0
+                 :column 3))
+          (setf (gethash "beta" (loom::%bookmark-table))
+                (make-editor-bookmark :name "beta" :line 0 :column 0))
+          (expect (loom::%bookmark-candidates "al") :to-equal (list "alpha"))
+          (%run-bookmark-command #'loom::jump-to-bookmark minibuffer "alpha")
+          (expect (buffer-text (%selected-test-buffer)) :to-equal "loaded")
+          (expect (buffer-point-column (%selected-test-buffer)) :to-equal 3)))))
+
+  (it
     "reports when no bookmarks are available to list"
     (%with-minibuffer-state (minibuffer "")
       (loom::list-bookmarks)
       (expect (minibuffer-message-string minibuffer)
-              :to-equal "No bookmarks"))))
+              :to-equal "No bookmarks")))

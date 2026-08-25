@@ -49,15 +49,16 @@ an empty buffer associated with that path, so a later save creates the file."
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((path "Find file: "))
     (let ((existing-path (probe-file path)))
-      (when (and existing-path
-                 (host-kit:directory-pathname-p existing-path))
-        (return-from find-file
-          (minibuffer-message
-           (editor-state-minibuffer *editor-state*)
-           (format nil "Cannot open directory: ~A" path))))
-      (if existing-path
-          (%visit-existing-file existing-path)
-          (%show-buffer-in-selected-window (%make-file-buffer path))))))
+      (cond
+        ((and existing-path
+              (host-kit:directory-pathname-p existing-path))
+         (minibuffer-message
+          (editor-state-minibuffer *editor-state*)
+          (format nil "Cannot open directory: ~A" path)))
+        (existing-path
+         (%visit-existing-file existing-path))
+        (t
+         (%show-buffer-in-selected-window (%make-file-buffer path)))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."
