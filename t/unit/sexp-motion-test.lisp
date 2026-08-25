@@ -5,6 +5,20 @@
 (in-package #:loom/test)
 
 (describe
+  "%sexp-syntax-classes"
+  (it-each
+      (("#\\(" (:atom :atom :atom))
+       ("(; )" (:code :comment :comment :comment))
+       ("\"(\"" (:string :string :string))
+       ("#|)|#" (:comment :comment :comment :comment :comment))
+       ("#\\Space" (:atom :atom :atom :atom :atom :atom :atom)))
+      "classifies reader syntax in ~S"
+      (text expected)
+    (expect (coerce (loom::%sexp-syntax-classes text) 'list)
+            :to-equal
+            expected)))
+
+(describe
   "%forward-sexp-offset"
   (it-each
       (("(a b) c" 0 5)
@@ -31,7 +45,58 @@
       "treats the parenthesis in ~S as text, moving from ~D to ~S"
       (text offset expected)
     (expect (loom::%forward-sexp-offset (format nil text) offset)
+            :to-equal expected))
+
+  (it-each
+      (("" 0 nil)
+       ("; comment" 0 nil)
+       ("#| unfinished comment" 0 nil)
+       ("#\\" 0 2)
+       ("\"unfinished" 0 11))
+      "handles empty, comment-only, and unterminated syntax at ~D in ~S"
+      (text offset expected)
+      (expect (loom::%forward-sexp-offset text offset)
             :to-equal expected)))
+
+(describe
+  "S-expression boundary helpers"
+  (it-each
+      (("  foo" 0 2 0)
+       ("foo  " 5 5 3)
+       ("  ; comment" 0 11 0)
+       ("foo ; comment" 13 13 3))
+      "skips filler in ~S from ~D forward to ~D and backward to ~D"
+      (text offset forward backward)
+    (let ((classes (loom::%sexp-syntax-classes (format nil text))))
+      (expect (loom::%sexp-skip-forward-filler text classes offset)
+              :to-equal forward)
+      (expect (loom::%sexp-skip-backward-filler text classes offset)
+              :to-equal backward)))
+
+  (it-each
+      (("(a (b))" 0 7)
+       ("(a (b))" 3 6)
+       ("(a b" 0 nil)
+       ("a b)" 3 nil))
+      "finds balanced list boundaries in ~S from ~D"
+      (text offset expected)
+    (let ((classes (loom::%sexp-syntax-classes text)))
+      (expect (loom::%sexp-forward-list-end text classes offset)
+              :to-equal expected)
+      (when expected
+        (expect (loom::%sexp-backward-list-start text classes expected)
+                :to-equal offset))))
+
+  (it-each
+      (("foo bar" 0 3 0)
+       ("foo bar" 4 7 4)
+       ("#\\Space" 0 7 0)
+       ("(foo)" 1 4 1))
+      "finds atom boundaries in ~S"
+      (text offset end start)
+    (let ((classes (loom::%sexp-syntax-classes text)))
+      (expect (loom::%sexp-atom-end text classes offset) :to-equal end)
+      (expect (loom::%sexp-atom-start text classes end) :to-equal start))))
 
 (describe
   "%backward-sexp-offset"
@@ -45,7 +110,9 @@
        ("a b)" 3 2)
        ("(a b" 1 nil)
        ("  " 2 nil)
-       ("a b (" 5 nil))
+       ("a b (" 5 nil)
+       ("; comment" 9 nil)
+       ("#| unfinished comment" 20 nil))
       "moves backward in ~S from ~D to ~S"
       (text offset expected)
     (expect (loom::%backward-sexp-offset text offset) :to-equal expected)))
