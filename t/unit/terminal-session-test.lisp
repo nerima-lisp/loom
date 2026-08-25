@@ -21,6 +21,16 @@
               :to-equal
               "plain colored")))
 
+  (it "replaces a terminal transcript while preserving buffer invariants"
+    (let ((buffer (make-buffer :name "*Loom-Terminal*")))
+      (buffer-insert-string buffer "stale transcript")
+      (loom/feature/terminal::%replace-terminal-buffer
+       buffer
+       "fresh\ntranscript")
+      (expect (buffer-text buffer) :to-equal "fresh\ntranscript")
+      (expect (buffer-read-only-p buffer) :to-be-truthy)
+      (expect (buffer-modified-p buffer) :to-be nil)))
+
   (it "accepts only live terminal input events"
     (let* ((state (%fresh-editor-state ""))
            (buffer (window-buffer
@@ -88,6 +98,63 @@
               :to-contain
               "Terminal failed: PTY unavailable")))
 
+  (it "registers and selects a started terminal session"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((buffer (make-buffer :name "*Loom-Terminal*"))
+             (session
+               (loom/feature/terminal::%make-terminal-session
+                "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer nil)))
+        (setf (terminal-session-alive-p session) t)
+        (with-replaced-function
+            (start-terminal-session (lambda () session))
+          (%with-stubbed-terminal-size (100 40)
+            (with-replaced-function
+                (terminal-session-poll (lambda (candidate) candidate))
+              (expect (terminal) :to-be session)))
+          (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
+                  :to-be-truthy)
+          (expect (window-buffer (%selected-window)) :to-be buffer)
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal
+                  "Terminal started")))))
+
+  (it "stops the terminal session selected by the current buffer"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((buffer (make-buffer :name "*Loom-Terminal*"))
+             (session
+               (loom/feature/terminal::%make-terminal-session
+                "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer nil)))
+        (setf (terminal-session-alive-p session) t
+              (editor-state-terminal-sessions *editor-state*) (list session))
+        (%register-buffer buffer)
+        (window-set-buffer (%selected-window) buffer)
+        (with-replaced-function
+            (stop-terminal-session
+             (lambda (candidate)
+               (setf (terminal-session-alive-p candidate) nil)
+               candidate))
+          (expect (terminal-stop) :to-be session))
+        (expect (minibuffer-message-string minibuffer)
+                :to-equal
+                  "Terminal stopped"))))
+
+  (it "reports when a terminal exits immediately"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((buffer (make-buffer :name "*Loom-Terminal*"))
+             (session
+             (loom/feature/terminal::%make-terminal-session
+                "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer nil)))
+        (setf (terminal-session-alive-p session) nil)
+        (with-replaced-function
+            (start-terminal-session (lambda () session))
+          (%with-stubbed-terminal-size (100 40)
+            (with-replaced-function
+                (terminal-session-poll (lambda (candidate) candidate))
+              (expect (terminal) :to-be session)))
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal
+                  "Terminal exited immediately")))))
+
   (it "reports when stopping a non-terminal buffer"
     (%with-minibuffer-state (minibuffer "")
       (terminal-stop)
@@ -110,6 +177,41 @@
       (expect (terminal-session-alive-p session) :to-be nil)
       (expect (terminal-session-for-buffer buffer state) :to-be session)))
 
+  (it "polls PTY output into the screen before closing an exited PTY"
+    (let* ((buffer (make-buffer :name "*Loom-Terminal*"))
+           (session
+             (loom/feature/terminal::%make-terminal-session
+              "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer :pty))
+           (chunks (list "hello" "")))
+      (with-replaced-function
+          (cl-tty-kit:pty-read
+           (lambda (pty)
+             (declare (ignore pty))
+             (pop chunks)))
+        (with-replaced-function
+            (cl-tty-kit:pty-alive-p
+             (lambda (pty)
+               (declare (ignore pty))
+               nil))
+          (with-replaced-function
+              (cl-tty-kit:pty-exit-code
+               (lambda (pty)
+                 (declare (ignore pty))
+                 7))
+            (with-replaced-function
+                (cl-tty-kit:close-pty
+                 (lambda (pty)
+                   (declare (ignore pty))
+                   t))
+              (expect (terminal-session-poll session) :to-be session)))))
+      (expect (terminal-session-output session) :to-contain "hello")
+      (expect (terminal-session-raw-output session) :to-equal "hello")
+      (expect (terminal-session-exit-code session) :to-be 7)
+      (expect (terminal-session-alive-p session) :to-be nil)
+      (expect (terminal-session-pty session) :to-be nil)
+      (expect (buffer-text buffer) :to-contain "hello")
+      (expect (buffer-read-only-p buffer) :to-be-truthy)))
+
   (it "keeps invalid resize requests out of the screen and PTY"
     (let ((session
             (loom/feature/terminal::%make-terminal-session
@@ -120,6 +222,25 @@
               :to-be 80)
       (expect (terminal-screen-height (terminal-session-screen session))
               :to-be 24)))
+
+  (it "ignores sends from inactive sessions"
+    (let ((session
+            (loom/feature/terminal::%make-terminal-session
+             "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd)
+             (make-buffer :name "*Loom-Terminal*") nil)))
+      (expect (terminal-session-send session "ignored") :to-be nil)))
+
+  (it "resizes a live session screen without requiring a PTY"
+    (let ((session
+            (loom/feature/terminal::%make-terminal-session
+             "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd)
+             (make-buffer :name "*Loom-Terminal*") nil)))
+      (setf (terminal-session-alive-p session) t)
+      (expect (terminal-session-resize session 100 40) :to-be session)
+      (expect (terminal-screen-width (terminal-session-screen session))
+              :to-be 100)
+      (expect (terminal-screen-height (terminal-session-screen session))
+              :to-be 40)))
 
   (it "handles empty terminal registries without a state"
     (expect (poll-terminal-sessions nil) :to-be nil)

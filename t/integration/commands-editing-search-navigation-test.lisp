@@ -70,6 +70,23 @@
       (expect (buffer-search-spans buffer "" 0) :to-be nil)))
 
   (it
+    "clamps search starts and preserves absolute coordinates inside a narrowing"
+    (let ((buffer (make-buffer :initial-content "zero one two one")))
+      (buffer-narrow-to-region buffer 0 5 0 16)
+      (let ((spans (buffer-search-spans buffer "one" 0)))
+        (expect (mapcar #'buffer-span-start spans) :to-equal '(5 13)))
+      (buffer-set-point buffer 0 0)
+      (let ((span (buffer-search-forward buffer "one")))
+        (expect (buffer-span-start span) :to-equal 5))))
+
+  (it
+    "clamps a point outside the visible text before searching"
+    (let ((buffer (make-buffer :initial-content "alpha beta")))
+      (buffer-set-point buffer 0 100)
+      (let ((span (buffer-search-forward buffer "alpha")))
+        (expect (buffer-span-start span) :to-equal 0))))
+
+  (it
     "finds an occurrence on a later line of a multi-line buffer, searching from a later starting line"
     (%with-selected-minibuffer-buffer (minibuffer buffer (format nil "one~%two~%three~%four"))
       (buffer-set-point buffer 1 0)

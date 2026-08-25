@@ -5,11 +5,39 @@
 ;;;; the top-level state helpers stay observable as one slice.
 (in-package #:loom/test)
 
+(defmacro %editor-state-accessor-contract-test ()
+  `(it "exposes every public editor-state slot accessor"
+      (let ((state (make-editor-state)))
+        (dolist (slot '(window-tree workspaces minibuffer keymap file-tree
+                        concurrent-runtime renderer buffers recent-files
+                        bookmarks kill-ring last-yank-ranges lsp-session
+                        registers keyboard-macro isearch auto-save-mode-p
+                        auto-save-buffers auto-save-last-run-at format-on-save-p
+                        format-command before-save-hooks after-save-hooks
+                        terminal-sessions prefix-argument))
+          (let ((accessor (intern (format nil "EDITOR-STATE-~A" slot)
+                                  (find-package :loom))))
+            (expect (fboundp accessor) :to-be-truthy)
+            (expect (handler-case
+                        (progn (funcall accessor state) t)
+                      (error () nil))
+                    :to-be-truthy))))))
+
+(%editor-state-accessor-contract-test)
+
 (describe "editor-state save hooks"
   (it "rejects registering save hooks without an active state"
     (let ((hook (lambda (buffer) buffer)))
       (signals error (add-before-save-hook hook nil))
       (signals error (add-after-save-hook hook nil))))
+
+  (it "rejects non-function save hooks and keeps empty dispatch harmless"
+    (let ((state (make-editor-state)))
+      (signals error (add-before-save-hook :not-a-function state))
+      (signals error (add-after-save-hook :not-a-function state))
+      (let ((buffer (make-buffer :name "notes.txt")))
+        (expect (run-before-save-hooks buffer nil) :to-be buffer)
+        (expect (run-after-save-hooks buffer nil) :to-be buffer))))
 
   (it "runs before-save hooks in registration order without duplicates"
     (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))

@@ -43,6 +43,15 @@ to the same LET*, so they may refer to *EDITOR-STATE* and BUFFER."
           ,@extra-bindings)
      ,@body))
 
+(defmacro %with-buffer-at ((buffer initial-content line column) &body body)
+  "Bind BUFFER to a fresh buffer with point at LINE and COLUMN.
+
+This keeps property-based editing examples focused on the operation under
+test instead of repeating buffer construction and point setup."
+  `(let ((,buffer (make-buffer :initial-content ,initial-content)))
+     (buffer-set-point ,buffer ,line ,column)
+     ,@body))
+
 (defun %selected-test-buffer ()
   "Return the buffer displayed in the fresh editor state's sole window."
   (window-buffer (window-tree-selected-window (editor-state-window-tree *editor-state*))))
