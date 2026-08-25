@@ -15,6 +15,29 @@
         (expect (buffer-position-column position) :to-equal 3)))))
 
 (describe
+  "buffer point offsets"
+  (it "returns zero for the initial point of an empty buffer"
+    (let ((buffer (make-buffer)))
+      (expect (buffer-point-offset buffer) :to-equal 0)))
+
+  (it "counts preceding lines when converting a multiline point"
+    (let ((buffer (make-buffer :initial-content (format nil "zero~%one~%two"))))
+      (buffer-set-point buffer 1 2)
+      (expect (buffer-point-offset buffer) :to-equal 7)))
+
+  (it "counts line separators at the end of the final line"
+    (let ((buffer (make-buffer :initial-content (format nil "zero~%one"))))
+      (buffer-set-point buffer 1 3)
+      (expect (buffer-point-offset buffer) :to-equal 8)))
+
+  (it "converts an offset in the middle of a multiline visible region"
+    (let ((buffer (make-buffer :initial-content (format nil "zero~%one~%two"))))
+      (buffer-narrow-to-region buffer 0 2 2 1)
+      (let ((position (buffer-visible-offset-position buffer 6)))
+        (expect (buffer-position-line position) :to-equal 1)
+        (expect (buffer-position-column position) :to-equal 1)))))
+
+(describe
   "buffer narrowing"
   (it "keeps the full text while exposing a half-open visible region"
     (let ((buffer (make-buffer :initial-content "0123456789")))
@@ -27,6 +50,15 @@
       (expect (buffer-visible-line-count buffer) :to-equal 1)
       (expect (buffer-visible-line buffer 0) :to-equal "23456")
       (expect (buffer-region-string buffer 0 0 0 4) :to-equal "23")))
+
+  (it "widens back to the complete piece-table length"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 7)
+      (buffer-widen buffer)
+      (expect (buffer-narrowed-p buffer) :to-be-falsy)
+      (expect (buffer-narrow-start-offset buffer) :to-equal 0)
+      (expect (buffer-narrow-end-offset buffer) :to-equal 10)
+      (expect (buffer-visible-text buffer) :to-equal "0123456789")))
 
   (it "clamps point, mark, and nested narrowing to the visible region"
     (let ((buffer (make-buffer :initial-content "0123456789")))
@@ -62,6 +94,18 @@
         (expect (buffer-position-column end) :to-equal 5))
       (expect (buffer-visible-offset-position buffer 1) :to-be nil)
       (expect (buffer-visible-offset-position buffer 8) :to-be nil)))
+
+  (it "reports point coordinates relative to a multiline visible region"
+    (let ((buffer (make-buffer :initial-content (format nil "zero~%one~%two"))))
+      (buffer-narrow-to-region buffer 0 2 2 1)
+      (buffer-set-point buffer 1 1)
+      (expect (buffer-visible-point-line buffer) :to-equal 1)
+      (expect (buffer-visible-point-column buffer) :to-equal 1)
+      (expect (buffer-visible-line-count buffer) :to-equal 3)))
+
+  (it "rejects a visible line number outside the narrowed view"
+    (let ((buffer (make-buffer :initial-content "one")))
+      (signals error (buffer-visible-line buffer 1))))
 
   (it "keeps narrowing bounds consistent across edit undo and redo"
     (let ((buffer (make-buffer :initial-content "0123456789")))

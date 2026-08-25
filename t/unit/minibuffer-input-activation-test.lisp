@@ -98,3 +98,30 @@
       (minibuffer-activate minibuffer "Find file: ")
       (minibuffer-handle-key minibuffer (%special-key :control-g))
       (expect (minibuffer-prompt-string minibuffer) :to-be-falsy))))
+
+(describe
+  "minibuffer input callbacks"
+  (it
+    "lets ON-KEY consume an event before the default editor handles it"
+    (let ((minibuffer (make-minibuffer))
+          (seen nil))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :on-key (lambda (event)
+                 (setf seen event)
+                 t))
+      (minibuffer-handle-key minibuffer (%char-key #\x))
+      (expect seen :to-be-truthy)
+      (expect (minibuffer-input-string minibuffer) :to-equal "")))
+
+  (it
+    "reports the current input through ON-CHANGE after editing"
+    (let ((minibuffer (make-minibuffer))
+          (changes nil))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :on-change (lambda (input)
+                    (push input changes)))
+      (%type-string minibuffer "ab")
+      (minibuffer-handle-key minibuffer (%special-key :backspace))
+      (expect changes :to-equal '("a" "ab" "a")))))

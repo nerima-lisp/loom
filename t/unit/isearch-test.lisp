@@ -11,6 +11,13 @@
 (describe
   "isearch-apply-pattern"
   (it
+    "retains the current pattern as part of the session state"
+    (let* ((buffer (make-buffer :initial-content "one two"))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "two")
+      (expect (isearch-session-pattern session) :to-equal "two")))
+
+  (it
     "selects the first match at or after the origin"
     (let* ((buffer (make-buffer :initial-content "one two one"))
            (session (make-isearch-session buffer 0)))

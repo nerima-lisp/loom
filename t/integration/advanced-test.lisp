@@ -22,25 +22,23 @@
       "keeps generated insertion points and text consistent"
       ((column (cl-weave:gen-integer :min 0 :max 6))
        (character (cl-weave:gen-character :alphabet "abc")))
-    (let* ((buffer (make-buffer :initial-content "abcdef"))
-           (inserted (string character)))
-      (buffer-set-point buffer 0 column)
-      (buffer-insert-string buffer inserted)
-      (expect (buffer-point-column buffer)
-              :to-equal (1+ column))
-      (expect (buffer-text buffer)
-              :to-equal
-              (concatenate 'string
-                           (subseq "abcdef" 0 column)
-                           inserted
-                           (subseq "abcdef" column)))))
+    (%with-buffer-at (buffer "abcdef" 0 column)
+      (let ((inserted (string character)))
+        (buffer-insert-string buffer inserted)
+        (expect (buffer-point-column buffer)
+                :to-equal (1+ column))
+        (expect (buffer-text buffer)
+                :to-equal
+                (concatenate 'string
+                             (subseq "abcdef" 0 column)
+                             inserted
+                             (subseq "abcdef" column))))))
 
   (cl-weave:it-fuzz
       "accepts generated insertion positions"
       ((column (cl-weave:gen-integer :min 0 :max 6)))
       (:trials 16 :timeout-per-trial 1)
-    (let ((buffer (make-buffer :initial-content "abcdef")))
-      (buffer-set-point buffer 0 column)
+    (%with-buffer-at (buffer "abcdef" 0 column)
       (buffer-insert-string buffer "!")
       (expect (buffer-point-column buffer) :to-equal (1+ column))
       (expect (length (buffer-text buffer)) :to-equal 7))))

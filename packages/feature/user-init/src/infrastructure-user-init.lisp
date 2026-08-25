@@ -1,8 +1,8 @@
 ;;;; packages/feature/user-init/src/infrastructure-user-init.lisp
 ;;;;
-;;;; Infrastructure adapter for the optional user-owned startup file. The
-;;;; loader only resolves the conventional path and establishes the public
-;;;; user package; the application layer owns the extension API itself.
+;;;; Infrastructure for the optional user-owned startup file. The loader only
+;;;; resolves the conventional path and establishes the public user package;
+;;;; the application layer owns the extension API itself.
 (in-package #:loom/feature/user-init)
 
 (defun %configured-user-init-path (&optional (getenv (function host-kit:getenv)))

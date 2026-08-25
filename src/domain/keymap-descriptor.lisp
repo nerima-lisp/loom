@@ -10,7 +10,7 @@
 ;;;; anything handed to KEYMAP-DEFINE-KEY / KEYMAP-STATE-DISPATCH into that
 ;;;; shape:
 ;;;;
-;;;;   (MODIFIERS . CODE)
+;;;;   a cons whose CAR is MODIFIERS and whose CDR is CODE
 ;;;;
 ;;;; where MODIFIERS is a list of keyword symbols such as :CONTROL, :META,
 ;;;; :SHIFT (order-independent -- NORMALIZE-KEY-DESCRIPTOR sorts it), and CODE

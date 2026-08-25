@@ -57,6 +57,12 @@
                    (window-tree-selected-window
                     (editor-state-window-tree state)))
                   :not :to-be source-buffer))))))
+  (it "reports the singular form count after minibuffer evaluation"
+    (%with-minibuffer-state (minibuffer "")
+      (eval-expression)
+      (funcall (loom::%minibuffer-on-confirm minibuffer) "(+ 1 2)")
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Evaluated 1 form")))
   (it "evaluates minibuffer input"
     (%with-minibuffer-state (minibuffer "")
       (loom/feature/evaluation:eval-expression)

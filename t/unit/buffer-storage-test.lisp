@@ -87,6 +87,19 @@
       (expect (length (loom::%buffer-pieces buffer)) :to-equal 1))))
 
 (describe
+  "buffer-read-only-error reporting"
+  (it
+    "reports the rejecting buffer name"
+    (let ((buffer (make-buffer :name "*locked*" :initial-content "hello")))
+      (buffer-set-read-only buffer t)
+      (handler-case
+          (progn (buffer-insert-string buffer "!")
+                 (error "expected buffer-insert-string to signal"))
+        (buffer-read-only-error (condition)
+          (expect (princ-to-string condition)
+                  :to-equal "Buffer *locked* is read-only"))))))
+
+(describe
   "piece-table position helpers"
   (cl-weave:it-property
       "splits every generated character into one line"
