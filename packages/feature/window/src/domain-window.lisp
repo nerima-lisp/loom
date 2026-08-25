@@ -36,8 +36,8 @@
   (scroll-line 0)
   ;; The horizontal viewport offset, in screen cells rather than characters.
   ;; Unlike SCROLL-LINE this stays out of WINDOW-TREE-LAYOUT: the layout
-  ;; description is what sessions persist, and the v5 envelope has no
-  ;; compatibility path for a fourth leaf element (NFR-004).
+  ;; description is what sessions persist, while viewport offsets are runtime
+  ;; state and are deliberately not part of the persisted layout.
   (scroll-column 0)
   ;; Which wrapped segment of SCROLL-LINE sits on the window's first row. Only
   ;; a wrapping buffer ever leaves this at anything but 0, and like

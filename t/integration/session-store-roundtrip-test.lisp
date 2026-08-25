@@ -101,6 +101,24 @@
         (signals error (session-store-read path)))))
 
   (it
+    "rejects malformed fixed-shape session plists"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "malformed.sexp" directory)))
+        (dolist (value
+                  '((:loom-session 5 :buffers)
+                    (:loom-session 5 :buffers () :recent-files ()
+                     :bookmarks () :command-history () :workspaces ()
+                     :current-workspace-index 0 :extra t)
+                    (:loom-session 5 :buffers () :recent-files ()
+                     :bookmarks () :bookmarks () :command-history ()
+                     :workspaces () :current-workspace-index 0)
+                    (:loom-session 5 :buffers (42) :recent-files ()
+                     :bookmarks () :command-history () :workspaces ()
+                     :current-workspace-index 0)))
+          (host-kit:write-file-string (prin1-to-string value) path)
+          (signals error (session-store-read path))))))
+
+  (it
     "removes the temporary file when atomic replacement fails"
     (host-kit:with-temporary-directory (directory)
       (let* ((path (merge-pathnames "session.sexp" directory))

@@ -6,6 +6,26 @@
 (describe
   "session-store snapshot layout validation"
   (it
+    "rejects malformed generated plist codec declarations"
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                42
+                make-session-buffer-snapshot
+                (:name session-buffer-snapshot-name))))
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                temporary
+                make-session-buffer-snapshot
+                (:name))))
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                temporary
+                make-session-buffer-snapshot
+                (name session-buffer-snapshot-name)))))
+  (it
     "rejects malformed layouts and selected window indexes"
     (let ((buffer (make-session-buffer-snapshot
                    :name "*layout*"

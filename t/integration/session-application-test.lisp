@@ -104,4 +104,47 @@
       (signals error
         (loom/feature/session::%restore-session-layout
          '(:unknown)
-         (list registered))))))
+         (list registered)))))
+
+  (it
+    "restores an unmatched bookmark while preserving its saved location"
+    (let* ((snapshot
+             (make-session-bookmark-snapshot
+              :name "orphan"
+              :path "/tmp/orphan.txt"
+              :buffer-name "orphan.txt"
+              :line 4
+              :column 7))
+           (bookmarks
+             (loom/feature/session::%restore-session-bookmarks
+              (list snapshot) nil))
+           (bookmark (gethash "orphan" bookmarks)))
+      (expect bookmark :to-be-truthy)
+      (expect (editor-bookmark-buffer bookmark) :to-be nil)
+      (expect (editor-bookmark-path bookmark) :to-equal #P"/tmp/orphan.txt")
+      (expect (editor-bookmark-buffer-name bookmark) :to-equal "orphan.txt")
+      (expect (editor-bookmark-line bookmark) :to-equal 4)
+      (expect (editor-bookmark-column bookmark) :to-equal 7)))
+
+  (it
+    "reconnects a bookmark by buffer name when its path is absent"
+    (let* ((buffer (make-buffer :name "notes.txt"))
+           (snapshot
+             (make-session-bookmark-snapshot
+              :name "spot"
+              :buffer-name "notes.txt"
+              :line 1
+              :column 3))
+           (bookmarks
+             (loom/feature/session::%restore-session-bookmarks
+              (list snapshot) (list buffer)))
+           (bookmark (gethash "spot" bookmarks)))
+      (expect (editor-bookmark-buffer bookmark) :to-be buffer)
+      (expect (editor-bookmark-buffer-name bookmark) :to-equal "notes.txt")))
+
+  (it
+    "rejects non-hash-table bookmark state during snapshotting"
+    (let ((*editor-state* (%fresh-editor-state "content")))
+      (setf (editor-state-bookmarks *editor-state*) 'invalid)
+      (signals error
+        (loom/feature/session::%session-bookmark-snapshots)))))

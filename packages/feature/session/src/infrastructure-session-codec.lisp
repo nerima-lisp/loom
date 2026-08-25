@@ -6,7 +6,7 @@
 
 (defun %session-sexp (snapshot)
   (validate-session-snapshot snapshot)
-  (list :loom-session *loom-session-version*
+  (list :loom-session +loom-session-version+
         :buffers (mapcar #'%session-sexp-buffer
                          (session-snapshot-buffers snapshot))
         :recent-files (session-snapshot-recent-files snapshot)
@@ -19,9 +19,9 @@
         (session-snapshot-current-workspace-index snapshot)))
 
 (defun %session-from-sexp (value)
-  (%validate-session-plist value *loom-session-top-level-keys* "session")
+  (%validate-session-plist value +loom-session-top-level-keys+ "session")
   (let ((version (%session-plist-value value :loom-session)))
-    (unless (eql version *loom-session-version*)
+    (unless (eql version +loom-session-version+)
       (error "session: unsupported version ~S" version))
     (let ((serialized-buffers (%session-plist-value value :buffers))
           (recent-files (%session-plist-value value :recent-files))
