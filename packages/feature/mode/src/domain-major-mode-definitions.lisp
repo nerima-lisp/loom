@@ -1,8 +1,9 @@
 ;;;; packages/feature/mode/src/domain-major-mode-definitions.lisp
 ;;;;
-;;;; Built-in major-mode metadata and registry state shared by read- and
-;;;; write-side helpers.  Lookup APIs live in domain-major-mode.lisp and
-;;;; mutation/validation lives in domain-major-mode-registry.lisp.
+;;;; Built-in major-mode metadata.  Lookup APIs live in
+;;;; domain-major-mode.lisp; registry state and mutation support live in
+;;;; domain-major-mode-registry-support.lisp and
+;;;; domain-major-mode-registry.lisp.
 (in-package #:loom/feature/mode)
 
 ;; TypeScript and TypeScript React share one vocabulary; the two modes differ
@@ -145,18 +146,3 @@
      :language-id "plaintext"
      :keywords ()))
   "The built-in major modes and the metadata consumed by editor features.")
-
-(defparameter *registered-major-modes* (make-hash-table :test #'eq)
-  "Dynamically registered major-mode definitions keyed by canonical keyword.")
-
-(defparameter *registered-major-mode-order* nil
-  "Canonical keys for dynamically registered modes, in registration order.")
-
-(defparameter *major-mode-registry-version* 0
-  "Monotonic version used to invalidate derived mode keymaps.")
-
-(defun %static-major-mode-definition (key)
-  (cdr (assoc key +major-mode-definitions+)))
-
-(defun %dynamic-major-mode-definition (key)
-  (and key (gethash key *registered-major-modes*)))

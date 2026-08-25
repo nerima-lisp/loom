@@ -2,6 +2,21 @@
 
 (in-package #:loom/feature/mode)
 
+(defparameter *registered-major-modes* (make-hash-table :test #'eq)
+  "Dynamically registered major-mode definitions keyed by canonical keyword.")
+
+(defparameter *registered-major-mode-order* nil
+  "Canonical keys for dynamically registered modes, in registration order.")
+
+(defparameter *major-mode-registry-version* 0
+  "Monotonic version used to invalidate derived mode keymaps.")
+
+(defun %static-major-mode-definition (key)
+  (cdr (assoc key +major-mode-definitions+)))
+
+(defun %dynamic-major-mode-definition (key)
+  (and key (gethash key *registered-major-modes*)))
+
 (defun %new-major-mode-key (mode)
   (unless (or (keywordp mode) (symbolp mode))
     (error "A new major mode must be named by a symbol or keyword: ~S" mode))
