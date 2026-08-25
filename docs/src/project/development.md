@@ -47,6 +47,12 @@ compare its commits with `main`. Integrate only a complete work unit, then
 remove the worktree after confirming that `main` contains it. Empty or
 duplicate worktrees should be removed without creating an additional branch.
 
+For a detached worktree containing unstaged changes, first run the focused or
+full test command, review the diff, and commit the complete work unit in that
+worktree. Then fast-forward `main` to that commit, verify the commit and clean
+status from a main checkout, and remove the worktree with `git worktree
+remove`. Do not delete a worktree until its commit is reachable from `main`.
+
 ## Verification
 
 Run the focused commands directly when iterating:
