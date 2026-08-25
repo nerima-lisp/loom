@@ -17,10 +17,7 @@
   (let* ((ring (editor-state-kill-ring *editor-state*))
          (start (editor-state-last-yank-start-offset *editor-state*))
          (end (editor-state-last-yank-end-offset *editor-state*))
-         (ranges (or (editor-state-last-yank-ranges *editor-state*)
-                     (and (integerp start)
-                          (integerp end)
-                          (list (cons start end)))))
+         (ranges (editor-state-last-yank-ranges *editor-state*))
          (last-buffer (editor-state-last-yank-buffer *editor-state*))
          (index (editor-state-last-yank-ring-index *editor-state*))
          (repeat-count
