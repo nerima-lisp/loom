@@ -21,10 +21,10 @@
     offset))
 
 (defun %backward-word-offset (text offset)
-  (loop while (and (> offset 0)
+  (loop while (and (plusp offset)
                    (not (%word-character-p (char text (1- offset)))))
         do (decf offset))
-  (loop while (and (> offset 0)
+  (loop while (and (plusp offset)
                    (%word-character-p (char text (1- offset))))
         do (decf offset))
   offset)

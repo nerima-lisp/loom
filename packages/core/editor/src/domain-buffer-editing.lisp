@@ -28,8 +28,8 @@ column 0. A no-op at the very start of the buffer."
   (let ((line (%buffer-point-line buffer))
         (column (%buffer-point-column buffer)))
     (cond
-      ((and (= line 0) (= column 0)) nil)
-      ((> column 0)
+      ((and (zerop line) (zerop column)) nil)
+      ((plusp column)
        (%do-delete buffer line (1- column) line column)
        (setf (%buffer-point-line buffer) line
              (%buffer-point-column buffer) (1- column)))
