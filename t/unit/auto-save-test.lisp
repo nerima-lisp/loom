@@ -9,6 +9,16 @@
                 :to-equal
                 "#notes.txt#"))))
 
+  (it "accepts string content and creates parent directories"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "nested/#notes.txt#" directory)))
+        (expect (write-auto-save-file path "draft") :to-equal path)
+        (expect (host-kit:read-file-string path) :to-equal "draft"))))
+
+  (it "rejects non-string auto-save content"
+    (signals type-error
+      (write-auto-save-file "/tmp/loom-invalid-auto-save" 42)))
+
   (it "writes modified file buffers without clearing their modified state"
     (host-kit:with-temporary-directory (directory)
       (let* ((path (merge-pathnames "notes.txt" directory))
@@ -60,6 +70,10 @@
           (expect (buffer-modified-p buffer) :to-be-falsy)
           (expect hook-buffer :to-be buffer)
           (expect (host-kit:read-file-string path) :to-equal "draft")))))
+
+  (it "treats missing or pathless sidecars as harmless"
+    (let ((buffer (make-buffer :initial-content "draft")))
+      (expect (delete-auto-save-file buffer) :to-be nil)))
 
 (describe
   "automatic save modes"
