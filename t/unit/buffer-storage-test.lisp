@@ -70,6 +70,13 @@
       (expect (length (loom::%buffer-add-buffer buffer)) :to-equal 5)
       (expect (length (loom::%buffer-pieces buffer)) :to-equal 4))))
 
+  (it
+    "extracts a region spanning original and added pieces"
+    (let ((buffer (make-buffer :initial-content "abcd")))
+      (buffer-set-point buffer 0 2)
+      (buffer-insert-string buffer "XY")
+      (expect (buffer-region-string buffer 0 1 0 5) :to-equal "bXYc")))
+
 (describe
   "%raw-insert-at and %raw-delete-region"
   (it
