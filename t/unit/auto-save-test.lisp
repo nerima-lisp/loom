@@ -179,3 +179,18 @@
                   :to-equal (list "other.sidecar"))
           (expect (minibuffer-message-string minibuffer)
                   :to-contain "Auto-save error for"))))))
+  (it "saves a selected buffer only once when it is registered"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((path (merge-pathnames "notes.txt" directory))
+             (buffer (make-buffer :name "notes.txt"
+                                  :path path
+                                  :initial-content "draft")))
+        (%with-minibuffer-state (minibuffer "text")
+          (declare (ignore minibuffer))
+          (let ((state *editor-state*))
+            (setf (editor-state-buffers state) (list buffer buffer))
+            (window-set-buffer (%selected-window) buffer)
+            (buffer-mark-modified buffer)
+            (auto-save-mode t)
+            (expect (maybe-auto-save :force t :now 100)
+                    :to-equal (list (auto-save-path path))))))))
