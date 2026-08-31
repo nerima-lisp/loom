@@ -44,6 +44,18 @@
       (expect (prefix-argument-explicit-p argument) :to-be t)
       (expect (prefix-argument-active-p argument) :to-be t)))
 
+  (it-each
+      ((nil 1)
+       (-3 0)
+       (4 4))
+      "binds a nonnegative command prefix from ~S"
+      (prefix expected)
+    (let ((loom:*current-prefix-argument* prefix)
+          (seen nil))
+      (loom::with-nonnegative-command-prefix (count)
+        (setf seen count))
+      (expect seen :to-equal expected)))
+
   (it
     "starts and toggles a negative argument while inactive"
     (let ((argument (make-prefix-argument)))
