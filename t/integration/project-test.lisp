@@ -24,6 +24,15 @@
                         (project-list-files root))
                 :to-equal
                 '("flake.nix" "src/main.py"))
+        (let ((visited nil)
+              (completion-count 0))
+          (loom/feature/project::%project-walk-files-cps
+           root
+           (lambda (path) (push (project-relative-path root path) visited))
+           (lambda () (incf completion-count)))
+          (expect (sort visited #'string<) :to-equal
+                  '("flake.nix" "src/main.py"))
+          (expect completion-count :to-be 1))
         (let ((results (project-search-files root "needle")))
           (expect (length results) :to-equal 1)
           (expect (project-relative-path root (getf (first results) :path))

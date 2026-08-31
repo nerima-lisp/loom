@@ -29,20 +29,35 @@
           (project-ignored-directory-names)
           :test #'string=))
 
+(defun %project-walk-files-cps (directory on-file on-complete)
+  (labels ((walk-entries (entries)
+             (if (null entries)
+                 (funcall on-complete)
+                 (destructuring-bind (path . kind) (first entries)
+                   (cond
+                     ((eq kind :file)
+                      (funcall on-file path)
+                      (walk-entries (rest entries)))
+                     ((and (eq kind :directory)
+                           (not (%project-ignored-directory-p path)))
+                      (%project-walk-files-cps
+                       path
+                       on-file
+                       (lambda ()
+                         (walk-entries (rest entries)))))
+                     (t
+                      (walk-entries (rest entries))))))))
+    (walk-entries
+     (loom/feature/file-tree:loom-fs-list-directory directory))))
+
 (defun project-list-files (root)
   "Return regular files below ROOT, excluding generated/vendor directories."
-  (labels ((walk (directory)
-             (loop for entry in
-                   (loom/feature/file-tree:loom-fs-list-directory directory)
-                   for path = (car entry)
-                   for kind = (cdr entry)
-                   append (cond
-                            ((eq kind :file) (list path))
-                            ((and (eq kind :directory)
-                                  (not (%project-ignored-directory-p path)))
-                             (walk path))
-                            (t nil)))))
-    (sort (walk (project-directory-path root)) #'string< :key #'namestring)))
+  (let ((files nil))
+    (%project-walk-files-cps
+     (project-directory-path root)
+     (lambda (path) (push path files))
+     (lambda () nil))
+    (sort files #'string< :key #'namestring)))
 
 (defun project-search-files (root query)
   "Search text files below ROOT and return path/match plist entries."
