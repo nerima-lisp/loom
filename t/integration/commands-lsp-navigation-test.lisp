@@ -194,6 +194,21 @@
       (expect (buffer-text buffer) :to-equal "foo")))
 
   (it
+    "dismisses a candidate whose insertion anchor is no longer current"
+    (%with-lsp-navigation (transport session buffer :content "(list foo")
+      (buffer-set-point buffer 0 9)
+      (loom/feature/lsp:lsp-completion-at-point)
+      (%fake-push-and-drain
+       transport session
+       (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"label\":\"foobar\"}]}"
+               (%lsp-last-request-id transport)))
+      (buffer-set-point buffer 0 0)
+      (expect (loom::%completion-popup-handle-key (%special-key :enter))
+              :to-be-truthy)
+      (expect (editor-state-completion *editor-state*) :to-be nil)
+      (expect (buffer-text buffer) :to-equal "(list foo")))
+
+  (it
     "does not consume an unrelated key, so typing keeps typing"
     (%with-lsp-navigation (transport session buffer :content "foo")
       (buffer-set-point buffer 0 3)
