@@ -43,8 +43,20 @@
              (macroexpand-1
               '(loom/feature/session::define-session-plist-codec
                 temporary
+                42
+                (:name session-buffer-snapshot-name))))
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                temporary
                 make-session-buffer-snapshot
                 (:name))))
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                temporary
+                make-session-buffer-snapshot
+                42)))
     (signals error
              (macroexpand-1
               '(loom/feature/session::define-session-plist-codec
