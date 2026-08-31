@@ -22,11 +22,10 @@
       (history-kit:history-reset-navigation history)))
   minibuffer)
 
-(defgeneric minibuffer-activate (minibuffer prompt &key on-confirm on-cancel
+(defun minibuffer-activate (minibuffer prompt &key on-confirm on-cancel
                                                    on-change on-key
                                                    completion-function)
-  (:documentation
-   "Begin an interactive input session in MINIBUFFER, displaying PROMPT and
+  "Begin an interactive input session in MINIBUFFER, displaying PROMPT and
 accepting keystrokes via MINIBUFFER-HANDLE-KEY. ON-CONFIRM, when supplied, is
 a function of one argument (the final input string) called when the user
 confirms the input (e.g. RET). ON-CANCEL, when supplied, is a function of
@@ -38,46 +37,40 @@ before MINIBUFFER-HANDLE-KEY classifies it; returning true consumes the event,
 which is how a caller keeps a chord like C-s from being typed into the input.
 COMPLETION-FUNCTION, when supplied, is a function of the current input string
 that returns a list of candidate strings for Tab completion. Returns
-MINIBUFFER.")
-  (:method (minibuffer prompt &key on-confirm on-cancel on-change on-key
-                                completion-function)
-    (dolist (entry (list (cons completion-function ":completion-function")
-                         (cons on-change ":on-change")
-                         (cons on-key ":on-key")))
-      (when (and (car entry) (not (functionp (car entry))))
-        (error "~A must be a function or NIL: ~S" (cdr entry) (car entry))))
-    (let ((history (%minibuffer-history minibuffer)))
-      (when history
-        (history-kit:history-reset-navigation history)))
-    (setf (%minibuffer-active-p minibuffer) t
-          (%minibuffer-prompt minibuffer) prompt
-          (%minibuffer-input minibuffer) ""
-          (%minibuffer-on-confirm minibuffer) on-confirm
-          (%minibuffer-on-cancel minibuffer) on-cancel
-          (%minibuffer-on-change minibuffer) on-change
-          (%minibuffer-on-key minibuffer) on-key
-          (%minibuffer-completion-function minibuffer) completion-function
-          (%minibuffer-message minibuffer) nil)
-    minibuffer))
+MINIBUFFER."
+  (dolist (entry (list (cons completion-function ":completion-function")
+                       (cons on-change ":on-change")
+                       (cons on-key ":on-key")))
+    (when (and (car entry) (not (functionp (car entry))))
+      (error "~A must be a function or NIL: ~S" (cdr entry) (car entry))))
+  (let ((history (%minibuffer-history minibuffer)))
+    (when history
+      (history-kit:history-reset-navigation history)))
+  (setf (%minibuffer-active-p minibuffer) t
+        (%minibuffer-prompt minibuffer) prompt
+        (%minibuffer-input minibuffer) ""
+        (%minibuffer-on-confirm minibuffer) on-confirm
+        (%minibuffer-on-cancel minibuffer) on-cancel
+        (%minibuffer-on-change minibuffer) on-change
+        (%minibuffer-on-key minibuffer) on-key
+        (%minibuffer-completion-function minibuffer) completion-function
+        (%minibuffer-message minibuffer) nil)
+  minibuffer)
 
-(defgeneric minibuffer-set-prompt (minibuffer prompt)
-  (:documentation
-   "Replace an active MINIBUFFER's PROMPT without disturbing its input.
+(defun minibuffer-set-prompt (minibuffer prompt)
+  "Replace an active MINIBUFFER's PROMPT without disturbing its input.
 
 A prompt that reports state -- incremental search saying it is now failing --
 has to change mid-session, and it cannot use MINIBUFFER-MESSAGE for that: the
 message line is the same row the active prompt occupies. Inactive minibuffers
-ignore this. Returns MINIBUFFER.")
-  (:method (minibuffer prompt)
-    (when (%minibuffer-active-p minibuffer)
-      (setf (%minibuffer-prompt minibuffer) prompt))
-    minibuffer))
+ignore this. Returns MINIBUFFER."
+  (when (%minibuffer-active-p minibuffer)
+    (setf (%minibuffer-prompt minibuffer) prompt))
+  minibuffer)
 
-(defgeneric minibuffer-message (minibuffer text)
-  (:documentation
-   "Display TEXT in MINIBUFFER as a transient status message: unlike
+(defun minibuffer-message (minibuffer text)
+  "Display TEXT in MINIBUFFER as a transient status message: unlike
 MINIBUFFER-ACTIVATE, this does not solicit input and does not affect
-MINIBUFFER-ACTIVE-P. Returns MINIBUFFER.")
-  (:method (minibuffer text)
-    (setf (%minibuffer-message minibuffer) text)
-    minibuffer))
+MINIBUFFER-ACTIVE-P. Returns MINIBUFFER."
+  (setf (%minibuffer-message minibuffer) text)
+  minibuffer)

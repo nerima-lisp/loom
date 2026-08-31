@@ -66,9 +66,8 @@ not, because by then the session they would notify is already over."
     (when on-change
       (funcall on-change (%minibuffer-input minibuffer)))))
 
-(defgeneric minibuffer-handle-key (minibuffer key-event)
-  (:documentation
-   "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) to an
+(defun minibuffer-handle-key (minibuffer key-event)
+  "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) to an
 active MINIBUFFER: ordinary character events are appended to the input,
 Backspace/Delete edit it, Up/Down recall history (when MINIBUFFER was created
 with one, via CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT), RET invokes the
@@ -76,9 +75,8 @@ ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE after deactivating the
 current prompt (so the callback may activate a next prompt),
 Tab invokes MINIBUFFER-COMPLETE,
 and C-g invokes ON-CANCEL and deactivates MINIBUFFER. Has no effect if
-MINIBUFFER is not active. Returns MINIBUFFER.")
-  (:method (minibuffer key-event)
-    (when (and (%minibuffer-active-p minibuffer)
+MINIBUFFER is not active. Returns MINIBUFFER."
+  (when (and (%minibuffer-active-p minibuffer)
                (not (%minibuffer-consume-key minibuffer key-event)))
       (let* ((type (cl-tty-kit:key-event-type key-event))
              (code (cl-tty-kit:key-event-code key-event))
@@ -119,4 +117,4 @@ MINIBUFFER is not active. Returns MINIBUFFER.")
            (%minibuffer-notify-change minibuffer))
           (t
            nil))))
-    minibuffer))
+  minibuffer)
