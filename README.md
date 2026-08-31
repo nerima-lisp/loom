@@ -60,6 +60,10 @@ nix build
 nix develop -c sbcl --script run-tests.lisp
 nix flake check --print-build-logs
 nix fmt -- --ci
+
+# Release-oriented checks
+LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
+LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
 The [development guide](docs/src/project/development.md) covers the unit and
