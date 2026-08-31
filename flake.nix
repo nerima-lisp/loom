@@ -447,6 +447,7 @@
       devShellPackages = ctx: [
         cl-weave.packages.${ctx.system}.default
         paredit-cli.packages.${ctx.system}.default
+        nixpkgs.legacyPackages.${ctx.system}.python3Packages.mkdocs-material
       ];
 
       overrideOutputs = ctx: {

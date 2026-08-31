@@ -11,8 +11,9 @@ Enter the shell before running local Common Lisp commands:
 nix develop
 ```
 
-The shell provides SBCL, ASDF dependencies, and the test runner. The source
-tree is organized by shared editor layers and feature packages; see the
+The shell provides SBCL, ASDF dependencies, the test runner, and the MkDocs
+Material toolchain. The source tree is organized by shared editor layers and
+feature packages; see the
 [architecture](../reference/architecture.md) page for the composition
 boundaries.
 
