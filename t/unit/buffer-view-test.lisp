@@ -83,6 +83,15 @@
         (expect point-line :to-equal 0)
         (expect point-column :to-equal 4))))
 
+  (it "clamps point without creating an unset mark"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-set-point buffer 0 0)
+      (buffer-narrow-to-region buffer 0 2 0 8)
+      (expect (buffer-point-column buffer) :to-equal 2)
+      (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
+        (expect mark-line :to-be nil)
+        (expect mark-column :to-be nil))))
+
   (it "maps only offsets inside the visible region"
     (let ((buffer (make-buffer :initial-content "0123456789")))
       (buffer-narrow-to-region buffer 0 2 0 7)
