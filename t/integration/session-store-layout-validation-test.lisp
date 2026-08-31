@@ -50,6 +50,12 @@
               '(loom/feature/session::define-session-plist-codec
                 temporary
                 make-session-buffer-snapshot
+                (:name 42))))
+    (signals error
+             (macroexpand-1
+              '(loom/feature/session::define-session-plist-codec
+                temporary
+                make-session-buffer-snapshot
                 (name session-buffer-snapshot-name)))))
   (it
     "rejects malformed fixed-shape session plists"
