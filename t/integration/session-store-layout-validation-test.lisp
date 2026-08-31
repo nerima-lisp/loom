@@ -6,6 +6,32 @@
 (describe
   "session-store snapshot layout validation"
   (it
+    "keeps every generated codec shape round-trippable"
+    (dolist (codec
+              (list
+               (list #'loom/feature/session::%session-sexp-buffer
+                     #'loom/feature/session::%session-buffer-from-sexp
+                     (make-session-buffer-snapshot
+                      :name "*buffer*" :path "buffer.lisp" :text "text"
+                      :point-line 1 :point-column 2 :mark-line 0
+                      :mark-column 1 :modified-p t))
+               (list #'loom/feature/session::%session-sexp-bookmark
+                     #'loom/feature/session::%session-bookmark-from-sexp
+                     (make-session-bookmark-snapshot
+                      :name "bookmark" :path "buffer.lisp"
+                      :buffer-name "*buffer*" :line 1 :column 2))
+               (list #'loom/feature/session::%session-sexp-workspace
+                     #'loom/feature/session::%session-workspace-from-sexp
+                     (make-session-workspace-snapshot
+                      :name "main" :layout '(:leaf 0 1)
+                      :selected-window-index 0))))
+      (destructuring-bind (serializer reader object) codec
+        (let ((serialized (funcall serializer object)))
+          (expect serialized :to-be-truthy)
+          (expect (funcall serializer (funcall reader serialized))
+                  :to-equal serialized)))))
+
+  (it
     "rejects malformed generated plist codec declarations"
     (signals error
              (macroexpand-1
@@ -87,3 +113,46 @@
                                                 (:leaf 0 0))
                                       :selected-window-index 2))
                    :current-workspace-index 0)))))))
+
+  (it
+    "accepts nested layouts and every persisted metadata collection"
+    (let* ((buffer (make-session-buffer-snapshot
+                    :name "*layout*"
+                    :path "layout.lisp"
+                    :text "text"
+                    :point-line 0
+                    :point-column 0
+                    :mark-line 0
+                    :mark-column 0
+                    :modified-p t))
+           (snapshot (make-session-snapshot
+                      :buffers (list buffer)
+                      :recent-files (list "layout.lisp")
+                      :bookmarks (list
+                                  (make-session-bookmark-snapshot
+                                   :name "spot"
+                                   :path "layout.lisp"
+                                   :buffer-name "*layout*"
+                                   :line 0
+                                   :column 0))
+                      :command-history (list "M-x find-file")
+                      :workspaces (list
+                                   (%session-test-workspace
+                                    :layout '(:split :vertical
+                                              (:leaf 0 0)
+                                              (:split :horizontal
+                                                       (:leaf 0 0)
+                                                       (:leaf 0 0)))
+                                    :selected-window-index 2))
+                      :current-workspace-index 0)))
+      (expect (validate-session-snapshot snapshot) :to-be snapshot)))
+
+  (it
+    "rejects duplicate metadata names using their documented comparison rules"
+    (let ((snapshot (%session-test-snapshot)))
+      (setf (session-snapshot-bookmarks snapshot)
+            (list (make-session-bookmark-snapshot
+                   :name "spot" :path nil :buffer-name nil :line 0 :column 0)
+                  (make-session-bookmark-snapshot
+                   :name "spot" :path nil :buffer-name nil :line 0 :column 0)))
+      (signals error (validate-session-snapshot snapshot))))

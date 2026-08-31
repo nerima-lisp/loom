@@ -215,7 +215,10 @@ layer and the application layer explicitly activates it afterward. The
 presentation layer includes the active workspace name in the shortcut/status
 line. Session v5 persists every workspace's layout and selected window.
 
-`src/presentation/layout.lisp` composes the current state into screen regions.
+`src/presentation/layout.lisp` composes the current state into screen regions;
+`src/presentation/layout-minibuffer.lisp` owns minibuffer and completion-popup
+rendering so the main layout module remains focused on geometry and region
+composition.
 A buffer position is a character count while a screen position is a cell
 count, and a full-width character occupies two cells, so
 `%layout-screen-column` is the single conversion between them: cursor

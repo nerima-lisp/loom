@@ -49,6 +49,7 @@
        (loom::%backward-slurp-edits "(b)" 1 nil)
        (loom::%backward-barf-edits "(a b)" 1 "a (b)")
        (loom::%backward-barf-edits "(a)" 1 "a ()")
+       (loom::%backward-barf-edits "(ab)" 1 "ab ()")
        (loom::%wrap-round-edits "a b" 0 "(a) b")
        (loom::%wrap-round-edits "" 0 "()")
        (loom::%splice-edits "(a (b c) d)" 4 "(a b c d)")

@@ -20,12 +20,16 @@
        (setf (gethash key (loom-concurrent-runtime-errors runtime))
              (getf result :condition))))))
 
+(defun %directory-result-current-p (runtime key generation)
+  "Return true when GENERATION is still current for KEY."
+  (= (gethash key (loom-concurrent-runtime-generation runtime) 0)
+     generation))
+
 (defun %apply-directory-result (runtime result)
   (let* ((key (getf result :key))
-         (result-generation (getf result :generation))
-         (generation-table (loom-concurrent-runtime-generation runtime)))
+         (result-generation (getf result :generation)))
     (%clear-completed-directory-task runtime key result-generation)
-    (when (= (gethash key generation-table 0) result-generation)
+    (when (%directory-result-current-p runtime key result-generation)
       (%store-directory-result runtime result))))
 
 (defun loom-concurrent-runtime-drain (runtime)

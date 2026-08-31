@@ -6,6 +6,59 @@
 (describe
   "search navigation commands"
   (it
+    "routes forward search through one result continuation"
+    (let ((buffer (make-buffer :initial-content "alpha beta"))
+          (matches 0)
+          (misses 0))
+      (loom/feature/search::%search-forward-cps
+       buffer "beta"
+       (lambda (span)
+         (incf matches)
+         (expect (buffer-span-start span) :to-equal 6))
+       (lambda () (incf misses)))
+      (expect matches :to-equal 1)
+      (expect misses :to-equal 0)))
+
+  (it
+    "routes an absent forward search to the miss continuation"
+    (let ((buffer (make-buffer :initial-content "alpha"))
+          (matches 0)
+          (misses 0))
+      (loom/feature/search::%search-forward-cps
+       buffer "missing"
+       (lambda (span) (declare (ignore span)) (incf matches))
+       (lambda () (incf misses)))
+      (expect matches :to-equal 0)
+      (expect misses :to-equal 1)))
+
+  (it
+    "routes backward search through one result continuation"
+    (let ((buffer (make-buffer :initial-content "one two one"))
+          (matches 0)
+          (misses 0))
+      (buffer-set-point buffer 0 11)
+      (loom/feature/search::%search-backward-cps
+       buffer "one"
+       (lambda (span)
+         (incf matches)
+         (expect (buffer-span-start span) :to-equal 8))
+       (lambda () (incf misses)))
+      (expect matches :to-equal 1)
+      (expect misses :to-equal 0)))
+
+  (it
+    "routes an absent backward search to the miss continuation"
+    (let ((buffer (make-buffer :initial-content "alpha"))
+          (matches 0)
+          (misses 0))
+      (loom/feature/search::%search-backward-cps
+       buffer "missing"
+       (lambda (span) (declare (ignore span)) (incf matches))
+       (lambda () (incf misses)))
+      (expect matches :to-equal 0)
+      (expect misses :to-equal 1)))
+
+  (it
     "searches case-sensitively from point and wraps once"
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha ALPHA alpha")
       (buffer-set-point buffer 0 6)

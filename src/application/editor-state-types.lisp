@@ -23,7 +23,10 @@
                       (last-yank-ring-index nil) (last-yank-repeat-count nil)
                       (last-command-kill-p nil)
                       (last-command-self-insert-p nil) (lsp-session nil)
-                      (registers nil) (keyboard-macro nil) (isearch nil)
+                      (registers nil)
+                      (keyboard-macro
+                       (loom/feature/keyboard-macro:make-keyboard-macro))
+                      (isearch nil)
                       (jump-origins nil)
                       (completion nil) (auto-save-mode-p nil)
                       (auto-save-buffers nil) (auto-save-last-run-at nil)
@@ -94,7 +97,7 @@ reach any of them through *EDITOR-STATE* alone."
   ;; register bank when constructing EDITOR-STATE.
   (registers nil)
   ;; The currently defined keyboard macro and its recording/replay state.
-  (keyboard-macro nil)
+  keyboard-macro
   ;; The incremental-search session that is live only while its minibuffer
   ;; prompt is up. The renderer reads it to highlight matches, which is why it
   ;; sits here rather than in the search command's own closure. Transient, and

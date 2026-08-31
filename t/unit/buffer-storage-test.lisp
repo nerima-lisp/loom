@@ -134,3 +134,25 @@
       (expect line :to-equal (+ 3 (count #\Newline text)))
       (expect column :to-equal
               (length (subseq text (1+ (or (position #\Newline text :from-end t) -1)))))))))
+
+  (it
+    "advances to column zero after a trailing newline"
+    (multiple-value-bind (line column)
+        (loom::%advance-position 1 7 (format nil "prefix~%"))
+      (expect line :to-equal 2)
+      (expect column :to-equal 0)))
+
+  (it
+    "recognizes narrowing only when the visible interval is reduced"
+    (cl-weave:it-each
+        ((0 4 nil)
+         (1 4 t)
+         (0 3 t))
+        "narrowing interval [~D, ~D) is ~:[not narrowed~;narrowed~]"
+        (start end expected)
+      (let ((buffer (make-buffer :initial-content "abcd")))
+        (setf (loom::%buffer-narrow-start-offset buffer) start
+              (loom::%buffer-narrow-end-offset buffer) end)
+        (if expected
+            (expect (loom::%buffer-narrowed-p buffer) :to-be-truthy)
+            (expect (loom::%buffer-narrowed-p buffer) :to-be-falsy)))))

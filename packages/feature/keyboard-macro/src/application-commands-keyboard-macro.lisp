@@ -6,21 +6,16 @@
 ;;;; macro that they control.
 (in-package #:loom/feature/keyboard-macro)
 
-(defun %keyboard-macro-for-editor ()
-  "Return the current state's keyboard macro, creating it for old fixtures."
-  (or (editor-state-keyboard-macro *editor-state*)
-      (setf (editor-state-keyboard-macro *editor-state*)
-            (make-keyboard-macro))))
-
 (defun start-kbd-macro ()
   "Start recording a new keyboard macro (C-x ()."
-  (keyboard-macro-start-recording (%keyboard-macro-for-editor))
+  (keyboard-macro-start-recording
+   (editor-state-keyboard-macro *editor-state*))
   (minibuffer-message (editor-state-minibuffer *editor-state*)
                       "Defining keyboard macro"))
 
 (defun end-kbd-macro ()
   "Stop recording the current keyboard macro (C-x ))."
-  (let ((macro (%keyboard-macro-for-editor)))
+  (let ((macro (editor-state-keyboard-macro *editor-state*)))
     (if (keyboard-macro-recording-p macro)
         (progn
           ;; The dispatcher records the C-x prefix after it is successfully
@@ -67,7 +62,7 @@
 
 (defun call-last-kbd-macro ()
   "Replay the last recorded keyboard macro (C-x e)."
-  (let* ((macro (%keyboard-macro-for-editor))
+  (let* ((macro (editor-state-keyboard-macro *editor-state*))
          (events (keyboard-macro-events macro)))
     (if (null events)
         (minibuffer-message (editor-state-minibuffer *editor-state*)

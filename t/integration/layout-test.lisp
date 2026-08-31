@@ -103,6 +103,69 @@ the degenerate-window tests are the ones that need them to differ."
       (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
 
 (describe
+  "minibuffer line selection"
+  (it "shows an empty line for an inactive minibuffer"
+    (expect (loom::%layout-minibuffer-line (make-minibuffer))
+            :to-equal ""))
+  (it "shows a transient message while inactive"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-message minibuffer "saved")
+      (expect (loom::%layout-minibuffer-line minibuffer)
+              :to-equal "saved")))
+  (it "shows input without a prompt when active"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate minibuffer nil)
+      (setf (loom::%minibuffer-input minibuffer) "query")
+      (expect (loom::%layout-minibuffer-line minibuffer)
+              :to-equal "query")))
+  (it "concatenates the prompt and input when active"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate minibuffer "> ")
+      (setf (loom::%minibuffer-input minibuffer) "query")
+      (expect (loom::%layout-minibuffer-line minibuffer)
+              :to-equal "> query"))))
+
+(describe
+  "minibuffer and shortcut drawing"
+  (it "draws the shortcut line with a workspace name"
+    (let* ((state (%fresh-layout-state :content "x" :width 32 :height 2))
+           (renderer (editor-state-renderer state))
+           (screen (%layout-screen state)))
+      (loom::%layout-draw-shortcuts
+       renderer 32 0 (window-buffer (%layout-window state)) "main")
+      (expect (cl-tty-kit:screen-row-string screen 0)
+              :to-equal "Ln 1, Col 1  Workspace: main  C-")))
+  (it "truncates the minibuffer line to the drawing width"
+    (let* ((state (%fresh-layout-state :width 8 :height 1))
+           (renderer (editor-state-renderer state))
+           (screen (%layout-screen state))
+           (minibuffer (editor-state-minibuffer state)))
+      (minibuffer-activate minibuffer "Prompt: ")
+      (setf (loom::%minibuffer-input minibuffer) "query")
+      (loom::%layout-draw-minibuffer renderer minibuffer 8 0)
+      (expect (cl-tty-kit:screen-row-string screen 0)
+              :to-equal "Prompt: ")))
+  (it "draws a selected completion row at its popup origin"
+    (let* ((state (%fresh-layout-state :width 12 :height 8))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 0 0
+                        (list (cons "one" "one")
+                              (cons "two" "two")))))
+      (setf (loom::%editor-completion-index completion) 1
+            (editor-state-completion state) completion)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-completion
+         (editor-state-renderer state) window 0))
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 3)
+                :to-equal "one")
+        (expect (cl-tty-kit:screen-row-string screen 2 :start 0 :end 3)
+                :to-equal "two")
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 2))
+                :to-equal '(:bold (:fg 0) (:bg 6)))))))
+
+(describe
   "incremental-search layout drawing"
   (it
     "highlights matches and distinguishes the current match"
@@ -202,3 +265,65 @@ the degenerate-window tests are the ones that need them to differ."
       (multiple-value-bind (line row)
           (loom::%layout-row-back renderer buffer 3 0 0 5)
         (expect (list line row) :to-equal '(0 0))))))
+
+(describe
+  "completion popup row preparation"
+  (it
+    "keeps the selected item centered when the candidate list is taller than the popup"
+    (let ((completion
+            (loom::make-editor-completion
+             (make-buffer) 0 0
+             (loop for index below 10 collect (cons (format nil "item-~D" index)
+                                                    (format nil "text-~D" index))))) )
+      (setf (loom::%editor-completion-index completion) 6)
+      (multiple-value-bind (rows selected)
+          (loom::%layout-completion-rows (make-loom-renderer 80 10) completion)
+        (expect rows :to-equal '("item-2" "item-3" "item-4" "item-5"
+                                 "item-6" "item-7" "item-8" "item-9"))
+        (expect selected :to-equal 4))))
+  (it
+    "limits short labels to the popup width and reports their local selection"
+    (let ((completion
+            (loom::make-editor-completion
+             (make-buffer) 0 0
+             (list (cons "short" "short")
+                   (cons "a-very-long-completion-label" "text")))))
+      (setf (loom::%editor-completion-index completion) 1)
+      (multiple-value-bind (rows selected)
+          (loom::%layout-completion-rows (make-loom-renderer 80 10) completion)
+        (expect rows :to-equal '("short" "a-very-long-completion-label"))
+        (expect selected :to-equal 1))))
+  (it
+    "places the completion popup below the anchor when there is room"
+    (let* ((state (%fresh-layout-state :height 12 :renderer-height 12))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 0 0
+                        (list (cons "one" "one")))))
+      (multiple-value-bind (column row)
+          (loom::%layout-completion-origin
+           (editor-state-renderer state) window completion 12)
+        (expect (list column row) :to-equal '(0 1)))))
+  (it
+    "places the completion popup above the anchor when below is full"
+    (let* ((state (%fresh-layout-state :height 12 :renderer-height 12))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 11 0
+                        (list (cons "one" "one")))))
+      (multiple-value-bind (column row)
+          (loom::%layout-completion-origin
+           (editor-state-renderer state) window completion 12)
+        (expect (list column row) :to-equal '(0 10)))))
+  (it
+    "returns no origin when the popup fits neither above nor below"
+    (let* ((state (%fresh-layout-state :height 6 :renderer-height 6))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 3 0
+                        (loop for index below 8
+                              collect (cons (format nil "item-~D" index)
+                                            "text")))))
+      (expect (loom::%layout-completion-origin
+               (editor-state-renderer state) window completion 6)
+              :to-be nil))))

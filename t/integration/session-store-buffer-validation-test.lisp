@@ -84,7 +84,11 @@
         (signals error (validate-session-snapshot
                         (snapshot (buffer :mark-line 0))))
         (signals error (validate-session-snapshot
+                        (snapshot (buffer :mark-line 0 :mark-column nil))))
+        (signals error (validate-session-snapshot
                         (snapshot (buffer :mark-line -1 :mark-column 0))))
+        (signals error (validate-session-snapshot
+                        (snapshot (buffer :mark-line nil :mark-column 0))))
         (signals error (validate-session-snapshot
                         (snapshot (buffer :modified-p :maybe))))
         (signals error
@@ -104,3 +108,38 @@
         (signals error
                  (validate-session-snapshot
                   (snapshot (buffer) :command-history (list "ok" 42))))))))
+
+  (it
+    "rejects malformed optional bookmark and workspace fields"
+    (let ((snapshot (%session-test-snapshot)))
+      (dolist (bookmark-case
+                (list
+                 (make-session-bookmark-snapshot
+                  :name nil :path nil :buffer-name nil :line 0 :column 0)
+                 (make-session-bookmark-snapshot
+                  :name "spot" :path 42 :buffer-name nil :line 0 :column 0)
+                 (make-session-bookmark-snapshot
+                  :name "spot" :path nil :buffer-name 42 :line 0 :column 0)
+                 (make-session-bookmark-snapshot
+                  :name "spot" :path nil :buffer-name nil :line -1 :column 0)
+                 (make-session-bookmark-snapshot
+                  :name "spot" :path nil :buffer-name nil :line 0 :column -1)))
+        (setf (session-snapshot-bookmarks snapshot) (list bookmark-case))
+        (signals error (validate-session-snapshot snapshot)))
+      (dolist (workspace-case
+                (list
+                 (%session-test-workspace :name nil)
+                 (%session-test-workspace :name "")
+                 (%session-test-workspace :layout nil)
+                 (%session-test-workspace :selected-window-index -1)))
+        (setf (session-snapshot-workspaces snapshot) (list workspace-case))
+        (signals error (validate-session-snapshot snapshot)))
+      (setf (session-snapshot-workspaces snapshot)
+            (list (%session-test-workspace :name "Main")
+                  (%session-test-workspace :name "main")))
+      (signals error (validate-session-snapshot snapshot))
+      (setf (session-snapshot-workspaces snapshot)
+            (list (%session-test-workspace)))
+      (dolist (index '(-1 1))
+        (setf (session-snapshot-current-workspace-index snapshot) index)
+        (signals error (validate-session-snapshot snapshot)))))

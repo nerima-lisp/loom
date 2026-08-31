@@ -4,6 +4,13 @@
 (in-package #:loom/test)
 
 (describe "editor-state recent files"
+  (it "bounds normalized files without mutating the input list"
+    (let ((files (list "older" "current" "oldest")))
+      (expect (loom::%bounded-recent-files "current" files 2)
+              :to-equal
+              (list "current" "older"))
+      (expect files :to-equal (list "older" "current" "oldest"))))
+
   (it "returns nil for a missing path without mutating recent files"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
            (state (make-editor-state :window-tree (make-window-tree buffer 80 24))))

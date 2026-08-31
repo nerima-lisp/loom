@@ -29,6 +29,7 @@
           (loom:*current-prefix-argument* 0))
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 2)
+        (loom:self-insert-command #\x)
         (loom::newline-command)
         (loom::open-line)
         (expect (buffer-text buffer) :to-equal "hello")

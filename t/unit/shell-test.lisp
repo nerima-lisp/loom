@@ -119,3 +119,49 @@
           (expect (buffer-text result) :to-contain "second")
           (expect (minibuffer-message-string minibuffer)
                   :to-equal "Pipe command finished successfully"))))))
+
+  (it "reports cancellation for an empty command"
+    (let* ((buffer (make-buffer :name "source.txt" :initial-content "source"))
+           (tree (make-window-tree buffer 80 24))
+           (state (make-editor-state
+                   :window-tree tree
+                   :workspaces (make-workspace-manager tree :name "main")
+                   :minibuffer (make-minibuffer)
+                   :keymap (make-keymap)
+                   :file-tree nil
+                   :renderer nil
+                   :buffers (list buffer)
+                   :kill-ring nil)))
+      (let ((*editor-state* state)
+            (minibuffer (editor-state-minibuffer state)))
+        (pipe-command)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "  ")
+        (expect (minibuffer-message-string minibuffer)
+                :to-equal "Pipe command cancelled"))))
+
+  (it "reports command errors without creating a result buffer"
+    (let* ((buffer (make-buffer :name "source.txt" :initial-content "source"))
+           (tree (make-window-tree buffer 80 24))
+           (state (make-editor-state
+                   :window-tree tree
+                   :workspaces (make-workspace-manager tree :name "main")
+                   :minibuffer (make-minibuffer)
+                   :keymap (make-keymap)
+                   :file-tree nil
+                   :renderer nil
+                   :buffers (list buffer)
+                   :kill-ring nil)))
+      (let ((*editor-state* state)
+            (minibuffer (editor-state-minibuffer state)))
+        (with-replaced-function
+            (loom/feature/shell:run-shell-command
+             (lambda (command &key directory)
+               (declare (ignore command directory))
+               (error "synthetic shell failure")))
+          (pipe-command)
+          (funcall (loom::%minibuffer-on-confirm minibuffer) "false"))
+        (expect (minibuffer-message-string minibuffer)
+                :to-contain "Pipe command error: synthetic shell failure")
+                (expect (find "*Loom-Pipe-Command*" (editor-state-buffers state)
+                      :key #'buffer-name :test #'string=)
+                :to-be nil))))

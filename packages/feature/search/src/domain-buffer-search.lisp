@@ -39,32 +39,42 @@ independent of search-engine concerns while still bounding the event loop.")
     (make-buffer-span (+ offset (buffer-span-start span))
                       (+ offset (buffer-span-end span)))))
 
-(defun buffer-search-forward (buffer pattern)
-  "Return the next BUFFER-SPAN for PATTERN from point, wrapping once, or NIL."
+(defun %search-forward-cps (buffer pattern on-match on-miss)
+  "Search from BUFFER's point and invoke exactly one result continuation."
   (let* ((text (buffer-visible-text buffer))
          (offset (buffer-narrow-start-offset buffer))
          (point (max 0 (min (length text)
                             (- (buffer-point-offset buffer) offset))))
          (match (%scan-next-occurrence text pattern point)))
-    (when match
-      (make-buffer-span (+ offset (cl-regex-kit:match-start match))
-                        (+ offset (cl-regex-kit:match-end match))))))
+    (if match
+        (funcall on-match
+                 (make-buffer-span (+ offset (cl-regex-kit:match-start match))
+                                   (+ offset (cl-regex-kit:match-end match))))
+        (funcall on-miss))))
+
+(defun buffer-search-forward (buffer pattern)
+  "Return the next BUFFER-SPAN for PATTERN from point, wrapping once, or NIL."
+  (%search-forward-cps buffer pattern #'identity (constantly nil)))
+
+(defun %search-backward-cps (buffer pattern on-match on-miss)
+  "Search before BUFFER's point and invoke exactly one result continuation."
+  (let* ((text (buffer-visible-text buffer))
+         (offset (buffer-narrow-start-offset buffer))
+         (point (max 0 (min (length text)
+                            (- (buffer-point-offset buffer) offset))))
+         (spans (unless (zerop (length pattern))
+                  (%search-spans-in-text text pattern 0)))
+         (prior (remove-if-not (lambda (span)
+                                 (< (buffer-span-start span) point))
+                               spans))
+         (span (or (car (last prior)) (car (last spans)))))
+    (if span
+        (funcall on-match (%visible-buffer-span buffer span))
+        (funcall on-miss))))
 
 (defun buffer-search-backward (buffer pattern)
   "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once."
-  (unless (zerop (length pattern))
-    (let* ((text (buffer-visible-text buffer))
-           (offset (buffer-narrow-start-offset buffer))
-           (point (max 0 (min (length text)
-                              (- (buffer-point-offset buffer) offset))))
-           (spans (%search-spans-in-text text pattern 0))
-           (prior (remove-if-not (lambda (span)
-                                   (< (buffer-span-start span) point))
-                                 spans)))
-      (let ((span (or (car (last prior))
-                      (car (last spans)))))
-        (when span
-          (%visible-buffer-span buffer span))))))
+  (%search-backward-cps buffer pattern #'identity (constantly nil)))
 
 (defun buffer-search-spans (buffer pattern start)
   "Return BUFFER-SPAN values for PATTERN, starting at START and wrapping once."

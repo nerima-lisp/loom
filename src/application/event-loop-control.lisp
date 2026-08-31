@@ -34,10 +34,11 @@ keeps its original blocking read behavior.")
 
 (defun %event-loop-background-work-p ()
   "Whether the event loop must wake up without a keyboard byte."
-  (or (some #'loom/feature/terminal:terminal-session-alive-p
-            (editor-state-terminal-sessions *editor-state*))
-      (editor-state-auto-save-mode-p *editor-state*)
-      (editor-state-auto-save-buffers *editor-state*)))
+  (not (null
+        (or (some #'loom/feature/terminal:terminal-session-alive-p
+                  (editor-state-terminal-sessions *editor-state*))
+            (editor-state-auto-save-mode-p *editor-state*)
+            (editor-state-auto-save-buffers *editor-state*)))))
 
 (defun %wait-for-editor-input (input-stream)
   "Wait for input, or return NIL after the background poll interval.

@@ -6,6 +6,18 @@
 (describe
   "session commands"
   (it
+    "recognizes session path values by content"
+    (dolist (case (list (list nil nil)
+                        (list (concatenate 'string "  " (string #\Tab)) nil)
+                        (list "session.sexp" t)))
+      (destructuring-bind (path expected) case
+        (if expected
+            (expect (loom/feature/session::%session-path-present-p path)
+                    :to-be t)
+            (expect (loom/feature/session::%session-path-present-p path)
+                    :to-be-falsy)))))
+
+  (it
     "reject empty save and load paths through the minibuffer"
     (%with-minibuffer-state (minibuffer "")
       (save-session)

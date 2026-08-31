@@ -10,19 +10,23 @@
       (namestring (or (ignore-errors (truename path-object))
                       path-object)))))
 
+(defun %bounded-recent-files (path-string files limit)
+  "Return PATH-STRING followed by unique FILES, bounded by LIMIT."
+  (let ((unique-files (cons path-string
+                            (remove path-string files :test #'string=))))
+    (subseq unique-files
+            0
+            (min limit (length unique-files)))))
+
 (defun remember-recent-file (path)
   "Put PATH at the front of the editor's recent-file list."
   (let ((path-string (editor-path-string path)))
     (when (and *editor-state*
                path-string
                (plusp (length path-string)))
-      (let ((files (cons path-string
-                         (remove path-string
-                                 (editor-state-recent-files *editor-state*)
-                                 :test #'string=))))
-        (setf (editor-state-recent-files *editor-state*)
-              (subseq files
-                      0
-                      (min *editor-recent-file-limit*
-                           (length files))))))
+      (setf (editor-state-recent-files *editor-state*)
+            (%bounded-recent-files
+             path-string
+             (editor-state-recent-files *editor-state*)
+             *editor-recent-file-limit*)))
     path-string))
