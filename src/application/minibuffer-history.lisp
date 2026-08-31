@@ -6,33 +6,29 @@
 ;;;; interactive history navigation in src/application/minibuffer-input.lisp.
 (in-package #:loom)
 
-(defgeneric minibuffer-history-entries (minibuffer)
-  (:documentation
-   "Return MINIBUFFER's recalled input strings, newest first.
+(defun minibuffer-history-entries (minibuffer)
+  "Return MINIBUFFER's recalled input strings, newest first.
 
 The returned list is independent of the underlying CL-HISTORY-KIT store and
-can therefore be used as a serializable session value.")
-  (:method (minibuffer)
-    (let ((history (%minibuffer-history minibuffer)))
-      (if history
-          (history-kit:history-entry-texts
-           (history-kit:history-entries history))
-          nil))))
+can therefore be used as a serializable session value."
+  (let ((history (%minibuffer-history minibuffer)))
+    (if history
+        (history-kit:history-entry-texts
+         (history-kit:history-entries history))
+        nil)))
 
-(defgeneric minibuffer-set-history-entries (minibuffer entries)
-  (:documentation
-   "Replace MINIBUFFER's recalled input strings with ENTRIES.
+(defun minibuffer-set-history-entries (minibuffer entries)
+  "Replace MINIBUFFER's recalled input strings with ENTRIES.
 
 ENTRIES must be a list of strings in newest-first order. The underlying
 history object, when present, is cleared before the entries are installed.
-The minibuffer is returned.")
-  (:method (minibuffer entries)
-    (unless (and (listp entries) (every #'stringp entries))
-      (error "minibuffer history must be a proper list of strings: ~S"
-             entries))
-    (let ((history (%minibuffer-history minibuffer)))
-      (when history
-        (history-kit:history-clear history)
-        (dolist (entry (reverse entries))
-          (history-kit:history-add history entry))))
-    minibuffer))
+The minibuffer is returned."
+  (unless (and (listp entries) (every #'stringp entries))
+    (error "minibuffer history must be a proper list of strings: ~S"
+           entries))
+  (let ((history (%minibuffer-history minibuffer)))
+    (when history
+      (history-kit:history-clear history)
+      (dolist (entry (reverse entries))
+        (history-kit:history-add history entry))))
+  minibuffer)
