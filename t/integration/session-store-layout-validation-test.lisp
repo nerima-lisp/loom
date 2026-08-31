@@ -52,6 +52,18 @@
                 make-session-buffer-snapshot
                 (name session-buffer-snapshot-name)))))
   (it
+    "rejects malformed fixed-shape session plists"
+    (dolist (value
+              (list
+               nil
+               '(:name)
+               '(:name "buffer" 42 "path")
+               '(:name "buffer" :unexpected "path")
+               '(:name "buffer" :name "duplicate")))
+      (signals error
+               (loom/feature/session::%validate-session-plist
+                value '(:name :path) "test"))))
+  (it
     "rejects malformed layouts and selected window indexes"
     (let ((buffer (make-session-buffer-snapshot
                    :name "*layout*"
