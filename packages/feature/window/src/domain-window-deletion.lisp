@@ -35,34 +35,30 @@
                      (setf (second children) new-second))
                    (values node deleted-second)))))))))
 
-(defgeneric window-delete (tree window)
-  (:documentation
-   "Delete WINDOW from TREE when another window remains. Returns the
-selected window after the deletion; deleting the sole window is a no-op.")
-  (:method (tree window)
-    (let ((selected (window-tree-selected tree)))
-      (when (> (length (window-tree-windows tree)) 1)
-        (multiple-value-bind (new-root deleted)
-            (%window-delete-node (window-tree-root tree) window)
-          (when deleted
-            (setf (window-tree-root tree) new-root
-                  (window-tree-selected tree)
-                  (if (eq selected window)
-                      (%window-first-leaf new-root)
-                      selected))
-            (%window-layout (window-tree-root tree)
-                            0 0
-                            (window-tree-width tree)
-                            (window-tree-height tree)))))
-      (window-tree-selected tree))))
+(defun window-delete (tree window)
+  "Delete WINDOW from TREE when another window remains. Returns the
+selected window after the deletion; deleting the sole window is a no-op."
+  (let ((selected (window-tree-selected tree)))
+    (when (> (length (window-tree-windows tree)) 1)
+      (multiple-value-bind (new-root deleted)
+          (%window-delete-node (window-tree-root tree) window)
+        (when deleted
+          (setf (window-tree-root tree) new-root
+                (window-tree-selected tree)
+                (if (eq selected window)
+                    (%window-first-leaf new-root)
+                    selected))
+          (%window-layout (window-tree-root tree)
+                          0 0
+                          (window-tree-width tree)
+                          (window-tree-height tree)))))
+    (window-tree-selected tree)))
 
-(defgeneric window-delete-other-windows (tree window)
-  (:documentation
-   "Delete every window in TREE except WINDOW and return WINDOW.")
-  (:method (tree window)
-    (setf (window-tree-root tree) window
-          (window-tree-selected tree) window)
-    (%window-layout window 0 0
-                    (window-tree-width tree)
-                    (window-tree-height tree))
-    window))
+(defun window-delete-other-windows (tree window)
+  "Delete every window in TREE except WINDOW and return WINDOW."
+  (setf (window-tree-root tree) window
+        (window-tree-selected tree) window)
+  (%window-layout window 0 0
+                  (window-tree-width tree)
+                  (window-tree-height tree))
+  window)
