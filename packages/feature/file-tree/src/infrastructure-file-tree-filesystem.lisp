@@ -111,9 +111,8 @@ Signals an error if PATH does not exist. Returns TREE.")
     (%dispatch-native-path-operation
         (path)
         (%native-delete-path path)
-        (progn
-          ;; Not *LOOM-FILESYSTEM*: recursing over the boundary's list-directory
-          ;; would follow symlinks out of the tree. See this file's header
-          ;; comment.
-          (host-kit:delete-path path :recursive t :if-does-not-exist :error)))
+        ;; Not *LOOM-FILESYSTEM*: recursing over the boundary's list-directory
+        ;; would follow symlinks out of the tree. See this file's header
+        ;; comment.
+        (host-kit:delete-path path :recursive t :if-does-not-exist :error))
     tree))
