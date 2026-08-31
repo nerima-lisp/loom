@@ -38,9 +38,8 @@
         :recent-files (copy-list (editor-state-recent-files *editor-state*))
         :bookmarks (%session-bookmark-snapshots)
         :command-history
-        (if (editor-state-minibuffer *editor-state*)
-            (minibuffer-history-entries
-             (editor-state-minibuffer *editor-state*))
-            nil)
+        (and (editor-state-minibuffer *editor-state*)
+             (minibuffer-history-entries
+              (editor-state-minibuffer *editor-state*)))
         :workspaces workspaces
         :current-workspace-index current-index)))))
