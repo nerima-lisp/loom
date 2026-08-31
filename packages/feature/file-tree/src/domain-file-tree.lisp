@@ -50,39 +50,30 @@ usable in isolation, e.g. in domain-layer tests."
   selection
   (child-lister #'%default-child-lister))
 
-(defgeneric file-tree-install-child-lister (tree lister)
-  (:documentation
-   "Install LISTER as TREE's child-directory provider and return TREE.
-LISTER receives one pathname and returns the children for that directory.")
-  (:method (tree lister)
-    (setf (file-tree-child-lister tree) lister)
-    tree))
+(defun file-tree-install-child-lister (tree lister)
+  "Install LISTER as TREE's child-directory provider and return TREE.
+LISTER receives one pathname and returns the children for that directory."
+  (setf (file-tree-child-lister tree) lister)
+  tree)
 
-(defgeneric file-tree-prefetch-paths (tree)
-  (:documentation
-   "Return TREE's root and currently expanded directories for prefetching.")
-  (:method (tree)
-    (cons (file-tree-root-path tree)
-          (loop for path being the hash-keys of
-                  (file-tree-expanded tree)
-                collect path))))
+(defun file-tree-prefetch-paths (tree)
+  "Return TREE's root and currently expanded directories for prefetching."
+  (cons (file-tree-root-path tree)
+        (loop for path being the hash-keys of
+                (file-tree-expanded tree)
+              collect path)))
 
-(defgeneric make-file-tree (root-path)
-  (:documentation
-   "Create and return a new file tree rooted at ROOT-PATH. The tree is
+(defun make-file-tree (root-path)
+  "Create and return a new file tree rooted at ROOT-PATH. The tree is
 initially not visible (see FILE-TREE-VISIBLE-P) and every directory starts
-collapsed.")
-  (:method (root-path)
-    (%make-file-tree :root-path root-path)))
+collapsed."
+  (%make-file-tree :root-path root-path))
 
-(defgeneric file-tree-visible-p (tree)
-  (:documentation "Return true if TREE's sidebar is currently shown.")
-  (:method (tree)
-    (file-tree-shown tree)))
+(defun file-tree-visible-p (tree)
+  "Return true if TREE's sidebar is currently shown."
+  (file-tree-shown tree))
 
-(defgeneric file-tree-toggle (tree)
-  (:documentation
-   "Toggle whether TREE's sidebar is shown, flipping FILE-TREE-VISIBLE-P.
-Returns the new visibility state.")
-  (:method (tree)
-    (setf (file-tree-shown tree) (not (file-tree-shown tree)))))
+(defun file-tree-toggle (tree)
+  "Toggle whether TREE's sidebar is shown, flipping FILE-TREE-VISIBLE-P.
+Returns the new visibility state."
+  (setf (file-tree-shown tree) (not (file-tree-shown tree))))
