@@ -6,22 +6,22 @@
 (in-package #:loom/test)
 
 (defmacro %editor-state-accessor-contract-test ()
-  `(it "exposes every public editor-state slot accessor"
-      (let ((state (make-editor-state)))
-        (dolist (slot '(window-tree workspaces minibuffer keymap file-tree
-                        concurrent-runtime renderer buffers recent-files
-                        bookmarks kill-ring last-yank-ranges lsp-session
-                        registers keyboard-macro isearch auto-save-mode-p
-                        auto-save-buffers auto-save-last-run-at format-on-save-p
-                        format-command before-save-hooks after-save-hooks
-                        terminal-sessions prefix-argument))
-          (let ((accessor (intern (format nil "EDITOR-STATE-~A" slot)
-                                  (find-package :loom))))
-            (expect (fboundp accessor) :to-be-truthy)
-            (expect (handler-case
-                        (progn (funcall accessor state) t)
-                      (error () nil))
-                    :to-be-truthy))))))
+  (let ((state (gensym "STATE"))
+        (slot (gensym "SLOT"))
+        (accessor (gensym "ACCESSOR")))
+    `(it "exposes every public editor-state slot accessor"
+        (let ((,state (make-editor-state)))
+          (dolist (,slot '(window-tree workspaces minibuffer keymap file-tree
+                          concurrent-runtime renderer buffers recent-files
+                          bookmarks kill-ring last-yank-ranges lsp-session
+                          registers keyboard-macro isearch auto-save-mode-p
+                          auto-save-buffers auto-save-last-run-at format-on-save-p
+                          format-command before-save-hooks after-save-hooks
+                          terminal-sessions prefix-argument))
+            (let ((,accessor (intern (format nil "EDITOR-STATE-~A" ,slot)
+                                     (find-package :loom))))
+              (expect (fboundp ,accessor) :to-be-truthy)
+              (funcall ,accessor ,state)))))))
 
 (%editor-state-accessor-contract-test)
 
