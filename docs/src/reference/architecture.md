@@ -329,7 +329,8 @@ trampoline.
 
 The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
 `cl-host-kit`, `cl-history-kit`, `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`,
-`cl-boundary-kit`, `cl-json-kit`, `cl-concurrent-kit`, and `cl-vcs-kit`. The
+`cl-boundary-kit`, `cl-json-kit`, `cl-concurrent-kit`, `cl-log-kit`, and
+`cl-vcs-kit`. The
 test system adds `cl-weave`, `cl-date-kit`, `cl-codec-kit`, `cl-parser-kit`,
 `cl-regex-kit`, `cl-boundary-kit`, `cl-concurrent-kit`, `cl-process-kit`, and
 `cl-vcs-kit`; these are explicit because the tests exercise their public
