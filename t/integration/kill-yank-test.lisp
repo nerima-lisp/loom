@@ -3,6 +3,26 @@
 (describe
   "kill and yank commands"
   (it
+    "normalizes word-kill ranges and coalescing direction"
+    (flet ((forward (text offset)
+             (declare (ignore text))
+             (1+ offset))
+           (backward (text offset)
+             (declare (ignore text))
+             (1- offset)))
+      (multiple-value-bind (start end prepend)
+          (loom::%kill-word-range "ignored" 5 2 #'backward #'forward
+                                   :prepend-when-positive t)
+        (expect (list start end prepend) :to-equal '(3 5 t)))
+      (multiple-value-bind (start end prepend)
+          (loom::%kill-word-range "ignored" 5 -2 #'forward #'forward
+                                   :prepend-when-positive t)
+        (expect (list start end prepend) :to-equal '(5 7 nil)))
+      (multiple-value-bind (start end prepend)
+          (loom::%kill-word-range "ignored" 5 0 #'forward #'backward)
+        (expect (list start end prepend) :to-equal '(nil nil nil)))))
+
+  (it
     "kill-word removes the next word and adds it to the kill ring"
     (%expect-word-kill (loom::kill-word "one two" " two" '("one"))))
 
