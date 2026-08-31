@@ -2,6 +2,19 @@
 
 (describe
   "movement commands character motion"
+  (it-each
+      ((loom::define-current-line-boundary-command
+         (move-to-line-boundary (buffer-point-column buffer))
+       "Move to the current line boundary.")
+       (loom::define-buffer-boundary-command
+         (move-to-buffer-boundary (buffer-point-offset buffer))
+       "Move to the buffer boundary."))
+      "expands boundary command helpers into documented zero-argument functions"
+      (macro form documentation)
+    (let ((expansion (macroexpand-1 `(,macro ,@form ,documentation))))
+      (expect (first expansion) :to-be 'defun)
+      (expect (fourth expansion) :to-equal documentation)))
+
   (it
     "clamps forward-char at the end of the buffer"
     (let ((*editor-state* (%fresh-editor-state "hi")))
