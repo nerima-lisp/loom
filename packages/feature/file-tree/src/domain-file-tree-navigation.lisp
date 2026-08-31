@@ -51,23 +51,36 @@ reachable in TREE.")
   (:method (tree path)
     (%file-tree-find-kind tree path)))
 
+(defun %file-tree-next-selection (paths selected-path direction)
+  "Return the visible PATH selected after moving in DIRECTION.
+
+The calculation is independent of FILE-TREE state so callers can keep the
+selection mutation at the boundary and test navigation as a pure operation."
+  (let ((count (length paths)))
+    (if (zerop count)
+        nil
+        (let ((position (position selected-path paths :test #'equal)))
+          (cond
+            ((null position)
+             (if (eq direction :down) (first paths) (car (last paths))))
+            ((eq direction :down)
+             (nth (min (1- count) (1+ position)) paths))
+            ((eq direction :up)
+             (nth (max 0 (1- position)) paths))
+            (t
+             (error "unknown direction: ~A" direction)))))))
+
 (defgeneric file-tree-move-selection (tree direction)
   (:documentation
    "Move TREE's selection cursor by one visible entry (see
 FILE-TREE-ENTRIES) in DIRECTION, which is :UP or :DOWN. A no-op at either
 end of the visible entry list. Returns the newly selected path.")
   (:method (tree direction)
-    (let* ((paths (mapcar #'car (file-tree-entries tree)))
-           (n (length paths)))
+    (let ((paths (mapcar #'car (file-tree-entries tree))))
       (setf (file-tree-selection tree)
-            (if (zerop n)
-                nil
-                (let ((pos (position (file-tree-selection tree) paths :test #'equal)))
-                  (cond
-                    ((null pos) (if (eq direction :down) (first paths) (car (last paths))))
-                    ((eq direction :down) (nth (min (1- n) (1+ pos)) paths))
-                    ((eq direction :up) (nth (max 0 (1- pos)) paths))
-                    (t (error "unknown direction: ~A" direction)))))))))
+            (%file-tree-next-selection paths
+                                       (file-tree-selection tree)
+                                       direction)))))
 
 (defgeneric file-tree-toggle-expand (tree path)
   (:documentation

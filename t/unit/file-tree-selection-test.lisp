@@ -12,7 +12,34 @@
     (t nil)))
 
 (describe
-  "file-tree-move-selection"
+  "file-tree-next-selection"
+  (cl-weave:it-each
+      ((:down nil ("a" "b") "a")
+       (:up nil ("a" "b") "b")
+       (:down "a" ("a" "b") "b")
+       (:up "b" ("a" "b") "a")
+       (:down "b" ("a" "b") "b")
+       (:up "a" ("a" "b") "a"))
+      "moves from ~S in ~S through ~S"
+      (direction selected paths expected)
+    (expect (loom/feature/file-tree::%file-tree-next-selection
+             paths selected direction)
+            :to-equal expected))
+
+  (it
+    "returns nil for an empty visible path list"
+    (expect (loom/feature/file-tree::%file-tree-next-selection
+             nil nil :down)
+            :to-be nil))
+
+  (it
+    "rejects an unknown direction after a known selection"
+    (signals error
+      (loom/feature/file-tree::%file-tree-next-selection
+       '("a") "a" :sideways)))
+
+  (describe
+    "stateful selection"
   (it
     "walks forward through visible entries and stops at the last one"
     (let ((tree (make-file-tree "/root/")))
@@ -48,4 +75,4 @@
     "is a no-op on a tree with no visible entries"
     (let ((tree (make-file-tree "/nowhere/")))
       (loom/feature/file-tree:file-tree-install-child-lister tree #'%fake-lister)
-      (expect (file-tree-move-selection tree :down) :to-be-falsy))))
+      (expect (file-tree-move-selection tree :down) :to-be-falsy)))))
