@@ -133,3 +133,23 @@
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
                                      *standard-input*))))))))
+
+  (it
+    "continues after a timeout status and stops at end-of-input"
+    (let ((*editor-state* (%fresh-full-editor-state ""))
+          (statuses (list :timeout nil))
+          (turns 0))
+      (%with-stubbed-terminal-size (80 24)
+        (with-replaced-function
+            (loom::%read-and-dispatch-event-loop-input
+             (lambda (&rest arguments)
+               (declare (ignore arguments))
+               (incf turns)
+               (pop statuses)))
+          (with-replaced-function
+              (loom::%render-event-loop-frame
+               (lambda (&rest arguments)
+                 (declare (ignore arguments))))
+            (loom::%run-event-loop (make-string-output-stream)
+                                   (make-string-input-stream "")))))
+      (expect turns :to-be 2)))
