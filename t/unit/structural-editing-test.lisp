@@ -82,6 +82,36 @@
     (expect (%structural-result #'loom::%raise-edits "(a b" 1) :to-be nil)))
 
 (describe
+  "structural editing boundary predicates"
+  (it
+    "returns the enclosing list bounds"
+    (multiple-value-bind (open close)
+        (loom::%structural-list-bounds "(a)"
+                                        (loom::%sexp-syntax-classes "(a)")
+                                        1)
+      (expect open :to-equal 0)
+      (expect close :to-equal 2)))
+
+  (it
+    "declines bounds outside a closed list"
+    (multiple-value-bind (open close)
+        (loom::%structural-list-bounds "(a"
+                                        (loom::%sexp-syntax-classes "(a")
+                                        1)
+      (expect open :to-be nil)
+      (expect close :to-be nil)))
+
+  (it-each
+      (("a b" 0 t)
+       (" a" 0 nil)
+       ("a)" 1 nil)
+       ("a" 1 nil))
+      "requires a separator for ~S at ~D"
+      (text offset expected)
+    (expect (loom::%structural-separator-needed-p text offset)
+            :to-equal expected)))
+
+(describe
   "%structural-adjusted-offset"
   (it
     "moves an offset past an insertion before it and not past one after it"
