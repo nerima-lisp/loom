@@ -51,6 +51,9 @@ and `C-u`, `M-0` … `M-9`, and `M--` apply numeric prefixes to the next command
 
 ## Build from source
 
-loom builds with [SBCL](http://www.sbcl.org/) and ASDF. The supported path is
-Nix. See the [development guide](project/development.md) for source builds,
-the test suite, PTY checks, coverage, and the REPL workflow.
+loom builds with [SBCL](http://www.sbcl.org/) and ASDF. SBCL is the supported
+implementation: the executable image uses SBCL's native command-line and image
+dumping interfaces, while the editor logic remains testable independently of
+that binary entry point. The supported build path is Nix. See the
+[development guide](project/development.md) for source builds, the test suite,
+PTY checks, coverage, and the REPL workflow.
