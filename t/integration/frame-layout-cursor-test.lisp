@@ -75,6 +75,21 @@
       (loom::%layout-keep-point-visible (editor-state-renderer state) window)
       (expect (window-scroll-column window) :to-equal 3)))
 
+  (it
+    "does nothing for a zero-width wrapped window"
+    (let* ((state (%fresh-layout-state :content "abcdefghijkl"
+                                       :width 20
+                                       :height 4))
+           (window (%layout-window state)))
+      (buffer-set-truncate-lines (window-buffer window) nil)
+      (setf (loom/feature/window::window-leaf-width window) 0
+            (window-scroll-line window) 2
+            (window-scroll-sub-row window) 1)
+      (buffer-set-point (window-buffer window) 0 10)
+      (loom::%layout-keep-point-visible (editor-state-renderer state) window)
+      (expect (window-scroll-line window) :to-equal 2)
+      (expect (window-scroll-sub-row window) :to-equal 1)))
+
   (it-each
       ((0 25 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
        (0 19 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
