@@ -4,6 +4,41 @@
 (in-package #:loom/test)
 
 (describe "workspace manager"
+  (it "generates the first available workspace name"
+    (let ((manager (make-workspace-manager
+                    (make-window-tree :scratch 80 24))))
+      (workspace-manager-create manager (make-window-tree :second 80 24)
+                                :name "workspace-2")
+      (workspace-manager-create manager (make-window-tree :fourth 80 24)
+                                :name "workspace-4")
+      (expect (workspace-manager-create
+               manager
+               (make-window-tree :third 80 24))
+              :to-be
+              (fourth (workspace-manager-workspaces manager)))
+      (expect (workspace-manager-current-name manager) :to-equal "main")
+      (expect (workspace-name
+               (fourth (workspace-manager-workspaces manager)))
+              :to-equal
+              "workspace-3")))
+
+  (it-each
+      ((:non-workspace 42)
+       (:empty-list nil)
+       (:out-of-range 1))
+      "rejects invalid manager input: ~A" (name invalid-input)
+    (signals error
+      (ecase name
+        (:non-workspace
+         (make-workspace-manager-from-workspaces
+          (list invalid-input)))
+        (:empty-list
+         (make-workspace-manager-from-workspaces invalid-input))
+        (:out-of-range
+         (make-workspace-manager-from-workspaces
+          (list (make-workspace :name "main"))
+          :current-index invalid-input)))))
+
   (it "starts with one named workspace over the initial window tree"
     (let* ((tree (make-window-tree :scratch 80 24))
            (manager (make-workspace-manager tree :name "main")))
