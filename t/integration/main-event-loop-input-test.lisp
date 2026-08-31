@@ -109,6 +109,28 @@
                   :to-be nil)))))
 
   (it
+    "returns timeout when no editor input is ready"
+    (let ((buffer (make-array 16 :element-type '(unsigned-byte 8)))
+          (decoder :decoder)
+          (keymap-state :keymap))
+      (with-replaced-function
+          (loom::%wait-for-editor-input
+           (lambda (stream)
+             (declare (ignore stream))
+             nil))
+        (with-replaced-function
+            (loom::%read-input-octets
+             (lambda (&rest arguments)
+               (declare (ignore arguments))
+               (error "input should not be read after a timeout")))
+          (expect (loom::%read-and-dispatch-event-loop-input
+                   (make-string-input-stream "")
+                   buffer
+                   decoder
+                   keymap-state)
+                  :to-be :timeout)))))
+
+  (it
     "self-inserts decoded input and exits cleanly at end-of-file"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "input.bin" dir)))
