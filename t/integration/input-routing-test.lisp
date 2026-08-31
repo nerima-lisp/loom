@@ -104,3 +104,22 @@
           (expect (loom::input-routing-decision-terminal-event-p decision)
                   :to-be nil)
           (expect (loom::input-routing-decision-command decision) :to-be nil))))))
+
+(describe
+  "%dispatch-key-event-action terminal routing"
+  (it
+    "passes classified terminal input to the terminal handler"
+    (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
+           (event (cl-tty-kit:make-key-event :type :character :code #\a))
+           (decision (loom::%make-input-routing-decision
+                      :minibuffer (editor-state-minibuffer *editor-state*)
+                      :terminal-event-p t))
+           (received nil))
+      (with-replaced-function
+          (loom/feature/terminal:terminal-handle-key-event
+            (lambda (candidate)
+              (setf received candidate)))
+        (expect (loom::%dispatch-key-event-action
+                 event (make-keymap-state (make-keymap)) decision)
+                :to-equal :handled))
+      (expect received :to-be event))))
