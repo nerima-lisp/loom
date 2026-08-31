@@ -21,8 +21,8 @@
   (let ((buffer (%selected-buffer)))
     (multiple-value-bind (ring start ranges index repeat-count)
         (%yank-pop-context buffer)
-      (if (not ring)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         "Previous command was not a yank")
-        (%perform-yank-pop buffer ring start ranges index repeat-count)))))
+      (if ring
+          (%perform-yank-pop buffer ring start ranges index repeat-count)
+          (minibuffer-message
+           (editor-state-minibuffer *editor-state*)
+           "Previous command was not a yank")))))
