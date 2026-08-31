@@ -144,6 +144,21 @@
 (describe
   "completion popup keys"
   (it
+    "reports no active popup before completion starts"
+    (%with-lsp-navigation (transport session buffer :content "foo")
+      (expect (loom::%completion-popup-active-p) :to-be nil)
+      (expect (loom::%completion-popup-handle-key (%char-key #\x))
+              :to-be nil)))
+
+  (it
+    "ignores popup input when there is no editor state"
+    (let ((loom::*editor-state* nil))
+      (expect (loom::%completion-popup-active-p) :to-be nil)
+      (expect (loom::%completion-popup-dismiss) :to-be nil)
+      (expect (loom::%completion-popup-handle-key (%char-key #\x))
+              :to-be nil)))
+
+  (it
     "lets the active popup consume a key before ordinary dispatch"
     (%with-lsp-navigation (transport session buffer :content "foo")
       (buffer-set-point buffer 0 3)
