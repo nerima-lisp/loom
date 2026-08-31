@@ -69,7 +69,11 @@
 
   (it
     "treats a non-array CompletionList items value as empty"
-    (expect (%decode-completion "{\"items\":1}") :to-equal nil)))
+    (expect (%decode-completion "{\"items\":1}") :to-equal nil))
+
+  (it
+    "treats an unsupported completion result shape as empty"
+    (expect (%decode-completion "42") :to-equal nil)))
 
 (describe
   "definition response decoding"
@@ -117,6 +121,14 @@
       (expect (length locations) :to-equal 1)
       (expect (lsp-location-uri (first locations))
               :to-equal "file:///tmp/a")))
+
+  (it
+    "treats a malformed single Location as no definition"
+    (expect (%decode-definition "{\"range\":{}}") :to-equal nil))
+
+  (it
+    "treats an unsupported definition result shape as empty"
+    (expect (%decode-definition "42") :to-equal nil))
 
   (it
     "treats null as no definition"
