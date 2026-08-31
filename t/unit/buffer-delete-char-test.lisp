@@ -49,4 +49,24 @@
       (buffer-set-point buffer 0 5)
       (buffer-delete-char buffer)
       (expect (buffer-line buffer 0) :to-equal "hello")
+      (expect (buffer-modified-p buffer) :to-be-falsy)))
+
+  (it
+    "does not delete backward past the start of a narrowed buffer"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 8)
+      (buffer-set-point buffer 0 2)
+      (buffer-delete-char buffer :backward t)
+      (expect (buffer-text buffer) :to-equal "0123456789")
+      (expect buffer :to-have-point (cons 0 2))
+      (expect (buffer-modified-p buffer) :to-be-falsy)))
+
+  (it
+    "does not delete forward past the end of a narrowed buffer"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-narrow-to-region buffer 0 2 0 8)
+      (buffer-set-point buffer 0 8)
+      (buffer-delete-char buffer)
+      (expect (buffer-text buffer) :to-equal "0123456789")
+      (expect buffer :to-have-point (cons 0 8))
       (expect (buffer-modified-p buffer) :to-be-falsy))))
