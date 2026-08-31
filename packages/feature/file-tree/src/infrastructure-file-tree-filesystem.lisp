@@ -37,50 +37,44 @@
 ;;; next frame's presentation/layout.lisp redraw -- already reflects whatever
 ;;; these methods just did to disk.
 
-(defgeneric file-tree-create-file (tree path)
-  (:documentation
-   "Create a new, empty regular file on disk at PATH (via *LOOM-FILESYSTEM*).
-Signals an error if PATH already exists. Returns PATH.")
-  (:method (tree path)
-    (declare (ignorable tree))
-    (%dispatch-native-path-operation
-        (path)
-        (%native-create-file path)
-        (cl-boundary-kit:filesystem-store-file *loom-filesystem* path ""
-                                               :if-exists :error))
-    path))
+(defun file-tree-create-file (tree path)
+  "Create a new, empty regular file on disk at PATH (via *LOOM-FILESYSTEM*).
+Signals an error if PATH already exists. Returns PATH."
+  (declare (ignorable tree))
+  (%dispatch-native-path-operation
+      (path)
+      (%native-create-file path)
+      (cl-boundary-kit:filesystem-store-file *loom-filesystem* path ""
+                                             :if-exists :error))
+  path)
 
-(defgeneric file-tree-create-directory (tree path)
-  (:documentation
-   "Create a new, empty directory on disk at PATH (via *LOOM-FILESYSTEM*). Signals
-an error if PATH already exists. Returns PATH.")
-  (:method (tree path)
-    (declare (ignorable tree))
-    (%dispatch-native-path-operation
-        (path)
-        (progn
-          (when (%native-path-exists-p path)
-            (error "file-tree-create-directory: ~A already exists" path))
-          (%native-make-directory path))
-        (progn
-          ;; CL-BOUNDARY-KIT:FILESYSTEM-MAKE-DIRECTORY is ENSURE-DIRECTORIES-EXIST
-          ;; underneath, so it succeeds silently on an already-existing
-          ;; directory rather than signalling. The "already exists" half of
-          ;; this generic's contract therefore has to be checked here.
-          (when (cl-boundary-kit:filesystem-directory-exists-p
-                  *loom-filesystem* path)
-            (error "file-tree-create-directory: ~A already exists" path))
-          (cl-boundary-kit:filesystem-make-directory *loom-filesystem* path)))
-    path))
+(defun file-tree-create-directory (tree path)
+  "Create a new, empty directory on disk at PATH (via *LOOM-FILESYSTEM*). Signals
+an error if PATH already exists. Returns PATH."
+  (declare (ignorable tree))
+  (%dispatch-native-path-operation
+      (path)
+      (progn
+        (when (%native-path-exists-p path)
+          (error "file-tree-create-directory: ~A already exists" path))
+        (%native-make-directory path))
+      (progn
+        ;; CL-BOUNDARY-KIT:FILESYSTEM-MAKE-DIRECTORY is ENSURE-DIRECTORIES-EXIST
+        ;; underneath, so it succeeds silently on an already-existing
+        ;; directory rather than signalling. The "already exists" half of
+        ;; this generic's contract therefore has to be checked here.
+        (when (cl-boundary-kit:filesystem-directory-exists-p
+                *loom-filesystem* path)
+          (error "file-tree-create-directory: ~A already exists" path))
+        (cl-boundary-kit:filesystem-make-directory *loom-filesystem* path)))
+  path)
 
-(defgeneric file-tree-rename (tree old-path new-path)
-  (:documentation
-   "Move/rename the file or directory at OLD-PATH to NEW-PATH on disk (via
+(defun file-tree-rename (tree old-path new-path)
+  "Move/rename the file or directory at OLD-PATH to NEW-PATH on disk (via
 *LOOM-FILESYSTEM*). Signals an error if OLD-PATH does not exist or
-NEW-PATH already does. Returns NEW-PATH.")
-  (:method (tree old-path new-path)
-    (declare (ignorable tree))
-    (%dispatch-native-path-operation
+NEW-PATH already does. Returns NEW-PATH."
+  (declare (ignorable tree))
+  (%dispatch-native-path-operation
         (old-path new-path)
         (progn
           (unless (%native-path-exists-p old-path)
@@ -101,18 +95,16 @@ NEW-PATH already does. Returns NEW-PATH.")
             (error "file-tree-rename: ~A already exists" new-path))
           (cl-boundary-kit:filesystem-rename-file
            *loom-filesystem* old-path new-path)))
-    new-path))
+  new-path)
 
-(defgeneric file-tree-delete (tree path)
-  (:documentation
-   "Delete the file or directory at PATH from disk (via CL-HOST-KIT).
-Signals an error if PATH does not exist. Returns TREE.")
-  (:method (tree path)
-    (%dispatch-native-path-operation
+(defun file-tree-delete (tree path)
+  "Delete the file or directory at PATH from disk (via CL-HOST-KIT).
+Signals an error if PATH does not exist. Returns TREE."
+  (%dispatch-native-path-operation
         (path)
         (%native-delete-path path)
         ;; Not *LOOM-FILESYSTEM*: recursing over the boundary's list-directory
         ;; would follow symlinks out of the tree. See this file's header
         ;; comment.
         (host-kit:delete-path path :recursive t :if-does-not-exist :error))
-    tree))
+  tree)
