@@ -37,9 +37,8 @@
                     :path path
                     :original original
                     :add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0)
-                    :pieces (if (plusp (length original))
-                                (list (%make-piece :source :original :start 0 :length (length original)))
-                                nil)
+                    :pieces (when (plusp (length original))
+                              (list (%make-piece :source :original :start 0 :length (length original))))
                     :narrow-start-offset 0
                     :narrow-end-offset (length original)
                     :point-line 0
