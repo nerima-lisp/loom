@@ -106,9 +106,3 @@
         (end (%position-to-offset buffer end-line end-column)))
     (when (< start end)
       (%splice-delete-range buffer start end))))
-
-(defun %extract-region (buffer start-line start-column end-line end-column)
-  "Return, without mutating BUFFER, the text between the two positions."
-  (%piece-table-range-text buffer
-                           (%position-to-offset buffer start-line start-column)
-                           (%position-to-offset buffer end-line end-column)))
