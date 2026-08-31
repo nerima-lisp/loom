@@ -53,6 +53,25 @@
 (describe
   "LSP completion at point"
   (it
+    "reports the missing session without sending a request"
+    (let ((*editor-state* (%lsp-navigation-state)))
+      (loom/feature/lsp:lsp-completion-at-point)
+      (expect (minibuffer-message-string
+               (editor-state-minibuffer *editor-state*))
+              :to-equal "No LSP session for this buffer")))
+
+  (it
+    "reports the missing file path without sending a request"
+    (%with-lsp-navigation (transport session buffer)
+      (setf (loom::%buffer-path buffer) nil)
+      (let ((before (length (%fake-sent-in-order transport))))
+        (loom/feature/lsp:lsp-completion-at-point)
+        (expect (minibuffer-message-string
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal "No LSP session for this buffer")
+        (expect (length (%fake-sent-in-order transport)) :to-equal before))))
+
+  (it
     "says so and sends nothing when the server does not provide completion"
     (%with-lsp-navigation (transport session buffer :capabilities "{}")
       (let ((before (length (%fake-sent-in-order transport))))
