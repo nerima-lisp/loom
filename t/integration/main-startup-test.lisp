@@ -2,6 +2,21 @@
 (in-package #:loom/test)
 
 (describe
+  "%main-exit-code"
+  (it
+    "passes the argument vector to the CLI application and returns its exit code"
+    (let ((received-argv nil)
+          (argv (list "loom" "--version")))
+      (with-replaced-function
+          (cl-cli:run-app
+           (lambda (app &key argv)
+             (expect app :to-equal loom::*loom-app*)
+             (setf received-argv argv)
+             7))
+        (expect (loom::%main-exit-code argv) :to-equal 7))
+      (expect received-argv :to-equal argv))))
+
+(describe
   "%startup-file-and-root"
   (it
     "returns the resolved file and its containing directory as file-tree root for an existing file"
