@@ -59,31 +59,38 @@ its own entry behind to be delivered a second time."
                (json-kit:make-json-object
                 (list (cons "line" line) (cons "character" character)))))))
 
-(defun lsp-request-completion (session uri line character handler)
+(defmacro define-lsp-position-request (name documentation capability method parser)
+  "Define a position request whose reply is decoded before HANDLER runs.
+
+The generated command is intentionally a thin declaration: transport and
+pending-request bookkeeping stay in %LSP-REQUEST, while PARSER owns the wire
+shape of the result."
+  `(defun ,name (session uri line character handler)
+     ,documentation
+     (when (lsp-session-capability session ,capability)
+       (%lsp-request session ,method
+                     (%lsp-text-document-position-params uri line character)
+                     (lambda (result error-message)
+                       (funcall handler
+                                (and (null error-message)
+                                     (,parser result))
+                                error-message))))))
+
+(define-lsp-position-request lsp-request-completion
   "Ask SESSION for completions at LINE/CHARACTER in URI.
 
 Returns NIL without sending anything when the server never advertised
 completionProvider, which is what lets a caller say so instead of waiting for a
 reply that is not coming."
-  (when (lsp-session-capability session "completionProvider")
-    (%lsp-request session "textDocument/completion"
-                  (%lsp-text-document-position-params uri line character)
-                  (lambda (result error-message)
-                    (funcall handler
-                             (and (null error-message)
-                                  (%lsp-parse-completion-result result))
-                             error-message)))))
+  "completionProvider"
+  "textDocument/completion"
+  %lsp-parse-completion-result)
 
-(defun lsp-request-definition (session uri line character handler)
+(define-lsp-position-request lsp-request-definition
   "Ask SESSION for the definition at LINE/CHARACTER in URI.
 
 Returns NIL without sending anything when the server never advertised
 definitionProvider."
-  (when (lsp-session-capability session "definitionProvider")
-    (%lsp-request session "textDocument/definition"
-                  (%lsp-text-document-position-params uri line character)
-                  (lambda (result error-message)
-                    (funcall handler
-                             (and (null error-message)
-                                  (%lsp-parse-definition-result result))
-                             error-message)))))
+  "definitionProvider"
+  "textDocument/definition"
+  %lsp-parse-definition-result)
