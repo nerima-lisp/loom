@@ -11,14 +11,12 @@
       2
       1))
 
-(defgeneric loom-renderer-string-width (renderer string)
-  (:documentation
-   "Return STRING's width in the screen-cell coordinates of RENDERER.")
-  (:method ((renderer loom-renderer) string)
-    (declare (ignore renderer))
-    (check-type string string)
-    (loop for character across string
-          sum (%loom-renderer-character-advance character))))
+(defun loom-renderer-string-width (renderer string)
+  "Return STRING's width in the screen-cell coordinates of RENDERER."
+  (declare (ignore renderer))
+  (check-type string string)
+  (loop for character across string
+        sum (%loom-renderer-character-advance character)))
 
 (defgeneric loom-renderer-wrap-segments (renderer string width)
   (:documentation
