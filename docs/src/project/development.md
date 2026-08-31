@@ -17,8 +17,9 @@ feature packages; see the
 [architecture](../reference/architecture.md) page for the composition
 boundaries.
 
-Nix pins the library revisions in `flake.lock`, while `loom.asd` remains
-versionless. When upgrading a library, inspect its ASDF `:depends-on` list and
+Nix pins the library revisions in `flake.lock`, while `loom.asd` declares the
+package version consumed by ASDF and the executable. When upgrading a library,
+inspect its ASDF `:depends-on` list and
 keep the corresponding sibling inputs explicit in `flake.nix`; this keeps the
 development shell, package build, and test system on the same dependency
 graph.
