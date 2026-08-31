@@ -90,6 +90,17 @@
       (expect (window-scroll-line window) :to-equal 2)
       (expect (window-scroll-sub-row window) :to-equal 1)))
 
+  (it
+    "scrolls a wrapped window upward within the same logical line"
+    (let* ((state (%fresh-wrapping-state :content "abcdefghijkl" :width 5 :height 4))
+           (window (%layout-window state)))
+      (setf (window-scroll-line window) 0
+            (window-scroll-sub-row window) 2)
+      (buffer-set-point (window-buffer window) 0 1)
+      (loom::%layout-keep-point-visible (editor-state-renderer state) window)
+      (expect (window-scroll-line window) :to-equal 0)
+      (expect (window-scroll-sub-row window) :to-equal 0)))
+
   (it-each
       ((0 25 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
        (0 19 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
