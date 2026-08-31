@@ -45,5 +45,10 @@ exit status for the CLI boundary."
           (%run-event-loop stream *standard-input*))
         0)
     (error (condition)
-      (format *error-output* "~&loom: ~A~%" condition)
+      (let ((logger (log-kit:make-logger
+                     :name "loom"
+                     :handler (log-kit:make-text-handler :stream *error-output*)
+                     :level log-kit:+level-error+)))
+        (log-kit:log-error logger (format nil "~A" condition)
+                           :condition-type (type-of condition)))
       1)))
