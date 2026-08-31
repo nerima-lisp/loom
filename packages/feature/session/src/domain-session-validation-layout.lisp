@@ -47,7 +47,7 @@
 (defun %validate-session-workspaces (snapshot buffer-count)
   "Validate workspace views and the active workspace index."
   (let ((workspaces (session-snapshot-workspaces snapshot)))
-    (unless (and (listp workspaces) (plusp (length workspaces)))
+    (unless (consp workspaces)
       (error "validate-session-snapshot: workspaces must be a non-empty list"))
     (dolist (workspace workspaces)
       (%validate-session-workspace workspace buffer-count))
