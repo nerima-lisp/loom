@@ -5,6 +5,44 @@
 
 (describe
   "terminal sessions"
+  (it-each
+      ((nil "*Loom-Terminal*")
+       (("*Loom-Terminal*") "*Loom-Terminal<2>*")
+       (("*Loom-Terminal*" "*Loom-Terminal<2>*") "*Loom-Terminal<3>*"))
+      "selects the first available terminal name from ~S"
+      (buffer-names expected)
+    (let ((state (%fresh-editor-state "")))
+      (setf (editor-state-buffers state)
+            (mapcar (lambda (name) (make-buffer :name name)) buffer-names))
+      (expect (loom/feature/terminal::%terminal-buffer-name state)
+              :to-equal
+              expected)))
+
+  (it "uses the current directory when no buffer path is available"
+    (expect (loom/feature/terminal::%terminal-directory-for-buffer nil)
+            :to-equal
+            (uiop:getcwd)))
+
+  (it-each
+      (("/tmp/loom/example.txt" "/tmp/loom/"))
+      "resolves a terminal directory from ~S"
+      (path expected)
+    (expect (loom/feature/terminal::%terminal-directory-for-buffer
+             (make-buffer :path path))
+            :to-equal
+            expected))
+
+  (it "returns the selected buffer only when an editor window tree exists"
+    (expect (loom/feature/terminal::%terminal-selected-buffer nil)
+            :to-be
+            nil)
+    (let ((state (%fresh-editor-state "")))
+      (expect (loom/feature/terminal::%terminal-selected-buffer state)
+              :to-be
+              (window-buffer
+               (window-tree-selected-window
+                (editor-state-window-tree state))))))
+
   (it "removes ANSI styling from the stored terminal transcript"
     (let ((session
             (loom/feature/terminal::%make-terminal-session
