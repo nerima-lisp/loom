@@ -221,7 +221,7 @@
     (%with-minibuffer-state (minibuffer "text")
       (let ((state *editor-state*)
             (buffer (%selected-test-buffer)))
-        (set-format-command "printf error >&2; exit 7" state)
+        (set-format-command "cat >/dev/null; printf error >&2; exit 7" state)
         (format-on-save-mode t state)
         (expect (format-before-save buffer state) :to-be buffer)
         (expect (buffer-text buffer) :to-equal "text")
