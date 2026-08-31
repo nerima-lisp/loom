@@ -5,15 +5,13 @@
 ;;;; domain-window.lisp and the mutating operations in domain-window-operations.lisp.
 (in-package #:loom/feature/window)
 
-(defgeneric window-tree-layout (tree)
-  (:documentation
-   "Return TREE's nested layout description.
+(defun window-tree-layout (tree)
+  "Return TREE's nested layout description.
 
 The description is a list of (:LEAF BUFFER SCROLL-LINE) or
 (:SPLIT DIRECTION CHILD-1 CHILD-2) forms. It contains domain values only;
-callers that persist it should replace BUFFER objects with stable identifiers.")
-  (:method (tree)
-    (labels ((describe-node (node)
+callers that persist it should replace BUFFER objects with stable identifiers."
+  (labels ((describe-node (node)
                (if (window-leaf-p node)
                    (list :leaf
                          (window-leaf-buffer node)
@@ -24,7 +22,7 @@ callers that persist it should replace BUFFER objects with stable identifiers.")
                           (first (window-split-node-children node)))
                          (describe-node
                           (second (window-split-node-children node)))))))
-      (describe-node (window-tree-root tree)))))
+    (describe-node (window-tree-root tree))))
 
 (defun %make-window-node-from-layout (layout)
   "Build a window node from WINDOW-TREE-LAYOUT's public description."
@@ -49,15 +47,13 @@ callers that persist it should replace BUFFER objects with stable identifiers.")
     (otherwise
      (error "make-window-tree-from-layout: unknown node ~S" (first layout)))))
 
-(defgeneric make-window-tree-from-layout (layout width height &key selected-index)
-  (:documentation
-   "Create a window tree from a nested layout description.
+(defun make-window-tree-from-layout (layout width height &key (selected-index 0))
+  "Create a window tree from a nested layout description.
 
 LAYOUT uses (:LEAF BUFFER SCROLL-LINE) and (:SPLIT DIRECTION CHILD-1
 CHILD-2). SELECTED-INDEX selects a leaf in depth-first order and defaults to
-zero. The input tree is fully built before the returned tree is laid out.")
-  (:method (layout width height &key (selected-index 0))
-    (let* ((root (%make-window-node-from-layout layout))
+zero. The input tree is fully built before the returned tree is laid out."
+  (let* ((root (%make-window-node-from-layout layout))
            (windows (%window-collect-leaves root)))
       (unless (and (integerp selected-index)
                    (<= 0 selected-index)
@@ -69,22 +65,18 @@ zero. The input tree is fully built before the returned tree is laid out.")
                                      :width width
                                      :height height)))
         (%window-layout root 0 0 width height)
-        tree))))
-
-(defgeneric window-tree-selected-index (tree)
-  (:documentation
-   "Return the zero-based depth-first index of TREE's selected window.")
-  (:method (tree)
-    (or (position (window-tree-selected tree)
-                  (window-tree-windows tree))
-        (error "window-tree-selected-index: selected window is not in tree"))))
-
-(defgeneric window-tree-select-index (tree index)
-  (:documentation
-   "Select the zero-based depth-first window INDEX in TREE and return TREE.")
-  (:method (tree index)
-    (let ((window (nth index (window-tree-windows tree))))
-      (unless window
-        (error "window-tree-select-index: index ~S out of range" index))
-      (setf (window-tree-selected tree) window)
       tree)))
+
+(defun window-tree-selected-index (tree)
+  "Return the zero-based depth-first index of TREE's selected window."
+  (or (position (window-tree-selected tree)
+                (window-tree-windows tree))
+      (error "window-tree-selected-index: selected window is not in tree")))
+
+(defun window-tree-select-index (tree index)
+  "Select the zero-based depth-first window INDEX in TREE and return TREE."
+  (let ((window (nth index (window-tree-windows tree))))
+    (unless window
+      (error "window-tree-select-index: index ~S out of range" index))
+    (setf (window-tree-selected tree) window)
+    tree))
