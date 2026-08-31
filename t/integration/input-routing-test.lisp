@@ -72,3 +72,35 @@
       (loom::%dispatch-key-event (cl-tty-kit:make-key-event :type :character :code #\a) keymap-state)
       (loom::%dispatch-key-event (cl-tty-kit:make-key-event :type :special :code :enter) keymap-state)
       (expect confirmed :to-equal "a"))))
+
+(describe
+  "%classify-key-event terminal routing"
+  (it
+    "marks an unbound terminal event as terminal input"
+    (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
+           (keymap-state (make-keymap-state (make-keymap)))
+           (event (cl-tty-kit:make-key-event :type :character :code #\a)))
+      (with-replaced-function
+          (loom/feature/terminal:terminal-input-event-p (lambda (candidate)
+                                                           (declare (ignore candidate))
+                                                           t))
+        (let ((decision (loom::%classify-key-event event keymap-state)))
+          (expect (loom::input-routing-decision-terminal-event-p decision)
+                  :to-be t)
+          (expect (loom::input-routing-decision-self-insert-event-p decision)
+                  :to-be nil)))))
+
+  (it
+    "does not route terminal input while a key sequence is pending"
+    (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
+           (keymap-state (make-keymap-state (make-keymap)))
+           (event (cl-tty-kit:make-key-event :type :character :code #\a)))
+      (setf (loom::keymap-state-sequence keymap-state) '((:control . #\x)))
+      (with-replaced-function
+          (loom/feature/terminal:terminal-input-event-p (lambda (candidate)
+                                                           (declare (ignore candidate))
+                                                           t))
+        (let ((decision (loom::%classify-key-event event keymap-state)))
+          (expect (loom::input-routing-decision-terminal-event-p decision)
+                  :to-be nil)
+          (expect (loom::input-routing-decision-command decision) :to-be nil))))))
