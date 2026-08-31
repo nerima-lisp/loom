@@ -87,6 +87,28 @@
 (describe
   "%run-event-loop input"
   (it
+    "returns no status when an input wait succeeds but reaches EOF"
+    (let ((buffer (make-array 16 :element-type '(unsigned-byte 8)))
+          (decoder :decoder)
+          (keymap-state :keymap))
+      (with-replaced-function
+          (loom::%wait-for-editor-input
+           (lambda (stream)
+             (declare (ignore stream))
+             t))
+        (with-replaced-function
+            (loom::%read-input-octets
+             (lambda (target stream)
+               (declare (ignore target stream))
+               nil))
+          (expect (loom::%read-and-dispatch-event-loop-input
+                   (make-string-input-stream "")
+                   buffer
+                   decoder
+                   keymap-state)
+                  :to-be nil)))))
+
+  (it
     "self-inserts decoded input and exits cleanly at end-of-file"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "input.bin" dir)))
