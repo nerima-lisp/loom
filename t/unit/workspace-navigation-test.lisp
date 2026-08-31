@@ -43,6 +43,14 @@
       (expect (workspace-manager-previous manager) :to-be created)
       (expect (workspace-manager-current-name manager) :to-equal "workspace-2")))
 
+  (it "skips generated workspace names that are already present"
+    (let ((manager (make-workspace-manager (make-window-tree :first 80 24))))
+      (workspace-manager-create manager (make-window-tree :second 80 24)
+                                :name "workspace-2")
+      (let ((created (workspace-manager-create
+                      manager (make-window-tree :third 80 24))))
+        (expect (workspace-name created) :to-equal "workspace-3"))))
+
   (it "keeps the nearest workspace active after deletion"
     (let* ((manager (make-workspace-manager (make-window-tree :first 80 24)))
            (second (workspace-manager-create
