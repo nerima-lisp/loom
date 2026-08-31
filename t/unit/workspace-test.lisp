@@ -52,6 +52,22 @@
               tree)
       (expect (workspace-manager-workspaces manager) :to-have-length 1)))
 
+  (it "returns nil when switching to an unknown workspace name"
+    (let ((manager (make-workspace-manager
+                    (make-window-tree :scratch 80 24))))
+      (expect (workspace-manager-switch-name manager "missing")
+              :to-be nil)
+      (expect (workspace-manager-current-name manager) :to-equal "main")))
+
+  (it-each
+      ((:negative -1)
+       (:too-large 1))
+      "rejects an out-of-range workspace index: ~A" (name index)
+    (let ((manager (make-workspace-manager
+                    (make-window-tree :scratch 80 24))))
+      (signals error
+        (workspace-manager-switch-index manager index))))
+
   (it "deletes the active workspace but preserves the final one"
     (let* ((manager (make-workspace-manager
                      (make-window-tree :first 80 24)))
