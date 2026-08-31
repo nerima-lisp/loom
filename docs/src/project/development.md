@@ -39,6 +39,25 @@ ASDF edges explicit when rearranging implementation dependencies; tests should
 not become loadable only because an unrelated production dependency currently
 re-exports them.
 
+## Common Lisp authoring policy
+
+Use `defmacro` for repetitive declarations whose variation is known at
+compile time: command families, command-spec catalogs, codecs, and other
+small declarative tables are generated from one readable source form. Keep
+runtime state transitions and domain calculations as ordinary functions so
+they remain directly callable, testable, and independent of macro expansion.
+Do not introduce an adapter merely to rename or forward an operation already
+provided by a `nerima-lisp` package; depend on that package at the owning
+boundary instead.
+
+Property and fuzz tests use `cl-weave` generators when an invariant spans a
+large input space. Example-based `it-each` cases remain appropriate for
+protocol tables and boundary contracts, while `it-property` and `it-fuzz`
+should exercise pure data transformations and CPS callbacks. A green
+coverage report does not justify adding tests for unreachable macroexpansion
+forms or `defstruct` default initializers: report those SB-COVER limitations
+separately and maximize executable expression and branch coverage.
+
 ## Worktree workflow
 
 The `main` branch is the integration point for completed work. Before
@@ -62,6 +81,15 @@ nix build
 nix develop -c sbcl --script run-tests.lisp
 nix fmt -- --ci
 paredit inspect workspace --output json .
+```
+
+For a complete source lint, pass Lisp files in bounded batches (or one file at
+a time) when the shell would otherwise exceed the operating system's argument
+limit:
+
+```sh
+rg --files src packages t -g '*.lisp' | sort
+paredit inspect lint --output json path/to/file.lisp
 ```
 
 `loom/test` loads the Lisp unit and integration tiers declared in `loom.asd` in
