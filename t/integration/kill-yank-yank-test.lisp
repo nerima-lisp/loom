@@ -19,6 +19,25 @@
         (expect (buffer-text buffer) :to-equal "one"))))
 
   (it
+    "does nothing when the kill ring is empty"
+    (let ((*editor-state* (%fresh-editor-state "text")))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 2)
+        (loom::yank)
+        (expect (buffer-text buffer) :to-equal "text")
+        (expect (loom::editor-state-last-command-kill-p *editor-state*) :to-be nil))))
+
+  (it
+    "does nothing for a zero yank prefix"
+    (let ((*editor-state* (%fresh-editor-state "text"))
+          (loom:*current-prefix-argument* 0))
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*) '("X"))
+        (buffer-set-point buffer 0 2)
+        (loom::yank)
+        (expect (buffer-text buffer) :to-equal "text"))))
+
+  (it
     "reports that yank-pop has no previous yank"
     (%with-minibuffer-state (minibuffer "")
       (loom::yank-pop)
