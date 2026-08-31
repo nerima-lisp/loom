@@ -90,6 +90,7 @@
   (it-each
       (("foo bar" 0 3 0)
        ("foo bar" 4 7 4)
+       ("#\\(" 0 3 0)
        ("#\\Space" 0 7 0)
        ("(foo)" 1 4 1))
       "finds atom boundaries in ~S"
