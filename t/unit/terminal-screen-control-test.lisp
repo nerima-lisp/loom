@@ -75,7 +75,7 @@
 
   (it "keeps parser control states isolated from screen content"
     (let ((escape (code-char 27))
-          (screen (make-terminal-screen :width 8 :height 2)))
+          (screen (make-terminal-screen :width 12 :height 2)))
       (terminal-screen-feed screen (format nil "a~C~C~C~C"
                                            (code-char 9)
                                            (code-char 8)
@@ -115,6 +115,18 @@
       (terminal-screen-feed screen (format nil "~C[?1049l" escape))
       (expect (loom/feature/terminal::terminal-screen-alternate-p screen)
               :to-be nil)
+      (expect (terminal-screen-text screen) :to-contain "main")))
+
+  (it "keeps repeated alternate-screen transitions idempotent"
+    (let ((escape (code-char 27))
+          (screen (make-terminal-screen :width 12 :height 2)))
+      (terminal-screen-feed screen "main")
+      (terminal-screen-feed screen (format nil "~C[?1049halt" escape))
+      (terminal-screen-feed screen "XYZ")
+      (terminal-screen-feed screen (format nil "~C[?1049halt" escape))
+      (expect (terminal-screen-text screen) :to-contain "XYZ")
+      (terminal-screen-feed screen (format nil "~C[?1049l" escape))
+      (terminal-screen-feed screen (format nil "~C[?1049l" escape))
       (expect (terminal-screen-text screen) :to-contain "main")))
 
   (it "keeps CSI cursor and line editing operations stateful"
@@ -167,6 +179,16 @@
         (terminal-screen-feed editing (funcall csi "1T"))
         (expect (terminal-screen-text editing)
                 :to-equal (format nil "~%bbbb~%cccc")))))
+
+  (it "bounds zero and oversized CSI edit counts"
+    (let* ((escape (code-char 27))
+           (csi (lambda (sequence)
+                  (format nil "~C[~A" escape sequence)))
+           (screen (make-terminal-screen :width 8 :height 4)))
+      (dolist (sequence '("0@" "0P" "0X" "99@" "99P" "99X"
+                          "0L" "0M" "99L" "99M"))
+        (terminal-screen-feed screen (funcall csi sequence)))
+      (expect (terminal-screen-text screen) :to-equal "")))
 
   (it "resizes the screen while preserving visible top-left content"
     (let ((screen (make-terminal-screen :width 6 :height 2)))
