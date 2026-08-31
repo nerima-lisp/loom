@@ -288,6 +288,14 @@ editor-state construction, terminal-session setup, and asynchronous resource
 shutdown. `src/application/event-loop.lisp` owns frame rendering, resize
 polling, and the event-loop boundary. `src/application/input-dispatch.lisp`
 owns raw-octet reading, event decoding, and dispatch to minibuffer,
+
+Startup failures cross the application boundary through `cl-log-kit` directly.
+The logger emits a human-readable error on `*error-output*` while retaining the
+logger name and condition type as structured fields, so command-line failures
+remain useful in a terminal and are also identifiable by process supervisors.
+The dependency is declared in both `loom.asd` and the flake's runtime
+`lispDependencies`; the dependency contract test keeps those declarations in
+sync.
 self-insert, or the global keymap. `src/main.lisp` is only the executable
 trampoline.
 
