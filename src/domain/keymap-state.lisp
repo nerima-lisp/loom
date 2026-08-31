@@ -10,17 +10,14 @@
   root-keymap
   (sequence nil))
 
-(defgeneric make-keymap-state (keymap)
-  (:documentation
-   "Create and return a new dispatch state for KEYMAP that tracks
+(defun make-keymap-state (keymap)
+  "Create and return a new dispatch state for KEYMAP that tracks
 in-progress prefix-key accumulation across successive KEYMAP-STATE-DISPATCH
-calls, starting with no keys accumulated.")
-  (:method (keymap)
-    (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil)))
+calls, starting with no keys accumulated."
+  (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil))
 
-(defgeneric keymap-state-dispatch (state key-event)
-  (:documentation
-   "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) into
+(defun keymap-state-dispatch (state key-event)
+  "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) into
 STATE. Appends KEY-EVENT to the sequence accumulated so far and looks it up
 in STATE's keymap:
 
@@ -31,18 +28,17 @@ in STATE's keymap:
   command (a function of zero arguments) and returns its return value,
   resetting STATE's accumulated sequence to empty.
 - If the accumulated sequence is bound to nothing, resets STATE's
-  accumulated sequence to empty and returns NIL.")
-  (:method (state key-event)
-    (setf (keymap-state-sequence state)
-          (append (keymap-state-sequence state) (list key-event)))
-    (let ((result (keymap-lookup (keymap-state-keymap state)
-                                 (keymap-state-sequence state))))
-      (cond
-        ((eq result :prefix)
-         :pending)
-        ((null result)
-         (setf (keymap-state-sequence state) nil)
-         nil)
-        (t
-         (setf (keymap-state-sequence state) nil)
-         (funcall result))))))
+  accumulated sequence to empty and returns NIL."
+  (setf (keymap-state-sequence state)
+        (append (keymap-state-sequence state) (list key-event)))
+  (let ((result (keymap-lookup (keymap-state-keymap state)
+                               (keymap-state-sequence state))))
+    (cond
+      ((eq result :prefix)
+       :pending)
+      ((null result)
+       (setf (keymap-state-sequence state) nil)
+       nil)
+      (t
+       (setf (keymap-state-sequence state) nil)
+       (funcall result)))))
