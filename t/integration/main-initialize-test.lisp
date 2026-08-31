@@ -33,3 +33,39 @@
            (declare (ignore name error-p))
            nil))
       (expect (loom::%loom-version) :to-equal "unknown"))))
+
+(describe
+  "editor-state save hooks"
+  (it
+    "dispatches registered hooks in registration order and removes them"
+    (let* ((state (make-editor-state))
+           (events nil)
+           (first-hook (lambda (buffer)
+                         (declare (ignore buffer))
+                         (push :first events)))
+           (second-hook (lambda (buffer)
+                          (declare (ignore buffer))
+                          (push :second events))))
+      (add-before-save-hook first-hook state)
+      (add-before-save-hook second-hook state)
+      (run-before-save-hooks :buffer state)
+      (expect events :to-equal '(:second :first))
+      (remove-before-save-hook first-hook state)
+      (expect (editor-state-before-save-hooks state) :to-equal (list second-hook))))
+
+  (it
+    "isolates a dispatch pass when a hook changes registration"
+    (let* ((state (make-editor-state))
+           (events nil)
+           (late-hook (lambda (buffer)
+                        (declare (ignore buffer))
+                        (push :late events)))
+           (registering-hook (lambda (buffer)
+                               (declare (ignore buffer))
+                               (push :registering events)
+                               (add-after-save-hook late-hook state))))
+      (add-after-save-hook registering-hook state)
+      (run-after-save-hooks :buffer state)
+      (expect events :to-equal '(:registering))
+      (run-after-save-hooks :buffer state)
+      (expect events :to-equal '(:late :registering :registering)))))
