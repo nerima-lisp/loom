@@ -144,6 +144,27 @@
 (describe
   "completion popup keys"
   (it
+    "lets the active popup consume a key before ordinary dispatch"
+    (%with-lsp-navigation (transport session buffer :content "foo")
+      (buffer-set-point buffer 0 3)
+      (loom/feature/lsp:lsp-completion-at-point)
+      (%fake-push-and-drain
+       transport session
+       (format nil
+               "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"label\":\"foobar\"},{\"label\":\"foobaz\"}]}"
+               (%lsp-last-request-id transport)))
+      (let* ((event (%special-key :down))
+             (decision (loom::%make-input-routing-decision
+                        :minibuffer (editor-state-minibuffer *editor-state*)))
+             (keymap-state (make-keymap-state (make-keymap))))
+        (expect (loom::%dispatch-key-event-action event keymap-state decision)
+                :to-equal :handled)
+        (expect (editor-completion-item-label
+                 (editor-completion-selected
+                  (editor-state-completion *editor-state*)))
+                :to-equal "foobaz"))))
+
+  (it
     "moves the selection and inserts the chosen candidate over the prefix"
     (%with-lsp-navigation (transport session buffer :content "(list foo")
       (buffer-set-point buffer 0 9)
