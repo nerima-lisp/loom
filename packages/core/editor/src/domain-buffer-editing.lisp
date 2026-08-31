@@ -8,19 +8,17 @@
 
 (in-package #:loom)
 
-(defgeneric buffer-insert-string (buffer string)
-  (:documentation
-   "Insert STRING into BUFFER at point, moving point to just after the
+(defun buffer-insert-string (buffer string)
+  "Insert STRING into BUFFER at point, moving point to just after the
 inserted text. Marks BUFFER as modified and records undo information.
-Returns BUFFER.")
-  (:method (buffer string)
-    (%ensure-buffer-writable buffer)
-    (unless (zerop (length string))
-      (multiple-value-bind (end-line end-column)
-          (%do-insert buffer (%buffer-point-line buffer) (%buffer-point-column buffer) string)
-        (setf (%buffer-point-line buffer) end-line
-              (%buffer-point-column buffer) end-column)))
-    buffer))
+Returns BUFFER."
+  (%ensure-buffer-writable buffer)
+  (unless (zerop (length string))
+    (multiple-value-bind (end-line end-column)
+        (%do-insert buffer (%buffer-point-line buffer) (%buffer-point-column buffer) string)
+      (setf (%buffer-point-line buffer) end-line
+            (%buffer-point-column buffer) end-column)))
+  buffer)
 
 (defun %delete-char-backward (buffer)
   "Delete the character before point, joining with the previous line at
@@ -52,27 +50,24 @@ end-of-line. A no-op at the very end of the buffer."
       ((< column line-len) (%do-delete buffer line column line (1+ column)))
       (t (%do-delete buffer line column (1+ line) 0)))))
 
-(defgeneric buffer-delete-char (buffer &key backward)
-  (:documentation "Delete one character next to point, returning BUFFER.")
-  (:method (buffer &key backward)
-    (%ensure-buffer-writable buffer)
-    (let ((point-offset (buffer-point-offset buffer)))
-      (if backward
-          (unless (<= point-offset (%buffer-narrow-start-offset buffer))
-            (%delete-char-backward buffer))
-          (unless (>= point-offset (%buffer-narrow-end-offset buffer))
-            (%delete-char-forward buffer))))
-    buffer))
+(defun buffer-delete-char (buffer &key backward)
+  "Delete one character next to point, returning BUFFER."
+  (%ensure-buffer-writable buffer)
+  (let ((point-offset (buffer-point-offset buffer)))
+    (if backward
+        (unless (<= point-offset (%buffer-narrow-start-offset buffer))
+          (%delete-char-backward buffer))
+        (unless (>= point-offset (%buffer-narrow-end-offset buffer))
+          (%delete-char-forward buffer))))
+  buffer)
 
-(defgeneric buffer-delete-region (buffer start-line start-column end-line end-column)
-  (:documentation
-   "Delete the text between the zero-based (START-LINE, START-COLUMN) and
+(defun buffer-delete-region (buffer start-line start-column end-line end-column)
+  "Delete the text between the zero-based (START-LINE, START-COLUMN) and
 (END-LINE, END-COLUMN) positions (end exclusive). The end position must not
 precede the start position. Moves point to the start position. Marks BUFFER
 as modified and records undo information. Returns the deleted text as a
-string.")
-  (:method (buffer start-line start-column end-line end-column)
-    (when (or (< end-line start-line)
+string."
+  (when (or (< end-line start-line)
               (and (= end-line start-line) (< end-column start-column)))
       (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
              end-line end-column start-line start-column))
@@ -91,4 +86,4 @@ string.")
                                   normalized-start-line normalized-start-column
                                   normalized-end-line normalized-end-column)))
                 (%set-buffer-point-from-offset buffer start-offset)
-                text)))))))
+                text))))))
