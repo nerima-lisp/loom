@@ -8,9 +8,7 @@
             (make-prefix-argument))))
 
 (defun %command-prefix-count ()
-  (if (null *current-prefix-argument*)
-      1
-      *current-prefix-argument*))
+  (or *current-prefix-argument* 1))
 
 (defmacro with-nonnegative-command-prefix ((count) &body body)
   `(let ((,count (max 0 (%command-prefix-count))))
