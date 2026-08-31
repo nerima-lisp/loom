@@ -61,6 +61,29 @@
       (expect composed :to-be-truthy)
       (expect presented :to-be-truthy)))))
 
+  (it
+    "composes and presents when optional refresh services are absent"
+    (let ((*editor-state* (%fresh-full-editor-state ""))
+          (composed nil)
+          (presented nil))
+      (with-replaced-function
+          (loom/feature/terminal:poll-terminal-sessions
+           (lambda (state) (declare (ignore state))))
+        (with-replaced-function
+            (loom::compose-frame
+             (lambda (state)
+               (expect state :to-be *editor-state*)
+               (setf composed t)))
+          (with-replaced-function
+              (loom:loom-renderer-present
+               (lambda (renderer &key stream cursor)
+                 (declare (ignore renderer stream cursor))
+                 (setf presented t)))
+            (loom::%render-event-loop-frame
+             (make-string-output-stream)))))
+      (expect composed :to-be-truthy)
+      (expect presented :to-be-truthy)))
+
 (describe
   "%run-event-loop input"
   (it
