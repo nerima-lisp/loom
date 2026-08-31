@@ -22,7 +22,7 @@ domain arguments."
 
 (define-git-operation run-git-diff (&key directory staged)
   "diff"
-  (if staged '("--cached") nil)
+  (and staged '("--cached"))
   "Run Git diff in DIRECTORY and return its captured process result.")
 
 (define-git-operation run-git-stage (path &key directory)
