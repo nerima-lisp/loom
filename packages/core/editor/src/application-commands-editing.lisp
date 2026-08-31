@@ -28,8 +28,10 @@
 
 (defun newline-command ()
   "Insert newlines repeatedly according to the active numeric prefix."
-  (%insert-newlines (max 0 (%command-prefix-count))))
+  (with-nonnegative-command-prefix (count)
+    (%insert-newlines count)))
 
 (defun open-line ()
   "Insert newlines while leaving point before them (C-o)."
-  (%open-line-with-newlines (max 0 (%command-prefix-count))))
+  (with-nonnegative-command-prefix (count)
+    (%open-line-with-newlines count)))
