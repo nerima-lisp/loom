@@ -107,6 +107,9 @@
                           :column 0)))))
         (signals error
                  (validate-session-snapshot
+                  (snapshot (buffer) :bookmarks (list "not a bookmark"))))
+        (signals error
+                 (validate-session-snapshot
                   (snapshot (buffer) :command-history (list "ok" 42))))))))
 
   (it
