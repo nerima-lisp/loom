@@ -59,7 +59,17 @@
     (let ((items (%decode-completion
                   "[{\"label\":\"alpha\"},{\"nolabel\":1},{\"label\":\"beta\"}]")))
       (expect (mapcar #'lsp-completion-item-label items)
-              :to-equal '("alpha" "beta")))))
+              :to-equal '("alpha" "beta"))))
+
+  (it
+    "drops a non-object completion item"
+    (expect (mapcar #'lsp-completion-item-label
+                    (%decode-completion "[1,{\"label\":\"alpha\"}]"))
+            :to-equal '("alpha")))
+
+  (it
+    "treats a non-array CompletionList items value as empty"
+    (expect (%decode-completion "{\"items\":1}") :to-equal nil)))
 
 (describe
   "definition response decoding"
@@ -89,6 +99,24 @@
       (expect (lsp-position-line
                (lsp-range-start (lsp-location-range (first locations))))
               :to-equal 5)))
+
+  (it
+    "accepts the optional targetRange LocationLink field"
+    (let ((locations (%decode-definition
+                      "[{\"targetUri\":\"file:///tmp/c.lisp\",\"targetRange\":{\"start\":{\"line\":7,\"character\":0},\"end\":{\"line\":7,\"character\":2}}}]")))
+      (expect (lsp-location-uri (first locations))
+              :to-equal "file:///tmp/c.lisp")
+      (expect (lsp-position-line
+               (lsp-range-start (lsp-location-range (first locations))))
+              :to-equal 7)))
+
+  (it
+    "drops malformed definitions while keeping valid locations"
+    (let ((locations (%decode-definition
+                      "[1,{\"uri\":\"file:///tmp/a\",\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":1}}},{\"range\":{}}]")))
+      (expect (length locations) :to-equal 1)
+      (expect (lsp-location-uri (first locations))
+              :to-equal "file:///tmp/a")))
 
   (it
     "treats null as no definition"
