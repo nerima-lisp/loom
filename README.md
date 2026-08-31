@@ -26,17 +26,17 @@ enable sidecar auto-save for modified file-backed buffers.
 
 ## Install
 
-Pin a reviewed release or commit when adding loom to another flake:
+Pin a reviewed commit when adding loom to another flake:
 
 ```nix
 inputs.loom = {
-  url = "github:nerima-lisp/loom/v0.1.0";
+  url = "github:nerima-lisp/loom/<reviewed-commit>";
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
 
-For a profile installation, run `nix profile install
-github:nerima-lisp/loom/v0.1.0`.
+For a profile installation from the default branch, run `nix profile install
+github:nerima-lisp/loom`.
 
 ## Documentation
 

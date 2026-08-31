@@ -17,17 +17,17 @@ nix run github:nerima-lisp/loom -- path/to/file.lisp
 ## Install
 
 ```sh
-nix profile install github:nerima-lisp/loom/v0.1.0
+nix profile install github:nerima-lisp/loom
 loom
 ```
 
 Consumers inside the nerima-lisp organization should pin a reviewed commit or
-release tag rather than following the default branch:
+release tag when one is available, rather than following the default branch:
 
 ```nix
 # flake.nix
 inputs.loom = {
-  url = "github:nerima-lisp/loom/v0.1.0";
+  url = "github:nerima-lisp/loom/<reviewed-commit>";
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
