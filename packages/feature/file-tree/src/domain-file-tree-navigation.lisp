@@ -28,28 +28,22 @@ reachable (visible) entries."
                                       (search-under child-path)))))))
     (search-under (file-tree-root-path tree))))
 
-(defgeneric file-tree-entries (tree)
-  (:documentation
-   "Return the flattened list of currently visible entries in TREE,
+(defun file-tree-entries (tree)
+  "Return the flattened list of currently visible entries in TREE,
 respecting each directory's expand/collapse state, as a list of (PATH .
 DEPTH) conses in display order. DEPTH is a non-negative integer: ROOT-PATH's
-direct children are at depth 0.")
-  (:method (tree)
-    (%file-tree-flatten tree (file-tree-root-path tree) 0)))
+direct children are at depth 0."
+  (%file-tree-flatten tree (file-tree-root-path tree) 0))
 
-(defgeneric file-tree-selected-path (tree)
-  (:documentation
-   "Return the path of TREE's currently selected entry, or NIL if nothing
-is selected (e.g. an empty tree).")
-  (:method (tree)
-    (file-tree-selection tree)))
+(defun file-tree-selected-path (tree)
+  "Return the path of TREE's currently selected entry, or NIL if nothing
+is selected (e.g. an empty tree)."
+  (file-tree-selection tree))
 
-(defgeneric file-tree-entry-kind (tree path)
-  (:documentation
-   "Return :FILE or :DIRECTORY for PATH in TREE, or NIL when PATH is not
-reachable in TREE.")
-  (:method (tree path)
-    (%file-tree-find-kind tree path)))
+(defun file-tree-entry-kind (tree path)
+  "Return :FILE or :DIRECTORY for PATH in TREE, or NIL when PATH is not
+reachable in TREE."
+  (%file-tree-find-kind tree path))
 
 (defun %file-tree-next-selection (paths selected-path direction)
   "Return the visible PATH selected after moving in DIRECTION.
@@ -70,28 +64,24 @@ selection mutation at the boundary and test navigation as a pure operation."
             (t
              (error "unknown direction: ~A" direction)))))))
 
-(defgeneric file-tree-move-selection (tree direction)
-  (:documentation
-   "Move TREE's selection cursor by one visible entry (see
+(defun file-tree-move-selection (tree direction)
+  "Move TREE's selection cursor by one visible entry (see
 FILE-TREE-ENTRIES) in DIRECTION, which is :UP or :DOWN. A no-op at either
-end of the visible entry list. Returns the newly selected path.")
-  (:method (tree direction)
-    (let ((paths (mapcar #'car (file-tree-entries tree))))
-      (setf (file-tree-selection tree)
-            (%file-tree-next-selection paths
-                                       (file-tree-selection tree)
-                                       direction)))))
+end of the visible entry list. Returns the newly selected path."
+  (let ((paths (mapcar #'car (file-tree-entries tree))))
+    (setf (file-tree-selection tree)
+          (%file-tree-next-selection paths
+                                     (file-tree-selection tree)
+                                     direction))))
 
-(defgeneric file-tree-toggle-expand (tree path)
-  (:documentation
-   "Toggle the expand/collapse state of the directory at PATH within TREE,
+(defun file-tree-toggle-expand (tree path)
+  "Toggle the expand/collapse state of the directory at PATH within TREE,
 changing which entries FILE-TREE-ENTRIES subsequently returns. Signals an
 error if PATH does not name a directory in TREE. Returns the new
-expanded-p state.")
-  (:method (tree path)
-    (unless (eq (%file-tree-find-kind tree path) :directory)
-      (error "not a directory in tree: ~S" path))
-    (if (gethash path (file-tree-expanded tree))
-        (remhash path (file-tree-expanded tree))
-        (setf (gethash path (file-tree-expanded tree)) t))
-    (and (gethash path (file-tree-expanded tree)) t)))
+expanded-p state."
+  (unless (eq (%file-tree-find-kind tree path) :directory)
+    (error "not a directory in tree: ~S" path))
+  (if (gethash path (file-tree-expanded tree))
+      (remhash path (file-tree-expanded tree))
+      (setf (gethash path (file-tree-expanded tree)) t))
+  (and (gethash path (file-tree-expanded tree)) t))
