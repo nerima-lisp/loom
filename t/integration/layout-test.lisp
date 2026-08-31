@@ -226,6 +226,22 @@ the degenerate-window tests are the ones that need them to differ."
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 1))
                 :to-equal '((:fg 0) (:bg 6))))))
 
+  (it
+    "does not draw a match scrolled above the window"
+    (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "two")
+      (setf (window-scroll-line window) 1
+            (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen state) 4 0))
+              :to-be nil)))
+
 (describe
   "%layout-path-label"
   (it
