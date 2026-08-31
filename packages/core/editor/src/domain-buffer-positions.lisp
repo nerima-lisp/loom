@@ -20,19 +20,17 @@
   (start 0 :type buffer-offset)
   (end 0 :type buffer-offset))
 
-(defgeneric buffer-visible-offset-position (buffer offset)
-  (:documentation
-   "Return the visible-region BUFFER-POSITION for absolute OFFSET, or NIL
+(defun buffer-visible-offset-position (buffer offset)
+  "Return the visible-region BUFFER-POSITION for absolute OFFSET, or NIL
 when OFFSET is outside BUFFER's current visible region. The region end is
-accepted as the position just after its last visible character.")
-  (:method (buffer offset)
-    (when (and (<= (%buffer-narrow-start-offset buffer) offset)
-               (<= offset (%buffer-narrow-end-offset buffer)))
-      (multiple-value-bind (line column)
-          (%text-offset-to-position-values
-           (buffer-visible-text buffer)
-           (- offset (%buffer-narrow-start-offset buffer)))
-        (%make-buffer-position line column)))))
+accepted as the position just after its last visible character."
+  (when (and (<= (%buffer-narrow-start-offset buffer) offset)
+             (<= offset (%buffer-narrow-end-offset buffer)))
+    (multiple-value-bind (line column)
+        (%text-offset-to-position-values
+         (buffer-visible-text buffer)
+         (- offset (%buffer-narrow-start-offset buffer)))
+      (%make-buffer-position line column))))
 
 (defun buffer-point-offset (buffer)
   "Return BUFFER's point as an offset in BUFFER-TEXT."
