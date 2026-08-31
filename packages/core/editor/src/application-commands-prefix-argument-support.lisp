@@ -12,6 +12,10 @@
       1
       *current-prefix-argument*))
 
+(defmacro with-nonnegative-command-prefix ((count) &body body)
+  `(let ((,count (max 0 (%command-prefix-count))))
+     ,@body))
+
 (defun %repeat-command (count forward backward)
   (let ((command (if (minusp count) backward forward)))
     (loop repeat (abs count)

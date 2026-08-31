@@ -3,10 +3,6 @@
 ;;;; Application layer: editing command helpers shared by public commands.
 (in-package #:loom)
 
-(defmacro with-nonnegative-command-prefix ((count) &body body)
-  `(let ((,count (max 0 (%command-prefix-count))))
-     ,@body))
-
 (defun %delete-char-forward-once ()
   (buffer-delete-char (%selected-buffer)))
 

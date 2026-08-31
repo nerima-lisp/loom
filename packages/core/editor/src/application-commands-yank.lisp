@@ -9,10 +9,11 @@
   "Insert the most recently killed text, repeating for the active prefix."
   (%clear-last-yank)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
-  (let ((text (first (editor-state-kill-ring *editor-state*)))
-        (count (max 0 (%command-prefix-count))))
-    (when (and text (plusp count))
-      (%perform-yank (%selected-buffer) text count))))
+  (with-nonnegative-command-prefix (count)
+    (let ((text (first (editor-state-kill-ring *editor-state*)))
+          (buffer (%selected-buffer)))
+      (when (and text (plusp count))
+        (%perform-yank buffer text count)))))
 
 (defun yank-pop ()
   "Replace the previous yank with the next entry in the kill ring."

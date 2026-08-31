@@ -63,9 +63,9 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
 
 (defun %kill-line-command ()
   (%clear-last-yank)
-  (let ((count (max 0 (%command-prefix-count)))
-        (previous-kill (editor-state-last-command-kill-p *editor-state*)))
-    (loop for index below count
-          do (%kill-line-once
-              :coalesce (or previous-kill (plusp index))))
-    (setf (editor-state-last-command-kill-p *editor-state*) t)))
+  (with-nonnegative-command-prefix (count)
+    (let ((previous-kill (editor-state-last-command-kill-p *editor-state*)))
+      (loop for index below count
+            do (%kill-line-once
+                :coalesce (or previous-kill (plusp index))))
+      (setf (editor-state-last-command-kill-p *editor-state*) t))))
