@@ -43,10 +43,24 @@
     (:regular-file :file)
     (t nil)))
 
-(defun %sort-file-tree-entries (entries)
-  (sort entries
-        (lambda (a b)
-          (string< (namestring (car a)) (namestring (car b))))))
+(defun %file-tree-entry< (first second)
+  (let ((first-kind (cdr first))
+        (second-kind (cdr second)))
+    (or (and (eq first-kind :directory)
+             (eq second-kind :file))
+        (and (eq first-kind second-kind)
+             (string< (namestring (car first))
+                      (namestring (car second)))))))
+
+(defun %collect-file-tree-entries (path)
+  (let ((entries '()))
+    (host-kit:call-with-directory-entries
+     (lambda (child-path metadata)
+       (let ((kind (%file-tree-entry-kind metadata)))
+         (when kind
+           (push (cons child-path kind) entries))))
+     path)
+    (nreverse entries)))
 
 (defun loom-fs-list-directory (path)
   "Return the direct children of the directory at PATH as a list of
@@ -55,15 +69,4 @@ yielded by CL-HOST-KIT:CALL-WITH-DIRECTORY-ENTRIES) and KIND is :DIRECTORY or
 :FILE. Directories sort before files; within each group, entries sort
 alphabetically by their namestrings. Symbolic links and other special entries
 are omitted."
-  (let ((directories '())
-        (files '()))
-    (host-kit:call-with-directory-entries
-     (lambda (child-path metadata)
-       (let ((kind (%file-tree-entry-kind metadata)))
-         (when kind
-           (ecase kind
-             (:directory (push (cons child-path kind) directories))
-             (:file (push (cons child-path kind) files))))))
-     path)
-    (append (%sort-file-tree-entries (nreverse directories))
-            (%sort-file-tree-entries (nreverse files)))))
+  (sort (%collect-file-tree-entries path) #'%file-tree-entry<))
