@@ -44,4 +44,8 @@
             (lsp-discover-command source)
           (expect command :to-be nil)
           (expect root :to-be nil)
-          (expect config :to-be nil))))))
+          (expect config :to-be nil)))))
+
+  (it "ignores non-string configuration contents"
+    (expect (loom/feature/lsp::%lsp-config-command nil)
+            :to-be nil)))
