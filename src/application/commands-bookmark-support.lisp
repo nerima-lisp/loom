@@ -18,27 +18,33 @@
   (let ((prefix (%bookmark-name input)))
     (sort
      (loop for name being the hash-keys of (%bookmark-table)
-           when (or (zerop (length prefix))
+           when (or (string= prefix "")
                     (and (<= (length prefix) (length name))
                          (string-equal prefix name
                                        :end2 (length prefix))))
              collect name)
      #'string<)))
 
+(defun %live-bookmark-buffer (bookmark)
+  "Return BOOKMARK's saved buffer when it is still registered."
+  (let ((saved-buffer (editor-bookmark-buffer bookmark)))
+    (and saved-buffer
+         (find saved-buffer (%editor-buffers) :test #'eq))))
+
+(defun %load-bookmark-file (path)
+  "Load PATH as a bookmark target when it names an existing regular file."
+  (let ((existing-path (and path (probe-file path))))
+    (when (and existing-path
+               (not (host-kit:directory-pathname-p existing-path)))
+      (let ((buffer (buffer-load existing-path)))
+        (%register-buffer buffer)
+        (remember-recent-file existing-path)
+        buffer))))
+
 (defun %bookmark-target-buffer (bookmark)
   "Resolve BOOKMARK to a live buffer, loading its file when necessary."
-  (let ((saved-buffer (editor-bookmark-buffer bookmark)))
-    (or (and saved-buffer
-             (find saved-buffer (%editor-buffers) :test #'eq))
-        (let ((path (editor-bookmark-path bookmark)))
-          (when path
-            (let ((existing-path (probe-file path)))
-              (when (and existing-path
-                         (not (host-kit:directory-pathname-p existing-path)))
-                (let ((buffer (buffer-load existing-path)))
-                  (%register-buffer buffer)
-                  (remember-recent-file existing-path)
-                  buffer))))))))
+  (or (%live-bookmark-buffer bookmark)
+      (%load-bookmark-file (editor-bookmark-path bookmark))))
 
 (defmacro define-bookmark-command
     (name (prompt &key completion-function) (bookmark-name minibuffer) &body body)
