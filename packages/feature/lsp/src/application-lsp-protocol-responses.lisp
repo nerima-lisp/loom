@@ -44,7 +44,7 @@
    (%lsp-ensure-initialize-result-capabilities result)
    (%lsp-ensure-initialize-result-server-info result)))
 
-(defun %lsp-initialize-response-error (session message)
+(defun %lsp-response-error (session message)
   (multiple-value-bind (error-value error-present-p)
       (%lsp-value-present-p message "error")
     (when (and error-present-p
@@ -54,7 +54,7 @@
             (%lsp-json-error-message error-value)))))
 
 (defun %lsp-handle-initialize-response-payload (session message)
-  (if (%lsp-initialize-response-error session message)
+  (if (%lsp-response-error session message)
       nil
       (multiple-value-bind (result result-present-p)
           (%lsp-value-present-p message "result")
@@ -78,11 +78,5 @@
          message
          (lsp-session-pending-shutdown-id session))
     (setf (lsp-session-pending-shutdown-id session) nil)
-    (multiple-value-bind (error-value error-present-p)
-        (%lsp-value-present-p message "error")
-      (when (and error-present-p
-                 (not (or (null error-value)
-                          (eq error-value json-kit:+json-null+))))
-        (setf (lsp-session-last-error session)
-              (%lsp-json-error-message error-value))))
+    (%lsp-response-error session message)
     (%lsp-finish-stop session)))
