@@ -66,20 +66,25 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
           (list (list :delete open 1)
                 (list :insert target (string (char text open)))))))))
 
+(defun %backward-barf-delimiter (text target delimiter)
+  "Return DELIMITER positioned before the expression at TARGET."
+  (if (and (plusp target)
+           (not (%sexp-whitespace-p (char text (1- target)))))
+      (concatenate 'string " " delimiter)
+      delimiter))
+
 (defun %backward-barf-edits (text classes offset)
   "Move the enclosing list's opening delimiter in past its first expression."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
     (when open
       (let ((first-end (%forward-sexp-offset text (1+ open) classes)))
         (when (and first-end (<= first-end close))
-          (let* ((target (%sexp-skip-forward-filler text classes first-end))
-                 (delimiter (string (char text open)))
-                 (separated (and (plusp target)
-                                 (not (%sexp-whitespace-p (char text (1- target)))))))
+        (let* ((target (%sexp-skip-forward-filler text classes first-end))
+               (delimiter (string (char text open)))
+                 (moved-delimiter (%backward-barf-delimiter
+                                   text target delimiter)))
             (list (list :insert target
-                        (if separated
-                            (concatenate 'string " " delimiter)
-                            delimiter))
+                        moved-delimiter)
                   (list :delete open 1))))))))
 
 (defun %wrap-round-edits (text classes offset)
