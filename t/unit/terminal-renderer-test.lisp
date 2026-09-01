@@ -159,7 +159,7 @@ BUFFER-LINE, not point/mark/undo state."
          (loom-renderer-present
           renderer
           :stream output
-          :cursor (loom-renderer-make-cursor renderer
+          :cursor (cl-tty-kit:make-cursor
                                              :x 2
                                              :y 1
                                              :visible nil))

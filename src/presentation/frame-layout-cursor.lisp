@@ -30,8 +30,7 @@ that %LAYOUT-DRAW-MINIBUFFER draws."
     (let* ((width (loom-renderer-width renderer))
            (text (%layout-minibuffer-line minibuffer))
            (column (%layout-screen-column renderer text (length text))))
-      (loom-renderer-make-cursor
-       renderer
+      (cl-tty-kit:make-cursor
        :x (min column (max 0 (1- width)))
        :y (%layout-minibuffer-row (loom-renderer-height renderer))))))
 
@@ -77,14 +76,13 @@ this, so a popup cannot drift away from the point it belongs to."
   (let ((width (loom/feature/window:window-width window))
         (height (loom/feature/window:window-height window)))
     (if (or (zerop width) (zerop height))
-        (loom-renderer-make-cursor renderer :visible nil)
+        (cl-tty-kit:make-cursor :visible nil)
         (let* ((buffer (loom/feature/window:window-buffer window))
                (line (buffer-visible-point-line buffer))
                (column (buffer-visible-point-column buffer)))
           (multiple-value-bind (screen-column screen-row)
               (%layout-buffer-cell renderer window buffer line column)
-            (loom-renderer-make-cursor
-             renderer
+            (cl-tty-kit:make-cursor
              :x (+ x-offset (loom/feature/window:window-x window)
                    screen-column)
              :y (+ (loom/feature/window:window-y window) screen-row)))))))

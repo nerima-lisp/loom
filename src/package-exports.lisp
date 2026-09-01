@@ -36,7 +36,7 @@
       loom-renderer-segment-cells loom-renderer-segment-column
       loom-renderer-write-string loom-renderer-draw-horizontal-line
       loom-renderer-draw-vertical-line loom-renderer-clear
-      loom-renderer-make-cursor loom-renderer-draw-buffer
+      loom-renderer-draw-buffer
       loom-renderer-present loom-renderer-resize
       make-keymap keymap-define-key keymap-lookup make-keymap-state
       keymap-state-sequence keymap-state-dispatch

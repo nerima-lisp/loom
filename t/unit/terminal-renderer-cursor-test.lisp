@@ -33,17 +33,16 @@
             :to-equal expected)))
 
 (describe
-  "loom-renderer-make-cursor"
+  "CL-TTY-KIT cursor construction"
   (it
     "creates a visible cursor at the origin by default"
-    (let ((cursor (loom-renderer-make-cursor (make-loom-renderer 10 4))))
+    (let ((cursor (cl-tty-kit:make-cursor)))
       (expect (cl-tty-kit:cursor-x cursor) :to-equal 0)
       (expect (cl-tty-kit:cursor-y cursor) :to-equal 0)
       (expect (cl-tty-kit:cursor-visible-p cursor) :to-be-truthy)))
   (it
     "preserves explicit position and visibility"
-    (let ((cursor (loom-renderer-make-cursor (make-loom-renderer 10 4)
-                                             :x 3 :y 2 :visible nil)))
+    (let ((cursor (cl-tty-kit:make-cursor :x 3 :y 2 :visible nil)))
       (expect (cl-tty-kit:cursor-x cursor) :to-equal 3)
       (expect (cl-tty-kit:cursor-y cursor) :to-equal 2)
       (expect (cl-tty-kit:cursor-visible-p cursor) :to-be-falsy))))
