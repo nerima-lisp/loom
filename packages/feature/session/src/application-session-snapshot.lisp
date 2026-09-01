@@ -17,29 +17,39 @@
      :mark-column mark-column
      :modified-p (buffer-modified-p buffer))))
 
+(defun %session-current-workspace (manager)
+  (loom/feature/workspace:workspace-manager-current manager))
+
+(defun %session-sync-active-workspace-tree (workspace)
+  (setf (loom/feature/workspace:workspace-window-tree workspace)
+        (editor-state-window-tree *editor-state*)))
+
+(defun %session-snapshot-buffers (manager)
+  (remove-duplicates
+   (append (copy-list (%editor-buffers))
+           (%session-workspace-live-buffers manager))
+   :test #'eq))
+
+(defun %session-command-history ()
+  (and (editor-state-minibuffer *editor-state*)
+       (minibuffer-history-entries (editor-state-minibuffer *editor-state*))))
+
+(defun %session-snapshot-data (manager buffers)
+  (make-session-snapshot
+   :buffers (mapcar #'%session-buffer-snapshot buffers)
+   :recent-files (copy-list (editor-state-recent-files *editor-state*))
+   :bookmarks (%session-bookmark-snapshots)
+   :command-history (%session-command-history)
+   :workspaces (%session-workspace-snapshots manager buffers)
+   :current-workspace-index
+   (loom/feature/workspace:workspace-manager-current-index manager)))
+
 (defun %session-snapshot-from-state ()
   "Return a validated snapshot of the current editor state."
   (let* ((manager (%session-workspace-manager))
-         (current (loom/feature/workspace:workspace-manager-current manager))
-         (current-tree (editor-state-window-tree *editor-state*))
-         (current-index
-           (loom/feature/workspace:workspace-manager-current-index manager)))
+         (current (%session-current-workspace manager)))
     ;; The visible editor tree is authoritative for the active workspace at
     ;; the instant a save starts; inactive workspaces already own their trees.
-    (setf (loom/feature/workspace:workspace-window-tree current) current-tree)
-    (let* ((visible (%session-workspace-live-buffers manager))
-           (buffers (remove-duplicates
-                     (append (copy-list (%editor-buffers)) visible)
-                     :test #'eq))
-           (workspaces (%session-workspace-snapshots manager buffers)))
-      (validate-session-snapshot
-       (make-session-snapshot
-        :buffers (mapcar #'%session-buffer-snapshot buffers)
-        :recent-files (copy-list (editor-state-recent-files *editor-state*))
-        :bookmarks (%session-bookmark-snapshots)
-        :command-history
-        (and (editor-state-minibuffer *editor-state*)
-             (minibuffer-history-entries
-              (editor-state-minibuffer *editor-state*)))
-        :workspaces workspaces
-        :current-workspace-index current-index)))))
+    (%session-sync-active-workspace-tree current)
+    (let ((buffers (%session-snapshot-buffers manager)))
+      (validate-session-snapshot (%session-snapshot-data manager buffers)))))
