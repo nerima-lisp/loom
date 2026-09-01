@@ -18,6 +18,21 @@
   (loop for character across string
         sum (%loom-renderer-character-advance character)))
 
+(defun %loom-renderer-wrap-segment-end (string start width)
+  (let ((end start)
+        (consumed 0)
+        (length (length string)))
+    (loop while (< end length)
+          for advance = (%loom-renderer-character-advance (char string end))
+          do (when (and (> (+ consumed advance) width)
+                        (> end start))
+               (return))
+             (incf consumed advance)
+             (incf end)
+             (when (>= consumed width)
+               (return)))
+    end))
+
 (defun loom-renderer-wrap-segments (renderer string width)
   "Split STRING into the character ranges filling successive WIDTH-cell rows.
 
@@ -36,18 +51,8 @@ whole string as one range, which is what a zero-width window draws: nothing."
           (let ((segments '())
                 (start 0))
             (loop while (< start length)
-                  do (let ((end start)
-                           (consumed 0))
-                       (loop while (< end length)
-                             for advance = (%loom-renderer-character-advance
-                                            (char string end))
-                             do (when (and (> (+ consumed advance) width)
-                                           (> end start))
-                                  (return))
-                                (incf consumed advance)
-                                (incf end)
-                                (when (>= consumed width)
-                                  (return)))
+                  do (let ((end (%loom-renderer-wrap-segment-end
+                                 string start width)))
                        (push (cons start end) segments)
                        (setf start end)))
             (nreverse segments)))))
