@@ -21,10 +21,12 @@
   (loop repeat count
         do (buffer-insert-string (%selected-buffer) (string #\Newline))))
 
+(defun %open-line-once ()
+  (let* ((buffer (%selected-buffer))
+         (line (buffer-point-line buffer))
+         (column (buffer-point-column buffer)))
+    (buffer-insert-string buffer (string #\Newline))
+    (buffer-set-point buffer line column)))
+
 (defun %open-line-with-newlines (count)
-  (loop repeat count
-        do (let ((buffer (%selected-buffer)))
-             (let ((line (buffer-point-line buffer))
-                   (column (buffer-point-column buffer)))
-               (buffer-insert-string buffer (string #\Newline))
-               (buffer-set-point buffer line column)))))
+  (loop repeat count do (%open-line-once)))
