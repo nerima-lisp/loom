@@ -7,6 +7,11 @@
 (defparameter *command-specs* nil
   "Registered command metadata used by completion and keymap installation.")
 
+(defun %normalized-command-name (input)
+  "Return INPUT trimmed and normalized for command lookup."
+  (string-downcase
+   (string-trim '(#\Space #\Tab) (or input ""))))
+
 (defun %command-name-matches-prefix-p (name prefix)
   "Return true when NAME starts with PREFIX, case-insensitively."
   (and name
@@ -17,8 +22,7 @@
 
 (defun command-completion-candidates (input)
   "Return named command specs whose names begin with INPUT."
-  (let ((prefix (string-downcase
-                 (string-trim '(#\Space #\Tab) (or input "")))))
+  (let ((prefix (%normalized-command-name input)))
     (loop for spec in *command-specs*
           for name = (getf spec :name)
           when (%command-name-matches-prefix-p name prefix)
@@ -26,8 +30,7 @@
 
 (defun find-extended-command (input)
   "Return the registered command named by INPUT, or NIL."
-  (let ((name (string-downcase
-               (string-trim '(#\Space #\Tab) (or input "")))))
+  (let ((name (%normalized-command-name input)))
     (getf
      (find-if (lambda (spec)
                 (and (getf spec :name)
