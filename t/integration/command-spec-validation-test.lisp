@@ -2,6 +2,19 @@
 
 (describe
   "command-spec validation"
+  (it "expands the package export definition into a defpackage form"
+    (let ((expansion
+            (macroexpand-1
+             '(cl-user::define-package-with-exports
+                #:loom/test-package (#:cl) (foo bar)))))
+      (expect (first expansion) :to-be 'defpackage)
+      (expect (symbol-name (second expansion))
+              :to-equal
+              "LOOM/TEST-PACKAGE")
+      (expect (first (third expansion)) :to-be :use)
+      (expect (symbol-name (second (third expansion))) :to-equal "CL")
+      (expect (first (fourth expansion)) :to-be :export)
+      (expect (rest (fourth expansion)) :to-equal '("FOO" "BAR"))))
   (it "accepts a valid command-spec command"
     (let ((expansion
             (macroexpand-1
