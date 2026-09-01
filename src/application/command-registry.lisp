@@ -42,7 +42,7 @@
 (defun help-summary-message ()
   "Return the compact help message derived from registered command metadata."
   (let ((entries
-          (sort
+          (stable-sort
            (copy-list
             (loop for spec in *command-specs*
                   for help = (getf spec :help)
