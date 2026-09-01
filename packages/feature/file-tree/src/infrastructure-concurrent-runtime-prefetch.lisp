@@ -56,6 +56,14 @@ so a failed executor cannot leave the runtime believing a task is in flight."
       (remhash key pending)
       (error condition))))
 
+(defun %prefetch-directory-if-needed
+    (runtime pending cache errors generation-table path)
+  "Submit PATH when its directory state has not been resolved yet."
+  (let* ((key (%directory-key path))
+         (generation (gethash key generation-table 0)))
+    (when (%directory-prefetch-needed-p cache errors pending key)
+      (%submit-directory-prefetch runtime pending path key generation))))
+
 (defun loom-concurrent-runtime-prefetch (runtime paths)
   "Submit uncached PATHS and return promises plus the accepted task count.
 
@@ -69,13 +77,10 @@ shutting down."
         (errors (loom-concurrent-runtime-errors runtime))
         (generation-table (loom-concurrent-runtime-generation runtime)))
     (dolist (path paths (values (nreverse promises) accepted))
-      (when (%prefetch-slot-available-p runtime pending)
-        (let* ((key (%directory-key path))
-               (generation (gethash key generation-table 0)))
-          (when (%directory-prefetch-needed-p cache errors pending key)
-            (multiple-value-bind (promise accepted-p)
-                (%submit-directory-prefetch
-                 runtime pending path key generation)
-              (when accepted-p
-                (push promise promises)
-                (incf accepted)))))))))
+        (when (%prefetch-slot-available-p runtime pending)
+          (multiple-value-bind (promise accepted-p)
+              (%prefetch-directory-if-needed
+               runtime pending cache errors generation-table path)
+            (when accepted-p
+              (push promise promises)
+              (incf accepted)))))))
