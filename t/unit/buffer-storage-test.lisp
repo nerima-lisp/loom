@@ -77,6 +77,21 @@
       (buffer-insert-string buffer "XY")
       (expect (buffer-region-string buffer 0 1 0 5) :to-equal "bXYc")))
 
+  (it
+    "keeps the original source stable across edits and history replay"
+    (let ((buffer (make-buffer :initial-content "one~%two")))
+      (buffer-set-point buffer 0 3)
+      (buffer-insert-string buffer "-edited")
+      (buffer-set-point buffer 1 0)
+      (buffer-delete-region buffer 1 0 1 3)
+      (expect (buffer-text buffer) :to-equal "one-edited~%")
+      (expect (loom::%buffer-original buffer) :to-equal "one~%two")
+      (buffer-undo buffer)
+      (expect (buffer-text buffer) :to-equal "one-edited~%two")
+      (buffer-redo buffer)
+      (expect (buffer-text buffer) :to-equal "one-edited~%")
+      (expect (loom::%pieces-text buffer) :to-equal (buffer-text buffer))))
+
 (describe
   "%raw-insert-at and %raw-delete-region"
   (it
