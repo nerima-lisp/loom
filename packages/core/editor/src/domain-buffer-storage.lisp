@@ -78,16 +78,10 @@ modified-p, read-only state, and undo/redo state."
 newline yields a single-element list; a leading, trailing, or doubled
 newline yields empty-string elements, matching how buffer lines represent
 an empty line. Always returns at least one element, even for \"\"."
-  (let ((result nil)
-        (start 0))
-    (loop
-      (let ((pos (position #\Newline string :start start)))
-        (if pos
-            (progn (push (subseq string start pos) result)
-                   (setf start (1+ pos)))
-            (progn (push (subseq string start) result)
-                   (return)))))
-    (nreverse result)))
+  (loop for start = 0 then (1+ newline)
+        for newline = (position #\Newline string :start start)
+        collect (subseq string start newline)
+        while newline))
 
 (defun %advance-position (line column text)
   "Return (values end-line end-column), the position immediately after
