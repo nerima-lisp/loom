@@ -25,6 +25,10 @@
       (expect (loom/application:find-extended-command "keymap-only-command")
               :to-be
               nil)))
+  (it "treats a missing command input as empty"
+    (expect (loom/application:find-extended-command nil)
+            :to-be
+            nil))
   (it "returns no candidates for an unknown prefix"
     (expect
      (loom/application:command-completion-candidates "does-not-exist")

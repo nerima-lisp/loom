@@ -26,7 +26,8 @@
 
 (defun find-extended-command (input)
   "Return the registered command named by INPUT, or NIL."
-  (let ((name (string-downcase (string-trim '(#\Space #\Tab) input))))
+  (let ((name (string-downcase
+               (string-trim '(#\Space #\Tab) (or input "")))))
     (getf
      (find-if (lambda (spec)
                 (and (getf spec :name)
