@@ -69,6 +69,17 @@ addresses documents by URI, and a buffer that was never saved has none."
                               (lsp-position-character position))
        buffer))))
 
+(defun %lsp-definition-response (buffer line character locations error-message)
+  (cond
+    (error-message
+     (%lsp-navigation-message
+      (format nil "Definition failed: ~A" error-message)))
+    ((null locations)
+     (%lsp-navigation-message "No definition found"))
+    (t
+     (%lsp-push-jump-origin buffer line character)
+     (%lsp-goto-location (first locations)))))
+
 (defun lsp-find-definition ()
   "Jump to the definition of the symbol at point (M-.).
 
@@ -84,14 +95,8 @@ back even when the jump crossed into another file."
        (lsp-request-definition
         session uri line character
         (lambda (locations error-message)
-          (cond
-            (error-message
-             (%lsp-navigation-message
-              (format nil "Definition failed: ~A" error-message)))
-            ((null locations) (%lsp-navigation-message "No definition found"))
-            (t
-             (%lsp-push-jump-origin buffer line character)
-             (%lsp-goto-location (first locations))))))
+          (%lsp-definition-response
+           buffer line character locations error-message)))
        nil))))
 
 (defun lsp-pop-definition ()
