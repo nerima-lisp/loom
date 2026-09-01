@@ -57,18 +57,20 @@ and M-x lookup is implemented by
 ```sh
 nix develop
 nix build
-nix develop -c sbcl --script run-tests.lisp
+nix develop -c loom-test
 nix flake check --print-build-logs
 nix fmt -- --ci
 
 # Release-oriented checks
-LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
+LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
 LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
 The Nix coverage output is a report directory, not an executable. Build it
 with `nix build .#coverage` (or run `nix flake check`); use the development
-command above when the report should be written to a local directory.
+command above when the report should be written to a local directory. Inside
+an interactive shell, `test` and `coverage` remain available as convenience
+aliases; `loom-test` and `loom-coverage` are the portable executable commands.
 
 The [development guide](docs/src/project/development.md) covers the unit and
 integration suite, PTY checks, coverage, and the concurrency benchmark.

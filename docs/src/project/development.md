@@ -8,8 +8,13 @@ source of truth for the package, development shell, and checks.
 Enter the shell before running local Common Lisp commands:
 
 ```sh
-nix develop
+nix develop -c loom-test
+nix develop -c loom-coverage
 ```
+
+The shell also provides `test` and `coverage` as interactive aliases. Use the
+`loom-*` commands for scripts and CI because they are executable commands and
+work with `nix develop -c`.
 
 The shell provides SBCL, ASDF dependencies, the test runner, and the MkDocs
 Material toolchain. The source tree is organized by shared editor layers and

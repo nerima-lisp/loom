@@ -446,15 +446,30 @@
       # documented contributor tools. Interactive only: the generated shell
       # is built from the check-enabled derivation, so cl-weave's source for
       # the registry is already on it.
-      devShellPackages = ctx: [
-        cl-weave.packages.${ctx.system}.default
-        paredit-cli.packages.${ctx.system}.default
-        nixpkgs.legacyPackages.${ctx.system}.python3Packages.mkdocs-material
-      ];
+      devShellPackages =
+        ctx:
+        let
+          pkgs = nixpkgs.legacyPackages.${ctx.system};
+          loom-test = pkgs.writeShellScriptBin "loom-test" ''
+            exec sbcl --script "$PWD/run-tests.lisp" "$@"
+          '';
+          loom-coverage = pkgs.writeShellScriptBin "loom-coverage" ''
+            exec env LOOM_COVERAGE_DIR="''${LOOM_COVERAGE_DIR:-$PWD/coverage}" \
+              timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s \
+              sbcl --script "$PWD/scripts/coverage.lisp" "$@"
+          '';
+        in
+        [
+          cl-weave.packages.${ctx.system}.default
+          paredit-cli.packages.${ctx.system}.default
+          nixpkgs.legacyPackages.${ctx.system}.python3Packages.mkdocs-material
+          loom-test
+          loom-coverage
+        ];
 
       overrideOutputs = ctx: {
-        # The generated shell, plus the aliases this repository's
-        # README documents. Appended to the preset's own shellHook rather
+        # The generated shell, plus interactive aliases and executable
+        # commands this repository's README documents. Appended to the preset's own shellHook rather
         # than replacing it, so the CL_SOURCE_REGISTRY it exports (the
         # derivation's own resolved registry, including check dependencies)
         # is kept.
@@ -465,8 +480,8 @@
             alias coverage='cd "$LOOM_ROOT" && LOOM_COVERAGE_DIR="$LOOM_ROOT/coverage" timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s sbcl --script "$LOOM_ROOT/scripts/coverage.lisp"'
             echo ""
             echo "loom development environment"
-            echo "  test     - Run the full loom suite (cl-weave, loom/test)"
-            echo "  coverage - Run the test suite and write HTML coverage to coverage/"
+            echo "  loom-test     - Run the full loom suite (also works with nix develop -c)"
+            echo "  loom-coverage - Run the test suite and write HTML coverage to coverage/"
             echo "  sbcl     - Interactive Common Lisp (with cl-weave and paredit)"
             echo "  paredit  - Inspect and structurally edit Lisp source"
             echo ""
