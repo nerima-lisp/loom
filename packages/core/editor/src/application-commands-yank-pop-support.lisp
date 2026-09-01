@@ -13,16 +13,22 @@
        (integerp index)
        (= (buffer-point-offset buffer) end)))
 
+(defun %yank-pop-repeat-count ()
+  (max 1 (or (editor-state-last-yank-repeat-count *editor-state*)
+             1)))
+
+(defun %yank-pop-state ()
+  (values (editor-state-kill-ring *editor-state*)
+          (editor-state-last-yank-start-offset *editor-state*)
+          (editor-state-last-yank-end-offset *editor-state*)
+          (editor-state-last-yank-ranges *editor-state*)
+          (editor-state-last-yank-buffer *editor-state*)
+          (editor-state-last-yank-ring-index *editor-state*)
+          (%yank-pop-repeat-count)))
+
 (defun %yank-pop-context (buffer)
-  (let* ((ring (editor-state-kill-ring *editor-state*))
-         (start (editor-state-last-yank-start-offset *editor-state*))
-         (end (editor-state-last-yank-end-offset *editor-state*))
-         (ranges (editor-state-last-yank-ranges *editor-state*))
-         (last-buffer (editor-state-last-yank-buffer *editor-state*))
-         (index (editor-state-last-yank-ring-index *editor-state*))
-         (repeat-count
-           (max 1 (or (editor-state-last-yank-repeat-count *editor-state*)
-                      1))))
+  (multiple-value-bind (ring start end ranges last-buffer index repeat-count)
+      (%yank-pop-state)
     (when (%valid-yank-pop-context-p buffer ring start end ranges last-buffer index)
       (values ring start ranges index repeat-count))))
 
