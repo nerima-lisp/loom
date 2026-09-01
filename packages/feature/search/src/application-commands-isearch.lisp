@@ -64,6 +64,25 @@ would have been recognized there."
         (#\r :backward)
         (t nil)))))
 
+(defun %isearch-change (session minibuffer input)
+  (isearch-apply-pattern session input)
+  (%isearch-refresh session minibuffer))
+
+(defun %isearch-key (session minibuffer key-event)
+  (let ((repeat (%isearch-repeat-key-direction key-event)))
+    (when repeat
+      (isearch-repeat session repeat)
+      (%isearch-refresh session minibuffer)
+      t)))
+
+(defun %isearch-confirm (session input)
+  (declare (ignore session input))
+  (%isearch-end))
+
+(defun %isearch-cancel (session)
+  (%isearch-restore-origin session)
+  (%isearch-end))
+
 (defun %isearch-start (direction)
   "Open an incremental-search prompt in DIRECTION over the selected buffer."
   (let* ((buffer (loom/application:%selected-buffer))
@@ -77,24 +96,13 @@ would have been recognized there."
          minibuffer
          (%isearch-prompt-for session)
          :on-change
-         (lambda (input)
-           (isearch-apply-pattern session input)
-           (%isearch-refresh session minibuffer))
+         (lambda (input) (%isearch-change session minibuffer input))
          :on-key
-         (lambda (key-event)
-           (let ((repeat (%isearch-repeat-key-direction key-event)))
-             (when repeat
-               (isearch-repeat session repeat)
-               (%isearch-refresh session minibuffer)
-               t)))
+         (lambda (key-event) (%isearch-key session minibuffer key-event))
          :on-confirm
-         (lambda (input)
-           (declare (ignore input))
-           (%isearch-end))
+         (lambda (input) (%isearch-confirm session input))
          :on-cancel
-         (lambda ()
-           (%isearch-restore-origin session)
-           (%isearch-end))))))
+         (lambda () (%isearch-cancel session))))))
   nil)
 
 (defun isearch-forward ()
