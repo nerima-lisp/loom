@@ -17,6 +17,27 @@
 (defun %layout-syntax-style (kind)
   (cdr (assoc kind +layout-syntax-styles+)))
 
+(defun %syntax-draw-token (renderer token character-index start-index
+                           column y remaining)
+  (let* ((text (syntax-token-text token))
+         (end (+ character-index (length text))))
+    (if (and (plusp remaining) (> end start-index))
+        (let* ((slice (if (> start-index character-index)
+                          (subseq text (- start-index character-index))
+                          text))
+               (visible (loom-renderer-truncate-string renderer slice remaining))
+               (visible-width (loom-renderer-string-width renderer visible)))
+          (if (zerop (length visible))
+              (values column remaining end)
+              (progn
+                (loom-renderer-write-string
+                 renderer column y visible
+                 :style (%layout-syntax-style (syntax-token-kind token)))
+                (values (+ column visible-width)
+                        (- remaining visible-width)
+                        end))))
+        (values column remaining end))))
+
 (defun syntax-draw-highlighted-line (renderer line x y width
                                       &optional (mode :common-lisp)
                                                 (start-column 0))
@@ -33,22 +54,12 @@ so no token is measured twice and no full-width character is drawn in half."
           (remaining (max 0 (- width leading-blank)))
           (character-index 0))
       (dolist (token (syntax-highlight-line-for-mode line mode))
-        (let* ((text (syntax-token-text token))
-               (end (+ character-index (length text))))
-          (when (and (plusp remaining) (> end start-index))
-            (let* ((slice (if (> start-index character-index)
-                              (subseq text (- start-index character-index))
-                              text))
-                   (visible (loom-renderer-truncate-string
-                             renderer slice remaining))
-                   (visible-width (loom-renderer-string-width renderer visible)))
-              (unless (zerop (length visible))
-                (loom-renderer-write-string
-                 renderer column y visible
-                 :style (%layout-syntax-style (syntax-token-kind token)))
-                (incf column visible-width)
-                (decf remaining visible-width))))
-          (setf character-index end)))))
+        (multiple-value-bind (next-column next-remaining next-index)
+            (%syntax-draw-token renderer token character-index start-index
+                                column y remaining)
+          (setf column next-column
+                remaining next-remaining
+                character-index next-index)))))
   renderer)
 
 (defun syntax-draw-buffer (renderer buffer x y width height
