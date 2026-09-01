@@ -20,14 +20,16 @@ Returns BUFFER."
             (%buffer-point-column buffer) end-column)))
   buffer)
 
+(defun %previous-line-end-position (buffer line)
+  (let ((previous-line (1- line)))
+    (values previous-line
+            (length (%line-at buffer previous-line)))))
+
 (defun %backward-delete-position (buffer line column)
   (cond
     ((and (zerop line) (zerop column)) nil)
     ((plusp column) (values line (1- column)))
-    (t
-     (let ((previous-line (1- line)))
-       (values previous-line
-               (length (%line-at buffer previous-line)))))))
+    (t (%previous-line-end-position buffer line))))
 
 (defun %delete-backward-within-line (buffer line column)
   (%do-delete buffer line (1- column) line column)
