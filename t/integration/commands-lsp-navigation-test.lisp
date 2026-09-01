@@ -251,6 +251,31 @@
               :to-equal 0)))
 
   (it
+    "accepts with Tab and dismisses with Escape"
+    (%with-lsp-navigation (transport session buffer :content "foo")
+      (buffer-set-point buffer 0 3)
+      (loom/feature/lsp:lsp-completion-at-point)
+      (%fake-push-and-drain
+       transport session
+       (format nil
+               "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"label\":\"foobar\"}]}"
+               (%lsp-last-request-id transport)))
+      (expect (loom::%completion-popup-handle-key (%special-key :tab))
+              :to-be-truthy)
+      (expect (buffer-text buffer) :to-equal "foobar")
+      (buffer-set-point buffer 0 6)
+      (loom/feature/lsp:lsp-completion-at-point)
+      (%fake-push-and-drain
+       transport session
+       (format nil
+               "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"label\":\"foobarbaz\"}]}"
+               (%lsp-last-request-id transport)))
+      (expect (loom::%completion-popup-handle-key (%special-key :escape))
+              :to-be-truthy)
+      (expect (editor-state-completion *editor-state*) :to-be nil)
+      (expect (buffer-text buffer) :to-equal "foobar")))
+
+  (it
     "closes on C-g without touching the buffer"
     (%with-lsp-navigation (transport session buffer :content "foo")
       (buffer-set-point buffer 0 3)
