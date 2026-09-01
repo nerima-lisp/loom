@@ -4,7 +4,8 @@
 ;;;; remains in startup.lisp so the executable boundary is easy to inspect.
 (in-package #:loom)
 
-(defparameter *loom-app*
+(defun %make-loom-app ()
+  "Build the CL-CLI application specification for the loom binary."
   (cl-cli:make-app
    :name "loom"
    :version (loom-version)
@@ -13,7 +14,9 @@
                        :key :path
                        :required-p nil
                        :description "A file to open, or a directory to browse (defaults to \".\")"))
-   :handler (function %run-loom))
+   :handler (function %run-loom)))
+
+(defparameter *loom-app* (%make-loom-app)
   "CL-CLI application spec for the loom binary: a single positional path
 argument and no subcommands (the \"root positional\" shape CL-CLI's own
 getting-started guide documents for script-style tools), which gets

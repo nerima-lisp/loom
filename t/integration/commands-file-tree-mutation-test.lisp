@@ -42,6 +42,22 @@
       (funcall (loom::%minibuffer-on-confirm minibuffer) path)
       (expect (host-kit:path-exists-p path) :to-be-truthy)))
 
+  (it-each
+      (("file-tree-create-file-command" loom/feature/file-tree:file-tree-create-file-command
+        "cancelled.txt")
+       ("file-tree-create-directory-command"
+        loom/feature/file-tree:file-tree-create-directory-command
+        "cancelled-dir/"))
+      "~A leaves the filesystem unchanged when its prompt is cancelled"
+      (label command relative-path)
+    (declare (ignore label))
+    (%with-file-tree-prompt (dir path)
+        command
+        (merge-pathnames relative-path dir)
+      (funcall (loom::%minibuffer-on-cancel minibuffer))
+      (expect (host-kit:path-exists-p path) :to-be-falsy)
+      (expect (minibuffer-message-string minibuffer) :to-equal "Quit")))
+
   (it
     "file-tree-rename-command renames the selected entry"
     (%with-selected-file-tree-entry-prompt (dir old-path "old.txt")

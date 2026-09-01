@@ -15,6 +15,13 @@
       (expect (cl-cli:positional-required-p (first positionals)) :to-be nil)
       (expect (functionp (cl-cli:app-handler app)) :to-be-truthy)))
   (it
+    "builds the application contract from the startup specification"
+    (let ((app (loom::%make-loom-app)))
+      (expect (cl-cli:app-name app) :to-equal "loom")
+      (expect (cl-cli:app-version app) :to-equal (loom-version))
+      (expect (cl-cli:app-positionals app) :to-have-length 1)
+      (expect (functionp (cl-cli:app-handler app)) :to-be-truthy)))
+  (it
     "passes process arguments to cl-cli and exits successfully"
     (let* ((root (namestring
                   (asdf:system-source-directory (asdf:find-system "loom"))))
