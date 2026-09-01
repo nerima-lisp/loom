@@ -20,21 +20,26 @@
           (json-kit:make-json-object
            (list (cons "relatedInformation" t)))))))
 
+(defun %lsp-client-info ()
+  (json-kit:make-json-object
+   (list (cons "name" "Loom")
+         (cons "version" (loom-version)))))
+
+(defun %lsp-workspace-folders (root-uri)
+  (when root-uri
+    (list
+     (json-kit:make-json-object
+      (list (cons "uri" root-uri)
+            (cons "name" "Loom workspace"))))))
+
 (defun %lsp-initialize-params (session)
   (let ((root-uri (lsp-session-root-uri session)))
     (json-kit:make-json-object
      (append
       (list (cons "processId" json-kit:+json-null+)
-            (cons "clientInfo"
-                  (json-kit:make-json-object
-                   (list (cons "name" "Loom")
-                         (cons "version" (loom-version)))))
+            (cons "clientInfo" (%lsp-client-info))
             (cons "rootUri" (or root-uri json-kit:+json-null+))
             (cons "capabilities" (%lsp-client-capabilities)))
       (when root-uri
-        (list
-         (cons "workspaceFolders"
-               (list
-                (json-kit:make-json-object
-                 (list (cons "uri" root-uri)
-                       (cons "name" "Loom workspace")))))))))))
+        (list (cons "workspaceFolders"
+                    (%lsp-workspace-folders root-uri))))))))
