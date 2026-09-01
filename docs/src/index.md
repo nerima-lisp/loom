@@ -3,7 +3,8 @@
 A terminal text editor for SBCL with Emacs-style keybindings. Its direct
 runtime dependencies include `cl-tty-kit`, `cl-host-kit`, `cl-history-kit`,
 `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`, `cl-boundary-kit`,
-`cl-concurrent-kit`, `cl-json-kit`, and `cl-log-kit`.
+`cl-concurrent-kit`, `cl-json-kit`, `cl-log-kit`, `cl-process-kit`, and
+`cl-vcs-kit`.
 
 ```sh
 nix run github:nerima-lisp/loom
