@@ -61,18 +61,18 @@
   (let ((buffer (%selected-buffer)))
     (buffer-set-point buffer (1- (buffer-point-line buffer)) (buffer-point-column buffer))))
 
+(defun %run-word-motion-helper (offset-function)
+  (let* ((buffer (%selected-buffer))
+         (start (buffer-narrow-start-offset buffer))
+         (offset (funcall offset-function
+                          (buffer-visible-text buffer)
+                          (- (buffer-point-offset buffer) start))))
+    (%move-point-to-offset buffer (+ start offset))))
+
 (defmacro define-word-motion-helper (name offset-function)
   "Define NAME as a one-step word motion helper using OFFSET-FUNCTION."
-  (let ((buffer (gensym "BUFFER-"))
-        (start (gensym "START-"))
-        (offset (gensym "OFFSET-")))
-    `(defun ,name ()
-       (let* ((,buffer (%selected-buffer))
-              (,start (buffer-narrow-start-offset ,buffer))
-              (,offset (,offset-function
-                        (buffer-visible-text ,buffer)
-                        (- (buffer-point-offset ,buffer) ,start))))
-         (%move-point-to-offset ,buffer (+ ,start ,offset))))))
+  `(defun ,name ()
+     (%run-word-motion-helper #',offset-function)))
 
 (define-word-motion-helper %forward-word-once %forward-word-offset)
 (define-word-motion-helper %backward-word-once %backward-word-offset)
