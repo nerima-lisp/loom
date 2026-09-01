@@ -31,27 +31,33 @@
     (otherwise
      (setf (terminal-screen-parser-state screen) :ground))))
 
+(defun %terminal-screen-feed-backspace (screen)
+  (setf (terminal-screen-cursor-column screen)
+        (max 0 (1- (terminal-screen-cursor-column screen)))
+        (terminal-screen-wrap-pending screen) nil))
+
+(defun %terminal-screen-feed-tab (screen)
+  (setf (terminal-screen-cursor-column screen)
+        (min (1- (terminal-screen-width screen))
+             (* 8
+                (1+ (floor (terminal-screen-cursor-column screen)
+                           8))))
+        (terminal-screen-wrap-pending screen) nil))
+
+(defun %terminal-screen-feed-printable-character (screen character)
+  (when (and (>= (char-code character) 32)
+             (/= (char-code character) 127))
+    (%terminal-screen-write-character screen character)))
+
 (defun %terminal-screen-feed-ground-character (screen character)
   (case character
     (#\Esc (setf (terminal-screen-parser-state screen) :escape))
     (#\Return (%terminal-screen-carriage-return screen))
     (#\Newline (%terminal-screen-line-feed screen))
-    (#\Backspace
-     (setf (terminal-screen-cursor-column screen)
-           (max 0 (1- (terminal-screen-cursor-column screen)))
-           (terminal-screen-wrap-pending screen) nil))
-    (#\Tab
-     (setf (terminal-screen-cursor-column screen)
-           (min (1- (terminal-screen-width screen))
-                (* 8
-                   (1+ (floor (terminal-screen-cursor-column screen)
-                              8))))
-           (terminal-screen-wrap-pending screen) nil))
+    (#\Backspace (%terminal-screen-feed-backspace screen))
+    (#\Tab (%terminal-screen-feed-tab screen))
     (#\Bell nil)
-    (otherwise
-     (when (and (>= (char-code character) 32)
-                (/= (char-code character) 127))
-       (%terminal-screen-write-character screen character)))))
+    (otherwise (%terminal-screen-feed-printable-character screen character))))
 
 (defun %terminal-screen-feed-csi-character (screen character)
   (cond
