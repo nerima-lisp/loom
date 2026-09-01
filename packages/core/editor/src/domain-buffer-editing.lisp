@@ -20,23 +20,41 @@ Returns BUFFER."
             (%buffer-point-column buffer) end-column)))
   buffer)
 
+(defun %backward-delete-position (buffer line column)
+  (cond
+    ((and (zerop line) (zerop column)) nil)
+    ((plusp column) (values line (1- column)))
+    (t
+     (let ((previous-line (1- line)))
+       (values previous-line
+               (length (%line-at buffer previous-line)))))))
+
+(defun %delete-backward-within-line (buffer line column)
+  (%do-delete buffer line (1- column) line column)
+  (setf (%buffer-point-line buffer) line
+        (%buffer-point-column buffer) (1- column)))
+
+(defun %delete-backward-across-line (buffer line)
+  (let* ((previous-line (1- line))
+         (previous-length (length (%line-at buffer previous-line))))
+    (%do-delete buffer previous-line previous-length line 0)
+    (setf (%buffer-point-line buffer) previous-line
+          (%buffer-point-column buffer) previous-length)))
+
 (defun %delete-char-backward (buffer)
   "Delete the character before point, joining with the previous line at
 column 0. A no-op at the very start of the buffer."
   (let ((line (%buffer-point-line buffer))
         (column (%buffer-point-column buffer)))
-    (cond
-      ((and (zerop line) (zerop column)) nil)
-      ((plusp column)
-       (%do-delete buffer line (1- column) line column)
-       (setf (%buffer-point-line buffer) line
-             (%buffer-point-column buffer) (1- column)))
-      (t
-       (let* ((prev-line (1- line))
-              (prev-len (length (%line-at buffer prev-line))))
-         (%do-delete buffer prev-line prev-len line 0)
-         (setf (%buffer-point-line buffer) prev-line
-               (%buffer-point-column buffer) prev-len))))))
+    (multiple-value-bind (previous-line previous-column)
+        (%backward-delete-position buffer line column)
+      (declare (ignore previous-column))
+      (cond
+        ((null previous-line) nil)
+        ((= previous-line line)
+         (%delete-backward-within-line buffer line column))
+        (t
+         (%delete-backward-across-line buffer line))))))
 
 (defun %delete-char-forward (buffer)
   "Delete the character at point, joining with the next line at
