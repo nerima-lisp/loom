@@ -1,6 +1,18 @@
 ;;;; packages/feature/session/src/domain-session-validation-metadata.lisp
 (in-package #:loom/feature/session)
 
+(defun %validate-session-string-list (value predicate message)
+  (unless (and (listp value) (every predicate value))
+    (error "validate-session-snapshot: ~A" message))
+  value)
+
+(defun %validate-session-unique-names (objects name-reader message)
+  (let ((names (mapcar name-reader objects)))
+    (unless (= (length names)
+               (length (remove-duplicates names :test #'string=)))
+      (error "validate-session-snapshot: ~A: ~S" message names)))
+  objects)
+
 (defun %validate-session-buffer (buffer)
   (unless (typep buffer 'session-buffer-snapshot)
     (error "validate-session-snapshot: invalid buffer snapshot ~S" buffer))
@@ -44,18 +56,16 @@
   (let ((recent-files (session-snapshot-recent-files snapshot))
         (bookmarks (session-snapshot-bookmarks snapshot))
         (command-history (session-snapshot-command-history snapshot)))
-    (unless (and (listp recent-files)
-                 (every #'%session-nonempty-string-p recent-files))
-      (error "validate-session-snapshot: recent files must be a list of non-empty strings"))
+    (%validate-session-string-list
+     recent-files #'%session-nonempty-string-p
+     "recent files must be a list of non-empty strings")
     (unless (listp bookmarks)
       (error "validate-session-snapshot: bookmarks must be a list"))
     (mapc #'%validate-session-bookmark bookmarks)
-    (let ((names (mapcar #'session-bookmark-snapshot-name bookmarks)))
-      (unless (= (length names)
-                 (length (remove-duplicates names :test #'string=)))
-        (error "validate-session-snapshot: bookmark names must be unique: ~S"
-               names)))
-    (unless (and (listp command-history)
-                 (every #'stringp command-history))
-      (error "validate-session-snapshot: command history must be a list of strings")))
+    (%validate-session-unique-names
+     bookmarks #'session-bookmark-snapshot-name
+     "bookmark names must be unique")
+    (%validate-session-string-list
+     command-history #'stringp
+     "command history must be a list of strings"))
   snapshot)
