@@ -45,6 +45,34 @@
         ((%syntax-keyword-token-p text) :keyword)
         (t :plain)))
 
+(defun %syntax-prefix-token (line position length)
+  (if (< (1+ position) length)
+      (case (char line (1+ position))
+        (#\| (values :comment (%syntax-block-comment-end line position)))
+        (#\\ (values :character
+                      (%syntax-character-literal-end line position)))
+        (otherwise
+         (let ((end (%syntax-atom-end line position)))
+           (values (%syntax-token-kind (subseq line position end)) end))))
+      (values :plain (1+ position))))
+
+(defun %syntax-line-token (line position length)
+  (let ((character (char line position)))
+    (cond ((%syntax-whitespace-p character)
+           (values :whitespace (%syntax-whitespace-end line position)))
+          ((char= character #\;)
+           (values :comment length))
+          ((char= character #\")
+           (values :string (%syntax-string-end line position)))
+          ((char= character #\#)
+           (%syntax-prefix-token line position length))
+          ((%syntax-delimiter-p character)
+           (values :delimiter (1+ position)))
+          (t
+           (let ((end (%syntax-atom-end line position)))
+             (values (%syntax-token-kind (subseq line position end))
+                     end))))))
+
 (defun syntax-highlight-line (line)
   "Return semantic tokens for LINE without changing its source text.
 
@@ -56,36 +84,10 @@ function's contract."
         (position 0)
         (length (length line)))
     (loop while (< position length)
-          do (let ((character (char line position)))
-               (multiple-value-bind
-                     (kind end)
-                   (cond ((%syntax-whitespace-p character)
-                          (values :whitespace
-                                  (%syntax-whitespace-end line position)))
-                         ((char= character #\;)
-                          (values :comment length))
-                         ((char= character #\")
-                          (values :string
-                                  (%syntax-string-end line position)))
-                         ((and (char= character #\#)
-                               (< (1+ position) length)
-                               (char= (char line (1+ position)) #\|))
-                          (values :comment
-                                  (%syntax-block-comment-end line position)))
-                         ((and (char= character #\#)
-                               (< (1+ position) length)
-                               (char= (char line (1+ position)) #\\))
-                          (values :character
-                                  (%syntax-character-literal-end line position)))
-                         ((%syntax-delimiter-p character)
-                          (values :delimiter (1+ position)))
-                         (t
-                          (let ((end (%syntax-atom-end line position)))
-                            (values (%syntax-token-kind
-                                     (subseq line position end))
-                                    end))))
+          do (multiple-value-bind (kind end)
+                 (%syntax-line-token line position length)
                  (push (%make-syntax-token kind
                                            (subseq line position end))
                        tokens)
-                 (setf position end))))
+                 (setf position end)))
     (nreverse tokens)))
