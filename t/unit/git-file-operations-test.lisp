@@ -45,7 +45,7 @@
         (expect captured-directory :to-equal "/repo/")
         (expect captured-timeout :to-equal *git-command-timeout-seconds*)))))
 
-  (it "builds status and staged diff commands with the requested directory"
+  (it "builds status and diff commands with the requested directory"
     (let ((result (make-test-git-result :status 0))
           commands)
       (with-replaced-function
@@ -55,10 +55,13 @@
                    commands)
              result))
         (expect (run-git-status :directory "/repo/") :to-be result)
+        (expect (run-git-diff :directory "/repo/") :to-be result)
         (expect (run-git-diff :directory "/repo/" :staged t) :to-be result)
         (expect (nreverse commands)
                 :to-equal
                 `((nil "status" ("--short" "--branch") "/repo/"
+                        ,*git-command-timeout-seconds*)
+                  (nil "diff" nil "/repo/"
                         ,*git-command-timeout-seconds*)
                   (nil "diff" ("--cached") "/repo/"
                         ,*git-command-timeout-seconds*))))))

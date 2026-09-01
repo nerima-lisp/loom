@@ -140,6 +140,22 @@
               original-launch
               (symbol-function 'loom/feature/lsp::%start-lsp-process-readers)
               original-readers)))))
+  (it "signals when the reader executor rejects a reader"
+    (let ((original-submit
+            (symbol-function 'cl-concurrent-kit:try-submit))
+          (process (%make-test-lsp-process)))
+      (unwind-protect
+           (progn
+             (setf (symbol-function 'cl-concurrent-kit:try-submit)
+                   (lambda (executor function)
+                     (declare (ignore executor function))
+                     (values nil nil)))
+             (signals error
+               (loom/feature/lsp::%start-lsp-process-readers
+                process nil
+                (loom/feature/lsp::lsp-process-result-channel process))))
+        (setf (symbol-function 'cl-concurrent-kit:try-submit)
+              original-submit))))
 
 (describe
   "LSP transport sending"

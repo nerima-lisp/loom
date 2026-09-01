@@ -11,6 +11,7 @@
        (loom::forward-barf-sexp "(a b)" 1 "(a) b")
        (loom::backward-slurp-sexp "a (b)" 3 "(a b)")
        (loom::backward-barf-sexp "(a b)" 1 "a (b)")
+       (loom::backward-barf-sexp "(a)" 1 "a ()")
        (loom::splice-sexp "(a (b c) d)" 4 "(a b c d)")
        (loom::raise-sexp "(a (b c) d)" 3 "(b c)")
        (loom::wrap-round "a b" 0 "(a) b"))
@@ -48,6 +49,14 @@
       (loom::wrap-round)
       (expect (buffer-text buffer) :to-equal "(a) b")
       (expect (buffer-point-column buffer) :to-equal 1)))
+
+  (it
+    "wrap-round inserts an empty pair before a closing delimiter"
+    (%with-selected-buffer-state (buffer "(a)")
+      (buffer-set-point buffer 0 2)
+      (loom::wrap-round)
+      (expect (buffer-text buffer) :to-equal "(a())")
+      (expect (buffer-point-column buffer) :to-equal 3)))
 
   (it
     "keeps point on the same text through a slurp"
