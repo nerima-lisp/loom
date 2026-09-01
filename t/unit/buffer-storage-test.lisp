@@ -149,6 +149,19 @@
 
 (describe
   "piece-table position helpers"
+  (it
+    "tracks full text length without materializing the piece table"
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
+      (expect (loom::%buffer-full-length buffer)
+              :to-equal (length (buffer-text buffer)))
+      (buffer-set-point buffer 0 3)
+      (buffer-insert-string buffer "-edited")
+      (expect (loom::%buffer-full-length buffer)
+              :to-equal (length (buffer-text buffer)))
+      (buffer-delete-region buffer 1 0 1 3)
+      (expect (loom::%buffer-full-length buffer)
+              :to-equal (length (buffer-text buffer)))))
+
   (cl-weave:it-property
       "splits every generated character into one line"
       ((character (cl-weave:gen-character :alphabet "abc")))
