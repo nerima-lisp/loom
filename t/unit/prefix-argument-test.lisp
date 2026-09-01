@@ -44,6 +44,13 @@
       (expect (prefix-argument-explicit-p argument) :to-be t)
       (expect (prefix-argument-active-p argument) :to-be t)))
 
+  (it
+    "consumes an inactive argument as the default count"
+    (let ((argument (make-prefix-argument)))
+      (expect (prefix-argument-consume argument) :to-equal 1)
+      (expect (prefix-argument-active-p argument) :to-be nil)
+      (expect (prefix-argument-value argument) :to-equal 1)))
+
   (it-each
       ((nil 1)
        (-3 0)
