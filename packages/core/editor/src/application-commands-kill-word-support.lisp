@@ -9,6 +9,11 @@
         do (setf offset (funcall stepper text offset))
         finally (return offset)))
 
+(defun %ordered-kill-range (point target prepend)
+  (if (< target point)
+      (values target point prepend)
+      (values point target prepend)))
+
 (defun %kill-word-range (text point count positive-step negative-step
                          &key prepend-when-positive)
   "Translate COUNT at POINT into visible-text offsets and coalescing direction.
@@ -16,21 +21,19 @@
 POSITIVE-STEP and NEGATIVE-STEP walk the offset for positive and negative
 prefix arguments respectively. Returns START, END, and whether the deleted
 text should be prepended when coalescing into the newest kill-ring entry."
-  (flet ((ordered-range (target prepend)
-           (if (< target point)
-               (values target point prepend)
-               (values point target prepend))))
-    (cond
-      ((plusp count)
-       (ordered-range
-        (%walk-word-offset text point count positive-step)
-        prepend-when-positive))
-      ((minusp count)
-       (ordered-range
-        (%walk-word-offset text point (- count) negative-step)
-        (not prepend-when-positive)))
-      (t
-       (values nil nil nil)))))
+  (cond
+    ((plusp count)
+     (%ordered-kill-range
+      point
+      (%walk-word-offset text point count positive-step)
+      prepend-when-positive))
+    ((minusp count)
+     (%ordered-kill-range
+      point
+      (%walk-word-offset text point (- count) negative-step)
+      (not prepend-when-positive)))
+    (t
+     (values nil nil nil))))
 
 (defun %execute-word-kill (positive-step negative-step &key prepend-when-positive)
   (let* ((buffer (%selected-buffer))
