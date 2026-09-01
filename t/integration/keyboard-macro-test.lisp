@@ -47,6 +47,28 @@
                 "Keyboard macro defined"))))
 
   (it
+    "keeps the final event when it is not the terminating control-x prefix"
+    (%with-minibuffer-state (minibuffer "")
+      (let ((macro (make-keyboard-macro)))
+        (setf (editor-state-keyboard-macro *editor-state*) macro)
+        (start-kbd-macro)
+        (let ((event (make-keyboard-macro-event
+                      :kind :key
+                      :value (cons nil #\q))))
+          (keyboard-macro-record-event macro event)
+          (end-kbd-macro)
+          (let ((events (keyboard-macro-events macro)))
+            (expect (length events) :to-equal 1)
+            (expect (keyboard-macro-event-kind (first events)) :to-equal :key)
+            (expect (keyboard-macro-event-value (first events))
+                    :to-equal
+                    (cons nil #\q))))
+        (expect (keyboard-macro-recording-p macro) :to-be nil)
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal
+                "Keyboard macro defined"))))
+
+  (it
     "does not record an unbound modified key"
     (%with-minibuffer-state (minibuffer "")
       (let* ((keymap (make-keymap))
