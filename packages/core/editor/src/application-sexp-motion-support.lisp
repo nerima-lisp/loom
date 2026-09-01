@@ -4,22 +4,23 @@
 ;;;;
 (in-package #:loom)
 
+(defun %sexp-filler-character-p (text classes offset)
+  (or (eq (aref classes offset) :comment)
+      (and (%sexp-code-p classes offset)
+           (%sexp-whitespace-p (char text offset)))))
+
 (defun %sexp-skip-forward-filler (text classes offset)
   "Return the first index at or after OFFSET that begins something readable."
   (let ((length (length text)))
     (loop while (and (< offset length)
-                     (or (eq (aref classes offset) :comment)
-                         (and (%sexp-code-p classes offset)
-                              (%sexp-whitespace-p (char text offset)))))
+                     (%sexp-filler-character-p text classes offset))
           do (incf offset))
     offset))
 
 (defun %sexp-skip-backward-filler (text classes offset)
   "Return the first index at or before OFFSET that ends something readable."
   (loop while (and (plusp offset)
-                   (or (eq (aref classes (1- offset)) :comment)
-                       (and (%sexp-code-p classes (1- offset))
-                            (%sexp-whitespace-p (char text (1- offset))))))
+                   (%sexp-filler-character-p text classes (1- offset)))
         do (decf offset))
   offset)
 
