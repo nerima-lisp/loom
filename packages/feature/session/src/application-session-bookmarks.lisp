@@ -57,6 +57,18 @@
                  :key #'buffer-name
                  :test #'string=))))
 
+(defun %restore-session-bookmark (snapshot buffer)
+  "Build one restored bookmark from SNAPSHOT and its matching BUFFER."
+  (make-editor-bookmark
+   :name (session-bookmark-snapshot-name snapshot)
+   :buffer buffer
+   :path (and (session-bookmark-snapshot-path snapshot)
+              (pathname (session-bookmark-snapshot-path snapshot)))
+   :buffer-name (or (session-bookmark-snapshot-buffer-name snapshot)
+                    (and buffer (buffer-name buffer)))
+   :line (session-bookmark-snapshot-line snapshot)
+   :column (session-bookmark-snapshot-column snapshot)))
+
 (defun %restore-session-bookmarks (snapshots buffers)
   "Build a named bookmark table and reconnect bookmarks to BUFFERS when possible."
   (when snapshots
@@ -64,12 +76,4 @@
       (dolist (snapshot snapshots bookmarks)
         (let ((buffer (%restore-session-bookmark-buffer snapshot buffers)))
           (setf (gethash (session-bookmark-snapshot-name snapshot) bookmarks)
-                (make-editor-bookmark
-                 :name (session-bookmark-snapshot-name snapshot)
-                 :buffer buffer
-                 :path (and (session-bookmark-snapshot-path snapshot)
-                            (pathname (session-bookmark-snapshot-path snapshot)))
-                 :buffer-name (or (session-bookmark-snapshot-buffer-name snapshot)
-                                  (and buffer (buffer-name buffer)))
-                 :line (session-bookmark-snapshot-line snapshot)
-                 :column (session-bookmark-snapshot-column snapshot))))))))
+                (%restore-session-bookmark snapshot buffer)))))))
