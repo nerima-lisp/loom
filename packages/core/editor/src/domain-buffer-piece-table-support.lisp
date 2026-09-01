@@ -105,15 +105,19 @@
        (list (%piece-right-fragment piece suffix-offset
                                     (- piece-length suffix-offset)))))))
 
+(defun %splice-delete-piece-step (piece cursor start end result)
+  (let ((next (+ cursor (%piece-length piece))))
+    (if (%piece-outside-delete-range-p cursor next start end)
+        (push piece result)
+        (%append-piece-fragments
+         result
+         (%delete-piece-fragments piece cursor start end)))))
+
 (defun %splice-delete-range (buffer start end)
   (let ((result nil) (cursor 0))
     (dolist (piece (%buffer-pieces buffer))
-      (let ((next (+ cursor (%piece-length piece))))
-        (if (%piece-outside-delete-range-p cursor next start end)
-            (push piece result)
-            (dolist (fragment (%delete-piece-fragments piece cursor start end))
-              (push fragment result)))
-        (setf cursor next)))
+      (setf result (%splice-delete-piece-step piece cursor start end result))
+      (incf cursor (%piece-length piece)))
     (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
 
 (defun %piece-range-overlap (cursor next start end)
