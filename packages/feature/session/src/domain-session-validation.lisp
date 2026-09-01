@@ -10,7 +10,7 @@ state is replaced."
   (unless (typep snapshot 'session-snapshot)
     (error "validate-session-snapshot: not a session snapshot: ~S" snapshot))
   (let ((buffers (session-snapshot-buffers snapshot)))
-    (unless (and (listp buffers) (plusp (length buffers)))
+    (unless (and (listp buffers) (consp buffers))
       (error "validate-session-snapshot: a session needs one or more buffers"))
     (dolist (buffer buffers)
       (%validate-session-buffer buffer))
