@@ -179,5 +179,9 @@
       (sb-cover:report coverage-dir
                        :if-matches (lambda (file)
                                      (loom-source-file-p file root))))
+    (let ((index (merge-pathnames #P"cover-index.html" coverage-dir)))
+      (unless (probe-file index)
+        (error "Coverage report did not produce ~A." index))
+      (progress (format nil "report available at ~A" index)))
     (progress (if passed-p "completed successfully" "completed with failures"))
     (sb-ext:exit :code (if passed-p 0 1))))
