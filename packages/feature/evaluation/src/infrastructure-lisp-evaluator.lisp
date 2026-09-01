@@ -18,6 +18,23 @@
                  (setf first-p nil)
                  (prin1 value stream)))))
 
+(defun %evaluate-form (form)
+  (%evaluation-values-line (multiple-value-list (eval form))))
+
+(defun %evaluate-forms (source eof)
+  (let ((form-count 0)
+        (value-lines nil)
+        (error-message nil))
+    (handler-case
+        (with-input-from-string (input source)
+          (loop for form = (read input nil eof)
+                until (eq form eof)
+                do (incf form-count)
+                   (push (%evaluate-form form) value-lines)))
+      (error (condition)
+        (setf error-message (princ-to-string condition))))
+    (values form-count (nreverse value-lines) error-message)))
+
 (defun %evaluate-lisp-forms (source output-stream)
   "Evaluate SOURCE forms and return count, values, and an optional error."
   (let ((form-count 0)
@@ -28,16 +45,11 @@
               (*read-eval* nil)
               (*standard-output* output-stream)
               (eof (gensym "EOF")))
-          (with-input-from-string (input source)
-            (loop for form = (read input nil eof)
-                  until (eq form eof)
-                  do (incf form-count)
-                     (push (%evaluation-values-line
-                            (multiple-value-list (eval form)))
-                           value-lines))))
+          (multiple-value-setq (form-count value-lines error-message)
+            (%evaluate-forms source eof)))
       (error (condition)
         (setf error-message (princ-to-string condition))))
-    (values form-count (nreverse value-lines) error-message)))
+    (values form-count value-lines error-message)))
 
 (defun evaluate-lisp-source (source)
   "Evaluate every form in SOURCE in LOOM-USER and return an evaluation result.
