@@ -113,3 +113,28 @@
               (error (condition)
                 (expect (princ-to-string condition) :to-contain "boom"))))))
       (expect stopped :to-be t))))
+
+(describe
+  "%run-loom"
+  (it
+    "passes the CLI positional path and terminal descriptor through startup"
+    (let ((received-path nil)
+          (received-fd nil)
+          (received-state nil)
+          (invocation (cl-cli:parse-argv loom::*loom-app*
+                                         '("loom" "notes.txt"))))
+      (with-replaced-function
+          (loom::%call-with-started-editor-state
+           (lambda (path thunk)
+             (setf received-path path)
+             (setf received-state (funcall thunk :started-state))
+             :started))
+        (with-replaced-function
+            (loom::%run-loom-session
+             (lambda (fd)
+               (setf received-fd fd)
+               :session-ended))
+          (expect (loom::%run-loom invocation :fd 7) :to-equal :started)
+          (expect received-path :to-equal "notes.txt")
+          (expect received-state :to-equal :session-ended)
+          (expect received-fd :to-equal 7))))))
