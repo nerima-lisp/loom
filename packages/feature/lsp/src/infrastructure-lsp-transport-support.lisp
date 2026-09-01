@@ -45,8 +45,8 @@
    (lsp-process-output process)
    (lambda (message)
      (cl-concurrent-kit:send channel message)))
-    (ignore-errors
-      (cl-concurrent-kit:send channel nil)))
+  (ignore-errors
+    (cl-concurrent-kit:send channel nil)))
 
 (defun %lsp-process-drain-errors (process)
   (loop for byte = (read-byte (lsp-process-error-output process) nil nil)
