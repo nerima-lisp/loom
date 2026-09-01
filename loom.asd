@@ -194,6 +194,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/application-sexp-motion-support")
    (:file "packages/core/editor/src/application-sexp-motion")
    (:file "packages/core/editor/src/application-structural-editing")
+   (:file "packages/core/editor/src/application-structural-editing-application")
    (:file "packages/core/editor/src/application-commands-movement-support")
    (:file "packages/core/editor/src/application-commands-movement-view-support")
    (:file "packages/core/editor/src/application-commands-movement")
