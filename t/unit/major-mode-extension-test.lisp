@@ -117,11 +117,35 @@
     "rejects malformed extension metadata before registration"
     (expect
      (signals error
+       (register-major-mode 42))
+     :to-be-truthy)
+    (expect
+     (signals error
        (register-major-mode :loom-invalid-name :name 42))
      :to-be-truthy)
     (expect
      (signals error
+       (register-major-mode :loom-invalid-alias-list :aliases 42))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-alias-item :aliases '(42)))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-keyword-list :keywords 42))
+     :to-be-truthy)
+    (expect
+     (signals error
        (register-major-mode :loom-invalid-keywords :keywords '(42)))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-keybinding-list :keybindings 42))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-keybinding :keybindings '((nil . nil))))
      :to-be-truthy)
     (expect
      (signals error
