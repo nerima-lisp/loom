@@ -18,15 +18,21 @@
             do (incf position)))
     position))
 
+(defun %sexp-string-next-position (text position length)
+  (let ((character (char text position)))
+    (cond
+      ((char= character #\\) (values (min length (+ position 2)) nil))
+      ((char= character #\") (values (1+ position) t))
+      (t (values (1+ position) nil)))))
+
 (defun %sexp-string-end (text index length)
   "Return the index just past the string literal opening at INDEX."
-  (let ((position (1+ index)))
-    (loop while (< position length)
-          do (let ((character (char text position)))
-               (incf position)
-               (cond ((char= character #\\) (incf position))
-                     ((char= character #\") (return)))))
-    (min position length)))
+  (let ((position (1+ index))
+        (closed nil))
+    (loop while (and (< position length) (not closed))
+          do (multiple-value-setq (position closed)
+               (%sexp-string-next-position text position length)))
+    position))
 
 (defun %mark-sexp-range (classes start end class)
   (loop for position from start below end
