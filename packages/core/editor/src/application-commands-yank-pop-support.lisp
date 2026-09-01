@@ -47,14 +47,16 @@ right to left preserves those offsets; the returned ranges use the resulting
     (%yank-replacement-ranges ranges replacement-length)))
 
 (defun %yank-replacement-ranges (ranges replacement-length)
-  (mapcar
-   (lambda (range)
-     (let* ((old-start (car range))
-            (left-shift (%yank-range-left-shift ranges old-start
-                                                 replacement-length)))
-       (cons (+ old-start left-shift)
-             (+ old-start left-shift replacement-length))))
-   ranges))
+  (mapcar (lambda (range)
+            (%yank-replacement-range ranges range replacement-length))
+          ranges))
+
+(defun %yank-replacement-range (ranges range replacement-length)
+  (let* ((old-start (car range))
+         (left-shift (%yank-range-left-shift ranges old-start
+                                              replacement-length)))
+    (cons (+ old-start left-shift)
+          (+ old-start left-shift replacement-length))))
 
 (defun %replace-yank-range (buffer range replacement)
   (let* ((start (buffer-offset-position buffer (car range)))
