@@ -14,6 +14,9 @@ recursing only into expanded directories."
                                 (gethash child-path (file-tree-expanded tree)))
                        (%file-tree-flatten tree child-path (1+ depth))))))
 
+(defun %file-tree-child-kind (path children)
+  (cdr (assoc path children :test (function equal))))
+
 (defun %file-tree-find-kind (tree path)
   "Search TREE, following only currently-expanded directories starting from
 its root, for an entry whose path is EQUAL to PATH, and return its kind
@@ -21,7 +24,7 @@ its root, for an entry whose path is EQUAL to PATH, and return its kind
 reachable (visible) entries."
   (labels ((search-under (dir-path)
              (let ((children (funcall (file-tree-child-lister tree) dir-path)))
-               (or (cdr (assoc path children :test (function equal)))
+               (or (%file-tree-child-kind path children)
                    (loop for (child-path . kind) in children
                          thereis (and (eq kind :directory)
                                       (gethash child-path (file-tree-expanded tree))
