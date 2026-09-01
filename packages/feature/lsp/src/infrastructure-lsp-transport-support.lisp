@@ -3,6 +3,14 @@
 ;;;; Internal helpers for the LSP child-process transport.
 (in-package #:loom/feature/lsp)
 
+(defun %lsp-buffer-after-frame (buffer used)
+  (let ((remaining-length (- (length buffer) used)))
+    (make-array remaining-length
+                :element-type '(unsigned-byte 8)
+                :adjustable t
+                :fill-pointer remaining-length
+                :initial-contents (subseq buffer used))))
+
 (defun %lsp-decode-complete-frames (buffer)
   (let ((messages nil)
         (remaining buffer))
@@ -14,12 +22,7 @@
            (return (values (nreverse messages) remaining)))
           ((eq status :complete)
            (push json messages)
-           (setf remaining
-                 (make-array (- (length remaining) used)
-                             :element-type '(unsigned-byte 8)
-                             :adjustable t
-                             :fill-pointer (- (length remaining) used)
-                             :initial-contents (subseq remaining used))))
+           (setf remaining (%lsp-buffer-after-frame remaining used)))
           (t (return (values (nreverse messages) remaining))))))))
 
 (defun %lsp-process-read-output (process channel)

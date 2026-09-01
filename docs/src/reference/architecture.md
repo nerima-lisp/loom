@@ -353,6 +353,13 @@ primitives directly because it needs unsigned-byte `Content-Length` framing;
 keeps the process boundary explicit instead of introducing a character-stream
 wrapper that cannot represent the protocol's framing bytes safely.
 
+The transport reader keeps byte accumulation and channel lifecycle in the
+process boundary, while `%lsp-decode-complete-frames` handles only the pure
+buffer-to-messages transformation. An incomplete trailing frame is returned as
+the next buffer; complete frames are emitted in wire order. This separation
+makes fragmented and coalesced process output testable without coupling frame
+decoding to process I/O.
+
 ## Test Suite
 
 The `loom/test` ASDF system is run by the same script locally and in Nix:
