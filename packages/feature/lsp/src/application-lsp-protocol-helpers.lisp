@@ -10,9 +10,9 @@
      (let ((message (gethash "message" value)))
        (if (stringp message)
            message
-           (format nil "~S" value))))
+           (prin1-to-string value))))
     ((stringp value) value)
-    (t (format nil "~S" value))))
+    (t (prin1-to-string value))))
 
 (defun %lsp-value-present-p (object key)
   (multiple-value-bind (value present-p)
