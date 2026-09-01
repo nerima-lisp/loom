@@ -27,6 +27,21 @@
   (multiple-value-bind (line column) (buffer-mark buffer)
     (and line (%format-position-offset buffer line column))))
 
+(defun %format-replace-buffer-text (buffer source formatted point-offset mark-offset)
+  (unless (string= source formatted)
+    (buffer-record-undo-boundary buffer)
+    (let ((end (buffer-offset-position buffer (length source))))
+      (buffer-delete-region
+       buffer
+       0
+       0
+       (buffer-position-line end)
+       (buffer-position-column end)))
+    (buffer-insert-string buffer formatted)
+    (%format-set-position-from-offset buffer point-offset)
+    (when mark-offset
+      (%format-set-position-from-offset buffer mark-offset :mark t))))
+
 (defun format-buffer-with-command (command &optional (buffer (%selected-buffer)))
   "Format BUFFER by sending its complete text to COMMAND.
 
@@ -52,18 +67,7 @@ returned in all non-signalling process cases."
                                     :directory (%format-buffer-directory buffer)
                                     :input source)))
     (when (shell-command-result-success-p result)
-      (let ((formatted (shell-command-result-output result)))
-        (unless (string= source formatted)
-          (buffer-record-undo-boundary buffer)
-          (let ((end (buffer-offset-position buffer (length source))))
-            (buffer-delete-region
-             buffer
-             0
-             0
-             (buffer-position-line end)
-             (buffer-position-column end)))
-          (buffer-insert-string buffer formatted)
-          (%format-set-position-from-offset buffer point-offset)
-          (when mark-offset
-            (%format-set-position-from-offset buffer mark-offset :mark t)))))
+      (%format-replace-buffer-text
+       buffer source (shell-command-result-output result)
+       point-offset mark-offset))
     result))
