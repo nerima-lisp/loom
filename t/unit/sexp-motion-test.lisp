@@ -12,7 +12,9 @@
        ("\"(\"" (:string :string :string))
        ("\"a\\\"(\"" (:string :string :string :string :string :string))
        ("#|)|#" (:comment :comment :comment :comment :comment))
-       ("#\\Space" (:atom :atom :atom :atom :atom :atom :atom)))
+       ("#\\Space" (:atom :atom :atom :atom :atom :atom :atom))
+       ("#\\" (:atom :atom))
+       ("\"unfinished" (:string :string :string :string :string :string :string :string :string :string :string)))
       "classifies reader syntax in ~S"
       (text expected)
     (expect (coerce (loom::%sexp-syntax-classes text) 'list)
