@@ -31,54 +31,60 @@
     (otherwise
      (setf (terminal-screen-parser-state screen) :ground))))
 
+(defun %terminal-screen-feed-ground-character (screen character)
+  (case character
+    (#\Esc (setf (terminal-screen-parser-state screen) :escape))
+    (#\Return (%terminal-screen-carriage-return screen))
+    (#\Newline (%terminal-screen-line-feed screen))
+    (#\Backspace
+     (setf (terminal-screen-cursor-column screen)
+           (max 0 (1- (terminal-screen-cursor-column screen)))
+           (terminal-screen-wrap-pending screen) nil))
+    (#\Tab
+     (setf (terminal-screen-cursor-column screen)
+           (min (1- (terminal-screen-width screen))
+                (* 8
+                   (1+ (floor (terminal-screen-cursor-column screen)
+                              8))))
+           (terminal-screen-wrap-pending screen) nil))
+    (#\Bell nil)
+    (otherwise
+     (when (and (>= (char-code character) 32)
+                (/= (char-code character) 127))
+       (%terminal-screen-write-character screen character)))))
+
+(defun %terminal-screen-feed-csi-character (screen character)
+  (cond
+    ((and (zerop (length (terminal-screen-csi-parameters screen)))
+          (char= character #\?))
+     (setf (terminal-screen-csi-private screen) t))
+    ((<= 64 (char-code character) 126)
+     (%terminal-screen-csi screen character)
+     (setf (terminal-screen-parser-state screen) :ground))
+    ((or (digit-char-p character)
+         (char= character #\;)
+         (char= character #\:))
+     (setf (terminal-screen-csi-parameters screen)
+           (concatenate 'string
+                        (terminal-screen-csi-parameters screen)
+                        (string character))))
+    (t
+     (setf (terminal-screen-parser-state screen) :ground))))
+
+(defun %terminal-screen-feed-osc-character (screen character)
+  (cond
+    ((char= character #\Bell)
+     (setf (terminal-screen-parser-state screen) :ground))
+    ((char= character #\Esc)
+     (setf (terminal-screen-parser-state screen) :osc-escape))))
+
 (defun %terminal-screen-feed-character (screen character)
   (case (terminal-screen-parser-state screen)
-    (:ground
-     (case character
-       (#\Esc (setf (terminal-screen-parser-state screen) :escape))
-       (#\Return (%terminal-screen-carriage-return screen))
-       (#\Newline (%terminal-screen-line-feed screen))
-       (#\Backspace
-        (setf (terminal-screen-cursor-column screen)
-              (max 0 (1- (terminal-screen-cursor-column screen)))
-              (terminal-screen-wrap-pending screen) nil))
-       (#\Tab
-        (setf (terminal-screen-cursor-column screen)
-              (min (1- (terminal-screen-width screen))
-                   (* 8
-                      (1+ (floor (terminal-screen-cursor-column screen)
-                                 8))))
-              (terminal-screen-wrap-pending screen) nil))
-       (#\Bell nil)
-       (otherwise
-        (when (and (>= (char-code character) 32)
-                   (/= (char-code character) 127))
-          (%terminal-screen-write-character screen character)))))
+    (:ground (%terminal-screen-feed-ground-character screen character))
     (:escape
      (%terminal-screen-handle-escape screen character))
-    (:csi
-     (cond
-       ((and (zerop (length (terminal-screen-csi-parameters screen)))
-             (char= character #\?))
-        (setf (terminal-screen-csi-private screen) t))
-       ((<= 64 (char-code character) 126)
-        (%terminal-screen-csi screen character)
-        (setf (terminal-screen-parser-state screen) :ground))
-       ((or (digit-char-p character)
-            (char= character #\;)
-            (char= character #\:))
-        (setf (terminal-screen-csi-parameters screen)
-              (concatenate 'string
-                           (terminal-screen-csi-parameters screen)
-                           (string character))))
-       (t
-        (setf (terminal-screen-parser-state screen) :ground))))
-    (:osc
-     (cond
-       ((char= character #\Bell)
-        (setf (terminal-screen-parser-state screen) :ground))
-       ((char= character #\Esc)
-        (setf (terminal-screen-parser-state screen) :osc-escape))))
+    (:csi (%terminal-screen-feed-csi-character screen character))
+    (:osc (%terminal-screen-feed-osc-character screen character))
     (:osc-escape
      (setf (terminal-screen-parser-state screen) :ground)))
   screen)
