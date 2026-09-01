@@ -56,7 +56,7 @@ whole string as one range, which is what a zero-width window draws: nothing."
   (declare (ignore renderer))
   (check-type string string)
   (check-type width (integer 0 *))
-  (if (or (zerop (length string)) (zerop width))
+  (if (or (equal string "") (zerop width))
       (list (cons 0 (length string)))
       (%loom-renderer-wrap-segment-ranges string width)))
 
