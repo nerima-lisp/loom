@@ -37,13 +37,15 @@
 (defmacro %define-file-tree-selected-path-command
     (name docstring path-binding &body body)
   "Define NAME as a zero-argument file-tree command over the selected path."
-  (let ((tree-var (gensym "TREE-")))
+  (let ((tree-var (gensym "TREE-"))
+        (path-var (gensym "PATH-")))
     `(defun ,name ()
      ,docstring
      (let* ((,tree-var (editor-state-file-tree *editor-state*))
-            (,path-binding (file-tree-selected-path ,tree-var)))
-       (when ,path-binding
-           (symbol-macrolet ((tree ,tree-var))
+            (,path-var (file-tree-selected-path ,tree-var)))
+       (when ,path-var
+         (symbol-macrolet ((tree ,tree-var)
+                          (,path-binding ,path-var))
            ,@body))))))
 
 (%define-file-tree-selection-command
