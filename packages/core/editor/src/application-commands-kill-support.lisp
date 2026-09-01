@@ -62,13 +62,13 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
     (multiple-value-bind (end-line end-column)
       (%kill-line-end-position buffer line column)
       (unless (and (= end-line line) (= end-column column))
-        (list line column end-line end-column)))))
+        (values line column end-line end-column)))))
 
 (defun %kill-line-once (&key coalesce)
-  (let* ((buffer (%selected-buffer))
-         (range (%kill-line-range buffer)))
-    (when range
-      (destructuring-bind (line column end-line end-column) range
+  (let ((buffer (%selected-buffer)))
+    (multiple-value-bind (line column end-line end-column)
+        (%kill-line-range buffer)
+      (when line
         (%kill-ring-push
          (buffer-delete-region buffer line column end-line end-column)
          :coalesce coalesce)))))
