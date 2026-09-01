@@ -1,6 +1,26 @@
 (in-package #:loom/test)
 
 (describe
+    "git result text"
+  (it "prefers standard output"
+      (expect (loom/feature/git::git-result-text
+               (make-test-git-result :stdout "status~%"
+                                     :stderr "diagnostic~%"))
+              :to-equal
+              "status~%"))
+  (it "falls back to standard error when standard output is empty"
+      (expect (loom/feature/git::git-result-text
+               (make-test-git-result :stdout ""
+                                     :stderr "not a repository"))
+              :to-equal
+              "not a repository"))
+  (it "returns an empty string when Git captured no output"
+      (expect (loom/feature/git::git-result-text
+               (make-test-git-result :stdout "" :stderr ""))
+              :to-equal
+              "")))
+
+(describe
     "git command execution"
   (it "runs status in the requested directory"
       (let ((result

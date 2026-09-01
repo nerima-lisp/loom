@@ -158,3 +158,25 @@
       (funcall (loom::%minibuffer-on-confirm minibuffer) "   ")
       (expect (minibuffer-message-string minibuffer)
               :to-equal "Git unstage cancelled")))
+
+  (it "reports exceptions from stage and unstage"
+    (%with-minibuffer-state (minibuffer "")
+      (with-replaced-function
+          (loom/feature/git:run-git-stage
+           (lambda (path &key directory)
+             (declare (ignore path directory))
+             (error "stage unavailable")))
+        (git-stage-file)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "README.md")
+        (expect (minibuffer-message-string minibuffer)
+                :to-equal "Git stage error: stage unavailable")))
+    (%with-minibuffer-state (minibuffer "")
+      (with-replaced-function
+          (loom/feature/git:run-git-unstage
+           (lambda (path &key directory)
+             (declare (ignore path directory))
+             (error "unstage unavailable")))
+        (git-unstage-file)
+        (funcall (loom::%minibuffer-on-confirm minibuffer) "README.md")
+        (expect (minibuffer-message-string minibuffer)
+                :to-equal "Git unstage error: unstage unavailable"))))
