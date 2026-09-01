@@ -14,6 +14,10 @@
           (dolist (,slot '(window-tree workspaces minibuffer keymap file-tree
                           concurrent-runtime renderer buffers recent-files
                           bookmarks kill-ring last-yank-ranges lsp-session
+                          last-yank-buffer last-yank-start-offset
+                          last-yank-end-offset last-yank-ring-index
+                          last-yank-repeat-count last-command-kill-p
+                          last-command-self-insert-p
                           registers keyboard-macro isearch completion jump-origins
                           auto-save-mode-p
                           auto-save-buffers auto-save-last-run-at format-on-save-p
