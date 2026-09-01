@@ -68,6 +68,21 @@ a measurable string rather than a bounds check of their own."
   "Return the screen column TEXT's SEGMENT starts at within its logical line."
   (loom-renderer-string-width renderer (subseq text 0 (car segment))))
 
+(defun %layout-row-back-step (renderer buffer width line row)
+  "Move one wrapped screen row backward from LINE and ROW.
+
+Return the preceding position and whether the beginning of BUFFER was reached."
+  (cond
+    ((plusp row)
+     (values line (1- row) nil))
+    ((zerop line)
+     (values line row t))
+    (t
+     (let ((previous-line (1- line)))
+       (values previous-line
+               (1- (%layout-segment-count renderer buffer previous-line width))
+               nil)))))
+
 (defun %layout-rows-between (renderer buffer width from-line from-row
                              to-line to-row limit)
   "Return the screen rows from (FROM-LINE, FROM-ROW) to (TO-LINE, TO-ROW).
@@ -90,18 +105,14 @@ viewport costs the height of the window rather than the distance to it."
         (current-row row)
         (remaining count))
     (loop while (plusp remaining)
-          do (cond
-               ((plusp current-row)
-                (decf current-row)
-                (decf remaining))
-               ((zerop current-line)
-                (setf remaining 0))
-               (t
-                (decf current-line)
-                (setf current-row
-                      (1- (%layout-segment-count
-                           renderer buffer current-line width)))
-                (decf remaining))))
+          do (multiple-value-bind (previous-line previous-row at-start)
+                 (%layout-row-back-step
+                  renderer buffer width current-line current-row)
+               (setf current-line previous-line
+                     current-row previous-row)
+               (if at-start
+                   (setf remaining 0)
+                   (decf remaining))))
     (values current-line current-row)))
 
 (defun %layout-draw-wrapped-line (renderer text x y width mode start-row
