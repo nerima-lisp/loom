@@ -27,13 +27,18 @@
         (list (%parse-command-spec-form spec)))))
    specs))
 
+(defun %duplicate-command-spec-name (entries)
+  "Return the first duplicated non-NIL command name in ENTRIES."
+  (let ((names (make-hash-table :test (function equalp))))
+    (loop for (name) in entries
+          when name
+            do (when (gethash name names)
+                 (return name))
+               (setf (gethash name names) t))))
+
 (defun %validate-command-spec-entries (entries)
   "Signal an error when ENTRIES contains duplicate command names."
-  (let* ((names (remove nil (mapcar (function first) entries)))
-         (duplicate
-           (find-if (lambda (name)
-                      (> (count name names :test (function string-equal)) 1))
-                    names)))
+  (let ((duplicate (%duplicate-command-spec-name entries)))
     (when duplicate
       (error "Duplicate COMMAND-SPEC name: ~S" duplicate)))
   entries)
