@@ -5,6 +5,42 @@
 ;;;; domain-major-mode.lisp.
 (in-package #:loom/feature/mode)
 
+(defun %validate-major-mode-parent-and-aliases (key parent parent-key aliases)
+  (unless parent-key
+    (error "Unknown parent major mode: ~S" parent))
+  (when (eq parent-key key)
+    (error "A major mode cannot inherit from itself: ~S" key))
+  (when (/= (length aliases)
+            (length (remove-duplicates aliases :test #'string=)))
+    (error "Major-mode aliases must be unique: ~S" aliases))
+  (dolist (alias aliases)
+    (let ((existing (%major-mode-key alias)))
+      (when (and existing (not (eq existing key)))
+        (error "Major-mode alias is already in use: ~S" alias))))
+  parent-key)
+
+(defun %make-major-mode-definition
+    (key name parent-key aliases extensions filenames comment-prefix
+     indentation-width language-id keywords keybindings truncate-lines)
+  (list :name (or name (string-capitalize (symbol-name key)))
+        :aliases aliases
+        :parent (or parent-key :fundamental)
+        :extensions extensions
+        :filenames filenames
+        :comment-prefix comment-prefix
+        :indentation-width indentation-width
+        :truncate-lines (and truncate-lines t)
+        :language-id (or language-id (string-downcase (symbol-name key)))
+        :keywords (%validate-major-mode-keywords (or keywords '()))
+        :keybindings (%validate-major-mode-keybindings (or keybindings '()))))
+
+(defun %register-major-mode-definition (key definition)
+  (setf (gethash key *registered-major-modes*) definition)
+  (setf *registered-major-mode-order*
+        (append *registered-major-mode-order* (list key)))
+  (incf *major-mode-registry-version*)
+  key)
+
 (defun register-major-mode
     (mode &key name aliases (parent :fundamental) extensions filenames
             comment-prefix (indentation-width 2) language-id keywords
@@ -31,39 +67,14 @@ same single- and multi-chord notation accepted by the global key binding API.
                                    :strip-leading-dot t))
            (normalized-filenames (%normalize-major-mode-string-list
                                   (or filenames '()) ":filenames"))
-           (display-name (or name (string-capitalize (symbol-name key))))
-           (definition (list :name display-name
-                             :aliases normalized-aliases
-                             :parent (or parent-key :fundamental)
-                             :extensions normalized-extensions
-                             :filenames normalized-filenames
-                             :comment-prefix comment-prefix
-                             :indentation-width indentation-width
-                             :truncate-lines (and truncate-lines t)
-                             :language-id (or language-id
-                                               (string-downcase
-                                                (symbol-name key)))
-                             :keywords (%validate-major-mode-keywords
-                                        (or keywords '()))
-                             :keybindings (%validate-major-mode-keybindings
-                                           (or keybindings '())))))
-      (unless parent-key
-        (error "Unknown parent major mode: ~S" parent))
-      (when (eq parent-key key)
-        (error "A major mode cannot inherit from itself: ~S" mode))
-      (when (/= (length normalized-aliases)
-                (length (remove-duplicates normalized-aliases
-                                           :test #'string=)))
-        (error "Major-mode aliases must be unique: ~S" aliases))
-      (dolist (alias normalized-aliases)
-        (let ((existing (%major-mode-key alias)))
-          (when (and existing (not (eq existing key)))
-            (error "Major-mode alias is already in use: ~S" alias))))
-      (setf (gethash key *registered-major-modes*) definition)
-      (setf *registered-major-mode-order*
-            (append *registered-major-mode-order* (list key)))
-      (incf *major-mode-registry-version*)
-      key)))
+           (definition (%make-major-mode-definition
+                        key name parent-key normalized-aliases
+                        normalized-extensions normalized-filenames
+                        comment-prefix indentation-width language-id keywords
+                        keybindings truncate-lines)))
+      (%validate-major-mode-parent-and-aliases
+       key parent parent-key normalized-aliases)
+      (%register-major-mode-definition key definition))))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.
