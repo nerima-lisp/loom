@@ -87,6 +87,20 @@
   (with-output-to-string (output)
     (loop for octet across octets do (write-char (code-char octet) output))))
 
+(defun %lsp-header-line-fields (line)
+  (let ((colon (position #\: line)))
+    (unless colon
+      (error "Invalid LSP header line: ~S" line))
+    (values (string-trim '(#\Space #\Tab) (subseq line 0 colon))
+            (string-trim '(#\Space #\Tab #\Return)
+                         (subseq line (1+ colon))))))
+
+(defun %lsp-content-length-value (value)
+  (handler-case
+      (parse-integer value :junk-allowed nil)
+    (error ()
+      (error "Invalid Content-Length: ~S" value))))
+
 (defun %lsp-content-length (header)
   (let ((length-value nil))
     (loop with start = 0
@@ -95,21 +109,12 @@
           for line = (string-trim '(#\Space #\Tab #\Return)
                                   (subseq header start end))
           do (when (plusp (length line))
-               (let ((colon (position #\: line)))
-                 (unless colon
-                   (error "Invalid LSP header line: ~S" line))
-                 (let ((name (string-trim '(#\Space #\Tab)
-                                          (subseq line 0 colon)))
-                       (value (string-trim '(#\Space #\Tab #\Return)
-                                           (subseq line (1+ colon)))))
-                   (when (string-equal name "Content-Length")
-                     (when length-value
-                       (error "Duplicate Content-Length header"))
-                     (setf length-value
-                           (handler-case
-                               (parse-integer value :junk-allowed nil)
-                             (error ()
-                               (error "Invalid Content-Length: ~S" value))))))))
+               (multiple-value-bind (name value)
+                   (%lsp-header-line-fields line)
+                 (when (string-equal name "Content-Length")
+                   (when length-value
+                     (error "Duplicate Content-Length header"))
+                   (setf length-value (%lsp-content-length-value value)))))
              (if (= end (length header))
                  (return length-value)
                  (setf start (1+ end))))))
