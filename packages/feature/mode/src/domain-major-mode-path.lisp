@@ -5,6 +5,23 @@
 ;;;; extension/filename matching used by file-opening features.
 (in-package #:loom/feature/mode)
 
+(defparameter *major-mode-path-rules*
+  '((:common-lisp :extensions ("lisp" "lsp" "cl"))
+    (:emacs-lisp :extensions ("el"))
+    (:python :extensions ("py"))
+    (:rust :extensions ("rs"))
+    (:nix :extensions ("nix"))
+    (:typescript-react :extensions ("tsx"))
+    (:typescript :extensions ("ts" "mts" "cts"))
+    (:shell :extensions ("sh" "bash" "zsh")
+             :filenames ("dockerfile" "makefile"))
+    (:markdown :extensions ("md" "markdown"))
+    (:org :extensions ("org"))
+    (:json :extensions ("json"))
+    (:text :extensions ("txt")
+           :filenames ("readme" "license" "copying")))
+  "Built-in path rules, ordered from most specific to least specific.")
+
 (defun %major-mode-path-text (path)
   (typecase path
     (string path)
@@ -29,40 +46,29 @@
          (< (1+ dot) (length basename))
          (string-downcase (subseq basename (1+ dot))))))
 
+(defun %major-mode-registered-for-path (basename extension)
+  (loop for key in *registered-major-mode-order*
+        for definition = (%dynamic-major-mode-definition key)
+        when (or (member basename (getf definition :filenames)
+                         :test #'string=)
+                 (and extension
+                      (member extension (getf definition :extensions)
+                              :test #'string=)))
+          return key))
+
+(defun %major-mode-built-in-for-path (basename extension)
+  (loop for (mode . options) in *major-mode-path-rules*
+        when (or (member basename (getf options :filenames)
+                         :test #'string=)
+                 (and extension
+                      (member extension (getf options :extensions)
+                              :test #'string=)))
+          return mode))
+
 (defun major-mode-for-path (path)
   "Infer a major mode from PATH without accessing the file system."
   (let* ((basename (string-downcase (%major-mode-basename path)))
          (extension (%major-mode-extension basename)))
-    (cond
-      ((loop for key in *registered-major-mode-order*
-             for definition = (%dynamic-major-mode-definition key)
-             when (or (member basename (getf definition :filenames)
-                              :test #'string=)
-                      (and extension
-                           (member extension (getf definition :extensions)
-                                   :test #'string=)))
-               return key))
-      ((and extension
-            (member extension '("lisp" "lsp" "cl") :test #'string=))
-       :common-lisp)
-      ((and extension (string= extension "el")) :emacs-lisp)
-      ((and extension (string= extension "py")) :python)
-      ((and extension (string= extension "rs")) :rust)
-      ((and extension (string= extension "nix")) :nix)
-      ((and extension (string= extension "tsx")) :typescript-react)
-      ((and extension
-            (member extension '("ts" "mts" "cts") :test #'string=))
-       :typescript)
-      ((and extension
-            (member extension '("sh" "bash" "zsh") :test #'string=))
-       :shell)
-      ((and extension
-            (member extension '("md" "markdown") :test #'string=))
-       :markdown)
-      ((and extension (string= extension "org")) :org)
-      ((and extension (string= extension "json")) :json)
-      ((and extension (string= extension "txt")) :text)
-      ((member basename '("dockerfile" "makefile") :test #'string=) :shell)
-      ((member basename '("readme" "license" "copying") :test #'string=)
-       :text)
-      (t :fundamental))))
+    (or (%major-mode-registered-for-path basename extension)
+        (%major-mode-built-in-for-path basename extension)
+        :fundamental)))
