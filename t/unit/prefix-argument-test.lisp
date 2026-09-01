@@ -45,6 +45,14 @@
       (expect (prefix-argument-active-p argument) :to-be t)))
 
   (it
+    "continues an explicit count after starting with a digit"
+    (let ((argument (make-prefix-argument)))
+      (prefix-argument-digit argument 4)
+      (prefix-argument-digit argument 2)
+      (expect (prefix-argument-value argument) :to-equal 42)
+      (expect (prefix-argument-explicit-p argument) :to-be t)))
+
+  (it
     "consumes an inactive argument as the default count"
     (let ((argument (make-prefix-argument)))
       (expect (prefix-argument-consume argument) :to-equal 1)
