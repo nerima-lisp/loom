@@ -27,15 +27,18 @@
           (%active-region-bounds-from-points
            point-line point-column mark-line mark-column)))))
 
+(defun %message-no-active-region ()
+  (minibuffer-message
+   (editor-state-minibuffer *editor-state*)
+   "The mark is not set now, so no region is active")
+  nil)
+
 (defun %kill-active-region-or-message (buffer)
   (%clear-last-yank)
   (multiple-value-bind (start-line start-column end-line end-column prepend)
       (%active-region-bounds buffer)
     (if (null start-line)
-        (progn
-          (minibuffer-message (editor-state-minibuffer *editor-state*)
-                              "The mark is not set now, so no region is active")
-          nil)
+        (%message-no-active-region)
         (progn
           (%kill-ring-push
            (buffer-delete-region buffer start-line start-column end-line end-column)
@@ -50,11 +53,7 @@
   (multiple-value-bind (start-line start-column end-line end-column)
       (%active-region-bounds buffer)
     (if (null start-line)
-        (progn
-          (minibuffer-message
-           (editor-state-minibuffer *editor-state*)
-           "The mark is not set now, so no region is active")
-          nil)
+        (%message-no-active-region)
         (progn
           (%kill-ring-push
            (buffer-region-string
