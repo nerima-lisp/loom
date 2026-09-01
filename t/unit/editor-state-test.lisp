@@ -31,6 +31,11 @@
       (signals error (add-before-save-hook hook nil))
       (signals error (add-after-save-hook hook nil))))
 
+  (it "makes removing save hooks without an active state a harmless no-op"
+    (let ((hook (lambda (buffer) buffer)))
+      (expect (remove-before-save-hook hook nil) :to-be hook)
+      (expect (remove-after-save-hook hook nil) :to-be hook)))
+
   (it "rejects non-function save hooks and keeps empty dispatch harmless"
     (let ((state (make-editor-state)))
       (signals error (add-before-save-hook :not-a-function state))
