@@ -78,4 +78,4 @@
       prefix-argument-explicit-p prefix-argument-negative-p
       prefix-argument-value prefix-argument-universal prefix-argument-digit
       prefix-argument-negative prefix-argument-consume prefix-argument-reset
-      main)))
+      loom-version main)))

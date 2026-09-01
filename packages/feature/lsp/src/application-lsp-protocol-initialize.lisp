@@ -28,7 +28,7 @@
             (cons "clientInfo"
                   (json-kit:make-json-object
                    (list (cons "name" "Loom")
-                         (cons "version" "0.1.0"))))
+                         (cons "version" (loom-version)))))
             (cons "rootUri" (or root-uri json-kit:+json-null+))
             (cons "capabilities" (%lsp-client-capabilities)))
       (when root-uri

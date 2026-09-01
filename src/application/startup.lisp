@@ -5,7 +5,7 @@
 ;;;; startup-services.lisp; this file keeps the CLI boundary and orchestration.
 (in-package #:loom)
 
-(defun %loom-version ()
+(defun loom-version ()
   "Return LOOM's version string from its own ASDF system definition -- the
 single source of truth loom.asd's header comment and flake.nix's ASDVERSIONOF
 both already rely on -- so CL-CLI's generated --version output cannot drift

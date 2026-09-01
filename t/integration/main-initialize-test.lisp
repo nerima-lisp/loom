@@ -20,10 +20,10 @@
       (expect (buffer-name (%selected-test-buffer)) :to-equal "*scratch*"))))
 
 (describe
-  "%loom-version"
+  "loom-version"
   (it
     "returns the loom ASDF system's version string"
-    (expect (loom::%loom-version) :to-equal (asdf:component-version (asdf:find-system "loom"))))
+    (expect (loom:loom-version) :to-equal (asdf:component-version (asdf:find-system "loom"))))
 
   (it
     "uses an explicit fallback when the ASDF system is unavailable"
@@ -32,7 +32,7 @@
          (lambda (name &optional error-p)
            (declare (ignore name error-p))
            nil))
-      (expect (loom::%loom-version) :to-equal "unknown"))))
+      (expect (loom:loom-version) :to-equal "unknown"))))
 
 (describe
   "editor-state save hooks"

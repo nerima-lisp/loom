@@ -7,7 +7,7 @@
 (defparameter *loom-app*
   (cl-cli:make-app
    :name "loom"
-   :version (%loom-version)
+   :version (loom-version)
    :summary "Terminal text editor with Emacs-like keybindings"
    :positionals (list (cl-cli:make-positional
                        :key :path
