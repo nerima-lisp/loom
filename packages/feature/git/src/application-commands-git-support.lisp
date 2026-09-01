@@ -49,33 +49,40 @@
     (:stage (run-git-stage path :directory directory))
     (:unstage (run-git-unstage path :directory directory))))
 
+(defun %git-operation-result-message (operation path result)
+  (multiple-value-bind (verb past-tense)
+      (%git-operation-labels operation)
+    (if (vcs-kit:process-success-p result)
+        (format nil "Git ~A ~A" past-tense path)
+        (format nil "Git ~A exited with status ~D"
+                verb
+                (vcs-kit:process-result-exit-code result)))))
+
+(defun %git-operation-error-message (operation condition)
+  (format nil "Git ~A error: ~A"
+          (nth-value 0 (%git-operation-labels operation))
+          condition))
+
+(defun %git-operation-cancelled-message (operation)
+  (format nil "Git ~A cancelled"
+          (nth-value 0 (%git-operation-labels operation))))
+
 (defun %git-file-operation (operation path minibuffer)
   "Run OPERATION for PATH and report its result in MINIBUFFER."
   (let ((path (string-trim '(#\Space #\Tab #\Newline #\Return) path)))
     (if (%git-path-present-p path)
         (handler-case
-            (multiple-value-bind (verb past-tense)
-                (%git-operation-labels operation)
-              (let ((result
-                      (%run-git-file-operation
-                       operation path (%git-status-directory))))
-                (minibuffer-message
-                 minibuffer
-                 (if (vcs-kit:process-success-p result)
-                     (format nil "Git ~A ~A" past-tense path)
-                     (format nil "Git ~A exited with status ~D"
-                             verb
-                             (vcs-kit:process-result-exit-code result))))
-                result))
-          (error (condition)
-            (multiple-value-bind (verb)
-                (%git-operation-labels operation)
+            (let ((result (%run-git-file-operation
+                           operation path (%git-status-directory))))
               (minibuffer-message
                minibuffer
-               (format nil "Git ~A error: ~A" verb condition)))
+               (%git-operation-result-message operation path result))
+              result)
+          (error (condition)
+            (minibuffer-message
+             minibuffer
+             (%git-operation-error-message operation condition))
             nil))
-        (multiple-value-bind (verb)
-            (%git-operation-labels operation)
-          (minibuffer-message
-           minibuffer
-           (format nil "Git ~A cancelled" verb))))))
+        (minibuffer-message
+         minibuffer
+         (%git-operation-cancelled-message operation)))))
