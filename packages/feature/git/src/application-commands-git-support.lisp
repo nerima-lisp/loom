@@ -32,6 +32,28 @@
          buffer)
     (buffer-set-read-only buffer t)))
 
+(defun %display-git-result (buffer-name run success-message failure-label)
+  "Run RUN, display its result, and report the outcome to the minibuffer."
+  (handler-case
+      (let* ((result (funcall run))
+             (buffer (%replace-git-result-buffer
+                      (%git-result-buffer buffer-name)
+                      (git-result-text result))))
+        (window-set-buffer (%selected-window) buffer)
+        (minibuffer-message
+         (editor-state-minibuffer *editor-state*)
+         (if (vcs-kit:process-success-p result)
+             success-message
+             (format nil "Git ~A exited with status ~D"
+                     failure-label
+                     (vcs-kit:process-result-exit-code result))))
+        result)
+    (error (condition)
+      (minibuffer-message
+       (editor-state-minibuffer *editor-state*)
+       (format nil "Git ~A error: ~A" failure-label condition))
+      nil)))
+
 (defun %git-path-present-p (path)
   "Return true when PATH contains a non-whitespace character."
   (and (stringp path)

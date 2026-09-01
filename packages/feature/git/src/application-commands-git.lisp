@@ -2,49 +2,19 @@
 
 (defun git-status ()
   "Display concise Git status for the current project."
-  (handler-case
-      (let* ((directory (%git-status-directory))
-             (result (run-git-status :directory directory))
-             (buffer (%replace-git-result-buffer
-                      (%git-result-buffer *git-status-buffer-name*)
-                      (git-result-text result))))
-        (window-set-buffer (%selected-window) buffer)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         (if (vcs-kit:process-success-p result)
-             "Git status refreshed"
-             (format nil "Git status exited with status ~D"
-                     (vcs-kit:process-result-exit-code result))))
-        result)
-    (error (condition)
-      (minibuffer-message
-       (editor-state-minibuffer *editor-state*)
-       (format nil "Git status error: ~A" condition))
-      nil)))
+  (%display-git-result
+   *git-status-buffer-name*
+   (lambda () (run-git-status :directory (%git-status-directory)))
+   "Git status refreshed"
+   "status"))
 
 (defun %display-git-diff (staged)
   "Display the working-tree or staged diff in a read-only result buffer."
-  (handler-case
-      (let* ((directory (%git-status-directory))
-             (result (run-git-diff :directory directory :staged staged))
-             (buffer (%replace-git-result-buffer
-                      (%git-result-buffer *git-diff-buffer-name*)
-                      (git-result-text result))))
-        (window-set-buffer (%selected-window) buffer)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         (if (vcs-kit:process-success-p result)
-             (if staged
-                 "Git staged diff refreshed"
-                 "Git diff refreshed")
-             (format nil "Git diff exited with status ~D"
-                     (vcs-kit:process-result-exit-code result))))
-        result)
-    (error (condition)
-      (minibuffer-message
-       (editor-state-minibuffer *editor-state*)
-       (format nil "Git diff error: ~A" condition))
-      nil)))
+  (%display-git-result
+   *git-diff-buffer-name*
+   (lambda () (run-git-diff :directory (%git-status-directory) :staged staged))
+   (if staged "Git staged diff refreshed" "Git diff refreshed")
+   "diff"))
 
 (defun git-diff ()
   "Display the current working-tree diff for the current project."
