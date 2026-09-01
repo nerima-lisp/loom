@@ -36,6 +36,16 @@
      nil)))
 
 (describe "help summary message"
+  (it "does not reorder the command registry while sorting help entries"
+    (let* ((first (list :name "first" :help "First" :help-order 20))
+           (second (list :name "second" :help "Second" :help-order 10))
+           (loom/application:*command-specs* (list first second)))
+      (expect (loom/application:help-summary-message)
+              :to-equal
+              "Help: Second  First")
+      (expect loom/application:*command-specs*
+              :to-equal
+              (list first second))))
   (it "builds the help text from registry metadata"
     (expect (loom/application:help-summary-message)
             :to-equal

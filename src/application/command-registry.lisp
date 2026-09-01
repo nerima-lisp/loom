@@ -43,8 +43,9 @@
   "Return the compact help message derived from registered command metadata."
   (let ((entries
           (sort
-           (loop for spec in *command-specs*
-                 for help = (getf spec :help)
-                 when help collect spec)
+           (copy-list
+            (loop for spec in *command-specs*
+                  for help = (getf spec :help)
+                  when help collect spec))
            #'%help-spec<)))
     (format nil "Help: ~{~A~^  ~}" (mapcar (lambda (spec) (getf spec :help)) entries))))
