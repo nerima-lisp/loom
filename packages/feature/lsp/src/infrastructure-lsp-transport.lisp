@@ -35,18 +35,28 @@
       (unless accepted (error "Could not start the LSP process reader"))))
   process)
 
-(defun %cleanup-lsp-launch (info executor channel)
-  (when executor
-    (ignore-errors
-      (cl-concurrent-kit:shutdown-executor
-       executor :wait t :cancel-pending t)))
-  (when channel
-    (ignore-errors (cl-concurrent-kit:close-channel channel)))
+(defun %close-lsp-resources (info input output error-output executor channel)
+  (ignore-errors (close input))
   (when info
-    (ignore-errors (close (uiop:process-info-input info)))
-    (ignore-errors (uiop:terminate-process info))
-    (ignore-errors (close (uiop:process-info-output info)))
-    (ignore-errors (close (uiop:process-info-error-output info)))))
+    (ignore-errors (uiop:terminate-process info)))
+  (ignore-errors (close output))
+  (ignore-errors (close error-output))
+  (unwind-protect
+       (when executor
+         (ignore-errors
+           (cl-concurrent-kit:shutdown-executor
+            executor :wait t :cancel-pending t)))
+    (when channel
+      (ignore-errors (cl-concurrent-kit:close-channel channel)))))
+
+(defun %cleanup-lsp-launch (info executor channel)
+  (%close-lsp-resources
+   info
+   (when info (uiop:process-info-input info))
+   (when info (uiop:process-info-output info))
+   (when info (uiop:process-info-error-output info))
+   executor
+   channel))
 
 (defun %launch-lsp-process (command directory)
   (let* ((info (uiop:launch-program
@@ -102,17 +112,11 @@ the same trust boundary as the user-init and Lisp evaluation features."
 (defmethod lsp-transport-close ((transport lsp-process))
   (unless (lsp-process-closed-p transport)
     (setf (lsp-process-closed-p transport) t)
-    (ignore-errors (close (lsp-process-input transport)))
-    (ignore-errors (uiop:terminate-process (lsp-process-process transport)))
-    (ignore-errors (close (lsp-process-output transport)))
-    (ignore-errors (close (lsp-process-error-output transport)))
-    (unwind-protect
-      (ignore-errors
-          (cl-concurrent-kit:shutdown-executor
-           (lsp-process-executor transport)
-           :wait t
-           :cancel-pending t))
-      (ignore-errors
-        (cl-concurrent-kit:close-channel
-         (lsp-process-result-channel transport)))))
+    (%close-lsp-resources
+     (lsp-process-process transport)
+     (lsp-process-input transport)
+     (lsp-process-output transport)
+     (lsp-process-error-output transport)
+     (lsp-process-executor transport)
+     (lsp-process-result-channel transport)))
   transport)
