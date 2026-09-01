@@ -14,8 +14,15 @@
       (values target point prepend)
       (values point target prepend)))
 
+(defun %apply-word-kill (buffer start-offset start end prepend)
+  (when start
+    (%kill-between-offsets
+     buffer (+ start-offset start) (+ start-offset end)
+     :prepend prepend
+     :coalesce (editor-state-last-command-kill-p *editor-state*))))
+
 (defun %kill-word-range (text point count positive-step negative-step
-                         &key prepend-when-positive)
+                          &key prepend-when-positive)
   "Translate COUNT at POINT into visible-text offsets and coalescing direction.
 
 POSITIVE-STEP and NEGATIVE-STEP walk the offset for positive and negative
@@ -44,11 +51,7 @@ text should be prepended when coalescing into the newest kill-ring entry."
     (multiple-value-bind (start end prepend)
         (%kill-word-range text point count positive-step negative-step
                           :prepend-when-positive prepend-when-positive)
-      (when start
-        (%kill-between-offsets
-         buffer (+ start-offset start) (+ start-offset end)
-         :prepend prepend
-         :coalesce (editor-state-last-command-kill-p *editor-state*))))))
+      (%apply-word-kill buffer start-offset start end prepend))))
 
 (defmacro define-word-kill-command (name docstring positive-step negative-step
                                     &key prepend-when-positive)
