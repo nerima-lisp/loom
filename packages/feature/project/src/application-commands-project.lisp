@@ -1,7 +1,7 @@
 ;;;; packages/feature/project/src/application-commands-project.lisp
 ;;;;
 ;;;; Project navigation and search commands.  The commands depend on the
-;;;; project domain and filesystem adapter, while the editor state remains in
+;;;; project domain and filesystem operations, while the editor state remains in
 ;;;; the src/<DDD> composition root.
 (in-package #:loom/feature/project)
 
