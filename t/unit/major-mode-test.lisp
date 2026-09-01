@@ -114,6 +114,18 @@
         (expect (typep (major-mode-keywords mode) 'list) :to-be-truthy)
         (expect (typep (major-mode-definition mode) 'list) :to-be-truthy))))
 
+  (it
+    "does not expose mutable catalog state through metadata accessors"
+    (let ((keywords (major-mode-keywords :python))
+          (definition (major-mode-definition :python)))
+      (setf (car keywords) "mutated")
+      (setf (getf definition :name) "Mutated")
+      (expect (major-mode-keywords :python) :to-contain "def")
+      (expect (member "mutated" (major-mode-keywords :python)
+                      :test #'equal)
+              :to-be nil)
+      (expect (major-mode-name :python) :to-equal "Python")))
+
 (describe
   "major-mode-for-path"
   (it-each
