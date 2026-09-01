@@ -31,28 +31,32 @@
 
 COMMAND is passed to UIOP's shell launcher, so this adapter intentionally has
 the same trust boundary as the user-init and Lisp evaluation features."
-  (let ((process nil))
+  (let ((info nil)
+        (process nil)
+        (channel nil)
+        (executor nil))
     (handler-case
         (progn
-          (let* ((info (uiop:launch-program
-                        command
-                        :shell t
-                        :directory directory
-                        :input :stream
-                        :output :stream
-                        :error-output :stream
-                        :element-type '(unsigned-byte 8)))
-                 (channel (cl-concurrent-kit:make-channel :buffer-size 128))
-                 (executor (cl-concurrent-kit:make-executor
+          (let* ((launched-info (uiop:launch-program
+                                 command
+                                 :shell t
+                                 :directory directory
+                                 :input :stream
+                                 :output :stream
+                                 :error-output :stream
+                                 :element-type '(unsigned-byte 8))))
+            (setf info launched-info
+                  channel (cl-concurrent-kit:make-channel :buffer-size 128)
+                  executor (cl-concurrent-kit:make-executor
                             :size 2
                             :name "loom lsp process"
-                            :queue-capacity 2)))
-            (setf process
+                            :queue-capacity 2)
+                  process
                   (%make-lsp-process
-                   info
-                   (uiop:process-info-input info)
-                   (uiop:process-info-output info)
-                   (uiop:process-info-error-output info)
+                   launched-info
+                   (uiop:process-info-input launched-info)
+                   (uiop:process-info-output launched-info)
+                   (uiop:process-info-error-output launched-info)
                    executor
                    channel)))
           (multiple-value-bind (promise accepted)
@@ -71,6 +75,19 @@ the same trust boundary as the user-init and Lisp evaluation features."
       (error (condition)
         (when process
           (lsp-transport-close process))
+        (when (and info (null process))
+          (when executor
+            (ignore-errors
+              (cl-concurrent-kit:shutdown-executor
+               executor
+               :wait t
+               :cancel-pending t)))
+          (when channel
+            (ignore-errors (cl-concurrent-kit:close-channel channel)))
+          (ignore-errors (close (uiop:process-info-input info)))
+          (ignore-errors (uiop:terminate-process info))
+          (ignore-errors (close (uiop:process-info-output info)))
+          (ignore-errors (close (uiop:process-info-error-output info))))
         (error condition)))))
 
 (defmethod lsp-transport-send ((transport lsp-process) json)
