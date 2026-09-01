@@ -10,30 +10,36 @@
       node
       (%window-first-leaf (first (window-split-node-children node)))))
 
+(defun %window-delete-child (node target)
+  (let* ((children (window-split-node-children node))
+         (first-child (first children))
+         (second-child (second children)))
+    (cond
+      ((eq first-child target) (values second-child t))
+      ((eq second-child target) (values first-child t))
+      (t (values nil nil)))))
+
+(defun %window-delete-from-subtree (node target child-index)
+  (let ((children (window-split-node-children node)))
+    (multiple-value-bind (new-child deleted)
+        (%window-delete-node (nth child-index children) target)
+      (when deleted
+        (setf (nth child-index children) new-child))
+      (values node deleted))))
+
 (defun %window-delete-node (node target)
   "Return NODE with TARGET removed, plus whether TARGET was found."
   (if (window-leaf-p node)
       (values node nil)
-      (let* ((children (window-split-node-children node))
-             (first-child (first children))
-             (second-child (second children)))
-        (cond
-          ((eq first-child target)
-           (values second-child t))
-          ((eq second-child target)
-           (values first-child t))
-          (t
-           (multiple-value-bind (new-first deleted-first)
-               (%window-delete-node first-child target)
-             (if deleted-first
-                 (progn
-                   (setf (first children) new-first)
-                   (values node t))
-                 (multiple-value-bind (new-second deleted-second)
-                     (%window-delete-node second-child target)
-                   (when deleted-second
-                     (setf (second children) new-second))
-                   (values node deleted-second)))))))))
+      (multiple-value-bind (replacement deleted)
+          (%window-delete-child node target)
+        (if deleted
+            (values replacement t)
+            (multiple-value-bind (new-node deleted-in-first)
+                (%window-delete-from-subtree node target 0)
+              (if deleted-in-first
+                  (values new-node t)
+                  (%window-delete-from-subtree node target 1)))))))
 
 (defun window-delete (tree window)
   "Delete WINDOW from TREE when another window remains. Returns the
