@@ -33,6 +33,26 @@
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No keyboard macro is being defined"))))
 
+(defun %replay-keyboard-macro-key-event (event keymap-state)
+  (let* ((descriptor (keyboard-macro-event-value event))
+         (argument (loom:prefix-argument-for-editor))
+         (prefix-action
+           (and (null (loom:keymap-state-sequence keymap-state))
+                (loom:prefix-argument-action descriptor argument))))
+    (if prefix-action
+        (loom:apply-prefix-argument-action (car prefix-action)
+                                            (cdr prefix-action))
+        (progn
+          (loom:record-undo-boundary-for-command nil)
+          (let ((dispatch-result nil))
+            (unwind-protect
+                 (let ((loom:*current-prefix-argument*
+                         (loom:prefix-argument-value-for-editor)))
+                   (setf dispatch-result
+                         (keymap-state-dispatch keymap-state descriptor)))
+              (unless (eq dispatch-result :pending)
+                (prefix-argument-reset argument))))))))
+
 (defun %replay-keyboard-macro-event (event keymap-state)
   (ecase (keyboard-macro-event-kind event)
     (:self-insert
@@ -41,24 +61,7 @@
              (loom:consume-prefix-argument-for-editor)))
        (loom:self-insert-command (keyboard-macro-event-value event))))
     (:key
-     (let* ((descriptor (keyboard-macro-event-value event))
-            (argument (loom:prefix-argument-for-editor))
-            (prefix-action
-              (and (null (loom:keymap-state-sequence keymap-state))
-                   (loom:prefix-argument-action descriptor argument))))
-       (if prefix-action
-           (loom:apply-prefix-argument-action (car prefix-action)
-                                               (cdr prefix-action))
-           (progn
-             (loom:record-undo-boundary-for-command nil)
-             (let ((dispatch-result nil))
-               (unwind-protect
-                    (let ((loom:*current-prefix-argument*
-                            (loom:prefix-argument-value-for-editor)))
-                      (setf dispatch-result
-                            (keymap-state-dispatch keymap-state descriptor)))
-                 (unless (eq dispatch-result :pending)
-                   (prefix-argument-reset argument))))))))))
+     (%replay-keyboard-macro-key-event event keymap-state))))
 
 (defun call-last-kbd-macro ()
   "Replay the last recorded keyboard macro (C-x e)."
