@@ -113,6 +113,16 @@
       (expect (buffer-point-column buffer) :to-equal 0)))
 
   (it
+    "reports a failing backward search in the prompt"
+    (%with-selected-minibuffer-buffer (minibuffer buffer "alpha beta")
+      (buffer-set-point buffer 0 6)
+      (loom/feature/search:isearch-backward)
+      (%type-string minibuffer "zz")
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Failing I-search backward: ")
+      (expect (buffer-point-column buffer) :to-equal 6)))
+
+  (it
     "exposes every match, and which one point is on, for the renderer"
     (%with-selected-minibuffer-buffer (minibuffer buffer "one two one")
       (buffer-set-point buffer 0 0)
