@@ -46,13 +46,16 @@ leaves the previous target untouched."
       (when (probe-file temporary)
         (ignore-errors (delete-file temporary))))))
 
+(defun %read-session-value (stream eof)
+  (let ((*read-eval* nil))
+    (read stream nil eof)))
+
 (defun %read-session-form (stream)
-  (let ((*read-eval* nil)
-        (eof (gensym "EOF")))
-    (let ((value (read stream nil eof)))
+  (let ((eof (gensym "EOF")))
+    (let ((value (%read-session-value stream eof)))
       (when (eq value eof)
         (error "session is empty"))
-      (when (not (eq (read stream nil eof) eof))
+      (when (not (eq (%read-session-value stream eof) eof))
         (error "session contains more than one form"))
       value)))
 
