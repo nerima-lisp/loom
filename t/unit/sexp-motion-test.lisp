@@ -10,6 +10,7 @@
       (("#\\(" (:atom :atom :atom))
        ("(; )" (:code :comment :comment :comment))
        ("\"(\"" (:string :string :string))
+       ("\"a\\\"(\"" (:string :string :string :string :string :string))
        ("#|)|#" (:comment :comment :comment :comment :comment))
        ("#\\Space" (:atom :atom :atom :atom :atom :atom :atom)))
       "classifies reader syntax in ~S"
