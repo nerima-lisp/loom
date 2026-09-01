@@ -32,18 +32,20 @@
        (characterp code)
        (char-equal code #\u)))
 
+(defun %alternate-prefix-descriptor-p (modifiers)
+  (and (member :alt modifiers)
+       (not (member :control modifiers))))
+
 (defun %digit-prefix-descriptor-value (modifiers code active-p)
   (let ((digit (and (characterp code) (digit-char-p code)))
-        (alt-p (and (member :alt modifiers)
-                    (not (member :control modifiers)))))
+        (alt-p (%alternate-prefix-descriptor-p modifiers)))
     (when (and digit
                (or alt-p
                    (and active-p (null modifiers))))
       digit)))
 
 (defun %negative-prefix-descriptor-p (modifiers code active-p)
-  (let ((alt-p (and (member :alt modifiers)
-                    (not (member :control modifiers)))))
+  (let ((alt-p (%alternate-prefix-descriptor-p modifiers)))
     (and (characterp code)
          (char= code #\-)
          (or alt-p
