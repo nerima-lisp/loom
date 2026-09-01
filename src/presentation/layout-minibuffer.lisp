@@ -43,19 +43,25 @@ ROW, truncated to WIDTH columns."
 (defparameter +layout-completion-style+ '((:bg 4) (:fg 7)))
 (defparameter +layout-completion-selected-style+ '(:bold (:bg 6) (:fg 0)))
 
+(defun %layout-completion-first-index (index count visible)
+  (max 0 (min (- index (floor visible 2)) (- count visible))))
+
+(defun %layout-completion-labels (renderer items first visible)
+  (loop for offset below visible
+        collect (loom-renderer-truncate-string
+                 renderer
+                 (editor-completion-item-label
+                  (nth (+ first offset) items))
+                 +layout-completion-width+)))
+
 (defun %layout-completion-rows (renderer completion)
   "Return visible labels and the selected row within them."
   (let* ((items (editor-completion-items completion))
          (count (length items))
          (visible (min count +layout-completion-rows+))
          (index (editor-completion-index completion))
-         (first (max 0 (min (- index (floor visible 2)) (- count visible)))))
-    (values (loop for offset below visible
-                  collect (loom-renderer-truncate-string
-                           renderer
-                           (editor-completion-item-label
-                            (nth (+ first offset) items))
-                           +layout-completion-width+))
+         (first (%layout-completion-first-index index count visible)))
+    (values (%layout-completion-labels renderer items first visible)
             (- index first))))
 
 (defun %layout-completion-popup-item-count (completion)
