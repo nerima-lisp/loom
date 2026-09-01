@@ -45,24 +45,33 @@ is selected (e.g. an empty tree)."
 reachable in TREE."
   (%file-tree-find-kind tree path))
 
+(defun %file-tree-selection-position (paths selected-path)
+  (position selected-path paths :test #'equal))
+
+(defun %file-tree-position-at-boundary (paths direction)
+  (if (eq direction :down)
+      0
+      (1- (length paths))))
+
+(defun %file-tree-move-selection-position (position count direction)
+  (ecase direction
+    (:down (min (1- count) (1+ position)))
+    (:up (max 0 (1- position)))))
+
 (defun %file-tree-next-selection (paths selected-path direction)
   "Return the visible PATH selected after moving in DIRECTION.
 
 The calculation is independent of FILE-TREE state so callers can keep the
 selection mutation at the boundary and test navigation as a pure operation."
   (let ((count (length paths)))
-    (if (zerop count)
-        nil
-        (let ((position (position selected-path paths :test #'equal)))
-          (cond
-            ((null position)
-             (if (eq direction :down) (first paths) (car (last paths))))
-            ((eq direction :down)
-             (nth (min (1- count) (1+ position)) paths))
-            ((eq direction :up)
-             (nth (max 0 (1- position)) paths))
-            (t
-             (error "unknown direction: ~A" direction)))))))
+    (when (plusp count)
+      (let* ((position (%file-tree-selection-position paths selected-path))
+             (next-position
+               (if position
+                   (%file-tree-move-selection-position
+                    position count direction)
+                   (%file-tree-position-at-boundary paths direction))))
+        (nth next-position paths)))))
 
 (defun file-tree-move-selection (tree direction)
   "Move TREE's selection cursor by one visible entry (see
