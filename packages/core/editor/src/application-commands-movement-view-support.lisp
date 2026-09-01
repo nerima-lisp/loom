@@ -46,11 +46,18 @@
             (minibuffer-message minibuffer "Moved"))
           (minibuffer-message minibuffer error-message)))))
 
+(defun %scroll-page-size (height)
+  (max 1 (1- height)))
+
+(defun %scroll-max-line (line-count height)
+  (max 0 (- line-count (max 1 height))))
+
 (defun %scroll-window-target-line (window buffer delta)
   (let* ((height (loom/feature/window:window-height window))
-         (page (max 1 (1- height)))
-         (max-scroll (max 0 (- (buffer-visible-line-count buffer)
-                               (max 1 height)))))
+         (page (%scroll-page-size height))
+         (max-scroll (%scroll-max-line
+                      (buffer-visible-line-count buffer)
+                      height)))
     (max 0 (min max-scroll
                 (+ (loom/feature/window:window-scroll-line window)
                    (* delta page))))))
