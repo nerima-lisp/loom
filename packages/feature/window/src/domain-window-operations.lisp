@@ -22,31 +22,30 @@ mutating WINDOW-SPLIT-NODE children in place as it descends."
 which is :HORIZONTAL (stacking the two windows top/bottom, i.e. C-x 2) or
 :VERTICAL (placing the two windows side by side, i.e. C-x 3). Both resulting
 windows initially display the same buffer WINDOW displayed. Selection moves
-to the newly created window. Returns the newly created window."
+  to the newly created window. Returns the newly created window."
   (let ((buffer (window-leaf-buffer window)))
-      (multiple-value-bind (rect1 rect2)
-          (%window-split-rects (window-leaf-x window) (window-leaf-y window)
-                                (window-leaf-width window) (window-leaf-height window)
-                                direction)
-        (destructuring-bind (x1 y1 w1 h1) rect1
-          (destructuring-bind (x2 y2 w2 h2) rect2
-            ;; WINDOW is mutated in place to become the first half, rather
-            ;; than being discarded in favor of a fresh struct, so that any
-            ;; reference to it a caller already holds stays valid -- and
-            ;; correctly reflects the post-split size -- instead of becoming
-            ;; silently stale. %WINDOW-REPLACE below still finds it by EQ,
-            ;; which mutating its slots does not affect.
-            (setf (window-leaf-x window) x1
-                  (window-leaf-y window) y1
-                  (window-leaf-width window) w1
-                  (window-leaf-height window) h1)
-            (let* ((leaf2 (make-window-leaf :buffer buffer :x x2 :y y2 :width w2 :height h2))
-                   (split-node (make-window-split-node :direction direction
-                                                        :children (list window leaf2))))
-              (setf (window-tree-root tree)
-                    (%window-replace (window-tree-root tree) window split-node))
-              (setf (window-tree-selected tree) leaf2)
-              leaf2))))))
+    (multiple-value-bind (rect1 rect2)
+        (%window-split-rects (window-leaf-x window) (window-leaf-y window)
+                             (window-leaf-width window) (window-leaf-height window)
+                             direction)
+      (destructuring-bind (x1 y1 w1 h1) rect1
+        (destructuring-bind (x2 y2 w2 h2) rect2
+          ;; Keep WINDOW's identity stable so existing references observe the
+          ;; first half after splitting.
+          (setf (window-leaf-x window) x1
+                (window-leaf-y window) y1
+                (window-leaf-width window) w1
+                (window-leaf-height window) h1)
+          (let* ((leaf2 (make-window-leaf :buffer buffer
+                                          :x x2 :y y2
+                                          :width w2 :height h2))
+                 (split-node (make-window-split-node
+                              :direction direction
+                              :children (list window leaf2))))
+            (setf (window-tree-root tree)
+                  (%window-replace (window-tree-root tree) window split-node)
+                  (window-tree-selected tree) leaf2)
+            leaf2))))))
 
 (defun window-select-next (tree)
   "Select the next window in TREE, cycling back to the first after the
