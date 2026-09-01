@@ -8,19 +8,24 @@
 ;;; views of the current buffer text.
 ;;; ---------------------------------------------------------------------
 
+(defun %position-matches-p (current-line current-column line column)
+  (and (= current-line line)
+       (= current-column column)))
+
+(defun %advance-buffer-position (character current-line current-column offset)
+  (if (char= character #\Newline)
+      (values (1+ current-line) 0 (1+ offset))
+      (values current-line (1+ current-column) (1+ offset))))
+
 (defun %position-to-offset (buffer line column)
   (let ((current-line 0) (current-column 0) (offset 0))
     (dolist (piece (%buffer-pieces buffer))
       (loop for character across (%piece-text buffer piece)
-            do (when (and (= current-line line) (= current-column column))
+            do (when (%position-matches-p current-line current-column line column)
                  (return-from %position-to-offset offset))
-               (incf offset)
-               (if (char= character #\Newline)
-                   (progn
-                     (incf current-line)
-                     (setf current-column 0))
-                   (incf current-column))))
-    (if (and (= current-line line) (= current-column column))
+               (multiple-value-setq (current-line current-column offset)
+                 (%advance-buffer-position character current-line current-column offset))))
+    (if (%position-matches-p current-line current-column line column)
         offset
         (error "buffer position (~D, ~D) out of range" line column))))
 
