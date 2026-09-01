@@ -1,0 +1,80 @@
+;;;; packages/core/editor/src/application-sexp-motion-support.lisp
+;;;;
+;;;; Internal scanning primitives for S-expression motion.
+;;;;
+(in-package #:loom)
+
+(defun %sexp-skip-forward-filler (text classes offset)
+  "Return the first index at or after OFFSET that begins something readable."
+  (let ((length (length text)))
+    (loop while (and (< offset length)
+                     (or (eq (aref classes offset) :comment)
+                         (and (%sexp-code-p classes offset)
+                              (%sexp-whitespace-p (char text offset)))))
+          do (incf offset))
+    offset))
+
+(defun %sexp-skip-backward-filler (text classes offset)
+  "Return the first index at or before OFFSET that ends something readable."
+  (loop while (and (plusp offset)
+                   (or (eq (aref classes (1- offset)) :comment)
+                       (and (%sexp-code-p classes (1- offset))
+                            (%sexp-whitespace-p (char text (1- offset))))))
+        do (decf offset))
+  offset)
+
+(defun %sexp-forward-list-end (text classes offset)
+  "Return the index just past the list opening at OFFSET, or NIL if unbalanced."
+  (let ((length (length text))
+        (depth 0)
+        (position offset))
+    (loop while (< position length)
+          do (cond ((%sexp-open-p text classes position) (incf depth))
+                   ((%sexp-close-p text classes position)
+                    (decf depth)
+                    (when (zerop depth)
+                      (return-from %sexp-forward-list-end (1+ position)))))
+             (incf position))
+    nil))
+
+(defun %sexp-backward-list-start (text classes offset)
+  "Return the index of the list whose closing character ends at OFFSET.
+
+OFFSET is exclusive, as a backward motion's starting point always is. Returns
+NIL when the parentheses do not balance."
+  (let ((depth 0)
+        (position (1- offset)))
+    (loop while (>= position 0)
+          do (cond ((%sexp-close-p text classes position) (incf depth))
+                   ((%sexp-open-p text classes position)
+                    (decf depth)
+                    (when (zerop depth)
+                      (return-from %sexp-backward-list-start position))))
+             (decf position))
+    nil))
+
+(defun %sexp-atom-end (text classes offset)
+  (let ((length (length text)))
+    (loop while (and (< offset length)
+                     (%sexp-code-p classes offset)
+                     (not (%sexp-whitespace-p (char text offset)))
+                     (not (%sexp-open-p text classes offset))
+                     (not (%sexp-close-p text classes offset))
+                     (not (char= (char text offset) #\")))
+          do (incf offset))
+    ;; A `#\X' literal is one atom even though its characters are :ATOM rather
+    ;; than :CODE, so an atom that stopped right at one keeps going.
+    (loop while (and (< offset length) (eq (aref classes offset) :atom))
+          do (incf offset))
+    offset))
+
+(defun %sexp-atom-start (text classes offset)
+  (loop while (and (plusp offset)
+                   (or (eq (aref classes (1- offset)) :atom)
+                       (and (%sexp-code-p classes (1- offset))
+                            (not (%sexp-whitespace-p (char text (1- offset))))
+                            (not (%sexp-open-p text classes (1- offset)))
+                            (not (%sexp-close-p text classes (1- offset)))
+                            (not (char= (char text (1- offset)) #\")))))
+        do (decf offset))
+  offset)
