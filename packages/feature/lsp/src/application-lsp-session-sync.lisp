@@ -13,6 +13,48 @@
      (lsp-path-uri buffer-or-path))
     (t nil)))
 
+(defun %lsp-send-document-change (session uri document text)
+  (incf (lsp-document-version document))
+  (setf (lsp-document-text document) text)
+  (%lsp-send-notification
+   session
+   "textDocument/didChange"
+   (json-kit:make-json-object
+    (list
+     (cons "textDocument"
+           (json-kit:make-json-object
+            (list (cons "uri" uri)
+                  (cons "version" (lsp-document-version document)))))
+     (cons "contentChanges"
+           (list (json-kit:make-json-object
+                  (list (cons "text" text)))))))))
+
+(defun %lsp-send-document-open (session uri document text)
+  (%lsp-send-notification
+   session
+   "textDocument/didOpen"
+   (json-kit:make-json-object
+    (list
+     (cons "textDocument"
+           (json-kit:make-json-object
+            (list (cons "uri" uri)
+                  (cons "languageId"
+                        (lsp-document-language-id document))
+                  (cons "version" (lsp-document-version document))
+                  (cons "text" text))))))))
+
+(defun %lsp-sync-existing-document (session uri document text)
+  (unless (string= text (lsp-document-text document))
+    (%lsp-send-document-change session uri document text)))
+
+(defun %lsp-sync-new-document (session uri buffer text)
+  (let ((document (make-lsp-document uri
+                                     (%lsp-language-id (buffer-path buffer))
+                                     1
+                                     text)))
+    (setf (gethash uri (lsp-session-documents session)) document)
+    (%lsp-send-document-open session uri document text)))
+
 (defun lsp-session-sync-buffer (session buffer)
   "Send a full-text open or change notification for BUFFER."
   (unless (loom:buffer-p buffer)
@@ -22,42 +64,8 @@
       (let* ((text (buffer-text buffer))
              (document (gethash uri (lsp-session-documents session))))
         (if document
-            (unless (string= text (lsp-document-text document))
-              (incf (lsp-document-version document))
-              (setf (lsp-document-text document) text)
-              (%lsp-send-notification
-               session
-               "textDocument/didChange"
-               (json-kit:make-json-object
-                (list
-                 (cons "textDocument"
-                       (json-kit:make-json-object
-                        (list (cons "uri" uri)
-                              (cons "version"
-                                    (lsp-document-version document)))))
-                 (cons "contentChanges"
-                       (list
-                        (json-kit:make-json-object
-                         (list (cons "text" text)))))))))
-            (let ((new-document
-                    (make-lsp-document uri
-                                       (%lsp-language-id (buffer-path buffer))
-                                       1
-                                       text)))
-              (setf (gethash uri (lsp-session-documents session)) new-document)
-              (%lsp-send-notification
-               session
-               "textDocument/didOpen"
-               (json-kit:make-json-object
-                (list
-                 (cons "textDocument"
-                       (json-kit:make-json-object
-                        (list (cons "uri" uri)
-                              (cons "languageId"
-                                    (lsp-document-language-id new-document))
-                              (cons "version"
-                                    (lsp-document-version new-document))
-                              (cons "text" text)))))))))))
+            (%lsp-sync-existing-document session uri document text)
+            (%lsp-sync-new-document session uri buffer text))))
   session))
 
 (defun lsp-session-diagnostics (session buffer-or-path)
