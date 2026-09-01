@@ -74,6 +74,17 @@
       (expect confirmed :to-equal "a"))))
 
 (describe
+  "%refresh-active-keymap"
+  (it
+    "uses the current keymap when no root keymap has been captured"
+    (let* ((keymap (make-keymap))
+           (keymap-state (make-keymap-state keymap)))
+      (setf (loom::keymap-state-root-keymap keymap-state) nil)
+      (let ((*editor-state* nil))
+        (expect (loom::%refresh-active-keymap keymap-state)
+                :to-be keymap)))))
+
+(describe
   "%classify-key-event terminal routing"
   (it
     "marks an unbound terminal event as terminal input"
