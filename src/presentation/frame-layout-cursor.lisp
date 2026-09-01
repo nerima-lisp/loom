@@ -72,6 +72,23 @@ this, so a popup cannot drift away from the point it belongs to."
                      (loom/feature/window:window-width window)
                      line column)))
 
+(defun %selected-window-cursor (renderer window x-offset)
+  "Return the cursor for WINDOW, offset by the file-tree width X-OFFSET."
+  (let ((width (loom/feature/window:window-width window))
+        (height (loom/feature/window:window-height window)))
+    (if (or (zerop width) (zerop height))
+        (loom-renderer-make-cursor renderer :visible nil)
+        (let* ((buffer (loom/feature/window:window-buffer window))
+               (line (buffer-visible-point-line buffer))
+               (column (buffer-visible-point-column buffer)))
+          (multiple-value-bind (screen-column screen-row)
+              (%layout-buffer-cell renderer window buffer line column)
+            (loom-renderer-make-cursor
+             renderer
+             :x (+ x-offset (loom/feature/window:window-x window)
+                   screen-column)
+             :y (+ (loom/feature/window:window-y window) screen-row)))))))
+
 (defun editor-cursor (editor-state)
   "Return the terminal cursor for EDITOR-STATE: the active minibuffer's input
 position when a prompt is up, otherwise point in the selected window."
@@ -83,18 +100,6 @@ position when a prompt is up, otherwise point in the selected window."
                          (loom/feature/file-tree:file-tree-visible-p file-tree))
                     (loom-renderer-width renderer)))
          (window (loom/feature/window:window-tree-selected-window
-                  (editor-state-window-tree editor-state)))
-         (width (loom/feature/window:window-width window))
-         (height (loom/feature/window:window-height window)))
+                  (editor-state-window-tree editor-state))))
     (or (and minibuffer (%minibuffer-cursor renderer minibuffer))
-        (if (or (zerop width) (zerop height))
-            (loom-renderer-make-cursor renderer :visible nil)
-            (let ((buffer (loom/feature/window:window-buffer window)))
-              (multiple-value-bind (column row)
-                  (%layout-buffer-cell renderer window buffer
-                                       (buffer-visible-point-line buffer)
-                                       (buffer-visible-point-column buffer))
-                (loom-renderer-make-cursor
-                 renderer
-                 :x (+ x-offset (loom/feature/window:window-x window) column)
-                 :y (+ (loom/feature/window:window-y window) row))))))))
+        (%selected-window-cursor renderer window x-offset))))
