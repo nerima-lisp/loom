@@ -54,11 +54,15 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
       (concatenate 'string delimiter " ")
       delimiter))
 
-(defun %forward-barf-target (text classes open close)
+(defun %forward-barf-target-position (text classes open close)
   (let ((last-start (%backward-sexp-offset text close classes)))
     (when (and last-start (> last-start open))
-      (let* ((target (%sexp-skip-backward-filler text classes last-start))
-             (delimiter (string (char text close))))
+      (%sexp-skip-backward-filler text classes last-start))))
+
+(defun %forward-barf-target (text classes open close)
+  (let ((target (%forward-barf-target-position text classes open close)))
+    (when target
+      (let ((delimiter (string (char text close))))
         (values target
                 (%forward-barf-delimiter text target delimiter))))))
 
@@ -95,11 +99,15 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
       (concatenate 'string " " delimiter)
       delimiter))
 
-(defun %backward-barf-target (text classes open close)
+(defun %backward-barf-target-position (text classes open close)
   (let ((first-end (%forward-sexp-offset text (1+ open) classes)))
     (when (and first-end (<= first-end close))
-      (let* ((target (%sexp-skip-forward-filler text classes first-end))
-             (delimiter (string (char text open))))
+      (%sexp-skip-forward-filler text classes first-end))))
+
+(defun %backward-barf-target (text classes open close)
+  (let ((target (%backward-barf-target-position text classes open close)))
+    (when target
+      (let ((delimiter (string (char text open))))
         (values target
                 (%backward-barf-delimiter text target delimiter))))))
 
