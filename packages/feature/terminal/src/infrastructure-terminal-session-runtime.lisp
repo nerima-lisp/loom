@@ -21,23 +21,27 @@
   (setf (terminal-session-alive-p session) nil)
   session)
 
+(defun %buffer-end-coordinates (buffer text)
+  (let ((end (buffer-offset-position buffer (length text))))
+    (values (buffer-position-line end)
+            (buffer-position-column end))))
+
+(defun %clear-terminal-buffer (buffer)
+  (unless (zerop (length (buffer-text buffer)))
+    (multiple-value-bind (end-line end-column)
+        (%buffer-end-coordinates buffer (buffer-text buffer))
+      (buffer-delete-region buffer 0 0 end-line end-column))))
+
 (defun %replace-terminal-buffer (buffer text)
   (unwind-protect
        (progn
          (buffer-set-read-only buffer nil)
-         (unless (zerop (length (buffer-text buffer)))
-           (let* ((end (buffer-offset-position
-                        buffer
-                        (length (buffer-text buffer))))
-                  (end-line (buffer-position-line end))
-                  (end-column (buffer-position-column end)))
-             (buffer-delete-region buffer 0 0 end-line end-column)))
+         (%clear-terminal-buffer buffer)
          (unless (zerop (length text))
            (buffer-insert-string buffer text))
          (buffer-mark-saved buffer)
-         (let* ((end (buffer-offset-position buffer (length text)))
-                (end-line (buffer-position-line end))
-                (end-column (buffer-position-column end)))
+         (multiple-value-bind (end-line end-column)
+             (%buffer-end-coordinates buffer text)
            (buffer-set-point buffer end-line end-column))
          buffer)
     (buffer-set-read-only buffer t)))
