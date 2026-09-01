@@ -88,6 +88,12 @@ truncation makes screen rows and logical lines mean anyway."
                     (loom-renderer-segment-column
                      renderer (buffer-line buffer line) segment goal)))
 
+(defun %visual-line-edge-segment (renderer buffer line width edge)
+  (let ((segments (%visual-line-segments renderer buffer line width)))
+    (if (eq edge :first)
+        (first segments)
+        (car (last segments)))))
+
 (defun %visual-line-move-state (renderer buffer width)
   (let* ((line (buffer-point-line buffer))
          (text (buffer-line buffer line))
@@ -106,7 +112,7 @@ truncation makes screen rows and logical lines mean anyway."
         (if (< next-line (buffer-line-count buffer))
             (%move-point-into-segment
              renderer buffer next-line
-             (first (%visual-line-segments renderer buffer next-line width))
+             (%visual-line-edge-segment renderer buffer next-line width :first)
              goal)
             (buffer-set-point buffer line (length text))))))
 
@@ -118,7 +124,8 @@ truncation makes screen rows and logical lines mean anyway."
         (when (>= previous-line 0)
           (%move-point-into-segment
            renderer buffer previous-line
-           (car (last (%visual-line-segments renderer buffer previous-line width)))
+           (%visual-line-edge-segment
+            renderer buffer previous-line width :last)
            goal)))))
 
 (defun %visual-line-move (direction)
