@@ -28,29 +28,39 @@
 ;;;; so END values in a region are exclusive.
 (in-package #:loom)
 
+(defun %buffer-initial-pieces (original)
+  (when (plusp (length original))
+    (list (%make-piece :source :original
+                       :start 0
+                       :length (length original)))))
+
+(defun %make-initial-buffer (name path original)
+  (%make-buffer :name (or name "*scratch*")
+                :path path
+                :original original
+                :add-buffer (make-array 0
+                                        :element-type (quote character)
+                                        :adjustable t
+                                        :fill-pointer 0)
+                :pieces (%buffer-initial-pieces original)
+                :narrow-start-offset 0
+                :narrow-end-offset (length original)
+                :point-line 0
+                :point-column 0
+                :mark-line nil
+                :mark-column nil
+                :major-mode :fundamental
+                :truncate-lines :default
+                :read-only-p nil
+                :modified-p nil
+                :undo-list nil
+                :redo-list nil))
+
 (defgeneric make-buffer (&key name path initial-content)
   (:documentation
    "Create and return a new buffer with empty undo and redo history.")
   (:method (&key name path initial-content)
-    (let ((original (or initial-content "")))
-      (%make-buffer :name (or name "*scratch*")
-                    :path path
-                    :original original
-                    :add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0)
-                    :pieces (when (plusp (length original))
-                              (list (%make-piece :source :original :start 0 :length (length original))))
-                    :narrow-start-offset 0
-                    :narrow-end-offset (length original)
-                    :point-line 0
-                    :point-column 0
-                    :mark-line nil
-                    :mark-column nil
-                    :major-mode :fundamental
-                    :truncate-lines :default
-                    :read-only-p nil
-                    :modified-p nil
-                    :undo-list nil
-                    :redo-list nil))))
+    (%make-initial-buffer name path (or initial-content ""))))
 
 (defgeneric buffer-name (buffer)
   (:documentation "Return BUFFER's display name, as a string.")
