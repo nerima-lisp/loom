@@ -25,30 +25,34 @@
         renderer (subseq text start end) (- width column))
        :style style))))
 
+(defun %layout-draw-wrapped-segment
+    (renderer window x y text width height line segments segment start end style)
+  (let ((from (max start (car segment)))
+        (to (min end (cdr segment))))
+    (when (> to from)
+      (let ((row (%layout-rows-between
+                  renderer
+                  (loom/feature/window:window-buffer window)
+                  width
+                  (loom/feature/window:window-scroll-line window)
+                  (loom/feature/window:window-scroll-sub-row window)
+                  line
+                  (%loom-segment-index segments from)
+                  (1- height)))
+            (column (loom-renderer-segment-cells renderer text segment from)))
+        (when row
+          (loom-renderer-write-string
+           renderer (+ x column) (+ y row)
+           (loom-renderer-truncate-string
+            renderer (subseq text from to) (- width column))
+           :style style))))))
+
 (defun %layout-draw-wrapped-line-run
     (renderer window x y text width height line start end style)
   (let ((segments (loom-renderer-wrap-segments renderer text width)))
     (dolist (segment segments)
-      (let ((from (max start (car segment)))
-            (to (min end (cdr segment))))
-        (when (> to from)
-          (let ((row (%layout-rows-between
-                      renderer
-                      (loom/feature/window:window-buffer window)
-                      width
-                      (loom/feature/window:window-scroll-line window)
-                      (loom/feature/window:window-scroll-sub-row window)
-                      line
-                      (%loom-segment-index segments from)
-                      (1- height)))
-                (column (loom-renderer-segment-cells
-                         renderer text segment from)))
-            (when row
-              (loom-renderer-write-string
-               renderer (+ x column) (+ y row)
-               (loom-renderer-truncate-string
-                renderer (subseq text from to) (- width column))
-               :style style))))))))
+      (%layout-draw-wrapped-segment
+       renderer window x y text width height line segments segment start end style))))
 
 (defun %layout-draw-line-run (renderer window x-offset line start end style)
   "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.
