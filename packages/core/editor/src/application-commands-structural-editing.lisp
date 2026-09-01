@@ -10,6 +10,13 @@
 ;;;; operation rather than half of it.
 (in-package #:loom)
 
+(defun %run-structural-command (edit-function buffer text offset start)
+  (let ((edits (funcall edit-function text (%sexp-syntax-classes text) offset)))
+    (when edits
+      (%apply-structural-edits buffer start edits)
+      (%move-point-to-offset
+       buffer (+ start (%structural-adjusted-offset edits offset))))))
+
 (defmacro define-structural-command (name edit-function documentation)
   "Define a zero-argument structural editing command.
 
@@ -17,18 +24,11 @@ EDIT-FUNCTION returns the edits to apply, or NIL when the operation has nothing
 to act on -- no enclosing list, nothing left to slurp, an unbalanced form. NIL
 leaves the buffer untouched rather than guessing, because a structural command
 that half-applies is exactly the failure these commands exist to avoid."
-  (let ((classes-var (gensym "CLASSES-"))
-        (edits-var (gensym "EDITS-")))
-    `(defun ,name ()
+  `(defun ,name ()
      ,documentation
-     (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
-       (let* ((,classes-var (%sexp-syntax-classes text))
-              (,edits-var (,edit-function text ,classes-var offset)))
-         (when ,edits-var
-           (%apply-structural-edits buffer start ,edits-var)
-           (%move-point-to-offset
-            buffer (+ start (%structural-adjusted-offset ,edits-var offset))))))
-     nil)))
+     (multiple-value-call #'%run-structural-command #',edit-function
+       (%sexp-motion-context))
+     nil))
 
 (define-structural-command forward-slurp-sexp %forward-slurp-edits
   "Move the enclosing list's closing delimiter past the next expression (C-<right>).

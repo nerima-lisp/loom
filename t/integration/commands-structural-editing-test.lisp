@@ -16,7 +16,7 @@
       (expect (second expansion) :to-be 'test-command)
       (expect (third expansion) :to-equal '())
       (expect (fourth expansion) :to-equal "test documentation")
-      (expect (first (fifth expansion)) :to-be 'multiple-value-bind))))
+      (expect (first (fifth expansion)) :to-be 'multiple-value-call))))
 
 (describe
   "structural editing commands"
