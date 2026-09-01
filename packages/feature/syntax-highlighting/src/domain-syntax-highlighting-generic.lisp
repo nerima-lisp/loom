@@ -65,6 +65,9 @@
       (t
        (%syntax-generic-token-at-atom line position mode comment-prefix)))))
 
+(defun %syntax-generic-token (line position end kind)
+  (%make-syntax-token kind (subseq line position end)))
+
 (defun %syntax-highlight-generic-line (line mode)
   (let* ((comment-prefix (major-mode-comment-prefix mode))
          (tokens '())
@@ -73,7 +76,7 @@
     (loop while (< position length) do
       (multiple-value-bind (kind end)
           (%syntax-generic-token-at line position mode comment-prefix)
-        (push (%make-syntax-token kind (subseq line position end)) tokens)
+        (push (%syntax-generic-token line position end kind) tokens)
         (setf position end)))
     (nreverse tokens)))
 
