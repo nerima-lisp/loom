@@ -56,20 +56,26 @@
            (concatenate 'string (string (code-char 27)) payload)
            payload)))
 
+(defun %terminal-event-text (event)
+  (let ((text (cl-tty-kit:key-event-text event)))
+    (if (and text (plusp (length text)))
+        text
+        (string (cl-tty-kit:key-event-code event)))))
+
+(defun %terminal-character-payload-for-text (text modifiers)
+  (when (plusp (length text))
+    (let ((payload
+            (if (member :control modifiers :test #'eq)
+                (let ((control-character
+                        (%terminal-control-character (char text 0))))
+                  (and control-character (string control-character)))
+                text)))
+      (%terminal-alt-prefix payload modifiers))))
+
 (defun %terminal-character-payload (event)
-  (let* ((event-text (cl-tty-kit:key-event-text event))
-         (text (if (and event-text (plusp (length event-text)))
-                   event-text
-                   (string (cl-tty-kit:key-event-code event))))
-         (modifiers (cl-tty-kit:key-event-modifiers event)))
-    (when (and text (plusp (length text)))
-      (let ((payload
-              (if (member :control modifiers :test #'eq)
-                  (let ((control-character
-                          (%terminal-control-character (char text 0))))
-                    (and control-character (string control-character)))
-                  text)))
-        (%terminal-alt-prefix payload modifiers)))))
+  (%terminal-character-payload-for-text
+   (%terminal-event-text event)
+   (cl-tty-kit:key-event-modifiers event)))
 
 (defun %terminal-special-event-payload (event)
   (let ((payload (or (%terminal-special-payload
