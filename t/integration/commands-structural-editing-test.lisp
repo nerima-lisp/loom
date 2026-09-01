@@ -80,6 +80,15 @@
       (expect (buffer-text buffer) :to-equal "(a b)")
       (expect (buffer-point-column buffer) :to-equal 1)))
 
+  (it
+    "applies a slurp across a newline using buffer positions"
+    (%with-selected-buffer-state (buffer "(a)\nb")
+      (buffer-set-point buffer 0 1)
+      (loom::forward-slurp-sexp)
+      (expect (buffer-text buffer) :to-equal "(a\nb)")
+      (expect (buffer-point-line buffer) :to-equal 0)
+      (expect (buffer-point-column buffer) :to-equal 1)))
+
   (it-each
       ((loom::forward-slurp-sexp "(a) b" 1)
        (loom::forward-barf-sexp "(a b)" 1)
