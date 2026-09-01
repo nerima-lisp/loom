@@ -22,6 +22,29 @@ itself to only sequence the draw calls against them."
     (values content-height minibuffer-row shortcuts-row shortcuts-visible-p
             file-tree-width window-area-width)))
 
+(defun %layout-draw-frame-content (renderer file-tree file-tree-visible
+                                    file-tree-width window-area-width
+                                    content-height window-tree)
+  (when file-tree-visible
+    (%layout-draw-file-tree renderer file-tree file-tree-width content-height))
+  (loom/feature/window:window-tree-resize
+   window-tree window-area-width content-height)
+  (dolist (window (loom/feature/window:window-tree-windows window-tree))
+    (%layout-keep-point-visible renderer window))
+  (%layout-draw-windows renderer window-tree file-tree-width))
+
+(defun %layout-draw-frame-footer (renderer editor-state width minibuffer-row
+                                  shortcuts-row shortcuts-visible-p workspace-name
+                                  window-tree)
+  (when shortcuts-visible-p
+    (%layout-draw-shortcuts renderer width shortcuts-row
+                            (loom/feature/window:window-buffer
+                             (loom/feature/window:window-tree-selected-window
+                              window-tree))
+                            workspace-name))
+  (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state)
+                            width minibuffer-row))
+
 (defun compose-frame (editor-state)
   "Compose one full editor frame into EDITOR-STATE's renderer's in-memory
 screen: clear it; draw the file-tree sidebar (when FILE-TREE-VISIBLE-P) into
@@ -55,18 +78,10 @@ EDITOR-STATE."
                            file-tree-width window-area-width)
         (%layout-compute-regions width height file-tree-visible)
       (loom-renderer-clear renderer)
-      (when file-tree-visible
-        (%layout-draw-file-tree renderer file-tree file-tree-width content-height))
-      (loom/feature/window:window-tree-resize
-       window-tree window-area-width content-height)
-      (dolist (window (loom/feature/window:window-tree-windows window-tree))
-        (%layout-keep-point-visible renderer window))
-      (%layout-draw-windows renderer window-tree file-tree-width)
-      (when shortcuts-visible-p
-        (%layout-draw-shortcuts renderer width shortcuts-row
-                                (loom/feature/window:window-buffer
-                                 (loom/feature/window:window-tree-selected-window
-                                  window-tree))
-                                workspace-name))
-      (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state) width minibuffer-row)
+      (%layout-draw-frame-content renderer file-tree file-tree-visible
+                                   file-tree-width window-area-width content-height
+                                   window-tree)
+      (%layout-draw-frame-footer renderer editor-state width minibuffer-row
+                                  shortcuts-row shortcuts-visible-p workspace-name
+                                  window-tree)
       editor-state)))
