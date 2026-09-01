@@ -27,11 +27,20 @@
     (unless (char= (char text (1- (length text))) #\Newline)
       (terpri stream))))
 
+(defun %write-evaluation-values (stream result)
+  (dolist (line (evaluation-result-value-lines result))
+    (format stream "=> ~A~%" line)))
+
+(defun %evaluation-result-empty-p (result)
+  (and (zerop (evaluation-result-form-count result))
+       (null (evaluation-result-error-message result))
+       (zerop (length (evaluation-result-output result)))
+       (zerop (length (evaluation-result-error-output result)))))
+
 (defun evaluation-result-text (result)
   "Render RESULT as text suitable for the evaluation output buffer."
   (with-output-to-string (stream)
-    (dolist (line (evaluation-result-value-lines result))
-      (format stream "=> ~A~%" line))
+    (%write-evaluation-values stream result)
     (%write-evaluation-stream stream
                               "Output"
                               (evaluation-result-output result))
@@ -41,9 +50,6 @@
     (when (evaluation-result-error-message result)
       (format stream "Evaluation error: ~A~%"
               (evaluation-result-error-message result)))
-    (when (and (zerop (evaluation-result-form-count result))
-               (null (evaluation-result-error-message result))
-               (zerop (length (evaluation-result-output result)))
-               (zerop (length (evaluation-result-error-output result))))
+    (when (%evaluation-result-empty-p result)
       (write-string "No forms evaluated." stream)
       (terpri stream))))
