@@ -35,14 +35,17 @@ buffer coordinates and retain the original range order."
   (let ((replacement-length (length replacement)))
     (dolist (range (sort (copy-list ranges) #'> :key #'car))
       (%replace-yank-range buffer range replacement))
-    (mapcar
-     (lambda (range)
-       (let* ((old-start (car range))
-              (left-shift (%yank-range-left-shift ranges old-start
-                                                   replacement-length)))
-         (cons (+ old-start left-shift)
-               (+ old-start left-shift replacement-length))))
-     ranges)))
+    (%yank-replacement-ranges ranges replacement-length)))
+
+(defun %yank-replacement-ranges (ranges replacement-length)
+  (mapcar
+   (lambda (range)
+     (let* ((old-start (car range))
+            (left-shift (%yank-range-left-shift ranges old-start
+                                                 replacement-length)))
+       (cons (+ old-start left-shift)
+             (+ old-start left-shift replacement-length))))
+   ranges))
 
 (defun %replace-yank-range (buffer range replacement)
   (let* ((start (buffer-offset-position buffer (car range)))
