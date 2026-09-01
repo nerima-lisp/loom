@@ -4,6 +4,17 @@
 (describe
   "MAIN CLI integration"
   (it
+    "defines the expected application contract"
+    (let* ((app loom::*loom-app*)
+           (positionals (cl-cli:app-positionals app)))
+      (expect (cl-cli:app-name app) :to-equal "loom")
+      (expect (cl-cli:app-summary app)
+              :to-equal "Terminal text editor with Emacs-like keybindings")
+      (expect positionals :to-have-length 1)
+      (expect (cl-cli:positional-key (first positionals)) :to-be :path)
+      (expect (cl-cli:positional-required-p (first positionals)) :to-be nil)
+      (expect (functionp (cl-cli:app-handler app)) :to-be-truthy)))
+  (it
     "passes process arguments to cl-cli and exits successfully"
     (let* ((root (namestring
                   (asdf:system-source-directory (asdf:find-system "loom"))))
