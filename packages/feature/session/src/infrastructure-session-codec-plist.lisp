@@ -10,17 +10,23 @@
         when (eq (first tail) key)
           return (second tail)))
 
-(defun %validate-session-plist (value expected-keys context)
-  (unless (and (listp value)
-               (evenp (length value))
-               (loop for tail on value by #'cddr
-                     always (keywordp (first tail))))
-    (error "~A: expected a keyword plist, got ~S" context value))
+(defun %session-keyword-plist-p (value)
+  (and (listp value)
+       (evenp (length value))
+       (loop for tail on value by #'cddr
+             always (keywordp (first tail)))))
+
+(defun %session-plist-keys-valid-p (value expected-keys)
   (let ((keys (loop for tail on value by #'cddr collect (first tail))))
-    (unless (and (= (length keys) (length expected-keys))
-                 (every (lambda (key) (member key expected-keys :test #'eq)) keys)
-                 (every (lambda (key) (member key keys :test #'eq)) expected-keys))
-      (error "~A: unexpected or duplicate fields in ~S" context value)))
+    (and (= (length keys) (length expected-keys))
+         (every (lambda (key) (member key expected-keys :test #'eq)) keys)
+         (every (lambda (key) (member key keys :test #'eq)) expected-keys))))
+
+(defun %validate-session-plist (value expected-keys context)
+  (unless (%session-keyword-plist-p value)
+    (error "~A: expected a keyword plist, got ~S" context value))
+  (unless (%session-plist-keys-valid-p value expected-keys)
+    (error "~A: unexpected or duplicate fields in ~S" context value))
   value)
 
 (defparameter +loom-session-top-level-keys+
