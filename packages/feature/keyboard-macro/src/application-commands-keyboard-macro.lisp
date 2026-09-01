@@ -33,25 +33,32 @@
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No keyboard macro is being defined"))))
 
+(defun %replay-keyboard-macro-prefix-action (descriptor keymap-state argument)
+  (and (null (loom:keymap-state-sequence keymap-state))
+       (loom:prefix-argument-action descriptor argument)))
+
+(defun %replay-keyboard-macro-dispatch-key (descriptor keymap-state argument)
+  (loom:record-undo-boundary-for-command nil)
+  (let ((dispatch-result nil))
+    (unwind-protect
+         (let ((loom:*current-prefix-argument*
+                 (loom:prefix-argument-value-for-editor)))
+           (setf dispatch-result
+                 (keymap-state-dispatch keymap-state descriptor)))
+      (unless (eq dispatch-result :pending)
+        (prefix-argument-reset argument)))))
+
 (defun %replay-keyboard-macro-key-event (event keymap-state)
   (let* ((descriptor (keyboard-macro-event-value event))
          (argument (loom:prefix-argument-for-editor))
          (prefix-action
-           (and (null (loom:keymap-state-sequence keymap-state))
-                (loom:prefix-argument-action descriptor argument))))
+           (%replay-keyboard-macro-prefix-action descriptor keymap-state
+                                                 argument)))
     (if prefix-action
         (loom:apply-prefix-argument-action (car prefix-action)
                                             (cdr prefix-action))
-        (progn
-          (loom:record-undo-boundary-for-command nil)
-          (let ((dispatch-result nil))
-            (unwind-protect
-                 (let ((loom:*current-prefix-argument*
-                         (loom:prefix-argument-value-for-editor)))
-                   (setf dispatch-result
-                         (keymap-state-dispatch keymap-state descriptor)))
-              (unless (eq dispatch-result :pending)
-                (prefix-argument-reset argument))))))))
+        (%replay-keyboard-macro-dispatch-key descriptor keymap-state
+                                              argument))))
 
 (defun %replay-keyboard-macro-event (event keymap-state)
   (ecase (keyboard-macro-event-kind event)
