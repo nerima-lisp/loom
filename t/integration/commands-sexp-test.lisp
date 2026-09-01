@@ -70,6 +70,17 @@
       (loom::forward-sexp)
       (expect buffer :to-have-point (cons 1 5))))
 
+  (it-each
+      (("forward" "(a" 0 loom::forward-sexp)
+       ("backward" "a)" 2 loom::backward-sexp))
+      "leaves point unchanged when ~A motion finds an unbalanced list"
+      (label text point command)
+    (declare (ignore label))
+    (%with-selected-buffer-state (buffer text)
+      (buffer-set-point buffer 0 point)
+      (funcall command)
+      (expect buffer :to-have-point (cons 0 point))))
+
   (it
     "kill-sexp puts the expression on the kill ring and coalesces repeats"
     (%with-selected-buffer-state (buffer "(a b) (c d) e")
