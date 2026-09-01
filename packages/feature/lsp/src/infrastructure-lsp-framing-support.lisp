@@ -128,14 +128,16 @@
 
 (defun %lsp-header-lines (header)
   (loop with start = 0
+        while (< start (length header))
         for end = (or (position #\Newline header :start start)
                       (length header))
         for line = (string-trim '(#\Space #\Tab #\Return)
                                 (subseq header start end))
-        unless (zerop (length line))
-          collect line
-        until (= end (length header))
-        do (setf start (1+ end))))
+        do (setf start (if (= end (length header))
+                           end
+                           (1+ end)))
+        when (plusp (length line))
+          collect line))
 
 (defun %lsp-content-length-line (line length-value found-p)
   (multiple-value-bind (name value)
