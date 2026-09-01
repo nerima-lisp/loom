@@ -319,7 +319,37 @@ the degenerate-window tests are the ones that need them to differ."
         (loom::%layout-draw-isearch
          (editor-state-renderer state) window 0))
       (expect (cl-tty-kit:cell-style
+              (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
+              :to-be nil)))
+
+  (it
+    "does not draw a truncated match that is fully below the viewport"
+    (let* ((state (%fresh-layout-state :content "first\nmatch" :width 20 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "match")
+      (setf (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
                (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
+              :to-be nil)))
+
+  (it
+    "does not draw a truncated match that is fully right of the viewport"
+    (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "89")
+      (let ((*editor-state* state))
+        (setf (editor-state-isearch state) session)
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen state) 4 0))
               :to-be nil)))
 
   (it
