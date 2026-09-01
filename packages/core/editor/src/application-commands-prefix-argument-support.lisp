@@ -49,6 +49,15 @@
          (or alt-p
              (and active-p (null modifiers))))))
 
+(defun %prefix-action-kind (modifiers code active-p)
+  (cond
+    ((%universal-prefix-descriptor-p modifiers code)
+     :universal)
+    ((%digit-prefix-descriptor-value modifiers code active-p)
+     :digit)
+    ((%negative-prefix-descriptor-p modifiers code active-p)
+     :negative)))
+
 (defun %prefix-argument-descriptor-action (descriptor argument)
   (check-type argument prefix-argument)
   (let* ((normalized (normalize-key-descriptor descriptor))
@@ -56,12 +65,8 @@
          (code (cdr normalized))
          (active-p (prefix-argument-active-p argument))
          (digit (%digit-prefix-descriptor-value modifiers code active-p)))
-    (cond
-      ((%universal-prefix-descriptor-p modifiers code)
-       (values :universal nil))
-      (digit
-       (values :digit digit))
-      ((%negative-prefix-descriptor-p modifiers code active-p)
-       (values :negative nil))
-      (t
-       (values nil nil)))))
+    (case (%prefix-action-kind modifiers code active-p)
+      (:digit (values :digit digit))
+      (:universal (values :universal nil))
+      (:negative (values :negative nil))
+      (otherwise (values nil nil)))))
