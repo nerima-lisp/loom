@@ -66,6 +66,48 @@ not, because by then the session they would notify is already over."
     (when on-change
       (funcall on-change (%minibuffer-input minibuffer)))))
 
+(defun %minibuffer-cancel (minibuffer)
+  (when (%minibuffer-on-cancel minibuffer)
+    (funcall (%minibuffer-on-cancel minibuffer)))
+  (%minibuffer-deactivate minibuffer))
+
+(defun %minibuffer-delete-backward (minibuffer)
+  (let ((input (%minibuffer-input minibuffer)))
+    (when (plusp (length input))
+      (setf (%minibuffer-input minibuffer)
+            (subseq input 0 (1- (length input)))))))
+
+(defun %minibuffer-confirm (minibuffer)
+  (let ((input (%minibuffer-input minibuffer))
+        (history (%minibuffer-history minibuffer))
+        (on-confirm (%minibuffer-on-confirm minibuffer)))
+    (when history
+      (history-kit:history-add history input))
+    (%minibuffer-deactivate minibuffer)
+    (when on-confirm
+      (funcall on-confirm input))))
+
+(defun %minibuffer-insert-character (minibuffer code)
+  (setf (%minibuffer-input minibuffer)
+        (concatenate 'string (%minibuffer-input minibuffer)
+                     (string code))))
+
+(defun %minibuffer-dispatch-key (minibuffer kind code)
+  (case kind
+    (:cancel (%minibuffer-cancel minibuffer))
+    (:backspace (%minibuffer-delete-backward minibuffer)
+                (%minibuffer-notify-change minibuffer))
+    (:history-previous (%minibuffer-recall-history minibuffer :previous)
+                       (%minibuffer-notify-change minibuffer))
+    (:history-next (%minibuffer-recall-history minibuffer :next)
+                   (%minibuffer-notify-change minibuffer))
+    (:complete (minibuffer-complete minibuffer)
+               (%minibuffer-notify-change minibuffer))
+    (:confirm (%minibuffer-confirm minibuffer))
+    (:character (%minibuffer-insert-character minibuffer code)
+                (%minibuffer-notify-change minibuffer))
+    (t nil)))
+
 (defun minibuffer-handle-key (minibuffer key-event)
   "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) to an
 active MINIBUFFER: ordinary character events are appended to the input,
@@ -80,41 +122,6 @@ MINIBUFFER is not active. Returns MINIBUFFER."
                (not (%minibuffer-consume-key minibuffer key-event)))
       (let* ((type (cl-tty-kit:key-event-type key-event))
              (code (cl-tty-kit:key-event-code key-event))
-             (history (%minibuffer-history minibuffer))
              (kind (%minibuffer-key-kind key-event type code)))
-        (case kind
-          (:cancel
-           (when (%minibuffer-on-cancel minibuffer)
-             (funcall (%minibuffer-on-cancel minibuffer)))
-           (%minibuffer-deactivate minibuffer))
-          (:backspace
-           (let ((input (%minibuffer-input minibuffer)))
-             (when (plusp (length input))
-               (setf (%minibuffer-input minibuffer)
-                     (subseq input 0 (1- (length input))))))
-           (%minibuffer-notify-change minibuffer))
-          (:history-previous
-           (%minibuffer-recall-history minibuffer :previous)
-           (%minibuffer-notify-change minibuffer))
-          (:history-next
-           (%minibuffer-recall-history minibuffer :next)
-           (%minibuffer-notify-change minibuffer))
-          (:complete
-           (minibuffer-complete minibuffer)
-           (%minibuffer-notify-change minibuffer))
-          (:confirm
-           (let ((input (%minibuffer-input minibuffer))
-                 (on-confirm (%minibuffer-on-confirm minibuffer)))
-             (when history
-               (history-kit:history-add history input))
-             (%minibuffer-deactivate minibuffer)
-             (when on-confirm
-               (funcall on-confirm input))))
-          (:character
-           (setf (%minibuffer-input minibuffer)
-                 (concatenate 'string (%minibuffer-input minibuffer)
-                              (string code)))
-           (%minibuffer-notify-change minibuffer))
-          (t
-           nil))))
+        (%minibuffer-dispatch-key minibuffer kind code)))
   minibuffer)
