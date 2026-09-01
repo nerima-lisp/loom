@@ -34,25 +34,31 @@ right to left preserves those offsets; the returned ranges use the resulting
 buffer coordinates and retain the original range order."
   (let ((replacement-length (length replacement)))
     (dolist (range (sort (copy-list ranges) #'> :key #'car))
-      (let* ((start (buffer-offset-position buffer (car range)))
-             (end (buffer-offset-position buffer (cdr range))))
-        (buffer-delete-region buffer
-                              (buffer-position-line start)
-                              (buffer-position-column start)
-                              (buffer-position-line end)
-                              (buffer-position-column end))
-        (buffer-insert-string buffer replacement)))
+      (%replace-yank-range buffer range replacement))
     (mapcar
      (lambda (range)
        (let* ((old-start (car range))
-              (left-shift
-                (loop for other in ranges
-                      when (<= (cdr other) old-start)
-                        sum (- replacement-length
-                               (- (cdr other) (car other))))))
+              (left-shift (%yank-range-left-shift ranges old-start
+                                                   replacement-length)))
          (cons (+ old-start left-shift)
                (+ old-start left-shift replacement-length))))
      ranges)))
+
+(defun %replace-yank-range (buffer range replacement)
+  (let* ((start (buffer-offset-position buffer (car range)))
+         (end (buffer-offset-position buffer (cdr range))))
+    (buffer-delete-region buffer
+                          (buffer-position-line start)
+                          (buffer-position-column start)
+                          (buffer-position-line end)
+                          (buffer-position-column end))
+    (buffer-insert-string buffer replacement)))
+
+(defun %yank-range-left-shift (ranges old-start replacement-length)
+  (loop for other in ranges
+        when (<= (cdr other) old-start)
+          sum (- replacement-length
+                 (- (cdr other) (car other)))))
 
 (defun %perform-yank-pop (buffer ring start ranges index repeat-count)
   (let* ((next-index (mod (+ index (%command-prefix-count))
