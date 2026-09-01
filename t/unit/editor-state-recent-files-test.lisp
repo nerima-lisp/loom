@@ -4,6 +4,16 @@
 (in-package #:loom/test)
 
 (describe "editor-state recent files"
+  (it "returns a copy of recent files for completion"
+    (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
+           (state (make-editor-state :window-tree (make-window-tree buffer 80 24)))
+           (files (list "one.lisp" "two.lisp")))
+      (setf (editor-state-recent-files state) files)
+      (let ((*editor-state* state))
+        (let ((candidates (loom/feature/file-tree::%recent-file-candidates "")))
+          (expect candidates :to-equal files)
+          (expect candidates :not :to-be files)))))
+
   (it "bounds normalized files without mutating the input list"
     (let ((files (list "older" "current" "oldest")))
       (expect (loom::%bounded-recent-files "current" files 2)
