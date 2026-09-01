@@ -8,13 +8,16 @@
   (find character '(#\( #\) #\[ #\] #\{ #\} #\' #\, #\: #\; #\#)
         :test #'char=))
 
+(defun %syntax-generic-comment-end (position comment-prefix)
+  (+ position (length comment-prefix)))
+
 (defun %syntax-generic-comment-start-p (line position comment-prefix)
-  (and comment-prefix
-       (let ((end (+ position (length comment-prefix))))
-         (and (<= end (length line))
-              (string= comment-prefix line
-                       :start2 position
-                       :end2 end)))))
+  (when comment-prefix
+    (let ((end (%syntax-generic-comment-end position comment-prefix)))
+      (and (<= end (length line))
+           (string= comment-prefix line
+                    :start2 position
+                    :end2 end)))))
 
 (defun %syntax-generic-atom-continues-p (line position comment-prefix)
   (and (not (%syntax-whitespace-p (char line position)))
