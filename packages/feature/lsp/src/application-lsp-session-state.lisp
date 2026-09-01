@@ -69,6 +69,13 @@ unreserved characters remain readable."
       (when (and high low)
         (values (+ (* high 16) low) 3)))))
 
+(defun %lsp-uri-octet-at (uri index)
+  (multiple-value-bind (octet consumed)
+      (%lsp-uri-percent-escape-at uri index)
+    (if consumed
+        (values octet consumed)
+        (values (char-code (char uri index)) 1))))
+
 (defun %lsp-uri-decode-octets (uri)
   (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
                               :adjustable t :fill-pointer 0))
@@ -76,14 +83,9 @@ unreserved characters remain readable."
         (length (length uri)))
     (loop while (< index length)
           do (multiple-value-bind (octet consumed)
-                 (%lsp-uri-percent-escape-at uri index)
-               (if consumed
-                   (progn
-                     (vector-push-extend octet octets)
-                     (incf index consumed))
-                   (progn
-                     (vector-push-extend (char-code (char uri index)) octets)
-                     (incf index)))))
+                 (%lsp-uri-octet-at uri index)
+               (vector-push-extend octet octets)
+               (incf index consumed)))
     (coerce octets '(simple-array (unsigned-byte 8) (*)))))
 
 (defun lsp-uri-path (uri)
