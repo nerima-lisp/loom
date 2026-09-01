@@ -100,13 +100,10 @@
          (suffix-offset (max 0 (- end cursor))))
     (append
      (when (plusp prefix-length)
-       (list (%make-piece :source (%piece-source piece)
-                          :start (%piece-start piece)
-                          :length prefix-length)))
+       (list (%piece-left-fragment piece prefix-length)))
      (when (< suffix-offset piece-length)
-       (list (%make-piece :source (%piece-source piece)
-                          :start (+ (%piece-start piece) suffix-offset)
-                          :length (- piece-length suffix-offset)))))))
+       (list (%piece-right-fragment piece suffix-offset
+                                    (- piece-length suffix-offset)))))))
 
 (defun %splice-delete-range (buffer start end)
   (let ((result nil) (cursor 0))
