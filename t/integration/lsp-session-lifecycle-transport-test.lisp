@@ -52,19 +52,15 @@
   (it "returns an incomplete trailing buffer to the caller"
     (let* ((frame (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
            (partial (subseq frame 0 (1- (length frame))))
-           (messages nil)
-           (count (loom/feature/lsp::%lsp-read-stream-frames
-                   (%make-lsp-byte-stream partial)
-                   (lambda (message)
-                     (push message messages)))))
-      (expect count :to-equal 0)
-      (expect messages :to-be nil)
-      (expect (length (nth-value 1
-                                 (loom/feature/lsp::%lsp-read-stream-frames
-                                  (%make-lsp-byte-stream partial)
-                                  (lambda (message)
-                                    (declare (ignore message))))))
-              :to-be-greater-than 0)))
+           (messages nil))
+      (multiple-value-bind (count remainder)
+          (loom/feature/lsp::%lsp-read-stream-frames
+           (%make-lsp-byte-stream partial)
+           (lambda (message)
+             (push message messages)))
+        (expect count :to-equal 0)
+        (expect messages :to-be nil)
+        (expect (length remainder) :to-be-greater-than 0))))
   (it "decodes multiple framed messages from a child output stream"
     (let* ((first (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
            (second (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":2}"))
