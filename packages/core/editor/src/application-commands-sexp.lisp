@@ -26,12 +26,13 @@ point outside its own region, and the offsets are translated back by START."
 A NIL result means the motion has nowhere to go -- the end of the region, an
 enclosing list's own parenthesis, or unbalanced text -- and leaves point alone
 rather than guessing."
-  `(defun ,name ()
+  (let ((target-var (gensym "TARGET-")))
+    `(defun ,name ()
      ,documentation
      (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
-       (let ((target (,offset-function text offset)))
-         (when target
-           (%move-point-to-local-offset buffer start target))))))
+       (let ((,target-var (,offset-function text offset)))
+         (when ,target-var
+           (%move-point-to-local-offset buffer start ,target-var)))))))
 
 (define-sexp-motion-command forward-sexp %forward-sexp-offset
   "Move point past the next S-expression (C-M-f).

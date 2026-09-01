@@ -17,16 +17,18 @@ EDIT-FUNCTION returns the edits to apply, or NIL when the operation has nothing
 to act on -- no enclosing list, nothing left to slurp, an unbalanced form. NIL
 leaves the buffer untouched rather than guessing, because a structural command
 that half-applies is exactly the failure these commands exist to avoid."
-  `(defun ,name ()
+  (let ((classes-var (gensym "CLASSES-"))
+        (edits-var (gensym "EDITS-")))
+    `(defun ,name ()
      ,documentation
      (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
-       (let* ((classes (%sexp-syntax-classes text))
-              (edits (,edit-function text classes offset)))
-         (when edits
-           (%apply-structural-edits buffer start edits)
+       (let* ((,classes-var (%sexp-syntax-classes text))
+              (,edits-var (,edit-function text ,classes-var offset)))
+         (when ,edits-var
+           (%apply-structural-edits buffer start ,edits-var)
            (%move-point-to-offset
-            buffer (+ start (%structural-adjusted-offset edits offset))))))
-     nil))
+            buffer (+ start (%structural-adjusted-offset ,edits-var offset))))))
+     nil)))
 
 (define-structural-command forward-slurp-sexp %forward-slurp-edits
   "Move the enclosing list's closing delimiter past the next expression (C-<right>).

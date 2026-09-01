@@ -24,24 +24,27 @@
 (defmacro %define-file-tree-prompted-mutation-command
     (name docstring prompt mutation-operator)
   "Define NAME as a prompted file-tree mutation command for PROMPT."
-  `(defun ,name ()
+  (let ((tree-var (gensym "TREE-")))
+    `(defun ,name ()
      ,docstring
-     (let ((tree (editor-state-file-tree *editor-state*)))
+     (let ((,tree-var (editor-state-file-tree *editor-state*)))
        (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                       :on-cancel (minibuffer-message minibuffer "Quit"))
            ((path ,prompt))
-         (,mutation-operator tree path)
-         (%invalidate-file-tree-path path)))))
+         (,mutation-operator ,tree-var path)
+         (%invalidate-file-tree-path path))))))
 
 (defmacro %define-file-tree-selected-path-command
     (name docstring path-binding &body body)
   "Define NAME as a zero-argument file-tree command over the selected path."
-  `(defun ,name ()
+  (let ((tree-var (gensym "TREE-")))
+    `(defun ,name ()
      ,docstring
-     (let* ((tree (editor-state-file-tree *editor-state*))
-            (,path-binding (file-tree-selected-path tree)))
+     (let* ((,tree-var (editor-state-file-tree *editor-state*))
+            (,path-binding (file-tree-selected-path ,tree-var)))
        (when ,path-binding
-         ,@body))))
+           (symbol-macrolet ((tree ,tree-var))
+           ,@body))))))
 
 (%define-file-tree-selection-command
  file-tree-select-next
