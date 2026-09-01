@@ -28,8 +28,14 @@
        (sort
         (loop for bookmark being the hash-values of bookmarks
               collect (%session-bookmark-snapshot bookmark))
-        #'string<
-        :key #'session-bookmark-snapshot-name))
+        (lambda (left right)
+          (let ((left-name (session-bookmark-snapshot-name left))
+                (right-name (session-bookmark-snapshot-name right)))
+            (or (string< (string-downcase left-name)
+                         (string-downcase right-name))
+                (and (string= (string-downcase left-name)
+                              (string-downcase right-name))
+                     (string< left-name right-name)))))))
       (t
        (error "session snapshot: bookmarks must be a hash table")))))
 

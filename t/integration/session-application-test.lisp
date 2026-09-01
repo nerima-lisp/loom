@@ -155,4 +155,19 @@
     (let ((*editor-state* (%fresh-editor-state "content")))
       (setf (editor-state-bookmarks *editor-state*) 'invalid)
       (signals error
-        (loom/feature/session::%session-bookmark-snapshots)))))
+        (loom/feature/session::%session-bookmark-snapshots))))
+
+  (it
+    "orders bookmark snapshots deterministically when names differ by case"
+    (let* ((bookmarks (make-hash-table :test #'equal))
+           (*editor-state* (%fresh-editor-state "content")))
+      (setf (gethash "zebra" bookmarks)
+            (make-editor-bookmark :name "zebra" :line 1 :column 0)
+            (gethash "Alpha" bookmarks)
+            (make-editor-bookmark :name "Alpha" :line 2 :column 0)
+            (gethash "alpha" bookmarks)
+            (make-editor-bookmark :name "alpha" :line 3 :column 0)
+            (editor-state-bookmarks *editor-state*) bookmarks)
+      (expect (mapcar #'session-bookmark-snapshot-name
+                      (loom/feature/session::%session-bookmark-snapshots))
+              :to-equal '("Alpha" "alpha" "zebra")))))
