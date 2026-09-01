@@ -176,26 +176,3 @@ to raise it out of and the operation would delete rather than promote."
         (%raiseable-range text classes offset open close)
       (when start
         (%raise-range-edits open close start end)))))
-
-(defun %structural-offset-after-insert (offset edit)
-  (let ((position (second edit)))
-    (if (<= position offset)
-        (+ offset (length (third edit)))
-        offset)))
-
-(defun %structural-offset-after-delete (offset edit)
-  (let* ((position (second edit))
-         (length (third edit))
-         (end (+ position length)))
-    (cond ((<= end offset) (- offset length))
-          ((< position offset) position)
-          (t offset))))
-
-(defun %structural-adjusted-offset-after-edit (offset edit)
-  (ecase (first edit)
-    (:insert (%structural-offset-after-insert offset edit))
-    (:delete (%structural-offset-after-delete offset edit))))
-
-(defun %structural-adjusted-offset (edits offset)
-  "Return where OFFSET ends up once EDITS have been applied."
-  (reduce #'%structural-adjusted-offset-after-edit edits :initial-value offset))
