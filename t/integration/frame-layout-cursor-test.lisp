@@ -5,6 +5,18 @@
 (describe
   "compose-frame"
   (it
+    "uses the only terminal row for the minibuffer when shortcuts cannot fit"
+    (let* ((state (%fresh-layout-state :name "*scratch*"
+                                       :content "hidden"
+                                       :width 20
+                                       :height 1))
+           (minibuffer (editor-state-minibuffer state)))
+      (minibuffer-message minibuffer "status")
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 0)
+              :to-equal "status              ")))
+
+  (it
     "truncates the shortcut line to fit a narrow terminal"
     (let ((state (%fresh-layout-state :name "*scratch*" :content "hi" :width 10)))
       (loom::compose-frame state)
