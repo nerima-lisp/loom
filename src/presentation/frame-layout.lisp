@@ -64,19 +64,29 @@ jump to a distant line costs the window's height rather than the jump."
              (%layout-line-segments renderer buffer line width)
              (buffer-visible-point-column buffer)))))
 
+(defun %layout-point-before-viewport-p
+    (point-line point-row scroll-line scroll-row)
+  (or (< point-line scroll-line)
+      (and (= point-line scroll-line) (< point-row scroll-row))))
+
+(defun %layout-point-fits-viewport-p
+    (renderer buffer width scroll-line scroll-row point-line point-row height)
+  (%layout-rows-between renderer buffer width
+                         scroll-line scroll-row point-line point-row
+                         (1- height)))
+
 (defun %layout-follow-wrapped-point
     (renderer window buffer width height point-line point-row)
   (let ((scroll-line (loom/feature/window:window-scroll-line window))
         (scroll-row (loom/feature/window:window-scroll-sub-row window)))
     (cond
-      ((or (< point-line scroll-line)
-           (and (= point-line scroll-line) (< point-row scroll-row)))
+      ((%layout-point-before-viewport-p
+        point-line point-row scroll-line scroll-row)
        (setf (loom/feature/window:window-scroll-line window) point-line
              (loom/feature/window:window-scroll-sub-row window) point-row))
-      ((not (%layout-rows-between renderer buffer width
-                                  scroll-line scroll-row
-                                  point-line point-row
-                                  (1- height)))
+      ((not (%layout-point-fits-viewport-p
+             renderer buffer width scroll-line scroll-row
+             point-line point-row height))
        (multiple-value-bind (new-line new-row)
            (%layout-row-back renderer buffer width point-line point-row
                              (1- height))
