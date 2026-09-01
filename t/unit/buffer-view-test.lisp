@@ -123,7 +123,8 @@
 
   (it "rejects a visible line number outside the narrowed view"
     (let ((buffer (make-buffer :initial-content "one")))
-      (signals error (buffer-visible-line buffer 1))))
+      (signals error (buffer-visible-line buffer 1))
+      (signals error (buffer-visible-line buffer -1))))
 
   (it "rejects a region whose end precedes its start"
     (let ((buffer (make-buffer :initial-content "0123456789")))
