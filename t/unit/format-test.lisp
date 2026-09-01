@@ -99,7 +99,7 @@
     (%with-minibuffer-state (minibuffer "abc")
       (format-current-buffer)
       (funcall (loom::%minibuffer-on-confirm minibuffer)
-               "printf bad >&2; exit 4")
+               "cat >/dev/null; printf bad >&2; exit 4")
       (expect (minibuffer-message-string minibuffer)
               :to-equal "Formatter exited with code 4")))
   (it "does nothing when the formatter prompt is cancelled"
