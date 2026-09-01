@@ -6,30 +6,37 @@
 ;;;; use-cases and a normal Loom buffer.
 (in-package #:loom/feature/lsp)
 
+(defun %lsp-start-discovery (buffer)
+  (let ((path (or (buffer-path buffer) (truename "."))))
+    (multiple-value-bind (command root)
+        (lsp-discover-command path)
+      (values command (or root (%lsp-buffer-directory buffer))))))
+
+(defun %lsp-start-with-command (command root buffer minibuffer)
+  (if command
+      (multiple-value-bind (session condition)
+          (%lsp-start-session command root)
+        (%lsp-report-start-result minibuffer session condition))
+      (minibuffer-message minibuffer "LSP command cannot be empty")))
+
 (defun lsp-start ()
   "Start an LSP session, offering the project-local command when available.
 
 `.loom-lsp` is discovered before the prompt.  Pressing RET accepts the first
 usable command line from that file; typing a command continues to override
 the discovered value explicitly."
-  (let* ((buffer (loom/application:%selected-buffer))
-         (path (or (buffer-path buffer) (truename ".")))
-         (discovered-command nil)
-         (discovered-root nil))
-    (multiple-value-setq (discovered-command discovered-root)
-      (lsp-discover-command path))
+  (let ((buffer (loom/application:%selected-buffer)))
+    (multiple-value-bind (discovered-command discovered-root)
+        (%lsp-start-discovery buffer)
     (loom/application:with-prompts
         (minibuffer (editor-state-minibuffer *editor-state*)
                          :on-cancel (minibuffer-message minibuffer "Quit"))
-        ((typed-command (%lsp-command-prompt-string discovered-command)))
-      (let ((command (%normalize-lsp-command typed-command discovered-command)))
-        (if command
-            (multiple-value-bind (session condition)
-                (%lsp-start-session
-                 command
-                 (or discovered-root (%lsp-buffer-directory buffer)))
-              (%lsp-report-start-result minibuffer session condition))
-            (minibuffer-message minibuffer "LSP command cannot be empty"))))))
+      ((typed-command (%lsp-command-prompt-string discovered-command)))
+      (%lsp-start-with-command
+       (%normalize-lsp-command typed-command discovered-command)
+       discovered-root
+       buffer
+       minibuffer)))))
 
 (defun lsp-stop ()
   "Stop the current LSP session, if one exists."
