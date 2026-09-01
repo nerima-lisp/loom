@@ -16,6 +16,29 @@
   command
   recording-before)
 
+(defun %terminal-input-event-for-routing-p (event minibuffer-was-active sequence)
+  (and (not minibuffer-was-active)
+       (loom/feature/terminal:terminal-input-event-p event)
+       (null sequence)))
+
+(defun %self-insert-event-for-routing-p
+    (event minibuffer-was-active prefix-action sequence terminal-event-p)
+  (and (not minibuffer-was-active)
+       (eq (cl-tty-kit:key-event-type event) :character)
+       (not (intersection '(:control :alt)
+                          (cl-tty-kit:key-event-modifiers event)))
+       (null prefix-action)
+       (null sequence)
+       (not terminal-event-p)))
+
+(defun %routing-command (keymap-state sequence descriptor minibuffer-was-active
+                         self-insert-event-p)
+  (and (not minibuffer-was-active)
+       (not self-insert-event-p)
+       (keymap-lookup
+        (keymap-state-keymap keymap-state)
+        (append sequence (list descriptor)))))
+
 (defun %classify-key-event (event keymap-state)
   "Return the immutable routing decision for EVENT in KEYMAP-STATE."
   (let* ((minibuffer (editor-state-minibuffer *editor-state*))
@@ -33,23 +56,15 @@
                 macro
                 (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)))
          (terminal-input-event-p
-           (and (not minibuffer-was-active)
-                (loom/feature/terminal:terminal-input-event-p event)
-                (null sequence)))
+           (%terminal-input-event-for-routing-p event minibuffer-was-active
+                                                 sequence))
          (self-insert-event-p
-           (and (not minibuffer-was-active)
-                (eq (cl-tty-kit:key-event-type event) :character)
-                (not (intersection '(:control :alt)
-                                   (cl-tty-kit:key-event-modifiers event)))
-                (null prefix-action)
-                (null sequence)
-                (not terminal-input-event-p)))
+           (%self-insert-event-for-routing-p
+            event minibuffer-was-active prefix-action sequence
+            terminal-input-event-p))
          (command
-           (and (not minibuffer-was-active)
-                (not self-insert-event-p)
-                (keymap-lookup
-                 (keymap-state-keymap keymap-state)
-                 (append sequence (list descriptor)))))
+           (%routing-command keymap-state sequence descriptor
+                             minibuffer-was-active self-insert-event-p))
          (terminal-event-p
            (and terminal-input-event-p
                 (null command))))
