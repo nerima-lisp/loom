@@ -24,7 +24,7 @@
 Returns three values: the JSON string, the number of consumed octets, and one
 of :COMPLETE or :INCOMPLETE.  Malformed headers and invalid UTF-8 signal an
 error; an incomplete frame is a normal result for a streaming reader."
-  (check-type octets vector)
+  (check-type octets (vector (unsigned-byte 8)))
   (let ((header-end (%lsp-find-header-end octets)))
     (unless header-end
       (return-from loom-lsp-frame-decode (values nil 0 :incomplete)))

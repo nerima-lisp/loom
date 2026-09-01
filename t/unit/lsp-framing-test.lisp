@@ -32,7 +32,7 @@
         (expect consumed :to-equal 0)
         (expect status :to-be :incomplete)))
     (multiple-value-bind (decoded consumed status)
-        (loom/feature/lsp::loom-lsp-frame-decode #())
+        (loom/feature/lsp::loom-lsp-frame-decode (%lsp-octets))
       (expect decoded :to-be nil)
       (expect consumed :to-equal 0)
         (expect status :to-be :incomplete)))
@@ -71,6 +71,8 @@
               emoji))
     (signals type-error
       (loom/feature/lsp::loom-lsp-frame-encode 42))
+    (signals type-error
+      (loom/feature/lsp::loom-lsp-frame-decode #("not octets")))
     (signals error
       (loom/feature/lsp::%lsp-utf8-decode (%lsp-octets #x80)))
     (signals error
