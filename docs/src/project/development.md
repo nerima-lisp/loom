@@ -161,6 +161,17 @@ Set `LOOM_COVERAGE_MIN_EXPRESSIONS` and/or `LOOM_COVERAGE_MIN_BRANCHES` to make
 the corresponding percentage a failing quality gate. Values must be between 0
 and 100; raise them incrementally as executable coverage improves toward 100%.
 
+### Coverage debt triage
+
+Treat an uncovered executable expression or branch as coverage debt. First map
+the uncovered location back to its source form, then add a higher-level test
+that exercises the user-visible behavior. Do not add tests solely to evaluate
+`defstruct` slot declarations, type declarations, default forms, or other
+top-level forms that SB-COVER instruments but that do not represent a runtime
+decision in Loom. Do not lower a threshold or alter instrumentation to make a
+report green; document a genuine harness limitation and keep the expression
+and branch totals visible instead.
+
 ## REPL workflow
 
 Inside the development shell, load the system into a REPL:
