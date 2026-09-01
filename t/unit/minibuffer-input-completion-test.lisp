@@ -46,6 +46,41 @@
       (minibuffer-handle-key minibuffer (%special-key :tab))
       (expect (minibuffer-input-string minibuffer) :to-equal "z")))
 
+  (it-each
+      (("inactive minibuffer" nil :missing "")
+       ("missing completion function" t :missing "Al")
+       ("empty candidates" t :empty "Al"))
+      "leaves input unchanged for ~A"
+      (label active-p completion-function expected)
+    (let ((minibuffer (make-minibuffer)))
+      (declare (ignore label))
+      (when (eq completion-function :empty)
+        (minibuffer-activate minibuffer "Prompt: "
+                              :completion-function
+                              (lambda (input)
+                                (declare (ignore input))
+                                nil)))
+      (when (eq completion-function :missing)
+        (minibuffer-activate minibuffer "Prompt: "))
+      (unless active-p
+        (setf (loom::%minibuffer-active-p minibuffer) nil))
+      (setf (loom::%minibuffer-input minibuffer) "Al")
+      (expect (minibuffer-complete minibuffer) :to-be minibuffer)
+      (expect (minibuffer-input-string minibuffer) :to-equal expected)))
+
+  (it
+    "matches completion candidates without regard to case"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :completion-function
+       (lambda (input)
+         (declare (ignore input))
+         '("Alpha-one" "ALPHA-two")))
+      (%type-string minibuffer "a")
+      (minibuffer-handle-key minibuffer (%special-key :tab))
+      (expect (minibuffer-input-string minibuffer) :to-equal "Alpha-")))
+
   (it
     "rejects invalid completion functions and candidate results"
     (let ((minibuffer (make-minibuffer)))
