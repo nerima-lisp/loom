@@ -17,25 +17,33 @@
 (defun %layout-syntax-style (kind)
   (cdr (assoc kind +layout-syntax-styles+)))
 
+(defun %syntax-token-visible-text (renderer token character-index start-index
+                                   remaining)
+  (let* ((text (syntax-token-text token))
+         (end (+ character-index (length text)))
+         (slice (if (> start-index character-index)
+                    (subseq text (- start-index character-index))
+                    text)))
+    (values (loom-renderer-truncate-string renderer slice remaining)
+            end)))
+
 (defun %syntax-draw-token (renderer token character-index start-index
                            column y remaining)
-  (let* ((text (syntax-token-text token))
-         (end (+ character-index (length text))))
+  (let ((end (+ character-index (length (syntax-token-text token)))))
     (if (and (plusp remaining) (> end start-index))
-        (let* ((slice (if (> start-index character-index)
-                          (subseq text (- start-index character-index))
-                          text))
-               (visible (loom-renderer-truncate-string renderer slice remaining))
-               (visible-width (loom-renderer-string-width renderer visible)))
-          (if (zerop (length visible))
-              (values column remaining end)
-              (progn
-                (loom-renderer-write-string
-                 renderer column y visible
-                 :style (%layout-syntax-style (syntax-token-kind token)))
-                (values (+ column visible-width)
-                        (- remaining visible-width)
-                        end))))
+        (multiple-value-bind (visible visible-end)
+            (%syntax-token-visible-text renderer token character-index
+                                        start-index remaining)
+          (let ((visible-width (loom-renderer-string-width renderer visible)))
+            (if (zerop visible-width)
+                (values column remaining visible-end)
+                (progn
+                  (loom-renderer-write-string
+                   renderer column y visible
+                   :style (%layout-syntax-style (syntax-token-kind token)))
+                  (values (+ column visible-width)
+                          (- remaining visible-width)
+                          visible-end)))))
         (values column remaining end))))
 
 (defun syntax-draw-highlighted-line (renderer line x y width
