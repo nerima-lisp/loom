@@ -2,6 +2,20 @@
 
 (describe
     "git file operations"
+  (it "uses the project directory when no project root is found"
+    (let ((selected-buffer (make-buffer :name "notes" :path #P"/repo/src/notes.lisp")))
+      (with-replaced-function
+          (loom/feature/git::%selected-buffer
+           (lambda () selected-buffer))
+        (with-replaced-function
+            (project-find-root
+             (lambda (path)
+               (declare (ignore path))
+               nil))
+          (expect (namestring (loom/feature/git::%git-status-directory))
+                  :to-equal
+                  "/repo/src/")))))
+
   (it "runs stage and unstage with the requested directory"
     (let ((result
             (make-test-git-result
