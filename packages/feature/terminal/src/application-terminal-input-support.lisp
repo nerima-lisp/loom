@@ -50,36 +50,37 @@
            (control (%terminal-control-character character)))
       (and control (string control)))))
 
+(defun %terminal-alt-prefix (payload modifiers)
+  (and payload
+       (if (member :alt modifiers :test #'eq)
+           (concatenate 'string (string (code-char 27)) payload)
+           payload)))
+
+(defun %terminal-character-payload (event)
+  (let* ((event-text (cl-tty-kit:key-event-text event))
+         (text (if (and event-text (plusp (length event-text)))
+                   event-text
+                   (string (cl-tty-kit:key-event-code event))))
+         (modifiers (cl-tty-kit:key-event-modifiers event)))
+    (when (and text (plusp (length text)))
+      (let ((payload
+              (if (member :control modifiers :test #'eq)
+                  (let ((control-character
+                          (%terminal-control-character (char text 0))))
+                    (and control-character (string control-character)))
+                  text)))
+        (%terminal-alt-prefix payload modifiers)))))
+
+(defun %terminal-special-event-payload (event)
+  (let ((payload (or (%terminal-special-payload
+                      (cl-tty-kit:key-event-code event))
+                     (%terminal-control-special-payload
+                      (cl-tty-kit:key-event-code event)))))
+    (%terminal-alt-prefix payload (cl-tty-kit:key-event-modifiers event))))
+
 (defun %terminal-event-payload (event)
   (case (cl-tty-kit:key-event-type event)
-    (:character
-     (let* ((event-text (cl-tty-kit:key-event-text event))
-            (text (if (and event-text (plusp (length event-text)))
-                      event-text
-                      (string (cl-tty-kit:key-event-code event))))
-            (modifiers (cl-tty-kit:key-event-modifiers event))
-            (control (member :control modifiers :test #'eq))
-            (alt (member :alt modifiers :test #'eq)))
-       (when (and text (plusp (length text)))
-         (let ((payload
-                 (if control
-                     (let ((control-character
-                             (%terminal-control-character (char text 0))))
-                       (and control-character (string control-character)))
-                     text)))
-           (and payload
-                (if alt
-                    (concatenate 'string (string (code-char 27)) payload)
-                    payload))))))
+    (:character (%terminal-character-payload event))
     (:paste
      (cl-tty-kit:key-event-code event))
-    (:special
-     (let ((payload (or (%terminal-special-payload
-                         (cl-tty-kit:key-event-code event))
-                        (%terminal-control-special-payload
-                         (cl-tty-kit:key-event-code event)))))
-       (and payload
-            (if (member :alt (cl-tty-kit:key-event-modifiers event)
-                        :test #'eq)
-                (concatenate 'string (string (code-char 27)) payload)
-                payload))))))
+    (:special (%terminal-special-event-payload event))))
