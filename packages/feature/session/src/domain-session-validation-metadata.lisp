@@ -1,11 +1,10 @@
 ;;;; packages/feature/session/src/domain-session-validation-metadata.lisp
 (in-package #:loom/feature/session)
 
-(defmacro %validate-session-list (value predicate message)
-  `(let ((value ,value))
-     (unless (and (listp value) (every ,predicate value))
-       (error "validate-session-snapshot: ~A" ,message))
-     value))
+(defun %validate-session-list (value predicate message)
+  (unless (and (listp value) (every predicate value))
+    (error "validate-session-snapshot: ~A" message))
+  value)
 
 (defun %validate-session-unique-names (objects name-reader message)
   (let ((names (mapcar name-reader objects)))
