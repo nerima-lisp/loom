@@ -20,28 +20,35 @@
          (loom/feature/window:window-scroll-line window)
          (loom/feature/window:window-scroll-sub-row window)))))
 
+(defun %layout-draw-window-overlays (renderer leaf x-offset)
+  (%layout-draw-window-buffer renderer leaf x-offset)
+  (%layout-draw-matching-paren renderer leaf x-offset)
+  (%layout-draw-isearch renderer leaf x-offset)
+  (%layout-draw-completion renderer leaf x-offset))
+
+(defun %layout-draw-window-separator (renderer leaf x-offset)
+  (when (and (plusp (loom/feature/window:window-x leaf))
+             (plusp (loom/feature/window:window-height leaf)))
+    (loom-renderer-draw-vertical-line
+     renderer (1- (+ x-offset (loom/feature/window:window-x leaf)))
+     (loom/feature/window:window-y leaf)
+     (loom/feature/window:window-height leaf)))
+  (when (and (plusp (loom/feature/window:window-y leaf))
+             (plusp (loom/feature/window:window-width leaf)))
+    (loom-renderer-draw-horizontal-line
+     renderer (+ x-offset (loom/feature/window:window-x leaf))
+     (1- (loom/feature/window:window-y leaf))
+     (loom/feature/window:window-width leaf)))
+  renderer)
+
 (defun %layout-draw-windows (renderer window-tree x-offset)
   "Draw every leaf window and the separators in WINDOW-TREE."
   (let ((leaves (loom/feature/window:window-tree-windows window-tree)))
     (dolist (leaf leaves)
-      (%layout-draw-window-buffer renderer leaf x-offset)
-      (%layout-draw-matching-paren renderer leaf x-offset)
-      (%layout-draw-isearch renderer leaf x-offset)
-      (%layout-draw-completion renderer leaf x-offset))
+      (%layout-draw-window-overlays renderer leaf x-offset))
     (dolist (leaf leaves)
-      (when (and (plusp (loom/feature/window:window-x leaf))
-                 (plusp (loom/feature/window:window-height leaf)))
-        (loom-renderer-draw-vertical-line
-         renderer (1- (+ x-offset (loom/feature/window:window-x leaf)))
-         (loom/feature/window:window-y leaf)
-         (loom/feature/window:window-height leaf)))
-      (when (and (plusp (loom/feature/window:window-y leaf))
-                 (plusp (loom/feature/window:window-width leaf)))
-        (loom-renderer-draw-horizontal-line
-         renderer (+ x-offset (loom/feature/window:window-x leaf))
-         (1- (loom/feature/window:window-y leaf))
-         (loom/feature/window:window-width leaf))))
-    renderer))
+      (%layout-draw-window-separator renderer leaf x-offset)))
+  renderer)
 
 (defparameter +layout-matching-paren-style+ '(:bold (:bg 5) (:fg 0))
   "Style marking the parenthesis at point and the one it pairs with.")
