@@ -35,6 +35,25 @@
   (+ (get-internal-real-time)
      (ceiling (* (max 0 timeout) internal-time-units-per-second))))
 
+(defun %lsp-request-shutdown (session)
+  (unless (lsp-session-pending-shutdown-id session)
+    (handler-case
+        (setf (lsp-session-pending-shutdown-id session)
+              (%lsp-send-request session "shutdown"))
+      (error (condition)
+        (setf (lsp-session-last-error session)
+              (format nil "~A" condition))))))
+
+(defun %lsp-await-shutdown (session timeout)
+  (let ((deadline (%lsp-shutdown-deadline timeout)))
+    (loop while (and (not (lsp-session-closed-p session))
+                     (lsp-session-pending-shutdown-id session)
+                     (< (get-internal-real-time) deadline))
+          do (lsp-session-drain session)
+             (when (and (not (lsp-session-closed-p session))
+                        (lsp-session-pending-shutdown-id session))
+               (sleep 0.01)))))
+
 (defun lsp-session-stop (session &key (timeout *lsp-shutdown-timeout-seconds*))
   "Gracefully stop SESSION, falling back to EXIT after TIMEOUT seconds.
 
@@ -46,21 +65,8 @@ before the transport is closed."
     (if (not (lsp-session-initialized-p session))
         (%lsp-finish-stop session)
         (progn
-          (unless (lsp-session-pending-shutdown-id session)
-            (handler-case
-                (setf (lsp-session-pending-shutdown-id session)
-                      (%lsp-send-request session "shutdown"))
-              (error (condition)
-                (setf (lsp-session-last-error session)
-                      (format nil "~A" condition)))))
-          (let ((deadline (%lsp-shutdown-deadline timeout)))
-            (loop while (and (not (lsp-session-closed-p session))
-                             (lsp-session-pending-shutdown-id session)
-                             (< (get-internal-real-time) deadline))
-                  do (lsp-session-drain session)
-                     (when (and (not (lsp-session-closed-p session))
-                                (lsp-session-pending-shutdown-id session))
-                       (sleep 0.01))))
+          (%lsp-request-shutdown session)
+          (%lsp-await-shutdown session timeout)
           (unless (lsp-session-closed-p session)
             (%lsp-finish-stop session)))))
   session)
