@@ -18,12 +18,19 @@
       (expect (minibuffer-history-entries minibuffer)
               :to-equal '("latest"))))
 
-  (it
-    "rejects non-string history entries"
-    (signals error
-             (minibuffer-set-history-entries
-              (make-minibuffer :history (history-kit:make-history))
-              '("ok" 42)))))
+    (it
+      "rejects non-string history entries"
+       (signals error
+                (minibuffer-set-history-entries
+                 (make-minibuffer :history (history-kit:make-history))
+                 '("ok" 42)))))
+    (it
+      "treats a missing history store as an empty optional feature"
+      (let ((minibuffer (make-minibuffer)))
+        (expect (minibuffer-history-entries minibuffer) :to-be nil)
+        (expect (minibuffer-set-history-entries minibuffer '("ignored"))
+                :to-be minibuffer)
+        (expect (minibuffer-history-entries minibuffer) :to-be nil)))
 
 (describe
   "minibuffer-message"
