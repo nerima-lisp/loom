@@ -27,6 +27,18 @@
     (values (loom-renderer-truncate-string renderer slice remaining)
             end)))
 
+(defun %syntax-draw-visible-token (renderer token visible column y remaining end)
+  (let ((visible-width (loom-renderer-string-width renderer visible)))
+    (if (zerop visible-width)
+        (values column remaining end)
+        (progn
+          (loom-renderer-write-string
+           renderer column y visible
+           :style (%layout-syntax-style (syntax-token-kind token)))
+          (values (+ column visible-width)
+                  (- remaining visible-width)
+                  end)))))
+
 (defun %syntax-draw-token (renderer token character-index start-index
                            column y remaining)
   (let ((end (+ character-index (length (syntax-token-text token)))))
@@ -34,16 +46,8 @@
         (multiple-value-bind (visible visible-end)
             (%syntax-token-visible-text renderer token character-index
                                         start-index remaining)
-          (let ((visible-width (loom-renderer-string-width renderer visible)))
-            (if (zerop visible-width)
-                (values column remaining visible-end)
-                (progn
-                  (loom-renderer-write-string
-                   renderer column y visible
-                   :style (%layout-syntax-style (syntax-token-kind token)))
-                  (values (+ column visible-width)
-                          (- remaining visible-width)
-                          visible-end)))))
+          (%syntax-draw-visible-token renderer token visible column y
+                                      remaining visible-end))
         (values column remaining end))))
 
 (defun syntax-draw-highlighted-line (renderer line x y width
