@@ -395,6 +395,7 @@
           clConcurrentKit
           clJsonKit
           clLogKit
+          clProcessKit
           clVcsKit
         ];
 
