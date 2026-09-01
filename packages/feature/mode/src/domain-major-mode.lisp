@@ -16,24 +16,27 @@
     (or (%dynamic-major-mode-definition key)
         (%static-major-mode-definition key))))
 
+(defun %dynamic-major-mode-key (token)
+  (loop for key in *registered-major-mode-order*
+        for definition = (%dynamic-major-mode-definition key)
+        when (or (string= token (string-downcase (symbol-name key)))
+                 (string= token (%major-mode-token (getf definition :name)))
+                 (member token (getf definition :aliases) :test #'string=))
+          return key))
+
+(defun %static-major-mode-key (name)
+  (loop for (key . definition) in +major-mode-definitions+
+        when (or (string-equal name (symbol-name key))
+                 (string-equal name (getf definition :name)))
+          return key))
+
 (defun %major-mode-key (mode)
   (cond
     ((keywordp mode) mode)
     ((symbolp mode) (intern (string-upcase (symbol-name mode)) :keyword))
     ((stringp mode)
-     (let ((token (%major-mode-token mode)))
-       (or (loop for key in *registered-major-mode-order*
-                 for definition = (%dynamic-major-mode-definition key)
-                 when (or (string= token (string-downcase (symbol-name key)))
-                          (string= token
-                                   (%major-mode-token (getf definition :name)))
-                          (member token (getf definition :aliases)
-                                  :test #'string=))
-                   return key)
-           (loop for (key . definition) in +major-mode-definitions+
-                 when (or (string-equal mode (symbol-name key))
-                          (string-equal mode (getf definition :name)))
-                   return key))))
+     (or (%dynamic-major-mode-key (%major-mode-token mode))
+         (%static-major-mode-key mode)))
     (t nil)))
 
 (defun major-mode-known-p (mode)
