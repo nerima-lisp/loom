@@ -20,4 +20,10 @@
     "stores an optional file path as the :path positional"
     (let ((invocation (cl-cli:parse-argv loom::*loom-app* '("loom" "notes.txt"))))
       (expect (cl-cli:invocation-action invocation) :to-be :dispatch)
-      (expect (cl-cli:positional-value invocation :path) :to-equal "notes.txt"))))
+      (expect (cl-cli:positional-value invocation :path) :to-equal "notes.txt")))
+
+  (it
+    "leaves the path absent when no positional argument is given"
+    (let ((invocation (cl-cli:parse-argv loom::*loom-app* '("loom"))))
+      (expect (cl-cli:invocation-action invocation) :to-be :dispatch)
+      (expect (cl-cli:positional-value invocation :path) :to-be nil))))
