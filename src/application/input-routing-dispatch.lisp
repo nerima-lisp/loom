@@ -62,7 +62,7 @@ the minibuffer instead of unwinding the event loop; LOOM-QUIT still escapes
       (error (condition)
         (minibuffer-message
          (input-routing-decision-minibuffer decision)
-         (format nil "~A" condition))))
+         (princ-to-string condition))))
     (when (and (eq dispatched-p :handled)
                (input-routing-decision-recording-before decision)
                macro
