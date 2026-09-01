@@ -259,6 +259,22 @@ the degenerate-window tests are the ones that need them to differ."
               :to-equal '((:fg 0) (:bg 6)))))
 
 (describe
+  "matching-parenthesis layout drawing"
+  (it
+    "marks both the adjacent parenthesis and its matching partner"
+    (let* ((state (%fresh-layout-state :content "(abc)" :width 8 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-point buffer 0 0)
+      (loom::%layout-draw-matching-paren
+       (editor-state-renderer state) window 0)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                :to-equal '(:bold (:fg 0) (:bg 5)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 4 0))
+                :to-equal '(:bold (:fg 0) (:bg 5)))))))
+
+(describe
   "%layout-path-label"
   (it
     "returns a pathname's last path component"
