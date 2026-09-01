@@ -4,24 +4,34 @@
 ;;;; points stay in infrastructure-lsp-framing.lisp.
 (in-package #:loom/feature/lsp)
 
+(defun %lsp-utf8-codepoint-width (code)
+  (cond ((<= code #x7F) 1)
+        ((<= code #x7FF) 2)
+        ((<= code #xFFFF) 3)
+        ((<= code #x10FFFF) 4)
+        (t (error "Invalid UTF-8 code point: ~S" code))))
+
+(defun %lsp-utf8-emit-continuation (octets code shift)
+  (vector-push-extend (+ #x80 (logand (ash code (- shift)) #x3F)) octets))
+
 (defun %lsp-utf8-emit-codepoint (octets code)
-  (flet ((emit (octet) (vector-push-extend octet octets)))
-    (cond
-      ((<= code #x7F) (emit code))
-      ((<= code #x7FF)
-       (emit (+ #xC0 (ash code -6)))
-       (emit (+ #x80 (logand code #x3F))))
-      ((<= code #xFFFF)
-       (when (<= #xD800 code #xDFFF)
-         (error "Cannot encode a UTF-8 surrogate code point: ~S" code))
-       (emit (+ #xE0 (ash code -12)))
-       (emit (+ #x80 (logand (ash code -6) #x3F)))
-       (emit (+ #x80 (logand code #x3F))))
-      ((<= code #x10FFFF)
-       (emit (+ #xF0 (ash code -18)))
-       (emit (+ #x80 (logand (ash code -12) #x3F)))
-       (emit (+ #x80 (logand (ash code -6) #x3F)))
-       (emit (+ #x80 (logand code #x3F)))))))
+  (let ((width (%lsp-utf8-codepoint-width code)))
+    (when (and (= width 3) (<= #xD800 code #xDFFF))
+      (error "Cannot encode a UTF-8 surrogate code point: ~S" code))
+    (case width
+      (1 (vector-push-extend code octets))
+      (2
+       (vector-push-extend (+ #xC0 (ash code -6)) octets)
+       (%lsp-utf8-emit-continuation octets code 0))
+      (3
+       (vector-push-extend (+ #xE0 (ash code -12)) octets)
+       (%lsp-utf8-emit-continuation octets code 6)
+       (%lsp-utf8-emit-continuation octets code 0))
+      (4
+       (vector-push-extend (+ #xF0 (ash code -18)) octets)
+       (%lsp-utf8-emit-continuation octets code 12)
+       (%lsp-utf8-emit-continuation octets code 6)
+       (%lsp-utf8-emit-continuation octets code 0)))))
 
 (defun %lsp-utf8-encode (string)
   (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
