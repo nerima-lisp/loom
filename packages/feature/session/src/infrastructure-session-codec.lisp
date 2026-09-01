@@ -29,6 +29,23 @@
     (error "session: ~A must be a list of strings" message))
   value)
 
+(defun %session-snapshot-from-sexp-fields
+    (serialized-buffers recent-files serialized-bookmarks command-history
+     serialized-workspaces current-index)
+  (%session-required-list serialized-buffers ":buffers")
+  (%session-required-string-list recent-files ":recent-files")
+  (%session-required-list serialized-bookmarks ":bookmarks")
+  (%session-required-string-list command-history ":command-history")
+  (%session-required-list serialized-workspaces ":workspaces")
+  (validate-session-snapshot
+   (make-session-snapshot
+    :buffers (mapcar #'%session-buffer-from-sexp serialized-buffers)
+    :recent-files recent-files
+    :bookmarks (mapcar #'%session-bookmark-from-sexp serialized-bookmarks)
+    :command-history command-history
+    :workspaces (mapcar #'%session-workspace-from-sexp serialized-workspaces)
+    :current-workspace-index current-index)))
+
 (defun %session-from-sexp (value)
   (%validate-session-plist value +loom-session-top-level-keys+ "session")
   (let ((version (%session-plist-value value :loom-session)))
@@ -41,18 +58,6 @@
           (serialized-workspaces (%session-plist-value value :workspaces))
           (current-index
             (%session-plist-value value :current-workspace-index)))
-      (%session-required-list serialized-buffers ":buffers")
-      (%session-required-string-list recent-files ":recent-files")
-      (%session-required-list serialized-bookmarks ":bookmarks")
-      (%session-required-string-list command-history ":command-history")
-      (%session-required-list serialized-workspaces ":workspaces")
-      (validate-session-snapshot
-       (make-session-snapshot
-        :buffers (mapcar #'%session-buffer-from-sexp serialized-buffers)
-        :recent-files recent-files
-        :bookmarks (mapcar #'%session-bookmark-from-sexp
-                           serialized-bookmarks)
-        :command-history command-history
-        :workspaces (mapcar #'%session-workspace-from-sexp
-                            serialized-workspaces)
-        :current-workspace-index current-index)))))
+      (%session-snapshot-from-sexp-fields
+       serialized-buffers recent-files serialized-bookmarks command-history
+       serialized-workspaces current-index))))
