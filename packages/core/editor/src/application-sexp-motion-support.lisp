@@ -70,13 +70,16 @@ NIL when the parentheses do not balance."
              (decf position))
     nil))
 
+(defun %sexp-code-atom-character-p (text classes offset)
+  (and (%sexp-code-p classes offset)
+       (not (%sexp-whitespace-p (char text offset)))
+       (not (%sexp-open-p text classes offset))
+       (not (%sexp-close-p text classes offset))
+       (not (char= (char text offset) #\"))))
+
 (defun %sexp-atom-character-p (text classes offset)
   (or (eq (aref classes offset) :atom)
-      (and (%sexp-code-p classes offset)
-           (not (%sexp-whitespace-p (char text offset)))
-           (not (%sexp-open-p text classes offset))
-           (not (%sexp-close-p text classes offset))
-           (not (char= (char text offset) #\")))))
+      (%sexp-code-atom-character-p text classes offset)))
 
 (defun %sexp-atom-end (text classes offset)
   (let ((length (length text)))
