@@ -113,6 +113,23 @@
       (expect (buffer-point-column buffer) :to-equal 1)))
 
   (it-each
+      ((loom::forward-slurp-sexp "(alpha)
+  beta" 2 "(alpha
+  beta)")
+       (loom::forward-barf-sexp "(alpha
+  beta)" 2 "(alpha)
+  beta")
+       (loom::backward-barf-sexp "(alpha
+  beta)" 2 "alpha
+  (beta)"))
+      "~S preserves multiline structural edits for ~S"
+      (command content offset expected)
+    (%with-selected-buffer-state (buffer content)
+      (buffer-set-point buffer 0 offset)
+      (funcall command)
+      (expect (buffer-text buffer) :to-equal expected)))
+
+  (it-each
       ((loom::forward-slurp-sexp "(a) b" 1)
        (loom::forward-barf-sexp "(a b)" 1)
        (loom::backward-slurp-sexp "a (b)" 3)
