@@ -1,4 +1,5 @@
 (defpackage #:loom/feature/auto-save
+  (:documentation "Automatic saving of modified buffers to recovery files.")
   (:use #:cl #:loom #:loom/application)
   (:export
    #:*auto-save-interval*

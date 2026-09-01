@@ -1,4 +1,5 @@
 (defpackage #:loom/feature/git
+  (:documentation "Git status, diff, staging, and unstaging commands.")
   (:use #:cl
         #:loom
         #:loom/application

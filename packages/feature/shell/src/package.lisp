@@ -1,4 +1,5 @@
 (defpackage #:loom/feature/shell
+  (:documentation "Shell command execution and result types.")
   (:use #:cl
         #:loom
         #:loom/application

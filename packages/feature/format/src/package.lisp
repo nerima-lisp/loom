@@ -1,4 +1,5 @@
 (defpackage #:loom/feature/format
+  (:documentation "Buffer formatting commands and save hooks.")
   (:use #:cl
         #:loom
         #:loom/application

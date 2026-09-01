@@ -1,4 +1,5 @@
 (defpackage #:loom/feature/terminal
+  (:documentation "Terminal session management and terminal screen state.")
   (:use #:cl
         #:loom
         #:loom/application
