@@ -99,4 +99,24 @@
                  :command kill-line
                  :keys nil
                  :help nil
-                 :help-order nil))))))
+                 :help-order nil)))))
+  (it "preserves command metadata while composing grouped spec variables"
+    (let ((loom/application:*command-specs* nil)
+          (movement-specs
+            '((loom/application:command-spec-group
+                  "movement"
+                (loom/application:command-spec
+                    "forward-char" forward-char
+                  :keys (((:control #\f)))
+                  :help "C-f Forward"
+                  :help-order 10)))))
+      (eval
+       `(let ((movement-specs ',movement-specs))
+          (loom/application:define-command-spec-catalog movement-specs)))
+      (expect loom/application:*command-specs*
+              :to-equal
+              '((:name "forward-char"
+                 :command forward-char
+                 :keys (((:control #\f)))
+                 :help "C-f Forward"
+                 :help-order 10))))))
