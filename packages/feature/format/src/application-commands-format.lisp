@@ -1,12 +1,23 @@
 (in-package #:loom/feature/format)
 
+(defun %trim-format-command (command)
+  (string-trim '(#\Space #\Tab #\Newline #\Return) command))
+
+(defun %format-result-message (result)
+  (if (shell-command-result-success-p result)
+      "Buffer formatted successfully"
+      (format nil "Formatter exited with code ~D"
+              (shell-command-result-exit-code result))))
+
+(defun %format-error-message (prefix condition)
+  (format nil "~A error: ~A" prefix condition))
+
 (defun format-current-buffer ()
   "Prompt for a formatter command and format the selected buffer."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                 :on-cancel (lambda () nil))
       ((command "Format command: "))
-      (let ((command
-              (string-trim '(#\Space #\Tab #\Newline #\Return) command)))
+      (let ((command (%trim-format-command command)))
         (if (zerop (length command))
             (minibuffer-message
              (editor-state-minibuffer *editor-state*)
@@ -15,15 +26,12 @@
                 (let ((result (format-buffer-with-command command)))
                   (minibuffer-message
                    (editor-state-minibuffer *editor-state*)
-                   (if (shell-command-result-success-p result)
-                       "Buffer formatted successfully"
-                       (format nil "Formatter exited with code ~D"
-                               (shell-command-result-exit-code result))))
+                   (%format-result-message result))
                   result)
               (error (condition)
                 (minibuffer-message
                  (editor-state-minibuffer *editor-state*)
-                 (format nil "Format command error: ~A" condition))))))))
+                 (%format-error-message "Format command" condition))))))))
 
 (defun set-format-command (command &optional (state *editor-state*))
   "Set the shell COMMAND used by format-on-save in STATE.
@@ -32,8 +40,7 @@ The command is stored as a trimmed string and must not be empty."
   (check-type command string)
   (unless state
     (error "No editor state is active"))
-  (let ((trimmed (string-trim '(#\Space #\Tab #\Newline #\Return)
-                              command)))
+    (let ((trimmed (%trim-format-command command)))
     (when (zerop (length trimmed))
       (error "The format command must not be empty"))
     (setf (editor-state-format-command state) trimmed)))
@@ -69,7 +76,7 @@ unsaveable."
                        buffer)))
           (unless (shell-command-result-success-p result)
             (when (editor-state-minibuffer state)
-              (minibuffer-message
+               (minibuffer-message
                (editor-state-minibuffer state)
                (format nil "Format-on-save exited with code ~D"
                        (shell-command-result-exit-code result))))))
@@ -77,7 +84,7 @@ unsaveable."
         (when (editor-state-minibuffer state)
           (minibuffer-message
            (editor-state-minibuffer state)
-           (format nil "Format-on-save error: ~A" condition))))))
+           (%format-error-message "Format-on-save" condition))))))
   buffer)
 
 (defun set-format-command-command ()
