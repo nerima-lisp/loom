@@ -48,15 +48,17 @@
                     (return (1+ position))))
           finally (return (length line)))))
 
-(defun %syntax-number-token-p (text)
-  (let* ((length (length text))
-         (position (if (and (> length 1)
-                            (find (char text 0) '(#\+ #\-) :test #'char=))
-                       1
-                       0))
-         (digits 0)
-         (dot-seen nil))
-    (loop while (< position length)
+(defun %syntax-number-start-position (text)
+  (if (and (> (length text) 1)
+           (find (char text 0) '(#\+ #\-) :test #'char=))
+      1
+      0))
+
+(defun %syntax-number-body-p (text start)
+  (let ((position start)
+        (digits 0)
+        (dot-seen nil))
+    (loop while (< position (length text))
           for character = (char text position)
           do (cond ((digit-char-p character 10)
                     (incf digits)
@@ -66,4 +68,7 @@
                     (incf position))
                    (t (return))))
     (and (plusp digits)
-         (= position length))))
+         (= position (length text)))))
+
+(defun %syntax-number-token-p (text)
+  (%syntax-number-body-p text (%syntax-number-start-position text)))
