@@ -42,6 +42,12 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
           (list (list :insert target (string (char text close)))
                 (list :delete close 1)))))))
 
+(defun %forward-barf-delimiter (text target delimiter)
+  "Return DELIMITER positioned after the expression at TARGET."
+  (if (%structural-separator-needed-p text target)
+      (concatenate 'string delimiter " ")
+      delimiter))
+
 (defun %forward-barf-edits (text classes offset)
   "Move the enclosing list's closing delimiter in past its last expression."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
@@ -52,9 +58,7 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
                  (delimiter (string (char text close))))
             (list (list :delete close 1)
                   (list :insert target
-                        (if (%structural-separator-needed-p text target)
-                            (concatenate 'string delimiter " ")
-                            delimiter)))))))))
+                        (%forward-barf-delimiter text target delimiter)))))))))
 
 (defun %backward-slurp-edits (text classes offset)
   "Move the enclosing list's opening delimiter back past the expression before it."
