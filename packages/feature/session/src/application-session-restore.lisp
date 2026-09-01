@@ -4,21 +4,26 @@
 ;;;; session snapshot owned by the domain-session-* files.
 (in-package #:loom/feature/session)
 
+(defun %session-buffer-path (snapshot)
+  (and (session-buffer-snapshot-path snapshot)
+       (pathname (session-buffer-snapshot-path snapshot))))
+
+(defun %restore-session-buffer-position (buffer snapshot)
+  (buffer-set-point buffer
+                    (session-buffer-snapshot-point-line snapshot)
+                    (session-buffer-snapshot-point-column snapshot))
+  (when (session-buffer-snapshot-mark-line snapshot)
+    (buffer-set-mark buffer
+                     (session-buffer-snapshot-mark-line snapshot)
+                     (session-buffer-snapshot-mark-column snapshot))))
+
 (defun %restore-session-buffer (snapshot)
   "Build a fresh buffer from one validated session buffer SNAPSHOT."
-  (let ((buffer
-          (make-buffer
-           :name (session-buffer-snapshot-name snapshot)
-           :path (and (session-buffer-snapshot-path snapshot)
-                      (pathname (session-buffer-snapshot-path snapshot)))
-           :initial-content (session-buffer-snapshot-text snapshot))))
-    (buffer-set-point buffer
-                      (session-buffer-snapshot-point-line snapshot)
-                      (session-buffer-snapshot-point-column snapshot))
-    (when (session-buffer-snapshot-mark-line snapshot)
-      (buffer-set-mark buffer
-                       (session-buffer-snapshot-mark-line snapshot)
-                       (session-buffer-snapshot-mark-column snapshot)))
+  (let ((buffer (make-buffer
+                 :name (session-buffer-snapshot-name snapshot)
+                 :path (%session-buffer-path snapshot)
+                 :initial-content (session-buffer-snapshot-text snapshot))))
+    (%restore-session-buffer-position buffer snapshot)
     (when (session-buffer-snapshot-modified-p snapshot)
       (buffer-mark-modified buffer))
     buffer))
