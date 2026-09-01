@@ -23,18 +23,13 @@ the discovered value explicitly."
                          :on-cancel (minibuffer-message minibuffer "Quit"))
         ((typed-command (%lsp-command-prompt-string discovered-command)))
       (let ((command (%normalize-lsp-command typed-command discovered-command)))
-        (if (null command)
-            (minibuffer-message minibuffer "LSP command cannot be empty")
+        (if command
             (multiple-value-bind (session condition)
                 (%lsp-start-session
                  command
                  (or discovered-root (%lsp-buffer-directory buffer)))
-              (declare (ignore session))
-              (if condition
-                  (minibuffer-message
-                   minibuffer
-                   (format nil "LSP start failed: ~A" condition))
-                  (minibuffer-message minibuffer "LSP started."))))))))
+              (%lsp-report-start-result minibuffer session condition))
+            (minibuffer-message minibuffer "LSP command cannot be empty"))))))
 
 (defun lsp-stop ()
   "Stop the current LSP session, if one exists."

@@ -22,7 +22,7 @@
 (defun %normalize-lsp-command (typed-command discovered-command)
   (or (and typed-command
            (let ((trimmed (string-trim '(#\Space #\Tab) typed-command)))
-             (unless (zerop (length trimmed)) trimmed)))
+             (unless (string= trimmed "") trimmed)))
       discovered-command))
 
 (defun %install-lsp-session (new-session)
@@ -47,3 +47,10 @@
         (when new-session
           (lsp-session-stop new-session))
         (values nil condition)))))
+
+(defun %lsp-report-start-result (minibuffer session condition)
+  (declare (ignore session))
+  (if condition
+      (minibuffer-message minibuffer
+                          (format nil "LSP start failed: ~A" condition))
+      (minibuffer-message minibuffer "LSP started.")))
