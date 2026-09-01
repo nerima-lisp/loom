@@ -1,10 +1,11 @@
 ;;;; packages/feature/session/src/domain-session-validation-metadata.lisp
 (in-package #:loom/feature/session)
 
-(defun %validate-session-string-list (value predicate message)
-  (unless (and (listp value) (every predicate value))
-    (error "validate-session-snapshot: ~A" message))
-  value)
+(defmacro %validate-session-list (value predicate message)
+  `(let ((value ,value))
+     (unless (and (listp value) (every ,predicate value))
+       (error "validate-session-snapshot: ~A" ,message))
+     value))
 
 (defun %validate-session-unique-names (objects name-reader message)
   (let ((names (mapcar name-reader objects)))
@@ -56,7 +57,7 @@
   (let ((recent-files (session-snapshot-recent-files snapshot))
         (bookmarks (session-snapshot-bookmarks snapshot))
         (command-history (session-snapshot-command-history snapshot)))
-    (%validate-session-string-list
+    (%validate-session-list
      recent-files #'%session-nonempty-string-p
      "recent files must be a list of non-empty strings")
     (unless (listp bookmarks)
@@ -65,7 +66,7 @@
     (%validate-session-unique-names
      bookmarks #'session-bookmark-snapshot-name
      "bookmark names must be unique")
-    (%validate-session-string-list
+    (%validate-session-list
      command-history #'stringp
      "command history must be a list of strings"))
   snapshot)
