@@ -39,12 +39,25 @@ independent of search-engine concerns while still bounding the event loop.")
     (make-buffer-span (+ offset (buffer-span-start span))
                       (+ offset (buffer-span-end span)))))
 
+(defun %search-visible-point (buffer text)
+  "Return BUFFER's point clamped to the visible TEXT coordinate space."
+  (let ((offset (buffer-narrow-start-offset buffer)))
+    (max 0 (min (length text)
+                (- (buffer-point-offset buffer) offset)))))
+
+(defun %search-backward-span (spans point)
+  "Return the latest SPANS match before POINT, wrapping when necessary."
+  (let ((prior (remove-if-not (lambda (span)
+                                (< (buffer-span-start span) point))
+                              spans)))
+    (or (car (last prior))
+        (car (last spans)))))
+
 (defun %search-forward-cps (buffer pattern on-match on-miss)
   "Search from BUFFER's point and invoke exactly one result continuation."
   (let* ((text (buffer-visible-text buffer))
          (offset (buffer-narrow-start-offset buffer))
-         (point (max 0 (min (length text)
-                            (- (buffer-point-offset buffer) offset))))
+         (point (%search-visible-point buffer text))
          (match (%scan-next-occurrence text pattern point)))
     (if match
         (funcall on-match
@@ -59,15 +72,10 @@ independent of search-engine concerns while still bounding the event loop.")
 (defun %search-backward-cps (buffer pattern on-match on-miss)
   "Search before BUFFER's point and invoke exactly one result continuation."
   (let* ((text (buffer-visible-text buffer))
-         (offset (buffer-narrow-start-offset buffer))
-         (point (max 0 (min (length text)
-                            (- (buffer-point-offset buffer) offset))))
+         (point (%search-visible-point buffer text))
          (spans (unless (zerop (length pattern))
                   (%search-spans-in-text text pattern 0)))
-         (prior (remove-if-not (lambda (span)
-                                 (< (buffer-span-start span) point))
-                               spans))
-         (span (or (car (last prior)) (car (last spans)))))
+         (span (%search-backward-span spans point)))
     (if span
         (funcall on-match (%visible-buffer-span buffer span))
         (funcall on-miss))))
