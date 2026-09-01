@@ -17,6 +17,13 @@
 (defun %session-rename (old-path new-path)
   (host-kit:move-path old-path new-path :if-exists :supersede))
 
+(defun %write-session-stream (stream snapshot)
+  (let ((*print-readably* t)
+        (*print-circle* nil))
+    (write (%session-sexp snapshot) :stream stream)
+    (terpri stream)
+    (finish-output stream)))
+
 (defun session-store-write (path snapshot)
   "Validate and atomically write SNAPSHOT to native PATH, returning SNAPSHOT.
 
@@ -33,11 +40,7 @@ leaves the previous target untouched."
                                    :if-exists :error
                                    :if-does-not-exist :create
                                    :external-format :utf-8)
-             (let ((*print-readably* t)
-                   (*print-circle* nil))
-               (write (%session-sexp snapshot) :stream stream)
-               (terpri stream)
-               (finish-output stream)))
+             (%write-session-stream stream snapshot))
            (%session-rename temporary target)
            snapshot)
       (when (probe-file temporary)
