@@ -4,6 +4,20 @@
 (describe
   "buffer-load / buffer-save"
   (it
+    "constructs an empty scratch buffer with stable editing defaults"
+    (let ((buffer (make-buffer)))
+      (expect (buffer-name buffer) :to-equal "*scratch*")
+      (expect (buffer-path buffer) :to-be-falsy)
+      (expect (buffer-text buffer) :to-equal "")
+      (expect (buffer-line-count buffer) :to-equal 1)
+      (expect (buffer-point-line buffer) :to-equal 0)
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (expect (buffer-major-mode buffer) :to-equal :fundamental)
+      (expect (buffer-truncate-lines buffer) :to-equal :default)
+      (expect (buffer-modified-p buffer) :to-be-falsy)
+      (expect (buffer-read-only-p buffer) :to-be-falsy)))
+
+  (it
     "loads a file's contents into a new buffer named after the file"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "notes.txt" dir)))
