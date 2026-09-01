@@ -14,7 +14,8 @@
           (dolist (,slot '(window-tree workspaces minibuffer keymap file-tree
                           concurrent-runtime renderer buffers recent-files
                           bookmarks kill-ring last-yank-ranges lsp-session
-                          registers keyboard-macro isearch auto-save-mode-p
+                          registers keyboard-macro isearch completion jump-origins
+                          auto-save-mode-p
                           auto-save-buffers auto-save-last-run-at format-on-save-p
                           format-command before-save-hooks after-save-hooks
                           terminal-sessions prefix-argument))
