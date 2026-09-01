@@ -23,6 +23,14 @@
           do (decf start))
     start))
 
+(defun %sexp-forward-atom-end (text classes start)
+  (let ((end (%sexp-atom-end text classes start)))
+    (and (> end start) end)))
+
+(defun %sexp-backward-atom-start (text classes end)
+  (let ((start (%sexp-atom-start text classes end)))
+    (and (< start end) start)))
+
 (defun %forward-sexp-token-end (text classes start)
   "Return the end of the token beginning at START, or NIL."
   (cond
@@ -31,8 +39,7 @@
      (%sexp-forward-list-end text classes start))
     ((eq (aref classes start) :string)
      (%sexp-string-run-end classes start))
-    (t (let ((end (%sexp-atom-end text classes start)))
-         (and (> end start) end)))))
+    (t (%sexp-forward-atom-end text classes start))))
 
 (defun %backward-sexp-token-start (text classes end)
   "Return the start of the token ending before END, or NIL."
@@ -43,8 +50,7 @@
        (%sexp-backward-list-start text classes end))
       ((eq (aref classes last) :string)
        (%sexp-string-run-start classes end))
-      (t (let ((start (%sexp-atom-start text classes end)))
-           (and (< start end) start))))))
+      (t (%sexp-backward-atom-start text classes end)))))
 
 (defun %forward-sexp-offset (text offset &optional (classes
                                                     (%sexp-syntax-classes text)))
