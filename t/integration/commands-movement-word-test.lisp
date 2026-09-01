@@ -1,6 +1,18 @@
 (in-package #:loom/test)
 
 (describe
+  "word motion helper definition"
+  (it
+    "expands a helper into a zero-argument visible-buffer operation"
+    (let ((expansion
+            (macroexpand-1
+             '(loom::define-word-motion-helper test-word-motion test-offset))))
+      (expect (first expansion) :to-be 'defun)
+      (expect (second expansion) :to-be 'test-word-motion)
+      (expect (third expansion) :to-equal '())
+      (expect (first (fourth expansion)) :to-be 'let*))))
+
+(describe
   "movement commands word and buffer motion"
   (it
     "moves by words and reaches both buffer boundaries"
