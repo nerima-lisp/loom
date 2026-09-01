@@ -6,6 +6,16 @@
 (describe
   "prefix argument command definitions"
   (it
+    "expands a nonnegative prefix binding around its body"
+    (let ((expansion
+            (macroexpand-1
+             '(loom::with-nonnegative-command-prefix (count)
+                (list count)))))
+      (expect (first expansion) :to-be 'let)
+      (expect (symbol-name (first (first (second expansion)))) :to-equal "COUNT")
+      (expect (first (second (first (second expansion)))) :to-be 'max)
+      (expect (first (third expansion)) :to-be 'list)))
+  (it
     "expands a repeating command with prefix-aware dispatch"
     (let ((expansion
             (macroexpand-1
