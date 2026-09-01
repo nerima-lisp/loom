@@ -16,13 +16,16 @@
                        :start2 position
                        :end2 end)))))
 
+(defun %syntax-generic-atom-continues-p (line position comment-prefix)
+  (and (not (%syntax-whitespace-p (char line position)))
+       (not (%syntax-generic-delimiter-p (char line position)))
+       (not (%syntax-generic-comment-start-p line position comment-prefix))))
+
 (defun %syntax-generic-atom-end (line start comment-prefix)
   (let ((position start))
     (loop while (and (< position (length line))
-                     (not (%syntax-whitespace-p (char line position)))
-                     (not (%syntax-generic-delimiter-p (char line position)))
-                     (not (%syntax-generic-comment-start-p
-                           line position comment-prefix)))
+                     (%syntax-generic-atom-continues-p
+                      line position comment-prefix))
           do (incf position))
     position))
 
