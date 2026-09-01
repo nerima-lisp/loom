@@ -15,6 +15,34 @@
 (defparameter *shell-command-timeout-seconds* 30
   "Maximum time allowed for one shell command invocation.")
 
+(defun %shell-command-result (command working-directory timeout-seconds
+                              process-result)
+  (let ((timed-out-p
+          (process-kit:process-result-timed-out-p process-result)))
+    (make-shell-command-result
+     :command command
+     :directory (namestring working-directory)
+     :output (or (process-kit:process-result-stdout process-result) "")
+     :error-output
+     (if timed-out-p
+         (format nil "Command timed out after ~,3F seconds.~%"
+                 timeout-seconds)
+         (or (process-kit:process-result-stderr process-result) ""))
+     :exit-code
+     (if timed-out-p
+         124
+         (process-kit:process-result-exit-code process-result)))))
+
+(defun %run-shell-process (command working-directory input-stream timeout-seconds)
+  (process-kit:run-shell
+   command
+   :directory working-directory
+   :input input-stream
+   :output :capture
+   :error :capture
+   :timeout timeout-seconds
+   :on-timeout :return))
+
 (defun run-shell-command (command &key directory
                                          (input nil input-supplied-p)
                                          (timeout-seconds
@@ -36,30 +64,10 @@ is represented as exit code 124 so callers can handle it as data."
     (check-type input string))
   (let ((working-directory (%shell-directory-pathname directory)))
     (labels ((execute (input-stream)
-               (let* ((process-result
-                        (process-kit:run-shell
-                         command
-                         :directory working-directory
-                         :input input-stream
-                         :output :capture
-                         :error :capture
-                         :timeout timeout-seconds
-                         :on-timeout :return))
-                      (timed-out-p
-                        (process-kit:process-result-timed-out-p process-result)))
-                 (make-shell-command-result
-                  :command command
-                  :directory (namestring working-directory)
-                  :output (or (process-kit:process-result-stdout process-result) "")
-                  :error-output
-                  (if timed-out-p
-                      (format nil "Command timed out after ~,3F seconds.~%"
-                              timeout-seconds)
-                      (or (process-kit:process-result-stderr process-result) ""))
-                  :exit-code
-                  (if timed-out-p
-                      124
-                      (process-kit:process-result-exit-code process-result))))))
+               (%shell-command-result
+                command working-directory timeout-seconds
+                (%run-shell-process command working-directory input-stream
+                                    timeout-seconds))))
       (if input-supplied-p
           (with-input-from-string (input-stream input)
             (execute input-stream))
