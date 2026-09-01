@@ -3,6 +3,12 @@
 ;;;; Application layer: active-region helpers shared by kill/copy commands.
 (in-package #:loom)
 
+(defun %region-point-is-after-mark-p (point-line point-column mark-line mark-column)
+  "Return true when the point follows the mark in buffer order."
+  (or (> point-line mark-line)
+      (and (= point-line mark-line)
+           (> point-column mark-column))))
+
 (defun %active-region-bounds (buffer)
   "Return region bounds and coalescing direction for BUFFER, or NIL values."
   (let ((point-line (buffer-point-line buffer))
@@ -13,9 +19,8 @@
           (multiple-value-bind (start-line start-column end-line end-column)
               (%order-region point-line point-column mark-line mark-column)
             (values start-line start-column end-line end-column
-                    (or (> point-line mark-line)
-                        (and (= point-line mark-line)
-                             (> point-column mark-column)))))))))
+                    (%region-point-is-after-mark-p
+                     point-line point-column mark-line mark-column)))))))
 
 (defun %kill-active-region-or-message (buffer)
   (%clear-last-yank)
