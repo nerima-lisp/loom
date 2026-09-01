@@ -47,7 +47,7 @@ github:nerima-lisp/loom`.
 - [Development](https://nerima-lisp.github.io/loom/project/development/)
 
 The complete public export list is maintained in
-[`src/package.lisp`](src/package.lisp). The current command catalogue is in
+[`src/package-exports.lisp`](src/package-exports.lisp). The current command catalogue is in
 [`src/application/command-definitions.lisp`](src/application/command-definitions.lisp),
 and M-x lookup is implemented by
 [`src/application/command-registry.lisp`](src/application/command-registry.lisp).
