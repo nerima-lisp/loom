@@ -56,6 +56,20 @@
             (project-relative-path root path)
             (getf first-match :line))))
 
+(defun %project-search-message (root results)
+  (if results
+      (format nil
+              "Matches: ~{~A~^, ~}"
+              (mapcar (lambda (result)
+                        (%project-search-summary root result))
+                      results))
+      "No matches"))
+
+(defun %project-search-with-query (root minibuffer query)
+  (let ((results (project-search-files root query)))
+    (minibuffer-message minibuffer (%project-search-message root results))
+    results))
+
 (defun project-search ()
   "Search every readable project file for a case-sensitive query."
   (let ((root (project-find-root (%project-start-path))))
@@ -66,17 +80,7 @@
             (minibuffer (editor-state-minibuffer *editor-state*)
                         :on-cancel (minibuffer-message minibuffer "Quit"))
           ((query "Project search: "))
-          (let ((results (project-search-files root query)))
-            (minibuffer-message
-             minibuffer
-             (if results
-                 (format nil
-                         "Matches: ~{~A~^, ~}"
-                         (mapcar (lambda (result)
-                                   (%project-search-summary root result))
-                                 results))
-                 "No matches"))
-            results)))))
+          (%project-search-with-query root minibuffer query)))))
 
 (defun project-root ()
   "Display the current project's root directory."
