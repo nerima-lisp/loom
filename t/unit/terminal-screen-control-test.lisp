@@ -140,6 +140,18 @@
       (terminal-screen-feed screen (format nil "~C[?1049l" escape))
       (expect (terminal-screen-text screen) :to-contain "main")))
 
+  (it "resizes both the active alternate screen and its saved main screen"
+    (let ((escape (code-char 27))
+          (screen (make-terminal-screen :width 8 :height 2)))
+      (terminal-screen-feed screen "mainline")
+      (terminal-screen-feed screen (format nil "~C[?1049halt" escape))
+      (terminal-screen-feed screen "alternate")
+      (terminal-screen-resize screen 5 3)
+      (terminal-screen-feed screen (format nil "~C[?1049l" escape))
+      (expect (terminal-screen-text screen) :to-equal "mainl")
+      (expect (terminal-screen-width screen) :to-be 5)
+      (expect (terminal-screen-height screen) :to-be 3)))
+
   (it "keeps CSI cursor and line editing operations stateful"
     (let* ((escape (code-char 27))
            (csi (lambda (sequence)
