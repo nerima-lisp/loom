@@ -19,7 +19,7 @@
        (multiple-value-bind (entries present-p)
            (loom/feature/file-tree:loom-concurrent-runtime-directory-entries
             runtime path)
-         (if present-p entries nil))))
+         (when present-p entries))))
     (setf (editor-state-concurrent-runtime state) runtime)
     runtime))
 
@@ -49,6 +49,6 @@ exit status for the CLI boundary."
                      :name "loom"
                      :handler (log-kit:make-text-handler :stream *error-output*)
                      :level log-kit:+level-error+)))
-        (log-kit:log-error logger (format nil "~A" condition)
+        (log-kit:log-error logger (princ-to-string condition)
                            :condition-type (type-of condition)))
       1)))
