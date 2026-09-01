@@ -103,6 +103,9 @@
                     :to-equal
                     "draft"))
           (expect (maybe-auto-save :now 101) :to-be nil)
+          (expect (maybe-auto-save
+                   :now (+ 100 loom/feature/auto-save::*auto-save-interval*))
+                  :to-have-length 1)
           (auto-save-mode nil)
           (expect (auto-save-enabled-p buffer) :to-be-falsy)
           (expect (toggle-auto-save) :to-be-truthy)
