@@ -127,6 +127,21 @@
                 :to-equal "Bookmark target is unavailable: gone"))))
 
   (it
+    "reports an unavailable bookmark target when its path is a directory"
+    (host-kit:with-temporary-directory (dir)
+      (let ((bookmark (make-editor-bookmark
+                       :name "directory"
+                       :path (editor-path-string dir)
+                       :buffer-name "directory"
+                       :line 0
+                       :column 0)))
+        (%with-minibuffer-state (minibuffer "")
+          (setf (gethash "directory" (loom::%bookmark-table)) bookmark)
+          (%run-bookmark-command #'loom::jump-to-bookmark minibuffer "directory")
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Bookmark target is unavailable: directory")))))
+
+  (it
     "reloads a bookmark target from its existing file and completes prefixes"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "bookmark-target.txt" dir)))
