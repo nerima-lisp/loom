@@ -369,6 +369,26 @@
               :to-equal "Definition is not a local file: jar:///a.class")))
 
   (it
+    "reports a local definition that cannot be opened"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "missing.lisp" directory)))
+        (%with-lsp-navigation (transport session buffer)
+          (with-replaced-function
+              (loom/feature/file-tree:visit-file (lambda (ignored-path)
+                                                    (declare (ignore ignored-path))
+                                                    nil))
+            (loom/feature/lsp:lsp-find-definition)
+            (%fake-push-and-drain
+             transport session
+             (format nil
+                     "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":{\"uri\":\"~A\",\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":1}}}}"
+                     (%lsp-last-request-id transport)
+                     (lsp-path-uri path)))
+            (expect (minibuffer-message-string
+                     (editor-state-minibuffer *editor-state*))
+                    :to-equal (format nil "Cannot open ~A" path)))))))
+
+  (it
     "reports having nothing to return to"
     (%with-lsp-navigation (transport session buffer)
       (loom/feature/lsp:lsp-pop-definition)
