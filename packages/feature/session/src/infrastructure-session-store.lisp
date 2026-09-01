@@ -43,6 +43,19 @@ leaves the previous target untouched."
       (when (probe-file temporary)
         (ignore-errors (delete-file temporary))))))
 
+(defun %read-session-form (stream)
+  (let ((*read-eval* nil)
+        (eof (gensym "EOF")))
+    (let ((value (read stream nil eof)))
+      (when (eq value eof)
+        (error "session is empty"))
+      (when (not (eq (read stream nil eof) eof))
+        (error "session contains more than one form"))
+      value)))
+
+(defun %read-session-stream (stream)
+  (%session-from-sexp (%read-session-form stream)))
+
 (defun session-store-read (path)
   "Read, safely parse, validate, and return the session snapshot at PATH.
 
@@ -53,14 +66,6 @@ or unsupported input is reported as a session-store-read error."
         (with-open-file (stream pathname
                                 :direction :input
                                 :external-format :utf-8)
-          (let ((*read-eval* nil)
-                (eof (gensym "EOF")))
-            (let ((value (read stream nil eof)))
-              (when (eq value eof)
-                (error "session is empty"))
-              (let ((trailing (read stream nil eof)))
-                (unless (eq trailing eof)
-                  (error "session contains more than one form")))
-              (%session-from-sexp value))))
+          (%read-session-stream stream))
       (error (condition)
         (error "session-store-read: cannot read ~A: ~A" pathname condition)))))
