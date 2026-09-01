@@ -280,6 +280,7 @@ root source tree responsible for every feature."
    (:file "src/presentation/layout-minibuffer")
    (:file "src/presentation/layout-file-tree")
    (:file "src/presentation/frame-layout-cursor")
+   (:file "src/presentation/frame-layout-viewport")
    (:file "src/presentation/frame-layout")
    (:file "src/application/input-routing-command-state")
    (:file "src/application/input-routing-decision")

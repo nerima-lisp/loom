@@ -53,8 +53,10 @@
        (loom::%wrap-round-edits "a b" 0 "(a) b")
        (loom::%wrap-round-edits "" 0 "()")
        (loom::%splice-edits "(a (b c) d)" 4 "(a b c d)")
+       (loom::%splice-edits "((a b) c)" 2 "(a b c)")
        (loom::%splice-edits "a b" 0 nil)
        (loom::%raise-edits "(a (b c) d)" 3 "(b c)")
+       (loom::%raise-edits "(a b)" 4 nil)
        (loom::%raise-edits "a b" 0 nil))
       "~S rewrites ~S at ~D as ~S"
       (function text offset expected)
