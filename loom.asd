@@ -196,6 +196,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/application-structural-editing-application")
    (:file "packages/core/editor/src/application-commands-movement-support")
    (:file "packages/core/editor/src/application-commands-movement-view-support")
+   (:file "packages/core/editor/src/application-commands-movement-visual-lines")
    (:file "packages/core/editor/src/application-commands-movement")
   (:file "packages/core/editor/src/application-commands-editing-support")
   (:file "packages/core/editor/src/application-commands-editing")
