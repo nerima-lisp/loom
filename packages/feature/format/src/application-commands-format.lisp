@@ -12,6 +12,17 @@
 (defun %format-error-message (prefix condition)
   (format nil "~A error: ~A" prefix condition))
 
+(defun %show-format-message (message)
+  (minibuffer-message (editor-state-minibuffer *editor-state*) message))
+
+(defun %format-current-buffer-command (command)
+  (handler-case
+      (let ((result (format-buffer-with-command command)))
+        (%show-format-message (%format-result-message result))
+        result)
+    (error (condition)
+      (%show-format-message (%format-error-message "Format command" condition)))))
+
 (defun format-current-buffer ()
   "Prompt for a formatter command and format the selected buffer."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
@@ -19,19 +30,8 @@
       ((command "Format command: "))
       (let ((command (%trim-format-command command)))
         (if (zerop (length command))
-            (minibuffer-message
-             (editor-state-minibuffer *editor-state*)
-             "Format command cancelled")
-            (handler-case
-                (let ((result (format-buffer-with-command command)))
-                  (minibuffer-message
-                   (editor-state-minibuffer *editor-state*)
-                   (%format-result-message result))
-                  result)
-              (error (condition)
-                (minibuffer-message
-                 (editor-state-minibuffer *editor-state*)
-                 (%format-error-message "Format command" condition))))))))
+            (%show-format-message "Format command cancelled")
+            (%format-current-buffer-command command)))))
 
 (defun set-format-command (command &optional (state *editor-state*))
   "Set the shell COMMAND used by format-on-save in STATE.
