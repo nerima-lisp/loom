@@ -67,17 +67,21 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
          (buffer-delete-region buffer line column end-line end-column)
          :coalesce coalesce)))))
 
+(defun %buffer-range-at-offsets (buffer start-offset end-offset)
+  (let ((start (buffer-offset-position buffer start-offset))
+        (end (buffer-offset-position buffer end-offset)))
+    (values (buffer-position-line start)
+            (buffer-position-column start)
+            (buffer-position-line end)
+            (buffer-position-column end))))
+
 (defun %kill-between-offsets (buffer start-offset end-offset &key prepend coalesce)
   (unless (= start-offset end-offset)
-    (let* ((start (buffer-offset-position buffer start-offset))
-           (end (buffer-offset-position buffer end-offset))
-           (text (buffer-delete-region
-                  buffer
-                  (buffer-position-line start)
-                  (buffer-position-column start)
-                  (buffer-position-line end)
-                  (buffer-position-column end))))
-      (%kill-ring-push text :prepend prepend :coalesce coalesce))))
+    (multiple-value-bind (start-line start-column end-line end-column)
+        (%buffer-range-at-offsets buffer start-offset end-offset)
+      (let ((text (buffer-delete-region buffer start-line start-column
+                                        end-line end-column)))
+        (%kill-ring-push text :prepend prepend :coalesce coalesce)))))
 
 (defun %kill-line-command ()
   (%clear-last-yank)
