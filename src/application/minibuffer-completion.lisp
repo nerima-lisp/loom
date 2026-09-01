@@ -27,30 +27,36 @@ CANDIDATES must be a non-empty list of strings."
                  finally (return index))))
     (subseq first 0 common-length)))
 
+(defun %minibuffer-valid-completion-candidates (completion-function input)
+  "Call COMPLETION-FUNCTION and validate its list of string candidates."
+  (let ((candidates (funcall completion-function input)))
+    (unless (listp candidates)
+      (error "Completion function must return a list: ~S" candidates))
+    (dolist (candidate candidates)
+      (unless (stringp candidate)
+        (error "Completion candidates must be strings: ~S" candidate)))
+    candidates))
+
+(defun %minibuffer-matching-candidates (input candidates)
+  "Return CANDIDATES that begin with INPUT, ignoring case."
+  (remove-if-not (lambda (candidate)
+                  (%minibuffer-prefix-match-p input candidate))
+                 candidates))
+
 (defun minibuffer-complete (minibuffer)
   "Complete MINIBUFFER's current input using its activation's completion
 function. The function receives the current input and must return a list of
 candidate strings. Candidates are matched case-insensitively; a Tab key
 replaces the input with their longest common prefix. With no completion
 function or no matching candidates, the input is unchanged. Returns
-MINIBUFFER."
+  MINIBUFFER."
   (let ((completion-function (%minibuffer-completion-function minibuffer)))
     (when (and (%minibuffer-active-p minibuffer) completion-function)
-      (let ((candidates (funcall completion-function
-                                 (%minibuffer-input minibuffer))))
-        (unless (listp candidates)
-          (error "Completion function must return a list: ~S" candidates))
-        (dolist (candidate candidates)
-          (unless (stringp candidate)
-            (error "Completion candidates must be strings: ~S" candidate)))
-        (let ((matches
-                (remove-if-not
-                 (lambda (candidate)
-                   (%minibuffer-prefix-match-p
-                    (%minibuffer-input minibuffer)
-                    candidate))
-                 candidates)))
-          (when matches
-            (setf (%minibuffer-input minibuffer)
-                  (%minibuffer-longest-common-prefix matches)))))))
+      (let* ((input (%minibuffer-input minibuffer))
+             (candidates (%minibuffer-valid-completion-candidates
+                          completion-function input))
+             (matches (%minibuffer-matching-candidates input candidates)))
+        (when matches
+          (setf (%minibuffer-input minibuffer)
+                (%minibuffer-longest-common-prefix matches))))))
   minibuffer)
