@@ -79,6 +79,15 @@ end-of-line. A no-op at the very end of the buffer."
           (%delete-char-forward buffer))))
   buffer)
 
+(defun %delete-region-at-offsets (buffer start-offset end-offset)
+  (multiple-value-bind (start-line start-column)
+      (%offset-to-position-values buffer start-offset)
+    (multiple-value-bind (end-line end-column)
+        (%offset-to-position-values buffer end-offset)
+      (let ((text (%do-delete buffer start-line start-column end-line end-column)))
+        (%set-buffer-point-from-offset buffer start-offset)
+        text))))
+
 (defun buffer-delete-region (buffer start-line start-column end-line end-column)
   "Delete the text between the zero-based (START-LINE, START-COLUMN) and
 (END-LINE, END-COLUMN) positions (end exclusive). The end position must not
@@ -86,22 +95,13 @@ precede the start position. Moves point to the start position. Marks BUFFER
 as modified and records undo information. Returns the deleted text as a
 string."
   (when (or (< end-line start-line)
-              (and (= end-line start-line) (< end-column start-column)))
-      (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
-             end-line end-column start-line start-column))
-    (%ensure-buffer-writable buffer)
-    (multiple-value-bind (start-offset end-offset)
-        (%region-offsets-within-narrowing
-         buffer start-line start-column end-line end-column)
-      (if (= start-offset end-offset)
-          ""
-          (multiple-value-bind (normalized-start-line normalized-start-column)
-              (%offset-to-position-values buffer start-offset)
-            (multiple-value-bind (normalized-end-line normalized-end-column)
-                (%offset-to-position-values buffer end-offset)
-              (let ((text
-                      (%do-delete buffer
-                                  normalized-start-line normalized-start-column
-                                  normalized-end-line normalized-end-column)))
-                (%set-buffer-point-from-offset buffer start-offset)
-                text))))))
+            (and (= end-line start-line) (< end-column start-column)))
+    (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
+           end-line end-column start-line start-column))
+  (%ensure-buffer-writable buffer)
+  (multiple-value-bind (start-offset end-offset)
+      (%region-offsets-within-narrowing
+       buffer start-line start-column end-line end-column)
+    (if (= start-offset end-offset)
+        ""
+        (%delete-region-at-offsets buffer start-offset end-offset))))
