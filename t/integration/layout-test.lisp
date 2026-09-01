@@ -33,6 +33,11 @@ the degenerate-window tests are the ones that need them to differ."
   "STATE's sole (or currently selected) window."
   (window-tree-selected-window (editor-state-window-tree state)))
 
+(defmacro with-layout-state ((name &rest initargs) &body body)
+  "Run BODY with NAME bound to a fresh state suitable for layout tests."
+  `(let ((,name (%fresh-layout-state ,@initargs)))
+     ,@body))
+
 (describe
   "window buffer layout mode"
   (it
@@ -101,29 +106,29 @@ the degenerate-window tests are the ones that need them to differ."
   ;; rather than an error.
   (it
     "%layout-draw-file-tree does nothing for a zero-width sidebar"
-    (let* ((state (%fresh-layout-state))
-           (screen (%layout-screen state))
-           (before (cl-tty-kit:screen-row-string screen 0)))
-      (loom::%layout-draw-file-tree screen (editor-state-file-tree state) 0 6)
-      (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before)))
+    (with-layout-state (state)
+      (let* ((screen (%layout-screen state))
+             (before (cl-tty-kit:screen-row-string screen 0)))
+        (loom::%layout-draw-file-tree screen (editor-state-file-tree state) 0 6)
+        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
 
   (it
     "%layout-draw-shortcuts does nothing for a zero-width terminal"
-    (let* ((state (%fresh-layout-state :content "text"))
-           (screen (%layout-screen state))
-           (before (cl-tty-kit:screen-row-string screen 0)))
-      (loom::%layout-draw-shortcuts screen 0 0 (window-buffer (%layout-window state)))
-      (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before)))
+    (with-layout-state (state :content "text")
+      (let* ((screen (%layout-screen state))
+             (before (cl-tty-kit:screen-row-string screen 0)))
+        (loom::%layout-draw-shortcuts screen 0 0 (window-buffer (%layout-window state)))
+        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
 
   (it
     "%layout-draw-minibuffer does nothing for a zero-width terminal"
-    (let* ((state (%fresh-layout-state))
-           (screen (%layout-screen state))
-           (minibuffer (editor-state-minibuffer state))
-           (before (cl-tty-kit:screen-row-string screen 0)))
-      (minibuffer-message minibuffer "status")
-      (loom::%layout-draw-minibuffer screen minibuffer 0 0)
-      (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
+    (with-layout-state (state)
+      (let* ((screen (%layout-screen state))
+             (minibuffer (editor-state-minibuffer state))
+             (before (cl-tty-kit:screen-row-string screen 0)))
+        (minibuffer-message minibuffer "status")
+        (loom::%layout-draw-minibuffer screen minibuffer 0 0)
+        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before)))))
 
 (describe
   "minibuffer line selection"
