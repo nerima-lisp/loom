@@ -151,6 +151,32 @@
       (expect (editor-bookmark-buffer-name bookmark) :to-equal "notes.txt")))
 
   (it
+    "derives a bookmark buffer name when its explicit name is absent"
+    (let* ((buffer (make-buffer :name "notes.txt"))
+           (*editor-state* (%fresh-editor-state "content"))
+           (bookmarks (make-hash-table :test #'equal)))
+      (setf (gethash "spot" bookmarks)
+            (make-editor-bookmark :name "spot" :buffer buffer)
+            (editor-state-bookmarks *editor-state*) bookmarks)
+      (expect (session-bookmark-snapshot-buffer-name
+               (first (loom/feature/session::%session-bookmark-snapshots)))
+              :to-equal "notes.txt")))
+
+  (it
+    "derives a restored bookmark buffer name from its connected buffer"
+    (let* ((buffer (make-buffer :name "notes.txt"
+                                :path #P"/tmp/notes.txt"))
+           (snapshot (make-session-bookmark-snapshot
+                      :name "spot"
+                      :path "/tmp/notes.txt"))
+           (bookmarks
+             (loom/feature/session::%restore-session-bookmarks
+              (list snapshot) (list buffer)))
+           (bookmark (gethash "spot" bookmarks)))
+      (expect (editor-bookmark-buffer bookmark) :to-be buffer)
+      (expect (editor-bookmark-buffer-name bookmark) :to-equal "notes.txt")))
+
+  (it
     "rejects non-hash-table bookmark state during snapshotting"
     (let ((*editor-state* (%fresh-editor-state "content")))
       (setf (editor-state-bookmarks *editor-state*) 'invalid)
