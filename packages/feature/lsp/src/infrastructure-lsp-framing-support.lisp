@@ -137,12 +137,21 @@
         until (= end (length header))
         do (setf start (1+ end))))
 
-(defun %lsp-content-length (header)
-  (let ((length-value nil))
-    (dolist (line (%lsp-header-lines header) length-value)
-      (multiple-value-bind (name value)
-          (%lsp-header-line-fields line)
-        (when (string-equal name "Content-Length")
-          (when length-value
+(defun %lsp-content-length-line (line length-value found-p)
+  (multiple-value-bind (name value)
+      (%lsp-header-line-fields line)
+    (if (string-equal name "Content-Length")
+        (progn
+          (when found-p
             (error "Duplicate Content-Length header"))
-          (setf length-value (%lsp-content-length-value value)))))))
+          (values (%lsp-content-length-value value) t))
+        (values length-value found-p))))
+
+(defun %lsp-content-length (header)
+  (let ((length-value nil)
+        (found-p nil))
+    (dolist (line (%lsp-header-lines header) length-value)
+      (multiple-value-bind (next-length next-found-p)
+          (%lsp-content-length-line line length-value found-p)
+        (setf length-value next-length
+              found-p next-found-p)))))
