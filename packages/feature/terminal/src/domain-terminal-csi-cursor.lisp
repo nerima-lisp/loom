@@ -1,45 +1,42 @@
 (in-package #:loom/feature/terminal)
 
-(defun %terminal-screen-csi-cursor (screen final parameters)
-  (let ((first (%terminal-screen-parameter parameters 0 1)))
+(defun %terminal-screen-csi-relative-cursor (screen final parameters)
+  (let ((amount (%terminal-screen-parameter parameters 0 1)))
     (case final
-      (#\A
-       (decf (terminal-screen-cursor-row screen)
-             (%terminal-screen-parameter parameters 0 1)))
-      (#\B
-       (incf (terminal-screen-cursor-row screen)
-             (%terminal-screen-parameter parameters 0 1)))
-      (#\C
-       (incf (terminal-screen-cursor-column screen)
-             (%terminal-screen-parameter parameters 0 1)))
-      (#\D
-       (decf (terminal-screen-cursor-column screen)
-             (%terminal-screen-parameter parameters 0 1)))
+      (#\A (decf (terminal-screen-cursor-row screen) amount))
+      (#\B (incf (terminal-screen-cursor-row screen) amount))
+      (#\C (incf (terminal-screen-cursor-column screen) amount))
+      (#\D (decf (terminal-screen-cursor-column screen) amount))
       (#\E
-       (incf (terminal-screen-cursor-row screen)
-             (%terminal-screen-parameter parameters 0 1))
+       (incf (terminal-screen-cursor-row screen) amount)
        (setf (terminal-screen-cursor-column screen) 0))
       (#\F
-       (decf (terminal-screen-cursor-row screen)
-             (%terminal-screen-parameter parameters 0 1))
+       (decf (terminal-screen-cursor-row screen) amount)
        (setf (terminal-screen-cursor-column screen) 0))
-      ((#\G #\`)
-       (setf (terminal-screen-cursor-column screen) (1- first)))
-      ((#\H #\f)
-       (setf (terminal-screen-cursor-row screen)
-             (1- (%terminal-screen-parameter parameters 0 1))
-             (terminal-screen-cursor-column screen)
-             (1- (%terminal-screen-parameter parameters 1 1))))
-      (#\d
-       (setf (terminal-screen-cursor-row screen)
-             (1- (%terminal-screen-parameter parameters 0 1))))
-      (#\a
-       (incf (terminal-screen-cursor-column screen)
-             (%terminal-screen-parameter parameters 0 1)))
-      (#\e
-       (incf (terminal-screen-cursor-row screen)
-             (%terminal-screen-parameter parameters 0 1)))
-      (otherwise nil)))
+      (#\a (incf (terminal-screen-cursor-column screen) amount))
+      (#\e (incf (terminal-screen-cursor-row screen) amount))
+      (otherwise (return-from %terminal-screen-csi-relative-cursor nil)))
+    t))
+
+(defun %terminal-screen-csi-absolute-cursor (screen final parameters)
+  (case final
+    ((#\G #\`)
+     (setf (terminal-screen-cursor-column screen)
+           (1- (%terminal-screen-parameter parameters 0 1))))
+    ((#\H #\f)
+     (setf (terminal-screen-cursor-row screen)
+           (1- (%terminal-screen-parameter parameters 0 1))
+           (terminal-screen-cursor-column screen)
+           (1- (%terminal-screen-parameter parameters 1 1))))
+    (#\d
+     (setf (terminal-screen-cursor-row screen)
+           (1- (%terminal-screen-parameter parameters 0 1))))
+    (otherwise (return-from %terminal-screen-csi-absolute-cursor nil)))
+  t)
+
+(defun %terminal-screen-csi-cursor (screen final parameters)
+  (or (%terminal-screen-csi-relative-cursor screen final parameters)
+      (%terminal-screen-csi-absolute-cursor screen final parameters))
   screen)
 
 (defun %terminal-screen-csi-private-mode (screen final parameters)
