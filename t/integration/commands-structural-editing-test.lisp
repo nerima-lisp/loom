@@ -56,6 +56,17 @@
       (expect (buffer-text buffer) :to-equal "()")
       (expect (buffer-point-column buffer) :to-equal 1)))
 
+  (cl-weave:it-property
+      "wrap-round preserves every generated atom inside a pair"
+      ((length (cl-weave:gen-integer :min 0 :max 12))
+       (character (cl-weave:gen-character :alphabet "abc")))
+    (let ((content (make-string length :initial-element character)))
+      (%with-selected-buffer-state (buffer content)
+        (loom::wrap-round)
+        (expect (buffer-text buffer)
+                :to-equal (concatenate 'string "(" content ")"))
+        (expect (buffer-point-column buffer) :to-equal 1))))
+
   (it
     "wrap-round leaves point just inside the delimiter it added"
     (%with-selected-buffer-state (buffer "a b")
