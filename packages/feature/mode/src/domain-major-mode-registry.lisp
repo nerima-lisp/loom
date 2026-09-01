@@ -41,6 +41,24 @@
   (incf *major-mode-registry-version*)
   key)
 
+(defun %validate-major-mode-registration-options
+    (name comment-prefix language-id indentation-width)
+  (%validate-major-mode-text name ":name")
+  (%validate-major-mode-text comment-prefix ":comment-prefix")
+  (%validate-major-mode-text language-id ":language-id")
+  (unless (and (integerp indentation-width) (plusp indentation-width))
+    (error "Major-mode indentation width must be a positive integer: ~S"
+           indentation-width)))
+
+(defun %normalize-major-mode-registration-lists
+    (aliases extensions filenames)
+  (values (%normalize-major-mode-string-list
+           (or aliases '()) ":aliases")
+          (%normalize-major-mode-string-list
+           (or extensions '()) ":extensions" :strip-leading-dot t)
+          (%normalize-major-mode-string-list
+           (or filenames '()) ":filenames")))
+
 (defun register-major-mode
     (mode &key name aliases (parent :fundamental) extensions filenames
             comment-prefix (indentation-width 2) language-id keywords
@@ -53,28 +71,21 @@ same single- and multi-chord notation accepted by the global key binding API.
   (let ((key (%new-major-mode-key mode)))
     (when (%major-mode-definition key)
       (error "Major mode is already defined: ~S" mode))
-    (%validate-major-mode-text name ":name")
-    (%validate-major-mode-text comment-prefix ":comment-prefix")
-    (%validate-major-mode-text language-id ":language-id")
-    (unless (and (integerp indentation-width) (plusp indentation-width))
-      (error "Major-mode indentation width must be a positive integer: ~S"
-             indentation-width))
-    (let* ((parent-key (major-mode-from-name parent))
-           (normalized-aliases (%normalize-major-mode-string-list
-                                (or aliases '()) ":aliases"))
-           (normalized-extensions (%normalize-major-mode-string-list
-                                   (or extensions '()) ":extensions"
-                                   :strip-leading-dot t))
-           (normalized-filenames (%normalize-major-mode-string-list
-                                  (or filenames '()) ":filenames"))
-           (definition (%make-major-mode-definition
-                        key name parent-key normalized-aliases
-                        normalized-extensions normalized-filenames
-                        comment-prefix indentation-width language-id keywords
-                        keybindings truncate-lines)))
-      (%validate-major-mode-parent-and-aliases
-       key parent parent-key normalized-aliases)
-      (%register-major-mode-definition key definition))))
+    (%validate-major-mode-registration-options
+     name comment-prefix language-id indentation-width)
+    (let ((parent-key (major-mode-from-name parent)))
+      (multiple-value-bind (normalized-aliases normalized-extensions
+                            normalized-filenames)
+          (%normalize-major-mode-registration-lists
+           aliases extensions filenames)
+        (%validate-major-mode-parent-and-aliases
+         key parent parent-key normalized-aliases)
+        (%register-major-mode-definition
+         key
+         (%make-major-mode-definition
+          key name parent-key normalized-aliases normalized-extensions
+          normalized-filenames comment-prefix indentation-width language-id
+          keywords keybindings truncate-lines))))))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.
