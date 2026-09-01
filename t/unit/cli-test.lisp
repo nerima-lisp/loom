@@ -17,6 +17,15 @@
       (expect (cl-cli:invocation-action invocation) :to-be :version)))
 
   (it
+    "recognizes the documented short help and version aliases"
+    (expect (cl-cli:invocation-action
+             (cl-cli:parse-argv loom::*loom-app* '("loom" "-h")))
+            :to-be :help)
+    (expect (cl-cli:invocation-action
+             (cl-cli:parse-argv loom::*loom-app* '("loom" "-V")))
+            :to-be :version))
+
+  (it
     "stores an optional file path as the :path positional"
     (let ((invocation (cl-cli:parse-argv loom::*loom-app* '("loom" "notes.txt"))))
       (expect (cl-cli:invocation-action invocation) :to-be :dispatch)
