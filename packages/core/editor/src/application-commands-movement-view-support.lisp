@@ -67,6 +67,39 @@ truncation makes screen rows and logical lines mean anyway."
                     (loom-renderer-segment-column
                      renderer (buffer-line buffer line) segment goal)))
 
+(defun %visual-line-move-state (renderer buffer width)
+  (let* ((line (buffer-point-line buffer))
+         (text (buffer-line buffer line))
+         (column (buffer-point-column buffer))
+         (segments (loom-renderer-wrap-segments renderer text width))
+         (index (%loom-segment-index segments column)))
+    (values line text segments index
+            (loom-renderer-segment-cells
+             renderer text (nth index segments) column))))
+
+(defun %visual-line-move-next (renderer buffer width line text segments index goal)
+  (if (< (1+ index) (length segments))
+      (%move-point-into-segment renderer buffer line
+                                (nth (1+ index) segments) goal)
+      (let ((next-line (1+ line)))
+        (if (< next-line (buffer-line-count buffer))
+            (%move-point-into-segment
+             renderer buffer next-line
+             (first (%visual-line-segments renderer buffer next-line width))
+             goal)
+            (buffer-set-point buffer line (length text))))))
+
+(defun %visual-line-move-previous (renderer buffer width line segments index goal)
+  (if (plusp index)
+      (%move-point-into-segment renderer buffer line
+                                (nth (1- index) segments) goal)
+      (let ((previous-line (1- line)))
+        (when (>= previous-line 0)
+          (%move-point-into-segment
+           renderer buffer previous-line
+           (car (last (%visual-line-segments renderer buffer previous-line width)))
+           goal)))))
+
 (defun %visual-line-move (direction)
   "Move point one screen row DIRECTION -- :NEXT or :PREVIOUS -- and return true.
 
@@ -78,37 +111,13 @@ full-width character does not shift the column under a vertical move."
   (multiple-value-bind (renderer buffer window width) (%visual-line-move-context)
     (declare (ignore window))
     (when renderer
-      (let* ((line (buffer-point-line buffer))
-             (text (buffer-line buffer line))
-             (column (buffer-point-column buffer))
-             (segments (loom-renderer-wrap-segments renderer text width))
-             (index (%loom-segment-index segments column))
-             (goal (loom-renderer-segment-cells
-                    renderer text (nth index segments) column)))
+      (multiple-value-bind (line text segments index goal)
+          (%visual-line-move-state renderer buffer width)
         (ecase direction
-          (:next
-           (if (< (1+ index) (length segments))
-               (%move-point-into-segment renderer buffer line
-                                         (nth (1+ index) segments) goal)
-               (let ((next-line (1+ line)))
-                 (if (< next-line (buffer-line-count buffer))
-                     (%move-point-into-segment
-                      renderer buffer next-line
-                      (first (%visual-line-segments
-                              renderer buffer next-line width))
-                      goal)
-                     (buffer-set-point buffer line (length text))))))
-          (:previous
-           (if (plusp index)
-               (%move-point-into-segment renderer buffer line
-                                         (nth (1- index) segments) goal)
-               (let ((previous-line (1- line)))
-                 (when (>= previous-line 0)
-                   (%move-point-into-segment
-                    renderer buffer previous-line
-                    (car (last (%visual-line-segments
-                                renderer buffer previous-line width)))
-                    goal))))))
+          (:next (%visual-line-move-next renderer buffer width line text
+                                          segments index goal))
+          (:previous (%visual-line-move-previous renderer buffer width line
+                                                  segments index goal)))
         t))))
 
 (defun %next-visual-line-once ()
