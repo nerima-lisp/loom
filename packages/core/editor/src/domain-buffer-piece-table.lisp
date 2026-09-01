@@ -22,6 +22,18 @@
     (setf (%buffer-redo-list buffer) nil))
   (push (list :delete line column text) (%buffer-undo-list buffer)))
 
+(defun %update-after-delete (buffer was-narrowed-p old-length deleted-length)
+  (if was-narrowed-p
+      (decf (%buffer-narrow-end-offset buffer) deleted-length)
+      (setf (%buffer-narrow-start-offset buffer) 0
+            (%buffer-narrow-end-offset buffer) (- old-length deleted-length)))
+  (setf (%buffer-modified-p buffer) t))
+
+(defun %record-delete (buffer line column text clear-redo)
+  (when clear-redo
+    (setf (%buffer-redo-list buffer) nil))
+  (push (list :insert line column text) (%buffer-undo-list buffer)))
+
 (defun %do-insert (buffer line column text &key (clear-redo t))
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
 entry describing the inverse of this exact edit (a delete of the same
@@ -48,19 +60,13 @@ re-insertion of the deleted text). Returns the deleted text.
 When CLEAR-REDO is true, discard explicit redo history because this is a
 new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
-  (let* ((start-offset (%position-to-offset buffer start-line start-column))
+    (let* ((start-offset (%position-to-offset buffer start-line start-column))
          (end-offset (%position-to-offset buffer end-line end-column))
          (text (%piece-table-range-text buffer start-offset end-offset))
          (was-narrowed (%buffer-narrowed-p buffer))
          (old-length (%buffer-full-length buffer))
          (deleted-length (- end-offset start-offset)))
     (%raw-delete-region buffer start-line start-column end-line end-column)
-    (if was-narrowed
-        (decf (%buffer-narrow-end-offset buffer) deleted-length)
-        (setf (%buffer-narrow-start-offset buffer) 0
-              (%buffer-narrow-end-offset buffer) (- old-length deleted-length)))
-    (setf (%buffer-modified-p buffer) t)
-    (when clear-redo
-      (setf (%buffer-redo-list buffer) nil))
-    (push (list :insert start-line start-column text) (%buffer-undo-list buffer))
+    (%update-after-delete buffer was-narrowed old-length deleted-length)
+    (%record-delete buffer start-line start-column text clear-redo)
     text))
