@@ -4,30 +4,37 @@
 ;;;; minibuffer-driven navigation.
 (in-package #:loom)
 
-(defmacro define-scroll-command (name delta documentation)
+(defmacro define-scroll-command (name documentation delta)
   `(defun ,name ()
      ,documentation
      (%repeat-command (%command-prefix-count)
                       (lambda () (%scroll-window ,delta))
                       (lambda () (%scroll-window ,(- delta))))))
 
-(defun %goto-visible-line-input (minibuffer input)
+(defun %goto-line-target (buffer input)
   (handler-case
       (let ((line (parse-integer input)))
         (if (plusp line)
-            (let ((buffer (%selected-buffer)))
-              (if (<= line (buffer-visible-line-count buffer))
-                  (let* ((start (buffer-narrow-start-offset buffer))
-                         (start-position (buffer-offset-position buffer start))
-                         (target-line (+ (buffer-position-line start-position)
-                                         (1- line))))
-                    (buffer-set-point buffer target-line (buffer-point-column buffer))
-                    (minibuffer-message minibuffer "Moved"))
-                  (minibuffer-message minibuffer
-                                      "Line is outside the narrowed buffer")))
-            (minibuffer-message minibuffer "Line number must be positive")))
+            (if (<= line (buffer-visible-line-count buffer))
+                (let* ((start (buffer-narrow-start-offset buffer))
+                       (start-position (buffer-offset-position buffer start))
+                       (target-line (+ (buffer-position-line start-position)
+                                       (1- line))))
+                  (values target-line nil))
+                (values nil "Line is outside the narrowed buffer"))
+            (values nil "Line number must be positive")))
     (parse-error ()
-      (minibuffer-message minibuffer "Enter a line number"))))
+      (values nil "Enter a line number"))))
+
+(defun %goto-visible-line-input (minibuffer input)
+  (let ((buffer (%selected-buffer)))
+    (multiple-value-bind (target-line error-message)
+        (%goto-line-target buffer input)
+      (if target-line
+          (progn
+            (buffer-set-point buffer target-line (buffer-point-column buffer))
+            (minibuffer-message minibuffer "Moved"))
+          (minibuffer-message minibuffer error-message)))))
 
 (defun %scroll-window (delta)
   (let* ((window (%selected-window))

@@ -50,12 +50,12 @@ buffer draws one row per logical line, which makes the two the same thing.")
   "Move point to the end of the buffer (M->).")
 
 (define-scroll-command scroll-up-command
-    1
-  "Scroll down by roughly one page, repeating for the active prefix (C-v).")
+  "Scroll down by roughly one page, repeating for the active prefix (C-v)."
+  1)
 
 (define-scroll-command scroll-down-command
-    -1
-  "Scroll up by roughly one page, repeating for the active prefix (M-v).")
+  "Scroll up by roughly one page, repeating for the active prefix (M-v)."
+  -1)
 
 (defun goto-line ()
   "Prompt for a one-based line number and move point there."
