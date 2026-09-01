@@ -24,16 +24,22 @@
   "Display the staged index diff for the current project."
   (%display-git-diff t))
 
-(defun git-stage-file ()
-  "Prompt for a repository path and stage it in Git's index."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((path "Git stage file: "))
-    (%git-file-operation :stage path minibuffer)))
+(defmacro %define-git-file-command (name operation prompt documentation)
+  `(defun ,name ()
+     ,documentation
+     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                    :on-cancel (minibuffer-message minibuffer "Quit"))
+         ((path ,prompt))
+       (%git-file-operation ,operation path minibuffer))))
 
-(defun git-unstage-file ()
-  "Prompt for a repository path and remove it from Git's index."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((path "Git unstage file: "))
-    (%git-file-operation :unstage path minibuffer)))
+(%define-git-file-command
+ git-stage-file
+ :stage
+ "Git stage file: "
+ "Prompt for a repository path and stage it in Git's index.")
+
+(%define-git-file-command
+ git-unstage-file
+ :unstage
+ "Git unstage file: "
+ "Prompt for a repository path and remove it from Git's index.")
