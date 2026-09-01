@@ -291,6 +291,7 @@ root source tree responsible for every feature."
    (:file "src/application/startup-state")
    (:file "src/application/startup-services")
    (:file "src/application/startup")
+   (:file "src/application/startup-cli")
    (:file "src/main"))
   ;; The three build keys and the :perform below are exempt from the metadata
   ;; order above -- PACKAGE_STANDARD.md names cl-weave's identical trio and

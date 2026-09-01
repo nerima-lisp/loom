@@ -39,18 +39,3 @@ raw/alternate-screen mode, whether the error is caught here or not."
    (lambda (state)
      (declare (ignore state))
      (%run-loom-session fd))))
-
-(defparameter *loom-app*
-  (cl-cli:make-app
-   :name "loom"
-   :version (%loom-version)
-   :summary "Terminal text editor with Emacs-like keybindings"
-   :positionals (list (cl-cli:make-positional
-                       :key :path
-                       :required-p nil
-                       :description "A file to open, or a directory to browse (defaults to \".\")"))
-   :handler (function %run-loom))
-  "CL-CLI application spec for the loom binary: a single positional path
-argument and no subcommands (the \"root positional\" shape CL-CLI's own
-getting-started guide documents for script-style tools), which gets
---help/--version/-h/-V for free instead of main.lisp hand-parsing argv.")
