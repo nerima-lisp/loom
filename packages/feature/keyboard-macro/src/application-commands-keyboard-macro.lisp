@@ -13,23 +13,28 @@
   (minibuffer-message (editor-state-minibuffer *editor-state*)
                       "Defining keyboard macro"))
 
+(defun %kbd-macro-termination-event-p (event)
+  (and event
+       (eq (keyboard-macro-event-kind event) :key)
+       (equal (keyboard-macro-event-value event)
+              (cons '(:control) #\x))))
+
+(defun %remove-kbd-macro-termination-prefix (macro)
+  (when (%kbd-macro-termination-event-p
+         (car (last (keyboard-macro-events macro))))
+    (keyboard-macro-remove-last-event macro)))
+
+(defun %finish-kbd-macro (macro)
+  (%remove-kbd-macro-termination-prefix macro)
+  (keyboard-macro-stop-recording macro)
+  (minibuffer-message (editor-state-minibuffer *editor-state*)
+                      "Keyboard macro defined"))
+
 (defun end-kbd-macro ()
   "Stop recording the current keyboard macro (C-x ))."
   (let ((macro (editor-state-keyboard-macro *editor-state*)))
     (if (keyboard-macro-recording-p macro)
-        (progn
-          ;; The dispatcher records the C-x prefix after it is successfully
-          ;; dispatched.  C-x ) is the command that terminates recording, so
-          ;; that prefix is not part of the user's macro and must be removed.
-          (let ((last-event (car (last (keyboard-macro-events macro)))))
-            (when (and last-event
-                       (eq (keyboard-macro-event-kind last-event) :key)
-                       (equal (keyboard-macro-event-value last-event)
-                              (cons '(:control) #\x)))
-              (keyboard-macro-remove-last-event macro)))
-          (keyboard-macro-stop-recording macro)
-          (minibuffer-message (editor-state-minibuffer *editor-state*)
-                              "Keyboard macro defined"))
+        (%finish-kbd-macro macro)
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No keyboard macro is being defined"))))
 
