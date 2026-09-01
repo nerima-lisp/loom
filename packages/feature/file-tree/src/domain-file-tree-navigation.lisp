@@ -4,15 +4,17 @@
 ;;;; navigation for FILE-TREE state.
 (in-package #:loom/feature/file-tree)
 
-(defun %file-tree-flatten (tree path depth)
+(defun %file-tree-flatten (tree path depth visited)
   "Return the depth-first flattening of PATH's children (at DEPTH) and, for
 each child directory currently in TREE's expanded set, its children in turn,
 recursing only into expanded directories."
-  (loop for (child-path . kind) in (funcall (file-tree-child-lister tree) path)
+  (unless (gethash path visited)
+    (setf (gethash path visited) t)
+    (loop for (child-path . kind) in (funcall (file-tree-child-lister tree) path)
         append (cons (cons child-path depth)
                      (when (and (eq kind :directory)
                                 (gethash child-path (file-tree-expanded tree)))
-                       (%file-tree-flatten tree child-path (1+ depth))))))
+                       (%file-tree-flatten tree child-path (1+ depth) visited))))))
 
 (defun %file-tree-child-kind (path children)
   (cdr (assoc path children :test (function equal))))
@@ -22,21 +24,25 @@ recursing only into expanded directories."
 its root, for an entry whose path is EQUAL to PATH, and return its kind
 (:FILE or :DIRECTORY), or NIL if PATH is not found among the currently
 reachable (visible) entries."
-  (labels ((search-under (dir-path)
-             (let ((children (funcall (file-tree-child-lister tree) dir-path)))
-               (or (%file-tree-child-kind path children)
-                   (loop for (child-path . kind) in children
-                         thereis (and (eq kind :directory)
-                                      (gethash child-path (file-tree-expanded tree))
-                                      (search-under child-path)))))))
-    (search-under (file-tree-root-path tree))))
+  (let ((visited (make-hash-table :test #'equal)))
+    (labels ((search-under (dir-path)
+               (unless (gethash dir-path visited)
+                 (setf (gethash dir-path visited) t)
+                 (let ((children (funcall (file-tree-child-lister tree) dir-path)))
+                   (or (%file-tree-child-kind path children)
+                       (loop for (child-path . kind) in children
+                             thereis (and (eq kind :directory)
+                                          (gethash child-path (file-tree-expanded tree))
+                                          (search-under child-path))))))))
+      (search-under (file-tree-root-path tree)))))
 
 (defun file-tree-entries (tree)
   "Return the flattened list of currently visible entries in TREE,
 respecting each directory's expand/collapse state, as a list of (PATH .
 DEPTH) conses in display order. DEPTH is a non-negative integer: ROOT-PATH's
 direct children are at depth 0."
-  (%file-tree-flatten tree (file-tree-root-path tree) 0))
+  (%file-tree-flatten tree (file-tree-root-path tree) 0
+                      (make-hash-table :test #'equal)))
 
 (defun file-tree-selected-path (tree)
   "Return the path of TREE's currently selected entry, or NIL if nothing

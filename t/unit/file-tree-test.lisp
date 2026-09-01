@@ -17,6 +17,12 @@
      '(("/root/sub/nested/c.txt" . :file)))
     (t nil)))
 
+(defun %cyclic-fake-lister (path)
+  (cond
+    ((equal path "/root/") '(("/root/loop/" . :directory)))
+    ((equal path "/root/loop/") '(("/root/" . :directory)))
+    (t nil)))
+
 (describe
   "make-file-tree"
   (it
@@ -99,6 +105,19 @@
               '(("/root/a.txt" . 0) ("/root/sub/" . 0)
                 ("/root/sub/b.txt" . 1) ("/root/sub/nested/" . 1)
                 ("/root/sub/nested/c.txt" . 2))))))
+
+(describe
+  "file-tree cycle handling"
+  (it
+    "terminates when expanded directories contain a cycle"
+    (let ((tree (make-file-tree "/root/")))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree #'%cyclic-fake-lister)
+      (file-tree-toggle-expand tree "/root/loop/")
+      (expect (file-tree-entries tree)
+              :to-equal '(("/root/loop/" . 0) ("/root/" . 1)))
+      (expect (file-tree-entry-kind tree "/root/loop/")
+              :to-equal :directory))))
 
 (describe
   "file-tree-prefetch-paths"
