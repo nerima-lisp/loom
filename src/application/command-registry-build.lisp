@@ -81,6 +81,5 @@ registry is used for lookup."
 
 (defmacro define-command-spec-catalog (&rest spec-blocks)
   "Define the command registry from declarative SPEC-BLOCK variables."
-  `(progn
-     (defparameter *command-specs*
-       (build-command-specs ,@spec-blocks))))
+  `(defparameter *command-specs*
+       (build-command-specs ,@spec-blocks)))
