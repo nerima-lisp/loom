@@ -30,6 +30,18 @@
           (sb-posix:chmod (namestring path) #o644)))))
 
   (it
+    "loads an empty file as a single editable empty line"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "empty.txt" dir)))
+        (host-kit:write-file-string "" path)
+        (let ((buffer (buffer-load path)))
+          (expect (buffer-text buffer) :to-equal "")
+          (expect (buffer-line-count buffer) :to-equal 1)
+          (buffer-insert-string buffer "content")
+          (expect (buffer-line buffer 0) :to-equal "content")
+          (expect (buffer-modified-p buffer) :to-be-truthy)))))
+
+  (it
     "saves buffer-text to buffer-path and clears modified-p"
     (host-kit:with-temporary-directory (dir)
       (let* ((path (merge-pathnames "out.txt" dir))
