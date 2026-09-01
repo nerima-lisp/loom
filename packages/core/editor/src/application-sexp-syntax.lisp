@@ -23,11 +23,13 @@
     position))
 
 (defun %sexp-string-next-position (text position length)
-  (let ((character (char text position)))
-    (cond
-      ((char= character #\\) (values (min length (+ position 2)) nil))
-      ((char= character #\") (values (1+ position) t))
-      (t (values (1+ position) nil)))))
+  (case (char text position)
+    (#\\ (values (%sexp-string-escaped-position position length) nil))
+    (#\" (values (1+ position) t))
+    (otherwise (values (1+ position) nil))))
+
+(defun %sexp-string-escaped-position (position length)
+  (min length (+ position 2)))
 
 (defun %sexp-string-end (text index length)
   "Return the index just past the string literal opening at INDEX."
