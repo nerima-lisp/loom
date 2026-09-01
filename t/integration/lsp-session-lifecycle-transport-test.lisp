@@ -64,6 +64,19 @@
       (expect (%lsp-byte-stream-position
               (loom/feature/lsp::lsp-process-error-output process))
               :to-equal 3))))
+  (it "finishes after an incomplete trailing frame and signals reader EOF"
+    (let* ((complete (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
+           (partial (subseq complete 0 (1- (length complete))))
+           (octets (make-array (+ (length complete) (length partial))
+                               :element-type '(unsigned-byte 8)))
+           (channel (cl-concurrent-kit:make-channel :buffer-size 2))
+           (process (loom/feature/lsp::%make-lsp-process
+                     nil nil (%make-lsp-byte-stream octets) nil nil channel)))
+      (replace octets complete)
+      (replace octets partial :start1 (length complete))
+      (loom/feature/lsp::%lsp-process-read-output process channel)
+      (expect (cl-concurrent-kit:recv channel) :to-equal "{\"id\":1}")
+      (expect (cl-concurrent-kit:recv channel) :to-be nil)))
 
 (describe
   "LSP transport state"
