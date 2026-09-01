@@ -12,5 +12,10 @@
       (expect (buffer-read-only-p buffer) :to-be-falsy)
       (expect (loom::toggle-read-only) :to-be buffer)
       (expect (buffer-read-only-p buffer) :to-be-truthy)
+      (signals buffer-read-only-error
+        (buffer-insert-string buffer "!"))
       (expect (loom::toggle-read-only) :to-be buffer)
-      (expect (buffer-read-only-p buffer) :to-be-falsy))))
+      (expect (buffer-read-only-p buffer) :to-be-falsy)
+      (buffer-set-point buffer 0 5)
+      (buffer-insert-string buffer "!")
+      (expect (buffer-text buffer) :to-equal "hello!"))))
