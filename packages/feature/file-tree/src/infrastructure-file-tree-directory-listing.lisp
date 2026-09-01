@@ -37,6 +37,17 @@
 ;;;
 ;;; The editor initialization path installs LOOM-FS-LIST-DIRECTORY here.
 ;;; ---------------------------------------------------------------------
+(defun %file-tree-entry-kind (metadata)
+  (case (host-kit:file-metadata-kind metadata)
+    (:directory :directory)
+    (:regular-file :file)
+    (t nil)))
+
+(defun %sort-file-tree-entries (entries)
+  (sort entries
+        (lambda (a b)
+          (string< (namestring (car a)) (namestring (car b))))))
+
 (defun loom-fs-list-directory (path)
   "Return the direct children of the directory at PATH as a list of
 (CHILD-PATH . KIND) conses, where CHILD-PATH is an absolute pathname (as
@@ -48,12 +59,11 @@ are omitted."
         (files '()))
     (host-kit:call-with-directory-entries
      (lambda (child-path metadata)
-       (case (host-kit:file-metadata-kind metadata)
-         (:directory (push (cons child-path :directory) directories))
-         (:regular-file (push (cons child-path :file) files))
-         (t nil)))
+       (let ((kind (%file-tree-entry-kind metadata)))
+         (when kind
+           (ecase kind
+             (:directory (push (cons child-path kind) directories))
+             (:file (push (cons child-path kind) files))))))
      path)
-    (flet ((by-namestring< (a b)
-             (string< (namestring (car a)) (namestring (car b)))))
-      (append (sort (nreverse directories) #'by-namestring<)
-              (sort (nreverse files) #'by-namestring<)))))
+    (append (%sort-file-tree-entries (nreverse directories))
+            (%sort-file-tree-entries (nreverse files)))))
