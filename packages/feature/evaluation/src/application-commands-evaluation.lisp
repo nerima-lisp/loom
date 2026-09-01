@@ -23,22 +23,25 @@
       (format nil "Evaluation error: ~A"
               (evaluation-result-error-message result))))
 
+(defun %evaluation-entry (source result buffer)
+  (format nil
+          "~Aloom-eval> ~A~%~A~%"
+          (if (zerop (length (buffer-text buffer))) "" (format nil "~%"))
+          source
+          (evaluation-result-text result)))
+
+(defun %display-evaluation-result (buffer result)
+  (buffer-mark-saved buffer)
+  (loom/feature/window:window-set-buffer (%selected-window) buffer)
+  (let ((minibuffer (editor-state-minibuffer *editor-state*)))
+    (when minibuffer
+      (minibuffer-message minibuffer (%evaluation-status-message result)))))
+
 (defun %append-evaluation-result (source result)
-  (let* ((buffer (%evaluation-buffer))
-         (prefix (if (zerop (length (buffer-text buffer))) "" (format nil "~%"))))
+  (let ((buffer (%evaluation-buffer)))
     (%move-buffer-point-to-end buffer)
-    (buffer-insert-string
-     buffer
-     (format nil
-             "~Aloom-eval> ~A~%~A~%"
-             prefix
-             source
-             (evaluation-result-text result)))
-    (buffer-mark-saved buffer)
-    (loom/feature/window:window-set-buffer (%selected-window) buffer)
-    (let ((minibuffer (editor-state-minibuffer *editor-state*)))
-      (when minibuffer
-        (minibuffer-message minibuffer (%evaluation-status-message result))))
+    (buffer-insert-string buffer (%evaluation-entry source result buffer))
+    (%display-evaluation-result buffer result)
     result))
 
 (defun %evaluate-and-display (source)
