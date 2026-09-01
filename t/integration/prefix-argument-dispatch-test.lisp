@@ -74,4 +74,24 @@
       (expect (loom:keymap-state-sequence keymap-state) :to-be nil)
       (expect (prefix-argument-active-p
                (editor-state-prefix-argument *editor-state*))
-              :to-be nil))))
+              :to-be nil)))
+
+  (it
+    "recognizes alternate prefix descriptors and rejects unrelated modifiers"
+    (let ((inactive (make-prefix-argument))
+          (active (loom::%make-prefix-argument :active-p t)))
+      (multiple-value-bind (kind value)
+          (loom::%prefix-argument-descriptor-action
+           (cons '(:alt) #\3) inactive)
+        (expect kind :to-equal :digit)
+        (expect value :to-equal 3))
+      (multiple-value-bind (kind value)
+          (loom::%prefix-argument-descriptor-action
+           (cons '(:alt) #\-) inactive)
+        (expect kind :to-equal :negative)
+        (expect value :to-be nil))
+      (multiple-value-bind (kind value)
+          (loom::%prefix-argument-descriptor-action
+           (cons '(:control) #\3) active)
+        (expect kind :to-be nil)
+        (expect value :to-be nil)))))
