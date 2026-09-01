@@ -32,12 +32,15 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
          (not (or (%sexp-whitespace-p character)
                   (member character +sexp-close-characters+ :test #'char=))))))
 
+(defun %forward-slurp-target (text classes close)
+  (%forward-sexp-offset text (1+ close) classes))
+
 (defun %forward-slurp-edits (text classes offset)
   "Move the enclosing list's closing delimiter past the expression after it."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
     (declare (ignore open))
     (when close
-      (let ((target (%forward-sexp-offset text (1+ close) classes)))
+      (let ((target (%forward-slurp-target text classes close)))
         (when target
           (list (list :insert target (string (char text close)))
                 (list :delete close 1)))))))
@@ -66,12 +69,15 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
           (list (list :delete close 1)
                 (list :insert target moved-delimiter)))))))
 
+(defun %backward-slurp-target (text classes open)
+  (%backward-sexp-offset text open classes))
+
 (defun %backward-slurp-edits (text classes offset)
   "Move the enclosing list's opening delimiter back past the expression before it."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
     (declare (ignore close))
     (when open
-      (let ((target (%backward-sexp-offset text open classes)))
+      (let ((target (%backward-slurp-target text classes open)))
         (when target
           (list (list :delete open 1)
                 (list :insert target (string (char text open)))))))))

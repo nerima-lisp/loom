@@ -10,7 +10,7 @@
       (expect (first expansion) :to-be 'defun)
       (expect (second expansion) :to-be 'test-word-motion)
       (expect (third expansion) :to-equal '())
-      (expect (first (fourth expansion)) :to-be 'let*))))
+      (expect (first (fourth expansion)) :to-be 'loom::%run-word-motion-helper))))
 
 (describe
   "movement commands word and buffer motion"
