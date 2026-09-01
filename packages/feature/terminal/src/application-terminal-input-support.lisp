@@ -26,19 +26,24 @@
     (:page-up (%terminal-csi "5~"))
     (:page-down (%terminal-csi "6~"))))
 
+(defun %terminal-control-letter (character)
+  (when (and (char>= character #\a) (char<= character #\z))
+    (code-char (1+ (- (char-code character) (char-code #\a))))))
+
+(defun %terminal-control-punctuation (character)
+  (case character
+    ((#\Space #\@) (code-char 0))
+    (#\[ (code-char 27))
+    (#\\ (code-char 28))
+    (#\] (code-char 29))
+    (#\^ (code-char 30))
+    (#\_ (code-char 31))))
+
 (defun %terminal-control-character (character)
   (when character
     (let ((downcase (char-downcase character)))
-      (cond
-        ((and (char>= downcase #\a) (char<= downcase #\z))
-         (code-char (1+ (- (char-code downcase) (char-code #\a)))))
-        ((char= character #\Space) (code-char 0))
-        ((char= character #\@) (code-char 0))
-        ((char= character #\[) (code-char 27))
-        ((char= character #\\) (code-char 28))
-        ((char= character #\]) (code-char 29))
-        ((char= character #\^) (code-char 30))
-        ((char= character #\_) (code-char 31))))))
+      (or (%terminal-control-letter downcase)
+          (%terminal-control-punctuation character)))))
 
 (defun %terminal-control-special-payload (code)
   (when (%terminal-control-special-p code)
