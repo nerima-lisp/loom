@@ -45,6 +45,14 @@
                (incf position)))
     nil))
 
+(defun %sexp-backward-list-depth-step (text classes position depth)
+  (cond
+    ((%sexp-close-p text classes position) (values (1+ depth) nil))
+    ((%sexp-open-p text classes position)
+     (let ((next-depth (1- depth)))
+       (values next-depth (zerop next-depth))))
+    (t (values depth nil))))
+
 (defun %sexp-backward-list-start (text classes offset)
   "Return the index of the list whose closing character ends at OFFSET.
 
@@ -53,11 +61,11 @@ NIL when the parentheses do not balance."
   (let ((depth 0)
         (position (1- offset)))
     (loop while (>= position 0)
-          do (cond ((%sexp-close-p text classes position) (incf depth))
-                   ((%sexp-open-p text classes position)
-                    (decf depth)
-                    (when (zerop depth)
-                      (return-from %sexp-backward-list-start position))))
+          do (multiple-value-bind (next-depth complete)
+                 (%sexp-backward-list-depth-step text classes position depth)
+               (setf depth next-depth)
+               (when complete
+                 (return-from %sexp-backward-list-start position)))
              (decf position))
     nil))
 
