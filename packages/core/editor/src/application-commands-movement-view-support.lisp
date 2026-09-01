@@ -11,20 +11,29 @@
                       (lambda () (%scroll-window ,delta))
                       (lambda () (%scroll-window ,(- delta))))))
 
-(defun %goto-line-target (buffer input)
+(defun %parse-goto-line-number (input)
   (handler-case
       (let ((line (parse-integer input)))
         (if (plusp line)
-            (if (<= line (buffer-visible-line-count buffer))
-                (let* ((start (buffer-narrow-start-offset buffer))
-                       (start-position (buffer-offset-position buffer start))
-                       (target-line (+ (buffer-position-line start-position)
-                                       (1- line))))
-                  (values target-line nil))
-                (values nil "Line is outside the narrowed buffer"))
+            (values line nil)
             (values nil "Line number must be positive")))
     (parse-error ()
       (values nil "Enter a line number"))))
+
+(defun %goto-line-target (buffer input)
+  (multiple-value-bind (line error-message)
+      (%parse-goto-line-number input)
+    (cond
+      (error-message
+       (values nil error-message))
+      ((> line (buffer-visible-line-count buffer))
+       (values nil "Line is outside the narrowed buffer"))
+      (t
+       (let* ((start (buffer-narrow-start-offset buffer))
+              (start-position (buffer-offset-position buffer start))
+              (target-line (+ (buffer-position-line start-position)
+                              (1- line))))
+         (values target-line nil))))))
 
 (defun %goto-visible-line-input (minibuffer input)
   (let ((buffer (%selected-buffer)))
