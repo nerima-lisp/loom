@@ -26,6 +26,45 @@
   result-channel
   (closed-p nil))
 
+(defun %start-lsp-process-readers (process executor channel)
+  (dolist (reader (list (lambda () (%lsp-process-read-output process channel))
+                        (lambda () (%lsp-process-drain-errors process))))
+    (multiple-value-bind (promise accepted)
+        (cl-concurrent-kit:try-submit executor reader)
+      (declare (ignore promise))
+      (unless accepted (error "Could not start the LSP process reader"))))
+  process)
+
+(defun %cleanup-lsp-launch (info executor channel)
+  (when executor
+    (ignore-errors
+      (cl-concurrent-kit:shutdown-executor
+       executor :wait t :cancel-pending t)))
+  (when channel
+    (ignore-errors (cl-concurrent-kit:close-channel channel)))
+  (when info
+    (ignore-errors (close (uiop:process-info-input info)))
+    (ignore-errors (uiop:terminate-process info))
+    (ignore-errors (close (uiop:process-info-output info)))
+    (ignore-errors (close (uiop:process-info-error-output info)))))
+
+(defun %launch-lsp-process (command directory)
+  (let* ((info (uiop:launch-program
+                command :shell t :directory directory
+                :input :stream :output :stream :error-output :stream
+                :element-type '(unsigned-byte 8)))
+         (channel (cl-concurrent-kit:make-channel :buffer-size 128))
+         (executor (cl-concurrent-kit:make-executor
+                    :size 2 :name "loom lsp process" :queue-capacity 2))
+         (process (%make-lsp-process
+                   info
+                   (uiop:process-info-input info)
+                   (uiop:process-info-output info)
+                   (uiop:process-info-error-output info)
+                   executor
+                   channel)))
+    (values process info executor channel)))
+
 (defun make-lsp-process (command &key directory)
   "Launch COMMAND as an LSP server using binary streams.
 
@@ -37,57 +76,14 @@ the same trust boundary as the user-init and Lisp evaluation features."
         (executor nil))
     (handler-case
         (progn
-          (let* ((launched-info (uiop:launch-program
-                                 command
-                                 :shell t
-                                 :directory directory
-                                 :input :stream
-                                 :output :stream
-                                 :error-output :stream
-                                 :element-type '(unsigned-byte 8))))
-            (setf info launched-info
-                  channel (cl-concurrent-kit:make-channel :buffer-size 128)
-                  executor (cl-concurrent-kit:make-executor
-                            :size 2
-                            :name "loom lsp process"
-                            :queue-capacity 2)
-                  process
-                  (%make-lsp-process
-                   launched-info
-                   (uiop:process-info-input launched-info)
-                   (uiop:process-info-output launched-info)
-                   (uiop:process-info-error-output launched-info)
-                   executor
-                   channel)))
-          (multiple-value-bind (promise accepted)
-              (cl-concurrent-kit:try-submit
-               executor
-               (lambda () (%lsp-process-read-output process channel)))
-            (declare (ignore promise))
-            (unless accepted (error "Could not start the LSP output reader")))
-          (multiple-value-bind (promise accepted)
-              (cl-concurrent-kit:try-submit
-               executor
-               (lambda () (%lsp-process-drain-errors process)))
-            (declare (ignore promise))
-            (unless accepted (error "Could not start the LSP error reader")))
-          process)
+          (multiple-value-setq (process info executor channel)
+            (%launch-lsp-process command directory))
+          (%start-lsp-process-readers process executor channel))
       (error (condition)
         (when process
           (lsp-transport-close process))
         (when (and info (null process))
-          (when executor
-            (ignore-errors
-              (cl-concurrent-kit:shutdown-executor
-               executor
-               :wait t
-               :cancel-pending t)))
-          (when channel
-            (ignore-errors (cl-concurrent-kit:close-channel channel)))
-          (ignore-errors (close (uiop:process-info-input info)))
-          (ignore-errors (uiop:terminate-process info))
-          (ignore-errors (close (uiop:process-info-output info)))
-          (ignore-errors (close (uiop:process-info-error-output info))))
+          (%cleanup-lsp-launch info executor channel))
         (error condition)))))
 
 (defmethod lsp-transport-send ((transport lsp-process) json)
