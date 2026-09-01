@@ -45,6 +45,21 @@ becomes a prefix key (see KEYMAP-LOOKUP). Returns KEYMAP."
                  (setf (gethash key table) command)))
     keymap))
 
+(defun %keymap-lookup-table (table key-sequence)
+  (let ((local-p nil))
+    (loop for (key . rest) on key-sequence
+        do (multiple-value-bind (value present-p) (gethash key table)
+             (unless present-p
+               (return (values nil local-p)))
+             (setf local-p t)
+             (if rest
+                 (if (hash-table-p value)
+                     (setf table value)
+                     (return (values nil t)))
+                 (return (values (if (hash-table-p value) :prefix value)
+                                 t))))
+          finally (return (values nil local-p)))))
+
 (defun %keymap-local-lookup (keymap key-sequence)
   "Look up KEY-SEQUENCE locally, returning VALUE and a presence flag.
 
@@ -53,21 +68,8 @@ later chord does not.  This makes a local prefix shadow the entire matching
 parent subtree, which is how mode-local prefix maps avoid surprising global
 fallbacks."
   (when key-sequence
-    (let ((normalized (mapcar #'normalize-key-descriptor key-sequence))
-          (table (keymap-table keymap))
-          (local-p nil))
-      (loop for (key . rest) on normalized
-            do (multiple-value-bind (value present-p) (gethash key table)
-                 (unless present-p
-                   (return-from %keymap-local-lookup (values nil local-p)))
-                 (setf local-p t)
-                 (if rest
-                     (if (hash-table-p value)
-                         (setf table value)
-                         (return-from %keymap-local-lookup (values nil t)))
-                     (return-from %keymap-local-lookup
-                       (values (if (hash-table-p value) :prefix value) t))))
-            finally (return (values nil local-p))))))
+    (let ((normalized (mapcar #'normalize-key-descriptor key-sequence)))
+      (%keymap-lookup-table (keymap-table keymap) normalized))))
 
 (defun keymap-lookup (keymap key-sequence)
   "Look up KEY-SEQUENCE (a list of key-event descriptors, as in
