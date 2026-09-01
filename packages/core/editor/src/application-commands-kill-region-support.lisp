@@ -9,6 +9,14 @@
       (and (= point-line mark-line)
            (> point-column mark-column))))
 
+(defun %active-region-bounds-from-points
+    (point-line point-column mark-line mark-column)
+  (multiple-value-bind (start-line start-column end-line end-column)
+      (%order-region point-line point-column mark-line mark-column)
+    (values start-line start-column end-line end-column
+            (%region-point-is-after-mark-p
+             point-line point-column mark-line mark-column))))
+
 (defun %active-region-bounds (buffer)
   "Return region bounds and coalescing direction for BUFFER, or NIL values."
   (let ((point-line (buffer-point-line buffer))
@@ -16,11 +24,8 @@
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
       (if (null mark-line)
           (values nil nil nil nil nil)
-          (multiple-value-bind (start-line start-column end-line end-column)
-              (%order-region point-line point-column mark-line mark-column)
-            (values start-line start-column end-line end-column
-                    (%region-point-is-after-mark-p
-                     point-line point-column mark-line mark-column)))))))
+          (%active-region-bounds-from-points
+           point-line point-column mark-line mark-column)))))
 
 (defun %kill-active-region-or-message (buffer)
   (%clear-last-yank)
