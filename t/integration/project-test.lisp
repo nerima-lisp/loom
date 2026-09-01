@@ -10,12 +10,19 @@
     (host-kit:with-temporary-directory (directory)
       (let* ((root (truename directory))
              (main-path (merge-pathnames "src/main.py" root))
-             (ignored-path (merge-pathnames "target/generated.py" root)))
+             (ignored-path (merge-pathnames "target/generated.py" root))
+             (nested-ignored-path
+               (merge-pathnames "src/node_modules/package/index.js" root))
+             (hidden-ignored-path (merge-pathnames ".git/objects/blob" root)))
         (ensure-directories-exist main-path)
         (ensure-directories-exist ignored-path)
+        (ensure-directories-exist nested-ignored-path)
+        (ensure-directories-exist hidden-ignored-path)
         (host-kit:write-file-string "" (merge-pathnames "flake.nix" root))
         (host-kit:write-file-string "print('needle')" main-path)
         (host-kit:write-file-string "needle" ignored-path)
+        (host-kit:write-file-string "needle" nested-ignored-path)
+        (host-kit:write-file-string "needle" hidden-ignored-path)
 
         (expect (namestring (project-find-root main-path))
                 :to-equal
