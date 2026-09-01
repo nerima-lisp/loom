@@ -12,6 +12,44 @@
 (defparameter +layout-isearch-current-style+ '((:bg 6) (:fg 0))
   "Style for the match point currently sits on, so it reads apart from the rest.")
 
+(defun %layout-draw-truncated-line-run (renderer window x y text line start end style)
+  (let ((row (- line (loom/feature/window:window-scroll-line window)))
+        (column (- (%layout-screen-column renderer text start)
+                   (loom/feature/window:window-scroll-column window)))
+        (width (loom/feature/window:window-width window))
+        (height (loom/feature/window:window-height window)))
+    (when (and (<= 0 row) (< row height) (<= 0 column) (< column width))
+      (loom-renderer-write-string
+       renderer (+ x column) (+ y row)
+       (loom-renderer-truncate-string
+        renderer (subseq text start end) (- width column))
+       :style style))))
+
+(defun %layout-draw-wrapped-line-run
+    (renderer window x y text width height line start end style)
+  (let ((segments (loom-renderer-wrap-segments renderer text width)))
+    (dolist (segment segments)
+      (let ((from (max start (car segment)))
+            (to (min end (cdr segment))))
+        (when (> to from)
+          (let ((row (%layout-rows-between
+                      renderer
+                      (loom/feature/window:window-buffer window)
+                      width
+                      (loom/feature/window:window-scroll-line window)
+                      (loom/feature/window:window-scroll-sub-row window)
+                      line
+                      (%loom-segment-index segments from)
+                      (1- height)))
+                (column (loom-renderer-segment-cells
+                         renderer text segment from)))
+            (when row
+              (loom-renderer-write-string
+               renderer (+ x column) (+ y row)
+               (loom-renderer-truncate-string
+                renderer (subseq text from to) (- width column))
+               :style style))))))))
+
 (defun %layout-draw-line-run (renderer window x-offset line start end style)
   "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.
 
@@ -29,35 +67,10 @@ draws nothing rather than clipping to the wrong row."
          (end (max start (min end (length text)))))
     (when (and (plusp width) (plusp height) (> end start))
       (if (loom/feature/mode:buffer-truncate-lines-p buffer)
-          (let ((row (- line (loom/feature/window:window-scroll-line window)))
-                (column (- (%layout-screen-column renderer text start)
-                           (loom/feature/window:window-scroll-column window))))
-            (when (and (<= 0 row) (< row height) (<= 0 column) (< column width))
-              (loom-renderer-write-string
-               renderer (+ x column) (+ y row)
-               (loom-renderer-truncate-string
-                renderer (subseq text start end) (- width column))
-               :style style)))
-          (let ((segments (loom-renderer-wrap-segments renderer text width)))
-            (dolist (segment segments)
-              (let ((from (max start (car segment)))
-                    (to (min end (cdr segment))))
-                (when (> to from)
-                  (let ((row (%layout-rows-between
-                              renderer buffer width
-                              (loom/feature/window:window-scroll-line window)
-                              (loom/feature/window:window-scroll-sub-row window)
-                              line
-                              (%loom-segment-index segments from)
-                              (1- height)))
-                        (column (loom-renderer-segment-cells
-                                 renderer text segment from)))
-                    (when row
-                      (loom-renderer-write-string
-                       renderer (+ x column) (+ y row)
-                       (loom-renderer-truncate-string
-                        renderer (subseq text from to) (- width column))
-                       :style style)))))))))))
+          (%layout-draw-truncated-line-run
+           renderer window x y text line start end style)
+          (%layout-draw-wrapped-line-run
+           renderer window x y text width height line start end style)))))
 
 (defun %layout-draw-span (renderer window x-offset span style)
   "Redraw the buffer text SPAN covers in STYLE, one logical line at a time."
