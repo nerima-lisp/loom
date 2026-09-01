@@ -34,6 +34,17 @@
                              inserted
                              (subseq "abcdef" column))))))
 
+  (cl-weave:it-property
+      "round-trips generated UTF-8 frame payloads"
+      ((character (cl-weave:gen-character :alphabet "abc日本語")))
+    (let ((json (format nil "{\"text\":\"~A\"}" character)))
+      (multiple-value-bind (decoded used status)
+          (loom/feature/lsp::loom-lsp-frame-decode
+           (loom/feature/lsp::loom-lsp-frame-encode json))
+        (expect decoded :to-equal json)
+        (expect used :to-be-greater-than (length json))
+        (expect status :to-be :complete))))
+
   (cl-weave:it-fuzz
       "accepts generated insertion positions"
       ((column (cl-weave:gen-integer :min 0 :max 6)))
