@@ -88,7 +88,7 @@ hide a package that already provides the required operation. `make-editor-state`
 also establishes the workspace invariant: when a caller does not supply a
 manager, the initial window tree is installed as the named `main` workspace.
 Commands therefore require a manager instead of reconstructing one through a
-legacy fallback.
+an implicit fallback.
 
 The session feature serializes those editor-state collections alongside
 buffers, named workspaces, and each workspace's window layout and selection.
