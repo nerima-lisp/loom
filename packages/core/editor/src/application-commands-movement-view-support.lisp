@@ -45,16 +45,20 @@
             (minibuffer-message minibuffer "Moved"))
           (minibuffer-message minibuffer error-message)))))
 
+(defun %scroll-window-target-line (window buffer delta)
+  (let* ((height (loom/feature/window:window-height window))
+         (page (max 1 (1- height)))
+         (max-scroll (max 0 (- (buffer-visible-line-count buffer)
+                               (max 1 height)))))
+    (max 0 (min max-scroll
+                (+ (loom/feature/window:window-scroll-line window)
+                   (* delta page))))))
+
 (defun %scroll-window (delta)
   (let* ((window (%selected-window))
-         (buffer (loom/feature/window:window-buffer window))
-         (page (max 1 (1- (loom/feature/window:window-height window))))
-         (max-scroll (max 0 (- (buffer-visible-line-count buffer)
-                               (max 1 (loom/feature/window:window-height window))))))
+         (buffer (loom/feature/window:window-buffer window)))
     (setf (loom/feature/window:window-scroll-line window)
-          (max 0 (min max-scroll
-                      (+ (loom/feature/window:window-scroll-line window)
-                         (* delta page)))))
+          (%scroll-window-target-line window buffer delta))
     ;; The scroll line just moved, so whichever segment of the old line was on
     ;; the first row means nothing now. A wrapping window's own point-following
     ;; pass re-derives the pair on the next frame.
