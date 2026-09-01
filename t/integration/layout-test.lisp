@@ -34,6 +34,29 @@ the degenerate-window tests are the ones that need them to differ."
   (window-tree-selected-window (editor-state-window-tree state)))
 
 (describe
+  "window buffer layout mode"
+  (it
+    "draws both truncated and wrapped buffer views through the layout helper"
+    (let ((truncated (%fresh-layout-state :content "abcdef" :width 3 :height 2))
+          (wrapped (%fresh-layout-state :content "abcdef" :width 3 :height 2)))
+      (let ((truncated-buffer (window-buffer (%layout-window truncated))))
+        (buffer-set-truncate-lines truncated-buffer t)
+        (loom::%layout-draw-window-buffer
+         (editor-state-renderer truncated) (%layout-window truncated) 0))
+      (let ((wrapped-buffer (window-buffer (%layout-window wrapped))))
+        (buffer-set-truncate-lines wrapped-buffer nil)
+        (loom::%layout-draw-window-buffer
+         (editor-state-renderer wrapped) (%layout-window wrapped) 0))
+      (expect (cl-tty-kit:screen-row-string (%layout-screen truncated) 0)
+              :to-equal "abc")
+      (expect (cl-tty-kit:screen-row-string (%layout-screen truncated) 1)
+              :to-equal "   ")
+      (expect (cl-tty-kit:screen-row-string (%layout-screen wrapped) 0)
+              :to-equal "abc")
+      (expect (cl-tty-kit:screen-row-string (%layout-screen wrapped) 1)
+              :to-equal "def"))))
+
+(describe
   "syntax-highlighted layout drawing"
   (it
     "maps semantic tokens to styles while clipping at screen-cell boundaries"
