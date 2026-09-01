@@ -140,6 +140,10 @@ Coverage is generated outside the checkout:
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/coverage.lisp
 ```
 
+The flake's `coverage` output is a report directory rather than a runnable
+program. Use `nix build .#coverage` to materialize it in the Nix store, or use
+the command above to choose a local output directory.
+
 The cl-weave runner covers Loom's `src/` and `packages/` trees and writes
 `coverage.data` plus the HTML report under the selected coverage directory.
 It rejects a no-test run and an empty source-expression selection. Record

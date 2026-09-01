@@ -66,6 +66,10 @@ LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c sbcl --script scripts/covera
 LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
+The Nix coverage output is a report directory, not an executable. Build it
+with `nix build .#coverage` (or run `nix flake check`); use the development
+command above when the report should be written to a local directory.
+
 The [development guide](docs/src/project/development.md) covers the unit and
 integration suite, PTY checks, coverage, and the concurrency benchmark.
 
