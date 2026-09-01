@@ -18,6 +18,17 @@
         :current-workspace-index
         (session-snapshot-current-workspace-index snapshot)))
 
+(defun %session-required-list (value message)
+  (unless (listp value)
+    (error "session: ~A must be a proper list" message))
+  value)
+
+(defun %session-required-string-list (value message)
+  (unless (and (listp value)
+               (every #'stringp value))
+    (error "session: ~A must be a list of strings" message))
+  value)
+
 (defun %session-from-sexp (value)
   (%validate-session-plist value +loom-session-top-level-keys+ "session")
   (let ((version (%session-plist-value value :loom-session)))
@@ -30,18 +41,11 @@
           (serialized-workspaces (%session-plist-value value :workspaces))
           (current-index
             (%session-plist-value value :current-workspace-index)))
-      (unless (listp serialized-buffers)
-        (error "session: :buffers must be a proper list"))
-      (unless (and (listp recent-files)
-                   (every #'stringp recent-files))
-        (error "session: :recent-files must be a list of strings"))
-      (unless (listp serialized-bookmarks)
-        (error "session: :bookmarks must be a proper list"))
-      (unless (and (listp command-history)
-                   (every #'stringp command-history))
-        (error "session: :command-history must be a list of strings"))
-      (unless (listp serialized-workspaces)
-        (error "session: :workspaces must be a proper list"))
+      (%session-required-list serialized-buffers ":buffers")
+      (%session-required-string-list recent-files ":recent-files")
+      (%session-required-list serialized-bookmarks ":bookmarks")
+      (%session-required-string-list command-history ":command-history")
+      (%session-required-list serialized-workspaces ":workspaces")
       (validate-session-snapshot
        (make-session-snapshot
         :buffers (mapcar #'%session-buffer-from-sexp serialized-buffers)
