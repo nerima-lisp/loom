@@ -24,26 +24,34 @@ callers that persist it should replace BUFFER objects with stable identifiers."
                           (second (window-split-node-children node)))))))
     (describe-node (window-tree-root tree))))
 
+(defun %validate-layout-shape (layout kind length)
+  (unless (= (length layout) length)
+    (error "make-window-tree-from-layout: malformed ~A ~S" kind layout))
+  layout)
+
+(defun %make-window-leaf-from-layout (layout)
+  (%validate-layout-shape layout :leaf 3)
+  (make-window-leaf :buffer (second layout)
+                    :scroll-line (max 0 (third layout))))
+
+(defun %make-window-split-from-layout (layout)
+  (%validate-layout-shape layout :split 4)
+  (let ((direction (second layout)))
+    (unless (member direction '(:horizontal :vertical))
+      (error "make-window-tree-from-layout: invalid direction ~S"
+             direction))
+    (make-window-split-node
+     :direction direction
+     :children (list (%make-window-node-from-layout (third layout))
+                     (%make-window-node-from-layout (fourth layout))))))
+
 (defun %make-window-node-from-layout (layout)
   "Build a window node from WINDOW-TREE-LAYOUT's public description."
   (unless (listp layout)
     (error "make-window-tree-from-layout: malformed layout ~S" layout))
   (case (first layout)
-    (:leaf
-     (unless (= (length layout) 3)
-       (error "make-window-tree-from-layout: malformed leaf ~S" layout))
-     (make-window-leaf :buffer (second layout)
-                       :scroll-line (max 0 (third layout))))
-    (:split
-     (unless (= (length layout) 4)
-       (error "make-window-tree-from-layout: malformed split ~S" layout))
-     (unless (member (second layout) '(:horizontal :vertical))
-       (error "make-window-tree-from-layout: invalid direction ~S"
-              (second layout)))
-     (make-window-split-node
-      :direction (second layout)
-      :children (list (%make-window-node-from-layout (third layout))
-                      (%make-window-node-from-layout (fourth layout)))))
+    (:leaf (%make-window-leaf-from-layout layout))
+    (:split (%make-window-split-from-layout layout))
     (otherwise
      (error "make-window-tree-from-layout: unknown node ~S" (first layout)))))
 
@@ -54,17 +62,17 @@ LAYOUT uses (:LEAF BUFFER SCROLL-LINE) and (:SPLIT DIRECTION CHILD-1
 CHILD-2). SELECTED-INDEX selects a leaf in depth-first order and defaults to
 zero. The input tree is fully built before the returned tree is laid out."
   (let* ((root (%make-window-node-from-layout layout))
-           (windows (%window-collect-leaves root)))
-      (unless (and (integerp selected-index)
-                   (<= 0 selected-index)
-                   (< selected-index (length windows)))
-        (error "make-window-tree-from-layout: selected index ~S out of range"
-               selected-index))
-      (let ((tree (%make-window-tree :root root
-                                     :selected (nth selected-index windows)
-                                     :width width
-                                     :height height)))
-        (%window-layout root 0 0 width height)
+         (windows (%window-collect-leaves root)))
+    (unless (and (integerp selected-index)
+                 (<= 0 selected-index)
+                 (< selected-index (length windows)))
+      (error "make-window-tree-from-layout: selected index ~S out of range"
+             selected-index))
+    (let ((tree (%make-window-tree :root root
+                                   :selected (nth selected-index windows)
+                                   :width width
+                                   :height height)))
+      (%window-layout root 0 0 width height)
       tree)))
 
 (defun window-tree-selected-index (tree)
