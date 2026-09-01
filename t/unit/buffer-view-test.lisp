@@ -14,6 +14,15 @@
         (expect (buffer-position-line position) :to-equal 1)
         (expect (buffer-position-column position) :to-equal 3)))))
 
+  (it "maps newline boundaries to the following line"
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
+      (let ((newline (buffer-offset-position buffer 3))
+            (following (buffer-offset-position buffer 4)))
+        (expect (buffer-position-line newline) :to-equal 0)
+        (expect (buffer-position-column newline) :to-equal 3)
+        (expect (buffer-position-line following) :to-equal 1)
+        (expect (buffer-position-column following) :to-equal 0))))
+
 (describe
   "buffer point offsets"
   (it "returns zero for the initial point of an empty buffer"
