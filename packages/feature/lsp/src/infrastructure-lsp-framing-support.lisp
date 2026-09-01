@@ -40,30 +40,45 @@
           do (%lsp-utf8-emit-codepoint octets (char-code character)))
     octets))
 
+(defun %lsp-utf8-leading-byte-width (byte)
+  (cond ((<= byte #x7F) 1)
+        ((<= #xC2 byte #xDF) 2)
+        ((<= #xE0 byte #xEF) 3)
+        ((<= #xF0 byte #xF4) 4)
+        (t (error "Invalid UTF-8 leading byte: ~X" byte))))
+
+(defun %lsp-utf8-leading-byte-code (byte width)
+  (logand byte (case width
+                 (1 #x7F)
+                 (2 #x1F)
+                 (3 #x0F)
+                 (4 #x07))))
+
+(defun %lsp-utf8-read-continuation (octets index width code)
+  (loop for offset from 1 below width
+        for byte = (aref octets (+ index offset))
+        do (unless (<= #x80 byte #xBF)
+             (error "Invalid UTF-8 continuation byte: ~X" byte))
+           (setf code (+ (ash code 6) (logand byte #x3F)))
+        finally (return code)))
+
+(defun %lsp-utf8-valid-codepoint-p (code width)
+  (not (or (and (= width 3) (< code #x800))
+           (and (= width 4) (< code #x10000))
+           (<= #xD800 code #xDFFF)
+           (> code #x10FFFF))))
+
 (defun %lsp-utf8-sequence (octets index)
   (let* ((first (aref octets index))
-         (width (cond
-                  ((<= first #x7F) 1)
-                  ((<= #xC2 first #xDF) 2)
-                  ((<= #xE0 first #xEF) 3)
-                  ((<= #xF0 first #xF4) 4)
-                  (t (error "Invalid UTF-8 leading byte: ~X" first))))
-         (code (logand first
-                       (case width
-                         (1 #x7F) (2 #x1F) (3 #x0F) (4 #x07)))))
+         (width (%lsp-utf8-leading-byte-width first)))
     (when (> (+ index width) (length octets))
       (error "Truncated UTF-8 sequence"))
-    (loop for offset from 1 below width
-          for byte = (aref octets (+ index offset))
-          do (unless (<= #x80 byte #xBF)
-               (error "Invalid UTF-8 continuation byte: ~X" byte))
-             (setf code (+ (ash code 6) (logand byte #x3F))))
-    (when (or (and (= width 3) (< code #x800))
-              (and (= width 4) (< code #x10000))
-              (<= #xD800 code #xDFFF)
-              (> code #x10FFFF))
-      (error "Invalid UTF-8 code point: ~X" code))
-    (values code (+ index width))))
+    (let ((code (%lsp-utf8-read-continuation
+                 octets index width
+                 (%lsp-utf8-leading-byte-code first width))))
+      (unless (%lsp-utf8-valid-codepoint-p code width)
+        (error "Invalid UTF-8 code point: ~X" code))
+      (values code (+ index width)))))
 
 (defun %lsp-utf8-decode (octets)
   (with-output-to-string (output)
