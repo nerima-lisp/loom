@@ -9,13 +9,17 @@
 (defun %sexp-whitespace-p (character)
   (member character '(#\Space #\Tab #\Newline #\Return #\Page) :test #'char=))
 
+(defun %sexp-character-name-end (text position length)
+  (loop while (and (< position length) (alpha-char-p (char text position)))
+        do (incf position))
+  position)
+
 (defun %sexp-character-literal-end (text index length)
   "Return the index just past a `#\\X' literal beginning at INDEX."
   (let ((position (min length (+ index 2))))
     (when (< position length)
       (incf position)
-      (loop while (and (< position length) (alpha-char-p (char text position)))
-            do (incf position)))
+      (setf position (%sexp-character-name-end text position length)))
     position))
 
 (defun %sexp-string-next-position (text position length)
