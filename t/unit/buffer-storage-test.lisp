@@ -79,17 +79,17 @@
 
   (it
     "keeps the original source stable across edits and history replay"
-    (let ((buffer (make-buffer :initial-content "one~%two")))
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
       (buffer-set-point buffer 0 3)
       (buffer-insert-string buffer "-edited")
       (buffer-set-point buffer 1 0)
       (buffer-delete-region buffer 1 0 1 3)
-      (expect (buffer-text buffer) :to-equal "one-edited~%")
-      (expect (loom::%buffer-original buffer) :to-equal "one~%two")
+      (expect (buffer-text buffer) :to-equal (format nil "one-edited~%"))
+      (expect (loom::%buffer-original buffer) :to-equal (format nil "one~%two"))
       (buffer-undo buffer)
-      (expect (buffer-text buffer) :to-equal "one-edited~%two")
+      (expect (buffer-text buffer) :to-equal (format nil "one~%two"))
       (buffer-redo buffer)
-      (expect (buffer-text buffer) :to-equal "one-edited~%")
+      (expect (buffer-text buffer) :to-equal (format nil "one-edited~%"))
       (expect (loom::%pieces-text buffer) :to-equal (buffer-text buffer))))
 
 (describe

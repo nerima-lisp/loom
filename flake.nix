@@ -394,7 +394,6 @@
           clBoundaryKit
           clConcurrentKit
           clJsonKit
-          clLogKit
           clVcsKit
         ];
 
