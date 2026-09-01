@@ -32,36 +32,35 @@
     ((member text (major-mode-keywords mode) :test #'string-equal) :keyword)
     (t :plain)))
 
+(defun %syntax-generic-token-at (line position mode comment-prefix)
+  (let ((character (char line position)))
+    (cond
+      ((%syntax-whitespace-p character)
+       (values :whitespace
+               (%syntax-whitespace-end line position)))
+      ((%syntax-generic-comment-start-p line position comment-prefix)
+       (values :comment (length line)))
+      ((char= character #\")
+       (values :string (%syntax-string-end line position)))
+      ((%syntax-generic-delimiter-p character)
+       (values :delimiter (1+ position)))
+      (t
+       (let ((end (%syntax-generic-atom-end line position comment-prefix)))
+         (values (%syntax-generic-token-kind
+                  (subseq line position end)
+                  mode)
+                 end))))))
+
 (defun %syntax-highlight-generic-line (line mode)
   (let* ((comment-prefix (major-mode-comment-prefix mode))
          (tokens '())
          (position 0)
          (length (length line)))
-    (loop while (< position length)
-          do (let ((character (char line position)))
-               (multiple-value-bind (kind end)
-                   (cond
-                     ((%syntax-whitespace-p character)
-                      (values :whitespace
-                              (%syntax-whitespace-end line position)))
-                     ((%syntax-generic-comment-start-p
-                       line position comment-prefix)
-                      (values :comment length))
-                     ((char= character #\")
-                      (values :string (%syntax-string-end line position)))
-                     ((%syntax-generic-delimiter-p character)
-                      (values :delimiter (1+ position)))
-                     (t
-                      (let ((end (%syntax-generic-atom-end
-                                  line position comment-prefix)))
-                        (values (%syntax-generic-token-kind
-                                 (subseq line position end)
-                                 mode)
-                                end))))
-                 (push (%make-syntax-token kind
-                                           (subseq line position end))
-                       tokens)
-                 (setf position end))))
+    (loop while (< position length) do
+      (multiple-value-bind (kind end)
+          (%syntax-generic-token-at line position mode comment-prefix)
+        (push (%make-syntax-token kind (subseq line position end)) tokens)
+        (setf position end)))
     (nreverse tokens)))
 
 (defun syntax-highlight-line-for-mode (line mode)
