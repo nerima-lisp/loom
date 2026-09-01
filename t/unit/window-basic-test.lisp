@@ -57,6 +57,22 @@
       (expect (window-buffer third) :to-be :scratch))))
 
 (describe
+  "window geometry properties"
+  (cl-weave:it-property
+      "preserves the requested bounds when splitting vertically"
+      ((width (cl-weave:gen-integer :min 2 :max 40))
+       (height (cl-weave:gen-integer :min 1 :max 20)))
+    (let* ((tree (make-window-tree :scratch width height))
+           (original (window-tree-selected-window tree))
+           (new-window (window-split tree original :vertical)))
+      (expect (+ (window-width original) (window-width new-window))
+              :to-equal width)
+      (expect (window-height original) :to-equal height)
+      (expect (window-height new-window) :to-equal height)
+      (expect (+ (window-x original) (window-width original))
+              :to-equal (window-x new-window)))))
+
+(describe
   "window-select-next"
   (it
     "cycles through windows and wraps back to the first"
