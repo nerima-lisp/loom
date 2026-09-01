@@ -10,29 +10,35 @@
 ;;; Frame composition
 ;;; ---------------------------------------------------------------------
 
+(defun %layout-follow-truncated-line (window buffer height)
+  (when (plusp height)
+    (let ((point-line (buffer-visible-point-line buffer))
+          (scroll-line (loom/feature/window:window-scroll-line window)))
+      (cond
+        ((< point-line scroll-line)
+         (setf (loom/feature/window:window-scroll-line window) point-line))
+        ((>= point-line (+ scroll-line height))
+         (setf (loom/feature/window:window-scroll-line window)
+               (- point-line (1- height))))))))
+
+(defun %layout-follow-truncated-column (renderer window buffer width)
+  (when (plusp width)
+    (let ((point-column (%layout-buffer-point-screen-column renderer buffer))
+          (scroll-column (loom/feature/window:window-scroll-column window)))
+      (cond
+        ((< point-column scroll-column)
+         (setf (loom/feature/window:window-scroll-column window) point-column))
+        ((>= point-column (+ scroll-column width))
+         (setf (loom/feature/window:window-scroll-column window)
+               (- point-column (1- width))))))))
+
 (defun %layout-keep-truncated-point-visible (renderer window)
   "Follow point in a window that draws one screen row per logical line."
   (let ((height (loom/feature/window:window-height window))
         (width (loom/feature/window:window-width window))
         (buffer (loom/feature/window:window-buffer window)))
-    (when (plusp height)
-      (let ((point-line (buffer-visible-point-line buffer))
-            (scroll-line (loom/feature/window:window-scroll-line window)))
-        (cond
-          ((< point-line scroll-line)
-           (setf (loom/feature/window:window-scroll-line window) point-line))
-          ((>= point-line (+ scroll-line height))
-           (setf (loom/feature/window:window-scroll-line window)
-                 (- point-line (1- height)))))))
-    (when (plusp width)
-      (let ((point-column (%layout-buffer-point-screen-column renderer buffer))
-            (scroll-column (loom/feature/window:window-scroll-column window)))
-        (cond
-          ((< point-column scroll-column)
-           (setf (loom/feature/window:window-scroll-column window) point-column))
-          ((>= point-column (+ scroll-column width))
-           (setf (loom/feature/window:window-scroll-column window)
-                 (- point-column (1- width)))))))))
+    (%layout-follow-truncated-line window buffer height)
+    (%layout-follow-truncated-column renderer window buffer width)))
 
 (defun %layout-keep-wrapped-point-visible (renderer window)
   "Follow point in a window that wraps a logical line across several rows.
