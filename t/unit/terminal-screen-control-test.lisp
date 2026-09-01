@@ -104,6 +104,17 @@
       (expect (loom/feature/terminal::terminal-screen-parser-state screen)
               :to-be :ground)))
 
+  (it "handles reverse index at the top margin and full-screen reset"
+    (let ((escape (code-char 27))
+          (screen (make-terminal-screen :width 4 :height 2)))
+      (terminal-screen-feed screen "top")
+      (terminal-screen-feed screen (format nil "~C[1;1H~CM" escape escape))
+      (expect (terminal-screen-text screen) :to-contain "top")
+      (terminal-screen-feed screen (format nil "~Cc" escape))
+      (expect (terminal-screen-text screen) :to-equal "")
+      (expect (loom/feature/terminal::terminal-screen-parser-state screen)
+              :to-be :ground)))
+
   (it "round-trips the alternate screen without losing the main screen"
     (let ((escape (code-char 27))
           (screen (make-terminal-screen :width 8 :height 2)))
