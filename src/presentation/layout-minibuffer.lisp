@@ -58,6 +58,16 @@ ROW, truncated to WIDTH columns."
                            +layout-completion-width+))
             (- index first))))
 
+(defun %layout-completion-popup-item-count (completion)
+  (min (length (editor-completion-items completion))
+       +layout-completion-rows+))
+
+(defun %layout-completion-popup-row (row item-count height)
+  (let ((below (1+ row))
+        (above (- row item-count)))
+    (cond ((<= (+ below item-count) height) below)
+          ((<= 0 above) above))))
+
 (defun %layout-completion-origin (renderer window completion height)
   "Return the popup origin, or NIL when its anchor is off screen."
   (multiple-value-bind (column row)
@@ -65,13 +75,13 @@ ROW, truncated to WIDTH columns."
                            (loom/feature/window:window-buffer window)
                            (editor-completion-line completion)
                            (editor-completion-column completion))
-    (let* ((items (min (length (editor-completion-items completion))
-                       +layout-completion-rows+))
-           (below (1+ row))
-           (above (- row items)))
-      (when (and (<= 0 row) (< row height) (<= 0 column))
-        (cond ((<= (+ below items) height) (values column below))
-              ((<= 0 above) (values column above)))))))
+    (when (and (<= 0 row) (< row height) (<= 0 column))
+      (let ((popup-row (%layout-completion-popup-row
+                       row
+                       (%layout-completion-popup-item-count completion)
+                       height)))
+        (when popup-row
+          (values column popup-row))))))
 
 (defun %layout-active-completion (window)
   (let ((completion (and *editor-state*
