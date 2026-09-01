@@ -42,6 +42,22 @@
     (loop for candidate in descriptors
           thereis (equal normalized (normalize-key-descriptor candidate)))))
 
+(defun %completion-popup-anchored-p (completion buffer)
+  "Return true when BUFFER point still belongs to COMPLETION's anchor."
+  (and (eq buffer (%selected-buffer))
+       (= (editor-completion-line completion) (buffer-point-line buffer))
+       (<= (editor-completion-column completion)
+           (buffer-point-column buffer))))
+
+(defun %completion-popup-insert-item (completion buffer item)
+  "Replace COMPLETION's anchored prefix in BUFFER with ITEM's text."
+  (let ((line (editor-completion-line completion))
+        (column (editor-completion-column completion)))
+    (buffer-delete-region buffer line column
+                          line (buffer-point-column buffer))
+    (buffer-set-point buffer line column)
+    (buffer-insert-string buffer (editor-completion-item-text item))))
+
 (defun %completion-popup-accept ()
   "Replace the completed prefix with the selected candidate. Returns true.
 
@@ -53,15 +69,9 @@ would corrupt unrelated text."
          (item (and completion (editor-completion-selected completion))))
     (when item
       (let* ((buffer (editor-completion-buffer completion))
-             (line (editor-completion-line completion))
-             (column (editor-completion-column completion)))
-        (when (and (eq buffer (%selected-buffer))
-                   (= line (buffer-point-line buffer))
-                   (<= column (buffer-point-column buffer)))
-          (buffer-delete-region buffer line column
-                                line (buffer-point-column buffer))
-          (buffer-set-point buffer line column)
-          (buffer-insert-string buffer (editor-completion-item-text item)))))
+             (anchored-p (%completion-popup-anchored-p completion buffer)))
+        (when anchored-p
+          (%completion-popup-insert-item completion buffer item))))
     (%completion-popup-dismiss)
     t))
 
