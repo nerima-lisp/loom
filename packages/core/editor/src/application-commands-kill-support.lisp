@@ -44,12 +44,17 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
     (setf (editor-state-kill-ring *editor-state*)
           (%updated-kill-ring kill-ring text prepend coalesce))))
 
+(defun %kill-line-end-position-for-line (line column line-len line-count)
+  (cond
+    ((< column line-len) (values line line-len))
+    ((< line (1- line-count)) (values (1+ line) 0))
+    (t (values line column))))
+
 (defun %kill-line-end-position (buffer line column)
-  (let ((line-len (length (buffer-line buffer line))))
-    (cond
-      ((< column line-len) (values line line-len))
-      ((< line (1- (buffer-line-count buffer))) (values (1+ line) 0))
-      (t (values line column)))))
+  (%kill-line-end-position-for-line
+   line column
+   (length (buffer-line buffer line))
+   (buffer-line-count buffer)))
 
 (defun %kill-line-once (&key coalesce)
   (let* ((buffer (%selected-buffer))
