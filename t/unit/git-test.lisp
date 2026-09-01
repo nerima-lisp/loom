@@ -64,6 +64,27 @@
           (expect captured-directory :to-equal "/repo/")
           (expect captured-timeout :to-equal *git-command-timeout-seconds*)))))
 
+    (it "runs an unstaged diff without adding cached arguments"
+        (let ((result
+                (make-test-git-result
+                 :stdout ""
+                 :stderr ""
+                 :status 0))
+              command
+              captured-directory
+              captured-timeout)
+          (with-replaced-function
+              (vcs-kit:run-git
+               (lambda (repository subcommand arguments &key directory timeout)
+                 (setf command (list repository subcommand arguments)
+                       captured-directory directory
+                       captured-timeout timeout)
+                 result))
+            (expect (run-git-diff :directory "/repo/" :staged nil) :to-be result)
+            (expect command :to-equal '(nil "diff" nil))
+            (expect captured-directory :to-equal "/repo/")
+            (expect captured-timeout :to-equal *git-command-timeout-seconds*))))
+
 (describe
     "git status"
   (it "displays captured status in a read-only result buffer"
