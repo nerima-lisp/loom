@@ -103,6 +103,12 @@
       (expect (loom/feature/lsp::lsp-transport-close process)
               :to-be process)
       (expect (loom/feature/lsp::lsp-transport-close process)
+              :to-be process)))
+  (it "tolerates a result channel closed by the reader"
+    (let ((process (%make-test-lsp-process)))
+      (cl-concurrent-kit:close-channel
+       (loom/feature/lsp::lsp-process-result-channel process))
+      (expect (loom/feature/lsp::lsp-transport-close process)
               :to-be process))))
 
 (describe

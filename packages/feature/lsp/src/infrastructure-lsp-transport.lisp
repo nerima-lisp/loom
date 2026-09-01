@@ -107,11 +107,12 @@ the same trust boundary as the user-init and Lisp evaluation features."
     (ignore-errors (close (lsp-process-output transport)))
     (ignore-errors (close (lsp-process-error-output transport)))
     (unwind-protect
-        (ignore-errors
+      (ignore-errors
           (cl-concurrent-kit:shutdown-executor
            (lsp-process-executor transport)
            :wait t
            :cancel-pending t))
-      (cl-concurrent-kit:close-channel
-       (lsp-process-result-channel transport))))
+      (ignore-errors
+        (cl-concurrent-kit:close-channel
+         (lsp-process-result-channel transport)))))
   transport)
