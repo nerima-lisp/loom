@@ -41,6 +41,12 @@ Returns BUFFER."
     (setf (%buffer-point-line buffer) previous-line
           (%buffer-point-column buffer) previous-length)))
 
+(defun %forward-delete-end-position (line column line-count line-length)
+  (cond
+    ((and (= line (1- line-count)) (= column line-length)) nil)
+    ((< column line-length) (values line (1+ column)))
+    (t (values (1+ line) 0))))
+
 (defun %delete-char-backward (buffer)
   "Delete the character before point, joining with the previous line at
 column 0. A no-op at the very start of the buffer."
@@ -63,10 +69,10 @@ end-of-line. A no-op at the very end of the buffer."
          (column (%buffer-point-column buffer))
          (line-count (%line-count buffer))
          (line-len (length (%line-at buffer line))))
-    (cond
-      ((and (= line (1- line-count)) (= column line-len)) nil)
-      ((< column line-len) (%do-delete buffer line column line (1+ column)))
-      (t (%do-delete buffer line column (1+ line) 0)))))
+    (multiple-value-bind (end-line end-column)
+        (%forward-delete-end-position line column line-count line-len)
+      (when end-line
+        (%do-delete buffer line column end-line end-column)))))
 
 (defun buffer-delete-char (buffer &key backward)
   "Delete one character next to point, returning BUFFER."
