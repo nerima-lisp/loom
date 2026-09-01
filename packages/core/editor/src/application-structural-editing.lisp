@@ -121,6 +121,15 @@ plain `insert a balanced pair' command."
       (list (list :delete close 1)
             (list :delete open 1)))))
 
+(defun %raiseable-range-p (open close start end)
+  (and end
+       (> start open)
+       (<= end close)))
+
+(defun %raise-range-edits (open close start end)
+  (list (list :delete end (- (1+ close) end))
+        (list :delete open (- start open))))
+
 (defun %raise-edits (text classes offset)
   "Replace the enclosing list with the expression at OFFSET.
 
@@ -130,9 +139,8 @@ to raise it out of and the operation would delete rather than promote."
     (when close
       (let ((start (%sexp-skip-forward-filler text classes offset))
             (end (%forward-sexp-offset text offset classes)))
-        (when (and end (> start open) (<= end close))
-          (list (list :delete end (- (1+ close) end))
-                (list :delete open (- start open))))))))
+        (when (%raiseable-range-p open close start end)
+          (%raise-range-edits open close start end))))))
 
 (defun %structural-offset-after-insert (offset edit)
   (let ((position (second edit)))
