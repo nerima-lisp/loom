@@ -57,14 +57,15 @@
       (error "validate-session-snapshot: workspaces must be a non-empty list"))
     (dolist (workspace workspaces)
       (%validate-session-workspace workspace buffer-count))
-    (let ((names (mapcar #'session-workspace-snapshot-name workspaces))
-          (current-index (session-snapshot-current-workspace-index snapshot)))
-      (unless (= (length names)
-                 (length (remove-duplicates names :test #'string-equal)))
-        (error "validate-session-snapshot: workspace names must be unique: ~S"
-               names))
-      (unless (and (%session-nonnegative-integer-p current-index)
-                   (< current-index (length workspaces)))
-        (error "validate-session-snapshot: current workspace index ~S is out of range"
-               current-index))))
+    (%validate-session-unique-names
+     workspaces #'session-workspace-snapshot-name
+     "workspace names must be unique")
+    (%validate-session-current-workspace-index snapshot workspaces))
   snapshot)
+
+(defun %validate-session-current-workspace-index (snapshot workspaces)
+  (let ((current-index (session-snapshot-current-workspace-index snapshot)))
+    (unless (and (%session-nonnegative-integer-p current-index)
+                 (< current-index (length workspaces)))
+      (error "validate-session-snapshot: current workspace index ~S is out of range"
+             current-index))))
