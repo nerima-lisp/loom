@@ -80,6 +80,40 @@ of setting :DEFAULT's own value."
                                    (make-string spaces :initial-element #\Space)))))
   nil)
 
+(defun %comment-line-removal-end (line indentation prefix-end)
+  (if (and (< prefix-end (length line))
+           (char= (char line prefix-end) #\Space))
+      (1+ prefix-end)
+      prefix-end))
+
+(defun %comment-line-point-after-removal
+    (point-column indentation remove-end)
+  (let ((removed-width (- remove-end indentation)))
+    (cond ((<= point-column indentation) point-column)
+          ((<= point-column remove-end) indentation)
+          (t (- point-column removed-width)))))
+
+(defun %comment-line-remove (buffer line-number line indentation prefix)
+  (let* ((prefix-end (+ indentation (length prefix)))
+         (remove-end (%comment-line-removal-end line indentation prefix-end))
+         (new-column (%comment-line-point-after-removal
+                      (loom:buffer-point-column buffer)
+                      indentation
+                      remove-end)))
+    (loom:buffer-delete-region buffer line-number indentation
+                               line-number remove-end)
+    (loom:buffer-set-point buffer line-number new-column)))
+
+(defun %comment-line-add (buffer line-number indentation prefix)
+  (let* ((insertion (format nil "~A " prefix))
+         (new-column (if (>= (loom:buffer-point-column buffer) indentation)
+                         (+ (loom:buffer-point-column buffer)
+                            (length insertion))
+                         (loom:buffer-point-column buffer))))
+    (loom:buffer-set-point buffer line-number indentation)
+    (loom:buffer-insert-string buffer insertion)
+    (loom:buffer-set-point buffer line-number new-column)))
+
 (defun comment-line ()
   "Toggle the current line's comment marker according to its major mode."
   (let* ((buffer (loom/application:%selected-buffer))
@@ -96,31 +130,9 @@ of setting :DEFAULT's own value."
        (let* ((line-number (loom:buffer-point-line buffer))
               (line (loom:buffer-line buffer line-number))
               (indentation (%major-mode-line-indentation line))
-              (prefix-end (+ indentation (length prefix)))
               (commented (%major-mode-comment-prefix-at
-                           line indentation prefix))
-              (point-column (loom:buffer-point-column buffer)))
+                           line indentation prefix)))
          (if commented
-             (let* ((remove-end
-                      (if (and (< prefix-end (length line))
-                               (char= (char line prefix-end) #\Space))
-                          (1+ prefix-end)
-                          prefix-end))
-                    (removed-width (- remove-end indentation))
-                    (new-column (cond ((<= point-column indentation)
-                                       point-column)
-                                      ((<= point-column remove-end)
-                                       indentation)
-                                      (t (- point-column removed-width)))))
-               (loom:buffer-delete-region buffer line-number indentation
-                                          line-number remove-end)
-               (loom:buffer-set-point buffer line-number new-column))
-             (let* ((insertion (format nil "~A " prefix))
-                    (insertion-width (length insertion))
-                    (new-column (if (>= point-column indentation)
-                                    (+ point-column insertion-width)
-                                    point-column)))
-               (loom:buffer-set-point buffer line-number indentation)
-               (loom:buffer-insert-string buffer insertion)
-               (loom:buffer-set-point buffer line-number new-column)))))))
+             (%comment-line-remove buffer line-number line indentation prefix)
+             (%comment-line-add buffer line-number indentation prefix))))))
   nil)
