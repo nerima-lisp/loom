@@ -29,6 +29,20 @@
                   (lsp-completion-item-text item)))
           items))
 
+(defun %show-lsp-completion-response (buffer line anchor items error-message)
+  "Apply a completion response to the editor state or report its failure."
+  (cond
+    (error-message
+     (%lsp-navigation-message
+      (format nil "Completion failed: ~A" error-message)))
+    ((null items)
+     (%lsp-navigation-message "No completions"))
+    (t
+     (setf (loom:editor-state-completion loom:*editor-state*)
+           (loom:make-editor-completion
+            buffer line anchor
+            (%lsp-completion-popup-items items))))))
+
 (defun lsp-completion-at-point ()
   "Ask the language server what can follow point and show the candidates (C-M-i).
 
@@ -46,14 +60,6 @@ nothing'."
          (lsp-request-completion
           session uri line character
           (lambda (items error-message)
-            (cond
-              (error-message
-               (%lsp-navigation-message
-                (format nil "Completion failed: ~A" error-message)))
-              ((null items) (%lsp-navigation-message "No completions"))
-              (t
-               (setf (loom:editor-state-completion loom:*editor-state*)
-                     (loom:make-editor-completion
-                      buffer line anchor
-                      (%lsp-completion-popup-items items))))))))
+            (%show-lsp-completion-response
+             buffer line anchor items error-message))))
        nil))))
