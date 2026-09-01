@@ -255,13 +255,19 @@ the degenerate-window tests are the ones that need them to differ."
            (window (%layout-window state))
            (buffer (window-buffer window))
            (session (make-isearch-session buffer 0)))
-      (setf (loom/feature/search::%isearch-matches session)
-            (list (make-buffer-span 4 13)))
+       (setf (loom/feature/search::%isearch-matches session)
+             (list (make-buffer-span 4 9)))
       (setf (editor-state-isearch state) session)
       (let ((*editor-state* state))
         (loom::%layout-draw-isearch
          (editor-state-renderer state) window 0))
-      (expect (editor-state-isearch state) :to-be session)))
+      (let ((screen (%layout-screen state)))
+        (expect (loop for row below 2
+                      thereis (loop for column below 20
+                                    thereis (cl-tty-kit:cell-style
+                                             (cl-tty-kit:screen-cell
+                                              screen column row))))
+                :to-be-truthy))))
 
   (it
     "does not draw a match scrolled above the window"
