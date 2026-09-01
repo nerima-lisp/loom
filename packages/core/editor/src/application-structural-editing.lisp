@@ -27,6 +27,18 @@ point is not inside a list, or when the list it is inside never closes."
         (when close
           (values open close))))))
 
+(defmacro %with-structural-list-bounds ((open close) (text classes offset)
+                                         &body body)
+  "Evaluate BODY only when OFFSET is inside a complete list.
+
+OPEN and CLOSE are lexical bindings for the enclosing delimiters. Keeping the
+guard here makes each structural operation read as a transformation over a
+known list instead of repeating the same failure path."
+  `(multiple-value-bind (,open ,close)
+       (%structural-list-bounds ,text ,classes ,offset)
+     (when ,close
+       ,@body)))
+
 (defun %structural-separator-needed-p (text offset)
   "True when inserting a delimiter at OFFSET would abut a token.
 
@@ -46,12 +58,10 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 
 (defun %forward-slurp-edits (text classes offset)
   "Move the enclosing list's closing delimiter past the expression after it."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (declare (ignore open))
-    (when close
-      (let ((target (%forward-slurp-target text classes close)))
-        (when target
-          (%forward-slurp-edits-at text close target))))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (let ((target (%forward-slurp-target text classes close)))
+      (when target
+        (%forward-slurp-edits-at text close target)))))
 
 (defun %forward-barf-delimiter (text target delimiter)
   "Return DELIMITER positioned after the expression at TARGET."
@@ -73,13 +83,12 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 
 (defun %forward-barf-edits (text classes offset)
   "Move the enclosing list's closing delimiter in past its last expression."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (when close
-      (multiple-value-bind (target moved-delimiter)
-          (%forward-barf-target text classes open close)
-        (when target
-          (list (list :delete close 1)
-                (list :insert target moved-delimiter)))))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (multiple-value-bind (target moved-delimiter)
+        (%forward-barf-target text classes open close)
+      (when target
+        (list (list :delete close 1)
+              (list :insert target moved-delimiter))))))
 
 (defun %backward-slurp-target (text classes open)
   (%backward-sexp-offset text open classes))
@@ -90,12 +99,10 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 
 (defun %backward-slurp-edits (text classes offset)
   "Move the enclosing list's opening delimiter back past the expression before it."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (declare (ignore close))
-    (when open
-      (let ((target (%backward-slurp-target text classes open)))
-        (when target
-          (%backward-slurp-edits-at text open target))))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (let ((target (%backward-slurp-target text classes open)))
+      (when target
+        (%backward-slurp-edits-at text open target)))))
 
 (defun %backward-barf-delimiter (text target delimiter)
   "Return DELIMITER positioned before the expression at TARGET."
@@ -118,13 +125,12 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 
 (defun %backward-barf-edits (text classes offset)
   "Move the enclosing list's opening delimiter in past its first expression."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (when open
-      (multiple-value-bind (target moved-delimiter)
-          (%backward-barf-target text classes open close)
-        (when target
-          (list (list :insert target moved-delimiter)
-                (list :delete open 1)))))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (multiple-value-bind (target moved-delimiter)
+        (%backward-barf-target text classes open close)
+      (when target
+        (list (list :insert target moved-delimiter)
+              (list :delete open 1))))))
 
 (defun %wrap-round-edits (text classes offset)
   "Wrap the expression after OFFSET in a new pair of parentheses.
@@ -141,10 +147,9 @@ plain `insert a balanced pair' command."
 
 (defun %splice-edits (text classes offset)
   "Remove the enclosing list's delimiters, keeping its contents in place."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (when close
-      (list (list :delete close 1)
-            (list :delete open 1)))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (list (list :delete close 1)
+          (list :delete open 1))))
 
 (defun %raiseable-range-p (open close start end)
   (and end
@@ -166,12 +171,11 @@ plain `insert a balanced pair' command."
 
 The expression has to lie strictly inside the list, otherwise there is nothing
 to raise it out of and the operation would delete rather than promote."
-  (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
-    (when close
-      (multiple-value-bind (start end)
-          (%raiseable-range text classes offset open close)
-        (when start
-          (%raise-range-edits open close start end))))))
+  (%with-structural-list-bounds (open close) (text classes offset)
+    (multiple-value-bind (start end)
+        (%raiseable-range text classes offset open close)
+      (when start
+        (%raise-range-edits open close start end)))))
 
 (defun %structural-offset-after-insert (offset edit)
   (let ((position (second edit)))
