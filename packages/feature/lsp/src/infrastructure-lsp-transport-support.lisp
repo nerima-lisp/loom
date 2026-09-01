@@ -25,20 +25,28 @@
            (setf remaining (%lsp-buffer-after-frame remaining used)))
           (t (return (values (nreverse messages) remaining))))))))
 
-(defun %lsp-process-read-output (process channel)
+(defun %lsp-read-stream-frames (stream on-message)
   (let ((buffer (make-array 0 :element-type '(unsigned-byte 8)
                             :adjustable t :fill-pointer 0))
-        (stream (lsp-process-output process)))
+        (message-count 0))
     (loop for byte = (read-byte stream nil nil)
           while byte
           do (vector-push-extend byte buffer)
              (multiple-value-bind (messages remaining)
                  (%lsp-decode-complete-frames buffer)
                (dolist (message messages)
-                 (cl-concurrent-kit:send channel message))
+                 (funcall on-message message)
+                 (incf message-count))
                (setf buffer remaining)))
+    (values message-count buffer)))
+
+(defun %lsp-process-read-output (process channel)
+  (%lsp-read-stream-frames
+   (lsp-process-output process)
+   (lambda (message)
+     (cl-concurrent-kit:send channel message)))
     (ignore-errors
-      (cl-concurrent-kit:send channel nil))))
+      (cl-concurrent-kit:send channel nil)))
 
 (defun %lsp-process-drain-errors (process)
   (loop for byte = (read-byte (lsp-process-error-output process) nil nil)

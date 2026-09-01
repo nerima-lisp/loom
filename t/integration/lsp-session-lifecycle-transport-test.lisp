@@ -40,6 +40,15 @@
 
 (describe
   "LSP transport readers"
+  (it "passes decoded messages to a continuation"
+    (let* ((frame (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
+           (messages nil)
+           (count (loom/feature/lsp::%lsp-read-stream-frames
+                   (%make-lsp-byte-stream frame)
+                   (lambda (message)
+                     (push message messages)))))
+      (expect count :to-equal 1)
+      (expect messages :to-equal '("{\"id\":1}"))))
   (it "decodes multiple framed messages from a child output stream"
     (let* ((first (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
            (second (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":2}"))
