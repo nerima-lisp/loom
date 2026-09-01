@@ -43,14 +43,17 @@
          (bookmarks (%restore-session-bookmarks
                      (session-snapshot-bookmarks snapshot)
                      buffers)))
-    (setf (editor-state-buffers *editor-state*) buffers
-          (editor-state-recent-files *editor-state*)
-          (copy-list (session-snapshot-recent-files snapshot))
-          (editor-state-bookmarks *editor-state*) bookmarks
-          (editor-state-workspaces *editor-state*) manager
-          (editor-state-window-tree *editor-state*) tree)
-    (when (editor-state-minibuffer *editor-state*)
-      (minibuffer-set-history-entries
-       (editor-state-minibuffer *editor-state*)
-       (session-snapshot-command-history snapshot)))
+    (%install-restored-session-state snapshot buffers bookmarks manager tree)
     tree))
+
+(defun %install-restored-session-state (snapshot buffers bookmarks manager tree)
+  (setf (editor-state-buffers *editor-state*) buffers
+        (editor-state-recent-files *editor-state*)
+        (copy-list (session-snapshot-recent-files snapshot))
+        (editor-state-bookmarks *editor-state*) bookmarks
+        (editor-state-workspaces *editor-state*) manager
+        (editor-state-window-tree *editor-state*) tree)
+  (when (editor-state-minibuffer *editor-state*)
+    (minibuffer-set-history-entries
+     (editor-state-minibuffer *editor-state*)
+     (session-snapshot-command-history snapshot))))
