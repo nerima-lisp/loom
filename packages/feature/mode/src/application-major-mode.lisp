@@ -114,6 +114,28 @@ of setting :DEFAULT's own value."
     (loom:buffer-insert-string buffer insertion)
     (loom:buffer-set-point buffer line-number new-column)))
 
+(defun %comment-line-context (buffer prefix)
+  (let* ((line-number (loom:buffer-point-line buffer))
+         (line (loom:buffer-line buffer line-number))
+         (indentation (%major-mode-line-indentation line)))
+    (values line-number
+            line
+            indentation
+            (%major-mode-comment-prefix-at line indentation prefix))))
+
+(defun %comment-line-toggle-buffer (buffer prefix)
+  (multiple-value-bind (line-number line indentation commented)
+      (%comment-line-context buffer prefix)
+    (if commented
+        (%comment-line-remove buffer line-number line indentation prefix)
+        (%comment-line-add buffer line-number indentation prefix))))
+
+(defun %comment-line-no-prefix-message (mode)
+  (loom:minibuffer-message
+   (loom:editor-state-minibuffer loom:*editor-state*)
+   (format nil "Mode ~A has no line comment syntax"
+           (major-mode-name mode))))
+
 (defun comment-line ()
   "Toggle the current line's comment marker according to its major mode."
   (let* ((buffer (loom/application:%selected-buffer))
@@ -122,17 +144,7 @@ of setting :DEFAULT's own value."
     (cond
       ((null buffer) nil)
       ((null prefix)
-       (loom:minibuffer-message (loom:editor-state-minibuffer
-                                  loom:*editor-state*)
-                           (format nil "Mode ~A has no line comment syntax"
-                                   (major-mode-name mode))))
+       (%comment-line-no-prefix-message mode))
       (t
-       (let* ((line-number (loom:buffer-point-line buffer))
-              (line (loom:buffer-line buffer line-number))
-              (indentation (%major-mode-line-indentation line))
-              (commented (%major-mode-comment-prefix-at
-                           line indentation prefix)))
-         (if commented
-             (%comment-line-remove buffer line-number line indentation prefix)
-             (%comment-line-add buffer line-number indentation prefix))))))
+       (%comment-line-toggle-buffer buffer prefix))))
   nil)
