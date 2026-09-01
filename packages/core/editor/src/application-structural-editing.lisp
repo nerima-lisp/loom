@@ -120,19 +120,21 @@ to raise it out of and the operation would delete rather than promote."
           (list (list :delete end (- (1+ close) end))
                 (list :delete open (- start open))))))))
 
+(defun %structural-adjusted-offset-after-edit (offset edit)
+  (ecase (first edit)
+    (:insert
+     (let ((position (second edit)))
+       (if (<= position offset)
+           (+ offset (length (third edit)))
+           offset)))
+    (:delete
+     (let* ((position (second edit))
+            (length (third edit))
+            (end (+ position length)))
+       (cond ((<= end offset) (- offset length))
+             ((< position offset) position)
+             (t offset))))))
+
 (defun %structural-adjusted-offset (edits offset)
   "Return where OFFSET ends up once EDITS have been applied."
-  (let ((result offset))
-    (dolist (edit edits result)
-      (ecase (first edit)
-        (:insert
-         (let ((position (second edit))
-               (length (length (third edit))))
-           (when (<= position result)
-             (incf result length))))
-        (:delete
-         (let* ((position (second edit))
-                (length (third edit))
-                (end (+ position length)))
-           (cond ((<= end result) (decf result length))
-                 ((< position result) (setf result position)))))))))
+  (reduce #'%structural-adjusted-offset-after-edit edits :initial-value offset))
