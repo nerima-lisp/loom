@@ -66,7 +66,7 @@
       (register-major-mode
        :loom-test-invalid-command-mode
        :name "Loom Test Invalid Command"
-       :keybindings (list (cons '(:control #\i) 42)))
+       :keybindings (list (cons '(:control #\i) 'when)))
       (signals error
         (loom/feature/mode:major-mode-keymap
          :loom-test-invalid-command-mode
