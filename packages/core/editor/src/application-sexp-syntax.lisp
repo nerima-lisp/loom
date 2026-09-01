@@ -28,6 +28,27 @@
                      ((char= character #\") (return)))))
     (min position length)))
 
+(defun %mark-sexp-range (classes start end class)
+  (loop for position from start below end
+        do (setf (aref classes position) class)))
+
+(defun %sexp-reader-range (text index length)
+  (cond
+    ((and (< (1+ index) length)
+          (char= (char text (1+ index)) #\\))
+     (values :atom (%sexp-character-literal-end text index length)))
+    ((and (< (1+ index) length)
+          (char= (char text (1+ index)) #\|))
+     (let ((close (search "|#" text :start2 (+ index 2))))
+       (values :comment (if close (+ close 2) length))))
+    (t nil)))
+
+(defun %sexp-comment-range (text index length)
+  (values :comment (or (position #\Newline text :start index) length)))
+
+(defun %sexp-string-range (text index length)
+  (values :string (%sexp-string-end text index length)))
+
 (defun %sexp-syntax-classes (text)
   "Classify every character of TEXT as :CODE, :STRING, :COMMENT, or :ATOM."
   (let* ((length (length text))
@@ -35,33 +56,19 @@
          (index 0))
     (loop while (< index length)
           do (let ((character (char text index)))
-               (cond
-                 ((and (char= character #\#)
-                       (< (1+ index) length)
-                       (char= (char text (1+ index)) #\\))
-                  (let ((end (%sexp-character-literal-end text index length)))
-                    (loop for position from index below end
-                          do (setf (aref classes position) :atom))
-                    (setf index end)))
-                 ((and (char= character #\#)
-                       (< (1+ index) length)
-                       (char= (char text (1+ index)) #\|))
-                  (let* ((close (search "|#" text :start2 (+ index 2)))
-                         (end (if close (+ close 2) length)))
-                    (loop for position from index below end
-                          do (setf (aref classes position) :comment))
-                    (setf index end)))
-                 ((char= character #\;)
-                  (let ((end (or (position #\Newline text :start index) length)))
-                    (loop for position from index below end
-                          do (setf (aref classes position) :comment))
-                    (setf index end)))
-                 ((char= character #\")
-                  (let ((end (%sexp-string-end text index length)))
-                    (loop for position from index below end
-                          do (setf (aref classes position) :string))
-                    (setf index end)))
-                 (t (incf index)))))
+               (multiple-value-bind (class end)
+                   (cond ((char= character #\#)
+                          (%sexp-reader-range text index length))
+                         ((char= character #\;)
+                          (%sexp-comment-range text index length))
+                         ((char= character #\")
+                          (%sexp-string-range text index length))
+                         (t nil))
+                 (if class
+                     (progn
+                       (%mark-sexp-range classes index end class)
+                       (setf index end))
+                     (incf index)))))
     classes))
 
 (defun %sexp-code-p (classes index)
