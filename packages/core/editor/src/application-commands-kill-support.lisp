@@ -16,6 +16,18 @@
 (the tail of the list, since new kills are pushed onto the front) are
 dropped once a push would exceed this.")
 
+(defun %kill-ring-entry (text existing prepend)
+  (if existing
+      (if prepend
+          (concatenate 'string text existing)
+          (concatenate 'string existing text))
+      text))
+
+(defun %bounded-kill-ring (kill-ring)
+  (if (> (length kill-ring) +kill-ring-max+)
+      (subseq kill-ring 0 +kill-ring-max+)
+      kill-ring))
+
 (defun %kill-ring-push (text &key prepend coalesce)
   "Push TEXT onto the kill ring, optionally coalescing with its newest entry.
 
@@ -24,15 +36,10 @@ it when PREPEND is true.  The caller supplies COALESCE explicitly so a copied
 region (M-w) always starts a fresh entry while adjacent kill commands join."
   (let* ((kill-ring (editor-state-kill-ring *editor-state*))
          (existing (and coalesce (first kill-ring)))
-         (entry (if existing
-                    (if prepend
-                        (concatenate 'string text existing)
-                        (concatenate 'string existing text))
-                    text))
-         (kill-ring (cons entry (if existing (rest kill-ring) kill-ring))))
-    (when (> (length kill-ring) +kill-ring-max+)
-      (setf kill-ring (subseq kill-ring 0 +kill-ring-max+)))
-    (setf (editor-state-kill-ring *editor-state*) kill-ring)))
+         (entry (%kill-ring-entry text existing prepend))
+         (updated (cons entry (if existing (rest kill-ring) kill-ring))))
+    (setf (editor-state-kill-ring *editor-state*)
+          (%bounded-kill-ring updated))))
 
 (defun %kill-line-end-position (buffer line column)
   (let ((line-len (length (buffer-line buffer line))))
