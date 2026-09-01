@@ -33,6 +33,16 @@
       (%confirm-minibuffer minibuffer "3")
       (expect (buffer-point-line (%selected-test-buffer)) :to-equal 2)))
 
+  (it
+    "reports a positive line outside the narrowed buffer without moving point"
+    (%with-minibuffer-state (minibuffer (format nil "one~%two~%three"))
+      (buffer-narrow-to-region (%selected-test-buffer) 0 0 0 3)
+      (loom::goto-line)
+      (%confirm-minibuffer minibuffer "2")
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Line is outside the narrowed buffer")
+      (expect (buffer-point-line (%selected-test-buffer)) :to-equal 0)))
+
   (it-each
       (("reports a non-positive line number without moving point"
         "0"
