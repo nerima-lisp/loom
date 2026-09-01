@@ -67,14 +67,15 @@ closing newline; both leave TEXT holding the answer."
 
 (defun %offset-to-position-values (buffer offset)
   "Return (VALUES LINE COLUMN) for OFFSET in BUFFER's full text."
-  (let ((line-count (%line-count buffer))
+  (let ((line 0)
+        (column 0)
         (remaining offset))
-    (loop for line below line-count
-          for line-length = (length (%line-at buffer line))
-          if (<= remaining line-length)
-            do (return (values line remaining))
-          do (decf remaining (1+ line-length))
-          finally (let ((last-line (1- line-count)))
-                    (return
-                      (values last-line
-                              (length (%line-at buffer last-line))))))))
+    (dolist (piece (%buffer-pieces buffer))
+      (loop for character across (%piece-text buffer piece)
+            do (when (zerop remaining)
+                 (return-from %offset-to-position-values
+                   (values line column)))
+               (multiple-value-setq (line column)
+                 (%advance-buffer-position character line column 0))
+               (decf remaining)))
+    (values line column)))
