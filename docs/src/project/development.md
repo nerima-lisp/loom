@@ -109,7 +109,7 @@ binary:
 LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
-The ordinary test process has a 600-second outer timeout and cl-weave's test
+The ordinary test process has a 1,800-second outer timeout and cl-weave's test
 runner gives each example a 40-second timeout. Coverage has a 1,800-second
 outer timeout;
 the PTY suite gives each interaction 10 seconds. These limits are part of the
