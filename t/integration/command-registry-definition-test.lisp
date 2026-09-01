@@ -62,6 +62,15 @@
       (expect (fourth expansion) :to-be nil))))
 
 (describe
+  "define-command-specs duplicate validation"
+  (it "rejects command names that differ only by case"
+    (signals error
+      (macroexpand-1
+       '(loom/application:define-command-specs
+         (loom/application:command-spec "Forward-Char" forward-char)
+         (loom/application:command-spec "forward-char" backward-char))))))
+
+(describe
   "define-command-spec-catalog"
   (it "builds the explicit command registry from grouped spec variables"
     (let ((loom::*command-specs* nil)
