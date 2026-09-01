@@ -12,6 +12,13 @@
   (and (<= (length prefix) (length candidate))
        (string-equal prefix candidate :end2 (length prefix))))
 
+(defun %minibuffer-common-character-p (first candidates index)
+  "Return true when CANDIDATES share FIRST's character at INDEX."
+  (every (lambda (candidate)
+           (char-equal (char first index)
+                       (char candidate index)))
+         candidates))
+
 (defun %minibuffer-longest-common-prefix (candidates)
   "Return the case-preserving longest common prefix of CANDIDATES.
 CANDIDATES must be a non-empty list of strings."
@@ -20,10 +27,8 @@ CANDIDATES must be a non-empty list of strings."
                       minimize (length candidate)))
          (common-length
            (loop for index below limit
-                 while (every (lambda (candidate)
-                                (char-equal (char first index)
-                                            (char candidate index)))
-                              (rest candidates))
+                 while (%minibuffer-common-character-p
+                        first (rest candidates) index)
                  finally (return index))))
     (subseq first 0 common-length)))
 
