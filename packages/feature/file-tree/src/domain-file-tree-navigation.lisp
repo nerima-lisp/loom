@@ -81,7 +81,6 @@ error if PATH does not name a directory in TREE. Returns the new
 expanded-p state."
   (unless (eq (%file-tree-find-kind tree path) :directory)
     (error "not a directory in tree: ~S" path))
-  (if (gethash path (file-tree-expanded tree))
-      (remhash path (file-tree-expanded tree))
-      (setf (gethash path (file-tree-expanded tree)) t))
+  (unless (remhash path (file-tree-expanded tree))
+    (setf (gethash path (file-tree-expanded tree)) t))
   (and (gethash path (file-tree-expanded tree)) t))
