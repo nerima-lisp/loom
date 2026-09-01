@@ -97,7 +97,16 @@
     (let ((minibuffer (make-minibuffer)))
       (minibuffer-activate minibuffer "Find file: ")
       (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (minibuffer-prompt-string minibuffer) :to-be-falsy))))
+      (expect (minibuffer-prompt-string minibuffer) :to-be-falsy)))
+
+  (it
+    "updates the prompt only while active"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-set-prompt minibuffer "Inactive: ")
+      (expect (minibuffer-prompt-string minibuffer) :to-be-falsy)
+      (minibuffer-activate minibuffer "Active: ")
+      (minibuffer-set-prompt minibuffer "Updated: ")
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "Updated: "))))
 
 (describe
   "minibuffer input callbacks"
@@ -113,6 +122,17 @@
       (minibuffer-handle-key minibuffer (%char-key #\x))
       (expect seen :to-be-truthy)
       (expect (minibuffer-input-string minibuffer) :to-equal "")))
+
+  (it
+    "continues default handling when ON-KEY does not consume an event"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :on-key (lambda (event)
+                 (declare (ignore event))
+                 nil))
+      (minibuffer-handle-key minibuffer (%char-key #\x))
+      (expect (minibuffer-input-string minibuffer) :to-equal "x")))
 
   (it
     "reports the current input through ON-CHANGE after editing"
