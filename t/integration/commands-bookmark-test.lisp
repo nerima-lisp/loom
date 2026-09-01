@@ -48,6 +48,29 @@
                   :to-equal (format nil "Recent file is unavailable: ~A" path)))))))
 
   (it
+    "visits an existing file directly and records it as recent"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "direct.txt" dir)))
+        (host-kit:write-file-string "direct" path)
+        (%with-minibuffer-state (minibuffer "existing")
+          (let ((buffer (loom/feature/file-tree:visit-file path)))
+            (expect (buffer-text buffer) :to-equal "direct")
+            (expect (%selected-test-buffer) :to-be buffer)
+            (expect (editor-state-recent-files *editor-state*)
+                    :to-equal (list (editor-path-string path)))))))
+
+  (it
+    "leaves the selected buffer unchanged when visiting a missing file directly"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "missing.txt" dir)))
+        (%with-minibuffer-state (minibuffer "existing")
+          (let ((buffer (%selected-test-buffer)))
+            (expect (loom/feature/file-tree:visit-file path) :to-be nil)
+            (expect (%selected-test-buffer) :to-be buffer)
+            (expect (editor-state-recent-files *editor-state*)
+                    :to-equal nil)))))))
+
+  (it
     "sets, jumps to, lists, and deletes a named bookmark"
     (%with-minibuffer-state (minibuffer (format nil "one~%two~%three")
                              (name "spot"))
