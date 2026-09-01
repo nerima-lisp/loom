@@ -28,6 +28,18 @@
           do (vector-push-extend character (%buffer-add-buffer buffer)))
     (values start (length text))))
 
+(defun %piece-left-fragment (piece length)
+  (when (plusp length)
+    (%make-piece :source (%piece-source piece)
+                 :start (%piece-start piece)
+                 :length length)))
+
+(defun %piece-right-fragment (piece offset length)
+  (when (plusp length)
+    (%make-piece :source (%piece-source piece)
+                 :start (+ (%piece-start piece) offset)
+                 :length length)))
+
 (defun %insert-piece-fragments (piece cursor offset new-piece)
   (let* ((piece-length (%piece-length piece))
          (left-length (- offset cursor))
@@ -35,14 +47,10 @@
     (values
      (append
       (when (plusp left-length)
-        (list (%make-piece :source (%piece-source piece)
-                           :start (%piece-start piece)
-                           :length left-length)))
+        (list (%piece-left-fragment piece left-length)))
       (list new-piece)
       (when (plusp right-length)
-        (list (%make-piece :source (%piece-source piece)
-                           :start (+ (%piece-start piece) left-length)
-                           :length right-length))))
+        (list (%piece-right-fragment piece left-length right-length))))
      t)))
 
 (defun %append-piece-fragments (result fragments)
