@@ -79,6 +79,19 @@
               1)
       (expect (lsp-session-diagnostics session nil) :to-be nil)))
 
+  (it "ignores invalid optional diagnostic field types"
+    (%with-initialized-fake-lsp-session ((transport session))
+      (%fake-push-publish-diagnostics
+       transport
+       "/tmp/main.lisp"
+       "[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":1}},\"message\":\"bad\",\"severity\":\"error\",\"source\":42,\"code\":{}}]")
+      (lsp-session-drain session)
+      (let ((diagnostic (first (lsp-session-diagnostics session "/tmp/main.lisp"))))
+        (expect (lsp-diagnostic-message diagnostic) :to-equal "bad")
+        (expect (lsp-diagnostic-severity diagnostic) :to-be nil)
+        (expect (lsp-diagnostic-source diagnostic) :to-be nil)
+        (expect (hash-table-p (lsp-diagnostic-code diagnostic)) :to-be-truthy))))
+
   (it "synchronizes a buffer and stores published diagnostics"
     (%with-initialized-fake-lsp-session ((transport session))
       (let ((buffer (make-buffer :name "main.lisp"
