@@ -63,20 +63,29 @@ parenthesis that belongs to an enclosing list, or an unbalanced opening one."
     (unless (zerop end)
       (%backward-sexp-token-start text classes end))))
 
+(defun %backward-up-list-step (text classes position depth)
+  (cond
+    ((%sexp-close-p text classes position)
+     (values (1- position) (1+ depth) nil))
+    ((%sexp-open-p text classes position)
+     (if (zerop depth)
+         (values position depth position)
+         (values (1- position) (1- depth) nil)))
+    (t (values (1- position) depth nil))))
+
 (defun %backward-up-list-offset (text offset &optional
                                              (classes
                                               (%sexp-syntax-classes text)))
   "Return the offset of the opening parenthesis enclosing OFFSET, or NIL."
-  (let ((depth 0)
-        (position (1- offset)))
-    (loop while (>= position 0)
-          do (cond ((%sexp-close-p text classes position) (incf depth))
-                   ((%sexp-open-p text classes position)
-                    (if (zerop depth)
-                        (return-from %backward-up-list-offset position)
-                        (decf depth))))
-             (decf position))
-    nil))
+  (loop with depth = 0
+        with position = (1- offset)
+        while (>= position 0)
+        do (multiple-value-bind (next-position next-depth found)
+               (%backward-up-list-step text classes position depth)
+             (when found (return found))
+             (setf position next-position
+                   depth next-depth))
+        finally (return nil)))
 
 (defun %down-list-offset (text offset &optional (classes
                                                  (%sexp-syntax-classes text)))
