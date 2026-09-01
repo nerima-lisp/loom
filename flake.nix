@@ -39,7 +39,7 @@
     # and the source-level syntax gate below. Keep it explicit instead of
     # relying on cl-weave's test-only transitive input.
     paredit-cli = {
-      url = "github:nerima-lisp/paredit-cli/v1.6.0";
+      url = "github:nerima-lisp/paredit-cli/v1.6.2";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
