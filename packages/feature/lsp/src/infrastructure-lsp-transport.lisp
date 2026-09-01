@@ -31,28 +31,30 @@
 
 COMMAND is passed to UIOP's shell launcher, so this adapter intentionally has
 the same trust boundary as the user-init and Lisp evaluation features."
-  (let* ((info (uiop:launch-program
-                command
-                :shell t
-                :directory directory
-                :input :stream
-                :output :stream
-                :error-output :stream
-                :element-type '(unsigned-byte 8)))
-         (channel (cl-concurrent-kit:make-channel :buffer-size 128))
-         (executor (cl-concurrent-kit:make-executor
-                    :size 2
-                    :name "loom lsp process"
-                    :queue-capacity 2))
-         (process (%make-lsp-process
+  (let ((process nil))
+    (handler-case
+        (progn
+          (let* ((info (uiop:launch-program
+                        command
+                        :shell t
+                        :directory directory
+                        :input :stream
+                        :output :stream
+                        :error-output :stream
+                        :element-type '(unsigned-byte 8)))
+                 (channel (cl-concurrent-kit:make-channel :buffer-size 128))
+                 (executor (cl-concurrent-kit:make-executor
+                            :size 2
+                            :name "loom lsp process"
+                            :queue-capacity 2)))
+            (setf process
+                  (%make-lsp-process
                    info
                    (uiop:process-info-input info)
                    (uiop:process-info-output info)
                    (uiop:process-info-error-output info)
                    executor
                    channel)))
-    (handler-case
-        (progn
           (multiple-value-bind (promise accepted)
               (cl-concurrent-kit:try-submit
                executor
@@ -67,7 +69,8 @@ the same trust boundary as the user-init and Lisp evaluation features."
             (unless accepted (error "Could not start the LSP error reader")))
           process)
       (error (condition)
-        (lsp-transport-close process)
+        (when process
+          (lsp-transport-close process))
         (error condition)))))
 
 (defmethod lsp-transport-send ((transport lsp-process) json)
