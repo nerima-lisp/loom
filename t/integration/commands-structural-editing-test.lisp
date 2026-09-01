@@ -67,6 +67,18 @@
                 :to-equal (concatenate 'string "(" content ")"))
         (expect (buffer-point-column buffer) :to-equal 1))))
 
+  (cl-weave:it-property
+      "wrap-round skips generated filler before the first atom"
+      ((filler-length (cl-weave:gen-integer :min 0 :max 8))
+       (atom-length (cl-weave:gen-integer :min 1 :max 12))
+       (character (cl-weave:gen-character :alphabet "abc")))
+    (let ((filler (make-string filler-length :initial-element #\Space))
+          (atom (make-string atom-length :initial-element character)))
+      (%with-selected-buffer-state (buffer (concatenate 'string filler atom))
+        (loom::wrap-round)
+        (expect (buffer-text buffer)
+                :to-equal (concatenate 'string filler "(" atom ")")))))
+
   (it
     "wrap-round leaves point just inside the delimiter it added"
     (%with-selected-buffer-state (buffer "a b")
