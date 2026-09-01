@@ -39,34 +39,43 @@
                                   path)
                     ""))))
 
+(defun %git-operation-labels (operation)
+  (ecase operation
+    (:stage (values "stage" "staged"))
+    (:unstage (values "unstage" "unstaged"))))
+
+(defun %run-git-file-operation (operation path directory)
+  (ecase operation
+    (:stage (run-git-stage path :directory directory))
+    (:unstage (run-git-unstage path :directory directory))))
+
 (defun %git-file-operation (operation path minibuffer)
   "Run OPERATION for PATH and report its result in MINIBUFFER."
-  (let* ((path (string-trim '(#\Space #\Tab #\Newline #\Return) path))
-         (verb (ecase operation
-                 (:stage "stage")
-                 (:unstage "unstage")))
-         (past-tense (ecase operation
-                       (:stage "staged")
-                       (:unstage "unstaged"))))
+  (let ((path (string-trim '(#\Space #\Tab #\Newline #\Return) path)))
     (if (%git-path-present-p path)
         (handler-case
-            (let* ((directory (%git-status-directory))
-                   (result (ecase operation
-                             (:stage (run-git-stage path :directory directory))
-                             (:unstage
-                              (run-git-unstage path :directory directory)))))
+            (multiple-value-bind (verb past-tense)
+                (%git-operation-labels operation)
+              (let ((result
+                      (%run-git-file-operation
+                       operation path (%git-status-directory))))
+                (minibuffer-message
+                 minibuffer
+                 (if (vcs-kit:process-success-p result)
+                     (format nil "Git ~A ~A" past-tense path)
+                     (format nil "Git ~A exited with status ~D"
+                             verb
+                             (vcs-kit:process-result-exit-code result))))
+                result))
+          (error (condition)
+            (multiple-value-bind (verb)
+                (%git-operation-labels operation)
               (minibuffer-message
                minibuffer
-               (if (vcs-kit:process-success-p result)
-                   (format nil "Git ~A ~A" past-tense path)
-                   (format nil "Git ~A exited with status ~D"
-                           verb
-                           (vcs-kit:process-result-exit-code result))))
-              result)
-          (error (condition)
-            (minibuffer-message
-             minibuffer
-             (format nil "Git ~A error: ~A" verb condition))
+               (format nil "Git ~A error: ~A" verb condition)))
             nil))
-        (minibuffer-message minibuffer
-                            (format nil "Git ~A cancelled" verb)))))
+        (multiple-value-bind (verb)
+            (%git-operation-labels operation)
+          (minibuffer-message
+           minibuffer
+           (format nil "Git ~A cancelled" verb))))))
