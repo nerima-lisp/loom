@@ -10,6 +10,18 @@
 ;;; undo/redo state; undo replay lives in domain-buffer-piece-table-undo.lisp.
 ;;; ---------------------------------------------------------------------
 
+(defun %update-after-insert (buffer was-narrowed-p old-length text-length)
+  (if was-narrowed-p
+      (incf (%buffer-narrow-end-offset buffer) text-length)
+      (setf (%buffer-narrow-start-offset buffer) 0
+            (%buffer-narrow-end-offset buffer) (+ old-length text-length)))
+  (setf (%buffer-modified-p buffer) t))
+
+(defun %record-insert (buffer line column text clear-redo)
+  (when clear-redo
+    (setf (%buffer-redo-list buffer) nil))
+  (push (list :delete line column text) (%buffer-undo-list buffer)))
+
 (defun %do-insert (buffer line column text &key (clear-redo t))
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
 entry describing the inverse of this exact edit (a delete of the same
@@ -23,14 +35,8 @@ new edit rather than an undo/redo replay."
          (old-length (%buffer-full-length buffer))
          (text-length (length text)))
     (multiple-value-bind (end-line end-column) (%raw-insert-at buffer line column text)
-      (if was-narrowed
-          (incf (%buffer-narrow-end-offset buffer) text-length)
-          (setf (%buffer-narrow-start-offset buffer) 0
-                (%buffer-narrow-end-offset buffer) (+ old-length text-length)))
-      (setf (%buffer-modified-p buffer) t)
-      (when clear-redo
-        (setf (%buffer-redo-list buffer) nil))
-      (push (list :delete line column text) (%buffer-undo-list buffer))
+      (%update-after-insert buffer was-narrowed old-length text-length)
+      (%record-insert buffer line column text clear-redo)
       (values end-line end-column))))
 
 (defun %do-delete (buffer start-line start-column end-line end-column
