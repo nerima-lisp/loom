@@ -38,18 +38,24 @@ addresses documents by URI, and a buffer that was never saved has none."
   (push (list buffer line column)
         (loom:editor-state-jump-origins loom:*editor-state*)))
 
+(defun %lsp-selected-buffer-for-path (path)
+  (let ((selected (loom/application:%selected-buffer)))
+    (and selected
+         (loom:buffer-path selected)
+         (equal (namestring (pathname (loom:buffer-path selected)))
+                (namestring (pathname path)))
+         selected)))
+
+(defun %lsp-location-buffer (path)
+  (and path
+       (or (%lsp-selected-buffer-for-path path)
+           (loom/feature/file-tree:visit-file path))))
+
 (defun %lsp-goto-location (location)
   "Move point to LOCATION, opening its file when it is not already shown."
   (let* ((path (lsp-uri-path (lsp-location-uri location)))
          (position (lsp-range-start (lsp-location-range location)))
-         (buffer (and path
-                      (or (let ((selected (loom/application:%selected-buffer)))
-                            (and (loom:buffer-path selected)
-                                 (equal (namestring
-                                         (pathname (loom:buffer-path selected)))
-                                        (namestring (pathname path)))
-                                 selected))
-                          (loom/feature/file-tree:visit-file path)))))
+         (buffer (%lsp-location-buffer path)))
     (cond
       ((null path)
        (%lsp-navigation-message
