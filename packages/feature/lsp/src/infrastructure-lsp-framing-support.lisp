@@ -126,20 +126,23 @@
     (error ()
       (error "Invalid Content-Length: ~S" value))))
 
+(defun %lsp-header-lines (header)
+  (loop with start = 0
+        for end = (or (position #\Newline header :start start)
+                      (length header))
+        for line = (string-trim '(#\Space #\Tab #\Return)
+                                (subseq header start end))
+        unless (zerop (length line))
+          collect line
+        until (= end (length header))
+        do (setf start (1+ end))))
+
 (defun %lsp-content-length (header)
   (let ((length-value nil))
-    (loop with start = 0
-          for end = (or (position #\Newline header :start start)
-                        (length header))
-          for line = (string-trim '(#\Space #\Tab #\Return)
-                                  (subseq header start end))
-          do (when (plusp (length line))
-               (multiple-value-bind (name value)
-                   (%lsp-header-line-fields line)
-                 (when (string-equal name "Content-Length")
-                   (when length-value
-                     (error "Duplicate Content-Length header"))
-                   (setf length-value (%lsp-content-length-value value)))))
-             (if (= end (length header))
-                 (return length-value)
-                 (setf start (1+ end))))))
+    (dolist (line (%lsp-header-lines header) length-value)
+      (multiple-value-bind (name value)
+          (%lsp-header-line-fields line)
+        (when (string-equal name "Content-Length")
+          (when length-value
+            (error "Duplicate Content-Length header"))
+          (setf length-value (%lsp-content-length-value value)))))))

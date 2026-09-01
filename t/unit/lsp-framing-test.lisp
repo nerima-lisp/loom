@@ -123,6 +123,15 @@
                          (format nil "X-Test: 1~AContent-Length: 0~A~A"
                                  crlf crlf crlf))))
         (expect status :to-be :complete))
+      (multiple-value-bind (decoded consumed status)
+          (loom/feature/lsp::loom-lsp-frame-decode
+           (%lsp-raw-frame
+            (format nil "X-Test: 1~A  Content-Length : 0  ~A~A"
+                    crlf crlf crlf)
+            #()))
+        (expect decoded :to-equal "")
+        (expect (plusp consumed) :to-be-truthy)
+        (expect status :to-be :complete))
       (signals error
         (loom/feature/lsp::loom-lsp-frame-decode
          (%lsp-raw-frame (format nil "X-Test: 1~A~A" crlf crlf)
