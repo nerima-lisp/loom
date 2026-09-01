@@ -29,24 +29,26 @@
           (project-ignored-directory-names)
           :test #'string=))
 
+(defun %project-walk-entry-cps (entry on-file on-next)
+  (destructuring-bind (path . kind) entry
+    (cond
+      ((eq kind :file)
+       (funcall on-file path)
+       (funcall on-next))
+      ((and (eq kind :directory)
+            (not (%project-ignored-directory-p path)))
+       (%project-walk-files-cps path on-file on-next))
+      (t
+       (funcall on-next)))))
+
 (defun %project-walk-files-cps (directory on-file on-complete)
   (labels ((walk-entries (entries)
              (if (null entries)
                  (funcall on-complete)
-                 (destructuring-bind (path . kind) (first entries)
-                   (cond
-                     ((eq kind :file)
-                      (funcall on-file path)
-                      (walk-entries (rest entries)))
-                     ((and (eq kind :directory)
-                           (not (%project-ignored-directory-p path)))
-                      (%project-walk-files-cps
-                       path
-                       on-file
-                       (lambda ()
-                         (walk-entries (rest entries)))))
-                     (t
-                      (walk-entries (rest entries))))))))
+                 (%project-walk-entry-cps
+                  (first entries)
+                  on-file
+                  (lambda () (walk-entries (rest entries)))))))
     (walk-entries
      (loom/feature/file-tree:loom-fs-list-directory directory))))
 
