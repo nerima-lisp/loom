@@ -150,6 +150,12 @@ plain `insert a balanced pair' command."
   (list (list :delete end (- (1+ close) end))
         (list :delete open (- start open))))
 
+(defun %raiseable-range (text classes offset open close)
+  (let ((start (%sexp-skip-forward-filler text classes offset))
+        (end (%forward-sexp-offset text offset classes)))
+    (when (%raiseable-range-p open close start end)
+      (values start end))))
+
 (defun %raise-edits (text classes offset)
   "Replace the enclosing list with the expression at OFFSET.
 
@@ -157,9 +163,9 @@ The expression has to lie strictly inside the list, otherwise there is nothing
 to raise it out of and the operation would delete rather than promote."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
     (when close
-      (let ((start (%sexp-skip-forward-filler text classes offset))
-            (end (%forward-sexp-offset text offset classes)))
-        (when (%raiseable-range-p open close start end)
+      (multiple-value-bind (start end)
+          (%raiseable-range text classes offset open close)
+        (when start
           (%raise-range-edits open close start end))))))
 
 (defun %structural-offset-after-insert (offset edit)
