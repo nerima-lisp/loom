@@ -27,28 +27,41 @@
                       #',forward
                       #',backward)))
 
+(defun %universal-prefix-descriptor-p (modifiers code)
+  (and (equal modifiers '(:control))
+       (characterp code)
+       (char-equal code #\u)))
+
+(defun %digit-prefix-descriptor-value (modifiers code active-p)
+  (let ((digit (and (characterp code) (digit-char-p code)))
+        (alt-p (and (member :alt modifiers)
+                    (not (member :control modifiers)))))
+    (when (and digit
+               (or alt-p
+                   (and active-p (null modifiers))))
+      digit)))
+
+(defun %negative-prefix-descriptor-p (modifiers code active-p)
+  (let ((alt-p (and (member :alt modifiers)
+                    (not (member :control modifiers)))))
+    (and (characterp code)
+         (char= code #\-)
+         (or alt-p
+             (and active-p (null modifiers))))))
+
 (defun %prefix-argument-descriptor-action (descriptor argument)
   (check-type argument prefix-argument)
   (let* ((normalized (normalize-key-descriptor descriptor))
          (modifiers (car normalized))
          (code (cdr normalized))
          (active-p (prefix-argument-active-p argument))
-         (alt-p (and (member :alt modifiers)
-                     (not (member :control modifiers)))))
+         (digit (%digit-prefix-descriptor-value modifiers code active-p)))
     (cond
-      ((and (equal modifiers '(:control))
-            (characterp code)
-            (char-equal code #\u))
+      ((%universal-prefix-descriptor-p modifiers code)
        (values :universal nil))
-      ((and (characterp code)
-            (digit-char-p code)
-            (or alt-p
-                (and active-p (null modifiers))))
-       (values :digit (digit-char-p code)))
-      ((and (characterp code)
-            (char= code #\-)
-            (or alt-p
-                (and active-p (null modifiers))))
+      (digit
+       (values :digit digit))
+      ((%negative-prefix-descriptor-p modifiers code active-p)
        (values :negative nil))
       (t
        (values nil nil)))))
