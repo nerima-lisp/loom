@@ -23,18 +23,26 @@
         do (decf offset))
   offset)
 
+(defun %sexp-forward-list-depth-step (text classes position depth)
+  (cond
+    ((%sexp-open-p text classes position) (values (1+ depth) nil))
+    ((%sexp-close-p text classes position)
+     (let ((next-depth (1- depth)))
+       (values next-depth (zerop next-depth))))
+    (t (values depth nil))))
+
 (defun %sexp-forward-list-end (text classes offset)
   "Return the index just past the list opening at OFFSET, or NIL if unbalanced."
   (let ((length (length text))
         (depth 0)
         (position offset))
     (loop while (< position length)
-          do (cond ((%sexp-open-p text classes position) (incf depth))
-                   ((%sexp-close-p text classes position)
-                    (decf depth)
-                    (when (zerop depth)
-                      (return-from %sexp-forward-list-end (1+ position)))))
-             (incf position))
+          do (multiple-value-bind (next-depth complete)
+                 (%sexp-forward-list-depth-step text classes position depth)
+               (setf depth next-depth)
+               (when complete
+                 (return-from %sexp-forward-list-end (1+ position)))
+               (incf position)))
     nil))
 
 (defun %sexp-backward-list-start (text classes offset)
