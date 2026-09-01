@@ -45,18 +45,26 @@
                            :length right-length))))
      t)))
 
+(defun %append-piece-fragments (result fragments)
+  (dolist (fragment fragments result)
+    (push fragment result)))
+
+(defun %splice-insert-piece-step (piece cursor offset new-piece result inserted)
+  (if (or inserted
+          (< offset cursor)
+          (> offset (+ cursor (%piece-length piece))))
+      (values (push piece result) inserted)
+      (values (%append-piece-fragments
+               result
+               (%insert-piece-fragments piece cursor offset new-piece))
+              t)))
+
 (defun %splice-insert-piece (buffer offset new-piece)
   (let ((result nil) (cursor 0) (inserted nil))
     (dolist (piece (%buffer-pieces buffer))
-      (let ((next (+ cursor (%piece-length piece))))
-        (if (and (not inserted) (<= cursor offset) (<= offset next))
-            (multiple-value-bind (fragments handled)
-                (%insert-piece-fragments piece cursor offset new-piece)
-              (dolist (fragment fragments)
-                (push fragment result))
-              (setf inserted handled))
-            (push piece result))
-        (setf cursor next)))
+      (multiple-value-setq (result inserted)
+        (%splice-insert-piece-step piece cursor offset new-piece result inserted))
+      (incf cursor (%piece-length piece)))
     (unless inserted
       (push new-piece result))
     (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
