@@ -6,6 +6,24 @@
   (funcall (loom::%minibuffer-on-confirm minibuffer) input))
 
 (describe
+  "bookmark command macro expansion"
+  (it
+    "preserves normalization, cancellation, and completion options"
+    (let ((expansion
+            (macroexpand-1
+             '(loom::define-bookmark-command loom::set-bookmark
+                  ("Bookmark: " :completion-function #'identity)
+                  (bookmark-name minibuffer)
+                (list bookmark-name minibuffer)))))
+      (expect (first expansion) :to-be 'defun)
+      (expect (second expansion) :to-be 'loom::set-bookmark)
+      (expect (first (fifth expansion)) :to-be 'loom::with-prompts)
+        (expect (search ":COMPLETION-FUNCTION" (prin1-to-string expansion))
+                :to-be-truthy)
+        (expect (search "LOOM::%BOOKMARK-NAME" (prin1-to-string expansion))
+                :to-be-truthy))))
+
+(describe
   "recent files and bookmarks"
   (it
     "tracks existing files and visits a recent file"
