@@ -141,6 +141,35 @@
         (call-last-kbd-macro)
         (expect invoked :to-be-truthy)
         (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+        (expect (keyboard-macro-replaying-p macro) :to-be nil))))
+
+  (it
+    "keeps a pending key sequence while replaying a macro"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((invoked nil)
+             (keymap (make-keymap))
+             (macro (make-keyboard-macro))
+             (first-descriptor (cons '(:control) #\x))
+             (second-descriptor (cons nil #\q)))
+        (keymap-define-key
+         keymap
+         (list first-descriptor second-descriptor)
+         (lambda ()
+           (setf invoked t)
+           :done))
+        (setf (editor-state-keymap *editor-state*) keymap
+              (editor-state-keyboard-macro *editor-state*) macro)
+        (keyboard-macro-start-recording macro)
+        (keyboard-macro-record-event
+         macro
+         (make-keyboard-macro-event :kind :key :value first-descriptor))
+        (keyboard-macro-record-event
+         macro
+         (make-keyboard-macro-event :kind :key :value second-descriptor))
+        (keyboard-macro-stop-recording macro)
+        (call-last-kbd-macro)
+        (expect invoked :to-be-truthy)
+        (expect (minibuffer-active-p minibuffer) :to-be-falsy)
         (expect (keyboard-macro-replaying-p macro) :to-be nil)))))
 
   (it
