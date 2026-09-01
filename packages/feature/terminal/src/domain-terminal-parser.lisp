@@ -1,11 +1,19 @@
 (in-package #:loom/feature/terminal)
 
+(defun %terminal-screen-start-csi (screen)
+  (setf (terminal-screen-parser-state screen) :csi
+        (terminal-screen-csi-parameters screen) ""
+        (terminal-screen-csi-private screen) nil))
+
+(defun %terminal-screen-reverse-index (screen)
+  (if (plusp (terminal-screen-cursor-row screen))
+      (decf (terminal-screen-cursor-row screen))
+      (%terminal-screen-scroll-down screen))
+  (setf (terminal-screen-parser-state screen) :ground))
+
 (defun %terminal-screen-handle-escape (screen character)
   (case character
-    (#\[
-     (setf (terminal-screen-parser-state screen) :csi
-           (terminal-screen-csi-parameters screen) ""
-           (terminal-screen-csi-private screen) nil))
+    (#\[ (%terminal-screen-start-csi screen))
     (#\]
      (setf (terminal-screen-parser-state screen) :osc))
     (#\7
@@ -20,11 +28,7 @@
     (#\E
      (%terminal-screen-next-line screen)
      (setf (terminal-screen-parser-state screen) :ground))
-    (#\M
-     (if (plusp (terminal-screen-cursor-row screen))
-         (decf (terminal-screen-cursor-row screen))
-         (%terminal-screen-scroll-down screen))
-     (setf (terminal-screen-parser-state screen) :ground))
+    (#\M (%terminal-screen-reverse-index screen))
     (#\c
      (%terminal-screen-clear-all screen)
      (setf (terminal-screen-parser-state screen) :ground))
