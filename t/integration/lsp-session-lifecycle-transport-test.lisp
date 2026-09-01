@@ -177,6 +177,38 @@
                 (loom/feature/lsp::lsp-process-result-channel process))))
         (setf (symbol-function 'cl-concurrent-kit:try-submit)
               original-submit))))
+  (it "cleans up launch resources when process construction fails"
+    (let ((original-launch
+            (symbol-function 'loom/feature/lsp::%launch-lsp-process))
+          (original-readers
+            (symbol-function 'loom/feature/lsp::%start-lsp-process-readers))
+          (original-cleanup
+            (symbol-function 'loom/feature/lsp::%cleanup-lsp-launch))
+          (cleaned nil))
+      (unwind-protect
+           (progn
+             (setf (symbol-function 'loom/feature/lsp::%launch-lsp-process)
+                   (lambda (command directory)
+                     (declare (ignore command directory))
+                     (values nil :launched-info :executor :channel)))
+             (setf (symbol-function
+                    'loom/feature/lsp::%start-lsp-process-readers)
+                   (lambda (process executor channel)
+                     (declare (ignore process executor channel))
+                     (error "reader unavailable")))
+             (setf (symbol-function 'loom/feature/lsp::%cleanup-lsp-launch)
+                   (lambda (info executor channel)
+                     (setf cleaned (list info executor channel))))
+             (signals error
+               (loom/feature/lsp::make-lsp-process "unused"))
+             (expect cleaned :to-equal
+                     '(:launched-info :executor :channel)))
+        (setf (symbol-function 'loom/feature/lsp::%launch-lsp-process)
+              original-launch
+              (symbol-function 'loom/feature/lsp::%start-lsp-process-readers)
+              original-readers
+              (symbol-function 'loom/feature/lsp::%cleanup-lsp-launch)
+              original-cleanup))))
 
 (describe
   "LSP transport sending"
