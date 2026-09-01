@@ -13,9 +13,13 @@ point outside its own region, and the offsets are translated back by START."
   (let* ((buffer (%selected-buffer))
          (start (buffer-narrow-start-offset buffer))
          (text (buffer-visible-text buffer))
-         (offset (max 0 (min (length text)
-                             (- (buffer-point-offset buffer) start)))))
+         (offset (%clamp-sexp-motion-offset
+                  (- (buffer-point-offset buffer) start)
+                  (length text))))
     (values buffer text offset start)))
+
+(defun %clamp-sexp-motion-offset (offset length)
+  (max 0 (min length offset)))
 
 (defun %move-point-to-local-offset (buffer start offset)
   (%move-point-to-offset buffer (+ start offset)))
