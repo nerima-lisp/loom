@@ -454,4 +454,39 @@ the degenerate-window tests are the ones that need them to differ."
                                             "text")))))
       (expect (loom::%layout-completion-origin
                (editor-state-renderer state) window completion 6)
-              :to-be nil))))
+              :to-be nil)))
+  (it
+    "ignores completion items belonging to another buffer"
+    (let* ((state (%fresh-layout-state))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (make-buffer) 0 0
+                        (list (cons "one" "one")))))
+      (let ((*editor-state* state))
+        (setf (editor-state-completion state) completion)
+        (expect (loom::%layout-active-completion window)
+                :to-be nil))))
+  (it
+    "ignores completion objects with no candidates"
+    (let* ((state (%fresh-layout-state))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 0 0 nil)))
+      (let ((*editor-state* state))
+        (setf (editor-state-completion state) completion)
+        (expect (loom::%layout-active-completion window)
+                :to-be nil))))
+  (it
+    "does not draw completion popups into a zero-width renderer"
+    (let* ((state (%fresh-layout-state :width 0 :height 6
+                                       :renderer-width 0 :renderer-height 6))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 0 0
+                        (list (cons "one" "one")))))
+      (setf (editor-state-completion state) completion)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-completion
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 0)
+              :to-equal ""))))
