@@ -72,6 +72,13 @@
      (%sexp-string-range text index length))
     (t nil)))
 
+(defun %mark-sexp-special-range (text classes index length character)
+  (multiple-value-bind (class end)
+      (%sexp-special-range text index length character)
+    (when class
+      (%mark-sexp-range classes index end class))
+    (values class end)))
+
 (defun %sexp-syntax-classes (text)
   "Classify every character of TEXT as :CODE, :STRING, :COMMENT, or :ATOM."
   (let* ((length (length text))
@@ -80,11 +87,9 @@
     (loop while (< index length)
           do (let ((character (char text index)))
                (multiple-value-bind (class end)
-                   (%sexp-special-range text index length character)
+                   (%mark-sexp-special-range text classes index length character)
                  (if class
-                     (progn
-                       (%mark-sexp-range classes index end class)
-                       (setf index end))
+                     (setf index end)
                      (incf index)))))
     classes))
 
