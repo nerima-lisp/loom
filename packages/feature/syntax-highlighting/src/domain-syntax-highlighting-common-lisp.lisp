@@ -8,7 +8,7 @@
 (defun %syntax-delimiter-p (character)
   (or (find character '(#\( #\) #\[ #\] #\{ #\} #\' #\, #\#)
             :test #'char=)
-      (char= character (code-char 96))))
+      (char= character #\`)))
 
 (defun %syntax-atom-end (line start)
   (let ((position start))
