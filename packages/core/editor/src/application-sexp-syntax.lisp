@@ -32,16 +32,19 @@
   (loop for position from start below end
         do (setf (aref classes position) class)))
 
+(defun %sexp-reader-dispatch-character (text index length)
+  (when (< (1+ index) length)
+    (char text (1+ index))))
+
+(defun %sexp-reader-block-comment-end (text index length)
+  (let ((close (search "|#" text :start2 (+ index 2))))
+    (if close (+ close 2) length)))
+
 (defun %sexp-reader-range (text index length)
-  (cond
-    ((and (< (1+ index) length)
-          (char= (char text (1+ index)) #\\))
-     (values :atom (%sexp-character-literal-end text index length)))
-    ((and (< (1+ index) length)
-          (char= (char text (1+ index)) #\|))
-     (let ((close (search "|#" text :start2 (+ index 2))))
-       (values :comment (if close (+ close 2) length))))
-    (t nil)))
+  (case (%sexp-reader-dispatch-character text index length)
+    (#\\ (values :atom (%sexp-character-literal-end text index length)))
+    (#\| (values :comment (%sexp-reader-block-comment-end text index length)))
+    (otherwise nil)))
 
 (defun %sexp-comment-range (text index length)
   (values :comment (or (position #\Newline text :start index) length)))
