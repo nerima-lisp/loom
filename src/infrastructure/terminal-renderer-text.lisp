@@ -33,6 +33,17 @@
                (return)))
     end))
 
+(defun %loom-renderer-wrap-segment-ranges (string width)
+  (let ((segments '())
+        (start 0)
+        (length (length string)))
+    (loop while (< start length)
+          do (let ((end (%loom-renderer-wrap-segment-end
+                         string start width)))
+               (push (cons start end) segments)
+               (setf start end)))
+    (nreverse segments)))
+
 (defun loom-renderer-wrap-segments (renderer string width)
   "Split STRING into the character ranges filling successive WIDTH-cell rows.
 
@@ -44,18 +55,10 @@ half-drawn character is what the caller clips away anyway. WIDTH 0 yields the
 whole string as one range, which is what a zero-width window draws: nothing."
   (declare (ignore renderer))
   (check-type string string)
-    (check-type width (integer 0 *))
-    (let ((length (length string)))
-      (if (or (zerop length) (zerop width))
-          (list (cons 0 length))
-          (let ((segments '())
-                (start 0))
-            (loop while (< start length)
-                  do (let ((end (%loom-renderer-wrap-segment-end
-                                 string start width)))
-                       (push (cons start end) segments)
-                       (setf start end)))
-            (nreverse segments)))))
+  (check-type width (integer 0 *))
+  (if (or (zerop (length string)) (zerop width))
+      (list (cons 0 (length string)))
+      (%loom-renderer-wrap-segment-ranges string width)))
 
 (defun %loom-segment-index (segments column)
   "Return the index of the LOOM-RENDERER-WRAP-SEGMENTS range holding COLUMN.
