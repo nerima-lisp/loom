@@ -32,24 +32,38 @@
     ((member text (major-mode-keywords mode) :test #'string-equal) :keyword)
     (t :plain)))
 
+(defun %syntax-generic-token-at-whitespace (line position)
+  (values :whitespace (%syntax-whitespace-end line position)))
+
+(defun %syntax-generic-token-at-comment (line)
+  (values :comment (length line)))
+
+(defun %syntax-generic-token-at-string (line position)
+  (values :string (%syntax-string-end line position)))
+
+(defun %syntax-generic-token-at-delimiter (position)
+  (values :delimiter (1+ position)))
+
+(defun %syntax-generic-token-at-atom (line position mode comment-prefix)
+  (let ((end (%syntax-generic-atom-end line position comment-prefix)))
+    (values (%syntax-generic-token-kind
+             (subseq line position end)
+             mode)
+            end)))
+
 (defun %syntax-generic-token-at (line position mode comment-prefix)
   (let ((character (char line position)))
     (cond
       ((%syntax-whitespace-p character)
-       (values :whitespace
-               (%syntax-whitespace-end line position)))
+       (%syntax-generic-token-at-whitespace line position))
       ((%syntax-generic-comment-start-p line position comment-prefix)
-       (values :comment (length line)))
+       (%syntax-generic-token-at-comment line))
       ((char= character #\")
-       (values :string (%syntax-string-end line position)))
+       (%syntax-generic-token-at-string line position))
       ((%syntax-generic-delimiter-p character)
-       (values :delimiter (1+ position)))
+       (%syntax-generic-token-at-delimiter position))
       (t
-       (let ((end (%syntax-generic-atom-end line position comment-prefix)))
-         (values (%syntax-generic-token-kind
-                  (subseq line position end)
-                  mode)
-                 end))))))
+       (%syntax-generic-token-at-atom line position mode comment-prefix)))))
 
 (defun %syntax-highlight-generic-line (line mode)
   (let* ((comment-prefix (major-mode-comment-prefix mode))
