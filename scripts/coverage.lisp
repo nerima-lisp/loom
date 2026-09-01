@@ -103,7 +103,13 @@
   "Return the optional percentage threshold named by environment NAME."
   (let ((value (sb-ext:posix-getenv name)))
     (when (and value (plusp (length value)))
-      (let ((minimum (read-from-string value nil nil)))
+      (let ((minimum
+              (with-input-from-string (stream value)
+                (let ((*read-eval* nil)
+                      (eof (gensym "EOF")))
+                  (let ((number (read stream nil eof))
+                        (trailing (read stream nil eof)))
+                    (if (eq trailing eof) number nil))))))
         (unless (and (realp minimum) (<= 0 minimum 100))
           (error "~A must be a percentage between 0 and 100, got ~S."
                  name value))
