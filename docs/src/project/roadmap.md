@@ -1,7 +1,8 @@
 # Roadmap
 
-loom is an MVP-stage terminal editor. This page separates what is
-implemented today from what is deliberately deferred.
+loom is an actively hardened terminal editor. This page separates what is
+implemented today from what is deliberately deferred; the deferred items are
+not production-readiness claims.
 
 ## Implemented today
 
@@ -127,12 +128,15 @@ implemented today from what is deliberately deferred.
   [development guide](development.md) documents the test runner, PTY checks,
   coverage, and benchmark commands.
 
-## 2026 refactor status
+## 2026 production-hardening status
 
-The bounded concurrent file-tree runtime and its ASDF-integrated
-`concurrent-runtime-test` are implemented in the current source. This marks
-the runtime portion of the 2026 refactor objective as present; it does not
-make the deferred editor features below complete.
+The 2026 refactor has established explicit domain/application/infrastructure/
+presentation boundaries, release-pinned Nerima Lisp dependencies, direct use
+of `cl-weave` for the test and coverage workflow, and an ASDF-integrated
+`concurrent-runtime-test`. The full Nix gate covers formatting, paredit
+syntax, tests, coverage, documentation, and all declared systems. This is a
+verified engineering baseline, not a claim that every deferred editor
+feature is complete.
 
 ## Not yet implemented
 
@@ -155,7 +159,7 @@ complete Lem or Emacs replacement:
 
 ### v0.1.0
 
-The MVP release consolidates the 2026 editor modernization, bounded concurrent
+The initial release consolidates the 2026 editor modernization, bounded concurrent
 file-tree runtime, integrated unit/integration/e2e test paths, and the
 session-wide buffer registry with `switch-to-buffer` lookup.
 
