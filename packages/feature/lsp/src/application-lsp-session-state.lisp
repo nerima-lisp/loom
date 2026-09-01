@@ -61,25 +61,28 @@ unreserved characters remain readable."
 (defun %lsp-uri-hex-digit (character)
   (digit-char-p character 16))
 
+(defun %lsp-uri-percent-escape-at (uri index)
+  (when (and (char= (char uri index) #\%)
+             (< (+ index 2) (length uri)))
+    (let ((high (%lsp-uri-hex-digit (char uri (1+ index))))
+          (low (%lsp-uri-hex-digit (char uri (+ index 2)))))
+      (when (and high low)
+        (values (+ (* high 16) low) 3)))))
+
 (defun %lsp-uri-decode-octets (uri)
   (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
                               :adjustable t :fill-pointer 0))
         (index 7)
         (length (length uri)))
     (loop while (< index length)
-          do (let ((character (char uri index)))
-               (if (and (char= character #\%)
-                        (< (+ index 2) length)
-                        (%lsp-uri-hex-digit (char uri (+ index 1)))
-                        (%lsp-uri-hex-digit (char uri (+ index 2))))
+          do (multiple-value-bind (octet consumed)
+                 (%lsp-uri-percent-escape-at uri index)
+               (if consumed
                    (progn
-                     (vector-push-extend
-                      (parse-integer uri :start (1+ index) :end (+ index 3)
-                                         :radix 16)
-                      octets)
-                     (incf index 3))
+                     (vector-push-extend octet octets)
+                     (incf index consumed))
                    (progn
-                     (vector-push-extend (char-code character) octets)
+                     (vector-push-extend (char-code (char uri index)) octets)
                      (incf index)))))
     (coerce octets '(simple-array (unsigned-byte 8) (*)))))
 
