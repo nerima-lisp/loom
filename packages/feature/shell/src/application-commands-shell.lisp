@@ -39,6 +39,25 @@
                  (shell-command-result-exit-code result))))
     result))
 
+(defun %pipe-command-message (message)
+  (minibuffer-message
+   (editor-state-minibuffer *editor-state*)
+   message))
+
+(defun %run-pipe-command (command)
+  (handler-case
+      (%show-shell-command-result
+       (run-shell-command command
+                          :directory (%shell-command-directory)))
+    (error (condition)
+      (%pipe-command-message
+       (format nil "Pipe command error: ~A" condition)))))
+
+(defun %execute-pipe-command (command)
+  (if (zerop (length command))
+      (%pipe-command-message "Pipe command cancelled")
+      (%run-pipe-command command)))
+
 (defun pipe-command ()
   "Run a shell command in the selected file's directory.
 
@@ -47,17 +66,5 @@ in *Loom-Pipe-Command*."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                 :on-cancel (lambda () nil))
       ((command "Pipe command: "))
-      (let ((command
-              (string-trim '(#\Space #\Tab #\Newline #\Return) command)))
-        (if (zerop (length command))
-            (minibuffer-message
-             (editor-state-minibuffer *editor-state*)
-             "Pipe command cancelled")
-            (handler-case
-                (%show-shell-command-result
-                 (run-shell-command command
-                                     :directory (%shell-command-directory)))
-              (error (condition)
-                (minibuffer-message
-                 (editor-state-minibuffer *editor-state*)
-                 (format nil "Pipe command error: ~A" condition))))))))
+      (%execute-pipe-command
+       (string-trim '(#\Space #\Tab #\Newline #\Return) command))))
