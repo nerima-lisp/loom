@@ -18,6 +18,18 @@
     (replace frame body :start1 (length header))
     frame))
 
+(defun %lsp-frame-body-range (octets header-end header)
+  (let ((body-length (%lsp-content-length header)))
+    (unless body-length
+      (error "LSP frame has no Content-Length header"))
+    (when (minusp body-length)
+      (error "LSP frame has a negative Content-Length: ~D" body-length))
+    (let ((body-start (+ header-end 4))
+          (body-end (+ header-end 4 body-length)))
+      (if (> body-end (length octets))
+          (values nil nil :incomplete)
+          (values body-start body-end :complete)))))
+
 (defun loom-lsp-frame-decode (octets)
   "Decode the first LSP frame in OCTETS.
 
@@ -28,17 +40,11 @@ error; an incomplete frame is a normal result for a streaming reader."
   (let ((header-end (%lsp-find-header-end octets)))
     (unless header-end
       (return-from loom-lsp-frame-decode (values nil 0 :incomplete)))
-    (let* ((header (%lsp-header-string (subseq octets 0 header-end)))
-           (body-length (%lsp-content-length header)))
-      (unless body-length
-        (error "LSP frame has no Content-Length header"))
-      (when (minusp body-length)
-        (error "LSP frame has a negative Content-Length: ~D" body-length))
-      (let* ((body-start (+ header-end 4))
-             (body-end (+ body-start body-length)))
-        (when (> body-end (length octets))
-          (return-from loom-lsp-frame-decode
-            (values nil 0 :incomplete)))
-        (values (%lsp-utf8-decode (subseq octets body-start body-end))
-                body-end
-                :complete)))))
+    (multiple-value-bind (body-start body-end status)
+        (%lsp-frame-body-range
+         octets header-end (%lsp-header-string (subseq octets 0 header-end)))
+      (if (eq status :incomplete)
+          (values nil 0 status)
+          (values (%lsp-utf8-decode (subseq octets body-start body-end))
+                  body-end
+                  status)))))
