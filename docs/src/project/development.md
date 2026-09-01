@@ -157,6 +157,10 @@ establish full expression coverage. SB-COVER is process-local, so top-level
 declarations and the child-process-only `loom:main` path can remain unexecuted
 in the report. Those forms are reported rather than hidden.
 
+Set `LOOM_COVERAGE_MIN_EXPRESSIONS` and/or `LOOM_COVERAGE_MIN_BRANCHES` to make
+the corresponding percentage a failing quality gate. Values must be between 0
+and 100; raise them incrementally as executable coverage improves toward 100%.
+
 ## REPL workflow
 
 Inside the development shell, load the system into a REPL:

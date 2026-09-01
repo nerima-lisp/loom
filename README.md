@@ -66,6 +66,17 @@ LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
 LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
 
+Coverage can be promoted to a quality gate with optional percentage thresholds:
+
+```sh
+LOOM_COVERAGE_MIN_EXPRESSIONS=95 \
+LOOM_COVERAGE_MIN_BRANCHES=92 \
+LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
+```
+
+Thresholds accept values from 0 to 100. The command fails when a configured
+threshold is not met, so the gate can be raised incrementally toward 100%.
+
 The Nix coverage output is a report directory, not an executable. Build it
 with `nix build .#coverage` (or run `nix flake check`); use the development
 command above when the report should be written to a local directory. Inside

@@ -99,6 +99,16 @@
              (merge-pathnames directory root)))
           '(#P"src/" #P"packages/"))))
 
+(defun %coverage-minimum (name)
+  "Return the optional percentage threshold named by environment NAME."
+  (let ((value (sb-ext:posix-getenv name)))
+    (when (and value (plusp (length value)))
+      (let ((minimum (read-from-string value nil nil)))
+        (unless (and (realp minimum) (<= 0 minimum 100))
+          (error "~A must be a percentage between 0 and 100, got ~S."
+                 name value))
+        minimum))))
+
 (let* ((script (or *load-truename*
                    (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
        (root (host-kit:parent-directory-pathname
@@ -159,7 +169,11 @@
                        (let ((expression-covered (getf statistics :expression-covered))
                              (expression-total (getf statistics :expression-total))
                              (branch-covered (getf statistics :branch-covered))
-                             (branch-total (getf statistics :branch-total)))
+                             (branch-total (getf statistics :branch-total))
+                             (expression-minimum (%coverage-minimum
+                                                  "LOOM_COVERAGE_MIN_EXPRESSIONS"))
+                             (branch-minimum (%coverage-minimum
+                                              "LOOM_COVERAGE_MIN_BRANCHES")))
                          (unless (plusp expression-total)
                            (error "Coverage selected no source expressions under ~A."
                                   source-pathnames))
@@ -171,6 +185,20 @@
                                  (if (zerop branch-total)
                                      100.0
                                      (* 100.0 (/ branch-covered branch-total))))
+                         (let ((expression-rate
+                                 (* 100.0 (/ expression-covered expression-total)))
+                               (branch-rate
+                                 (if (zerop branch-total)
+                                     100.0
+                                     (* 100.0 (/ branch-covered branch-total)))))
+                           (when (and expression-minimum
+                                      (< expression-rate expression-minimum))
+                             (error "Expression coverage ~,2F%% is below minimum ~,2F%%."
+                                    expression-rate expression-minimum))
+                           (when (and branch-minimum
+                                      (< branch-rate branch-minimum))
+                             (error "Branch coverage ~,2F%% is below minimum ~,2F%%."
+                                    branch-rate branch-minimum)))
                          passed)))
                  (sb-ext:timeout ()
                    (format *error-output* "~&loom/test: timed out after 1800s~%")
