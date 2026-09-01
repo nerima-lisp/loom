@@ -40,3 +40,21 @@
       (minibuffer-message minibuffer "Wrote file.")
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
       (expect (minibuffer-input-string minibuffer) :to-equal ""))))
+
+(describe
+  "minibuffer query protocol"
+  (it-each
+      (("inactive" nil nil "" nil)
+       ("active" t "Prompt: " "" nil)
+       ("message" nil nil "" "Saved."))
+      "returns stable public values for ~A state"
+      (label active prompt input message)
+    (let ((minibuffer (make-minibuffer)))
+      (when active
+        (minibuffer-activate minibuffer prompt))
+      (when message
+        (minibuffer-message minibuffer message))
+      (expect (minibuffer-active-p minibuffer) :to-be active)
+      (expect (minibuffer-prompt-string minibuffer) :to-equal prompt)
+      (expect (minibuffer-input-string minibuffer) :to-equal input)
+      (expect (minibuffer-message-string minibuffer) :to-equal message))))
