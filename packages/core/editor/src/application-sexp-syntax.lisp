@@ -49,6 +49,16 @@
 (defun %sexp-string-range (text index length)
   (values :string (%sexp-string-end text index length)))
 
+(defun %sexp-special-range (text index length character)
+  (cond
+    ((char= character #\#)
+     (%sexp-reader-range text index length))
+    ((char= character #\;)
+     (%sexp-comment-range text index length))
+    ((char= character #\")
+     (%sexp-string-range text index length))
+    (t nil)))
+
 (defun %sexp-syntax-classes (text)
   "Classify every character of TEXT as :CODE, :STRING, :COMMENT, or :ATOM."
   (let* ((length (length text))
@@ -57,13 +67,7 @@
     (loop while (< index length)
           do (let ((character (char text index)))
                (multiple-value-bind (class end)
-                   (cond ((char= character #\#)
-                          (%sexp-reader-range text index length))
-                         ((char= character #\;)
-                          (%sexp-comment-range text index length))
-                         ((char= character #\")
-                          (%sexp-string-range text index length))
-                         (t nil))
+                   (%sexp-special-range text index length character)
                  (if class
                      (progn
                        (%mark-sexp-range classes index end class)
