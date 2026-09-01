@@ -12,10 +12,9 @@
 The returned list is independent of the underlying CL-HISTORY-KIT store and
 can therefore be used as a serializable session value."
   (let ((history (%minibuffer-history minibuffer)))
-    (if history
+    (when history
         (history-kit:history-entry-texts
-         (history-kit:history-entries history))
-        nil)))
+         (history-kit:history-entries history)))))
 
 (defun minibuffer-set-history-entries (minibuffer entries)
   "Replace MINIBUFFER's recalled input strings with ENTRIES.
