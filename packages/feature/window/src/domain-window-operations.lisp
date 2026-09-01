@@ -50,15 +50,18 @@ windows initially display the same buffer WINDOW displayed. Selection moves
                              direction)
       (%window-install-split tree window direction buffer rect1 rect2))))
 
+(defun %window-next-window (windows selected)
+  (let ((position (position selected windows)))
+    (nth (mod (1+ (or position 0)) (length windows)) windows)))
+
 (defun window-select-next (tree)
   "Select the next window in TREE, cycling back to the first after the
 last (C-x o). Returns the newly selected window."
-  (let* ((windows (%window-collect-leaves (window-tree-root tree)))
-         (n (length windows))
-         (pos (position (window-tree-selected tree) windows)))
-    (let ((next (nth (mod (1+ (or pos 0)) n) windows)))
-      (setf (window-tree-selected tree) next)
-      next)))
+  (let ((next (%window-next-window
+               (%window-collect-leaves (window-tree-root tree))
+               (window-tree-selected tree))))
+    (setf (window-tree-selected tree) next)
+    next))
 
 (defun window-buffer (window)
   "Return the buffer currently displayed in WINDOW."
