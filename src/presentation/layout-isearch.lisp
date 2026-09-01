@@ -76,21 +76,29 @@ draws nothing rather than clipping to the wrong row."
           (%layout-draw-wrapped-line-run
            renderer window x y text width height line start end style)))))
 
+(defun %layout-span-line-bounds (buffer span)
+  (let ((start (buffer-visible-offset-position buffer
+                                                (buffer-span-start span)))
+        (end (buffer-visible-offset-position buffer
+                                              (buffer-span-end span))))
+    (when (and start end)
+      (values (buffer-position-line start)
+              (buffer-position-column start)
+              (buffer-position-line end)
+              (buffer-position-column end)))))
+
 (defun %layout-draw-span (renderer window x-offset span style)
   "Redraw the buffer text SPAN covers in STYLE, one logical line at a time."
-  (let* ((buffer (loom/feature/window:window-buffer window))
-         (start (buffer-visible-offset-position buffer
-                                                (buffer-span-start span)))
-         (end (buffer-visible-offset-position buffer (buffer-span-end span))))
-    (when (and start end)
-      (let ((first-line (buffer-position-line start))
-            (last-line (buffer-position-line end)))
+  (let ((buffer (loom/feature/window:window-buffer window)))
+    (multiple-value-bind (first-line first-column last-line last-column)
+        (%layout-span-line-bounds buffer span)
+      (when first-line
         (loop for line from first-line to last-line
               do (%layout-draw-line-run
                   renderer window x-offset line
-                  (if (= line first-line) (buffer-position-column start) 0)
+                  (if (= line first-line) first-column 0)
                   (if (= line last-line)
-                      (buffer-position-column end)
+                      last-column
                       (length (%layout-visible-line buffer line)))
                   style))))))
 
