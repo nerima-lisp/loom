@@ -23,16 +23,18 @@
   nil)
 
 (defmacro %define-register-command (name prompt docstring &body body)
-  `(defun ,name ()
+  (let ((register-name-var (gensym "REGISTER-NAME-")))
+    `(defun ,name ()
      ,docstring
      (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                     :on-cancel (minibuffer-message minibuffer "Quit"))
          ((input ,prompt))
        (handler-case
-           (let ((name (%parse-register-name input)))
-             ,@body)
+           (let ((,register-name-var (%parse-register-name input)))
+             (symbol-macrolet ((name ,register-name-var))
+               ,@body))
          (error (condition)
-           (%register-input-error minibuffer condition))))))
+           (%register-input-error minibuffer condition)))))))
 
 (%define-register-command copy-to-register "Copy region to register: "
   "Copy the active region to a named register without changing the buffer."
