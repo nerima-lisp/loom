@@ -45,6 +45,17 @@
         (expect used :to-be-greater-than (length json))
         (expect status :to-be :complete))))
 
+  (cl-weave:it-property
+      "normalizes generated command prefixes"
+      ((length (cl-weave:gen-integer :min 0 :max 12)))
+    (let* ((command "forward-char")
+           (prefix (subseq command 0 length))
+           (input (format nil "  ~A  " (string-upcase prefix))))
+      (expect (member command
+                      (loom/application:command-completion-candidates input)
+                      :test #'string=)
+              :to-be-truthy)))
+
   (cl-weave:it-fuzz
       "accepts generated insertion positions"
       ((column (cl-weave:gen-integer :min 0 :max 6)))
