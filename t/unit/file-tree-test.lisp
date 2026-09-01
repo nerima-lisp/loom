@@ -23,6 +23,16 @@
     ((equal path "/root/loop/") '(("/root/" . :directory)))
     (t nil)))
 
+(defun %shared-fake-lister (path)
+  (cond
+    ((equal path "/root/")
+     '(("/root/a/" . :directory) ("/root/b/" . :directory)))
+    ((member path '("/root/a/" "/root/b/") :test #'equal)
+     '(("/root/shared/" . :directory)))
+    ((equal path "/root/shared/")
+     '(("/root/shared.txt" . :file)))
+    (t nil)))
+
 (describe
   "make-file-tree"
   (it
@@ -118,6 +128,25 @@
               :to-equal '(("/root/loop/" . 0) ("/root/" . 1)))
       (expect (file-tree-entry-kind tree "/root/loop/")
               :to-equal :directory))))
+
+(describe
+  "file-tree shared path handling"
+  (it
+    "retains a shared directory under each expanded display path"
+    (let ((tree (make-file-tree "/root/")))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree #'%shared-fake-lister)
+      (file-tree-toggle-expand tree "/root/a/")
+      (file-tree-toggle-expand tree "/root/b/")
+      (file-tree-toggle-expand tree "/root/shared/")
+      (expect (file-tree-entries tree)
+              :to-equal
+              '(("/root/a/" . 0)
+                ("/root/shared/" . 1)
+                ("/root/shared.txt" . 2)
+                ("/root/b/" . 0)
+                ("/root/shared/" . 1)
+                ("/root/shared.txt" . 2))))))
 
 (describe
   "file-tree-prefetch-paths"
