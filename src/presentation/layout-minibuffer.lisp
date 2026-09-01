@@ -73,14 +73,34 @@ ROW, truncated to WIDTH columns."
         (cond ((<= (+ below items) height) (values column below))
               ((<= 0 above) (values column above)))))))
 
-(defun %layout-draw-completion (renderer window x-offset)
-  "Draw the active completion popup when it belongs to WINDOW's buffer."
+(defun %layout-active-completion (window)
   (let ((completion (and *editor-state*
                          (editor-state-completion *editor-state*))))
-    (when (and completion
-               (eq (editor-completion-buffer completion)
-                   (loom/feature/window:window-buffer window))
-               (editor-completion-items completion))
+    (and completion
+         (eq (editor-completion-buffer completion)
+             (loom/feature/window:window-buffer window))
+         (editor-completion-items completion)
+         completion)))
+
+(defun %layout-completion-cells (renderer rows width column)
+  (min (- width (min column (1- width)))
+       (loop for text in rows
+             maximize (loom-renderer-string-width renderer text))))
+
+(defun %layout-draw-completion-row (renderer x y offset text selected cells)
+  (loom-renderer-write-string
+   renderer x (+ y offset)
+   (cl-tty-kit:pad-string
+    (loom-renderer-truncate-string renderer text cells)
+    cells)
+   :style (if (= offset selected)
+              +layout-completion-selected-style+
+              +layout-completion-style+)))
+
+(defun %layout-draw-completion (renderer window x-offset)
+  "Draw the active completion popup when it belongs to WINDOW's buffer."
+  (let ((completion (%layout-active-completion window)))
+    (when completion
       (let ((width (loom/feature/window:window-width window))
             (height (loom/feature/window:window-height window)))
         (when (and (plusp width) (plusp height))
@@ -89,20 +109,11 @@ ROW, truncated to WIDTH columns."
             (multiple-value-bind (column row)
                 (%layout-completion-origin renderer window completion height)
               (when column
-                (let* ((x (+ x-offset (loom/feature/window:window-x window)
-                             (min column (1- width))))
-                       (y (loom/feature/window:window-y window))
-                       (cells (min (- width (min column (1- width)))
-                                   (loop for text in rows
-                                         maximize (loom-renderer-string-width
-                                                   renderer text)))))
+                (let ((x (+ x-offset (loom/feature/window:window-x window)
+                            (min column (1- width))))
+                      (y (loom/feature/window:window-y window))
+                      (cells (%layout-completion-cells renderer rows width column)))
                   (loop for text in rows
                         for offset from 0
-                        do (loom-renderer-write-string
-                            renderer x (+ y row offset)
-                            (cl-tty-kit:pad-string
-                             (loom-renderer-truncate-string renderer text cells)
-                             cells)
-                            :style (if (= offset selected)
-                                       +layout-completion-selected-style+
-                                       +layout-completion-style+))))))))))))
+                        do (%layout-draw-completion-row
+                            renderer x (+ y row) offset text selected cells)))))))))))
