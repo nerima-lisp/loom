@@ -23,39 +23,45 @@
           do (decf start))
     start))
 
+(defun %forward-sexp-token-end (text classes start)
+  "Return the end of the token beginning at START, or NIL."
+  (cond
+    ((%sexp-close-p text classes start) nil)
+    ((%sexp-open-p text classes start)
+     (%sexp-forward-list-end text classes start))
+    ((eq (aref classes start) :string)
+     (%sexp-string-run-end classes start))
+    (t (let ((end (%sexp-atom-end text classes start)))
+         (and (> end start) end)))))
+
+(defun %backward-sexp-token-start (text classes end)
+  "Return the start of the token ending before END, or NIL."
+  (let ((last (1- end)))
+    (cond
+      ((%sexp-open-p text classes last) nil)
+      ((%sexp-close-p text classes last)
+       (%sexp-backward-list-start text classes end))
+      ((eq (aref classes last) :string)
+       (%sexp-string-run-start classes end))
+      (t (let ((start (%sexp-atom-start text classes end)))
+           (and (< start end) start))))))
+
 (defun %forward-sexp-offset (text offset &optional (classes
                                                     (%sexp-syntax-classes text)))
   "Return the offset just past the S-expression after OFFSET, or NIL.
 
 NIL means there is nothing to move over: the end of the text, a closing
 parenthesis that belongs to an enclosing list, or an unbalanced opening one."
-  (let* ((length (length text))
-         (start (%sexp-skip-forward-filler text classes offset)))
-    (cond
-      ((>= start length) nil)
-      ((%sexp-close-p text classes start) nil)
-      ((%sexp-open-p text classes start)
-       (%sexp-forward-list-end text classes start))
-      ;; A string literal's own quotes are classified :STRING along with its
-      ;; contents, so this cannot ask whether the quote is :CODE.
-      ((eq (aref classes start) :string)
-       (%sexp-string-run-end classes start))
-      (t (let ((end (%sexp-atom-end text classes start)))
-           (and (> end start) end))))))
+  (let ((start (%sexp-skip-forward-filler text classes offset)))
+    (unless (>= start (length text))
+      (%forward-sexp-token-end text classes start))))
 
 (defun %backward-sexp-offset (text offset &optional (classes
                                                      (%sexp-syntax-classes text)))
   "Return the offset where the S-expression before OFFSET begins, or NIL."
   (let ((end (%sexp-skip-backward-filler text classes offset)))
-    (cond
-      ((zerop end) nil)
-      ((%sexp-open-p text classes (1- end)) nil)
-      ((%sexp-close-p text classes (1- end))
-       (%sexp-backward-list-start text classes end))
-      ((eq (aref classes (1- end)) :string)
-       (%sexp-string-run-start classes end))
-      (t (let ((start (%sexp-atom-start text classes end)))
-           (and (< start end) start))))))
+    (unless (zerop end)
+      (%backward-sexp-token-start text classes end))))
 
 (defun %backward-up-list-offset (text offset &optional
                                              (classes
