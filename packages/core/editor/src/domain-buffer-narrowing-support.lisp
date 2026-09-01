@@ -11,14 +11,10 @@
         (line 0)
         (line-start 0))
     (loop for newline = (position #\Newline text :start line-start)
-          do (cond
-               ((null newline)
-                (return (values line (- bounded-offset line-start))))
-               ((<= bounded-offset newline)
-                (return (values line (- bounded-offset line-start))))
-               (t
-                (incf line)
-                (setf line-start (1+ newline)))))))
+          while (and newline (> bounded-offset newline))
+          do (incf line)
+             (setf line-start (1+ newline))
+          finally (return (values line (- bounded-offset line-start))))))
 
 (defun %visible-lines (buffer)
   "Return BUFFER's visible text split into lines without trailing newlines."
