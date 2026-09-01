@@ -1,24 +1,28 @@
 ;;;; packages/feature/session/src/domain-session-validation-layout.lisp
 (in-package #:loom/feature/session)
 
+(defun %validate-session-layout-leaf (node buffer-count)
+  (unless (and (= (length node) 3)
+               (%session-nonnegative-integer-p (second node))
+               (< (second node) buffer-count)
+               (%session-nonnegative-integer-p (third node)))
+    (error "validate-session-snapshot: malformed leaf ~S" node))
+  1)
+
+(defun %validate-session-layout-split (node buffer-count)
+  (unless (and (= (length node) 4)
+               (member (second node) '(:horizontal :vertical)))
+    (error "validate-session-snapshot: malformed split ~S" node))
+  (+ (%validate-session-layout-node (third node) buffer-count)
+     (%validate-session-layout-node (fourth node) buffer-count)))
+
 (defun %validate-session-layout-node (node buffer-count)
   "Validate one layout NODE and return its number of leaf windows."
   (unless (listp node)
     (error "validate-session-snapshot: malformed layout node ~S" node))
   (case (first node)
-    (:leaf
-     (unless (and (= (length node) 3)
-                  (%session-nonnegative-integer-p (second node))
-                  (< (second node) buffer-count)
-                  (%session-nonnegative-integer-p (third node)))
-       (error "validate-session-snapshot: malformed leaf ~S" node))
-     1)
-    (:split
-     (unless (and (= (length node) 4)
-                  (member (second node) '(:horizontal :vertical)))
-       (error "validate-session-snapshot: malformed split ~S" node))
-     (+ (%validate-session-layout-node (third node) buffer-count)
-        (%validate-session-layout-node (fourth node) buffer-count)))
+    (:leaf (%validate-session-layout-leaf node buffer-count))
+    (:split (%validate-session-layout-split node buffer-count))
     (otherwise
      (error "validate-session-snapshot: unknown layout node ~S"
             (first node)))))
