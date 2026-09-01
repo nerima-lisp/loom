@@ -250,6 +250,20 @@ the degenerate-window tests are the ones that need them to differ."
                 :to-equal '((:fg 0) (:bg 6))))))
 
   (it
+    "highlights a search match spanning two logical lines"
+    (let* ((state (%fresh-layout-state :content "one two\nthree" :width 20 :height 2))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (setf (loom/feature/search::%isearch-matches session)
+            (list (make-buffer-span 4 13)))
+      (setf (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (editor-state-isearch state) :to-be session)))
+
+  (it
     "does not draw a match scrolled above the window"
     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
            (window (%layout-window state))
