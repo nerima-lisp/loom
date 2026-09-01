@@ -4,6 +4,21 @@
 (in-package #:loom/test)
 
 (describe
+  "structural motion command definition"
+  (it
+    "expands a command with a guarded local target"
+    (let ((expansion
+            (macroexpand-1
+             '(loom::define-sexp-motion-command test-sexp-motion
+                  test-offset
+                "test documentation"))))
+      (expect (first expansion) :to-be 'defun)
+      (expect (second expansion) :to-be 'test-sexp-motion)
+      (expect (third expansion) :to-equal '())
+      (expect (fourth expansion) :to-equal "test documentation")
+      (expect (first (fifth expansion)) :to-be 'multiple-value-bind))))
+
+(describe
   "structural motion commands"
   (it
     "forward-sexp steps over a list and then over the atom after it"
