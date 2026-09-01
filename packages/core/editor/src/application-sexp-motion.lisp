@@ -94,12 +94,25 @@ Point is adjacent to a parenthesis either by sitting on an opening one or by
 sitting just after a closing one, which is how Emacs decides. Returns NIL when
 point is next to no parenthesis, and NIL for MATCH when the parentheses do not
 balance -- an unbalanced list must not be shown a match it does not have."
-  (let ((length (length text)))
-    (cond
-      ((and (< offset length) (%sexp-open-p text classes offset))
-       (let ((end (%sexp-forward-list-end text classes offset)))
-         (values offset (and end (1- end)))))
-      ((and (plusp offset) (%sexp-close-p text classes (1- offset)))
-       (values (1- offset)
-               (%sexp-backward-list-start text classes offset)))
-      (t (values nil nil)))))
+  (cond
+    ((and (< offset (length text))
+          (%sexp-open-p text classes offset))
+     (%matching-open-paren-offset text classes offset))
+    ((and (plusp offset)
+          (%sexp-close-p text classes (1- offset)))
+     (%matching-close-paren-offset text classes offset))
+    (t (values nil nil))))
+
+(defun %matching-open-paren-offset (text classes offset)
+  "Return the opening parenthesis and its match when OFFSET is on one."
+  (when (and (< offset (length text))
+             (%sexp-open-p text classes offset))
+    (let ((end (%sexp-forward-list-end text classes offset)))
+      (values offset (and end (1- end))))))
+
+(defun %matching-close-paren-offset (text classes offset)
+  "Return the closing parenthesis and its match when OFFSET follows one."
+  (when (and (plusp offset)
+             (%sexp-close-p text classes (1- offset)))
+    (values (1- offset)
+            (%sexp-backward-list-start text classes offset))))
