@@ -131,6 +131,13 @@ build, with:
 nix flake check --all-systems --print-build-logs
 ```
 
+To build the documentation independently, pass the repository's MkDocs
+configuration explicitly:
+
+```sh
+nix develop -c mkdocs build --strict -f docs/mkdocs.yml
+```
+
 `checks.default` and `checks.coverage` both build inside the same PTY-less Nix
 sandbox, so both set `LOOM_SANDBOXED_CHECK`; tests that spawn a real child
 process over a PTY or a pipe skip visibly (in cl-weave's "N skipped" count)
