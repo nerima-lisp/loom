@@ -35,6 +35,10 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 (defun %forward-slurp-target (text classes close)
   (%forward-sexp-offset text (1+ close) classes))
 
+(defun %forward-slurp-edits-at (text close target)
+  (list (list :insert target (string (char text close)))
+        (list :delete close 1)))
+
 (defun %forward-slurp-edits (text classes offset)
   "Move the enclosing list's closing delimiter past the expression after it."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
@@ -42,8 +46,7 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
     (when close
       (let ((target (%forward-slurp-target text classes close)))
         (when target
-          (list (list :insert target (string (char text close)))
-                (list :delete close 1)))))))
+          (%forward-slurp-edits-at text close target))))))
 
 (defun %forward-barf-delimiter (text target delimiter)
   "Return DELIMITER positioned after the expression at TARGET."
@@ -72,6 +75,10 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
 (defun %backward-slurp-target (text classes open)
   (%backward-sexp-offset text open classes))
 
+(defun %backward-slurp-edits-at (text open target)
+  (list (list :delete open 1)
+        (list :insert target (string (char text open)))))
+
 (defun %backward-slurp-edits (text classes offset)
   "Move the enclosing list's opening delimiter back past the expression before it."
   (multiple-value-bind (open close) (%structural-list-bounds text classes offset)
@@ -79,8 +86,7 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
     (when open
       (let ((target (%backward-slurp-target text classes open)))
         (when target
-          (list (list :delete open 1)
-                (list :insert target (string (char text open)))))))))
+          (%backward-slurp-edits-at text open target))))))
 
 (defun %backward-barf-delimiter (text target delimiter)
   "Return DELIMITER positioned before the expression at TARGET."
