@@ -15,7 +15,17 @@
     (expect (loom/application:defkeys-chord :enter) :to-equal '(nil . :enter)))
   (it "normalizes a modified chord into a descriptor"
     (expect (loom/application:defkeys-chord '(:control #\f))
-            :to-equal '((:control) . #\f))))
+            :to-equal '((:control) . #\f)))
+  (it "rejects an unknown chord modifier"
+    (expect (handler-case
+                (progn (loom/application:defkeys-chord '(:meta #\f)) nil)
+              (error () t))
+            :to-be-truthy))
+  (it "rejects an invalid chord code"
+    (expect (handler-case
+                (progn (loom/application:defkeys-chord '(:control :alt)) nil)
+              (error () t))
+            :to-be-truthy)))
 (describe
   "%defkeys-key-sequence"
   (it "wraps a single modified chord in a sequence"
