@@ -73,6 +73,9 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
          (buffer-delete-region buffer line column end-line end-column)
          :coalesce coalesce)))))
 
+(defun %kill-line-coalesce-p (previous-kill index)
+  (or previous-kill (plusp index)))
+
 (defun %buffer-range-at-offsets (buffer start-offset end-offset)
   (let ((start (buffer-offset-position buffer start-offset))
         (end (buffer-offset-position buffer end-offset)))
@@ -95,5 +98,5 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
     (let ((previous-kill (editor-state-last-command-kill-p *editor-state*)))
       (loop for index below count
             do (%kill-line-once
-                :coalesce (or previous-kill (plusp index))))
+                :coalesce (%kill-line-coalesce-p previous-kill index)))
       (setf (editor-state-last-command-kill-p *editor-state*) t))))
