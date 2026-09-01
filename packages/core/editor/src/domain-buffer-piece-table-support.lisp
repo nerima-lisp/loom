@@ -54,18 +54,16 @@
                  :start (+ (%piece-start piece) offset)
                  :length length)))
 
-(defun %insert-piece-fragments (piece cursor offset new-piece)
+(defun %insert-piece-fragment-list (piece cursor offset new-piece)
   (let* ((piece-length (%piece-length piece))
          (left-length (- offset cursor))
          (right-length (- (+ cursor piece-length) offset)))
-    (values
-     (append
-      (when (plusp left-length)
-        (list (%piece-left-fragment piece left-length)))
-      (list new-piece)
-      (when (plusp right-length)
-        (list (%piece-right-fragment piece left-length right-length))))
-     t)))
+    (append
+     (when (plusp left-length)
+       (list (%piece-left-fragment piece left-length)))
+     (list new-piece)
+     (when (plusp right-length)
+       (list (%piece-right-fragment piece left-length right-length))))))
 
 (defun %append-piece-fragments (result fragments)
   (dolist (fragment fragments result)
@@ -78,7 +76,7 @@
       (values (push piece result) inserted)
       (values (%append-piece-fragments
                result
-               (%insert-piece-fragments piece cursor offset new-piece))
+               (%insert-piece-fragment-list piece cursor offset new-piece))
               t)))
 
 (defun %splice-insert-piece (buffer offset new-piece)
