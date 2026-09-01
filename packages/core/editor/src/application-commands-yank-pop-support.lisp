@@ -32,14 +32,17 @@
     (when (%valid-yank-pop-context-p buffer ring start end ranges last-buffer index)
       (values ring start ranges index repeat-count))))
 
+(defun %yank-ranges-in-replacement-order (ranges)
+  (sort (copy-list ranges) #'> :key #'car))
+
 (defun %replace-yank-ranges (buffer ranges replacement)
   "Replace each half-open RANGE in BUFFER with REPLACEMENT.
 
 The ranges use the buffer offsets from before any replacement. Editing from
 right to left preserves those offsets; the returned ranges use the resulting
-buffer coordinates and retain the original range order."
+  buffer coordinates and retain the original range order."
   (let ((replacement-length (length replacement)))
-    (dolist (range (sort (copy-list ranges) #'> :key #'car))
+    (dolist (range (%yank-ranges-in-replacement-order ranges))
       (%replace-yank-range buffer range replacement))
     (%yank-replacement-ranges ranges replacement-length)))
 
