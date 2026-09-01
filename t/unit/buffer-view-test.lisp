@@ -125,6 +125,10 @@
     (let ((buffer (make-buffer :initial-content "one")))
       (signals error (buffer-visible-line buffer 1))))
 
+  (it "rejects a region whose end precedes its start"
+    (let ((buffer (make-buffer :initial-content "0123456789")))
+      (signals error (buffer-region-string buffer 0 7 0 2))))
+
   (it "keeps narrowing bounds consistent across edit undo and redo"
     (let ((buffer (make-buffer :initial-content "0123456789")))
       (buffer-narrow-to-region buffer 0 2 0 7)
