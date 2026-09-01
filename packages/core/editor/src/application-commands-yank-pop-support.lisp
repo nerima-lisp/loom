@@ -63,19 +63,27 @@ buffer coordinates and retain the original range order."
           sum (- replacement-length
                  (- (cdr other) (car other)))))
 
+(defun %next-yank-pop-index (ring index)
+  (mod (+ index (%command-prefix-count))
+       (length ring)))
+
+(defun %yank-pop-primary-range (start ranges new-ranges)
+  (let ((primary-index (or (position start ranges :key #'car :test #'=)
+                           0)))
+    (nth primary-index new-ranges)))
+
+(defun %set-point-at-offset (buffer offset)
+  (let ((position (buffer-offset-position buffer offset)))
+    (buffer-set-point buffer
+                      (buffer-position-line position)
+                      (buffer-position-column position))))
+
 (defun %perform-yank-pop (buffer ring start ranges index repeat-count)
-  (let* ((next-index (mod (+ index (%command-prefix-count))
-                          (length ring)))
+  (let* ((next-index (%next-yank-pop-index ring index))
          (replacement (%repeat-kill-text (nth next-index ring) repeat-count))
          (new-ranges (%replace-yank-ranges buffer ranges replacement))
-         (primary-index (or (position start ranges :key #'car :test #'=)
-                            0))
-         (primary-range (nth primary-index new-ranges))
-         (primary-position
-           (buffer-offset-position buffer (cdr primary-range))))
-    (buffer-set-point buffer
-                      (buffer-position-line primary-position)
-                      (buffer-position-column primary-position))
+         (primary-range (%yank-pop-primary-range start ranges new-ranges)))
+    (%set-point-at-offset buffer (cdr primary-range))
     (%record-last-yank buffer new-ranges
                        :ring-index next-index
                        :repeat-count repeat-count)))
