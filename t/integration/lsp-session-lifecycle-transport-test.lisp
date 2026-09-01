@@ -112,6 +112,36 @@
               :to-be process))))
 
 (describe
+  "LSP transport launch failures"
+  (it "closes a partially launched process when readers cannot start"
+    (let ((original-launch
+            (symbol-function 'loom/feature/lsp::%launch-lsp-process))
+          (original-readers
+            (symbol-function 'loom/feature/lsp::%start-lsp-process-readers))
+          (process (%make-test-lsp-process)))
+      (unwind-protect
+           (progn
+             (setf (symbol-function 'loom/feature/lsp::%launch-lsp-process)
+                   (lambda (command directory)
+                     (declare (ignore command directory))
+                     (values process nil nil
+                             (loom/feature/lsp::lsp-process-result-channel
+                              process))))
+             (setf (symbol-function
+                    'loom/feature/lsp::%start-lsp-process-readers)
+                   (lambda (process executor channel)
+                     (declare (ignore process executor channel))
+                     (error "reader unavailable")))
+             (signals error
+               (loom/feature/lsp::make-lsp-process "unused"))
+             (expect (loom/feature/lsp::lsp-process-closed-p process)
+                     :to-be t))
+        (setf (symbol-function 'loom/feature/lsp::%launch-lsp-process)
+              original-launch
+              (symbol-function 'loom/feature/lsp::%start-lsp-process-readers)
+              original-readers)))))
+
+(describe
   "LSP transport sending"
   (it "writes a framed message to a binary output stream"
     (let* ((output (%make-lsp-output-byte-stream))
