@@ -37,6 +37,18 @@ required second, explicit confirmation."
         (buffer-save buffer)
         (remember-recent-file path))))
 
+(defun %install-file-buffer (window source path &key (name nil name-supplied-p))
+  (let ((buffer (if name-supplied-p
+                   (%make-file-buffer path
+                                      :name name
+                                      :initial-content (buffer-text source))
+                   (%make-file-buffer path
+                                      :initial-content (buffer-text source)))))
+    (%transfer-point-and-mark source buffer)
+    (%register-buffer buffer)
+    (loom/feature/window:window-set-buffer window buffer)
+    buffer))
+
 (defun %prompt-and-save-new-buffer (window buffer)
   "Prompt for a path and save BUFFER (which has none yet) under it.
 
@@ -49,12 +61,8 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((path "Save file: "))
-    (let ((new-buffer (%make-file-buffer path
-                                         :name (buffer-name buffer)
-                                         :initial-content (buffer-text buffer))))
-      (%transfer-point-and-mark buffer new-buffer)
-      (%register-buffer new-buffer)
-      (loom/feature/window:window-set-buffer window new-buffer)
+    (let ((new-buffer (%install-file-buffer window buffer path
+                                           :name (buffer-name buffer))))
       (%save-buffer-or-warn-overwrite new-buffer path))))
 
 (defun save-buffer ()
@@ -78,9 +86,5 @@ buffer, like Emacs's C-x C-w visit behavior."
     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                    :on-cancel (minibuffer-message minibuffer "Quit"))
         ((path "Write file: "))
-      (let ((new-buffer (%make-file-buffer path
-                                           :initial-content (buffer-text buffer))))
-        (%transfer-point-and-mark buffer new-buffer)
-        (%register-buffer new-buffer)
-        (loom/feature/window:window-set-buffer window new-buffer)
+      (let ((new-buffer (%install-file-buffer window buffer path)))
         (%save-buffer-or-warn-overwrite new-buffer path)))))
