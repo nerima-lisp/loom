@@ -3,23 +3,30 @@
 ;;;; Event routing orchestration after the key event is classified.
 (in-package #:loom)
 
-(defun %dispatch-key-event-action
-    (event keymap-state decision)
+(defun %dispatch-keymap-action (keymap-state decision)
+  (let ((dispatch-result
+          (%dispatch-keymap-command
+           keymap-state
+           (input-routing-decision-descriptor decision)
+           (input-routing-decision-prefix-argument decision)
+           (input-routing-decision-command decision))))
+    (cond
+      ((eq dispatch-result :pending) :pending)
+      ((null (input-routing-decision-command decision)) nil)
+      (t :handled))))
+
+(defun %dispatch-key-event-action (event keymap-state decision)
   "Run the selected routing action for EVENT and return its dispatch outcome.
 The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
 :HANDLED for an action that was selected even when its command returns NIL."
   (let ((minibuffer (input-routing-decision-minibuffer decision))
         (minibuffer-was-active
           (input-routing-decision-minibuffer-was-active decision))
-        (descriptor (input-routing-decision-descriptor decision))
-        (prefix-argument
-          (input-routing-decision-prefix-argument decision))
         (prefix-action (input-routing-decision-prefix-action decision))
         (terminal-event-p
           (input-routing-decision-terminal-event-p decision))
         (self-insert-event-p
-          (input-routing-decision-self-insert-event-p decision))
-        (command (input-routing-decision-command decision)))
+          (input-routing-decision-self-insert-event-p decision)))
     (cond
       (minibuffer-was-active
        (minibuffer-handle-key minibuffer event)
@@ -39,13 +46,7 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
        (%dispatch-self-insert-event event)
        :handled)
       (t
-       (let ((dispatch-result
-               (%dispatch-keymap-command
-                keymap-state descriptor prefix-argument command)))
-         (cond
-           ((eq dispatch-result :pending) :pending)
-           ((null command) nil)
-           (t :handled)))))))
+       (%dispatch-keymap-action keymap-state decision)))))
 
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT to the minibuffer, prefix logic, self-insert,
