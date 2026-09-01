@@ -36,6 +36,22 @@
               :to-equal
               '("file:///main.lisp" "commonlisp" 3 "(+ 1 2)"))))
 
+  (it
+    "preserves document metadata and uses completion label fallback"
+    (let* ((document (make-lsp-document "file:///main.lisp" "commonlisp"
+                                        1 ""))
+           (item (make-lsp-completion-item "format"
+                                           :detail "function"
+                                           :kind 3)))
+      (expect (lsp-document-version document) :to-equal 1)
+      (expect (lsp-completion-item-text item) :to-equal "format")))
+
+  (it
+    "prefers completion insert text when supplied"
+    (let ((item (make-lsp-completion-item "format(...)"
+                                          :insert-text "format")))
+      (expect (lsp-completion-item-text item) :to-equal "format")))
+
   (it-each
       ((1 "error") (2 "warning") (3 "info") (4 "hint") (nil "info")
        (99 "info"))
