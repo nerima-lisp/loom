@@ -97,6 +97,18 @@ ROW, truncated to WIDTH columns."
               +layout-completion-selected-style+
               +layout-completion-style+)))
 
+(defun %layout-draw-completion-popup (renderer window x-offset rows selected
+                                       column row)
+  (let* ((width (loom/feature/window:window-width window))
+         (x (+ x-offset (loom/feature/window:window-x window)
+               (min column (1- width))))
+         (y (+ row (loom/feature/window:window-y window)))
+         (cells (%layout-completion-cells renderer rows width column)))
+    (loop for text in rows
+          for offset from 0
+          do (%layout-draw-completion-row
+              renderer x y offset text selected cells))))
+
 (defun %layout-draw-completion (renderer window x-offset)
   "Draw the active completion popup when it belongs to WINDOW's buffer."
   (let ((completion (%layout-active-completion window)))
@@ -107,13 +119,7 @@ ROW, truncated to WIDTH columns."
           (multiple-value-bind (rows selected)
               (%layout-completion-rows renderer completion)
             (multiple-value-bind (column row)
-                (%layout-completion-origin renderer window completion height)
+              (%layout-completion-origin renderer window completion height)
               (when column
-                (let ((x (+ x-offset (loom/feature/window:window-x window)
-                            (min column (1- width))))
-                      (y (loom/feature/window:window-y window))
-                      (cells (%layout-completion-cells renderer rows width column)))
-                  (loop for text in rows
-                        for offset from 0
-                        do (%layout-draw-completion-row
-                            renderer x (+ y row) offset text selected cells)))))))))))
+                (%layout-draw-completion-popup
+                 renderer window x-offset rows selected column row)))))))))
