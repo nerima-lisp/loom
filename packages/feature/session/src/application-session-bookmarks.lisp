@@ -19,23 +19,27 @@
    :line (editor-bookmark-line bookmark)
    :column (editor-bookmark-column bookmark)))
 
+(defun %session-bookmark-snapshot< (left right)
+  (let ((left-name (session-bookmark-snapshot-name left))
+        (right-name (session-bookmark-snapshot-name right)))
+    (or (string-lessp left-name right-name)
+        (and (string= (string-downcase left-name)
+                      (string-downcase right-name))
+             (string< left-name right-name)))))
+
+(defun %session-bookmark-snapshots-from-table (bookmarks)
+  (sort
+   (loop for bookmark being the hash-values of bookmarks
+         collect (%session-bookmark-snapshot bookmark))
+   #'%session-bookmark-snapshot<))
+
 (defun %session-bookmark-snapshots ()
   "Return the current named bookmarks in deterministic order."
   (let ((bookmarks (editor-state-bookmarks *editor-state*)))
     (cond
       ((null bookmarks) nil)
       ((hash-table-p bookmarks)
-       (sort
-        (loop for bookmark being the hash-values of bookmarks
-              collect (%session-bookmark-snapshot bookmark))
-        (lambda (left right)
-          (let ((left-name (session-bookmark-snapshot-name left))
-                (right-name (session-bookmark-snapshot-name right)))
-            (or (string< (string-downcase left-name)
-                         (string-downcase right-name))
-                (and (string= (string-downcase left-name)
-                              (string-downcase right-name))
-                     (string< left-name right-name)))))))
+       (%session-bookmark-snapshots-from-table bookmarks))
       (t
        (error "session snapshot: bookmarks must be a hash table")))))
 
