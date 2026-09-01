@@ -98,8 +98,10 @@ does not provide a compatibility reader for pre-v5 session layouts.
 
 The LSP slice deliberately keeps its dependency boundary small:
 `application-commands-lsp.lisp` owns interactive commands,
-`application-commands-lsp-navigation.lisp` owns completion and definition
-navigation, `application-lsp-session-state.lisp` owns session state,
+`application-commands-lsp-completion.lisp` owns completion data
+transformations and the completion command, while
+`application-commands-lsp-navigation.lisp` owns definition navigation,
+`application-lsp-session-state.lisp` owns session state,
 pending requests, and URI/language helpers, and
 `application-lsp-session-sync.lisp` owns document synchronization and
 diagnostic lookup. `application-lsp-session-lifecycle.lisp` owns startup,
