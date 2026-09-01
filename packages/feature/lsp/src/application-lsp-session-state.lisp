@@ -61,34 +61,36 @@ unreserved characters remain readable."
 (defun %lsp-uri-hex-digit (character)
   (digit-char-p character 16))
 
+(defun %lsp-uri-decode-octets (uri)
+  (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
+                              :adjustable t :fill-pointer 0))
+        (index 7)
+        (length (length uri)))
+    (loop while (< index length)
+          do (let ((character (char uri index)))
+               (if (and (char= character #\%)
+                        (< (+ index 2) length)
+                        (%lsp-uri-hex-digit (char uri (+ index 1)))
+                        (%lsp-uri-hex-digit (char uri (+ index 2))))
+                   (progn
+                     (vector-push-extend
+                      (parse-integer uri :start (1+ index) :end (+ index 3)
+                                         :radix 16)
+                      octets)
+                     (incf index 3))
+                   (progn
+                     (vector-push-extend (char-code character) octets)
+                     (incf index)))))
+    (coerce octets '(simple-array (unsigned-byte 8) (*)))))
+
 (defun lsp-uri-path (uri)
   "Return the filesystem path a `file://' URI names, or NIL for anything else.
 
 The inverse of LSP-PATH-URI: percent escapes are decoded back to their bytes
 and the bytes read as UTF-8, so a server that echoes back the URI loom sent it
-yields the path loom started from."
+  yields the path loom started from."
   (when (and (stringp uri) (uiop:string-prefix-p "file://" uri))
-    (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
-                                :adjustable t :fill-pointer 0))
-          (index 7)
-          (length (length uri)))
-      (loop while (< index length)
-            do (let ((character (char uri index)))
-                 (if (and (char= character #\%)
-                          (< (+ index 2) length)
-                          (%lsp-uri-hex-digit (char uri (+ index 1)))
-                          (%lsp-uri-hex-digit (char uri (+ index 2))))
-                     (progn
-                       (vector-push-extend
-                        (parse-integer uri :start (1+ index) :end (+ index 3)
-                                           :radix 16)
-                        octets)
-                       (incf index 3))
-                     (progn
-                       (vector-push-extend (char-code character) octets)
-                       (incf index)))))
-      (%lsp-utf8-decode
-       (coerce octets '(simple-array (unsigned-byte 8) (*)))))))
+    (%lsp-utf8-decode (%lsp-uri-decode-octets uri))))
 
 (defun %lsp-language-id (path)
   (let ((type (string-downcase (or (pathname-type (pathname path)) ""))))
