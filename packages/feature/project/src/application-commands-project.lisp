@@ -17,6 +17,18 @@
                          (search needle (string-downcase candidate))))
                    candidates)))
 
+(defun %project-visit-file (root relative-path minibuffer)
+  (let ((path (merge-pathnames relative-path root)))
+    (if (probe-file path)
+        (let ((buffer (buffer-load path)))
+          (loom/application:%register-buffer buffer)
+          (loom/feature/window:window-set-buffer
+           (loom/application:%selected-window)
+           buffer))
+        (minibuffer-message minibuffer
+                            (format nil "File not found: ~A"
+                                    relative-path)))))
+
 (defun project-find-file ()
   "Prompt for a file relative to the current project's root and visit it."
   (let ((root (project-find-root (%project-start-path))))
@@ -34,16 +46,7 @@
                  :completion-function
                  (lambda (input)
                    (%project-completion-candidates input candidates))))
-            (let ((path (merge-pathnames relative-path root)))
-              (if (probe-file path)
-                  (let ((buffer (buffer-load path)))
-                    (loom/application:%register-buffer buffer)
-                    (loom/feature/window:window-set-buffer
-                     (loom/application:%selected-window)
-                                       buffer))
-                  (minibuffer-message minibuffer
-                                      (format nil "File not found: ~A"
-                                              relative-path)))))))))
+            (%project-visit-file root relative-path minibuffer))))))
 
 (defun %project-search-summary (root result)
   (let* ((path (getf result :path))
