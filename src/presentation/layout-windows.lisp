@@ -46,6 +46,16 @@
 (defparameter +layout-matching-paren-style+ '(:bold (:bg 5) (:fg 0))
   "Style marking the parenthesis at point and the one it pairs with.")
 
+(defun %layout-draw-matching-paren-at (renderer window x-offset buffer start local)
+  (let ((position (buffer-visible-offset-position buffer (+ start local))))
+    (when position
+      (%layout-draw-line-run
+       renderer window x-offset
+       (buffer-position-line position)
+       (buffer-position-column position)
+       (1+ (buffer-position-column position))
+       +layout-matching-paren-style+))))
+
 (defun %layout-draw-matching-paren (renderer window x-offset)
   "Mark the parenthesis point is adjacent to, together with its partner."
   (let* ((buffer (loom/feature/window:window-buffer window))
@@ -56,12 +66,5 @@
     (multiple-value-bind (paren match) (%matching-paren-offset text offset)
       (when (and paren match)
         (dolist (local (list paren match))
-          (let ((position (buffer-visible-offset-position
-                           buffer (+ start local))))
-            (when position
-              (%layout-draw-line-run
-               renderer window x-offset
-               (buffer-position-line position)
-               (buffer-position-column position)
-               (1+ (buffer-position-column position))
-               +layout-matching-paren-style+))))))))
+          (%layout-draw-matching-paren-at
+           renderer window x-offset buffer start local))))))
