@@ -7,6 +7,22 @@
 ;;;;
 (in-package #:loom)
 
+(defun %sexp-string-run-end (classes start)
+  "Return the position just after the string run beginning at START."
+  (let ((end start))
+    (loop while (and (< end (length classes))
+                     (eq (aref classes end) :string))
+          do (incf end))
+    end))
+
+(defun %sexp-string-run-start (classes end)
+  "Return the position where the string run ending before END begins."
+  (let ((start (1- end)))
+    (loop while (and (plusp start)
+                     (eq (aref classes (1- start)) :string))
+          do (decf start))
+    start))
+
 (defun %forward-sexp-offset (text offset &optional (classes
                                                     (%sexp-syntax-classes text)))
   "Return the offset just past the S-expression after OFFSET, or NIL.
@@ -23,10 +39,7 @@ parenthesis that belongs to an enclosing list, or an unbalanced opening one."
       ;; A string literal's own quotes are classified :STRING along with its
       ;; contents, so this cannot ask whether the quote is :CODE.
       ((eq (aref classes start) :string)
-       (let ((end start))
-         (loop while (and (< end length) (eq (aref classes end) :string))
-               do (incf end))
-         end))
+       (%sexp-string-run-end classes start))
       (t (let ((end (%sexp-atom-end text classes start)))
            (and (> end start) end))))))
 
@@ -40,11 +53,7 @@ parenthesis that belongs to an enclosing list, or an unbalanced opening one."
       ((%sexp-close-p text classes (1- end))
        (%sexp-backward-list-start text classes end))
       ((eq (aref classes (1- end)) :string)
-       (let ((start (1- end)))
-         (loop while (and (plusp start)
-                          (eq (aref classes (1- start)) :string))
-               do (decf start))
-         start))
+       (%sexp-string-run-start classes end))
       (t (let ((start (%sexp-atom-start text classes end)))
            (and (< start end) start))))))
 
