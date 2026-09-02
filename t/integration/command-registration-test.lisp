@@ -1,6 +1,21 @@
 (in-package #:loom/test)
 
 (describe "command registration"
+  (it "keeps the command catalogue unique and symbol-based"
+    (let ((specs loom/application::*command-specs*))
+      (expect specs :to-be-truthy)
+      (expect (loop for spec in specs
+                    for command = (getf spec :command)
+                    always (and (or (null (getf spec :name))
+                                    (stringp (getf spec :name)))
+                                (symbolp command)))
+              :to-be t)
+      (expect (length (remove-duplicates (mapcar (lambda (spec)
+                                                   (getf spec :name))
+                                                 specs)
+                                       :test #'string-equal))
+              :to-equal (length specs))))
+
   (it-each
       (("pipe-command"
         loom/feature/shell:pipe-command
