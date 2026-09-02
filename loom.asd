@@ -506,6 +506,7 @@ root source tree responsible for every feature."
    (:file "t/integration/user-init-test")
    (:file "t/integration/frame-layout-test-support")
    (:file "t/integration/layout-test")
+   (:file "t/integration/layout-secondary-test")
    (:file "t/integration/frame-layout-test")
    (:file "t/integration/frame-layout-cursor-test")
   (:file "t/integration/session-test-support")
