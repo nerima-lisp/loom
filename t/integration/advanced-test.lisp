@@ -35,6 +35,17 @@
                              (subseq "abcdef" column))))))
 
   (cl-weave:it-property
+      "restores generated edits through the public undo protocol"
+      ((column (cl-weave:gen-integer :min 0 :max 6))
+       (character (cl-weave:gen-character :alphabet "abc日本語")))
+    (%with-buffer-at (buffer "abcdef" 0 column)
+      (let ((before (buffer-text buffer)))
+        (buffer-insert-string buffer (string character))
+        (expect (buffer-undo buffer) :to-be buffer)
+        (expect (buffer-text buffer) :to-equal before)
+        (expect (buffer-point-column buffer) :to-equal column))))
+
+  (cl-weave:it-property
       "round-trips generated UTF-8 frame payloads"
       ((character (cl-weave:gen-character :alphabet "abc日本語")))
     (let ((json (format nil "{\"text\":\"~A\"}" character)))
