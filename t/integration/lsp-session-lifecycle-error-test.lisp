@@ -86,4 +86,11 @@
        "{\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":-1,\"message\":\"busy\"}}")
       (lsp-session-stop session)
       (expect (lsp-session-last-error session) :to-equal "busy")
+      (expect (%fake-closed-p transport) :to-be-truthy)))
+
+  (it "records shutdown send failures before finishing"
+    (%with-initialized-fake-lsp-session ((transport session))
+      (setf (%fake-send-error transport) "send failed")
+      (lsp-session-stop session)
+      (expect (lsp-session-last-error session) :to-equal "send failed")
       (expect (%fake-closed-p transport) :to-be-truthy))))

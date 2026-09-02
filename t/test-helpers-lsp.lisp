@@ -4,9 +4,12 @@
 (defclass %fake-lsp-transport ()
   ((sent :initform nil :accessor %fake-sent)
    (incoming :initform nil :accessor %fake-incoming)
-   (closed-p :initform nil :accessor %fake-closed-p)))
+   (closed-p :initform nil :accessor %fake-closed-p)
+   (send-error :initform nil :accessor %fake-send-error)))
 
 (defmethod loom/feature/lsp::lsp-transport-send ((transport %fake-lsp-transport) json)
+  (when (%fake-send-error transport)
+    (error "~A" (%fake-send-error transport)))
   (push json (%fake-sent transport)))
 
 (defmethod loom/feature/lsp::lsp-transport-receive ((transport %fake-lsp-transport))
