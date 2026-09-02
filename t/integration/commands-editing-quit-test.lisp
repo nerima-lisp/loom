@@ -6,6 +6,14 @@
 (describe
   "save-buffers-kill-terminal"
   (it
+    "quits immediately when no buffer has unsaved changes"
+    (%with-minibuffer-state (minibuffer "clean" (quit nil))
+      (%capturing-loom-quit (quit)
+        (loom::save-buffers-kill-terminal)
+        (expect quit :to-be t))
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
     "asks about a modified file buffer shown in a nonselected split"
     (host-kit:with-temporary-directory (dir)
       (%with-minibuffer-state (minibuffer "selected"
