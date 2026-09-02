@@ -457,6 +457,7 @@ root source tree responsible for every feature."
   (:file "t/integration/lsp-command-diagnostics-render-test")
   (:file "t/integration/lsp-command-diagnostics-state-test")
    (:file "t/integration/commands-lsp-navigation-test")
+   (:file "t/integration/lsp-completion-data-test")
    (:file "t/integration/commands-lsp-definition-test")
   (:file "t/integration/lsp-command-diagnostics-format-test")
                (:file "t/integration/lsp-command-start-test")
