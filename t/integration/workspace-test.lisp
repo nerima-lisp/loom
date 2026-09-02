@@ -5,6 +5,18 @@
 (in-package #:loom/test)
 
 (describe "workspace commands"
+  (it "switches the domain manager by name without losing its current value"
+    (let* ((main (make-workspace :name "main" :window-tree :main-tree))
+           (notes (make-workspace :name "notes" :window-tree :notes-tree))
+           (manager (make-workspace-manager-from-workspaces
+                     (list main notes))))
+      (expect (workspace-manager-current manager) :to-be main)
+      (expect (workspace-manager-current-name manager) :to-equal "main")
+      (expect (workspace-manager-switch-name manager "NOTES") :to-be notes)
+      (expect (workspace-manager-current manager) :to-be notes)
+      (expect (workspace-manager-switch-name manager "missing") :to-be nil)
+      (expect (workspace-manager-current manager) :to-be notes)))
+
   (it "keeps an independent window tree for each workspace"
     (%with-minibuffer-state (minibuffer "one")
       (let ((first-tree (editor-state-window-tree *editor-state*)))
