@@ -3,8 +3,11 @@
 ;;;; Reader-aware syntax classification shared by S-expression motion helpers.
 (in-package #:loom)
 
-(defparameter +sexp-open-characters+ '(#\( #\[ #\{))
-(defparameter +sexp-close-characters+ '(#\) #\] #\}))
+(defmacro define-sexp-character-set (name characters)
+  `(defparameter ,name ',characters))
+
+(define-sexp-character-set +sexp-open-characters+ (#\( #\[ #\{))
+(define-sexp-character-set +sexp-close-characters+ (#\) #\] #\}))
 
 (defun %sexp-whitespace-p (character)
   (member character '(#\Space #\Tab #\Newline #\Return #\Page) :test #'char=))
