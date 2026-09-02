@@ -57,11 +57,11 @@
 (defun %layout-active-completion (window)
   (let ((completion (and *editor-state*
                          (editor-state-completion *editor-state*))))
-    (and completion
-         (eq (editor-completion-buffer completion)
-             (loom/feature/window:window-buffer window))
-         (editor-completion-items completion)
-         completion)))
+    (when (and completion
+               (eq (editor-completion-buffer completion)
+                   (loom/feature/window:window-buffer window))
+               (editor-completion-items completion))
+      completion)))
 
 (defun %layout-completion-cells (renderer rows width column)
   (min (- width (min column (1- width)))
