@@ -20,6 +20,14 @@ same thing to a caller and are flattened to a list here."
        (if (listp items) items '())))
     (t '())))
 
+(defun %lsp-completion-string (object key)
+  (let ((value (%lsp-optional-diagnostic-value object key)))
+    (and (stringp value) value)))
+
+(defun %lsp-completion-kind (object)
+  (let ((value (%lsp-optional-diagnostic-value object "kind")))
+    (and (integerp value) value)))
+
 (defun %lsp-parse-completion-item (object)
   (unless (hash-table-p object)
     (error "LSP completion item is not an object: ~S" object))
@@ -28,13 +36,9 @@ same thing to a caller and are flattened to a list here."
       (error "LSP completion item has no label: ~S" object))
     (make-lsp-completion-item
      label
-     :insert-text (let ((value (%lsp-optional-diagnostic-value
-                                object "insertText")))
-                    (and (stringp value) value))
-     :detail (let ((value (%lsp-optional-diagnostic-value object "detail")))
-               (and (stringp value) value))
-     :kind (let ((value (%lsp-optional-diagnostic-value object "kind")))
-             (and (integerp value) value)))))
+     :insert-text (%lsp-completion-string object "insertText")
+     :detail (%lsp-completion-string object "detail")
+     :kind (%lsp-completion-kind object))))
 
 (defun %lsp-parse-completion-result (result)
   "Return the LSP-COMPLETION-ITEM values in a completion RESULT.
