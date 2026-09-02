@@ -60,6 +60,20 @@ the discovered value explicitly."
      (loom/application:%selected-window)
      diagnostics-buffer)))
 
+(defun %lsp-refresh-diagnostics (session buffer)
+  (lsp-session-refresh session buffer)
+  (when (lsp-session-last-error session)
+    (%lsp-error-message session)))
+
+(defun %lsp-report-diagnostics-result (session buffer minibuffer)
+  (let ((error-message (%lsp-refresh-diagnostics session buffer)))
+    (if error-message
+        (minibuffer-message minibuffer
+                            (format nil "LSP error: ~A" error-message))
+        (progn
+          (%lsp-show-diagnostics session buffer)
+          (minibuffer-message minibuffer "LSP diagnostics refreshed.")))))
+
 (defun lsp-diagnostics ()
   "Refresh and display diagnostics for the selected file-backed buffer."
   (let* ((session (editor-state-lsp-session *editor-state*))
@@ -72,11 +86,4 @@ the discovered value explicitly."
        (minibuffer-message minibuffer
                             "LSP diagnostics need a file-backed buffer."))
       (t
-       (lsp-session-refresh session buffer)
-       (if (lsp-session-last-error session)
-           (minibuffer-message
-            minibuffer
-            (format nil "LSP error: ~A" (%lsp-error-message session)))
-           (progn
-             (%lsp-show-diagnostics session buffer)
-             (minibuffer-message minibuffer "LSP diagnostics refreshed.")))))))
+       (%lsp-report-diagnostics-result session buffer minibuffer)))))
