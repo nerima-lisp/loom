@@ -18,6 +18,17 @@
       (expect (minibuffer-history-entries minibuffer)
               :to-equal '("latest"))))
 
+  (it
+    "returns a snapshot that can be changed independently"
+    (let ((minibuffer (make-minibuffer
+                       :history (history-kit:make-history))))
+      (minibuffer-set-history-entries minibuffer '("new" "old"))
+      (let ((snapshot (minibuffer-history-entries minibuffer)))
+        (pop snapshot)
+        (expect snapshot :to-equal '("old"))
+        (expect (minibuffer-history-entries minibuffer)
+                :to-equal '("new" "old")))))
+
     (it
       "rejects non-string history entries"
        (signals error
