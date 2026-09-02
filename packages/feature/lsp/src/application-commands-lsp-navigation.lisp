@@ -12,11 +12,11 @@
 
 (defun %lsp-selected-buffer-for-path (path)
   (let ((selected (loom/application:%selected-buffer)))
-    (and selected
-         (loom:buffer-path selected)
-         (equal (namestring (pathname (loom:buffer-path selected)))
-                (namestring (pathname path)))
-         selected)))
+    (when (and selected
+               (loom:buffer-path selected)
+               (equal (namestring (pathname (loom:buffer-path selected)))
+                      (namestring (pathname path))))
+      selected)))
 
 (defun %lsp-location-buffer (path)
   (and path
