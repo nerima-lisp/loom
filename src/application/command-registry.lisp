@@ -28,13 +28,17 @@
           when (%command-name-matches-prefix-p name prefix)
             collect name)))
 
+(defun %command-spec-named-p (spec name)
+  "Return true when SPEC has the command NAME."
+  (and (getf spec :name)
+       (string-equal name (getf spec :name))))
+
 (defun find-extended-command (input)
   "Return the registered command named by INPUT, or NIL."
   (let ((name (%normalized-command-name input)))
     (getf
      (find-if (lambda (spec)
-                (and (getf spec :name)
-                     (string-equal name (getf spec :name))))
+                (%command-spec-named-p spec name))
               *command-specs*)
      :command)))
 
@@ -42,13 +46,21 @@
   "Return true when LEFT should appear before RIGHT in the help summary."
   (< (getf left :help-order) (getf right :help-order)))
 
+(defun %help-specs ()
+  "Return registered command specs that contribute to the help summary."
+  (loop for spec in *command-specs*
+        when (getf spec :help)
+          collect spec))
+
+(defun %help-messages (specs)
+  "Extract help messages from sorted SPECS."
+  (mapcar (lambda (spec) (getf spec :help)) specs))
+
 (defun help-summary-message ()
   "Return the compact help message derived from registered command metadata."
   (let ((entries
           (stable-sort
            (copy-list
-            (loop for spec in *command-specs*
-                  for help = (getf spec :help)
-                  when help collect spec))
+            (%help-specs))
            #'%help-spec<)))
-    (format nil "Help: ~{~A~^  ~}" (mapcar (lambda (spec) (getf spec :help)) entries))))
+    (format nil "Help: ~{~A~^  ~}" (%help-messages entries))))
