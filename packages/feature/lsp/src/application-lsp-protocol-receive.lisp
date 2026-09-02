@@ -30,6 +30,6 @@
                      :false-value nil)))
                (error (condition)
                  (setf (lsp-session-last-error session)
-                       (format nil "~A" condition))
+                       (princ-to-string condition))
                  (return)))))
   session)

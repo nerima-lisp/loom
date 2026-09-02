@@ -46,7 +46,7 @@ parenthesis that belongs to an enclosing list, or an unbalanced opening one."
              (when found (return found))
              (setf position next-position
                    depth next-depth))
-        finally (return nil)))
+        finally (return)))
 
 (defun %down-list-offset (text offset &optional (classes
                                                  (%sexp-syntax-classes text)))

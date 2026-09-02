@@ -12,9 +12,7 @@
         number))))
 
 (defun %terminal-screen-parse-parameters (string)
-  (if (zerop (length string))
-      nil
-      (loop with start = 0
+  (unless (zerop (length string)) (loop with start = 0
             with parameters = nil
             for separator = (position #\; string :start start)
             for end = (or separator (length string))

@@ -25,9 +25,8 @@
            (json-kit:make-json-object
             (list (cons "uri" uri)
                   (cons "version" (lsp-document-version document)))))
-     (cons "contentChanges"
-           (list (json-kit:make-json-object
-                  (list (cons "text" text)))))))))
+     (list "contentChanges" (json-kit:make-json-object
+                  (list (cons "text" text))))))))
 
 (defun %lsp-send-document-open (session uri document text)
   (%lsp-send-notification

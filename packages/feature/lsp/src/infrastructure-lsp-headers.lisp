@@ -17,7 +17,7 @@
 (defun %lsp-find-header-end (octets)
   (loop for index from 0 below (- (length octets) 3)
         when (and (= (aref octets index) 13)
-                  (= (aref octets (+ index 1)) 10)
+                  (= (aref octets (1+ index)) 10)
                   (= (aref octets (+ index 2)) 13)
                   (= (aref octets (+ index 3)) 10))
           do (return index)))

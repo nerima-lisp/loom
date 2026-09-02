@@ -8,15 +8,13 @@
       (error "The LOOM-USER package is not available.")))
 
 (defun %evaluation-values-line (values)
-  (if (null values)
-      "<no values>"
-      (with-output-to-string (stream)
+  (if values (with-output-to-string (stream)
         (loop with first-p = t
               for value in values
               do (unless first-p
                    (write-string ", " stream))
                  (setf first-p nil)
-                 (prin1 value stream)))))
+                 (prin1 value stream))) "<no values>"))
 
 (defun %evaluate-form (form)
   (%evaluation-values-line (multiple-value-list (eval form))))

@@ -32,10 +32,7 @@
 (defun project-find-file ()
   "Prompt for a file relative to the current project's root and visit it."
   (let ((root (project-find-root (%project-start-path))))
-    (if (null root)
-        (minibuffer-message (editor-state-minibuffer *editor-state*)
-                            "No project root found")
-        (let ((candidates
+    (if root (let ((candidates
                 (mapcar (lambda (path) (project-relative-path root path))
                         (project-list-files root))))
           (loom/application:with-prompts
@@ -46,7 +43,8 @@
                  :completion-function
                  (lambda (input)
                    (%project-completion-candidates input candidates))))
-            (%project-visit-file root relative-path minibuffer))))))
+            (%project-visit-file root relative-path minibuffer))) (minibuffer-message (editor-state-minibuffer *editor-state*)
+                            "No project root found"))))
 
 (defun %project-search-summary (root result)
   (let* ((path (getf result :path))
@@ -73,14 +71,12 @@
 (defun project-search ()
   "Search every readable project file for a case-sensitive query."
   (let ((root (project-find-root (%project-start-path))))
-    (if (null root)
-        (minibuffer-message (editor-state-minibuffer *editor-state*)
-                            "No project root found")
-        (loom/application:with-prompts
+    (if root (loom/application:with-prompts
             (minibuffer (editor-state-minibuffer *editor-state*)
                         :on-cancel (minibuffer-message minibuffer "Quit"))
           ((query "Project search: "))
-          (%project-search-with-query root minibuffer query)))))
+          (%project-search-with-query root minibuffer query)) (minibuffer-message (editor-state-minibuffer *editor-state*)
+                            "No project root found"))))
 
 (defun project-root ()
   "Display the current project's root directory."

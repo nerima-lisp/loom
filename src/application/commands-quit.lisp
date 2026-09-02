@@ -79,12 +79,10 @@ original list when the answer is invalid."
   (defun %continue-quit (buffers)
     "Prompt for the next modified buffer in BUFFERS, or signal LOOM-QUIT."
     (let ((buffer (find-if (function buffer-modified-p) buffers)))
-      (if (null buffer)
-          (signal (quote loom-quit))
-          (%continue-quit-prompt
+      (if buffer (%continue-quit-prompt
            buffers buffer
            (lambda (next-buffers)
-             (%continue-quit next-buffers))))))
+             (%continue-quit next-buffers))) (signal (quote loom-quit)))))
 
   (defun save-buffers-kill-terminal ()
     "Exit after resolving all modified buffers in the session."

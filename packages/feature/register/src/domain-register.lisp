@@ -17,7 +17,7 @@ POSITION values keep a (LINE . COLUMN) cons cell."
 
 (defstruct (register-bank
             (:constructor %make-register-bank
-                (&optional (values (make-hash-table :test #'eql)))))
+                (&optional (values (make-hash-table)))))
   "The mutable collection of named register values for one editor session."
   values)
 

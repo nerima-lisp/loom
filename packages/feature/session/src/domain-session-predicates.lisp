@@ -13,6 +13,6 @@
       (%session-nonempty-string-p value)))
 
 (defun %session-mark-valid-p (line column)
-  (or (and (null line) (null column))
+  (or (not (or line column))
       (and (%session-nonnegative-integer-p line)
            (%session-nonnegative-integer-p column))))

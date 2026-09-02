@@ -25,7 +25,7 @@
   ;; Response handlers for requests the user drove, keyed by JSON-RPC id.
   ;; Initialize and shutdown keep their own dedicated slots because their
   ;; responses change the session's lifecycle rather than returning a value.
-  (pending-requests (make-hash-table :test #'eql))
+  (pending-requests (make-hash-table))
   pending-shutdown-id
   (exit-sent-p nil)
   last-error

@@ -55,9 +55,7 @@ the same order it was received instead of being reduced to a styled string."
                 when (%terminal-screen-row-content-p
                       (aref (terminal-screen-rows screen) row))
                   return row)))
-    (if (null last-row)
-        ""
-        (with-output-to-string (output)
+    (if last-row (with-output-to-string (output)
           (loop for row below (1+ last-row)
                 do (when (plusp row)
                      (write-char #\Newline output))
@@ -65,7 +63,7 @@ the same order it was received instead of being reduced to a styled string."
                     (string-right-trim " "
                                        (aref (terminal-screen-rows screen)
                                              row))
-                    output))))))
+                    output))) "")))
 
 (defun terminal-screen-resize (screen width height)
   "Resize SCREEN while retaining the top-left visible content."

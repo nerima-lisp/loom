@@ -15,7 +15,7 @@
        (setf (terminal-screen-cursor-column screen) 0))
       (#\a (incf (terminal-screen-cursor-column screen) amount))
       (#\e (incf (terminal-screen-cursor-row screen) amount))
-      (otherwise (return-from %terminal-screen-csi-relative-cursor nil)))
+      (otherwise (return-from %terminal-screen-csi-relative-cursor)))
     t))
 
 (defun %terminal-screen-csi-absolute-cursor (screen final parameters)
@@ -31,7 +31,7 @@
     (#\d
      (setf (terminal-screen-cursor-row screen)
            (1- (%terminal-screen-parameter parameters 0 1))))
-    (otherwise (return-from %terminal-screen-csi-absolute-cursor nil)))
+    (otherwise (return-from %terminal-screen-csi-absolute-cursor)))
   t)
 
 (defun %terminal-screen-csi-cursor (screen final parameters)

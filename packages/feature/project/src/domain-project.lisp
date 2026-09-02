@@ -55,7 +55,7 @@
         (return current))
       (let ((parent (project-parent-directory current)))
         (when (or (null parent) (equal parent current))
-          (return nil))
+          (return))
         (setf current parent)))))
 
 (defun project-relative-path (root path)

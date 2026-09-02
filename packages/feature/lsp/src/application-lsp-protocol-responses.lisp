@@ -54,9 +54,7 @@
             (%lsp-json-error-message error-value)))))
 
 (defun %lsp-handle-initialize-response-payload (session message)
-  (if (%lsp-response-error session message)
-      nil
-      (multiple-value-bind (result result-present-p)
+  (unless (%lsp-response-error session message) (multiple-value-bind (result result-present-p)
           (%lsp-value-present-p message "result")
         (if result-present-p
             (%lsp-handle-initialize-response-success session result)
@@ -71,7 +69,7 @@
         (%lsp-handle-initialize-response-payload session message)
       (error (condition)
         (setf (lsp-session-last-error session)
-              (format nil "~A" condition))))))
+              (princ-to-string condition))))))
 
 (defun %lsp-handle-shutdown-response (session message)
   (when (%lsp-message-id-matches-p

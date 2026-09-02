@@ -79,13 +79,11 @@
   "Replay the last recorded keyboard macro (C-x e)."
   (let* ((macro (editor-state-keyboard-macro *editor-state*))
          (events (keyboard-macro-events macro)))
-    (if (null events)
-        (minibuffer-message (editor-state-minibuffer *editor-state*)
-                            "Keyboard macro is empty")
-        (let ((keymap-state (make-keymap-state
+    (if events (let ((keymap-state (make-keymap-state
                              (editor-state-keymap *editor-state*))))
           (keyboard-macro-begin-replay macro)
           (unwind-protect
                (dolist (event events)
                  (%replay-keyboard-macro-event event keymap-state))
-            (keyboard-macro-end-replay macro))))))
+            (keyboard-macro-end-replay macro))) (minibuffer-message (editor-state-minibuffer *editor-state*)
+                            "Keyboard macro is empty"))))

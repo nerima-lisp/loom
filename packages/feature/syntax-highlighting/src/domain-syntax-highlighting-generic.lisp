@@ -20,9 +20,7 @@
                     :end2 end)))))
 
 (defun %syntax-generic-atom-continues-p (line position comment-prefix)
-  (and (not (%syntax-whitespace-p (char line position)))
-       (not (%syntax-generic-delimiter-p (char line position)))
-       (not (%syntax-generic-comment-start-p line position comment-prefix))))
+  (not (or (%syntax-whitespace-p (char line position)) (%syntax-generic-delimiter-p (char line position)) (%syntax-generic-comment-start-p line position comment-prefix))))
 
 (defun %syntax-generic-atom-end (line start comment-prefix)
   (let ((position start))

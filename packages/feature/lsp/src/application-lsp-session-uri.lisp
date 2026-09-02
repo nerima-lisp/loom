@@ -5,9 +5,9 @@
 
 (defun %lsp-uri-path-character-p (character)
   (or (char= character #\/)
-      (or (and (char>= character #\0) (char<= character #\9))
+      (and (char>= character #\0) (char<= character #\9))
           (and (char>= character #\A) (char<= character #\Z))
-          (and (char>= character #\a) (char<= character #\z)))
+          (and (char>= character #\a) (char<= character #\z))
       (find character "-._~:@!$&'()*+,;=" :test #'char=)))
 
 (defun %lsp-uri-escape-path (path)

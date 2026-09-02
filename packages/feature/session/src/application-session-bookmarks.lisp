@@ -23,8 +23,7 @@
   (let ((left-name (session-bookmark-snapshot-name left))
         (right-name (session-bookmark-snapshot-name right)))
     (or (string-lessp left-name right-name)
-        (and (string= (string-downcase left-name)
-                      (string-downcase right-name))
+        (and (string-equal left-name right-name)
              (string< left-name right-name)))))
 
 (defun %session-bookmark-snapshots-from-table (bookmarks)

@@ -28,7 +28,7 @@
                      (lsp-session-initialized-p session))
             (lsp-session-sync-buffer session buffer)))
       (error (condition)
-        (setf (lsp-session-last-error session) (format nil "~A" condition)))))
+        (setf (lsp-session-last-error session) (princ-to-string condition)))))
   session)
 
 (defun %lsp-shutdown-deadline (timeout)
@@ -42,7 +42,7 @@
               (%lsp-send-request session "shutdown"))
       (error (condition)
         (setf (lsp-session-last-error session)
-              (format nil "~A" condition))))))
+              (princ-to-string condition))))))
 
 (defun %lsp-await-shutdown (session timeout)
   (let ((deadline (%lsp-shutdown-deadline timeout)))
