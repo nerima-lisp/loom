@@ -256,6 +256,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/lsp/src/application-lsp-protocol-routing")
    (:file "packages/feature/lsp/src/application-lsp-protocol-receive")
    (:file "packages/feature/lsp/src/application-lsp-session-state")
+   (:file "packages/feature/lsp/src/application-lsp-session-uri")
    (:file "packages/feature/lsp/src/application-lsp-session-sync")
    (:file "packages/feature/lsp/src/application-lsp-session-lifecycle")
    (:file "packages/feature/lsp/src/application-lsp-diagnostics-view")
