@@ -13,6 +13,13 @@
 (describe
   "incremental search"
   (it
+    "does nothing when no minibuffer is available"
+    (let ((*editor-state* (%fresh-editor-state "alpha")))
+      (loom/feature/search:isearch-forward)
+      (expect (editor-state-isearch *editor-state*) :to-be nil)
+      (expect (buffer-point-column (%selected-test-buffer)) :to-equal 0)))
+
+  (it
     "moves point to the next match on every keystroke"
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha beta alpha")
       (buffer-set-point buffer 0 0)
