@@ -5,9 +5,9 @@
 ;;;; domain-major-mode.lisp.
 (in-package #:loom/feature/mode)
 
-(defun %validate-major-mode-parent-and-aliases (key parent parent-key aliases)
+(defun %validate-major-mode-parent-and-aliases (key parent-key aliases)
   (unless parent-key
-    (error "Unknown parent major mode: ~S" parent))
+    (error "Unknown parent major mode: ~S" parent-key))
   (when (eq parent-key key)
     (error "A major mode cannot inherit from itself: ~S" key))
   (when (/= (length aliases)
@@ -79,7 +79,7 @@ same single- and multi-chord notation accepted by the global key binding API.
           (%normalize-major-mode-registration-lists
            aliases extensions filenames)
         (%validate-major-mode-parent-and-aliases
-         key parent parent-key normalized-aliases)
+         key parent-key normalized-aliases)
         (%register-major-mode-definition
          key
          (%make-major-mode-definition
