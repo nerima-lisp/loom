@@ -153,6 +153,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/shell/src/infrastructure-shell")
    (:file "packages/feature/git/src/infrastructure-git")
    (:file "packages/feature/lsp/src/infrastructure-lsp-framing-support")
+   (:file "packages/feature/lsp/src/infrastructure-lsp-headers")
    (:file "packages/feature/lsp/src/infrastructure-lsp-framing")
    (:file "packages/feature/lsp/src/infrastructure-lsp-discovery")
    (:file "packages/feature/lsp/src/infrastructure-lsp-transport-support")
