@@ -76,6 +76,14 @@
                            nil))
               :to-equal
               (namestring (truename (uiop:getcwd))))))
+  (it "uses the parent directory for a file pathname"
+    (let* ((directory (uiop:temporary-directory))
+           (file (merge-pathnames "loom-shell-directory-file.txt" directory)))
+      (with-open-file (stream file :direction :output :if-exists :supersede)
+        (write-line "fixture" stream))
+      (expect (namestring (loom/feature/shell::%shell-directory-pathname file))
+              :to-equal
+              (namestring (truename directory)))))
   (it "passes string input to process standard input"
     (let ((result (run-shell-command "tr 'a-z' 'A-Z'"
                                      :input "abc")))
