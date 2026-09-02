@@ -82,4 +82,21 @@
                 nil)
         (expect (loom/feature/mode:comment-line)
                 :to-be
-                nil)))))
+                nil))))
+
+  (it
+    "rejects non-callable major-mode key bindings"
+    (%with-registered-major-modes (:loom-test-invalid-binding)
+      (register-major-mode
+       :loom-test-invalid-binding
+       :keybindings '(("C-c i" . 42)))
+      (signals error
+        (loom/feature/mode:major-mode-keymap
+         :loom-test-invalid-binding))))
+
+  (it
+    "reports the end of whitespace-only lines as their indentation"
+    (expect (loom/feature/mode::%major-mode-line-indentation
+             (format nil " ~C" #\Tab))
+            :to-equal
+            2)))
