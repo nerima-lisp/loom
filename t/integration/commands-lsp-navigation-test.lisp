@@ -381,6 +381,21 @@
       (expect buffer :to-have-point (cons 0 1))))
 
   (it
+    "reports an error result rather than jumping nowhere"
+    (%with-lsp-navigation (transport session buffer)
+      (buffer-set-point buffer 0 1)
+      (loom/feature/lsp:lsp-find-definition)
+      (%fake-push-and-drain
+       transport session
+       (format nil
+               "{\"jsonrpc\":\"2.0\",\"id\":~D,\"error\":{\"code\":-32603,\"message\":\"server failed\"}}"
+               (%lsp-last-request-id transport)))
+      (expect (minibuffer-message-string
+               (editor-state-minibuffer *editor-state*))
+              :to-equal "Definition failed: server failed")
+      (expect buffer :to-have-point (cons 0 1))))
+
+  (it
     "declines a definition that is not a local file"
     (%with-lsp-navigation (transport session buffer)
       (loom/feature/lsp:lsp-find-definition)
