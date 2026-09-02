@@ -31,7 +31,7 @@ both shapes are recognized here."
 
 (defun %minibuffer-key-kind (key-event type code)
   "Classify KEY-EVENT -- whose CL-TTY-KIT:KEY-EVENT-TYPE and -CODE the caller
-has already read out as TYPE and CODE -- as one of the nine things
+has already read out as TYPE and CODE -- as one of the eight things
 MINIBUFFER-HANDLE-KEY does with a keystroke: :CANCEL, :BACKSPACE,
 :HISTORY-PREVIOUS, :HISTORY-NEXT, :COMPLETE, :CONFIRM, :CHARACTER, or
 :IGNORE for anything else. Pure: the classification is separated from the
