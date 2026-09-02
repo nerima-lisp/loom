@@ -132,21 +132,29 @@ draws nothing rather than clipping to the wrong row."
                       (length (%layout-visible-line buffer line)))
                   style))))))
 
+(defun %layout-isearch-session-for-window (window)
+  (let ((session (and *editor-state* (editor-state-isearch *editor-state*))))
+    (when (and session
+               (eq (loom/feature/search:isearch-session-buffer session)
+                   (loom/feature/window:window-buffer window)))
+      session)))
+
+(defun %layout-isearch-span-style (span current)
+  (if (and current
+           (= (buffer-span-start span)
+              (buffer-span-start current)))
+      +layout-isearch-current-style+
+      +layout-isearch-match-style+))
+
 (defun %layout-draw-isearch (renderer window x-offset)
   "Highlight the active incremental search's matches inside WINDOW.
 
 Only the window's own buffer is highlighted: a session belongs to the buffer it
 started in, and painting its offsets onto a different buffer would mark text
 that never matched."
-  (let ((session (and *editor-state* (editor-state-isearch *editor-state*))))
-    (when (and session
-               (eq (loom/feature/search:isearch-session-buffer session)
-                   (loom/feature/window:window-buffer window)))
+  (let ((session (%layout-isearch-session-for-window window)))
+    (when session
       (let ((current (loom/feature/search:isearch-session-match session)))
         (dolist (span (loom/feature/search:isearch-session-matches session))
           (%layout-draw-span renderer window x-offset span
-                             (if (and current
-                                      (= (buffer-span-start span)
-                                         (buffer-span-start current)))
-                                 +layout-isearch-current-style+
-                                 +layout-isearch-match-style+)))))))
+                             (%layout-isearch-span-style span current)))))))
