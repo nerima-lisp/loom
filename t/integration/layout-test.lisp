@@ -6,38 +6,6 @@
 ;;;; call.
 (in-package #:loom/test)
 
-(defun %fresh-layout-state (&key name (content "") (width 40) (height 6)
-                                 (renderer-width width) (renderer-height height))
-  "Build the EDITOR-STATE every test in this file draws through: one window
-of WIDTH x HEIGHT over a buffer named NAME (defaulting to MAKE-BUFFER's own
-\"*scratch*\") holding CONTENT, a fresh minibuffer, a file-tree rooted at
-\"/root/\", and a renderer of RENDERER-WIDTH x RENDERER-HEIGHT. The renderer
-dimensions default to the window's, which is what every drawing test wants;
-the degenerate-window tests are the ones that need them to differ."
-  (make-editor-state :window-tree (make-window-tree
-                                   (make-buffer :name name :initial-content content)
-                                   width
-                                   height)
-                     :minibuffer (make-minibuffer)
-                     :keymap (make-keymap)
-                     :file-tree (make-file-tree "/root/")
-                     :renderer (make-loom-renderer renderer-width renderer-height)
-                     :kill-ring nil))
-
-(defun %layout-screen (state)
-  "The cl-tty-kit screen STATE's renderer draws into."
-  (cl-tty-kit:renderer-screen
-   (loom::%loom-renderer-cl-tty-renderer (editor-state-renderer state))))
-
-(defun %layout-window (state)
-  "STATE's sole (or currently selected) window."
-  (window-tree-selected-window (editor-state-window-tree state)))
-
-(defmacro with-layout-state ((name &rest initargs) &body body)
-  "Run BODY with NAME bound to a fresh state suitable for layout tests."
-  `(let ((,name (%fresh-layout-state ,@initargs)))
-     ,@body))
-
 (describe
   "window buffer layout mode"
   (it
