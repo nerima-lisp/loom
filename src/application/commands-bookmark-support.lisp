@@ -31,15 +31,25 @@
     (and saved-buffer
          (find saved-buffer (%editor-buffers) :test #'eq))))
 
+(defun %bookmark-regular-file (path)
+  "Return PATH when it names an existing regular file."
+  (let ((existing-path (and path (probe-file path))))
+    (and existing-path
+         (not (host-kit:directory-pathname-p existing-path))
+         existing-path)))
+
+(defun %register-bookmark-buffer (path)
+  "Load and register the bookmark buffer for PATH."
+  (let ((buffer (buffer-load path)))
+    (%register-buffer buffer)
+    (remember-recent-file path)
+    buffer))
+
 (defun %load-bookmark-file (path)
   "Load PATH as a bookmark target when it names an existing regular file."
-  (let ((existing-path (and path (probe-file path))))
-    (when (and existing-path
-               (not (host-kit:directory-pathname-p existing-path)))
-      (let ((buffer (buffer-load existing-path)))
-        (%register-buffer buffer)
-        (remember-recent-file existing-path)
-        buffer))))
+  (let ((regular-file (%bookmark-regular-file path)))
+    (when regular-file
+      (%register-bookmark-buffer regular-file))))
 
 (defun %bookmark-target-buffer (bookmark)
   "Resolve BOOKMARK to a live buffer, loading its file when necessary."
