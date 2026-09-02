@@ -54,5 +54,5 @@ stream implementation."
            (cl-tty-kit:stream-fd input-stream)
            :input
            *event-loop-poll-interval*)
-        (error () t))
+        (type-error () t))
       t))

@@ -80,12 +80,12 @@
       (expect wait-calls :to-be 1)))
 
   (it
-    "continues when waiting for input signals an error"
+    "continues when waiting receives an unsupported stream"
     (let ((loom::*editor-state* (make-editor-state)))
       (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
       (with-replaced-function
           (cl-tty-kit:fd-wait
             (lambda (&rest arguments)
               (declare (ignore arguments))
-              (error "synthetic wait failure")))
+              (error 'type-error :datum :unsupported-stream :expected-type 'stream)))
         (expect (loom::%wait-for-editor-input :input) :to-be t)))))
