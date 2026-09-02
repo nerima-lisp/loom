@@ -53,15 +53,19 @@
              (/= (char-code character) 127))
     (%terminal-screen-write-character screen character)))
 
-(defun %terminal-screen-feed-ground-character (screen character)
+(defun %terminal-screen-feed-ground-control-character (screen character)
   (case character
-    (#\Esc (setf (terminal-screen-parser-state screen) :escape))
-    (#\Return (%terminal-screen-carriage-return screen))
-    (#\Newline (%terminal-screen-line-feed screen))
-    (#\Backspace (%terminal-screen-feed-backspace screen))
-    (#\Tab (%terminal-screen-feed-tab screen))
-    (#\Bell nil)
-    (otherwise (%terminal-screen-feed-printable-character screen character))))
+    (#\Esc (setf (terminal-screen-parser-state screen) :escape) t)
+    (#\Return (%terminal-screen-carriage-return screen) t)
+    (#\Newline (%terminal-screen-line-feed screen) t)
+    (#\Backspace (%terminal-screen-feed-backspace screen) t)
+    (#\Tab (%terminal-screen-feed-tab screen) t)
+    (#\Bell t)
+    (otherwise nil)))
+
+(defun %terminal-screen-feed-ground-character (screen character)
+  (unless (%terminal-screen-feed-ground-control-character screen character)
+    (%terminal-screen-feed-printable-character screen character)))
 
 (defun %terminal-screen-feed-csi-character (screen character)
   (cond
