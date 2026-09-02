@@ -26,16 +26,18 @@
 (defun %terminal-screen-csi-left (screen amount)
   (%terminal-screen-csi-move-column screen amount -1))
 
+(defparameter +terminal-screen-csi-relative-cursor-handlers+
+  '((#\A . %terminal-screen-csi-up)
+    (#\B . %terminal-screen-csi-down)
+    (#\C . %terminal-screen-csi-right)
+    (#\D . %terminal-screen-csi-left)
+    (#\E . %terminal-screen-csi-next-line)
+    (#\F . %terminal-screen-csi-previous-line)
+    (#\a . %terminal-screen-csi-right)
+    (#\e . %terminal-screen-csi-down)))
+
 (defun %terminal-screen-csi-relative-cursor-handler (final)
-  (cdr (assoc final
-              '((#\A . %terminal-screen-csi-up)
-                (#\B . %terminal-screen-csi-down)
-                (#\C . %terminal-screen-csi-right)
-                (#\D . %terminal-screen-csi-left)
-                (#\E . %terminal-screen-csi-next-line)
-                (#\F . %terminal-screen-csi-previous-line)
-                (#\a . %terminal-screen-csi-right)
-                (#\e . %terminal-screen-csi-down)))))
+  (cdr (assoc final +terminal-screen-csi-relative-cursor-handlers+)))
 
 (defun %terminal-screen-csi-relative-cursor (screen final parameters)
   (let ((handler (%terminal-screen-csi-relative-cursor-handler final)))
