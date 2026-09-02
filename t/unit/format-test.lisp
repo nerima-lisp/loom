@@ -146,6 +146,13 @@
       (let ((buffer (%selected-test-buffer)))
         (expect (format-before-save buffer *editor-state*) :to-be buffer)
         (expect (minibuffer-message-string minibuffer) :to-be nil))))
+  (it "leaves a buffer untouched when the mode has no formatter command"
+    (%with-minibuffer-state (minibuffer "text")
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-format-on-save-p *editor-state*) t)
+        (expect (format-before-save buffer *editor-state*) :to-be buffer)
+        (expect (buffer-text buffer) :to-equal "text")
+        (expect (minibuffer-message-string minibuffer) :to-be nil))))
   (it "reports formatter conditions without aborting a save"
     (%with-minibuffer-state (minibuffer "text")
       (set-format-command "fmt" *editor-state*)

@@ -40,7 +40,7 @@ The command is stored as a trimmed string and must not be empty."
   (check-type command string)
   (unless state
     (error "No editor state is active"))
-    (let ((trimmed (%trim-format-command command)))
+  (let ((trimmed (%trim-format-command command)))
     (when (string= trimmed "")
       (error "The format command must not be empty"))
     (setf (editor-state-format-command state) trimmed)))
