@@ -255,6 +255,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/lsp/src/application-lsp-session-lifecycle")
    (:file "packages/feature/lsp/src/application-lsp-diagnostics-view")
    (:file "packages/feature/lsp/src/application-commands-lsp-support")
+   (:file "packages/feature/lsp/src/application-commands-lsp-context")
    (:file "packages/feature/lsp/src/application-commands-lsp")
    (:file "packages/feature/lsp/src/application-commands-lsp-completion")
    (:file "packages/feature/lsp/src/application-commands-lsp-navigation")
