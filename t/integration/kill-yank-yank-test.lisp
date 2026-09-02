@@ -106,6 +106,23 @@
                 :to-equal 2))))
 
   (it
+    "keeps point at the first replacement when the primary range is absent"
+    (let ((*editor-state* (%fresh-editor-state "aXXbYYc")))
+      (let ((buffer (%selected-test-buffer)))
+        (setf (editor-state-kill-ring *editor-state*) '("Z")
+              (loom::editor-state-last-yank-buffer *editor-state*) buffer
+              (loom::editor-state-last-yank-start-offset *editor-state*) 0
+              (loom::editor-state-last-yank-end-offset *editor-state*) 6
+              (editor-state-last-yank-ranges *editor-state*)
+                '((1 . 3) (4 . 6))
+              (loom::editor-state-last-yank-ring-index *editor-state*) 0
+              (loom::editor-state-last-yank-repeat-count *editor-state*) 1)
+        (buffer-set-point buffer 0 6)
+        (loom::yank-pop)
+        (expect (buffer-text buffer) :to-equal "aZbZc")
+        (expect (buffer-point-offset buffer) :to-equal 2))))
+
+  (it
     "kills from point to end of line and yanks it back at a new position"
     (let ((*editor-state* (%fresh-editor-state "hello world")))
       (let ((buffer (%selected-test-buffer)))
