@@ -25,8 +25,13 @@
           for name = (if (= index 1)
                          "*Loom-Terminal*"
                          (format nil "*Loom-Terminal<~D>*" index))
-          unless (gethash name buffer-names)
-            return name)))
+            unless (gethash name buffer-names)
+              return name)))
+
+(defun %terminal-session-buffer (name)
+  (let ((buffer (make-buffer :name name)))
+    (buffer-set-read-only buffer t)
+    buffer))
 
 (defun start-terminal-session (&key
                                   (program (or (uiop:getenv "SHELL") "/bin/sh"))
@@ -45,14 +50,12 @@
                                    :args args
                                    :directory working-directory)))
     (handler-case
-        (let ((buffer (make-buffer :name name)))
-          (buffer-set-read-only buffer t)
-          (%make-terminal-session name
-                                  program
-                                  args
-                                  working-directory
-                                  buffer
-                                  pty))
+        (%make-terminal-session name
+                                program
+                                args
+                                working-directory
+                                (%terminal-session-buffer name)
+                                pty)
       (error (condition)
         (cl-tty-kit:close-pty pty)
         (error condition)))))
