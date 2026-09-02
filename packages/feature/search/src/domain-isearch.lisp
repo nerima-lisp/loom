@@ -68,18 +68,22 @@ the result needs no rotation back into order."
        (buffer-search-spans buffer pattern
                             (buffer-narrow-start-offset buffer))))
 
+(defun %isearch-forward-match (matches offset)
+  (or (find-if (lambda (span) (>= (buffer-span-start span) offset)) matches)
+      (first matches)))
+
+(defun %isearch-backward-match (matches offset)
+  (or (car (last (remove-if-not
+                  (lambda (span) (<= (buffer-span-start span) offset))
+                  matches)))
+      (car (last matches))))
+
 (defun %isearch-select-match (matches offset direction)
   "Return the match at or past OFFSET in DIRECTION, wrapping once."
   (when matches
     (ecase direction
-      (:forward
-       (or (find-if (lambda (span) (>= (buffer-span-start span) offset)) matches)
-           (first matches)))
-      (:backward
-       (or (car (last (remove-if-not
-                       (lambda (span) (<= (buffer-span-start span) offset))
-                       matches)))
-           (car (last matches)))))))
+      (:forward (%isearch-forward-match matches offset))
+      (:backward (%isearch-backward-match matches offset)))))
 
 (defun isearch-apply-pattern (session pattern)
   "Return SESSION searching for PATTERN from its current search offset.
