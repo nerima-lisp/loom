@@ -50,6 +50,13 @@ tree model, layout calculation, and serialization, while
 and resize mutations. The operation file depends on the model but not on the
 terminal renderer.
 
+Terminal input protocol values follow the same data/logic boundary in
+`packages/feature/terminal/src/application-terminal-input-support.lisp`.
+Direct control-byte payloads and CSI suffixes are represented as data, while
+the functions that compose and dispatch those values remain generic. Adding a
+special key therefore updates the protocol table without duplicating input
+dispatch logic.
+
 ## Boundaries
 
 `src/domain/` owns shared editor invariants and does not perform terminal or
