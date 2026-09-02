@@ -117,6 +117,12 @@ draws nothing rather than clipping to the wrong row."
               (buffer-position-line end)
               (buffer-position-column end)))))
 
+(defun %layout-span-line-run-bounds (buffer line first-line first-column last-line last-column)
+  (values (if (= line first-line) first-column 0)
+          (if (= line last-line)
+              last-column
+              (length (%layout-visible-line buffer line)))))
+
 (defun %layout-draw-span (renderer window x-offset span style)
   "Redraw the buffer text SPAN covers in STYLE, one logical line at a time."
   (let ((buffer (loom/feature/window:window-buffer window)))
@@ -124,13 +130,11 @@ draws nothing rather than clipping to the wrong row."
         (%layout-span-line-bounds buffer span)
       (when first-line
         (loop for line from first-line to last-line
-              do (%layout-draw-line-run
-                  renderer window x-offset line
-                  (if (= line first-line) first-column 0)
-                  (if (= line last-line)
-                      last-column
-                      (length (%layout-visible-line buffer line)))
-                  style))))))
+              do (multiple-value-bind (start end)
+                     (%layout-span-line-run-bounds
+                      buffer line first-line first-column last-line last-column)
+                   (%layout-draw-line-run
+                    renderer window x-offset line start end style)))))))
 
 (defun %layout-isearch-session-for-window (window)
   (let ((session (and *editor-state* (editor-state-isearch *editor-state*))))
