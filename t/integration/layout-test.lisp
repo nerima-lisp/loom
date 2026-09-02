@@ -96,7 +96,20 @@
              (before (cl-tty-kit:screen-row-string screen 0)))
         (minibuffer-message minibuffer "status")
         (loom::%layout-draw-minibuffer screen minibuffer 0 0)
-        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before)))))
+        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
+
+  (it
+    "leaves a point viewport unchanged when either dimension is empty"
+    (dolist (dimensions '((:width 0 :height 0)))
+      (with-layout-state (state :content "abcdef" :width (getf dimensions :width)
+                                :height (getf dimensions :height))
+        (let ((window (%layout-window state)))
+          (setf (window-scroll-line window) 0
+                (window-scroll-column window) 3)
+          (loom::%layout-keep-point-visible
+           (editor-state-renderer state) window)
+          (expect (window-scroll-line window) :to-equal 0)
+          (expect (window-scroll-column window) :to-equal 3))))))
 
 (describe
   "minibuffer line selection"
