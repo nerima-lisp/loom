@@ -14,6 +14,19 @@
 ;;;; match) rather than a single whole-buffer rewrite.
 (in-package #:loom/feature/search)
 
+(defun %replace-span (buffer span new)
+  (let ((start-position
+          (buffer-offset-position buffer (buffer-span-start span)))
+        (end-position
+          (buffer-offset-position buffer (buffer-span-end span))))
+    (buffer-delete-region
+     buffer
+     (buffer-position-line start-position)
+     (buffer-position-column start-position)
+     (buffer-position-line end-position)
+     (buffer-position-column end-position))
+    (buffer-insert-string buffer new)))
+
 (defun %perform-replacement (buffer old new start)
   "Replace every occurrence of regular expression OLD with the literal text
 NEW in BUFFER, in one non-overlapping cycle beginning at START (see
@@ -24,17 +37,7 @@ REPLACE-STRING has both prompted-for strings."
   (let ((spans (and (string/= old "")
                     (buffer-search-spans buffer old start))))
     (dolist (span (sort (copy-list spans) #'> :key #'buffer-span-start))
-      (let ((start-position
-              (buffer-offset-position buffer (buffer-span-start span)))
-            (end-position
-              (buffer-offset-position buffer (buffer-span-end span))))
-        (buffer-delete-region
-         buffer
-         (buffer-position-line start-position)
-         (buffer-position-column start-position)
-         (buffer-position-line end-position)
-         (buffer-position-column end-position))
-        (buffer-insert-string buffer new)))
+      (%replace-span buffer span new))
     (length spans)))
 
 (defun replace-string ()
