@@ -70,22 +70,24 @@ one malformed candidate should not cost the user the other fifty."
                          (gethash "targetSelectionRange" object)
                          (gethash "targetRange" object)))))
 
+(defun %lsp-definition-items (result)
+  (cond
+    ((or (null result) (eq result json-kit:+json-null+)) '())
+    ((hash-table-p result) (list result))
+    ((listp result) result)
+    (t '())))
+
+(defun %lsp-definition-location (object)
+  (and (%lsp-location-p object)
+       (%lsp-parse-location object)))
+
 (defun %lsp-parse-definition-result (result)
   "Return the LSP-LOCATION values in a textDocument/definition RESULT.
 
 The response may be a single Location, an array of them, or an array of
 LocationLinks whose fields are named differently; %LSP-PARSE-LOCATION accepts
 either naming, and a null result means the server knows of no definition."
-  (cond
-    ((or (null result) (eq result json-kit:+json-null+)) '())
-    ((hash-table-p result)
-     (let ((location (and (%lsp-location-p result)
-                          (%lsp-parse-location result))))
-       (if location (list location) '())))
-    ((listp result)
-     (loop for object in result
-           for location = (and (%lsp-location-p object)
-                               (%lsp-parse-location object))
-           when location
-             collect location))
-    (t '())))
+  (loop for object in (%lsp-definition-items result)
+        for location = (%lsp-definition-location object)
+        when location
+          collect location))
