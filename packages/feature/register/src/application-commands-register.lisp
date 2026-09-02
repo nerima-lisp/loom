@@ -41,8 +41,7 @@
   "Copy region to register: "
   (let ((buffer (%selected-buffer)))
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-      (if (null mark-line)
-          (minibuffer-message minibuffer "The mark is not set")
+      (if mark-line
           (multiple-value-bind (start-line start-column end-line end-column)
               (%order-region (buffer-point-line buffer)
                              (buffer-point-column buffer)
@@ -55,7 +54,8 @@
                                    end-line end-column))
             (minibuffer-message
              minibuffer
-             (format nil "Copied region to register ~A" name)))))))
+             (format nil "Copied region to register ~A" name)))
+          (minibuffer-message minibuffer "The mark is not set")))))
 
 (%define-register-command insert-register
   "Insert the text stored in a named register at point."
