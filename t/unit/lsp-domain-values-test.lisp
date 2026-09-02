@@ -3,6 +3,14 @@
 (describe
   "LSP domain values"
   (it
+    "defaults an omitted position to the document origin"
+    (let ((position (make-lsp-position)))
+      (expect (list (lsp-position-line position)
+                    (lsp-position-character position))
+              :to-equal
+              '(0 0))))
+
+  (it
     "preserves nested positions, diagnostics, and documents"
     (let* ((start (make-lsp-position 1 2))
            (end (make-lsp-position 1 5))

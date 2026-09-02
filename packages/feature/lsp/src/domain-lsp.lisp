@@ -7,7 +7,8 @@
 (in-package #:loom/feature/lsp)
 
 (defstruct (lsp-position
-            (:constructor make-lsp-position (line character)))
+            (:constructor make-lsp-position
+                (&optional (line 0) (character 0))))
   "A zero-based LSP document position."
   (line 0 :type integer)
   (character 0 :type integer))
