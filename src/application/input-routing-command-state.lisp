@@ -15,11 +15,16 @@ while switching to any other command starts a new group."
     (buffer-record-undo-boundary (%selected-buffer)))
   (setf (editor-state-last-command-self-insert-p *editor-state*) self-insert-p))
 
-(defparameter +yank-command-names+ '(yank yank-pop)
+(defmacro define-command-name-set (name names documentation)
+  "Declare a command-name set consumed by routing-state decisions."
+  `(defparameter ,name ',names ,documentation))
+
+(define-command-name-set +yank-command-names+
+  (yank yank-pop)
   "Commands that may consume or rotate the last-yank transient state.")
 
-(defparameter +yank-preserving-command-names+
-  '(delete-char delete-backward-char)
+(define-command-name-set +yank-preserving-command-names+
+  (delete-char delete-backward-char)
   "Commands that leave the last-yank transient state intact.
 
 A forward delete after a yank leaves point at the yank's end offset, which is
@@ -29,8 +34,8 @@ preceding command to be a yank; keeping these two listed preserves loom's
 existing behavior rather than tightening it as a side effect of an unrelated
 change.")
 
-(defparameter +kill-command-names+
-  '(kill-line kill-word backward-kill-word kill-region kill-sexp)
+(define-command-name-set +kill-command-names+
+  (kill-line kill-word backward-kill-word kill-region kill-sexp)
   "Commands whose adjacent invocations may coalesce in the kill ring.")
 
 (defun %refresh-active-keymap (keymap-state)
