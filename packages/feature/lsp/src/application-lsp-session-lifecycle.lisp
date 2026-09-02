@@ -61,6 +61,7 @@ The operation is idempotent. An initialized server receives a shutdown
 request and, when it acknowledges that request, the required exit
 notification. A non-responsive or malformed server still receives EXIT
 before the transport is closed."
+  (check-type timeout (real 0))
   (unless (lsp-session-closed-p session)
     (if (not (lsp-session-initialized-p session))
         (%lsp-finish-stop session)
