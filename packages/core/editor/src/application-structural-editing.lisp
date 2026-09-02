@@ -11,44 +11,6 @@
 ;;;; operation that never writes an unmatched delimiter cannot produce one.
 (in-package #:loom)
 
-(defun %structural-list-close (text classes open)
-  (let ((end (%sexp-forward-list-end text classes open)))
-    (when end
-      (1- end))))
-
-(defun %structural-list-bounds (text classes offset)
-  "Return (VALUES OPEN CLOSE) for the list enclosing OFFSET.
-
-  CLOSE is the index of the closing character, not one past it. Returns NIL when
-point is not inside a list, or when the list it is inside never closes."
-  (let ((open (%backward-up-list-offset text offset classes)))
-    (when open
-      (let ((close (%structural-list-close text classes open)))
-        (when close
-          (values open close))))))
-
-(defmacro %with-structural-list-bounds ((open close) (text classes offset)
-                                         &body body)
-  "Evaluate BODY only when OFFSET is inside a complete list.
-
-OPEN and CLOSE are lexical bindings for the enclosing delimiters. Keeping the
-guard here makes each structural operation read as a transformation over a
-known list instead of repeating the same failure path."
-  `(multiple-value-bind (,open ,close)
-       (%structural-list-bounds ,text ,classes ,offset)
-     (when ,close
-       ,@body)))
-
-(defun %structural-separator-needed-p (text offset)
-  "True when inserting a delimiter at OFFSET would abut a token.
-
-A barfed expression that ends up written against the delimiter it was just
-expelled from is still balanced, but `()a' is not what the user meant to read."
-  (and (< offset (length text))
-       (let ((character (char text offset)))
-         (not (or (%sexp-whitespace-p character)
-                  (member character +sexp-close-characters+ :test #'char=))))))
-
 (defun %forward-slurp-target (text classes close)
   (%forward-sexp-offset text (1+ close) classes))
 
@@ -62,12 +24,6 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
     (let ((target (%forward-slurp-target text classes close)))
       (when target
         (%forward-slurp-edits-at text close target)))))
-
-(defun %forward-barf-delimiter (text target delimiter)
-  "Return DELIMITER positioned after the expression at TARGET."
-  (if (%structural-separator-needed-p text target)
-      (concatenate 'string delimiter " ")
-      delimiter))
 
 (defun %forward-barf-target-position (text classes open close)
   (let ((last-start (%backward-sexp-offset text close classes)))
@@ -103,13 +59,6 @@ expelled from is still balanced, but `()a' is not what the user meant to read."
     (let ((target (%backward-slurp-target text classes open)))
       (when target
         (%backward-slurp-edits-at text open target)))))
-
-(defun %backward-barf-delimiter (text target delimiter)
-  "Return DELIMITER positioned before the expression at TARGET."
-  (if (and (plusp target)
-           (not (%sexp-whitespace-p (char text (1- target)))))
-      (concatenate 'string " " delimiter)
-      delimiter))
 
 (defun %backward-barf-target-position (text classes open close)
   (let ((first-end (%forward-sexp-offset text (1+ open) classes)))

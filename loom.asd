@@ -193,6 +193,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/application-sexp-syntax")
    (:file "packages/core/editor/src/application-sexp-motion-support")
    (:file "packages/core/editor/src/application-sexp-motion")
+   (:file "packages/core/editor/src/application-structural-editing-support")
    (:file "packages/core/editor/src/application-structural-editing")
    (:file "packages/core/editor/src/application-structural-editing-offsets")
    (:file "packages/core/editor/src/application-structural-editing-application")
