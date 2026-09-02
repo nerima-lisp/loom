@@ -1,22 +1,49 @@
 (in-package #:loom/feature/terminal)
 
+(defun %terminal-screen-csi-move-row (screen amount direction)
+  (incf (terminal-screen-cursor-row screen) (* direction amount)))
+
+(defun %terminal-screen-csi-move-column (screen amount direction)
+  (incf (terminal-screen-cursor-column screen) (* direction amount)))
+
+(defun %terminal-screen-csi-next-line (screen amount)
+  (%terminal-screen-csi-move-row screen amount 1)
+  (setf (terminal-screen-cursor-column screen) 0))
+
+(defun %terminal-screen-csi-previous-line (screen amount)
+  (%terminal-screen-csi-move-row screen amount -1)
+  (setf (terminal-screen-cursor-column screen) 0))
+
+(defun %terminal-screen-csi-up (screen amount)
+  (%terminal-screen-csi-move-row screen amount -1))
+
+(defun %terminal-screen-csi-down (screen amount)
+  (%terminal-screen-csi-move-row screen amount 1))
+
+(defun %terminal-screen-csi-right (screen amount)
+  (%terminal-screen-csi-move-column screen amount 1))
+
+(defun %terminal-screen-csi-left (screen amount)
+  (%terminal-screen-csi-move-column screen amount -1))
+
+(defun %terminal-screen-csi-relative-cursor-handler (final)
+  (cdr (assoc final
+              '((#\A . %terminal-screen-csi-up)
+                (#\B . %terminal-screen-csi-down)
+                (#\C . %terminal-screen-csi-right)
+                (#\D . %terminal-screen-csi-left)
+                (#\E . %terminal-screen-csi-next-line)
+                (#\F . %terminal-screen-csi-previous-line)
+                (#\a . %terminal-screen-csi-right)
+                (#\e . %terminal-screen-csi-down)))))
+
 (defun %terminal-screen-csi-relative-cursor (screen final parameters)
-  (let ((amount (%terminal-screen-parameter parameters 0 1)))
-    (case final
-      (#\A (decf (terminal-screen-cursor-row screen) amount))
-      (#\B (incf (terminal-screen-cursor-row screen) amount))
-      (#\C (incf (terminal-screen-cursor-column screen) amount))
-      (#\D (decf (terminal-screen-cursor-column screen) amount))
-      (#\E
-       (incf (terminal-screen-cursor-row screen) amount)
-       (setf (terminal-screen-cursor-column screen) 0))
-      (#\F
-       (decf (terminal-screen-cursor-row screen) amount)
-       (setf (terminal-screen-cursor-column screen) 0))
-      (#\a (incf (terminal-screen-cursor-column screen) amount))
-      (#\e (incf (terminal-screen-cursor-row screen) amount))
-      (otherwise (return-from %terminal-screen-csi-relative-cursor)))
-    t))
+  (let ((handler (%terminal-screen-csi-relative-cursor-handler final)))
+    (when handler
+      (funcall handler
+               screen
+               (%terminal-screen-parameter parameters 0 1))
+      t)))
 
 (defun %terminal-screen-csi-absolute-cursor (screen final parameters)
   (case final
