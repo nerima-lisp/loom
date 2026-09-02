@@ -73,7 +73,17 @@
 
   (it
     "treats an unsupported completion result shape as empty"
-    (expect (%decode-completion "42") :to-equal nil)))
+    (expect (%decode-completion "42") :to-equal nil))
+
+  (it
+    "rejects completion items that are not objects or have no label"
+    (signals error
+      (loom/feature/lsp::%lsp-parse-completion-item 42))
+    (signals error
+      (loom/feature/lsp::%lsp-parse-completion-item
+       (let ((object (make-hash-table :test #'equal)))
+         (setf (gethash "label" object) 42)
+         object)))))
 
 (describe
   "definition response decoding"
@@ -133,7 +143,17 @@
   (it
     "treats null as no definition"
     (expect (%decode-definition "null") :to-equal nil)
-    (expect (%decode-definition "[]") :to-equal nil)))
+    (expect (%decode-definition "[]") :to-equal nil))
+
+  (it
+    "rejects locations that are not objects or lack a valid URI and range"
+    (signals error
+      (loom/feature/lsp::%lsp-parse-location 42))
+    (signals error
+      (loom/feature/lsp::%lsp-parse-location
+       (let ((object (make-hash-table :test #'equal)))
+         (setf (gethash "uri" object) "file:///tmp/a.lisp")
+         object)))))
 
 (describe
   "lsp-uri-path"
