@@ -48,6 +48,17 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
       (t
        (%dispatch-keymap-action keymap-state decision)))))
 
+(defun %record-dispatched-key-event (macro event decision)
+  (when (and (input-routing-decision-recording-before decision)
+             macro
+             (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)
+             (not (loom/feature/keyboard-macro:keyboard-macro-replaying-p macro)))
+    (%record-keyboard-macro-event
+     macro
+     event
+     (input-routing-decision-descriptor decision)
+     (input-routing-decision-self-insert-event-p decision))))
+
 (defun %dispatch-key-event (event keymap-state)
   "Route one decoded KEY-EVENT to the minibuffer, prefix logic, self-insert,
 terminal input, or keymap dispatch. Expected command errors are reported in
@@ -64,13 +75,5 @@ the minibuffer instead of unwinding the event loop; LOOM-QUIT still escapes
         (minibuffer-message
          (input-routing-decision-minibuffer decision)
          (princ-to-string condition))))
-    (when (and (eq dispatched-p :handled)
-               (input-routing-decision-recording-before decision)
-               macro
-               (loom/feature/keyboard-macro:keyboard-macro-recording-p macro)
-               (not (loom/feature/keyboard-macro:keyboard-macro-replaying-p macro)))
-      (%record-keyboard-macro-event
-       macro
-       event
-       (input-routing-decision-descriptor decision)
-       (input-routing-decision-self-insert-event-p decision)))))
+    (when (eq dispatched-p :handled)
+      (%record-dispatched-key-event macro event decision))))
