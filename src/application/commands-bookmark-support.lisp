@@ -13,15 +13,18 @@
   "Normalize a minibuffer bookmark name without changing its case."
   (string-trim '(#\Space #\Tab) input))
 
+(defun %bookmark-name-matches-prefix-p (name prefix)
+  "Return true when NAME begins with PREFIX, case-insensitively."
+  (or (string= prefix "")
+      (and (<= (length prefix) (length name))
+           (string-equal prefix name :end2 (length prefix)))))
+
 (defun %bookmark-candidates (input)
   "Return bookmark names matching the typed INPUT prefix."
   (let ((prefix (%bookmark-name input)))
     (sort
      (loop for name being the hash-keys of (%bookmark-table)
-           when (or (string= prefix "")
-                    (and (<= (length prefix) (length name))
-                         (string-equal prefix name
-                                       :end2 (length prefix))))
+           when (%bookmark-name-matches-prefix-p name prefix)
              collect name)
      #'string<)))
 
