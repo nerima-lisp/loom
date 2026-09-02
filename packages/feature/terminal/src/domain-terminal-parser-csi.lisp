@@ -23,16 +23,29 @@
                    (setf start (1+ separator))
                    (return (nreverse parameters))))))
 
+(defun %terminal-screen-csi-handler (final)
+  (or (cdr (assoc final
+                 '((#\A . %terminal-screen-csi-cursor)
+                   (#\B . %terminal-screen-csi-cursor)
+                   (#\C . %terminal-screen-csi-cursor)
+                   (#\D . %terminal-screen-csi-cursor)
+                   (#\E . %terminal-screen-csi-cursor)
+                   (#\F . %terminal-screen-csi-cursor)
+                   (#\G . %terminal-screen-csi-cursor)
+                   (#\` . %terminal-screen-csi-cursor)
+                   (#\H . %terminal-screen-csi-cursor)
+                   (#\f . %terminal-screen-csi-cursor)
+                   (#\d . %terminal-screen-csi-cursor)
+                   (#\a . %terminal-screen-csi-cursor)
+                   (#\e . %terminal-screen-csi-cursor)
+                   (#\h . %terminal-screen-csi-private-mode)
+                   (#\l . %terminal-screen-csi-private-mode))))
+      #'%terminal-screen-csi-edit))
+
 (defun %terminal-screen-csi (screen final)
   (let ((parameters (%terminal-screen-parse-parameters
                      (terminal-screen-csi-parameters screen))))
-    (case final
-      ((#\A #\B #\C #\D #\E #\F #\G #\` #\H #\f #\d #\a #\e)
-       (%terminal-screen-csi-cursor screen final parameters))
-      ((#\h #\l)
-       (%terminal-screen-csi-private-mode screen final parameters))
-      (t
-       (%terminal-screen-csi-edit screen final parameters))))
+    (funcall (%terminal-screen-csi-handler final) screen final parameters))
   (%terminal-screen-clamp-cursor screen)
   (setf (terminal-screen-wrap-pending screen) nil)
   screen)
