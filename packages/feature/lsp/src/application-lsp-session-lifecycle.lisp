@@ -63,11 +63,11 @@ notification. A non-responsive or malformed server still receives EXIT
 before the transport is closed."
   (check-type timeout (real 0))
   (unless (lsp-session-closed-p session)
-    (if (not (lsp-session-initialized-p session))
-        (%lsp-finish-stop session)
+    (if (lsp-session-initialized-p session)
         (progn
           (%lsp-request-shutdown session)
           (%lsp-await-shutdown session timeout)
           (unless (lsp-session-closed-p session)
-            (%lsp-finish-stop session)))))
+            (%lsp-finish-stop session)))
+        (%lsp-finish-stop session)))
   session)

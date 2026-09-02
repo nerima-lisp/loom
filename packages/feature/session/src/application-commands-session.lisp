@@ -18,8 +18,7 @@
      (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                     :on-cancel (minibuffer-message minibuffer "Quit"))
          ((path ,prompt))
-       (if (not (%session-path-present-p path))
-           (minibuffer-message minibuffer "Session path cannot be empty")
+       (if (%session-path-present-p path)
            (handler-case
                (progn
                  ,@body
@@ -29,7 +28,8 @@
              (error (condition)
                (minibuffer-message
                 minibuffer
-                (format nil ,error-format condition))))))))
+                (format nil ,error-format condition))))
+           (minibuffer-message minibuffer "Session path cannot be empty")))))
 
 (%define-session-command
  save-session

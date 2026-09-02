@@ -55,7 +55,7 @@ leaves the previous target untouched."
     (let ((value (%read-session-value stream eof)))
       (when (eq value eof)
         (error "session is empty"))
-      (when (not (eq (%read-session-value stream eof) eof))
+      (unless (eq (%read-session-value stream eof) eof)
         (error "session contains more than one form"))
       value)))
 
