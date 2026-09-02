@@ -93,6 +93,14 @@
       (expect (loom/feature/terminal::terminal-screen-parser-state screen)
               :to-be :ground)))
 
+  (it "preserves a character following an unterminated OSC escape"
+    (let ((escape (code-char 27))
+          (screen (make-terminal-screen :width 8 :height 1)))
+      (terminal-screen-feed screen (format nil "~C]0;title~Cx" escape escape))
+      (expect (terminal-screen-text screen) :to-equal "x")
+      (expect (loom/feature/terminal::terminal-screen-parser-state screen)
+              :to-be :ground)))
+
   (it "handles non-CSI escape controls and malformed input"
     (let ((escape (code-char 27))
           (screen (make-terminal-screen :width 4 :height 2)))

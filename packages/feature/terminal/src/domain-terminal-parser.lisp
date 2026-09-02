@@ -124,7 +124,9 @@
     (:csi (%terminal-screen-feed-csi-character screen character))
     (:osc (%terminal-screen-feed-osc-character screen character))
     (:osc-escape
-     (setf (terminal-screen-parser-state screen) :ground)))
+     (setf (terminal-screen-parser-state screen) :ground)
+     (unless (char= character #\\)
+       (%terminal-screen-feed-character screen character))))
   screen)
 
 (defun terminal-screen-feed (screen text)
