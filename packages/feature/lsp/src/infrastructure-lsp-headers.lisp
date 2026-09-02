@@ -50,7 +50,7 @@
         do (setf start (if (= end (length header))
                            end
                            (1+ end)))
-        when (plusp (length line))
+        when (string/= line "")
           collect line))
 
 (defun %lsp-content-length-line (line length-value found-p)

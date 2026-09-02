@@ -17,7 +17,7 @@ their arguments and quoting."
       (loop for line = (read-line stream nil nil)
             while line
             for candidate = (string-trim '(#\Space #\Tab #\Return) line)
-            unless (or (zerop (length candidate))
+            unless (or (string= candidate "")
                        (char= (char candidate 0) #\#))
               do (return candidate)))))
 
