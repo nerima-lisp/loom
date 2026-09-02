@@ -31,17 +31,23 @@ values when no usable configuration is found.  Reading a malformed or
 unreadable configuration is intentionally treated as no discovery so the
 interactive command can continue to offer its explicit prompt."
   (let ((root
-          (ignore-errors
-            (loom/feature/project:project-root-for-path
-             path
-             (lambda (directory)
-               (probe-file
-                (merge-pathnames +lsp-config-file-name+ directory)))))))
+          (loom/feature/project:project-root-for-path
+           path
+           (lambda (directory)
+             (probe-file
+              (merge-pathnames +lsp-config-file-name+ directory))))))
     (if root
         (let* ((configuration
                  (merge-pathnames +lsp-config-file-name+ root))
-               (contents (ignore-errors
-                           (host-kit:read-file-string configuration)))
+               (contents
+                 (handler-case
+                     (host-kit:read-file-string configuration)
+                   (file-error (condition)
+                     (declare (ignore condition))
+                     nil)
+                   (pathname-error (condition)
+                     (declare (ignore condition))
+                     nil)))
                (command (%lsp-config-command contents)))
           (if command
               (values command root configuration)
