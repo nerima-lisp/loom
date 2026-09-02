@@ -71,7 +71,8 @@ unknown mode, truncate: that is what loom did before the setting existed, and
 it is the safer answer for a file whose content is unknown. The absent case
 cannot be read off GETF's NIL, since NIL is also a mode's explicit choice."
   (let ((value (getf (%major-mode-definition mode) :truncate-lines :absent)))
-    (if (eq value :absent) t value)))
+    (cond ((eq value :absent) t)
+          (t value))))
 
 (defun major-mode-keywords (mode)
   (copy-list (getf (%major-mode-definition mode) :keywords)))

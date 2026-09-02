@@ -6,7 +6,7 @@
 
 (defun %session-nonempty-string-p (value)
   (and (stringp value)
-       (plusp (length value))))
+       (string/= value "")))
 
 (defun %session-optional-string-p (value)
   (or (null value)

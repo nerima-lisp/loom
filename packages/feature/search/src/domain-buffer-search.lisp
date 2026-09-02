@@ -13,7 +13,7 @@ independent of search-engine concerns while still bounding the event loop.")
 
 (defun %scan-next-occurrence (text pattern start)
   "Return the domain-local regex match at or after START, with wrap-around."
-  (unless (zerop (length pattern))
+  (unless (string= pattern "")
     (let ((regex (cl-regex-kit:compile-regex pattern)))
       (or (cl-regex-kit:scan regex text :start start
                                         :timeout +regex-search-timeout-seconds+)
@@ -73,7 +73,7 @@ independent of search-engine concerns while still bounding the event loop.")
   "Search before BUFFER's point and invoke exactly one result continuation."
   (let* ((text (buffer-visible-text buffer))
          (point (%search-visible-point buffer text))
-         (spans (unless (zerop (length pattern))
+         (spans (unless (string= pattern "")
                   (%search-spans-in-text text pattern 0)))
          (span (%search-backward-span spans point)))
     (if span
@@ -87,7 +87,7 @@ independent of search-engine concerns while still bounding the event loop.")
 (defun buffer-search-spans (buffer pattern start)
   "Return BUFFER-SPAN values for PATTERN, starting at START and wrapping once."
   (declare (type buffer-offset start))
-  (unless (zerop (length pattern))
+  (unless (string= pattern "")
     (let* ((text (buffer-visible-text buffer))
            (offset (buffer-narrow-start-offset buffer))
            (local-start (max 0 (min (length text) (- start offset)))))

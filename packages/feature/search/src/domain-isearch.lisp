@@ -64,7 +64,7 @@
   "Return every match for PATTERN in buffer order, restricted to the visible
 region: BUFFER-SEARCH-SPANS starting at the narrow start wraps over nothing, so
 the result needs no rotation back into order."
-  (and (plusp (length pattern))
+  (and (string/= pattern "")
        (buffer-search-spans buffer pattern
                             (buffer-narrow-start-offset buffer))))
 
@@ -95,7 +95,7 @@ it clears the match without reporting one."
     (setf (%isearch-pattern session) pattern
           (%isearch-matches session) (or matches '())
           (%isearch-match session) match
-          (%isearch-failed-p session) (and (plusp (length pattern))
+          (%isearch-failed-p session) (and (string/= pattern "")
                                            (null match)))
     session))
 
