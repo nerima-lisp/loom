@@ -43,12 +43,12 @@
 
 (defun %project-walk-files-cps (directory on-file on-complete)
   (labels ((walk-entries (entries)
-             (if (null entries)
-                 (funcall on-complete)
+             (if entries
                  (%project-walk-entry-cps
                   (first entries)
                   on-file
-                  (lambda () (walk-entries (rest entries)))))))
+                  (lambda () (walk-entries (rest entries))))
+                 (funcall on-complete))))
     (walk-entries
      (loom/feature/file-tree:loom-fs-list-directory directory))))
 
