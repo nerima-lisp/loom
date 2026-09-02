@@ -93,21 +93,33 @@
   (unless (%terminal-screen-feed-ground-control-character screen character)
     (%terminal-screen-feed-printable-character screen character)))
 
+(defun %terminal-screen-csi-private-marker-p (screen character)
+  (and (string= (terminal-screen-csi-parameters screen) "")
+       (char= character #\?)))
+
+(defun %terminal-screen-csi-final-character-p (character)
+  (<= 64 (char-code character) 126))
+
+(defun %terminal-screen-csi-parameter-character-p (character)
+  (or (digit-char-p character)
+      (char= character #\;)
+      (char= character #\:)))
+
+(defun %terminal-screen-append-csi-parameter (screen character)
+  (setf (terminal-screen-csi-parameters screen)
+        (concatenate 'string
+                     (terminal-screen-csi-parameters screen)
+                     (string character))))
+
 (defun %terminal-screen-feed-csi-character (screen character)
   (cond
-    ((and (string= (terminal-screen-csi-parameters screen) "")
-          (char= character #\?))
+    ((%terminal-screen-csi-private-marker-p screen character)
      (setf (terminal-screen-csi-private screen) t))
-    ((<= 64 (char-code character) 126)
+    ((%terminal-screen-csi-final-character-p character)
      (%terminal-screen-csi screen character)
      (setf (terminal-screen-parser-state screen) :ground))
-    ((or (digit-char-p character)
-         (char= character #\;)
-         (char= character #\:))
-     (setf (terminal-screen-csi-parameters screen)
-           (concatenate 'string
-                        (terminal-screen-csi-parameters screen)
-                        (string character))))
+    ((%terminal-screen-csi-parameter-character-p character)
+     (%terminal-screen-append-csi-parameter screen character))
     (t
      (setf (terminal-screen-parser-state screen) :ground))))
 
