@@ -29,7 +29,7 @@
 (in-package #:loom)
 
 (defun %buffer-initial-pieces (original)
-  (when (plusp (length original))
+  (when (string/= original "")
     (list (%make-piece :source :original
                        :start 0
                        :length (length original)))))

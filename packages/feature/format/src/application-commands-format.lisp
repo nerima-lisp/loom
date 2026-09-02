@@ -29,7 +29,7 @@
                 :on-cancel (lambda () nil))
       ((command "Format command: "))
       (let ((command (%trim-format-command command)))
-        (if (zerop (length command))
+        (if (string= command "")
             (%show-format-message "Format command cancelled")
             (%format-current-buffer-command command)))))
 
@@ -41,7 +41,7 @@ The command is stored as a trimmed string and must not be empty."
   (unless state
     (error "No editor state is active"))
     (let ((trimmed (%trim-format-command command)))
-    (when (zerop (length trimmed))
+    (when (string= trimmed "")
       (error "The format command must not be empty"))
     (setf (editor-state-format-command state) trimmed)))
 
@@ -57,7 +57,7 @@ formatter command to have been configured first."
                     enabled-p
                     (not (editor-state-format-on-save-p state)))))
     (when (and enabled
-               (zerop (length (or (editor-state-format-command state) ""))))
+               (string= (or (editor-state-format-command state) "") ""))
       (error "Set a format command before enabling format-on-save"))
     (setf (editor-state-format-on-save-p state) (not (null enabled)))))
 
