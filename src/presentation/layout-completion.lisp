@@ -3,8 +3,8 @@
 ;;;; Presentation layer: completion popup rendering helpers.
 (in-package #:loom)
 
-(defparameter +layout-completion-rows+ 8)
-(defparameter +layout-completion-width+ 40)
+(defconstant +layout-completion-rows+ 8)
+(defconstant +layout-completion-width+ 40)
 (defparameter +layout-completion-style+ '((:bg 4) (:fg 7)))
 (defparameter +layout-completion-selected-style+ '(:bold (:bg 6) (:fg 0)))
 
