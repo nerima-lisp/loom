@@ -17,13 +17,12 @@
     (loop
       (multiple-value-bind (json used status)
           (loom-lsp-frame-decode remaining)
-        (cond
-          ((eq status :incomplete)
+        (ecase status
+          (:incomplete
            (return (values (nreverse messages) remaining)))
-          ((eq status :complete)
+          (:complete
            (push json messages)
-           (setf remaining (%lsp-buffer-after-frame remaining used)))
-          (t (return (values (nreverse messages) remaining))))))))
+           (setf remaining (%lsp-buffer-after-frame remaining used))))))))
 
 (defun %lsp-read-stream-frames (stream on-message)
   (let ((buffer (make-array 0 :element-type '(unsigned-byte 8)
