@@ -4,6 +4,17 @@
 ;;;; navigation for FILE-TREE state.
 (in-package #:loom/feature/file-tree)
 
+(defun %file-tree-flatten-child (tree child-path kind depth active-paths)
+  (cons (cons child-path depth)
+        (when (%file-tree-expanded-directory-p tree child-path kind)
+          (%file-tree-flatten tree child-path (1+ depth) active-paths))))
+
+(defun %file-tree-flatten-children (tree path depth active-paths)
+  (loop for (child-path . kind) in
+        (funcall (file-tree-child-lister tree) path)
+        append (%file-tree-flatten-child tree child-path kind depth
+                                         active-paths)))
+
 (defun %file-tree-flatten (tree path depth active-paths)
   "Return the depth-first flattening of PATH's children (at DEPTH) and, for
 each child directory currently in TREE's expanded set, its children in turn,
@@ -11,12 +22,7 @@ recursing only into expanded directories."
   (unless (gethash path active-paths)
     (setf (gethash path active-paths) t)
     (unwind-protect
-         (loop for (child-path . kind) in (funcall (file-tree-child-lister tree) path)
-             append (cons (cons child-path depth)
-                          (when (and (eq kind :directory)
-                                     (gethash child-path (file-tree-expanded tree)))
-                            (%file-tree-flatten tree child-path (1+ depth)
-                                                 active-paths))))
+         (%file-tree-flatten-children tree path depth active-paths)
       (remhash path active-paths))))
 
 (defun %file-tree-child-kind (path children)
