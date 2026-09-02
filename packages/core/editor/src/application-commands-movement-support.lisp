@@ -15,7 +15,7 @@
   (%move-point-to-position buffer
                            (buffer-offset-position buffer offset)))
 
-(defmacro define-current-line-boundary-command (name column-form documentation)
+(defmacro define-current-line-boundary-command (name documentation column-form)
   "Define NAME as a command moving point within its current line."
   (let ((buffer (gensym "BUFFER-")))
     `(defun ,name ()
@@ -26,7 +26,7 @@
                              (buffer-point-line ,buffer)
                              ,column-form))))))
 
-(defmacro define-buffer-boundary-command (name offset-form documentation)
+(defmacro define-buffer-boundary-command (name documentation offset-form)
   "Define NAME as a command moving point to a buffer OFFSET."
   (let ((buffer (gensym "BUFFER-")))
     `(defun ,name ()

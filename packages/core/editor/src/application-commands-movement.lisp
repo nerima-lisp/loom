@@ -26,12 +26,12 @@ buffer draws one row per logical line, which makes the two the same thing.")
   "Move point up one screen row, repeating for the active numeric prefix.")
 
 (define-current-line-boundary-command move-beginning-of-line
-    0
-  "Move point to the beginning of the current line.")
+  "Move point to the beginning of the current line."
+  0)
 
 (define-current-line-boundary-command move-end-of-line
-    (length (buffer-line buffer (buffer-point-line buffer)))
-  "Move point to the end of the current line.")
+  "Move point to the end of the current line."
+  (length (buffer-line buffer (buffer-point-line buffer))))
 
 (define-repeating-command forward-word
     %forward-word-once %backward-word-once
@@ -42,12 +42,12 @@ buffer draws one row per logical line, which makes the two the same thing.")
   "Move point backward by words, repeating for the active numeric prefix.")
 
 (define-buffer-boundary-command beginning-of-buffer
-    (buffer-narrow-start-offset buffer)
-  "Move point to the beginning of the buffer (M-<).")
+  "Move point to the beginning of the buffer (M-<)."
+  (buffer-narrow-start-offset buffer))
 
 (define-buffer-boundary-command end-of-buffer
-    (buffer-narrow-end-offset buffer)
-  "Move point to the end of the buffer (M->).")
+  "Move point to the end of the buffer (M->)."
+  (buffer-narrow-end-offset buffer))
 
 (define-scroll-command scroll-up-command
   "Scroll down by roughly one page, repeating for the active prefix (C-v)."
