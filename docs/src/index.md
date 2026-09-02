@@ -28,7 +28,7 @@ nix run github:nerima-lisp/loom
 
 - [Getting started](getting-started.md) -- build loom and open a file.
 - [API reference](reference/api.md) -- the complete public export contract;
-  `src/package.lisp` remains authoritative when the package surface changes.
+  `src/package-exports.lisp` remains authoritative when the package surface changes.
 - [Architecture](reference/architecture.md) -- the layered design and the
   toolkit family it builds on.
 - [Roadmap](project/roadmap.md) -- what is implemented and what is not, yet.

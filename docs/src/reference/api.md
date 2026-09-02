@@ -1,7 +1,7 @@
 # API reference
 
 This page documents every symbol exported by the packages declared in
-`src/package.lisp`. The headings follow those export groups; symbols that are
+`src/package-exports.lisp`. The headings follow those export groups; symbols that are
 useful mainly as accessors or predicates still appear so the public contract is
 searchable in one place. Line and column numbers throughout are zero-based; a
 `(line . column)` pair denotes a position *between* characters, exactly like
@@ -2891,7 +2891,7 @@ Return point to the origin of the most recent definition jump. Bound to
 `M-,`.
 
 The complete export contract remains
-[`src/package.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package.lisp).
+[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp).
 
 ## CLI and commands
 
