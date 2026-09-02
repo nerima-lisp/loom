@@ -83,6 +83,19 @@ would have been recognized there."
   (%isearch-restore-origin session)
   (%isearch-end))
 
+(defun %isearch-activate-minibuffer (session minibuffer)
+  (loom:minibuffer-activate
+   minibuffer
+   (%isearch-prompt-for session)
+   :on-change
+   (lambda (input) (%isearch-change session minibuffer input))
+   :on-key
+   (lambda (key-event) (%isearch-key session minibuffer key-event))
+   :on-confirm
+   (lambda (input) (%isearch-confirm session input))
+   :on-cancel
+   (lambda () (%isearch-cancel session))))
+
 (defun %isearch-start (direction)
   "Open an incremental-search prompt in DIRECTION over the selected buffer."
   (let* ((buffer (loom/application:%selected-buffer))
@@ -92,17 +105,7 @@ would have been recognized there."
                                            (buffer-point-offset buffer)
                                            :direction direction)))
         (setf (loom:editor-state-isearch loom:*editor-state*) session)
-        (loom:minibuffer-activate
-         minibuffer
-         (%isearch-prompt-for session)
-         :on-change
-         (lambda (input) (%isearch-change session minibuffer input))
-         :on-key
-         (lambda (key-event) (%isearch-key session minibuffer key-event))
-         :on-confirm
-         (lambda (input) (%isearch-confirm session input))
-         :on-cancel
-         (lambda () (%isearch-cancel session))))))
+        (%isearch-activate-minibuffer session minibuffer))))
   nil)
 
 (defun isearch-forward ()
