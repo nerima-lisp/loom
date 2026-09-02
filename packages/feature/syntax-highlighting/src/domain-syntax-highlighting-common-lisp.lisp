@@ -56,6 +56,11 @@
            (values (%syntax-token-kind (subseq line position end)) end))))
       (values :plain (1+ position))))
 
+(defun %syntax-atom-token (line position)
+  (let ((end (%syntax-atom-end line position)))
+    (values (%syntax-token-kind (subseq line position end))
+            end)))
+
 (defun %syntax-line-token (line position length)
   (let ((character (char line position)))
     (cond ((%syntax-whitespace-p character)
@@ -68,10 +73,7 @@
            (%syntax-prefix-token line position length))
           ((%syntax-delimiter-p character)
            (values :delimiter (1+ position)))
-          (t
-           (let ((end (%syntax-atom-end line position)))
-             (values (%syntax-token-kind (subseq line position end))
-                     end))))))
+          (t (%syntax-atom-token line position)))))
 
 (defun syntax-highlight-line (line)
   "Return semantic tokens for LINE without changing its source text.
