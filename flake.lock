@@ -266,6 +266,23 @@
         "type": "github"
       }
     },
+    "cl-resilience-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786763915,
+        "narHash": "sha256-zKSL3mIsa783J8E2AD4tZUrQWaFuyMBjzLeE4wYYjVM=",
+        "owner": "nerima-lisp",
+        "repo": "cl-resilience-kit",
+        "rev": "741d42399ad781244bd36750c6626bd9f4e8b16b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v1.0.0",
+        "repo": "cl-resilience-kit",
+        "type": "github"
+      }
+    },
     "cl-tty-kit": {
       "flake": false,
       "locked": {
@@ -397,6 +414,7 @@
         "cl-process-kit": "cl-process-kit",
         "cl-prolog-kit": "cl-prolog-kit",
         "cl-regex-kit": "cl-regex-kit",
+        "cl-resilience-kit": "cl-resilience-kit",
         "cl-tty-kit": "cl-tty-kit",
         "cl-vcs-kit": "cl-vcs-kit",
         "cl-weave": "cl-weave",

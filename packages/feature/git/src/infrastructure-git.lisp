@@ -11,9 +11,13 @@ the generated function owns the process boundary while callers only provide
 domain arguments."
   `(defun ,name ,lambda-list
      ,documentation
-     (vcs-kit:run-git nil ,subcommand ,arguments
-                      :directory directory
-                      :timeout *git-command-timeout-seconds*)))
+    (resilience-kit:call-with-deadline
+     (lambda ()
+       (vcs-kit:run-git nil ,subcommand ,arguments
+                        :directory directory
+                        :timeout *git-command-timeout-seconds*))
+     :timeout *git-command-timeout-seconds*
+     :operation ,(string-downcase (symbol-name name)))))
 
 (define-git-operation run-git-status (&key directory)
   "Run Git status in DIRECTORY and return its captured process result."

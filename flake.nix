@@ -117,6 +117,10 @@
       url = "github:nerima-lisp/cl-vcs-kit/v0.2.0";
       flake = false;
     };
+    cl-resilience-kit = {
+      url = "github:nerima-lisp/cl-resilience-kit/v1.0.0";
+      flake = false;
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -146,6 +150,7 @@
       cl-log-kit,
       cl-process-kit,
       cl-vcs-kit,
+      cl-resilience-kit,
       treefmt-nix,
       ...
     }:
@@ -350,6 +355,15 @@
               clLogKit
             ];
           };
+          clResilienceKit = sibling {
+            name = "cl-resilience-kit";
+            source = cl-resilience-kit;
+            dependencies = [
+              clBoundaryKit
+              clConcurrentKit
+              clDateKit
+            ];
+          };
           # cl-weave is a dependency of `loom/test` only (see loom.asd), so it
           # is built here for `lispCheckDependencies` below; it must not enter
           # the delivered binary's closure.
@@ -397,6 +411,7 @@
           clLogKit
           clProcessKit
           clVcsKit
+          clResilienceKit
         ];
 
       lispCheckDependencies = ctx: [ (siblingsFor ctx).clWeave ];
