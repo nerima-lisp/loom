@@ -71,21 +71,27 @@ this, so a popup cannot drift away from the point it belongs to."
                      (loom/feature/window:window-width window)
                      line column)))
 
-(defun %selected-window-cursor (renderer window x-offset)
-  "Return the cursor for WINDOW, offset by the file-tree width X-OFFSET."
+(defun %selected-window-cursor-geometry (renderer window x-offset)
+  "Return the selected window cursor position, or NIL when it has no area."
   (let ((width (loom/feature/window:window-width window))
         (height (loom/feature/window:window-height window)))
-    (if (or (zerop width) (zerop height))
-        (cl-tty-kit:make-cursor :visible nil)
-        (let* ((buffer (loom/feature/window:window-buffer window))
-               (line (buffer-visible-point-line buffer))
-               (column (buffer-visible-point-column buffer)))
-          (multiple-value-bind (screen-column screen-row)
-              (%layout-buffer-cell renderer window buffer line column)
-            (cl-tty-kit:make-cursor
-             :x (+ x-offset (loom/feature/window:window-x window)
-                   screen-column)
-             :y (+ (loom/feature/window:window-y window) screen-row)))))))
+    (unless (or (zerop width) (zerop height))
+      (let* ((buffer (loom/feature/window:window-buffer window))
+             (line (buffer-visible-point-line buffer))
+             (column (buffer-visible-point-column buffer)))
+        (multiple-value-bind (screen-column screen-row)
+            (%layout-buffer-cell renderer window buffer line column)
+          (values (+ x-offset (loom/feature/window:window-x window)
+                     screen-column)
+                  (+ (loom/feature/window:window-y window) screen-row)))))))
+
+(defun %selected-window-cursor (renderer window x-offset)
+  "Return the cursor for WINDOW, offset by the file-tree width X-OFFSET."
+  (multiple-value-bind (x y)
+      (%selected-window-cursor-geometry renderer window x-offset)
+    (if (and x y)
+        (cl-tty-kit:make-cursor :x x :y y)
+        (cl-tty-kit:make-cursor :visible nil))))
 
 (defun editor-cursor (editor-state)
   "Return the terminal cursor for EDITOR-STATE: the active minibuffer's input
