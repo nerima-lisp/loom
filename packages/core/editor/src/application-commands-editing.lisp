@@ -14,9 +14,9 @@
 ;; one codepoint at a time would be pointless -- so SELF-INSERT-COMMAND takes
 ;; the typed character as an explicit argument instead of reading it back out
 ;; of some special variable.
-(defun self-insert-command (char)
-  "Insert CHAR repeatedly according to the active numeric prefix."
-  (%self-insert-character char))
+(defun self-insert-command (character)
+  "Insert CHARACTER repeatedly according to the active numeric prefix."
+  (%self-insert-character character))
 
 (define-repeating-command delete-char
   "Delete characters at point, repeating for the active numeric prefix."

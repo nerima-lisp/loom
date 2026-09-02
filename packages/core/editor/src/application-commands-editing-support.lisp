@@ -9,14 +9,14 @@
 (defun %delete-char-backward-once ()
   (buffer-delete-char (%selected-buffer) :backward t))
 
-(defun %repeated-character (char count)
+(defun %repeated-character (character count)
   (when (plusp count)
-    (make-string count :initial-element char)))
+    (make-string count :initial-element character)))
 
-(defun %self-insert-character (char)
+(defun %self-insert-character (character)
   (%clear-last-yank)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
-  (let ((text (%repeated-character char (%command-prefix-count))))
+  (let ((text (%repeated-character character (%command-prefix-count))))
     (when text
       (buffer-insert-string (%selected-buffer) text))))
 
