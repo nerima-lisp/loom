@@ -433,6 +433,7 @@ root source tree responsible for every feature."
   (:file "t/unit/terminal-screen-validation-test")
   (:file "t/unit/terminal-event-test")
   (:file "t/unit/terminal-session-test")
+  (:file "t/unit/terminal-session-lifecycle-test")
   (:file "t/unit/git-test")
   (:file "t/unit/git-file-operations-test")
   (:file "t/unit/lsp-framing-test-support")
