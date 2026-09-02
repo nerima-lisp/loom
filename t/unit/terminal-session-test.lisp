@@ -317,6 +317,35 @@
     (expect (resize-terminal-sessions 80 24 nil) :to-be nil)
     (expect (terminal-session-for-buffer nil nil) :to-be nil))
 
+  (it "polls and resizes every registered terminal session"
+    (let* ((state (%fresh-editor-state ""))
+           (first-session
+             (loom/feature/terminal::%make-terminal-session
+              "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd)
+              (make-buffer :name "*Loom-Terminal*") nil))
+           (second-session
+             (loom/feature/terminal::%make-terminal-session
+              "*Loom-Terminal<2>*" "/bin/sh" nil (uiop:getcwd)
+              (make-buffer :name "*Loom-Terminal<2>*") nil))
+           polled resized)
+      (setf (editor-state-terminal-sessions state)
+            (list first-session second-session))
+      (with-replaced-function
+          (terminal-session-poll
+           (lambda (session)
+             (push session polled)))
+        (with-replaced-function
+            (terminal-session-resize
+             (lambda (session columns rows)
+               (push (list session columns rows) resized)))
+          (expect (poll-terminal-sessions state) :to-be state)
+          (expect (resize-terminal-sessions 100 40 state) :to-be state)))
+      (expect polled :to-equal (list second-session first-session))
+      (expect resized
+              :to-equal
+              (list (list second-session 100 40)
+                    (list first-session 100 40)))))
+
   (it "captures output from a real child process attached to a PTY"
     (when (%sandboxed-check-p)
       (skip "no PTY/TTY inside the Nix sandbox; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
