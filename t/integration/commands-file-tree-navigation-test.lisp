@@ -101,4 +101,12 @@
         (loom/feature/file-tree:file-tree-select-next)
         (loom/feature/file-tree:file-tree-open-selected)
         (expect (gethash (file-tree-selected-path tree) (loom/feature/file-tree::file-tree-expanded tree))
-                :to-be-truthy)))))
+                :to-be-truthy))))
+
+  (it
+    "file-tree-delete-command removes the selected file and invalidates its path"
+    (%with-selected-file-tree-entry (dir "obsolete.txt")
+      (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
+      (loom/feature/file-tree:file-tree-select-next)
+      (loom/feature/file-tree:file-tree-delete-command)
+      (expect (host-kit:path-exists-p path) :to-be-falsy))))
