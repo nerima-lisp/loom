@@ -14,7 +14,7 @@
               do (unless first-p
                    (write-string ", " stream))
                  (setf first-p nil)
-                 (prin1 value stream))) "<no values>"))
+                 (write value :stream stream :escape t))) "<no values>"))
 
 (defun %evaluate-form (form)
   (%evaluation-values-line (multiple-value-list (eval form))))
