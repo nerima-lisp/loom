@@ -186,6 +186,13 @@
               :to-be nil)))
 
   (it
+    "does not handle acceptance keys without an active popup"
+    (%with-lsp-navigation (transport session buffer :content "foo")
+      (expect (loom::%completion-popup-handle-key (%special-key :enter))
+              :to-be nil)
+      (expect (buffer-text buffer) :to-equal "foo")))
+
+  (it
     "ignores popup input when there is no editor state"
     (let ((loom::*editor-state* nil))
       (expect (loom::%completion-popup-active-p) :to-be nil)
