@@ -17,21 +17,23 @@
 (defun %terminal-screen-handle-escape-osc (screen)
   (setf (terminal-screen-parser-state screen) :osc))
 
-(defun %terminal-screen-handle-escape-save-cursor (screen)
-  (%terminal-screen-save-cursor screen)
-  (setf (terminal-screen-parser-state screen) :ground))
+(defmacro define-terminal-escape-operation (name operation)
+  `(defun ,name (screen)
+     (,operation screen)
+     (setf (terminal-screen-parser-state screen) :ground)))
 
-(defun %terminal-screen-handle-escape-restore-cursor (screen)
-  (%terminal-screen-restore-cursor screen)
-  (setf (terminal-screen-parser-state screen) :ground))
-
-(defun %terminal-screen-handle-escape-line-feed (screen)
-  (%terminal-screen-line-feed screen)
-  (setf (terminal-screen-parser-state screen) :ground))
-
-(defun %terminal-screen-handle-escape-next-line (screen)
-  (%terminal-screen-next-line screen)
-  (setf (terminal-screen-parser-state screen) :ground))
+(define-terminal-escape-operation
+    %terminal-screen-handle-escape-save-cursor
+    %terminal-screen-save-cursor)
+(define-terminal-escape-operation
+    %terminal-screen-handle-escape-restore-cursor
+    %terminal-screen-restore-cursor)
+(define-terminal-escape-operation
+    %terminal-screen-handle-escape-line-feed
+    %terminal-screen-line-feed)
+(define-terminal-escape-operation
+    %terminal-screen-handle-escape-next-line
+    %terminal-screen-next-line)
 
 (defun %terminal-screen-handle-escape-reverse-index (screen)
   (%terminal-screen-reverse-index screen))
