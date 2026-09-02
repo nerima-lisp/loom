@@ -10,8 +10,9 @@
     "expands a command into a zero-argument buffer operation"
     (let ((expansion
             (macroexpand-1
-             '(loom::define-structural-command test-command test-edits
-                "test documentation"))))
+             '(loom::define-structural-command test-command
+                "test documentation"
+                test-edits))))
       (expect (first expansion) :to-be 'defun)
       (expect (second expansion) :to-be 'test-command)
       (expect (third expansion) :to-equal '())

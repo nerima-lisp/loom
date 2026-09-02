@@ -17,7 +17,7 @@
       (%move-point-to-offset
        buffer (+ start (%structural-adjusted-offset edits offset))))))
 
-(defmacro define-structural-command (name edit-function documentation)
+(defmacro define-structural-command (name documentation edit-function)
   "Define a zero-argument structural editing command.
 
 EDIT-FUNCTION returns the edits to apply, or NIL when the operation has nothing
@@ -30,36 +30,42 @@ that half-applies is exactly the failure these commands exist to avoid."
        (%sexp-motion-context))
      nil))
 
-(define-structural-command forward-slurp-sexp %forward-slurp-edits
+(define-structural-command forward-slurp-sexp
   "Move the enclosing list's closing delimiter past the next expression (C-<right>).
 
 `(a) b' becomes `(a b)'. The delimiter moves rather than being deleted and
-retyped, so the parentheses cannot come out unbalanced.")
+retyped, so the parentheses cannot come out unbalanced."
+  %forward-slurp-edits)
 
-(define-structural-command forward-barf-sexp %forward-barf-edits
+(define-structural-command forward-barf-sexp
   "Move the enclosing list's closing delimiter in past its last expression (C-<left>).
 
-`(a b)' becomes `(a) b'.")
+`(a b)' becomes `(a) b'."
+  %forward-barf-edits)
 
-(define-structural-command backward-slurp-sexp %backward-slurp-edits
+(define-structural-command backward-slurp-sexp
   "Move the enclosing list's opening delimiter back past the previous expression (C-M-<left>).
 
-`a (b)' becomes `(a b)'.")
+`a (b)' becomes `(a b)'."
+  %backward-slurp-edits)
 
-(define-structural-command backward-barf-sexp %backward-barf-edits
+(define-structural-command backward-barf-sexp
   "Move the enclosing list's opening delimiter in past its first expression (C-M-<right>).
 
-`(a b)' becomes `a (b)'.")
+`(a b)' becomes `a (b)'."
+  %backward-barf-edits)
 
-(define-structural-command splice-sexp %splice-edits
+(define-structural-command splice-sexp
   "Remove the enclosing list's delimiters, keeping its contents (M-s).
 
-`(a (b c) d)' with point inside the inner list becomes `(a b c d)'.")
+`(a (b c) d)' with point inside the inner list becomes `(a b c d)'."
+  %splice-edits)
 
-(define-structural-command raise-sexp %raise-edits
+(define-structural-command raise-sexp
   "Replace the enclosing list with the expression at point (M-r).
 
-`(a (b c) d)' with point at the inner list becomes `(b c)'.")
+`(a (b c) d)' with point at the inner list becomes `(b c)'."
+  %raise-edits)
 
 (defun wrap-round ()
   "Wrap the expression after point in a new pair of parentheses (M-().
