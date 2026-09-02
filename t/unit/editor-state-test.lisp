@@ -30,6 +30,14 @@
 
 (%editor-state-accessor-contract-test)
 
+(describe "editor-state default data"
+  (it "starts with independent empty hook collections"
+    (let ((first-state (make-editor-state))
+          (second-state (make-editor-state)))
+      (add-before-save-hook (lambda (buffer) buffer) first-state)
+      (expect (editor-state-before-save-hooks second-state) :to-be nil)
+      (expect (editor-state-after-save-hooks first-state) :to-be nil))))
+
 (describe "editor-state save hooks"
   (it "rejects registering save hooks without an active state"
     (let ((hook (lambda (buffer) buffer)))
