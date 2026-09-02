@@ -29,6 +29,20 @@
               :to-equal
               (format nil
                       "$ build~%Directory: /tmp/~%Output:~%stdout~%Error output:~%stderr~%Exit code: 7~%"))))
+  (it "renders stream sections only when they contain text"
+    (expect
+     (shell-command-result-text
+      (make-shell-command-result :command "true" :directory "/tmp/"))
+     :to-equal
+     (format nil "$ true~%Directory: /tmp/~%Exit code: 0~%"))
+    (expect
+     (shell-command-result-text
+      (make-shell-command-result :command "true" :directory "/tmp/"
+                                  :output (format nil "output~%")
+                                  :error-output (format nil "error~%")))
+     :to-equal
+     (format nil
+             "$ true~%Directory: /tmp/~%Output:~%output~%Error output:~%error~%Exit code: 0~%")))
   (it "runs a shell command and captures its streams and status"
     (let ((result
             (run-shell-command
