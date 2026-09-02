@@ -101,8 +101,8 @@ The LSP slice deliberately keeps its dependency boundary small:
 `application-commands-lsp-completion.lisp` owns completion data
 transformations and the completion command, while
 `application-commands-lsp-navigation.lisp` owns definition navigation,
-`application-lsp-session-state.lisp` owns session state,
-pending requests, and URI/language helpers, and
+`application-lsp-session-state.lisp` owns session state and pending requests,
+`application-lsp-session-uri.lisp` owns URI and language helpers, and
 `application-lsp-session-sync.lisp` owns document synchronization and
 diagnostic lookup. `application-lsp-session-lifecycle.lisp` owns startup,
 refresh, and shutdown orchestration, `application-lsp-protocol-send.lisp`
