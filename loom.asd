@@ -282,6 +282,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/user-init/src/application-user-configuration")
    (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
    (:file "src/presentation/layout")
+   (:file "src/presentation/layout-wrapping")
    (:file "src/presentation/layout-windows")
    (:file "src/presentation/layout-isearch")
    (:file "src/presentation/layout-minibuffer")
