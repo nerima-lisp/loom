@@ -236,19 +236,19 @@
                 :to-equal '((:fg 0) (:bg 6))))))
 
   (it
-    "highlights a search match spanning two logical lines"
-    (let* ((state (%fresh-layout-state :content "one two\nthree" :width 20 :height 2))
+    "highlights a search match spanning multiple logical lines"
+    (let* ((state (%fresh-layout-state :content "one two\nthree\nfour" :width 20 :height 3))
            (window (%layout-window state))
            (buffer (window-buffer window))
            (session (make-isearch-session buffer 0)))
        (setf (loom/feature/search::%isearch-matches session)
-             (list (make-buffer-span 4 9)))
+             (list (make-buffer-span 4 15)))
       (setf (editor-state-isearch state) session)
       (let ((*editor-state* state))
         (loom::%layout-draw-isearch
          (editor-state-renderer state) window 0))
       (let ((screen (%layout-screen state)))
-        (expect (loop for row below 2
+        (expect (loop for row below 3
                       thereis (loop for column below 20
                                     thereis (cl-tty-kit:cell-style
                                              (cl-tty-kit:screen-cell
