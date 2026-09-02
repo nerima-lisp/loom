@@ -131,12 +131,15 @@
         (signals error (validate-session-snapshot snapshot)))
       (dolist (workspace-case
                 (list
+                 :not-a-workspace
                  (%session-test-workspace :name nil)
                  (%session-test-workspace :name "")
                  (%session-test-workspace :layout nil)
                  (%session-test-workspace :selected-window-index -1)))
         (setf (session-snapshot-workspaces snapshot) (list workspace-case))
         (signals error (validate-session-snapshot snapshot)))
+      (setf (session-snapshot-workspaces snapshot) nil)
+      (signals error (validate-session-snapshot snapshot))
       (setf (session-snapshot-workspaces snapshot)
             (list (%session-test-workspace :name "Main")
                   (%session-test-workspace :name "main")))
