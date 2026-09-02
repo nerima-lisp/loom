@@ -9,20 +9,24 @@
 ;;;; silently eating the next character the user typed.
 (in-package #:loom)
 
-(defparameter +completion-popup-next-keys+
-  '(((:control) . #\n) (nil . :down))
+(defmacro define-completion-popup-key-set (name keys documentation)
+  "Declare the key descriptors consumed by one popup action."
+  `(defparameter ,name ',keys ,documentation))
+
+(define-completion-popup-key-set +completion-popup-next-keys+
+  (((:control) . #\n) (nil . :down))
   "Descriptors that move the selection down.")
 
-(defparameter +completion-popup-previous-keys+
-  '(((:control) . #\p) (nil . :up))
+(define-completion-popup-key-set +completion-popup-previous-keys+
+  (((:control) . #\p) (nil . :up))
   "Descriptors that move the selection up.")
 
-(defparameter +completion-popup-accept-keys+
-  '((nil . :enter) (nil . :tab))
+(define-completion-popup-key-set +completion-popup-accept-keys+
+  ((nil . :enter) (nil . :tab))
   "Descriptors that insert the selected candidate.")
 
-(defparameter +completion-popup-dismiss-keys+
-  '(((:control) . #\g) (nil . :escape))
+(define-completion-popup-key-set +completion-popup-dismiss-keys+
+  (((:control) . #\g) (nil . :escape))
   "Descriptors that close the popup without inserting anything.")
 
 (defun %completion-popup ()
