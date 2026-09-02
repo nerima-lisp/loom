@@ -60,6 +60,22 @@
                                           :insert-text "format")))
       (expect (lsp-completion-item-text item) :to-equal "format")))
 
+  (it
+    "preserves a definition location as a domain value"
+    (let* ((range (make-lsp-range (make-lsp-position 4 2)
+                                  (make-lsp-position 4 8)))
+           (location (make-lsp-location "file:///lib.lisp" range)))
+      (expect (lsp-location-uri location) :to-equal "file:///lib.lisp")
+      (expect (list (lsp-position-line
+                     (lsp-range-start (lsp-location-range location)))
+                    (lsp-position-character
+                     (lsp-range-start (lsp-location-range location)))
+                    (lsp-position-line
+                     (lsp-range-end (lsp-location-range location)))
+                    (lsp-position-character
+                     (lsp-range-end (lsp-location-range location))))
+              :to-equal '(4 2 4 8))))
+
   (it-each
       ((1 "error") (2 "warning") (3 "info") (4 "hint") (nil "info")
        (99 "info"))
