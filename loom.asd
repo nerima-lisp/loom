@@ -510,6 +510,7 @@ root source tree responsible for every feature."
    (:file "t/integration/layout-secondary-test")
    (:file "t/integration/frame-layout-test")
    (:file "t/integration/frame-layout-cursor-test")
+  (:file "t/integration/frame-layout-wrapping-test")
   (:file "t/integration/session-test-support")
   (:file "t/integration/session-store-roundtrip-test")
   (:file "t/integration/session-store-buffer-validation-test")
