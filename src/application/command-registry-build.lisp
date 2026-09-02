@@ -14,18 +14,20 @@
     (%validate-command-metadata name command help help-order)
     (list name command keys help help-order)))
 
+(defun %command-spec-group-p (spec)
+  (and (consp spec)
+       (eq (first spec) 'command-spec-group)))
+
+(defun %collect-command-spec-entry (spec)
+  (if (%command-spec-group-p spec)
+      (destructuring-bind (operator group-name &body group-specs) spec
+        (declare (ignore operator group-name))
+        (%collect-command-spec-entries group-specs))
+      (list (%parse-command-spec-form spec))))
+
 (defun %collect-command-spec-entries (specs)
   "Flatten SPECS from DEFINE-COMMAND-SPECS into validated registry entries."
-  (mapcan
-   (lambda (spec)
-     (cond
-       ((and (consp spec) (eq (first spec) 'command-spec-group))
-        (destructuring-bind (operator group-name &body group-specs) spec
-          (declare (ignore operator group-name))
-          (%collect-command-spec-entries group-specs)))
-       (t
-        (list (%parse-command-spec-form spec)))))
-   specs))
+  (mapcan #'%collect-command-spec-entry specs))
 
 (defun %duplicate-command-spec-name (entries)
   "Return the first duplicated non-NIL command name in ENTRIES."
