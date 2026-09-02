@@ -22,6 +22,11 @@
       (history-kit:history-reset-navigation history)))
   minibuffer)
 
+(defun %minibuffer-validate-function-option (value name)
+  (when (and value (not (functionp value)))
+    (error "~A must be a function or NIL: ~S" name value))
+  value)
+
 (defun minibuffer-activate (minibuffer prompt &key on-confirm on-cancel
                                                    on-change on-key
                                                    completion-function)
@@ -38,11 +43,9 @@ which is how a caller keeps a chord like C-s from being typed into the input.
 COMPLETION-FUNCTION, when supplied, is a function of the current input string
 that returns a list of candidate strings for Tab completion. Returns
 MINIBUFFER."
-  (dolist (entry (list (cons completion-function ":completion-function")
-                       (cons on-change ":on-change")
-                       (cons on-key ":on-key")))
-    (when (and (car entry) (not (functionp (car entry))))
-      (error "~A must be a function or NIL: ~S" (cdr entry) (car entry))))
+  (%minibuffer-validate-function-option completion-function ":completion-function")
+  (%minibuffer-validate-function-option on-change ":on-change")
+  (%minibuffer-validate-function-option on-key ":on-key")
   (let ((history (%minibuffer-history minibuffer)))
     (when history
       (history-kit:history-reset-navigation history)))
