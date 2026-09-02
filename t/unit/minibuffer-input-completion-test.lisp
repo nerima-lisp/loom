@@ -46,6 +46,19 @@
       (minibuffer-handle-key minibuffer (%special-key :tab))
       (expect (minibuffer-input-string minibuffer) :to-equal "z")))
 
+  (it
+    "does not match a candidate shorter than the input"
+    (let ((minibuffer (make-minibuffer)))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :completion-function
+       (lambda (input)
+         (declare (ignore input))
+         '("a")))
+      (%type-string minibuffer "ab")
+      (minibuffer-handle-key minibuffer (%special-key :tab))
+      (expect (minibuffer-input-string minibuffer) :to-equal "ab")))
+
   (it-each
       (("inactive minibuffer" nil :missing "")
        ("missing completion function" t :missing "Al")
