@@ -305,6 +305,32 @@
       (expect (buffer-text buffer) :to-equal "(list foo")))
 
   (it
+    "does not insert a candidate anchored in another buffer"
+    (%with-selected-buffer-state (buffer "foo")
+      (buffer-set-point buffer 0 3)
+      (let ((other-buffer (make-buffer :initial-content "bar")))
+        (setf (editor-state-completion *editor-state*)
+              (make-editor-completion other-buffer 0 3
+                                       '(("barbaz" . "barbaz"))))
+        (expect (loom::%completion-popup-handle-key (%special-key :enter))
+                :to-be-truthy)
+        (expect (buffer-text buffer) :to-equal "foo")
+        (expect (buffer-text other-buffer) :to-equal "bar")
+        (expect (editor-state-completion *editor-state*) :to-be nil))))
+
+  (it
+    "does not insert a candidate anchored on another line"
+    (%with-selected-buffer-state (buffer "foo\nbar")
+      (buffer-set-point buffer 0 3)
+      (setf (editor-state-completion *editor-state*)
+            (make-editor-completion buffer 1 0
+                                     '(("baz" . "baz"))))
+      (expect (loom::%completion-popup-handle-key (%special-key :enter))
+              :to-be-truthy)
+      (expect (buffer-text buffer) :to-equal "foo\nbar")
+      (expect (editor-state-completion *editor-state*) :to-be nil)))
+
+  (it
     "does not consume an unrelated key, so typing keeps typing"
     (%with-lsp-navigation (transport session buffer :content "foo")
       (buffer-set-point buffer 0 3)
