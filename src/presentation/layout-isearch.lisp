@@ -78,17 +78,20 @@
       (%layout-draw-wrapped-segment
        renderer window x y text width height line segments segment start end style))))
 
+(defun %layout-line-run-bounds (text start end)
+  (let ((start (max 0 (min start (length text)))))
+    (values start (max start (min end (length text))))))
+
 (defun %layout-line-run-geometry (window x-offset line start end)
   (let* ((buffer (loom/feature/window:window-buffer window))
          (text (%layout-visible-line buffer line))
          (width (loom/feature/window:window-width window))
          (height (loom/feature/window:window-height window))
          (y (loom/feature/window:window-y window))
-         (x (+ x-offset (loom/feature/window:window-x window)))
-         (start (max 0 (min start (length text))))
-         (end (max start (min end (length text)))))
-    (when (and (plusp width) (plusp height) (> end start))
-      (values buffer text width height x y start end))))
+         (x (+ x-offset (loom/feature/window:window-x window))))
+    (multiple-value-bind (start end) (%layout-line-run-bounds text start end)
+      (when (and (plusp width) (plusp height) (> end start))
+        (values buffer text width height x y start end)))))
 
 (defun %layout-draw-line-run (renderer window x-offset line start end style)
   "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.
