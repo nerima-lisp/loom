@@ -535,6 +535,7 @@ root source tree responsible for every feature."
    (:file "t/integration/concurrent-runtime-shutdown-test")
    (:file "t/integration/concurrent-runtime-submission-test")
    (:file "t/integration/advanced-test")
+   (:file "t/integration/piece-table-model-test")
    (:file "t/integration/editor-flow-test"))
   ;; Not HOST-KIT:SYMBOL-CALL or UIOP:SYMBOL-CALL: a .asd is read by the plain
   ;; CL reader before :depends-on is ever consulted, so any PKG:SYMBOL token
