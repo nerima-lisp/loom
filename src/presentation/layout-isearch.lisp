@@ -41,8 +41,8 @@
           renderer (subseq text draw-start end) (- width column))
          :style style)))))
 
-(defun %layout-draw-wrapped-segment
-    (renderer window x y text width height line segments segment start end style)
+(defun %layout-wrapped-segment-position
+    (renderer window width height line segments segment start end text)
   (let ((from (max start (car segment)))
         (to (min end (cdr segment))))
     (when (> to from)
@@ -57,11 +57,19 @@
                   (1- height)))
             (column (loom-renderer-segment-cells renderer text segment from)))
         (when row
-          (loom-renderer-write-string
-           renderer (+ x column) (+ y row)
-           (loom-renderer-truncate-string
-            renderer (subseq text from to) (- width column))
-           :style style))))))
+          (values from to row column))))))
+
+(defun %layout-draw-wrapped-segment
+    (renderer window x y text width height line segments segment start end style)
+  (multiple-value-bind (from to row column)
+      (%layout-wrapped-segment-position renderer window width height line segments
+                                        segment start end text)
+    (when row
+      (loom-renderer-write-string
+       renderer (+ x column) (+ y row)
+       (loom-renderer-truncate-string
+        renderer (subseq text from to) (- width column))
+       :style style))))
 
 (defun %layout-draw-wrapped-line-run
     (renderer window x y text width height line start end style)
