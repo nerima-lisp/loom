@@ -288,6 +288,22 @@
               :to-equal '((:fg 0) (:bg 6)))))
 
   (it
+    "draws the visible tail of a match clipped by horizontal scrolling"
+    (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (isearch-apply-pattern session "2345")
+      (setf (window-scroll-column window) 4
+            (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
+              :to-equal '((:fg 0) (:bg 6)))))
+
+  (it
     "does not draw a truncated match that is fully left of the viewport"
     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
            (window (%layout-window state))

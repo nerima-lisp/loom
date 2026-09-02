@@ -14,16 +14,21 @@
 
 (defun %layout-draw-truncated-line-run (renderer window x y text line start end style)
   (let ((row (- line (loom/feature/window:window-scroll-line window)))
-        (column (- (%layout-screen-column renderer text start)
-                   (loom/feature/window:window-scroll-column window)))
+        (scroll-column (loom/feature/window:window-scroll-column window))
         (width (loom/feature/window:window-width window))
         (height (loom/feature/window:window-height window)))
-    (when (and (<= 0 row) (< row height) (<= 0 column) (< column width))
-      (loom-renderer-write-string
-       renderer (+ x column) (+ y row)
-       (loom-renderer-truncate-string
-        renderer (subseq text start end) (- width column))
-       :style style))))
+    (let* ((visible-start
+             (loom-renderer-segment-column renderer text (cons 0 (length text))
+                                           scroll-column))
+           (draw-start (max start visible-start))
+           (column (max 0 (- (%layout-screen-column renderer text draw-start)
+                            scroll-column))))
+      (when (and (<= 0 row) (< row height) (< draw-start end) (< column width))
+        (loom-renderer-write-string
+         renderer (+ x column) (+ y row)
+         (loom-renderer-truncate-string
+          renderer (subseq text draw-start end) (- width column))
+         :style style)))))
 
 (defun %layout-draw-wrapped-segment
     (renderer window x y text width height line segments segment start end style)
