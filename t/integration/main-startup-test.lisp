@@ -14,10 +14,10 @@
              (setf received-argv argv)
              7))
         (expect (loom::%main-exit-code argv) :to-equal 7))
-      (expect received-argv :to-equal argv)))
+      (expect received-argv :to-equal argv))))
 
   (it
-    "uses SB-EXT:*POSIX-ARGV* when no argument vector is supplied"
+    "uses UIOP's raw command-line arguments when no argument vector is supplied"
     (let ((argv (list "loom" "--version"))
           (received-argv nil))
       (with-replaced-function
@@ -26,8 +26,9 @@
              (expect app :to-equal loom::*loom-app*)
              (setf received-argv argv)
              0))
-        (let ((sb-ext:*posix-argv* argv))
-          (expect (loom::%main-exit-code) :to-equal 0)))
+        (with-replaced-function
+            (uiop:raw-command-line-arguments (lambda () argv))
+          (expect (loom::%main-exit-code) :to-equal 0))
       (expect received-argv :to-equal argv))))
 
 (describe
