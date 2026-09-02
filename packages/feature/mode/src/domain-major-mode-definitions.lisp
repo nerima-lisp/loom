@@ -6,20 +6,6 @@
 ;;;; domain-major-mode-registry.lisp.
 (in-package #:loom/feature/mode)
 
-;; TypeScript and TypeScript React share one vocabulary; the two modes differ
-;; only in :language-id, which LSP servers use to select the JSX dialect.
-(defparameter +typescript-keywords+
-  '("abstract" "any" "as" "asserts" "async" "await" "bigint" "boolean"
-    "break" "case" "catch" "class" "const" "constructor" "continue"
-    "declare" "default" "delete" "do" "else" "enum" "export" "extends"
-    "false" "finally" "for" "from" "function" "get" "if" "implements"
-    "import" "in" "infer" "instanceof" "interface" "is" "keyof" "let"
-    "namespace" "never" "new" "null" "number" "of" "private" "protected"
-    "public" "readonly" "return" "satisfies" "set" "static" "string"
-    "super" "switch" "symbol" "this" "throw" "true" "try" "type" "typeof"
-    "undefined" "unknown" "var" "void" "while" "yield")
-  "Keyword vocabulary shared by the TypeScript and TypeScript React modes.")
-
 (defparameter +major-mode-definitions+
   `((:fundamental
      :name "Fundamental"

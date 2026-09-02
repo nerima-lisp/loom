@@ -71,6 +71,7 @@ root source tree responsible for every feature."
    (:file "packages/feature/user-init/src/package")
    (:file "packages/feature/lsp/src/package")
    (:file "src/package-user")
+   (:file "packages/feature/mode/src/domain-major-mode-keywords")
    (:file "packages/feature/mode/src/domain-major-mode-definitions")
    (:file "packages/feature/mode/src/domain-major-mode-registry-support")
    (:file "packages/feature/mode/src/domain-major-mode")
