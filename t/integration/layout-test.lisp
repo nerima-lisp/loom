@@ -317,7 +317,24 @@
         (loom::%layout-draw-isearch
          (editor-state-renderer state) window 0))
       (expect (cl-tty-kit:cell-style
-               (cl-tty-kit:screen-cell (%layout-screen state) 4 0))
+              (cl-tty-kit:screen-cell (%layout-screen state) 4 0))
+              :to-be nil)))
+
+  (it
+    "does not draw a match outside the buffer's visible region"
+    (let* ((state (%fresh-layout-state :content "0123456789" :width 10 :height 1))
+           (window (%layout-window state))
+           (buffer (window-buffer window))
+           (session (make-isearch-session buffer 0)))
+      (buffer-narrow-to-region buffer 0 5 0 10)
+      (setf (loom/feature/search::%isearch-matches session)
+            (list (make-buffer-span 0 2))
+            (editor-state-isearch state) session)
+      (let ((*editor-state* state))
+        (loom::%layout-draw-isearch
+         (editor-state-renderer state) window 0))
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
               :to-be nil)))
 
   (it
