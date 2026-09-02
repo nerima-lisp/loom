@@ -72,8 +72,15 @@
           (expect (host-kit:read-file-string path) :to-equal "draft")))))
 
   (it "treats missing or pathless sidecars as harmless"
-    (let ((buffer (make-buffer :initial-content "draft")))
-      (expect (delete-auto-save-file buffer) :to-be nil)))
+    (host-kit:with-temporary-directory (directory)
+      (let* ((path (merge-pathnames "notes.txt" directory))
+             (buffer (make-buffer :path path :initial-content "draft")))
+        (expect (delete-auto-save-file buffer)
+                :to-equal
+                (auto-save-path path))
+        (expect (delete-auto-save-file
+                 (list :not-a-buffer))
+                :to-be nil))))
 
 (describe
   "automatic save modes"
