@@ -52,31 +52,26 @@ expansion."
           (minibuffer-message minibuffer (format nil "Replaced ~D occurrence(s)" count))
           (minibuffer-message minibuffer "Not found")))))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun %search-command-form (name prompt search-fn docstring)
-    (let ((buffer-var (gensym "BUFFER-"))
-          (span-var (gensym "SPAN-"))
-          (position-var (gensym "POSITION-")))
-      `(defun ,name ()
-         ,docstring
-         (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                        :on-cancel (minibuffer-message minibuffer "Quit"))
-             ((pattern ,prompt))
-           (let* ((,buffer-var (%selected-buffer))
-                  (,span-var (,search-fn ,buffer-var pattern)))
-             (if ,span-var
-                 (let ((,position-var
-                         (buffer-offset-position ,buffer-var
-                                                  (buffer-span-start ,span-var))))
-                   (buffer-set-point ,buffer-var
-                                     (buffer-position-line ,position-var)
-                                     (buffer-position-column ,position-var))
-                   (minibuffer-message minibuffer "Found"))
-                 (minibuffer-message minibuffer "Not found")))))))
-  )
-
 (defmacro %define-search-command (name prompt search-fn docstring)
-  (%search-command-form name prompt search-fn docstring))
+  (let ((buffer-var (gensym "BUFFER-"))
+        (span-var (gensym "SPAN-"))
+        (position-var (gensym "POSITION-")))
+    `(defun ,name ()
+       ,docstring
+       (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
+                      :on-cancel (minibuffer-message minibuffer "Quit"))
+           ((pattern ,prompt))
+         (let* ((,buffer-var (%selected-buffer))
+                (,span-var (,search-fn ,buffer-var pattern)))
+           (if ,span-var
+               (let ((,position-var
+                       (buffer-offset-position ,buffer-var
+                                                (buffer-span-start ,span-var))))
+                 (buffer-set-point ,buffer-var
+                                   (buffer-position-line ,position-var)
+                                   (buffer-position-column ,position-var))
+                 (minibuffer-message minibuffer "Found"))
+               (minibuffer-message minibuffer "Not found")))))))
 
 (%define-search-command
  search-forward
