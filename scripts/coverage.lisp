@@ -25,7 +25,7 @@
 
 (defconstant +coverage-timeout-seconds+ 1800)
 (defconstant +coverage-test-timeout-ms+ 120000)
-(defparameter +coverage-source-directories+ '(#P"src/" #P"packages/"))
+(defconstant +coverage-source-directories+ '(#P"src/" #P"packages/"))
 
 (defun %required-function (package-name symbol-name)
   (let ((symbol (find-symbol symbol-name package-name)))
