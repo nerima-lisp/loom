@@ -88,20 +88,22 @@ reachable in TREE."
     (:down (min (1- count) (1+ position)))
     (:up (max 0 (1- position)))))
 
+(defun %file-tree-next-position (paths selected-path direction)
+  (let ((count (length paths)))
+    (when (plusp count)
+      (let ((position (%file-tree-selection-position paths selected-path)))
+        (if position
+            (%file-tree-move-selection-position position count direction)
+            (%file-tree-position-at-boundary paths direction))))))
+
 (defun %file-tree-next-selection (paths selected-path direction)
   "Return the visible PATH selected after moving in DIRECTION.
 
 The calculation is independent of FILE-TREE state so callers can keep the
 selection mutation at the boundary and test navigation as a pure operation."
-  (let ((count (length paths)))
-    (when (plusp count)
-      (let* ((position (%file-tree-selection-position paths selected-path))
-             (next-position
-               (if position
-                   (%file-tree-move-selection-position
-                    position count direction)
-                   (%file-tree-position-at-boundary paths direction))))
-        (nth next-position paths)))))
+  (let ((next-position (%file-tree-next-position paths selected-path direction)))
+    (when next-position
+      (nth next-position paths))))
 
 (defun file-tree-move-selection (tree direction)
   "Move TREE's selection cursor by one visible entry (see
