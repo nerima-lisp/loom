@@ -42,23 +42,29 @@
                   (values new-node t)
                   (%window-delete-from-subtree node target 1)))))))
 
+(defun %window-selection-after-deletion (selected deleted-window new-root)
+  (if (eq selected deleted-window)
+      (%window-first-leaf new-root)
+      selected))
+
+(defun %window-reflow-after-deletion (tree new-root selected window)
+  (setf (window-tree-root tree) new-root
+        (window-tree-selected tree)
+        (%window-selection-after-deletion selected window new-root))
+  (%window-layout new-root
+                  0 0
+                  (window-tree-width tree)
+                  (window-tree-height tree)))
+
 (defun window-delete (tree window)
   "Delete WINDOW from TREE when another window remains. Returns the
 selected window after the deletion; deleting the sole window is a no-op."
   (let ((selected (window-tree-selected tree)))
     (when (> (length (window-tree-windows tree)) 1)
       (multiple-value-bind (new-root deleted)
-          (%window-delete-node (window-tree-root tree) window)
+        (%window-delete-node (window-tree-root tree) window)
         (when deleted
-          (setf (window-tree-root tree) new-root
-                (window-tree-selected tree)
-                (if (eq selected window)
-                    (%window-first-leaf new-root)
-                    selected))
-          (%window-layout (window-tree-root tree)
-                          0 0
-                          (window-tree-width tree)
-                          (window-tree-height tree)))))
+          (%window-reflow-after-deletion tree new-root selected window))))
     (window-tree-selected tree)))
 
 (defun window-delete-other-windows (tree window)
