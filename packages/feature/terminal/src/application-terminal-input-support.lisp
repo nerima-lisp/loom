@@ -5,6 +5,13 @@
     :up :down :left :right :home :end :delete :insert :page-up :page-down)
   "Special key codes that have a direct terminal representation.")
 
+(defparameter +terminal-special-payload-suffixes+
+  '((:backtab . "Z")
+    (:up . "A") (:down . "B") (:right . "C") (:left . "D")
+    (:home . "H") (:end . "F") (:delete . "3~") (:insert . "2~")
+    (:page-up . "5~") (:page-down . "6~"))
+  "CSI suffixes for special keys whose payload is an escape sequence.")
+
 (defun %terminal-csi (suffix)
   (format nil "~C[~A" (code-char 27) suffix))
 
@@ -13,18 +20,10 @@
     (:enter (string (code-char 13)))
     (:backspace (string (code-char 127)))
     (:tab (string (code-char 9)))
-    (:backtab (%terminal-csi "Z"))
     (:escape (string (code-char 27)))
-    (:up (%terminal-csi "A"))
-    (:down (%terminal-csi "B"))
-    (:right (%terminal-csi "C"))
-    (:left (%terminal-csi "D"))
-    (:home (%terminal-csi "H"))
-    (:end (%terminal-csi "F"))
-    (:delete (%terminal-csi "3~"))
-    (:insert (%terminal-csi "2~"))
-    (:page-up (%terminal-csi "5~"))
-    (:page-down (%terminal-csi "6~"))))
+    (otherwise
+     (let ((suffix (cdr (assoc code +terminal-special-payload-suffixes+))))
+       (and suffix (%terminal-csi suffix))))))
 
 (defun %terminal-control-letter (character)
   (when (and (char>= character #\a) (char<= character #\z))
