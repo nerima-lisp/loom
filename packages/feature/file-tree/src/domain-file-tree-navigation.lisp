@@ -22,24 +22,34 @@ recursing only into expanded directories."
 (defun %file-tree-child-kind (path children)
   (cdr (assoc path children :test (function equal))))
 
+(defun %file-tree-expanded-directory-p (tree path kind)
+  (and (eq kind :directory)
+       (gethash path (file-tree-expanded tree))))
+
+(defun %file-tree-search-children (tree path children active-paths)
+  (or (%file-tree-child-kind path children)
+      (loop for (child-path . kind) in children
+            thereis (when (%file-tree-expanded-directory-p tree child-path kind)
+                      (%file-tree-search-directory tree path child-path
+                                                   active-paths)))))
+
+(defun %file-tree-search-directory (tree target-path directory-path active-paths)
+  (unless (gethash directory-path active-paths)
+    (setf (gethash directory-path active-paths) t)
+    (unwind-protect
+         (%file-tree-search-children
+          tree target-path
+          (funcall (file-tree-child-lister tree) directory-path)
+          active-paths)
+      (remhash directory-path active-paths))))
+
 (defun %file-tree-find-kind (tree path)
   "Search TREE, following only currently-expanded directories starting from
 its root, for an entry whose path is EQUAL to PATH, and return its kind
-(:FILE or :DIRECTORY), or NIL if PATH is not found among the currently
-reachable (visible) entries."
-  (let ((active-paths (make-hash-table :test #'equal)))
-    (labels ((search-under (dir-path)
-               (unless (gethash dir-path active-paths)
-                 (setf (gethash dir-path active-paths) t)
-                 (unwind-protect
-                      (let ((children (funcall (file-tree-child-lister tree) dir-path)))
-                        (or (%file-tree-child-kind path children)
-                            (loop for (child-path . kind) in children
-                                  thereis (and (eq kind :directory)
-                                               (gethash child-path (file-tree-expanded tree))
-                                               (search-under child-path)))))
-                   (remhash dir-path active-paths)))))
-      (search-under (file-tree-root-path tree)))))
+  (:FILE or :DIRECTORY), or NIL if PATH is not found among the currently
+  reachable (visible) entries."
+  (%file-tree-search-directory tree path (file-tree-root-path tree)
+                               (make-hash-table :test #'equal)))
 
 (defun file-tree-entries (tree)
   "Return the flattened list of currently visible entries in TREE,
