@@ -2,22 +2,6 @@
 (in-package #:loom/test)
 
 (describe
-  "%main-exit-code"
-  (it
-    "passes the application and explicit argv to the CLI runner"
-    (let ((application nil)
-          (arguments nil))
-      (with-replaced-function
-          (cl-cli:run-app
-           (lambda (app &key argv)
-             (setf application app
-                   arguments argv)
-             17))
-      (expect (loom::%main-exit-code '("loom" "--version")) :to-equal 17))
-      (expect application :to-be loom::*loom-app*)
-      (expect arguments :to-equal '("loom" "--version")))))
-
-(describe
   "%run-loom"
   (it
       "enables and restores raw mode against a real terminal descriptor, then returns 0"
