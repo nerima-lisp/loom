@@ -15,24 +15,28 @@
 (defun %lsp-utf8-emit-continuation (octets code shift)
   (vector-push-extend (+ #x80 (logand (ash code (- shift)) #x3F)) octets))
 
+(defun %lsp-utf8-leading-byte (code width)
+  (+ (case width
+       (1 0)
+       (2 #xC0)
+       (3 #xE0)
+       (4 #xF0))
+     (ash code (* -6 (1- width)))))
+
+(defun %lsp-utf8-continuation-shifts (width)
+  (case width
+    (1 nil)
+    (2 '(0))
+    (3 '(6 0))
+    (4 '(12 6 0))))
+
 (defun %lsp-utf8-emit-codepoint (octets code)
   (let ((width (%lsp-utf8-codepoint-width code)))
     (when (and (= width 3) (<= #xD800 code #xDFFF))
       (error "Cannot encode a UTF-8 surrogate code point: ~S" code))
-    (case width
-      (1 (vector-push-extend code octets))
-      (2
-       (vector-push-extend (+ #xC0 (ash code -6)) octets)
-       (%lsp-utf8-emit-continuation octets code 0))
-      (3
-       (vector-push-extend (+ #xE0 (ash code -12)) octets)
-       (%lsp-utf8-emit-continuation octets code 6)
-       (%lsp-utf8-emit-continuation octets code 0))
-      (4
-       (vector-push-extend (+ #xF0 (ash code -18)) octets)
-       (%lsp-utf8-emit-continuation octets code 12)
-       (%lsp-utf8-emit-continuation octets code 6)
-       (%lsp-utf8-emit-continuation octets code 0)))))
+    (vector-push-extend (%lsp-utf8-leading-byte code width) octets)
+    (dolist (shift (%lsp-utf8-continuation-shifts width))
+      (%lsp-utf8-emit-continuation octets code shift))))
 
 (defun %lsp-utf8-encode (string)
   (let ((octets (make-array 0 :element-type '(unsigned-byte 8)
