@@ -317,6 +317,10 @@
     (expect (resize-terminal-sessions 80 24 nil) :to-be nil)
     (expect (terminal-session-for-buffer nil nil) :to-be nil))
 
+  (it "requires editor state when starting a terminal session"
+    (signals error
+      (start-terminal-session :state nil)))
+
   (it "polls and resizes every registered terminal session"
     (let* ((state (%fresh-editor-state ""))
            (first-session
