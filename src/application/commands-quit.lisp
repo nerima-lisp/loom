@@ -9,7 +9,7 @@
 ;; ERROR is deliberate -- an unhandled LOOM-QUIT (e.g. this command called
 ;; outside the real event loop, such as from a test) is a harmless no-op
 ;; instead of an unwanted error.
-(define-condition loom-quit () ()
+(define-condition loom-quit (condition) ()
   (:documentation
    "Signaled by SAVE-BUFFERS-KILL-TERMINAL to ask the main event loop in
 src/main.lisp to exit cleanly."))
