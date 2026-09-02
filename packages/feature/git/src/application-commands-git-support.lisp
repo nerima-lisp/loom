@@ -92,22 +92,25 @@
   (format nil "Git ~A cancelled"
           (nth-value 0 (%git-operation-labels operation))))
 
+(defun %git-file-operation-success (operation path minibuffer)
+  (let ((result (%run-git-file-operation operation path (%git-status-directory))))
+    (minibuffer-message minibuffer
+                         (%git-operation-result-message operation path result))
+    result))
+
+(defun %git-file-operation-error (operation minibuffer condition)
+  (minibuffer-message minibuffer
+                       (%git-operation-error-message operation condition))
+  nil)
+
 (defun %git-file-operation (operation path minibuffer)
   "Run OPERATION for PATH and report its result in MINIBUFFER."
   (let ((path (string-trim '(#\Space #\Tab #\Newline #\Return) path)))
     (if (%git-path-present-p path)
         (handler-case
-            (let ((result (%run-git-file-operation
-                           operation path (%git-status-directory))))
-              (minibuffer-message
-               minibuffer
-               (%git-operation-result-message operation path result))
-              result)
+            (%git-file-operation-success operation path minibuffer)
           (error (condition)
-            (minibuffer-message
-             minibuffer
-             (%git-operation-error-message operation condition))
-            nil))
+            (%git-file-operation-error operation minibuffer condition)))
         (minibuffer-message
          minibuffer
          (%git-operation-cancelled-message operation)))))
