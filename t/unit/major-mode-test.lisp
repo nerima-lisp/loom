@@ -42,6 +42,13 @@
     (expect (major-mode-from-name 42) :to-be nil))
 
   (it
+    "resolves every alias declared by built-in mode metadata"
+    (dolist (entry loom/feature/mode::+major-mode-definitions+)
+      (let ((mode (car entry)))
+        (dolist (alias (getf (cdr entry) :aliases))
+          (expect (major-mode-from-name alias) :to-be mode)))))
+
+  (it
     "returns safe defaults for unknown mode metadata"
     (expect (major-mode-name :unknown) :to-be nil)
     (expect (major-mode-comment-prefix :unknown) :to-be nil)
