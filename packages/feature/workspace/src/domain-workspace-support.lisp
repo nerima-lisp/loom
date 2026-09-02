@@ -37,7 +37,7 @@
   workspace)
 
 (defun %validate-workspaces (workspaces current-index)
-  (unless (and (listp workspaces) (plusp (length workspaces)))
+  (unless (and (listp workspaces) (consp workspaces))
     (error "A workspace manager needs one or more workspaces"))
   (dolist (workspace workspaces)
     (%validate-workspace workspace))
