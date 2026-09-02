@@ -104,10 +104,16 @@
           (format nil "Content-Length: 0~AContent-Length: 0~A~A"
                   crlf crlf crlf)
           #())))
-      (signals error
-        (loom/feature/lsp::loom-lsp-frame-decode
-         (%lsp-raw-frame (format nil "Content-Length: nope~A~A" crlf crlf)
-                         #())))
+      (let ((condition nil))
+        (handler-case
+            (loom/feature/lsp::loom-lsp-frame-decode
+             (%lsp-raw-frame (format nil "Content-Length: nope~A~A" crlf crlf)
+                             #()))
+          (error (caught)
+            (setf condition caught)))
+        (expect condition :to-be-truthy)
+        (expect (princ-to-string condition)
+                :to-match "Invalid Content-Length: \"nope\""))
       (signals error
         (loom/feature/lsp::loom-lsp-frame-decode
          (%lsp-raw-frame (format nil "Content-Length: -1~A~A" crlf crlf)
