@@ -8,15 +8,18 @@
               do (write-string chunk output))
       ;; A PTY master commonly reports EIO for the final read after its
       ;; child exits. Data accumulated before that read is still useful.
-      (error () nil))))
+      (cl-tty-kit:pty-operation-failed () nil))))
 
 (defun %close-terminal-session (session)
   (let ((pty (terminal-session-pty session)))
     (when pty
-      (let ((exit-code (ignore-errors (cl-tty-kit:pty-exit-code pty))))
+        (let ((exit-code
+                (handler-case (cl-tty-kit:pty-exit-code pty)
+                  (cl-tty-kit:pty-operation-failed () nil))))
         (when exit-code
           (setf (terminal-session-exit-code session) exit-code)))
-      (ignore-errors (cl-tty-kit:close-pty pty))
+      (handler-case (cl-tty-kit:close-pty pty)
+        (cl-tty-kit:pty-operation-failed () nil))
       (setf (terminal-session-pty session) nil)))
   (setf (terminal-session-alive-p session) nil)
   session)
@@ -78,8 +81,7 @@
     (terminal-screen-resize (terminal-session-screen session) columns rows)
     (when (and (terminal-session-alive-p session)
                (terminal-session-pty session))
-      (ignore-errors
-        (cl-tty-kit:pty-resize (terminal-session-pty session) columns rows))))
+      (cl-tty-kit:pty-resize (terminal-session-pty session) columns rows)))
   session)
 
 (defun stop-terminal-session (session)
