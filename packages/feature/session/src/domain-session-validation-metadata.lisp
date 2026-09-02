@@ -13,23 +13,32 @@
       (error "validate-session-snapshot: ~A: ~S" message names)))
   objects)
 
+(defun %session-buffer-identity-valid-p (buffer)
+  (and (stringp (session-buffer-snapshot-name buffer))
+       (or (null (session-buffer-snapshot-path buffer))
+           (stringp (session-buffer-snapshot-path buffer)))
+       (stringp (session-buffer-snapshot-text buffer))))
+
+(defun %session-buffer-position-valid-p (buffer)
+  (and (%session-nonnegative-integer-p
+        (session-buffer-snapshot-point-line buffer))
+       (%session-nonnegative-integer-p
+        (session-buffer-snapshot-point-column buffer))
+       (%session-mark-valid-p
+        (session-buffer-snapshot-mark-line buffer)
+        (session-buffer-snapshot-mark-column buffer))))
+
+(defun %session-buffer-state-valid-p (buffer)
+  (member (session-buffer-snapshot-modified-p buffer)
+          '(nil t)
+          :test #'eq))
+
 (defun %validate-session-buffer (buffer)
   (unless (typep buffer 'session-buffer-snapshot)
     (error "validate-session-snapshot: invalid buffer snapshot ~S" buffer))
-  (unless (and (stringp (session-buffer-snapshot-name buffer))
-               (or (null (session-buffer-snapshot-path buffer))
-                   (stringp (session-buffer-snapshot-path buffer)))
-               (stringp (session-buffer-snapshot-text buffer))
-               (%session-nonnegative-integer-p
-                (session-buffer-snapshot-point-line buffer))
-               (%session-nonnegative-integer-p
-                (session-buffer-snapshot-point-column buffer))
-               (%session-mark-valid-p
-                (session-buffer-snapshot-mark-line buffer)
-                (session-buffer-snapshot-mark-column buffer))
-               (member (session-buffer-snapshot-modified-p buffer)
-                       '(nil t)
-                       :test #'eq))
+  (unless (and (%session-buffer-identity-valid-p buffer)
+               (%session-buffer-position-valid-p buffer)
+               (%session-buffer-state-valid-p buffer))
     (error "validate-session-snapshot: malformed buffer snapshot ~S" buffer))
   buffer)
 
