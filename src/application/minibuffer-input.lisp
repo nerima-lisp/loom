@@ -66,6 +66,12 @@ not, because by then the session they would notify is already over."
     (when on-change
       (funcall on-change (%minibuffer-input minibuffer)))))
 
+(defmacro %with-minibuffer-change ((minibuffer) &body body)
+  "Apply an input mutation and notify the prompt's change hook once."
+  `(progn
+     ,@body
+     (%minibuffer-notify-change ,minibuffer)))
+
 (defun %minibuffer-cancel (minibuffer)
   (when (%minibuffer-on-cancel minibuffer)
     (funcall (%minibuffer-on-cancel minibuffer)))
@@ -95,17 +101,22 @@ not, because by then the session they would notify is already over."
 (defun %minibuffer-dispatch-key (minibuffer kind code)
   (case kind
     (:cancel (%minibuffer-cancel minibuffer))
-    (:backspace (%minibuffer-delete-backward minibuffer)
-                (%minibuffer-notify-change minibuffer))
-    (:history-previous (%minibuffer-recall-history minibuffer :previous)
-                       (%minibuffer-notify-change minibuffer))
-    (:history-next (%minibuffer-recall-history minibuffer :next)
-                   (%minibuffer-notify-change minibuffer))
-    (:complete (minibuffer-complete minibuffer)
-               (%minibuffer-notify-change minibuffer))
+    (:backspace
+     (%with-minibuffer-change (minibuffer)
+       (%minibuffer-delete-backward minibuffer)))
+    (:history-previous
+     (%with-minibuffer-change (minibuffer)
+       (%minibuffer-recall-history minibuffer :previous)))
+    (:history-next
+     (%with-minibuffer-change (minibuffer)
+       (%minibuffer-recall-history minibuffer :next)))
+    (:complete
+     (%with-minibuffer-change (minibuffer)
+       (minibuffer-complete minibuffer)))
     (:confirm (%minibuffer-confirm minibuffer))
-    (:character (%minibuffer-insert-character minibuffer code)
-                (%minibuffer-notify-change minibuffer))
+    (:character
+     (%with-minibuffer-change (minibuffer)
+       (%minibuffer-insert-character minibuffer code)))
     (t nil)))
 
 (defun minibuffer-handle-key (minibuffer key-event)
