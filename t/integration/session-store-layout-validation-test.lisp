@@ -75,6 +75,7 @@
               (list
                nil
                '(:name)
+               '(:name . "buffer")
                '(:name "buffer" 42 "path")
                '(:name "buffer" :unexpected "path")
                '(:name "buffer" :name "duplicate")))

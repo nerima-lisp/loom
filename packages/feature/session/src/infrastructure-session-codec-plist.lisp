@@ -10,8 +10,12 @@
         when (eq (first tail) key)
           return (second tail)))
 
-(defun %session-keyword-plist-p (value)
+(defun %session-proper-list-p (value)
   (and (listp value)
+       (integerp (list-length value))))
+
+(defun %session-keyword-plist-p (value)
+  (and (%session-proper-list-p value)
        (evenp (length value))
        (loop for tail on value by #'cddr
              always (keywordp (first tail)))))
