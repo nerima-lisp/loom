@@ -4,6 +4,16 @@
 ;;;; keymap descriptor shape that the editor domain understands.
 (in-package #:loom)
 
+(defun %control-special-key-p (type code)
+  (and (eq type :special)
+       (keywordp code)
+       (let ((name (symbol-name code)))
+         (and (= (length name) 9)
+              (string= "CONTROL-" name :end2 8)))))
+
+(defun %control-special-key-character (code)
+  (char-downcase (char (symbol-name code) 8)))
+
 (defun %key-event->descriptor (event)
   "Convert a CL-TTY-KIT:KEY-EVENT into the (MODIFIERS . CODE) descriptor
 shape domain/keymap.lisp's protocol expects.
@@ -23,11 +33,7 @@ from a bare C-f."
   (let ((type (cl-tty-kit:key-event-type event))
         (code (cl-tty-kit:key-event-code event))
         (modifiers (cl-tty-kit:key-event-modifiers event)))
-    (if (and (eq type :special)
-             (keywordp code)
-             (let ((name (symbol-name code)))
-               (and (= (length name) 9)
-                    (string= "CONTROL-" name :end2 8))))
+    (if (%control-special-key-p type code)
         (cons (adjoin :control modifiers)
-              (char-downcase (char (symbol-name code) 8)))
+              (%control-special-key-character code))
         (cons modifiers code))))
