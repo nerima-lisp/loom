@@ -10,8 +10,8 @@
     (let ((expansion
             (macroexpand-1
              '(loom::define-sexp-motion-command test-sexp-motion
-                  test-offset
-                "test documentation"))))
+                  "test documentation"
+                  test-offset))))
       (expect (first expansion) :to-be 'defun)
       (expect (second expansion) :to-be 'test-sexp-motion)
       (expect (third expansion) :to-equal '())

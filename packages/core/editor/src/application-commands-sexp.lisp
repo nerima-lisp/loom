@@ -24,7 +24,7 @@ point outside its own region, and the offsets are translated back by START."
 (defun %move-point-to-local-offset (buffer start offset)
   (%move-point-to-offset buffer (+ start offset)))
 
-(defmacro define-sexp-motion-command (name offset-function documentation)
+(defmacro define-sexp-motion-command (name documentation offset-function)
   "Define a zero-argument command moving point to OFFSET-FUNCTION's result.
 
 A NIL result means the motion has nowhere to go -- the end of the region, an
@@ -38,20 +38,24 @@ rather than guessing."
          (when ,target-var
            (%move-point-to-local-offset buffer start ,target-var)))))))
 
-(define-sexp-motion-command forward-sexp %forward-sexp-offset
+(define-sexp-motion-command forward-sexp
   "Move point past the next S-expression (C-M-f).
 
 Parentheses inside a string, inside a comment, or in a #\\ character literal
-are text rather than structure and are stepped over as part of their atom.")
+are text rather than structure and are stepped over as part of their atom."
+  %forward-sexp-offset)
 
-(define-sexp-motion-command backward-sexp %backward-sexp-offset
-  "Move point to the start of the previous S-expression (C-M-b).")
+(define-sexp-motion-command backward-sexp
+  "Move point to the start of the previous S-expression (C-M-b)."
+  %backward-sexp-offset)
 
-(define-sexp-motion-command backward-up-list %backward-up-list-offset
-  "Move point to the opening parenthesis of the enclosing list (C-M-u).")
+(define-sexp-motion-command backward-up-list
+  "Move point to the opening parenthesis of the enclosing list (C-M-u)."
+  %backward-up-list-offset)
 
-(define-sexp-motion-command down-list %down-list-offset
-  "Move point just inside the next opening parenthesis (C-M-d).")
+(define-sexp-motion-command down-list
+  "Move point just inside the next opening parenthesis (C-M-d)."
+  %down-list-offset)
 
 (defun kill-sexp ()
   "Kill the S-expression after point and push it onto the kill ring (C-M-k).
