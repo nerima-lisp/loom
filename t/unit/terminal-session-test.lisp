@@ -268,6 +268,20 @@
              (make-buffer :name "*Loom-Terminal*") nil)))
       (expect (terminal-session-send session "ignored") :to-be nil)))
 
+  (it "sends input to a live PTY session"
+    (let ((session
+            (loom/feature/terminal::%make-terminal-session
+             "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd)
+             (make-buffer :name "*Loom-Terminal*") :pty))
+          sent)
+      (setf (terminal-session-alive-p session) t)
+      (with-replaced-function
+          (cl-tty-kit:pty-write
+           (lambda (pty text)
+             (setf sent (list pty text))))
+        (expect (terminal-session-send session "input") :to-be session))
+      (expect sent :to-equal '(:pty "input"))))
+
   (it "resizes a live session screen without requiring a PTY"
     (let ((session
             (loom/feature/terminal::%make-terminal-session
@@ -275,6 +289,24 @@
              (make-buffer :name "*Loom-Terminal*") nil)))
       (setf (terminal-session-alive-p session) t)
       (expect (terminal-session-resize session 100 40) :to-be session)
+      (expect (terminal-screen-width (terminal-session-screen session))
+              :to-be 100)
+      (expect (terminal-screen-height (terminal-session-screen session))
+              :to-be 40)))
+
+  (it "resizes the PTY after resizing the live session screen"
+    (let ((session
+            (loom/feature/terminal::%make-terminal-session
+             "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd)
+             (make-buffer :name "*Loom-Terminal*") :pty))
+          resized)
+      (setf (terminal-session-alive-p session) t)
+      (with-replaced-function
+          (cl-tty-kit:pty-resize
+           (lambda (pty columns rows)
+             (setf resized (list pty columns rows))))
+        (expect (terminal-session-resize session 100 40) :to-be session))
+      (expect resized :to-equal '(:pty 100 40))
       (expect (terminal-screen-width (terminal-session-screen session))
               :to-be 100)
       (expect (terminal-screen-height (terminal-session-screen session))
