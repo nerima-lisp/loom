@@ -52,20 +52,23 @@ expansion."
           (minibuffer-message minibuffer (format nil "Replaced ~D occurrence(s)" count))
           (minibuffer-message minibuffer "Not found")))))
 
+(defun %report-search-result (minibuffer buffer span)
+  (if span
+      (let ((position (buffer-offset-position buffer
+                                               (buffer-span-start span))))
+        (buffer-set-point buffer
+                          (buffer-position-line position)
+                          (buffer-position-column position))
+        (minibuffer-message minibuffer "Found"))
+      (minibuffer-message minibuffer "Not found")))
+
 (defun %run-search-command (prompt search-fn)
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((pattern prompt))
     (let* ((buffer (%selected-buffer))
            (span (funcall search-fn buffer pattern)))
-      (if span
-          (let ((position (buffer-offset-position buffer
-                                                   (buffer-span-start span))))
-            (buffer-set-point buffer
-                              (buffer-position-line position)
-                              (buffer-position-column position))
-            (minibuffer-message minibuffer "Found"))
-          (minibuffer-message minibuffer "Not found")))))
+      (%report-search-result minibuffer buffer span))))
 
 (defmacro %define-search-command (name docstring prompt search-fn)
   `(defun ,name ()
