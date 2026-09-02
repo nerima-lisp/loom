@@ -78,6 +78,7 @@ nav:
       - Core Concepts: guide/core-concepts.md
   - Reference:
       - API: reference/api.md
+      - Feature APIs: reference/api/features.md
       - Architecture: reference/architecture.md
   - Project:
       - Development: project/development.md
