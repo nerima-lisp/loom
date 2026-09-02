@@ -83,6 +83,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor/src/domain-buffer-storage")
    (:file "packages/core/editor/src/domain-buffer-storage-support")
   (:file "packages/core/editor/src/domain-buffer-piece-table-position")
+  (:file "packages/core/editor/src/domain-buffer-piece-table-coalescing")
   (:file "packages/core/editor/src/domain-buffer-piece-table-support")
   (:file "packages/core/editor/src/domain-buffer-piece-table")
   (:file "packages/core/editor/src/domain-buffer-piece-table-undo")
