@@ -29,21 +29,28 @@
                             (format nil "File not found: ~A"
                                     relative-path)))))
 
+(defun %project-file-candidates (root)
+  (mapcar (lambda (path) (project-relative-path root path))
+          (project-list-files root)))
+
+(defun %project-find-file-at-root (root)
+  (let ((candidates (%project-file-candidates root)))
+    (loom/application:with-prompts
+        (minibuffer (editor-state-minibuffer *editor-state*)
+                    :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((relative-path
+           "Project file: "
+           :completion-function
+           (lambda (input)
+             (%project-completion-candidates input candidates))))
+      (%project-visit-file root relative-path minibuffer))))
+
 (defun project-find-file ()
   "Prompt for a file relative to the current project's root and visit it."
   (let ((root (project-find-root (%project-start-path))))
-    (if root (let ((candidates
-                (mapcar (lambda (path) (project-relative-path root path))
-                        (project-list-files root))))
-          (loom/application:with-prompts
-              (minibuffer (editor-state-minibuffer *editor-state*)
-                         :on-cancel (minibuffer-message minibuffer "Quit"))
-              ((relative-path
-                 "Project file: "
-                 :completion-function
-                 (lambda (input)
-                   (%project-completion-candidates input candidates))))
-            (%project-visit-file root relative-path minibuffer))) (minibuffer-message (editor-state-minibuffer *editor-state*)
+    (if root
+        (%project-find-file-at-root root)
+        (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No project root found"))))
 
 (defun %project-search-summary (root result)
