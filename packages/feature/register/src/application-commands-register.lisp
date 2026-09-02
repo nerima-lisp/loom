@@ -19,10 +19,10 @@
     (char name 0)))
 
 (defun %register-input-error (minibuffer condition)
-  (minibuffer-message minibuffer (format nil "~A" condition))
+  (minibuffer-message minibuffer (princ-to-string condition))
   nil)
 
-(defmacro %define-register-command (name prompt docstring &body body)
+(defmacro %define-register-command (name docstring prompt &body body)
   (let ((register-name-var (gensym "REGISTER-NAME-")))
     `(defun ,name ()
      ,docstring
@@ -36,8 +36,9 @@
          (error (condition)
            (%register-input-error minibuffer condition)))))))
 
-(%define-register-command copy-to-register "Copy region to register: "
+(%define-register-command copy-to-register
   "Copy the active region to a named register without changing the buffer."
+  "Copy region to register: "
   (let ((buffer (%selected-buffer)))
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
       (if (null mark-line)
@@ -56,8 +57,9 @@
              minibuffer
              (format nil "Copied region to register ~A" name)))))))
 
-(%define-register-command insert-register "Insert register: "
+(%define-register-command insert-register
   "Insert the text stored in a named register at point."
+  "Insert register: "
   (let ((text (register-bank-text (%register-bank-for-editor) name)))
     (if text
         (buffer-insert-string (%selected-buffer) text)
@@ -65,8 +67,9 @@
          minibuffer
          (format nil "Register ~A does not contain text" name)))))
 
-(%define-register-command point-to-register "Point to register: "
+(%define-register-command point-to-register
   "Store the selected buffer's current point in a named register."
+  "Point to register: "
   (let ((buffer (%selected-buffer)))
     (register-bank-put-position
      (%register-bank-for-editor)
@@ -77,8 +80,9 @@
      minibuffer
      (format nil "Point stored in register ~A" name))))
 
-(%define-register-command jump-to-register "Jump to register: "
+(%define-register-command jump-to-register
   "Move point to the position stored in a named register."
+  "Jump to register: "
   (let ((buffer (%selected-buffer)))
     (multiple-value-bind (line column)
         (register-bank-position (%register-bank-for-editor) name)

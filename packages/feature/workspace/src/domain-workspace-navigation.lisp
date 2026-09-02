@@ -28,7 +28,7 @@
     (when index
       (workspace-manager-switch-index manager index))))
 
-(defmacro %define-workspace-stepper (name delta docstring)
+(defmacro %define-workspace-stepper (name docstring delta)
   `(defun ,name (manager)
      ,docstring
      (workspace-manager-switch-index
@@ -38,10 +38,10 @@
 
 (%define-workspace-stepper
  workspace-manager-next
- 1
- "Activate the next workspace, wrapping at the end.")
+ "Activate the next workspace, wrapping at the end."
+ 1)
 
 (%define-workspace-stepper
  workspace-manager-previous
- -1
- "Activate the previous workspace, wrapping at the beginning.")
+ "Activate the previous workspace, wrapping at the beginning."
+ -1)

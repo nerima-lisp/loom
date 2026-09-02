@@ -4,7 +4,7 @@
 ;;;; window tree with EDITOR-STATE before changing views.
 (in-package #:loom/feature/workspace)
 
-(defmacro %define-workspace-cycle-command (name switcher docstring)
+(defmacro %define-workspace-cycle-command (name docstring switcher)
   `(defun ,name ()
      ,docstring
      (%switch-workspace-with
@@ -17,13 +17,13 @@
 
 (%define-workspace-cycle-command
  next-workspace
- workspace-manager-next
- "Switch to the next workspace, wrapping at the end.")
+ "Switch to the next workspace, wrapping at the end."
+ workspace-manager-next)
 
 (%define-workspace-cycle-command
  previous-workspace
- workspace-manager-previous
- "Switch to the previous workspace, wrapping at the beginning.")
+ "Switch to the previous workspace, wrapping at the beginning."
+ workspace-manager-previous)
 
 (defun switch-workspace ()
   "Prompt for a workspace name and switch to it."

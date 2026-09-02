@@ -52,7 +52,7 @@ expansion."
           (minibuffer-message minibuffer (format nil "Replaced ~D occurrence(s)" count))
           (minibuffer-message minibuffer "Not found")))))
 
-(defmacro %define-search-command (name prompt search-fn docstring)
+(defmacro %define-search-command (name docstring prompt search-fn)
   (let ((buffer-var (gensym "BUFFER-"))
         (span-var (gensym "SPAN-"))
         (position-var (gensym "POSITION-")))
@@ -75,13 +75,13 @@ expansion."
 
 (%define-search-command
  search-forward
- "Search (regex): "
- buffer-search-forward
  "Prompt for a regular expression and move point to its next match. The
-pattern is case-sensitive unless it opens with the inline (?i) flag.")
+pattern is case-sensitive unless it opens with the inline (?i) flag."
+ "Search (regex): "
+ buffer-search-forward)
 
 (%define-search-command
  search-backward
+ "Prompt for a regular expression and move point to its previous match."
  "Search backward (regex): "
- buffer-search-backward
- "Prompt for a regular expression and move point to its previous match.")
+ buffer-search-backward)
