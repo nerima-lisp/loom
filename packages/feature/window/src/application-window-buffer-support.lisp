@@ -37,6 +37,14 @@
       (format nil "Save ~A? (s/d/c): " (buffer-name buffer))
       (format nil "Discard changes to ~A? (d/c): " (buffer-name buffer))))
 
+(defun %kill-buffer-answer-action (answer has-path-p)
+  "Classify ANSWER for a modified buffer confirmation."
+  (cond
+    ((and has-path-p (string-equal answer "s")) :save)
+    ((string-equal answer "d") :discard)
+    ((string-equal answer "c") :cancel)
+    (t :retry)))
+
 (defun %prompt-kill-buffer (minibuffer buffer)
   "Ask how to handle modified BUFFER before killing it."
   (let ((has-path-p (not (null (buffer-path buffer)))))
@@ -45,16 +53,13 @@
      (%kill-buffer-prompt-text buffer)
      :on-confirm
      (lambda (answer)
-       (cond
-         ((and has-path-p (string-equal answer "s"))
+       (case (%kill-buffer-answer-action answer has-path-p)
+         (:save
           (buffer-save buffer)
           (%kill-buffer-now buffer))
-         ((string-equal answer "d")
-          (%kill-buffer-now buffer))
-         ((string-equal answer "c")
-          nil)
-         (t
-          (%prompt-kill-buffer minibuffer buffer))))
+         (:discard (%kill-buffer-now buffer))
+         (:cancel nil)
+         (:retry (%prompt-kill-buffer minibuffer buffer))))
      :on-cancel
      (lambda ()
        (minibuffer-message minibuffer "Quit")))))
