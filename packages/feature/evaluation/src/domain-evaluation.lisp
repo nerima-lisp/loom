@@ -21,7 +21,7 @@
   (null (evaluation-result-error-message result)))
 
 (defun %write-evaluation-stream (stream label text)
-  (when (plusp (length text))
+  (when (string/= text "")
     (format stream "~A:~%" label)
     (write-string text stream)
     (unless (char= (char text (1- (length text))) #\Newline)
@@ -34,8 +34,8 @@
 (defun %evaluation-result-empty-p (result)
   (and (zerop (evaluation-result-form-count result))
        (null (evaluation-result-error-message result))
-       (zerop (length (evaluation-result-output result)))
-       (zerop (length (evaluation-result-error-output result)))))
+       (string= (evaluation-result-output result) "")
+       (string= (evaluation-result-error-output result) "")))
 
 (defun evaluation-result-text (result)
   "Render RESULT as text suitable for the evaluation output buffer."

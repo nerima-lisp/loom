@@ -26,7 +26,7 @@
 (defun %evaluation-entry (source result buffer)
   (format nil
           "~Aloom-eval> ~A~%~A~%"
-          (if (zerop (length (buffer-text buffer))) "" (format nil "~%"))
+          (if (string= (buffer-text buffer) "") "" (format nil "~%"))
           source
           (evaluation-result-text result)))
 
@@ -52,8 +52,9 @@
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                 :on-cancel (lambda () nil))
       ((source "Eval: "))
-    (if (plusp (length (string-trim '(#\Space #\Tab #\Newline #\Return)
-                                    source)))
+    (if (string/= (string-trim '(#\Space #\Tab #\Newline #\Return)
+                               source)
+                  "")
         (%evaluate-and-display source)
         (minibuffer-message minibuffer "Evaluation source cannot be empty"))))
 
