@@ -61,17 +61,26 @@ nix develop -c loom-test
 nix flake check --print-build-logs
 nix fmt -- --ci
 
+# Reproducible, bounded test run
+nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-test
+
 # Release-oriented checks
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
 LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
 ```
+
+`nix flake check --print-build-logs` also runs the repository-wide `paredit`
+syntax check, formatting check, build, documentation, test, and coverage
+checks. Use the `paredit` command in the development shell for structural
+inspection and edits when changing Lisp source.
 
 Coverage can be promoted to a quality gate with optional percentage thresholds:
 
 ```sh
 LOOM_COVERAGE_MIN_EXPRESSIONS=95 \
 LOOM_COVERAGE_MIN_BRANCHES=92 \
-LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
+LOOM_COVERAGE_DIR=/tmp/loom-coverage \
+nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-coverage
 ```
 
 Thresholds accept values from 0 to 100. The command fails when a configured
