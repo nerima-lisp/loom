@@ -65,7 +65,7 @@
 
 (defun %terminal-screen-feed-csi-character (screen character)
   (cond
-    ((and (zerop (length (terminal-screen-csi-parameters screen)))
+    ((and (string= (terminal-screen-csi-parameters screen) "")
           (char= character #\?))
      (setf (terminal-screen-csi-private screen) t))
     ((<= 64 (char-code character) 126)

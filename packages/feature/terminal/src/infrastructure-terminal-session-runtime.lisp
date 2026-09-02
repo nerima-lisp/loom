@@ -4,7 +4,7 @@
   (with-output-to-string (output)
     (handler-case
         (loop for chunk = (cl-tty-kit:pty-read pty)
-              while (and chunk (plusp (length chunk)))
+              while (and chunk (string/= chunk ""))
               do (write-string chunk output))
       ;; A PTY master commonly reports EIO for the final read after its
       ;; child exits. Data accumulated before that read is still useful.
@@ -30,7 +30,7 @@
             (buffer-position-column end))))
 
 (defun %clear-terminal-buffer (buffer)
-  (unless (zerop (length (buffer-text buffer)))
+  (unless (string= (buffer-text buffer) "")
     (multiple-value-bind (end-line end-column)
         (%buffer-end-coordinates buffer (buffer-text buffer))
       (buffer-delete-region buffer 0 0 end-line end-column))))
@@ -40,7 +40,7 @@
        (progn
          (buffer-set-read-only buffer nil)
          (%clear-terminal-buffer buffer)
-         (unless (zerop (length text))
+         (unless (string= text "")
            (buffer-insert-string buffer text))
          (buffer-mark-saved buffer)
          (multiple-value-bind (end-line end-column)
@@ -54,7 +54,7 @@
   (when (terminal-session-alive-p session)
     (let ((pty (terminal-session-pty session)))
       (if pty (let ((chunk (%terminal-read-available pty)))
-            (unless (zerop (length chunk))
+            (unless (string= chunk "")
               (terminal-session-feed-output session chunk)
               (%replace-terminal-buffer
                (terminal-session-buffer session)

@@ -62,12 +62,12 @@
 
 (defun %terminal-event-text (event)
   (let ((text (cl-tty-kit:key-event-text event)))
-    (if (and text (plusp (length text)))
+    (if (and text (string/= text ""))
         text
         (string (cl-tty-kit:key-event-code event)))))
 
 (defun %terminal-character-payload-for-text (text modifiers)
-  (when (plusp (length text))
+  (when (string/= text "")
     (let ((payload
             (if (member :control modifiers :test #'eq)
                 (let ((control-character

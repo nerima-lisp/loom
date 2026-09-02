@@ -36,7 +36,7 @@
               (%syntax-atom-end line literal-start))))))
 
 (defun %syntax-keyword-token-p (text)
-  (or (and (plusp (length text))
+  (or (and (string/= text "")
            (char= (char text 0) #\:))
       (member text +syntax-lisp-keywords+ :test #'string-equal)))
 
