@@ -26,7 +26,17 @@
             :to-be nil)
     (expect (loom/feature/mode::%major-mode-comment-prefix-at
              "plain" 0 nil)
+            :to-be nil)
+    (expect (loom/feature/mode::%major-mode-comment-prefix-at
+             "  #" 2 "##")
             :to-be nil))
+
+  (it
+    "accepts callable command symbols for mode keymaps"
+    (expect (loom/feature/mode::%major-mode-command-designator
+             'loom/feature/mode::indent-for-tab-command
+             :python)
+            :to-be 'loom/feature/mode::indent-for-tab-command))
 
   (it
     "resolves display names and common aliases"
