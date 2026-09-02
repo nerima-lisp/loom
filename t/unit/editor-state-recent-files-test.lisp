@@ -37,6 +37,14 @@
               (list "current" "older"))
       (expect files :to-equal (list "older" "current" "oldest"))))
 
+  (it "falls back to the supplied pathname when it is not on disk"
+    (let ((path #P"/tmp/loom-path-that-does-not-exist.txt"))
+      (expect (editor-path-string path) :to-equal (namestring path))))
+
+  (it "returns no recent files when the configured limit is zero"
+    (expect (loom::%bounded-recent-files "current" '("older") 0)
+            :to-be nil))
+
   (it "returns nil for a missing path without mutating recent files"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
            (state (make-editor-state :window-tree (make-window-tree buffer 80 24))))
