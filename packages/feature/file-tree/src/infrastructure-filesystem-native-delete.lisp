@@ -7,7 +7,7 @@
 #+sbcl
 (defun %native-child-namestring (directory name)
   (cond
-    ((zerop (length directory))
+    ((string= directory "")
      name)
     ((char= (char directory (1- (length directory))) #\/)
      (concatenate 'string directory name))
