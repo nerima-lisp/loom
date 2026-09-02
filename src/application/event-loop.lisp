@@ -19,6 +19,23 @@ polled, and NIL when INPUT-STREAM reached EOF."
           t))
       :timeout))
 
+(defun %run-event-loop-turn (output-stream input-stream buffer decoder
+                             keymap-state last-width last-height)
+  "Process one event-loop turn and return its status and terminal dimensions.
+
+EOF returns NIL without running background work or rendering.  A dispatched
+input chunk or timeout runs the periodic work, checks the terminal size, and
+renders the next frame."
+  (let ((status (%read-and-dispatch-event-loop-input
+                 input-stream buffer decoder keymap-state)))
+    (when status
+      (loom/feature/auto-save:maybe-auto-save)
+      (multiple-value-bind (width height)
+          (%poll-terminal-resize (editor-state-renderer *editor-state*)
+                                 last-width last-height)
+        (%render-event-loop-frame output-stream)
+        (values status width height)))))
+
 (defun %run-event-loop (output-stream input-stream)
   "Run the main input and render loop, writing frames to OUTPUT-STREAM and
 reading octets from INPUT-STREAM.
@@ -32,12 +49,11 @@ resizes, then redraws the frame."
     (multiple-value-bind (last-width last-height) (%initial-terminal-size)
       (%render-event-loop-frame output-stream)
       (handler-case
-          (loop for status = (%read-and-dispatch-event-loop-input
-                              input-stream buf decoder keymap-state)
-                while status
-                do (loom/feature/auto-save:maybe-auto-save)
-                do (multiple-value-setq (last-width last-height)
-                     (%poll-terminal-resize (editor-state-renderer *editor-state*)
-                                            last-width last-height))
-                   (%render-event-loop-frame output-stream))
+          (loop
+            (multiple-value-bind (status width height)
+                (%run-event-loop-turn output-stream input-stream buf decoder
+                                      keymap-state last-width last-height)
+              (unless status (return))
+              (setf last-width width
+                    last-height height)))
         (loom-quit () nil)))))
