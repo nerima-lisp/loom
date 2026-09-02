@@ -64,6 +64,13 @@ Returns RENDERER."
    (cl-tty-kit:renderer-screen (%loom-renderer-cl-tty-renderer renderer)))
   renderer)
 
+(defun %loom-renderer-draw-buffer-row (renderer buffer x y width line-number line-count)
+  (when (< line-number line-count)
+    (let* ((text (buffer-visible-line buffer line-number))
+           (visible (loom-renderer-truncate-string renderer text width)))
+      (loom-renderer-write-string renderer x y visible)))
+  renderer)
+
 (defun loom-renderer-draw-buffer (renderer buffer x y width height &key (start-line 0))
   "Draw BUFFER's currently visible region into RENDERER's screen, occupying
 the rectangle whose top-left corner is (X, Y) and which is WIDTH columns by
@@ -71,11 +78,8 @@ HEIGHT rows, all in screen-cell coordinates. Does not itself flush anything
 to a terminal -- see LOOM-RENDERER-PRESENT. Returns RENDERER."
   (let ((line-count (buffer-visible-line-count buffer)))
     (dotimes (row height)
-      (let ((line-number (+ start-line row)))
-        (when (< line-number line-count)
-          (let* ((text (buffer-visible-line buffer line-number))
-                 (visible (loom-renderer-truncate-string renderer text width)))
-            (loom-renderer-write-string renderer x (+ y row) visible)))))
+      (%loom-renderer-draw-buffer-row renderer buffer x (+ y row) width
+                                      (+ start-line row) line-count))
     renderer))
 
 (defun loom-renderer-present (renderer &key stream cursor)
