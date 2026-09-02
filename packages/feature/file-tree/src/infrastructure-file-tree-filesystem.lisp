@@ -28,8 +28,8 @@
 
 ;;; Each of the four generics below performs its disk operation for real --
 ;;; ordinary pathnames through *LOOM-FILESYSTEM*, literal namestring
-;;; pathnames through the native adapter above, and FILE-TREE-DELETE through
-;;; CL-HOST-KIT except for that same native adapter case. None of them needs
+;;; pathnames through the native operation above, and FILE-TREE-DELETE through
+;;; CL-HOST-KIT except for that same native operation case. None of them needs
 ;;; to explicitly "refresh" TREE afterwards:
 ;;; FILE-TREE-ENTRIES (domain/file-tree.lisp's %FILE-TREE-FLATTEN) calls
 ;;; FILE-TREE-CHILD-LISTER fresh on every invocation rather than caching a

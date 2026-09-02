@@ -1,6 +1,6 @@
 ;;;; packages/feature/lsp/src/infrastructure-lsp-transport.lisp
 ;;;;
-;;;; Infrastructure adapter for a language-server child process.  The process
+;;;; Infrastructure boundary for a language-server child process.  The process
 ;;;; reader is asynchronous: the editor's main lane only calls the non-blocking
 ;;;; RECEIVE operation while rendering a frame.  Pure JSON-RPC framing lives in
 ;;;; infrastructure-lsp-framing.lisp.
@@ -78,7 +78,7 @@
 (defun make-lsp-process (command &key directory)
   "Launch COMMAND as an LSP server using binary streams.
 
-COMMAND is passed to UIOP's shell launcher, so this adapter intentionally has
+COMMAND is passed to UIOP's shell launcher, so this boundary intentionally has
 the same trust boundary as the user-init and Lisp evaluation features."
   (let ((info nil)
         (process nil)
