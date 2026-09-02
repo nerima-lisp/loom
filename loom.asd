@@ -138,6 +138,7 @@ root source tree responsible for every feature."
    (:file "src/infrastructure/terminal-renderer")
    (:file "src/infrastructure/terminal-renderer-cursor")
    (:file "src/infrastructure/terminal-renderer-text")
+   (:file "src/infrastructure/terminal-renderer-text-wrapping")
    (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-paths")
    (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-mutations")
    (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-io")
