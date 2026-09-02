@@ -37,8 +37,8 @@
 (defun %lsp-content-length-value (value)
   (handler-case
       (parse-integer value :junk-allowed nil)
-    (error ()
-      (error "Invalid Content-Length: ~S" value))))
+    (error (condition)
+      (error "Invalid Content-Length: ~S (~A)" value condition))))
 
 (defun %lsp-header-lines (header)
   (loop with start = 0
