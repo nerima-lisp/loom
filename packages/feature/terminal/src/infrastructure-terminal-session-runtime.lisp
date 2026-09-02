@@ -49,18 +49,23 @@
          buffer)
     (buffer-set-read-only buffer t)))
 
+(defun %poll-terminal-session-pty (session pty)
+  (let ((chunk (%terminal-read-available pty)))
+    (unless (string= chunk "")
+      (terminal-session-feed-output session chunk)
+      (%replace-terminal-buffer
+       (terminal-session-buffer session)
+       (terminal-session-output session)))
+    (unless (cl-tty-kit:pty-alive-p pty)
+      (%close-terminal-session session))))
+
 (defun terminal-session-poll (session)
   "Read available PTY output into SESSION's buffer and update its status."
   (when (terminal-session-alive-p session)
     (let ((pty (terminal-session-pty session)))
-      (if pty (let ((chunk (%terminal-read-available pty)))
-            (unless (string= chunk "")
-              (terminal-session-feed-output session chunk)
-              (%replace-terminal-buffer
-               (terminal-session-buffer session)
-               (terminal-session-output session)))
-            (unless (cl-tty-kit:pty-alive-p pty)
-              (%close-terminal-session session))) (setf (terminal-session-alive-p session) nil))))
+      (if pty
+          (%poll-terminal-session-pty session pty)
+          (setf (terminal-session-alive-p session) nil))))
   session)
 
 (defun terminal-session-send (session text)
