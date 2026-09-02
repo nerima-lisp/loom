@@ -28,8 +28,27 @@
              0))
         (with-replaced-function
             (uiop:raw-command-line-arguments (lambda () argv))
-          (expect (loom::%main-exit-code) :to-equal 0))
-      (expect received-argv :to-equal argv))))
+          (expect (loom::%main-exit-code) :to-equal 0)))
+      (expect received-argv :to-equal argv)))
+
+  (it
+    "passes the default raw arguments to the application and quits with its code"
+    (let ((argv (list "loom" "--version"))
+          (received-argv nil)
+          (quit-code nil))
+      (with-replaced-function
+          (cl-cli:run-app
+           (lambda (app &key argv)
+             (declare (ignore app))
+             (setf received-argv argv)
+             7))
+        (with-replaced-function
+            (uiop:raw-command-line-arguments (lambda () argv))
+          (with-replaced-function
+              (uiop:quit (lambda (code) (setf quit-code code)))
+            (loom::main))))
+      (expect received-argv :to-equal argv)
+      (expect quit-code :to-equal 7)))
 
 (describe
   "%startup-file-and-root"
