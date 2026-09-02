@@ -8,7 +8,7 @@
 (defun %session-path-present-p (path)
   "Return true when PATH contains a non-whitespace character."
   (and (stringp path)
-       (plusp (length (string-trim '(#\Space #\Tab) path)))))
+       (not (string= (string-trim '(#\Space #\Tab) path) ""))))
 
 (defmacro %define-session-command
     (name documentation prompt success-format error-format &body body)

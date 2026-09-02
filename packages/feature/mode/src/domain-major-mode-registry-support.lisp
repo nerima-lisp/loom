@@ -26,10 +26,10 @@
   (unless (stringp item)
     (error "~A must contain only strings: ~S" label item))
   (let ((text (%major-mode-token item)))
-    (when (and strip-leading-dot (plusp (length text))
+    (when (and strip-leading-dot (string/= text "")
                (char= (char text 0) #\.))
       (setf text (subseq text 1)))
-    (when (zerop (length text))
+    (when (string= text "")
       (error "~A cannot contain an empty string: ~S" label item))
     text))
 
@@ -44,8 +44,8 @@
   (unless (or (null value) (stringp value))
     (error "~A must be a string or NIL: ~S" label value))
   (when (and value
-             (zerop (length (string-trim '(#\Space #\Tab #\Newline #\Return)
-                                          value))))
+             (string= (string-trim '(#\Space #\Tab #\Newline #\Return)
+                                    value) ""))
     (error "~A cannot be empty: ~S" label value))
   value)
 

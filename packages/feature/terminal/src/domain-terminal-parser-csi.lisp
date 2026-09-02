@@ -5,14 +5,14 @@
     (if (and (integerp value) (plusp value)) value default)))
 
 (defun %terminal-screen-parse-parameter (string)
-  (unless (zerop (length string))
+  (unless (string= string "")
     (multiple-value-bind (number end)
         (parse-integer string :junk-allowed t)
       (when (and number (= end (length string)))
         number))))
 
 (defun %terminal-screen-parse-parameters (string)
-  (unless (zerop (length string)) (loop with start = 0
+  (unless (string= string "") (loop with start = 0
             with parameters = nil
             for separator = (position #\; string :start start)
             for end = (or separator (length string))
