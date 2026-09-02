@@ -23,6 +23,10 @@
 
 (require :asdf)
 
+(defconstant +coverage-timeout-seconds+ 1800)
+(defconstant +coverage-test-timeout-ms+ 120000)
+(defparameter +coverage-source-directories+ '(#P"src/" #P"packages/"))
+
 (defun %required-function (package-name symbol-name)
   (let ((symbol (find-symbol symbol-name package-name)))
     (unless (and symbol (fboundp symbol))
@@ -82,7 +86,7 @@
      :inherit-configuration)))
 
 (handler-case
-    (sb-ext:with-timeout 1800
+    (sb-ext:with-timeout +coverage-timeout-seconds+
       (asdf:load-system "cl-host-kit")
       (require :sb-cover))
   (sb-ext:timeout ()
@@ -97,7 +101,7 @@
             (host-kit:pathname-within-p
              pathname
              (merge-pathnames directory root)))
-          '(#P"src/" #P"packages/"))))
+          +coverage-source-directories+)))
 
 (defun %coverage-minimum (name)
   "Return the optional percentage threshold named by environment NAME."
@@ -114,6 +118,11 @@
           (error "~A must be a percentage between 0 and 100, got ~S."
                  name value))
         minimum))))
+
+(defun %coverage-source-pathnames (root)
+  (mapcar (lambda (directory)
+            (merge-pathnames directory root))
+          +coverage-source-directories+))
 
 (let* ((script (or *load-truename*
                    (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
@@ -135,7 +144,7 @@
     (unwind-protect
          (setf passed-p
                (handler-case
-                   (sb-ext:with-timeout 1800
+                   (sb-ext:with-timeout +coverage-timeout-seconds+
                      (progress "loading loom")
                      ;; Recompile Loom's local components so SB-COVER sees
                      ;; the current source instead of an ASDF-cached FASL.
@@ -146,8 +155,7 @@
                      ;; its no-test and empty-expression guards reject vacuous runs.
                      (progress "running tests")
                      (let* ((source-pathnames
-                              (list (merge-pathnames #P"src/" root)
-                                    (merge-pathnames #P"packages/" root)))
+                           (%coverage-source-pathnames root))
                             (run-all (%required-function "CL-WEAVE" "RUN-ALL"))
                             (coverage-statistics
                               (%required-function "CL-WEAVE" "COVERAGE-STATISTICS"))
@@ -160,7 +168,7 @@
                                        ;; subprocess-based CLI integration
                                        ;; test substantially slower than the
                                        ;; normal test run.
-                                       :timeout-ms 120000
+                                       :timeout-ms +coverage-test-timeout-ms+
                                        ;; Coverage is intentionally deterministic:
                                        ;; subprocess-backed tests must not race
                                        ;; with parallel workers during teardown.
@@ -207,7 +215,8 @@
                                     branch-rate branch-minimum)))
                          passed)))
                  (sb-ext:timeout ()
-                   (format *error-output* "~&loom/test: timed out after 1800s~%")
+                   (format *error-output* "~&loom/test: timed out after ~Ds~%"
+                           +coverage-timeout-seconds+)
                    nil)))
       (progress "writing report")
       (sb-cover:report coverage-dir
