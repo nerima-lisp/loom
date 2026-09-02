@@ -26,9 +26,12 @@
   result-channel
   (closed-p nil))
 
+(defun %lsp-process-readers (process channel)
+  (list (lambda () (%lsp-process-read-output process channel))
+        (lambda () (%lsp-process-drain-errors process))))
+
 (defun %start-lsp-process-readers (process executor channel)
-  (dolist (reader (list (lambda () (%lsp-process-read-output process channel))
-                        (lambda () (%lsp-process-drain-errors process))))
+  (dolist (reader (%lsp-process-readers process channel))
     (multiple-value-bind (promise accepted)
         (cl-concurrent-kit:try-submit executor reader)
       (declare (ignore promise))
