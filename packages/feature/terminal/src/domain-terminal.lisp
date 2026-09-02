@@ -48,22 +48,28 @@ the same order it was received instead of being reduced to a styled string."
                          nil
                          nil))
 
+(defun %terminal-screen-last-content-row (screen)
+  (loop for row downfrom (1- (terminal-screen-height screen)) downto 0
+        when (%terminal-screen-row-content-p
+              (aref (terminal-screen-rows screen) row))
+          return row))
+
+(defun %terminal-screen-write-text (screen last-row output)
+  (loop for row below (1+ last-row)
+        do (when (plusp row)
+             (write-char #\Newline output))
+           (write-string
+            (string-right-trim " "
+                               (aref (terminal-screen-rows screen) row))
+            output)))
+
 (defun terminal-screen-text (screen)
   "Return the visible screen as newline-separated, trimmed terminal rows."
-  (let ((last-row
-          (loop for row downfrom (1- (terminal-screen-height screen)) downto 0
-                when (%terminal-screen-row-content-p
-                      (aref (terminal-screen-rows screen) row))
-                  return row)))
-    (if last-row (with-output-to-string (output)
-          (loop for row below (1+ last-row)
-                do (when (plusp row)
-                     (write-char #\Newline output))
-                   (write-string
-                    (string-right-trim " "
-                                       (aref (terminal-screen-rows screen)
-                                             row))
-                    output))) "")))
+  (let ((last-row (%terminal-screen-last-content-row screen)))
+    (if last-row
+        (with-output-to-string (output)
+          (%terminal-screen-write-text screen last-row output))
+        "")))
 
 (defun terminal-screen-resize (screen width height)
   "Resize SCREEN while retaining the top-left visible content."
