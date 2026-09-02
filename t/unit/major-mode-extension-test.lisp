@@ -158,4 +158,8 @@
     (expect
      (signals error
        (register-major-mode :loom-invalid-empty-extension :extensions '(".")))
+     :to-be-truthy)
+    (expect
+     (signals error
+       (register-major-mode :loom-invalid-indentation :indentation-width 0))
      :to-be-truthy))
