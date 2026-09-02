@@ -18,14 +18,15 @@
         (uiop:getcwd))))
 
 (defun %terminal-buffer-name (state)
-  (loop for index from 1
-        for name = (if (= index 1)
-                       "*Loom-Terminal*"
-                       (format nil "*Loom-Terminal<~D>*" index))
-        unless (find name (editor-state-buffers state)
-                     :key #'buffer-name
-                     :test #'string=)
-          return name))
+  (let ((buffer-names (make-hash-table :test #'equal)))
+    (dolist (buffer (editor-state-buffers state))
+      (setf (gethash (buffer-name buffer) buffer-names) t))
+    (loop for index from 1
+          for name = (if (= index 1)
+                         "*Loom-Terminal*"
+                         (format nil "*Loom-Terminal<~D>*" index))
+          unless (gethash name buffer-names)
+            return name)))
 
 (defun start-terminal-session (&key
                                   (program (or (uiop:getenv "SHELL") "/bin/sh"))
