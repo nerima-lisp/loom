@@ -47,7 +47,7 @@
 (defun major-mode-from-name (name)
   "Resolve a mode name, including the common short aliases."
   (let ((key (%major-mode-key name)))
-    (and key (%major-mode-definition key) key)))
+    (if (and key (%major-mode-definition key)) key)))
 
 (defun major-mode-name (mode)
   "Return the display name for MODE, or NIL for an unknown mode."

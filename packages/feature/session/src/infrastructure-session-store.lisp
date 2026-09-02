@@ -70,7 +70,6 @@ or unsupported input is reported as a session-store-read error."
   (let ((pathname (pathname path)))
     (handler-case
         (with-open-file (stream pathname
-                                :direction :input
                                 :external-format :utf-8)
           (%read-session-stream stream))
       (error (condition)
