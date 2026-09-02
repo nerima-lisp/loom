@@ -454,6 +454,27 @@
                (editor-state-renderer state) window completion 6)
               :to-be nil)))
   (it
+    "returns no origin when the completion anchor is below the window"
+    (let* ((state (%fresh-layout-state :height 6 :renderer-height 6))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 20 0
+                        (list (cons "one" "one")))))
+      (expect (loom::%layout-completion-origin
+               (editor-state-renderer state) window completion 6)
+              :to-be nil)))
+  (it
+    "returns no origin when the completion anchor is above the window"
+    (let* ((state (%fresh-layout-state :height 6 :renderer-height 6))
+           (window (%layout-window state))
+           (completion (loom::make-editor-completion
+                        (window-buffer window) 0 0
+                        (list (cons "one" "one")))))
+      (setf (window-scroll-line window) 1)
+      (expect (loom::%layout-completion-origin
+               (editor-state-renderer state) window completion 6)
+              :to-be nil)))
+  (it
     "ignores completion items belonging to another buffer"
     (let* ((state (%fresh-layout-state))
            (window (%layout-window state))
