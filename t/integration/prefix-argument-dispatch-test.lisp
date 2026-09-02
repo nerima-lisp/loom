@@ -97,6 +97,11 @@
         (expect value :to-be nil))
       (multiple-value-bind (kind value)
           (loom::%prefix-argument-descriptor-action
+           (cons '(:alt :control) #\3) inactive)
+        (expect kind :to-be nil)
+        (expect value :to-be nil))
+      (multiple-value-bind (kind value)
+          (loom::%prefix-argument-descriptor-action
            (cons '(:control) #\u) inactive)
         (expect kind :to-equal :universal)
         (expect value :to-be nil)))))
