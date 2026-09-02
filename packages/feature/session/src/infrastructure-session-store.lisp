@@ -7,10 +7,11 @@
 
 (defun %session-temporary-path (target)
   (make-pathname
-   :name (format nil ".~A.loom-session-~D-~D"
+   :name (format nil ".~A.loom-session-~D-~D-~A"
                  (or (pathname-name target) "session")
                  (get-universal-time)
-                 (get-internal-real-time))
+                 (get-internal-real-time)
+                 (symbol-name (gensym "TMP-")))
    :type (pathname-type target)
    :defaults target))
 

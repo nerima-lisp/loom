@@ -6,6 +6,14 @@
 (describe
   "session-store round-trip"
   (it
+    "gives successive writes distinct temporary paths"
+    (let ((target (pathname "loom-session.sexp")))
+      (expect (string= (namestring (loom/feature/session::%session-temporary-path target))
+                       (namestring (loom/feature/session::%session-temporary-path target)))
+              :to-be
+              nil)))
+
+  (it
     "round-trips a validated snapshot through a versioned file"
     (host-kit:with-temporary-directory (directory)
       (let ((path (merge-pathnames "session.sexp" directory))
