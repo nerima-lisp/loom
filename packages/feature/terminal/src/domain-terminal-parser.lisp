@@ -42,16 +42,18 @@
   (%terminal-screen-clear-all screen)
   (setf (terminal-screen-parser-state screen) :ground))
 
+(defparameter +terminal-screen-escape-handlers+
+  '((#\[ . %terminal-screen-handle-escape-csi)
+    (#\] . %terminal-screen-handle-escape-osc)
+    (#\7 . %terminal-screen-handle-escape-save-cursor)
+    (#\8 . %terminal-screen-handle-escape-restore-cursor)
+    (#\D . %terminal-screen-handle-escape-line-feed)
+    (#\E . %terminal-screen-handle-escape-next-line)
+    (#\M . %terminal-screen-handle-escape-reverse-index)
+    (#\c . %terminal-screen-handle-escape-reset)))
+
 (defun %terminal-screen-escape-handler (character)
-  (cdr (assoc character
-              '((#\[ . %terminal-screen-handle-escape-csi)
-                (#\] . %terminal-screen-handle-escape-osc)
-                (#\7 . %terminal-screen-handle-escape-save-cursor)
-                (#\8 . %terminal-screen-handle-escape-restore-cursor)
-                (#\D . %terminal-screen-handle-escape-line-feed)
-                (#\E . %terminal-screen-handle-escape-next-line)
-                (#\M . %terminal-screen-handle-escape-reverse-index)
-                (#\c . %terminal-screen-handle-escape-reset)))))
+  (cdr (assoc character +terminal-screen-escape-handlers+)))
 
 (defun %terminal-screen-handle-escape (screen character)
   (let ((handler (%terminal-screen-escape-handler character)))
