@@ -48,11 +48,11 @@ progress even when the user is idle.  Non-file streams used by tests and
 embedding callers do not have a descriptor; those retain the old blocking
 read semantics instead of making the event loop depend on a particular
 stream implementation."
-  (if (not (%event-loop-background-work-p))
-      t
+  (if (%event-loop-background-work-p)
       (handler-case
           (cl-tty-kit:fd-wait
            (cl-tty-kit:stream-fd input-stream)
            :input
            *event-loop-poll-interval*)
-        (error () t))))
+        (error () t))
+      t))
