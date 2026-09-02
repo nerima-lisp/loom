@@ -9,6 +9,9 @@
                 :to-equal
                 "#notes.txt#"))))
 
+  (it "returns NIL when no source path is supplied"
+    (expect (auto-save-path nil) :to-be nil))
+
   (it "accepts string content and creates parent directories"
     (host-kit:with-temporary-directory (directory)
       (let ((path (merge-pathnames "nested/#notes.txt#" directory)))
