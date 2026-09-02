@@ -60,7 +60,7 @@
         (dot-seen nil))
     (loop while (< position (length text))
           for character = (char text position)
-          do (cond ((digit-char-p character 10)
+          do (cond ((find character "0123456789" :test #'char=)
                     (incf digits)
                     (incf position))
                    ((and (not dot-seen) (char= character #\.))
