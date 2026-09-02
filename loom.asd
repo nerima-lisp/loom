@@ -289,6 +289,7 @@ root source tree responsible for every feature."
    (:file "src/presentation/layout-windows")
    (:file "src/presentation/layout-isearch")
    (:file "src/presentation/layout-minibuffer")
+   (:file "src/presentation/layout-completion")
    (:file "src/presentation/layout-file-tree")
    (:file "src/presentation/frame-layout-cursor")
    (:file "src/presentation/frame-layout-viewport")
