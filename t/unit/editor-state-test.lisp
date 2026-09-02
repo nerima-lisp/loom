@@ -131,4 +131,17 @@
                              (incf calls))
                            state)
       (expect (run-after-save-hooks buffer nil) :to-be buffer)
-      (expect calls :to-equal 0))))
+      (expect calls :to-equal 0)))
+
+  (it "uses the dynamically active editor state when state is omitted"
+    (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
+           (state (make-editor-state))
+           (calls nil)
+           (hook (lambda (saved-buffer)
+                   (push saved-buffer calls))))
+      (let ((*editor-state* state))
+        (add-before-save-hook hook)
+        (run-before-save-hooks buffer)
+        (remove-before-save-hook hook))
+      (expect calls :to-equal (list buffer))
+      (expect (editor-state-before-save-hooks state) :to-be nil))))
