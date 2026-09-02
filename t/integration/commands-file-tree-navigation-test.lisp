@@ -110,3 +110,18 @@
       (loom/feature/file-tree:file-tree-select-next)
       (loom/feature/file-tree:file-tree-delete-command)
       (expect (host-kit:path-exists-p path) :to-be-falsy))))
+
+  (it
+    "selected-path mutations do nothing when the file tree has no selection"
+    (let ((dir (merge-pathnames "loom-file-tree-no-selection/"
+                               (uiop:temporary-directory))))
+      (ensure-directories-exist dir)
+      (unwind-protect
+           (let ((*editor-state* (%fresh-editor-state "")))
+             (setf (editor-state-file-tree *editor-state*)
+                   (%fresh-file-tree dir))
+             (expect (loom/feature/file-tree:file-tree-rename-command)
+                     :to-be nil)
+             (expect (loom/feature/file-tree:file-tree-delete-command)
+                     :to-be nil))
+        (uiop:delete-directory-tree dir :validate t))))
