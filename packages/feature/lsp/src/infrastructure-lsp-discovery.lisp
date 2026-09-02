@@ -21,6 +21,28 @@ their arguments and quoting."
                        (char= (char candidate 0) #\#))
               do (return candidate)))))
 
+(defun %lsp-config-path (path)
+  (let ((root
+          (loom/feature/project:project-root-for-path
+           path
+           (lambda (directory)
+             (probe-file
+              (merge-pathnames +lsp-config-file-name+ directory))))))
+    (when root
+      (values root (merge-pathnames +lsp-config-file-name+ root)))))
+
+(defun %lsp-read-config-command (configuration)
+  (let ((contents
+          (handler-case
+              (host-kit:read-file-string configuration)
+            (file-error (condition)
+              (declare (ignore condition))
+              nil)
+            (pathname-error (condition)
+              (declare (ignore condition))
+              nil))))
+    (%lsp-config-command contents)))
+
 (defun lsp-discover-command (path)
   "Discover a project-local LSP command for PATH.
 
@@ -30,26 +52,10 @@ command, the project root, and the configuration pathname.  Return three NIL
 values when no usable configuration is found.  Reading a malformed or
 unreadable configuration is intentionally treated as no discovery so the
 interactive command can continue to offer its explicit prompt."
-  (let ((root
-          (loom/feature/project:project-root-for-path
-           path
-           (lambda (directory)
-             (probe-file
-              (merge-pathnames +lsp-config-file-name+ directory))))))
-    (if root
-        (let* ((configuration
-                 (merge-pathnames +lsp-config-file-name+ root))
-               (contents
-                 (handler-case
-                     (host-kit:read-file-string configuration)
-                   (file-error (condition)
-                     (declare (ignore condition))
-                     nil)
-                   (pathname-error (condition)
-                     (declare (ignore condition))
-                     nil)))
-               (command (%lsp-config-command contents)))
-          (if command
-              (values command root configuration)
-              (values nil nil nil)))
-        (values nil nil nil))))
+  (multiple-value-bind (root configuration)
+      (%lsp-config-path path)
+    (let ((command (and configuration
+                        (%lsp-read-config-command configuration))))
+      (if command
+          (values command root configuration)
+          (values nil nil nil)))))
