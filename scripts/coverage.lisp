@@ -183,10 +183,10 @@
                          (unless (plusp expression-total)
                            (error "Coverage selected no source expressions under ~A."
                                   source-pathnames))
-                         (format t "COVERAGE-EXPRESSIONS ~D/~D (~,2F%%)~%"
+                         (format t "COVERAGE-EXPRESSIONS ~D/~D (~,2F%)~%"
                                  expression-covered expression-total
                                  (* 100.0 (/ expression-covered expression-total)))
-                         (format t "COVERAGE-BRANCHES ~D/~D (~,2F%%)~%"
+                         (format t "COVERAGE-BRANCHES ~D/~D (~,2F%)~%"
                                  branch-covered branch-total
                                  (if (zerop branch-total)
                                      100.0
