@@ -61,6 +61,16 @@
         (expect count :to-equal 0)
         (expect messages :to-be nil)
         (expect (length remainder) :to-be-greater-than 0))))
+  (it "propagates malformed frames from the stream reader"
+    (let* ((crlf (%lsp-crlf))
+           (malformed (%lsp-raw-frame
+                       (format nil "Content-Length nope~A~A" crlf crlf)
+                       #())))
+      (signals error
+        (loom/feature/lsp::%lsp-read-stream-frames
+         (%make-lsp-byte-stream malformed)
+         (lambda (message)
+           (declare (ignore message)))))))
   (it "decodes multiple framed messages from a child output stream"
     (let* ((first (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":1}"))
            (second (loom/feature/lsp::loom-lsp-frame-encode "{\"id\":2}"))
