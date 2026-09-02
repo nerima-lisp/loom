@@ -27,11 +27,10 @@
           return key))
 
 (defun %dynamic-major-mode-key (token)
-  (%major-mode-key-from-definitions
-   token
-   (mapcar (lambda (key)
-             (cons key (%dynamic-major-mode-definition key)))
-           *registered-major-mode-order*)))
+  (loop for key in *registered-major-mode-order*
+        for definition = (%dynamic-major-mode-definition key)
+        when (%major-mode-definition-matches-token-p token key definition)
+          return key))
 
 (defun %static-major-mode-key (token)
   (%major-mode-key-from-definitions token +major-mode-definitions+))
