@@ -12,7 +12,9 @@
 
 (defun %session-proper-list-p (value)
   (and (listp value)
-       (integerp (list-length value))))
+       (handler-case
+           (integerp (list-length value))
+         (type-error () nil))))
 
 (defun %session-keyword-plist-p (value)
   (and (%session-proper-list-p value)

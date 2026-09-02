@@ -81,7 +81,12 @@
                '(:name "buffer" :name "duplicate")))
       (signals error
                (loom/feature/session::%validate-session-plist
-                value '(:name :path) "test"))))
+                value '(:name :path) "test")))
+    (expect (handler-case
+                (loom/feature/session::%validate-session-plist
+                 '(:name . "buffer") '(:name :path) "test")
+              (error (condition) (princ-to-string condition)))
+            :to-contain "expected a keyword plist"))
   (it
     "rejects malformed layouts and selected window indexes"
     (let ((buffer (make-session-buffer-snapshot
