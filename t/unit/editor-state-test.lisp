@@ -31,6 +31,22 @@
 (%editor-state-accessor-contract-test)
 
 (describe "editor-state default data"
+  (it "creates the default workspace and keyboard macro state"
+    (let* ((buffer (make-buffer :name "*scratch*"))
+           (state (make-editor-state
+                   :window-tree (make-window-tree buffer 80 24))))
+      (expect (editor-state-workspaces state) :to-be-truthy)
+      (expect (editor-state-keyboard-macro state) :to-be-truthy)))
+
+  (it "preserves an explicitly supplied workspace manager"
+    (let* ((buffer (make-buffer :name "*scratch*"))
+           (tree (make-window-tree buffer 80 24))
+           (workspaces (loom/feature/workspace:make-workspace-manager
+                        tree :name "writing"))
+           (state (make-editor-state :window-tree tree
+                                     :workspaces workspaces)))
+      (expect (editor-state-workspaces state) :to-be workspaces)))
+
   (it "starts with independent empty hook collections"
     (let ((first-state (make-editor-state))
           (second-state (make-editor-state)))
