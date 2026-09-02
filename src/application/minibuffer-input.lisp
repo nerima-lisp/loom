@@ -19,6 +19,16 @@ both shapes are recognized here."
            (eql (cl-tty-kit:key-event-code key-event) #\g)
            (member :control (cl-tty-kit:key-event-modifiers key-event)))))
 
+(defun %minibuffer-special-key-kind (code)
+  "Return the minibuffer action for a special key CODE, or NIL."
+  (case code
+    (:backspace :backspace)
+    (:up :history-previous)
+    (:down :history-next)
+    (:tab :complete)
+    (:enter :confirm)
+    (otherwise nil)))
+
 (defun %minibuffer-key-kind (key-event type code)
   "Classify KEY-EVENT -- whose CL-TTY-KIT:KEY-EVENT-TYPE and -CODE the caller
 has already read out as TYPE and CODE -- as one of the nine things
@@ -29,11 +39,7 @@ mutation so MINIBUFFER-HANDLE-KEY dispatches on one value rather than
 re-testing TYPE and CODE at every branch."
   (cond
     ((%control-g-key-p key-event) :cancel)
-    ((and (eq type :special) (eq code :backspace)) :backspace)
-    ((and (eq type :special) (eq code :up)) :history-previous)
-    ((and (eq type :special) (eq code :down)) :history-next)
-    ((and (eq type :special) (eq code :tab)) :complete)
-    ((and (eq type :special) (eq code :enter)) :confirm)
+    ((eq type :special) (or (%minibuffer-special-key-kind code) :ignore))
     ((eq type :character) :character)
     (t :ignore)))
 
