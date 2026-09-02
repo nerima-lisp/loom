@@ -140,6 +140,7 @@
         (keyboard-macro-stop-recording macro)
         (call-last-kbd-macro)
         (expect invoked :to-be-truthy)
+        (expect (length (keyboard-macro-events macro)) :to-equal 1)
         (expect (minibuffer-active-p minibuffer) :to-be-falsy)
         (expect (keyboard-macro-replaying-p macro) :to-be nil))))
 
