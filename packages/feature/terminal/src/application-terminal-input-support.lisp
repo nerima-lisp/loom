@@ -66,14 +66,16 @@
         text
         (string (cl-tty-kit:key-event-code event)))))
 
+(defun %terminal-text-payload (text modifiers)
+  (if (member :control modifiers :test #'eq)
+      (let ((control-character
+              (%terminal-control-character (char text 0))))
+        (and control-character (string control-character)))
+      text))
+
 (defun %terminal-character-payload-for-text (text modifiers)
   (when (string/= text "")
-    (let ((payload
-            (if (member :control modifiers :test #'eq)
-                (let ((control-character
-                        (%terminal-control-character (char text 0))))
-                  (and control-character (string control-character)))
-                text)))
+    (let ((payload (%terminal-text-payload text modifiers)))
       (%terminal-alt-prefix payload modifiers))))
 
 (defun %terminal-character-payload (event)
