@@ -22,10 +22,10 @@
   (let ((point-line (buffer-point-line buffer))
         (point-column (buffer-point-column buffer)))
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-      (if (null mark-line)
-          (values nil nil nil nil nil)
+      (if mark-line
           (%active-region-bounds-from-points
-           point-line point-column mark-line mark-column)))))
+           point-line point-column mark-line mark-column)
+          (values nil nil nil nil nil)))))
 
 (defun %message-no-active-region ()
   (minibuffer-message
@@ -37,25 +37,25 @@
   (%clear-last-yank)
   (multiple-value-bind (start-line start-column end-line end-column prepend)
       (%active-region-bounds buffer)
-    (if (null start-line)
-        (%message-no-active-region)
+    (if start-line
         (progn
           (%kill-ring-push
            (buffer-delete-region buffer start-line start-column end-line end-column)
            :prepend prepend
            :coalesce (editor-state-last-command-kill-p *editor-state*))
           (setf (editor-state-last-command-kill-p *editor-state*) t)
-          t))))
+          t)
+        (%message-no-active-region))))
 
 (defun %copy-active-region-or-message (buffer)
   (%clear-last-yank)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (multiple-value-bind (start-line start-column end-line end-column)
       (%active-region-bounds buffer)
-    (if (null start-line)
-        (%message-no-active-region)
+    (if start-line
         (progn
           (%kill-ring-push
            (buffer-region-string
             buffer start-line start-column end-line end-column))
-          t))))
+          t)
+        (%message-no-active-region))))

@@ -8,16 +8,16 @@
 
 (defun %exchange-point-and-mark-or-message (buffer)
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-    (if (null mark-line)
-        (progn
-          (minibuffer-message (editor-state-minibuffer *editor-state*)
-                              "The mark is not set")
-          nil)
+    (if mark-line
         (let ((point-line (buffer-point-line buffer))
               (point-column (buffer-point-column buffer)))
           (buffer-set-point buffer mark-line mark-column)
           (buffer-set-mark buffer point-line point-column)
-          t))))
+          t)
+        (progn
+          (minibuffer-message (editor-state-minibuffer *editor-state*)
+                              "The mark is not set")
+          nil))))
 
 (defun %mark-whole-buffer-region (buffer)
   (let ((start (buffer-offset-position buffer (buffer-narrow-start-offset buffer)))
@@ -31,12 +31,12 @@
 
 (defun %region-mark-position-or-message (buffer)
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-    (if (null mark-line)
+    (if mark-line
+        (values mark-line mark-column)
         (progn
           (minibuffer-message (editor-state-minibuffer *editor-state*)
                               "The mark is not set now, so no region is active")
-          nil)
-        (values mark-line mark-column))))
+          nil))))
 
 (defun %region-active-bounds (buffer mark-line mark-column)
   (let* ((point-offset (buffer-point-offset buffer))
