@@ -7,7 +7,8 @@
   "Return a stable string representation of PATH when it is available."
   (when path
     (let ((path-object (pathname path)))
-      (namestring (or (ignore-errors (truename path-object))
+      (namestring (or (handler-case (truename path-object)
+                        (file-error () nil))
                       path-object)))))
 
 (defun %bounded-recent-files (path-string files limit)
