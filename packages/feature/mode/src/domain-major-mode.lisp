@@ -24,11 +24,11 @@
                  (member token (getf definition :aliases) :test #'string=))
           return key))
 
-(defun %static-major-mode-key (name)
+(defun %static-major-mode-key (token)
   (loop for (key . definition) in +major-mode-definitions+
-        when (or (string-equal name (symbol-name key))
-                 (string-equal name (getf definition :name))
-                 (member name (getf definition :aliases) :test #'string-equal))
+        when (or (string= token (string-downcase (symbol-name key)))
+                 (string= token (%major-mode-token (getf definition :name)))
+                 (member token (getf definition :aliases) :test #'string=))
           return key))
 
 (defun %major-mode-key (mode)
@@ -37,7 +37,7 @@
     ((symbolp mode) (intern (string-upcase (symbol-name mode)) :keyword))
     ((stringp mode)
      (or (%dynamic-major-mode-key (%major-mode-token mode))
-         (%static-major-mode-key mode)))
+         (%static-major-mode-key (%major-mode-token mode))))
     (t nil)))
 
 (defun major-mode-known-p (mode)
@@ -47,7 +47,7 @@
 (defun major-mode-from-name (name)
   "Resolve a mode name, including the common short aliases."
   (let ((key (%major-mode-key name)))
-    (and (major-mode-known-p key) key)))
+    (and key (%major-mode-definition key) key)))
 
 (defun major-mode-name (mode)
   "Return the display name for MODE, or NIL for an unknown mode."

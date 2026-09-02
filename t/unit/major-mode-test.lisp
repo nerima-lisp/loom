@@ -38,6 +38,7 @@
     (expect (major-mode-known-p "unknown") :to-be-falsy)
     (expect (major-mode-from-name 'python) :to-be :python)
     (expect (major-mode-from-name "Common Lisp") :to-be :common-lisp)
+    (expect (major-mode-from-name "  Common Lisp  ") :to-be :common-lisp)
     (expect (major-mode-from-name "plain text") :to-be :text)
     (expect (major-mode-from-name 42) :to-be nil))
 
