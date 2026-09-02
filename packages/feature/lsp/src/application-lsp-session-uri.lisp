@@ -8,7 +8,7 @@
       (and (char>= character #\0) (char<= character #\9))
           (and (char>= character #\A) (char<= character #\Z))
           (and (char>= character #\a) (char<= character #\z))
-      (find character "-._~:@!$&'()*+,;=" :test #'char=)))
+          (find character "-._~:@!$&'()*+,;=" :test #'char=)))
 
 (defun %lsp-uri-escape-path (path)
   (with-output-to-string (output)
@@ -63,6 +63,10 @@
 
 (defun %lsp-language-id (path)
   (let ((type (string-downcase (or (pathname-type (pathname path)) ""))))
-    (if (member type '("lisp" "cl" "asd") :test #'string=)
-        "common-lisp"
-               (if (string/= type "") type "plaintext"))))
+    (cond
+      ((member type '("lisp" "cl" "asd") :test #'string=)
+       "common-lisp")
+      ((string/= type "")
+       type)
+      (t
+       "plaintext"))))
