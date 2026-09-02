@@ -61,4 +61,4 @@
   (let ((type (string-downcase (or (pathname-type (pathname path)) ""))))
     (if (member type '("lisp" "cl" "asd") :test #'string=)
         "common-lisp"
-        (if (plusp (length type)) type "plaintext"))))
+               (if (string/= type "") type "plaintext"))))

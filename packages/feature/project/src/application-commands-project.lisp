@@ -13,7 +13,7 @@
 (defun %project-completion-candidates (input candidates)
   (let ((needle (string-downcase input)))
     (remove-if-not (lambda (candidate)
-                     (or (zerop (length needle))
+                     (or (string= needle "")
                          (search needle (string-downcase candidate))))
                    candidates)))
 

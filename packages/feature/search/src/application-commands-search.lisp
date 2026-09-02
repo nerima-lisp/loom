@@ -21,7 +21,7 @@ BUFFER-SEARCH-SPANS), and return the number of occurrences replaced.
 NEW is inserted verbatim -- capture-group references such as $1 are not
 expanded. A pure buffer mutation with no minibuffer concerns, called once
 REPLACE-STRING has both prompted-for strings."
-  (let ((spans (and (plusp (length old))
+  (let ((spans (and (string/= old "")
                     (buffer-search-spans buffer old start))))
     (dolist (span (sort (copy-list spans) #'> :key #'buffer-span-start))
       (let ((start-position
