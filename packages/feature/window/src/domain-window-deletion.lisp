@@ -6,9 +6,10 @@
 
 (defun %window-first-leaf (node)
   "Return the first leaf below NODE in depth-first order."
-  (if (window-leaf-p node)
-      node
-      (%window-first-leaf (first (window-split-node-children node)))))
+  (loop
+    (when (window-leaf-p node)
+      (return node))
+    (setf node (first (window-split-node-children node)))))
 
 (defun %window-delete-child (node target)
   (let* ((children (window-split-node-children node))
