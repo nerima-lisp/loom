@@ -42,7 +42,9 @@ same thing to a caller and are flattened to a list here."
 Items that do not decode are dropped rather than aborting the whole response:
 one malformed candidate should not cost the user the other fifty."
   (loop for object in (%lsp-completion-items result)
-        for item = (ignore-errors (%lsp-parse-completion-item object))
+        for item = (and (hash-table-p object)
+                        (stringp (gethash "label" object))
+                        (%lsp-parse-completion-item object))
         when item
           collect item))
 
@@ -53,9 +55,16 @@ one malformed candidate should not cost the user the other fifty."
         (range (or (gethash "range" object)
                    (gethash "targetSelectionRange" object)
                    (gethash "targetRange" object))))
-    (unless (stringp uri)
+    (unless (and (stringp uri) (%lsp-range-p range))
       (error "LSP location has no uri: ~S" object))
     (make-lsp-location uri (%lsp-parse-range range))))
+
+(defun %lsp-location-p (object)
+  (and (hash-table-p object)
+       (stringp (or (gethash "uri" object) (gethash "targetUri" object)))
+       (%lsp-range-p (or (gethash "range" object)
+                         (gethash "targetSelectionRange" object)
+                         (gethash "targetRange" object)))))
 
 (defun %lsp-parse-definition-result (result)
   "Return the LSP-LOCATION values in a textDocument/definition RESULT.
@@ -66,11 +75,13 @@ either naming, and a null result means the server knows of no definition."
   (cond
     ((or (null result) (eq result json-kit:+json-null+)) '())
     ((hash-table-p result)
-     (let ((location (ignore-errors (%lsp-parse-location result))))
+     (let ((location (and (%lsp-location-p result)
+                          (%lsp-parse-location result))))
        (if location (list location) '())))
     ((listp result)
      (loop for object in result
-           for location = (ignore-errors (%lsp-parse-location object))
+           for location = (and (%lsp-location-p object)
+                               (%lsp-parse-location object))
            when location
              collect location))
     (t '())))

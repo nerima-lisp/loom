@@ -12,6 +12,16 @@
       (error "LSP position has invalid coordinates: ~S" object))
     (make-lsp-position line character)))
 
+(defun %lsp-position-p (object)
+  (and (hash-table-p object)
+       (integerp (gethash "line" object))
+       (integerp (gethash "character" object))))
+
+(defun %lsp-range-p (object)
+  (and (hash-table-p object)
+       (%lsp-position-p (gethash "start" object))
+       (%lsp-position-p (gethash "end" object))))
+
 (defun %lsp-parse-range (object)
   (unless (hash-table-p object)
     (error "LSP diagnostic range is not an object: ~S" object))
