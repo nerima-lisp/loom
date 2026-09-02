@@ -54,11 +54,15 @@
             (%lsp-json-error-message error-value)))))
 
 (defun %lsp-handle-initialize-response-payload (session message)
-  (unless (%lsp-response-error session message) (multiple-value-bind (result result-present-p)
-          (%lsp-value-present-p message "result")
-        (if result-present-p
-            (%lsp-handle-initialize-response-success session result)
-            (error "LSP initialize response has no object result")))))
+  (unless (%lsp-response-error session message)
+    (%lsp-handle-initialize-result-payload session message)))
+
+(defun %lsp-handle-initialize-result-payload (session message)
+  (multiple-value-bind (result result-present-p)
+      (%lsp-value-present-p message "result")
+    (if result-present-p
+        (%lsp-handle-initialize-response-success session result)
+        (error "LSP initialize response has no object result"))))
 
 (defun %lsp-handle-initialize-response (session message)
   (when (%lsp-message-id-matches-p
