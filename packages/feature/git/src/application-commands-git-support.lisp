@@ -16,17 +16,20 @@
       (%register-buffer
        (make-buffer :name name))))
 
+(defun %clear-git-result-buffer (buffer)
+  (unless (string= (buffer-text buffer) "")
+    (let* ((end (buffer-offset-position
+                 buffer
+                 (length (buffer-text buffer))))
+           (end-line (buffer-position-line end))
+           (end-column (buffer-position-column end)))
+      (buffer-delete-region buffer 0 0 end-line end-column))))
+
 (defun %replace-git-result-buffer (buffer text)
   (unwind-protect
        (progn
          (buffer-set-read-only buffer nil)
-         (unless (string= (buffer-text buffer) "")
-           (let* ((end (buffer-offset-position
-                        buffer
-                        (length (buffer-text buffer))))
-                  (end-line (buffer-position-line end))
-                  (end-column (buffer-position-column end)))
-             (buffer-delete-region buffer 0 0 end-line end-column)))
+         (%clear-git-result-buffer buffer)
          (buffer-insert-string buffer text)
          (buffer-mark-saved buffer)
          buffer)
