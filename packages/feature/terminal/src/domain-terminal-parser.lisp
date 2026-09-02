@@ -11,29 +11,51 @@
       (%terminal-screen-scroll-down screen))
   (setf (terminal-screen-parser-state screen) :ground))
 
+(defun %terminal-screen-handle-escape-csi (screen)
+  (%terminal-screen-start-csi screen))
+
+(defun %terminal-screen-handle-escape-osc (screen)
+  (setf (terminal-screen-parser-state screen) :osc))
+
+(defun %terminal-screen-handle-escape-save-cursor (screen)
+  (%terminal-screen-save-cursor screen)
+  (setf (terminal-screen-parser-state screen) :ground))
+
+(defun %terminal-screen-handle-escape-restore-cursor (screen)
+  (%terminal-screen-restore-cursor screen)
+  (setf (terminal-screen-parser-state screen) :ground))
+
+(defun %terminal-screen-handle-escape-line-feed (screen)
+  (%terminal-screen-line-feed screen)
+  (setf (terminal-screen-parser-state screen) :ground))
+
+(defun %terminal-screen-handle-escape-next-line (screen)
+  (%terminal-screen-next-line screen)
+  (setf (terminal-screen-parser-state screen) :ground))
+
+(defun %terminal-screen-handle-escape-reverse-index (screen)
+  (%terminal-screen-reverse-index screen))
+
+(defun %terminal-screen-handle-escape-reset (screen)
+  (%terminal-screen-clear-all screen)
+  (setf (terminal-screen-parser-state screen) :ground))
+
+(defun %terminal-screen-escape-handler (character)
+  (cdr (assoc character
+              '((#\[ . %terminal-screen-handle-escape-csi)
+                (#\] . %terminal-screen-handle-escape-osc)
+                (#\7 . %terminal-screen-handle-escape-save-cursor)
+                (#\8 . %terminal-screen-handle-escape-restore-cursor)
+                (#\D . %terminal-screen-handle-escape-line-feed)
+                (#\E . %terminal-screen-handle-escape-next-line)
+                (#\M . %terminal-screen-handle-escape-reverse-index)
+                (#\c . %terminal-screen-handle-escape-reset)))))
+
 (defun %terminal-screen-handle-escape (screen character)
-  (case character
-    (#\[ (%terminal-screen-start-csi screen))
-    (#\]
-     (setf (terminal-screen-parser-state screen) :osc))
-    (#\7
-     (%terminal-screen-save-cursor screen)
-     (setf (terminal-screen-parser-state screen) :ground))
-    (#\8
-     (%terminal-screen-restore-cursor screen)
-     (setf (terminal-screen-parser-state screen) :ground))
-    (#\D
-     (%terminal-screen-line-feed screen)
-     (setf (terminal-screen-parser-state screen) :ground))
-    (#\E
-     (%terminal-screen-next-line screen)
-     (setf (terminal-screen-parser-state screen) :ground))
-    (#\M (%terminal-screen-reverse-index screen))
-    (#\c
-     (%terminal-screen-clear-all screen)
-     (setf (terminal-screen-parser-state screen) :ground))
-    (otherwise
-     (setf (terminal-screen-parser-state screen) :ground))))
+  (let ((handler (%terminal-screen-escape-handler character)))
+    (if handler
+        (funcall handler screen)
+        (setf (terminal-screen-parser-state screen) :ground))))
 
 (defun %terminal-screen-feed-backspace (screen)
   (setf (terminal-screen-cursor-column screen)
