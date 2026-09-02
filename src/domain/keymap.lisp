@@ -67,9 +67,8 @@ The presence flag is true when the first chord exists locally, even when a
 later chord does not.  This makes a local prefix shadow the entire matching
 parent subtree, which is how mode-local prefix maps avoid surprising global
 fallbacks."
-  (when key-sequence
-    (let ((normalized (mapcar #'normalize-key-descriptor key-sequence)))
-      (%keymap-lookup-table (keymap-table keymap) normalized))))
+  (let ((normalized (mapcar #'normalize-key-descriptor key-sequence)))
+    (%keymap-lookup-table (keymap-table keymap) normalized)))
 
 (defun keymap-lookup (keymap key-sequence)
   "Look up KEY-SEQUENCE (a list of key-event descriptors, as in
