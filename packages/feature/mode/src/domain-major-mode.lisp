@@ -16,20 +16,25 @@
     (or (%dynamic-major-mode-definition key)
         (%static-major-mode-definition key))))
 
-(defun %dynamic-major-mode-key (token)
-  (loop for key in *registered-major-mode-order*
-        for definition = (%dynamic-major-mode-definition key)
-        when (or (string= token (string-downcase (symbol-name key)))
-                 (string= token (%major-mode-token (getf definition :name)))
-                 (member token (getf definition :aliases) :test #'string=))
+(defun %major-mode-definition-matches-token-p (token key definition)
+  (or (string= token (string-downcase (symbol-name key)))
+      (string= token (%major-mode-token (getf definition :name)))
+      (member token (getf definition :aliases) :test #'string=)))
+
+(defun %major-mode-key-from-definitions (token definitions)
+  (loop for (key . definition) in definitions
+        when (%major-mode-definition-matches-token-p token key definition)
           return key))
 
+(defun %dynamic-major-mode-key (token)
+  (%major-mode-key-from-definitions
+   token
+   (mapcar (lambda (key)
+             (cons key (%dynamic-major-mode-definition key)))
+           *registered-major-mode-order*)))
+
 (defun %static-major-mode-key (token)
-  (loop for (key . definition) in +major-mode-definitions+
-        when (or (string= token (string-downcase (symbol-name key)))
-                 (string= token (%major-mode-token (getf definition :name)))
-                 (member token (getf definition :aliases) :test #'string=))
-          return key))
+  (%major-mode-key-from-definitions token +major-mode-definitions+))
 
 (defun %major-mode-key (mode)
   (cond
