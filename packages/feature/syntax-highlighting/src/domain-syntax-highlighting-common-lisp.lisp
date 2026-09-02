@@ -52,7 +52,7 @@
         (#\\ (values :character
                       (%syntax-character-literal-end line position)))
         (otherwise
-         (let ((end (%syntax-atom-end line position)))
+         (let ((end (%syntax-atom-end line (1+ position))))
            (values (%syntax-token-kind (subseq line position end)) end))))
       (values :plain (1+ position))))
 

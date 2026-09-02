@@ -72,6 +72,20 @@
               (list line))))
 
   (it
+    "handles reader prefixes at the end of a line and delimiter boundaries"
+    (let ((line "foo #'bar # #\\"))
+      (expect (%syntax-token-kinds line)
+              :to-equal
+              '(:plain :whitespace :plain :delimiter :plain :whitespace :plain
+                :whitespace :character))
+      (expect (%syntax-token-texts line)
+              :to-equal
+              '("foo" " " "#" "'" "bar" " " "#" " " "#\\"))
+      (expect (apply #'concatenate 'string (%syntax-token-texts line))
+              :to-equal
+              line)))
+
+  (it
     "returns no tokens for an empty line"
     (expect (syntax-highlight-line "") :to-be nil)))
 
