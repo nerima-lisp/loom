@@ -24,7 +24,11 @@
           (%lsp-uri-escape-path (namestring (pathname path)))))
 
 (defun %lsp-uri-hex-digit (character)
-  (digit-char-p character 16))
+  (or (position character "0123456789" :test #'char=)
+      (let ((position (position character "ABCDEF" :test #'char=)))
+        (and position (+ 10 position)))
+      (let ((position (position character "abcdef" :test #'char=)))
+        (and position (+ 10 position)))))
 
 (defun %lsp-uri-percent-escape-at (uri index)
   (when (and (char= (char uri index) #\%)
