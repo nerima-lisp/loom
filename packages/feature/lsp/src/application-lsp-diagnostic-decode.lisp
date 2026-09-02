@@ -35,6 +35,14 @@
     (when (and present-p (not (eq value json-kit:+json-null+)))
       value)))
 
+(defun %lsp-diagnostic-severity (object)
+  (let ((value (%lsp-optional-diagnostic-value object "severity")))
+    (and (integerp value) value)))
+
+(defun %lsp-diagnostic-source (object)
+  (let ((value (%lsp-optional-diagnostic-value object "source")))
+    (and (stringp value) value)))
+
 (defun %lsp-parse-diagnostic (object)
   (unless (hash-table-p object)
     (error "LSP diagnostic is not an object: ~S" object))
@@ -44,10 +52,8 @@
     (make-lsp-diagnostic
      (%lsp-parse-range (gethash "range" object))
      message
-     :severity (let ((value (%lsp-optional-diagnostic-value object "severity")))
-                 (and (integerp value) value))
-     :source (let ((value (%lsp-optional-diagnostic-value object "source")))
-               (and (stringp value) value))
+     :severity (%lsp-diagnostic-severity object)
+     :source (%lsp-diagnostic-source object)
      :code (%lsp-optional-diagnostic-value object "code"))))
 
 (defun %lsp-publish-diagnostics-payload (message)
