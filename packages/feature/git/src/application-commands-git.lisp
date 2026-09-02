@@ -24,7 +24,7 @@
   "Display the staged index diff for the current project."
   (%display-git-diff t))
 
-(defmacro %define-git-file-command (name operation prompt documentation)
+(defmacro %define-git-file-command (name documentation prompt operation)
   `(defun ,name ()
      ,documentation
      (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
@@ -34,12 +34,12 @@
 
 (%define-git-file-command
  git-stage-file
- :stage
+ "Prompt for a repository path and stage it in Git's index."
  "Git stage file: "
- "Prompt for a repository path and stage it in Git's index.")
+ :stage)
 
 (%define-git-file-command
  git-unstage-file
- :unstage
+ "Prompt for a repository path and remove it from Git's index."
  "Git unstage file: "
- "Prompt for a repository path and remove it from Git's index.")
+ :unstage)
