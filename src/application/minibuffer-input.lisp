@@ -79,7 +79,7 @@ not, because by then the session they would notify is already over."
 
 (defun %minibuffer-delete-backward (minibuffer)
   (let ((input (%minibuffer-input minibuffer)))
-    (when (plusp (length input))
+    (when (string/= input "")
       (setf (%minibuffer-input minibuffer)
             (subseq input 0 (1- (length input)))))))
 

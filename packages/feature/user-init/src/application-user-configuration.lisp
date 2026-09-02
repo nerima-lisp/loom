@@ -54,7 +54,7 @@ active, the new key sequences are also installed in its live keymap."
     (error "User command name must be a string: ~S" name))
   (let ((canonical-name (string-downcase
                          (string-trim '(#\Space #\Tab) name))))
-    (when (zerop (length canonical-name))
+    (when (string= canonical-name "")
       (error "User command name cannot be empty."))
     (let ((resolved-command (%resolve-user-command command)))
       (multiple-value-bind (raw-keys normalized-keys)

@@ -22,7 +22,7 @@
 
 (defun %show-shell-command-result (result)
   (let* ((buffer (%shell-command-result-buffer))
-         (prefix (if (zerop (length (buffer-text buffer)))
+         (prefix (if (string= (buffer-text buffer) "")
                      ""
                      (format nil "~%"))))
     (%move-shell-result-point-to-end buffer)
@@ -54,7 +54,7 @@
        (format nil "Pipe command error: ~A" condition)))))
 
 (defun %execute-pipe-command (command)
-  (if (zerop (length command))
+  (if (string= command "")
       (%pipe-command-message "Pipe command cancelled")
       (%run-pipe-command command)))
 

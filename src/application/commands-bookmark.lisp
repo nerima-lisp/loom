@@ -6,7 +6,7 @@
 (define-bookmark-command set-bookmark
     ("Set bookmark: ") (bookmark-name minibuffer)
   (let ((buffer (%selected-buffer)))
-    (if (zerop (length bookmark-name))
+    (if (string= bookmark-name "")
         (minibuffer-message minibuffer "Bookmark name cannot be empty")
         (progn
           (setf (gethash bookmark-name (%bookmark-table))

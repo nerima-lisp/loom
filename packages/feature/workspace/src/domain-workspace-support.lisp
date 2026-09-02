@@ -18,8 +18,9 @@
 
 (defun %workspace-name-valid-p (name)
   (and (stringp name)
-       (plusp (length (string-trim '(#\Space #\Tab #\Newline #\Return)
-                                   name)))))
+       (string/= (string-trim '(#\Space #\Tab #\Newline #\Return)
+                              name)
+                 "")))
 
 (defun %workspace-index-valid-p (workspaces index)
   (and (integerp index)

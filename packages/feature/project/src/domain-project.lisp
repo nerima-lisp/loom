@@ -70,7 +70,7 @@
 
 (defun project-search-lines (query content)
   "Return plist entries for case-sensitive QUERY matches in CONTENT."
-  (when (plusp (length query))
+  (when (string/= query "")
     (with-input-from-string (stream content)
       (loop with line-number = 0
             for line = (read-line stream nil nil)

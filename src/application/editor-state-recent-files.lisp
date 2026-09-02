@@ -24,7 +24,7 @@
   (let ((path-string (editor-path-string path)))
     (when (and *editor-state*
                path-string
-               (plusp (length path-string)))
+               (string/= path-string ""))
       (setf (editor-state-recent-files *editor-state*)
             (%bounded-recent-files
              path-string

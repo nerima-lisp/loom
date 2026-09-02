@@ -8,7 +8,7 @@
 (defun %configured-user-init-path (&optional (getenv (function host-kit:getenv)))
   "Return the explicit or conventional path for the user init file."
   (let ((override (funcall getenv "LOOM_INIT_FILE")))
-    (if (and override (plusp (length override)))
+    (if (and override (string/= override ""))
         (pathname override)
         (merge-pathnames #P".loom/init.lisp"
                          (user-homedir-pathname)))))

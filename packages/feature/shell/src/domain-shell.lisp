@@ -22,7 +22,7 @@ independently."
   (zerop (shell-command-result-exit-code result)))
 
 (defun %write-shell-result-stream (stream label text)
-  (when (plusp (length text))
+  (when (string/= text "")
     (format stream "~A:~%" label)
     (write-string text stream)
     (unless (char= (char text (1- (length text))) #\Newline)
