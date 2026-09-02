@@ -45,15 +45,17 @@
         ((%syntax-keyword-token-p text) :keyword)
         (t :plain)))
 
+(defun %syntax-prefixed-atom-token (line position)
+  (let ((end (%syntax-atom-end line (1+ position))))
+    (values (%syntax-token-kind (subseq line position end)) end)))
+
 (defun %syntax-prefix-token (line position length)
   (if (< (1+ position) length)
       (case (char line (1+ position))
         (#\| (values :comment (%syntax-block-comment-end line position)))
         (#\\ (values :character
                       (%syntax-character-literal-end line position)))
-        (otherwise
-         (let ((end (%syntax-atom-end line (1+ position))))
-           (values (%syntax-token-kind (subseq line position end)) end))))
+        (otherwise (%syntax-prefixed-atom-token line position)))
       (values :plain (1+ position))))
 
 (defun %syntax-atom-token (line position)
