@@ -6,11 +6,17 @@
 (defparameter +defkeys-modifiers+ '(:control :alt)
   "The modifier keywords a DEFKEYS chord may carry.")
 
+(defun defkeys-modifier-p (value)
+  "Return true when VALUE is a supported DEFKEYS modifier keyword."
+  (case value
+    ((:control :alt) t)
+    (otherwise nil)))
+
 (defun defkeys-single-chord-p (spec)
   "True when SPEC, a DEFKEYS key form, names one chord rather than a
 multi-key sequence: a bare atom (an unmodified key) or a modifier-prefixed
 list such as (:CONTROL CODE) or (:CONTROL :ALT CODE)."
-  (or (atom spec) (member (first spec) +defkeys-modifiers+)))
+  (or (atom spec) (defkeys-modifier-p (first spec))))
 
 (defun defkeys-chord (spec)
   "Return the runtime key descriptor for one command-spec chord SPEC.
@@ -28,12 +34,12 @@ user init files reach this through DEFKEYS-KEY-SEQUENCE."
       (let ((modifiers (butlast spec))
             (code (car (last spec))))
         (dolist (modifier modifiers)
-          (unless (member modifier +defkeys-modifiers+)
+          (unless (defkeys-modifier-p modifier)
             (error "Key chord modifier must be one of ~S: ~S"
                    +defkeys-modifiers+ spec)))
         (unless (or (characterp code)
                     (and (keywordp code)
-                         (not (member code +defkeys-modifiers+))))
+                         (not (defkeys-modifier-p code))))
           (error "Key chord code must be a character or a special-key keyword: ~S"
                  spec))
         (cons modifiers code))))
