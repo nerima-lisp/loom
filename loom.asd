@@ -185,6 +185,7 @@ root source tree responsible for every feature."
     (:file "src/application/command-registry")
     (:file "packages/feature/mode/src/application-major-mode-support")
     (:file "packages/feature/mode/src/application-major-mode")
+    (:file "packages/feature/mode/src/application-major-mode-editing")
    (:file "packages/feature/project/src/application-commands-project")
    (:file "packages/core/editor/src/application-commands-prefix-argument-support")
   (:file "packages/core/editor/src/application-commands-prefix-argument")
