@@ -39,51 +39,57 @@
   '(:loom-session :buffers :recent-files :bookmarks :command-history
     :workspaces :current-workspace-index))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %session-codec-field-p (field)
+    (and (listp field)
+         (= (length field) 2)
+         (keywordp (first field))
+         (symbolp (second field))))
+
+  (defun %session-codec-declaration-p (name constructor fields)
+    (and (symbolp name)
+         (symbolp constructor)
+         (every #'%session-codec-field-p fields)))
+
+  (defun %session-codec-symbols (name)
+    (let ((stem (string-upcase (symbol-name name))))
+      (values
+       (intern (format nil "*LOOM-SESSION-~A-KEYS*" stem) *package*)
+       (intern (format nil "%SESSION-SEXP-~A" stem) *package*)
+       (intern (format nil "%SESSION-~A-FROM-SEXP" stem) *package*))))
+
+  (defun %session-codec-serializer-forms (fields)
+    (mapcan (lambda (field)
+              (list (first field)
+                    `(,(second field) object)))
+            fields))
+
+  (defun %session-codec-reader-forms (fields)
+    (mapcan (lambda (field)
+              (list (first field)
+                    `(%session-plist-value value ,(first field))))
+            fields)))
+
 (defmacro define-session-plist-codec (name constructor &body fields)
   "Define a fixed-shape plist serializer and reader for a session value.
 
 FIELDS is a sequence of (:KEY ACCESSOR) declarations. Keeping the shape in
 one macro invocation makes the serialized data contract visible and prevents
 the writer and reader from drifting apart as fields are added."
-  (labels ((field-p (field)
-             (and (listp field)
-                  (= (length field) 2)
-                  (keywordp (first field))
-                  (symbolp (second field))))
-           (declaration-p ()
-             (and (symbolp name)
-                  (symbolp constructor)
-                  (every #'field-p fields)))
-           (codec-symbols ()
-             (let ((stem (string-upcase (symbol-name name))))
-               (values
-                (intern (format nil "*LOOM-SESSION-~A-KEYS*" stem) *package*)
-                (intern (format nil "%SESSION-SEXP-~A" stem) *package*)
-                (intern (format nil "%SESSION-~A-FROM-SEXP" stem) *package*))))
-           (serializer-forms ()
-             (mapcan (lambda (field)
-                       (list (first field)
-                             `(,(second field) object)))
-                     fields))
-           (reader-forms ()
-             (mapcan (lambda (field)
-                       (list (first field)
-                             `(%session-plist-value value ,(first field))))
-                     fields)))
-    (unless (declaration-p)
-      (error "Invalid session plist codec declaration: ~S ~S ~S"
-             name constructor fields))
-    (multiple-value-bind (keys serializer reader)
-        (codec-symbols)
-      `(progn
-         (defparameter ,keys ',(mapcar #'first fields))
-         (defun ,serializer (object)
-           (list ,@(serializer-forms)))
-         (defun ,reader (value)
-           (%validate-session-plist value ,keys
-                                    ,(format nil "session ~A" name))
-           (,constructor
-            ,@(reader-forms)))))))
+  (unless (%session-codec-declaration-p name constructor fields)
+    (error "Invalid session plist codec declaration: ~S ~S ~S"
+           name constructor fields))
+  (multiple-value-bind (keys serializer reader)
+      (%session-codec-symbols name)
+    `(progn
+       (defparameter ,keys ',(mapcar #'first fields))
+       (defun ,serializer (object)
+         (list ,@(%session-codec-serializer-forms fields)))
+       (defun ,reader (value)
+         (%validate-session-plist value ,keys
+                                  ,(format nil "session ~A" name))
+         (,constructor
+          ,@(%session-codec-reader-forms fields))))))
 
 (define-session-plist-codec buffer make-session-buffer-snapshot
   (:name session-buffer-snapshot-name)
