@@ -19,7 +19,7 @@
     (loop repeat (abs count)
           do (funcall command))))
 
-(defmacro define-repeating-command (name forward backward documentation)
+(defmacro define-repeating-command (name documentation forward backward)
   "Define NAME as a prefix-aware FORWARD/BACKWARD command pair."
   `(defun ,name ()
      ,documentation

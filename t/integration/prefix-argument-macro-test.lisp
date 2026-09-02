@@ -20,8 +20,9 @@
     (let ((expansion
             (macroexpand-1
              '(loom::define-repeating-command test-repeat
+                  "test documentation"
                   forward-command backward-command
-                "test documentation"))))
+                ))))
       (expect (first expansion) :to-be 'defun)
       (expect (second expansion) :to-be 'test-repeat)
       (expect (third expansion) :to-equal '())

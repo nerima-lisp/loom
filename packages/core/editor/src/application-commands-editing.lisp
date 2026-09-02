@@ -19,12 +19,12 @@
   (%self-insert-character char))
 
 (define-repeating-command delete-char
-    %delete-char-forward-once %delete-char-backward-once
-  "Delete characters at point, repeating for the active numeric prefix.")
+  "Delete characters at point, repeating for the active numeric prefix."
+  %delete-char-forward-once %delete-char-backward-once)
 
 (define-repeating-command delete-backward-char
-    %delete-char-backward-once %delete-char-forward-once
-  "Delete characters before point, repeating for the active numeric prefix.")
+  "Delete characters before point, repeating for the active numeric prefix."
+  %delete-char-backward-once %delete-char-forward-once)
 
 (defun newline-command ()
   "Insert newlines repeatedly according to the active numeric prefix."
