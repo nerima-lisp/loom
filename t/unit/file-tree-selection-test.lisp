@@ -22,9 +22,23 @@
        (:up "a" ("a" "b") "a"))
       "moves from ~S in ~S through ~S"
       (direction selected paths expected)
-    (expect (loom/feature/file-tree::%file-tree-next-selection
+      (expect (loom/feature/file-tree::%file-tree-next-selection
              paths selected direction)
             :to-equal expected))
+
+  (cl-weave:it-property
+      "keeps generated selection movement inside the visible paths"
+      ((size (cl-weave:gen-integer :min 1 :max 16))
+       (direction-index (cl-weave:gen-integer :min 0 :max 1)))
+    (let* ((paths (loop for index below size
+                        collect (format nil "entry-~D" index)))
+           (direction (if (zerop direction-index) :up :down))
+           (selected (loom/feature/file-tree::%file-tree-next-selection
+                      paths nil direction)))
+      (expect selected :to-be (if (eq direction :down)
+                                  (first paths)
+                                  (car (last paths))))
+      (expect (member selected paths :test #'equal) :to-be-truthy)))
 
   (it
     "returns nil for an empty visible path list"
