@@ -31,6 +31,7 @@
     (:common-lisp
      :name "Common Lisp"
      :comment-prefix ";"
+     :aliases ("lisp" "cl" "common lisp")
      :indentation-width 2
      :truncate-lines t
      :language-id "commonlisp"
@@ -71,6 +72,7 @@
     (:shell
      :name "Shell"
      :comment-prefix "#"
+     :aliases ("sh" "bash" "zsh")
      :indentation-width 2
      :truncate-lines t
      :language-id "shellscript"
@@ -79,6 +81,7 @@
     (:emacs-lisp
      :name "Emacs Lisp"
      :comment-prefix ";"
+     :aliases ("el" "elisp")
      :indentation-width 2
      :truncate-lines t
      :language-id "emacs-lisp"
@@ -105,6 +108,7 @@
     (:typescript
      :name "TypeScript"
      :comment-prefix "//"
+     :aliases ("ts")
      :indentation-width 2
      :truncate-lines t
      :language-id "typescript"
@@ -112,6 +116,7 @@
     (:typescript-react
      :name "TypeScript React"
      :comment-prefix "//"
+     :aliases ("tsx")
      :indentation-width 2
      :truncate-lines t
      :language-id "typescriptreact"
@@ -141,6 +146,7 @@
     (:text
      :name "Text"
      :comment-prefix nil
+     :aliases ("plain text")
      :indentation-width 2
      :truncate-lines nil
      :language-id "plaintext"

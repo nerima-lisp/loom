@@ -27,7 +27,8 @@
 (defun %static-major-mode-key (name)
   (loop for (key . definition) in +major-mode-definitions+
         when (or (string-equal name (symbol-name key))
-                 (string-equal name (getf definition :name)))
+                 (string-equal name (getf definition :name))
+                 (member name (getf definition :aliases) :test #'string-equal))
           return key))
 
 (defun %major-mode-key (mode)
@@ -45,22 +46,8 @@
 
 (defun major-mode-from-name (name)
   "Resolve a mode name, including the common short aliases."
-  (let* ((key (%major-mode-key name))
-         (text (%major-mode-token name)))
-    (or (and (major-mode-known-p key) key)
-        (cdr (assoc text
-                    '(("lisp" . :common-lisp)
-                      ("cl" . :common-lisp)
-                      ("common lisp" . :common-lisp)
-                      ("el" . :emacs-lisp)
-                      ("elisp" . :emacs-lisp)
-                      ("sh" . :shell)
-                      ("bash" . :shell)
-                      ("zsh" . :shell)
-                      ("ts" . :typescript)
-                      ("tsx" . :typescript-react)
-                      ("plain text" . :text))
-                        :test #'string=)))))
+  (let ((key (%major-mode-key name)))
+    (and (major-mode-known-p key) key)))
 
 (defun major-mode-name (mode)
   "Return the display name for MODE, or NIL for an unknown mode."
