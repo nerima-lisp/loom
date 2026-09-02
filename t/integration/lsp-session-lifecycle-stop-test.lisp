@@ -13,6 +13,11 @@
       (signals type-error
         (lsp-session-stop session :timeout -1))))
 
+  (it "rejects a non-numeric shutdown timeout"
+    (%with-fake-lsp-session ((transport session))
+      (signals type-error
+        (lsp-session-stop session :timeout :immediate))))
+
   (it "stops with shutdown followed by exit after an acknowledge"
     (%with-started-fake-lsp-session ((transport session))
       (%fake-push-initialize-response
