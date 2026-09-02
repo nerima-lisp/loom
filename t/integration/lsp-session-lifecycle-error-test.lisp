@@ -50,7 +50,9 @@
                 ("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-1}}"
                  t)
                 ("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":42}"
-                 "42")))
+                 "42")
+                ("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":null}"
+                 t)))
       (%with-started-fake-lsp-session ((transport session))
         (%expect-initialize-error
             (transport session)
