@@ -45,19 +45,27 @@ becomes a prefix key (see KEYMAP-LOOKUP). Returns KEYMAP."
                  (setf (gethash key table) command)))
     keymap))
 
+(defun %keymap-lookup-step (table key rest)
+  (multiple-value-bind (value present-p) (gethash key table)
+    (cond
+      ((not present-p) (values nil nil nil))
+      ((null rest) (values (if (hash-table-p value) :prefix value) t nil))
+      ((hash-table-p value) (values nil t value))
+      (t (values nil t nil)))))
+
 (defun %keymap-lookup-table (table key-sequence)
   (let ((local-p nil))
     (loop for (key . rest) on key-sequence
-        do (multiple-value-bind (value present-p) (gethash key table)
-             (unless present-p
-               (return (values nil local-p)))
-             (setf local-p t)
-             (if rest
-                 (if (hash-table-p value)
-                     (setf table value)
-                     (return (values nil t)))
-                 (return (values (if (hash-table-p value) :prefix value)
-                                 t))))
+          do (multiple-value-bind (value present-p next-table)
+                 (%keymap-lookup-step table key rest)
+               (unless present-p
+                 (return (values nil local-p)))
+               (setf local-p t)
+               (when (null rest)
+                 (return (values value t)))
+               (unless next-table
+                 (return (values nil t)))
+               (setf table next-table))
           finally (return (values nil local-p)))))
 
 (defun %keymap-local-lookup (keymap key-sequence)
