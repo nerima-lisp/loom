@@ -17,6 +17,12 @@ string via NAMESTRING/identity."
          (slash (position #\/ trimmed :from-end t)))
     (if slash (subseq trimmed (1+ slash)) trimmed)))
 
+(defun %layout-file-tree-row (path depth selected width)
+  (let* ((indent (make-string (* 2 depth) :initial-element #\Space))
+         (text (concatenate 'string indent (%layout-path-label path))))
+    (values (%layout-truncate-to-width text width)
+            (when (equal path selected) '(:reverse)))))
+
 (defun %layout-draw-file-tree (renderer file-tree width height)
   "Draw FILE-TREE's currently visible entries (FILE-TREE-ENTRIES) into the
 left WIDTH-column, HEIGHT-row strip of RENDERER starting at (0,0), one entry
@@ -30,8 +36,6 @@ simply not drawn -- no scrolling is attempted here, matching this file's
           (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
       (loop for (path . depth) in entries
             for row from 0 below height
-            do (let* ((indent (make-string (* 2 depth) :initial-element #\Space))
-                      (text (concatenate 'string indent (%layout-path-label path)))
-                      (visible (%layout-truncate-to-width text width))
-                      (style (when (equal path selected) '(:reverse))))
+            do (multiple-value-bind (visible style)
+                   (%layout-file-tree-row path depth selected width)
                  (loom-renderer-write-string renderer 0 row visible :style style))))))
