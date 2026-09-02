@@ -145,3 +145,12 @@
       (%type-string minibuffer "ab")
       (minibuffer-handle-key minibuffer (%special-key :backspace))
       (expect changes :to-equal '("a" "ab" "a")))))
+
+(describe
+  "minibuffer activation contracts"
+  (it
+    "rejects non-function interactive callbacks"
+    (let ((minibuffer (make-minibuffer)))
+      (dolist (keyword '(:completion-function :on-change :on-key))
+        (signals error
+                 (minibuffer-activate minibuffer "Prompt: " keyword 42))))))
