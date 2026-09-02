@@ -130,6 +130,11 @@
     ((char= character #\Esc)
      (setf (terminal-screen-parser-state screen) :osc-escape))))
 
+(defun %terminal-screen-feed-osc-escape-character (screen character)
+  (setf (terminal-screen-parser-state screen) :ground)
+  (unless (char= character #\\)
+    (%terminal-screen-feed-character screen character)))
+
 (defun %terminal-screen-feed-character (screen character)
   (case (terminal-screen-parser-state screen)
     (:ground (%terminal-screen-feed-ground-character screen character))
@@ -137,10 +142,7 @@
      (%terminal-screen-handle-escape screen character))
     (:csi (%terminal-screen-feed-csi-character screen character))
     (:osc (%terminal-screen-feed-osc-character screen character))
-    (:osc-escape
-     (setf (terminal-screen-parser-state screen) :ground)
-     (unless (char= character #\\)
-       (%terminal-screen-feed-character screen character))))
+    (:osc-escape (%terminal-screen-feed-osc-escape-character screen character)))
   screen)
 
 (defun terminal-screen-feed (screen text)
