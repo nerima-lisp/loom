@@ -78,13 +78,7 @@
       (%layout-draw-wrapped-segment
        renderer window x y text width height line segments segment start end style))))
 
-(defun %layout-draw-line-run (renderer window x-offset line start end style)
-  "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.
-
-The run is placed with the same geometry the buffer text was drawn with, which
-means splitting it per wrapped segment when the window wraps and shifting it by
-the scroll column when it truncates. A run scrolled or wrapped off the window
-draws nothing rather than clipping to the wrong row."
+(defun %layout-line-run-geometry (window x-offset line start end)
   (let* ((buffer (loom/feature/window:window-buffer window))
          (text (%layout-visible-line buffer line))
          (width (loom/feature/window:window-width window))
@@ -94,6 +88,18 @@ draws nothing rather than clipping to the wrong row."
          (start (max 0 (min start (length text))))
          (end (max start (min end (length text)))))
     (when (and (plusp width) (plusp height) (> end start))
+      (values buffer text width height x y start end))))
+
+(defun %layout-draw-line-run (renderer window x-offset line start end style)
+  "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.
+
+The run is placed with the same geometry the buffer text was drawn with, which
+means splitting it per wrapped segment when the window wraps and shifting it by
+the scroll column when it truncates. A run scrolled or wrapped off the window
+draws nothing rather than clipping to the wrong row."
+  (multiple-value-bind (buffer text width height x y start end)
+      (%layout-line-run-geometry window x-offset line start end)
+    (when buffer
       (if (loom/feature/mode:buffer-truncate-lines-p buffer)
           (%layout-draw-truncated-line-run
            renderer window x y text line start end style)
