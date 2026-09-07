@@ -58,7 +58,7 @@ the walk is therefore bounded by the window height."
                  (loom/feature/window:window-scroll-line window)
                  (loom/feature/window:window-scroll-sub-row window)
                  line index
-                 (loom/feature/window:window-height window))
+                 (%layout-window-content-height window))
                 0))))
 
 (defun %layout-buffer-cell (renderer window buffer line column)
@@ -84,7 +84,7 @@ this, so a popup cannot drift away from the point it belongs to."
 (defun %selected-window-cursor-geometry (renderer window x-offset)
   "Return the selected window cursor position, or NIL when it has no area."
   (let ((width (loom/feature/window:window-width window))
-        (height (loom/feature/window:window-height window)))
+        (height (%layout-window-content-height window)))
     (unless (or (zerop width) (zerop height))
       (%window-cursor-position renderer window x-offset))))
 

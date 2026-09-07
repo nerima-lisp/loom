@@ -5,7 +5,7 @@
 (describe
   "compose-frame"
   (it
-    "uses the only terminal row for the minibuffer when shortcuts cannot fit"
+    "uses the only terminal row for the minibuffer when no buffer row fits"
     (let* ((state (%fresh-layout-state :name "*scratch*"
                                        :content "hidden"
                                        :width 20
@@ -17,11 +17,14 @@
               :to-equal "status              ")))
 
   (it
-    "truncates the shortcut line to fit a narrow terminal"
-    (let ((state (%fresh-layout-state :name "*scratch*" :content "hi" :width 10)))
+    "truncates the mode line to fit a narrow terminal"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi" :width 10))
+           (buffer (window-buffer (%layout-window state))))
       (loom::compose-frame state)
-      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 4)
-              :to-equal "Ln 1, Col ")))
+      (let ((row (cl-tty-kit:screen-row-string (%layout-screen state) 4)))
+        (expect row :to-equal
+                (loom::%layout-mode-line (editor-state-renderer state) buffer))
+        (expect (search "Ln" row) :to-be nil))))
 
   (it
     "draws the active minibuffer prompt and input, truncated to a narrow terminal"

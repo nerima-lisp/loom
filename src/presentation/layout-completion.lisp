@@ -92,7 +92,7 @@
 
 (defun %layout-draw-completion-content (renderer window x-offset completion)
   (let ((width (loom/feature/window:window-width window))
-        (height (loom/feature/window:window-height window)))
+        (height (%layout-window-content-height window)))
     (when (and (plusp width) (plusp height))
       (multiple-value-bind (rows selected)
           (%layout-completion-rows renderer completion)

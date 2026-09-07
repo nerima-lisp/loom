@@ -5,7 +5,7 @@
   "matching-parenthesis layout drawing"
   (it
     "marks both the adjacent parenthesis and its matching partner"
-    (let* ((state (%fresh-layout-state :content "(abc)" :width 8 :height 1))
+    (let* ((state (%fresh-layout-state :content "(abc)" :width 8 :height 2))
            (window (%layout-window state))
            (buffer (window-buffer window)))
       (buffer-set-point buffer 0 0)
@@ -16,6 +16,70 @@
                 :to-equal '(:bold (:fg 0) (:bg 5)))
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 4 0))
                 :to-equal '(:bold (:fg 0) (:bg 5)))))))
+
+(describe
+  "active region layout drawing"
+  (it
+    "highlights a single-line region without touching the mode line"
+    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 0 4)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (dolist (column '(1 2 3))
+          (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen column 0))
+                  :to-equal '((:fg 0) (:bg 2))))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 2))
+                :to-equal '(:reverse)))))
+
+  (it
+    "highlights each logical line of a multiline region"
+    (let* ((state (%fresh-layout-state
+                   :content (format nil "one~%two~%three")
+                   :width 8 :height 6))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 2 2)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 1))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 2))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 2))
+                :to-be nil))))
+
+  (it
+    "does not draw an empty region"
+    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 2)
+      (buffer-set-point buffer 0 2)
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell (%layout-screen state) 2 0))
+              :to-be nil)))
+
+  (it
+    "keeps a region highlight aligned at a full-width horizontal scroll boundary"
+    (let* ((state (%fresh-layout-state :content "あい" :width 4 :height 3))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-truncate-lines buffer t)
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 0 2)
+      (setf (window-scroll-column window) 1)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                :to-be nil)
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+                :to-equal '((:fg 0) (:bg 2)))))))
 
 (describe
   "%layout-path-label"
