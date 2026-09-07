@@ -78,4 +78,4 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | --- | --- | --- | --- |
 | P0 基線 | 完了 | `1420df3` | §1 |
 | P1 ハーネス | 完了 | `a8c7f09`（flake: pyte と `apps.e2e`）、`22b7415`（`t/e2e` 再構成） | `nix run .#e2e` を 2 回連続実行、いずれも `12 passed, 0 failed, 12 total`、`commands covered: 12 / 120`、exit 0。`nix run .#e2e -- --list` が 12 件を列挙。固定 sleep はハーネスから除去済み（`grep -rn 'time.sleep' t/e2e` はプロセス終了待ちの 1 箇所のみ） |
-| P2 全コマンド | 完了 | `a76ee02`, `a7cdca3`, `6f3db63`, `86d09a3`, `4298135` | `nix run .#e2e -- --list` は 120/120、未カバー 0。`nix run .#e2e` は 107 passed, 3 failed, 110 total。失敗 3 件は §2 の #4-#6 に記録済み |
+| P2 全コマンド | 完了 | `a76ee02`, `a7cdca3`, `6f3db63`, `86d09a3`, `4298135`, `6b6187a` | `nix run .#e2e -- --list` は 120/120、未カバー 0。`nix run .#e2e` は 107 passed, 3 failed, 110 total。失敗 3 件は §2 の #4-#6 に記録済み |
