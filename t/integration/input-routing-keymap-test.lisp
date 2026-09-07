@@ -49,6 +49,23 @@
         (expect (buffer-text buffer) :to-equal "hello worldgoodbye"))))
 
   (it
+    "routes the plain-terminal C-Space encoding to set-mark-command"
+    (let* ((state (%fresh-editor-state "hello"))
+           (*editor-state* state)
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
+           (keymap-state (make-keymap-state keymap)))
+      (setf (editor-state-minibuffer state) (make-minibuffer)
+            (editor-state-keymap state) keymap)
+      (let ((buffer (%selected-test-buffer)))
+        (loom::%dispatch-key-event
+         (cl-tty-kit:make-key-event :type :special :code :control-@)
+         keymap-state)
+        (buffer-set-point buffer 0 1)
+        (let ((span (buffer-active-region-span buffer)))
+          (expect (list (buffer-span-start span) (buffer-span-end span))
+                  :to-equal '(0 1))))))
+
+  (it
     "coalesces adjacent kill-region commands dispatched through the keymap"
     (let* ((state (%fresh-editor-state "abcdef"))
            (*editor-state* state)

@@ -12,7 +12,10 @@
               (string= "CONTROL-" name :end2 8)))))
 
 (defun %control-special-key-character (code)
-  (char-downcase (char (symbol-name code) 8)))
+  (let ((character (char-downcase (char (symbol-name code) 8))))
+    (if (char= character #\@)
+        #\Space
+        character)))
 
 (defun %key-event->descriptor (event)
   "Convert a CL-TTY-KIT:KEY-EVENT into the (MODIFIERS . CODE) descriptor
@@ -23,8 +26,10 @@ unified here. A plain-terminal C0 byte decodes as a :SPECIAL event whose CODE
 is a :CONTROL-<letter> keyword with no separate modifier, while kitty CSI-u
 decodes the same combo as a :CHARACTER event carrying the letter plus an
 explicit :CONTROL modifier. INSTALL-DEFAULT-KEYBINDINGS binds the latter
-shape, so a :SPECIAL :CONTROL-<letter> event is rewritten into it here. Every
-other event passes through verbatim, wrapped as (MODIFIERS . CODE).
+shape, so a :SPECIAL :CONTROL-<letter> event is rewritten into it here. The
+plain-terminal encoding of C-Space is CONTROL-@, so that punctuation is
+normalized to Space as well. Every other event passes through verbatim,
+wrapped as (MODIFIERS . CODE).
 
 The rewrite keeps whatever modifiers the event already carried. An ESC-prefixed
 Ctrl+letter -- how a plain terminal reports C-M-f -- arrives as :SPECIAL
