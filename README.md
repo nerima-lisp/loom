@@ -66,7 +66,7 @@ nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-test
 
 # Release-oriented checks
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
-LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
+nix run .#e2e
 ```
 
 `nix flake check --print-build-logs` also runs the repository-wide `paredit`
