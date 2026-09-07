@@ -34,10 +34,14 @@
 the mark is unset."
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
     (when mark-line
-      (let* ((point-offset (buffer-point-offset buffer))
-             (mark-offset (%position-to-offset buffer mark-line mark-column)))
-        (make-buffer-span (min point-offset mark-offset)
-                          (max point-offset mark-offset))))))
+      (multiple-value-bind (clamped-mark-line clamped-mark-column)
+          (%clamp-position buffer mark-line mark-column)
+        (let* ((point-offset (buffer-point-offset buffer))
+               (mark-offset (%position-to-offset buffer
+                                                  clamped-mark-line
+                                                  clamped-mark-column)))
+          (make-buffer-span (min point-offset mark-offset)
+                            (max point-offset mark-offset)))))))
 
 (defun %narrow-to-active-region-or-message (buffer)
   (let ((span (buffer-active-region-span buffer)))

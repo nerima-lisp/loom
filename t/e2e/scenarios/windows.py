@@ -66,7 +66,7 @@ def window_split_selection(binary):
             _assert_mode_line(session)
 
             session.extended_command("split-window-below")
-            split_row = session.layout.body_height // 2
+            split_row = session.layout.body_height // 2 + 1
             _wait_for_body_text(session, "LEFT-WINDOW")
             _wait_for_body_text(session, "LEFT-WINDOW", index=split_row)
 

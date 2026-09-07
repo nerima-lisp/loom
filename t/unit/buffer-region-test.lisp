@@ -70,6 +70,15 @@
                 :to-equal '(2 2)))))
 
   (it
+    "clamps a mark whose old position is past the current buffer"
+    (let ((buffer (make-buffer :initial-content (format nil "all text~%"))))
+      (buffer-set-mark buffer 1 0)
+      (buffer-delete-region buffer 0 0 1 0)
+      (let ((span (buffer-active-region-span buffer)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(0 0)))))
+
+  (it
     "returns nil when mark is unset"
     (expect (buffer-active-region-span (make-buffer :initial-content "hello"))
             :to-be nil)))

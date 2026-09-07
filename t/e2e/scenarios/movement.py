@@ -219,7 +219,7 @@ def scroll_up_command(binary):
             _prompted_mx(session, "goto-line", "Go to line: ", "15")
             session.wait_for_region_text("body", "line9")
             _mx(session, "scroll-up-command")
-            session.wait_for_region_text("body", "line14")
+            session.wait_for_region_text("body", "line14", index=1)
             output, code = session.quit()
     _assert_exit_zero("movement/scroll-up-command", output, code)
 
@@ -241,7 +241,7 @@ def scroll_down_command(binary):
             _prompted_mx(session, "goto-line", "Go to line: ", "15")
             session.wait_for_region_text("body", "line9")
             _mx(session, "scroll-up-command")
-            session.wait_for_region_text("body", "line14")
+            session.wait_for_region_text("body", "line14", index=1)
             _mx(session, "scroll-down-command")
             session.wait_for_region_text("body", "line9")
             output, code = session.quit()
