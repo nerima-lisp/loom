@@ -23,7 +23,8 @@
       buffer-narrow-to-region buffer-widen buffer-line-count buffer-line
       buffer-point-line buffer-point-column buffer-set-point buffer-mark
       buffer-set-mark buffer-insert-string buffer-delete-char
-      buffer-delete-region buffer-region-string buffer-modified-p
+      buffer-delete-region buffer-region-string buffer-active-region-span
+      buffer-modified-p
       buffer-read-only-p buffer-set-read-only buffer-read-only-error
       buffer-read-only-error-buffer buffer-mark-saved buffer-mark-modified
       buffer-offset buffer-position buffer-position-line

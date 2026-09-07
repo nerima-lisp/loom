@@ -6,11 +6,8 @@
 (in-package #:loom)
 
 (defun %layout-truncate-to-width (text width)
-  "Return TEXT clipped to its leading WIDTH characters, or TEXT itself when it
-already fits. Every draw helper in this file writes a single row into a
-fixed-width region, so each of them clips through here rather than repeating
-the SUBSEQ."
-  (if (> (length text) width) (subseq text 0 width) text))
+  "Return the longest prefix of TEXT that fits WIDTH screen cells."
+  (loom-renderer-truncate-string nil text width))
 
 (defun %layout-screen-column (renderer text column)
   "Return the screen column COLUMN characters into TEXT.
@@ -40,3 +37,7 @@ a measurable string rather than a bounds check of their own."
    renderer
    (%layout-visible-line buffer (buffer-visible-point-line buffer))
    (buffer-visible-point-column buffer)))
+
+(defun %layout-window-content-height (window)
+  "Return the rows available for WINDOW's buffer above its mode line."
+  (max 0 (1- (loom/feature/window:window-height window))))

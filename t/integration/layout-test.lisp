@@ -81,14 +81,6 @@
         (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
 
   (it
-    "%layout-draw-shortcuts does nothing for a zero-width terminal"
-    (with-layout-state (state :content "text")
-      (let* ((screen (%layout-screen state))
-             (before (cl-tty-kit:screen-row-string screen 0)))
-        (loom::%layout-draw-shortcuts screen 0 0 (window-buffer (%layout-window state)))
-        (expect (cl-tty-kit:screen-row-string screen 0) :to-equal before))))
-
-  (it
     "%layout-draw-minibuffer does nothing for a zero-width terminal"
     (with-layout-state (state)
       (let* ((screen (%layout-screen state))
@@ -135,15 +127,7 @@
               :to-equal "> query"))))
 
 (describe
-  "minibuffer and shortcut drawing"
-  (it "draws the shortcut line with a workspace name"
-    (let* ((state (%fresh-layout-state :content "x" :width 32 :height 2))
-           (renderer (editor-state-renderer state))
-           (screen (%layout-screen state)))
-      (loom::%layout-draw-shortcuts
-       renderer 32 0 (window-buffer (%layout-window state)) "main")
-      (expect (cl-tty-kit:screen-row-string screen 0)
-              :to-equal "Ln 1, Col 1  Workspace: main  C-")))
+  "minibuffer drawing"
   (it "truncates the minibuffer line to the drawing width"
     (let* ((state (%fresh-layout-state :width 8 :height 1))
            (renderer (editor-state-renderer state))
@@ -173,3 +157,118 @@
                 :to-equal "two")
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 2))
                 :to-equal '(:bold (:fg 0) (:bg 6)))))))
+
+(describe
+  "mode line construction"
+  (it
+    "lists buffer state, name, major mode, point, and display mode"
+    (let* ((renderer (make-loom-renderer 80 1))
+           (buffer (make-buffer :name "notes.lisp" :initial-content "abc")))
+      (buffer-set-major-mode buffer :common-lisp)
+      (buffer-set-point buffer 0 1)
+      (expect (loom::%layout-mode-line-text renderer buffer)
+              :to-equal "-- notes.lisp  Common Lisp  Ln 1, Col 2  Truncate")))
+
+  (it
+    "shows modified and read-only markers and wrap mode"
+    (let* ((renderer (make-loom-renderer 80 1))
+           (buffer (make-buffer :name "README.md" :initial-content "text")))
+      (buffer-set-major-mode buffer :markdown)
+      (buffer-mark-modified buffer)
+      (buffer-set-read-only buffer t)
+      (expect (loom::%layout-mode-line-text renderer buffer)
+              :to-equal "*% README.md  Markdown  Ln 1, Col 1  Wrap")))
+
+  (it
+    "keeps full-width buffer names and point columns in screen cells"
+    (let* ((renderer (make-loom-renderer 80 1))
+           (buffer (make-buffer :name "日本語" :initial-content "あいう")))
+      (buffer-set-point buffer 0 2)
+      (expect (loom::%layout-mode-line-text renderer buffer)
+              :to-equal "-- 日本語  Fundamental  Ln 1, Col 5  Truncate")))
+
+  (it
+    "clips a long mode line from the right at a cell boundary"
+    (let* ((renderer (make-loom-renderer 14 1))
+           (buffer (make-buffer :name "very-long-buffer-name")))
+      (expect (loom::%layout-mode-line renderer buffer)
+              :to-equal "-- very-long-b")
+      (expect (loom-renderer-string-width
+               renderer (loom::%layout-mode-line renderer buffer))
+              :to-equal 14)))
+
+  (it
+    "keeps the active workspace at the right edge within a narrow width"
+    (let* ((renderer (make-loom-renderer 40 1))
+           (buffer (make-buffer :name "非常に長いバッファ名" :initial-content "abc"))
+           (text (loom::%layout-mode-line renderer buffer 40 "ワークスペース")))
+      (expect (loom-renderer-string-width renderer text) :to-equal 40)
+      (expect (search "Workspace:" text) :to-be-truthy)
+      (expect (search "Truncate" text) :to-be-truthy)))
+
+  (it
+    "includes the complete workspace name when the mode line has room"
+    (let* ((renderer (make-loom-renderer 100 1))
+           (buffer (make-buffer :name "notes.lisp" :initial-content "abc")))
+      (expect (loom::%layout-mode-line renderer buffer 100 "notes")
+              :to-equal
+              "-- notes.lisp  Fundamental  Ln 1, Col 1  Truncate  Workspace: notes")))
+
+  (it
+    "distinguishes selected and unselected leaf mode lines"
+    (let* ((state (%fresh-layout-state :width 40 :height 6))
+           (tree (editor-state-window-tree state))
+           (left (window-tree-selected-window tree))
+           (right (window-split tree left :vertical)))
+      (window-set-buffer left (make-buffer :name "left"))
+      (window-set-buffer right (make-buffer :name "right"))
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 4))
+                :to-equal '((:fg 8)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 20 4))
+                :to-equal '(:reverse))))))
+
+(describe
+  "mode line frame height accounting"
+  (it
+    "leaves the only row for the minibuffer"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "body"
+                                       :height 1))
+           (minibuffer (editor-state-minibuffer state)))
+      (minibuffer-message minibuffer "status")
+      (loom::compose-frame state)
+      (expect (search "*scratch*"
+                      (cl-tty-kit:screen-row-string (%layout-screen state) 0))
+              :to-be nil)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 0)
+              :to-equal (cl-tty-kit:pad-string "status" 40))))
+
+  (it
+    "uses the first row for a mode line at terminal height two"
+    (let ((state (%fresh-layout-state :name "*scratch*" :content "body"
+                                      :height 2)))
+      (loom::compose-frame state)
+      (expect (search "*scratch*"
+                      (cl-tty-kit:screen-row-string (%layout-screen state) 0))
+              :to-be-truthy)
+      (expect (window-height (%layout-window state)) :to-equal 1)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 1)
+              :to-equal (cl-tty-kit:pad-string "" 40))))
+
+  (it
+    "keeps buffer content, mode line, and minibuffer rows separate"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "body"
+                                       :height 6))
+           (minibuffer (editor-state-minibuffer state)))
+      (minibuffer-message minibuffer "status")
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 0
+                                             :start 0 :end 4)
+              :to-equal "body")
+      (expect (search "*scratch*"
+                      (cl-tty-kit:screen-row-string (%layout-screen state) 4))
+              :to-be-truthy)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 5
+                                             :start 0 :end 6)
+              :to-equal "status"))))

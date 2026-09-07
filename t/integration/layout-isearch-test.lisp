@@ -7,7 +7,7 @@
    "incremental-search layout drawing"
    (it
      "highlights matches and distinguishes the current match"
-     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -24,7 +24,7 @@
 
    (it
      "does not paint a search session onto a different buffer"
-     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 2))
             (window (%layout-window state))
             (session (make-isearch-session (make-buffer :initial-content "one") 0)))
        (isearch-apply-pattern session "o")
@@ -38,7 +38,7 @@
 
    (it
      "leaves the screen unchanged when no search session is active"
-     (let* ((state (%fresh-layout-state :content "one two" :width 20 :height 1))
+     (let* ((state (%fresh-layout-state :content "one two" :width 20 :height 2))
             (screen (%layout-screen state))
             (before (cl-tty-kit:screen-row-string screen 0)))
        (let ((*editor-state* state))
@@ -48,7 +48,7 @@
 
    (it
      "highlights a match on the wrapped row where its text is displayed"
-     (let* ((state (%fresh-layout-state :content "abcdef" :width 3 :height 2))
+     (let* ((state (%fresh-layout-state :content "abcdef" :width 3 :height 3))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -97,7 +97,7 @@
 
    (it
      "does not draw a match scrolled above the window"
-     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 1))
+     (let* ((state (%fresh-layout-state :content "one two one" :width 20 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -113,7 +113,7 @@
 
    (it
      "draws a match at its horizontally scrolled position"
-     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -129,7 +129,7 @@
 
    (it
      "draws the visible tail of a match clipped by horizontal scrolling"
-     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -145,7 +145,7 @@
 
    (it
      "does not draw a truncated match that is fully left of the viewport"
-     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -161,7 +161,7 @@
 
    (it
      "does not draw a truncated match that is fully below the viewport"
-     (let* ((state (%fresh-layout-state :content "first\nmatch" :width 20 :height 1))
+     (let* ((state (%fresh-layout-state :content "first\nmatch" :width 20 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -176,7 +176,7 @@
 
    (it
      "does not draw a truncated match that is fully right of the viewport"
-     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 1))
+     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -191,7 +191,7 @@
 
    (it
      "does not draw a match outside the buffer's visible region"
-     (let* ((state (%fresh-layout-state :content "0123456789" :width 10 :height 1))
+     (let* ((state (%fresh-layout-state :content "0123456789" :width 10 :height 2))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
