@@ -118,6 +118,10 @@ nix run .#e2e -- --list            # scenario names
 nix run .#e2e -- --only project    # scenarios whose name contains "project"
 ```
 
+The CI workflow runs `nix flake check` and the PTY app as separate jobs. The
+PTY job builds `.#default` before running `nix run .#e2e` on `ubuntu-latest`,
+where a real pseudo-terminal is available outside the Nix build sandbox.
+
 The app builds `packages.default` and passes its `bin/loom` as `LOOM_BINARY`.
 To drive a different binary, run the entry point directly inside the
 development shell, which carries Python with `pyte`:

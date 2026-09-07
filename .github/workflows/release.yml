@@ -85,15 +85,10 @@ jobs:
       - name: Build release binary
         run: nix build --print-build-logs
 
-      # Not a functional smoke test: unlike nshell, loom has no batch/pipe
-      # mode -- MAIN always enters CL-TTY-KIT:WITH-TERMINAL-SESSION's raw-mode
-      # event loop, which needs a real controlling terminal. A GitHub Actions
-      # step has none, so piping input at the binary here would exercise a
-      # codepath (raw-mode setup against a non-tty) this repository has no
-      # other reason to support, rather than proving anything about a release.
-      # This only confirms save-lisp-and-die actually produced an executable.
-      - name: Verify release binary exists
-        run: test -x ./result/bin/loom
+      # The dumped binary enters a raw-mode event loop, so the release gate
+      # needs the real PTY provided by the E2E app.
+      - name: Run PTY E2E
+        run: nix run .#e2e
 
       - name: Package tarball + checksum
         run: |
