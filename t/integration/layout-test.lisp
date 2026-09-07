@@ -198,6 +198,23 @@
               :to-equal 14)))
 
   (it
+    "keeps the active workspace at the right edge within a narrow width"
+    (let* ((renderer (make-loom-renderer 40 1))
+           (buffer (make-buffer :name "非常に長いバッファ名" :initial-content "abc"))
+           (text (loom::%layout-mode-line renderer buffer 40 "ワークスペース")))
+      (expect (loom-renderer-string-width renderer text) :to-equal 40)
+      (expect (search "Workspace:" text) :to-be-truthy)
+      (expect (search "Truncate" text) :to-be-truthy)))
+
+  (it
+    "includes the complete workspace name when the mode line has room"
+    (let* ((renderer (make-loom-renderer 100 1))
+           (buffer (make-buffer :name "notes.lisp" :initial-content "abc")))
+      (expect (loom::%layout-mode-line renderer buffer 100 "notes")
+              :to-equal
+              "-- notes.lisp  Fundamental  Ln 1, Col 1  Truncate  Workspace: notes")))
+
+  (it
     "distinguishes selected and unselected leaf mode lines"
     (let* ((state (%fresh-layout-state :width 40 :height 6))
            (tree (editor-state-window-tree state))

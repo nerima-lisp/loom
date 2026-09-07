@@ -21,14 +21,15 @@ calls against them."
 
 (defun %layout-draw-frame-content (renderer file-tree file-tree-visible
                                     file-tree-width window-area-width
-                                    content-height window-tree)
+                                    content-height window-tree
+                                    &optional workspace-name)
   (when file-tree-visible
     (%layout-draw-file-tree renderer file-tree file-tree-width content-height))
   (loom/feature/window:window-tree-resize
    window-tree window-area-width content-height)
   (dolist (window (loom/feature/window:window-tree-windows window-tree))
     (%layout-keep-point-visible renderer window))
-  (%layout-draw-windows renderer window-tree file-tree-width))
+  (%layout-draw-windows renderer window-tree file-tree-width workspace-name))
 
 (defun %layout-draw-frame-footer (renderer editor-state width minibuffer-row)
   (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state)
@@ -55,13 +56,18 @@ EDITOR-STATE."
          (file-tree (editor-state-file-tree editor-state))
          (file-tree-visible
            (loom/feature/file-tree:file-tree-visible-p file-tree))
-         (window-tree (editor-state-window-tree editor-state)))
+         (window-tree (editor-state-window-tree editor-state))
+         (workspace-manager (editor-state-workspaces editor-state))
+         (workspace-name
+           (and workspace-manager
+                (loom/feature/workspace:workspace-manager-current-name
+                 workspace-manager))))
     (multiple-value-bind (content-height minibuffer-row file-tree-width
                            window-area-width)
         (%layout-compute-regions width height file-tree-visible)
       (loom-renderer-clear renderer)
       (%layout-draw-frame-content renderer file-tree file-tree-visible
                                    file-tree-width window-area-width content-height
-                                   window-tree)
+                                   window-tree workspace-name)
       (%layout-draw-frame-footer renderer editor-state width minibuffer-row)
       editor-state)))

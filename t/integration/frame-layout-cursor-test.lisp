@@ -23,7 +23,8 @@
       (loom::compose-frame state)
       (let ((row (cl-tty-kit:screen-row-string (%layout-screen state) 4)))
         (expect row :to-equal
-                (loom::%layout-mode-line (editor-state-renderer state) buffer))
+                (loom::%layout-mode-line
+                 (editor-state-renderer state) buffer 10 "main"))
         (expect (search "Ln" row) :to-be nil))))
 
   (it

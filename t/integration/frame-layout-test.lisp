@@ -21,12 +21,14 @@
                         (cl-tty-kit:pad-string
                          (loom::%layout-mode-line
                           (editor-state-renderer state)
-                          (window-buffer (%layout-window state)))
+                          (window-buffer (%layout-window state))
+                          40
+                          "main")
                          40)
                         (cl-tty-kit:pad-string "status message" 40))))))
 
   (it
-    "does not reserve a global shortcut line"
+    "shows the current workspace in the selected mode line"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
            (tree (editor-state-window-tree state)))
       (setf (editor-state-workspaces state)
@@ -36,9 +38,26 @@
                       (cl-tty-kit:screen-row-string
                        (%layout-screen state)
                        4))
-              :to-be nil)
+              :to-be-truthy)
       (expect (cl-tty-kit:screen-row-string (%layout-screen state) 5)
               :to-equal (cl-tty-kit:pad-string "" 40))))
+
+  (it
+    "updates the selected mode line after workspace navigation"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
+           (manager (editor-state-workspaces state)))
+      (workspace-manager-create
+       manager
+       (make-window-tree (make-buffer :name "notes") 40 6)
+       :name "notes")
+      (let ((*editor-state* state))
+        (next-workspace))
+      (loom::compose-frame state)
+      (expect (search "Workspace: notes"
+                      (cl-tty-kit:screen-row-string
+                       (%layout-screen state)
+                       4))
+              :to-be-truthy)))
 
   (it
     "scrolls a selected window so its point remains visible"

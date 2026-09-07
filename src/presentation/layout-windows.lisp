@@ -10,26 +10,75 @@
 (defparameter +layout-mode-line-unselected-style+ '((:fg 8))
   "Style for the mode line of a leaf window that is not selected.")
 
-(defun %layout-mode-line-text (renderer buffer)
-  "Return BUFFER's complete mode line text before width clipping."
-  (format nil "~A~A ~A  ~A  Ln ~D, Col ~D  ~A"
-          (if (buffer-modified-p buffer) "*" "-")
-          (if (buffer-read-only-p buffer) "%" "-")
-          (buffer-name buffer)
-          (or (loom/feature/mode:major-mode-name
-               (buffer-major-mode buffer))
-              "Fundamental")
-          (1+ (buffer-visible-point-line buffer))
-          (1+ (%layout-buffer-point-screen-column renderer buffer))
-          (if (loom/feature/mode:buffer-truncate-lines-p buffer)
-              "Truncate"
-              "Wrap")))
+(defun %layout-mode-line-parts (renderer buffer)
+  (list (format nil "~A~A"
+                (if (buffer-modified-p buffer) "*" "-")
+                (if (buffer-read-only-p buffer) "%" "-"))
+        (format nil " ~A" (buffer-name buffer))
+        (format nil "  ~A"
+                (or (loom/feature/mode:major-mode-name
+                     (buffer-major-mode buffer))
+                    "Fundamental"))
+        (format nil "  Ln ~D, Col ~D"
+                (1+ (buffer-visible-point-line buffer))
+                (1+ (%layout-buffer-point-screen-column renderer buffer)))
+        (format nil "  ~A"
+                (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+                    "Truncate"
+                    "Wrap"))))
 
-(defun %layout-mode-line (renderer buffer &optional width)
+(defun %layout-mode-line-text (renderer buffer &optional workspace-name)
+  "Return BUFFER's complete mode line text before width clipping."
+  (format nil "~{~A~}~@[  Workspace: ~A~]"
+          (%layout-mode-line-parts renderer buffer)
+          workspace-name))
+
+(defun %layout-mode-line-workspace-suffix (renderer workspace-name width)
+  (let* ((prefix "  Workspace: ")
+         (prefix-width (loom-renderer-string-width renderer prefix)))
+    (if (>= width prefix-width)
+        (concatenate 'string
+                     prefix
+                     (loom-renderer-truncate-string
+                      renderer workspace-name (- width prefix-width)))
+        (loom-renderer-truncate-string renderer prefix width))))
+
+(defun %layout-mode-line-workspace (renderer buffer width workspace-name)
+  (let* ((all-parts (%layout-mode-line-parts renderer buffer))
+         (status (first all-parts))
+         (parts (rest all-parts))
+         (status-visible (%layout-truncate-to-width status width))
+         (remaining-after-status
+           (max 0 (- width
+                     (loom-renderer-string-width renderer status-visible))))
+         (workspace
+           (%layout-mode-line-workspace-suffix
+            renderer workspace-name remaining-after-status))
+         (remaining
+           (max 0 (- remaining-after-status
+                    (loom-renderer-string-width renderer workspace))))
+         (selected nil))
+    (dolist (part (reverse (rest parts)))
+      (let ((part-width (loom-renderer-string-width renderer part)))
+        (when (<= part-width remaining)
+          (push part selected)
+          (decf remaining part-width))))
+    (if selected
+        (when (plusp remaining)
+          (push (%layout-truncate-to-width (first parts) remaining) selected))
+        (when (plusp remaining)
+          (push (%layout-truncate-to-width (car (last parts)) remaining)
+                selected)))
+    (format nil "~A~{~A~}~A" status-visible selected workspace)))
+
+(defun %layout-mode-line (renderer buffer &optional width workspace-name)
   "Return BUFFER's mode line clipped to WIDTH cells from the right."
-  (%layout-truncate-to-width
-   (%layout-mode-line-text renderer buffer)
-   (or width (loom-renderer-width renderer))))
+  (let ((width (or width (loom-renderer-width renderer))))
+    (if workspace-name
+        (%layout-mode-line-workspace renderer buffer width workspace-name)
+        (%layout-truncate-to-width
+         (%layout-mode-line-text renderer buffer)
+         width))))
 
 (defun %layout-draw-window-buffer (renderer window x-offset &optional height)
   "Draw WINDOW's buffer in whichever line-display mode that buffer selects.
@@ -61,13 +110,15 @@ the mode line or another footer in the remaining window rows."
   (%layout-draw-isearch renderer leaf x-offset)
   (%layout-draw-completion renderer leaf x-offset))
 
-(defun %layout-draw-window-mode-line (renderer window x-offset selected-p)
+(defun %layout-draw-window-mode-line (renderer window x-offset selected-p
+                                      &optional workspace-name)
   "Draw WINDOW's mode line across its last row when the leaf has an area."
   (let ((width (loom/feature/window:window-width window))
         (height (loom/feature/window:window-height window)))
     (when (and (plusp width) (plusp height))
       (let* ((text (%layout-mode-line
-                    renderer (loom/feature/window:window-buffer window) width))
+                    renderer (loom/feature/window:window-buffer window) width
+                    (and selected-p workspace-name)))
              (padding (make-string
                        (- width (loom-renderer-string-width renderer text))
                        :initial-element #\Space)))
@@ -95,7 +146,8 @@ the mode line or another footer in the remaining window rows."
      (loom/feature/window:window-width leaf)))
   renderer)
 
-(defun %layout-draw-windows (renderer window-tree x-offset)
+(defun %layout-draw-windows (renderer window-tree x-offset
+                             &optional workspace-name)
   "Draw every leaf window and the separators in WINDOW-TREE."
   (let ((leaves (loom/feature/window:window-tree-windows window-tree))
         (selected (loom/feature/window:window-tree-selected-window window-tree)))
@@ -104,7 +156,8 @@ the mode line or another footer in the remaining window rows."
     (dolist (leaf leaves)
       (%layout-draw-window-separator renderer leaf x-offset))
     (dolist (leaf leaves)
-      (%layout-draw-window-mode-line renderer leaf x-offset (eq leaf selected))))
+      (%layout-draw-window-mode-line renderer leaf x-offset (eq leaf selected)
+                                     workspace-name)))
   renderer)
 
 (defparameter +layout-matching-paren-style+ '(:bold (:bg 5) (:fg 0))
