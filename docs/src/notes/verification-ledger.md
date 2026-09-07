@@ -1,0 +1,69 @@
+# 検証台帳
+
+[検証計画](verification-plan.md) の基線と、実機検証で見つかった失敗ごとの処置を記録する。
+数値はすべて実行した出力から転記する。未実行のものは「未実行」と書く。
+
+## 1. 基線（P0）
+
+対象コミット: `f3a5d87`（main と同一）。実行環境: aarch64-darwin。
+
+### 1.1 in-process スイート（sandbox 外）
+
+コマンド: `nix develop --command sbcl --script run-tests.lisp`（launchd 経由）
+
+| 実行 | TMPDIR | total | passed | skipped | failed | errored | exit |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 回目 | 既定（`/tmp` 配下） | 1405 | 1404 | 0 | 0 | 1 | 1 |
+| 2 回目 | `getconf DARWIN_USER_TEMP_DIR` を指定したが `nix develop` が `/tmp/nix-shell.XXXX` を作るため実質 `/tmp` 配下 | 1405 | 1404 | 0 | 0 | 1 | 1 |
+
+1 回目の errored は `project filesystem integration without a root > reports missing project
+roots through every project command`（`t/integration/project-missing-root-test.lisp`）。
+条件は `HOST-KIT operation :CALL-WITH-TEMPORARY-DIRECTORY failed on #P"/tmp/nix-shell.XXXX/"`、
+期待した `"No project root found"` が出ない。原因はこのホストの `/tmp/Makefile` で、`Makefile` は
+`+project-marker-names+` に含まれる（`packages/feature/project/src/domain-project.lisp`）。
+一時ディレクトリの祖先にマーカーが無いことをテストが前提にしており、Nix sandbox では成立するが
+ホスト実行では環境依存になる。2 回目も同一テストが同一条件で errored になり、再現は決定的。処置は §2 に積む。
+
+同じ実行で、`main-run-loom` 系テストの間に alternate-screen 切り替えと 80x24 の空白フレームが
+ジョブの stdout に書き出されている（出力の先頭 `ESC[?1049h ESC[2J`）。テストが描画先を実端末の
+stdout に流している観察であり、判定には影響しない。処置は §2 に積む。
+
+### 1.2 `nix flake check`
+
+コマンド: `nix flake check --print-build-logs`。exit 0。aarch64-darwin の 6 check
+（default, build, coverage, docs, formatting, paredit-lint）を実行。x86_64-linux は
+`--all-systems` 無しのため省略と警告される。
+
+### 1.3 PTY E2E（現行）
+
+コマンド:
+
+```sh
+out=$(nix build --no-link --print-out-paths .#default)
+HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
+```
+
+結果: 12 件 PASS、`12 E2E tests passed`、exit 0。到達コマンドは 120 件中 12 件。
+
+### 1.4 slop grep
+
+対象: `src packages t docs README.md loom.asd flake.nix run-tests.lisp scripts .github`
+
+| 項目 | 生ヒット | 判定後 | コマンド |
+| --- | ---: | ---: | --- |
+| em dash（英語散文） | 18 | 4 行 / 3 ファイル | `grep -rnP '\x{2014}' <scope>`、`requirements-daily-driver.md`（日本語、15 行）を除外 |
+| 空虚な強調語 | 10 | 0 | `grep -rniE '\b(robust\|comprehensive\|seamless\|successfully\|significantly\|powerful\|elegant)\b' <scope>`。10 件はすべて exit 状態を述べる事実記述 |
+| ヘッジ | 0 | 0 | `grep -rniE '\b(essentially\|basically\|arguably)\b' <scope>` |
+| 宣言と締めの言い直し | 0 | 0 | `grep -rniE 'in this (section\|article\|document)\|^overall,\|in summary\|it is worth noting' <scope>` |
+| 署名を言い直す docstring | 33 | 3 | `grep -rn '"Return true' src packages` を全件読んで判定 |
+| 参照ゼロの export | | 1（`prefix-argument-p`） | `grep -rn '\bprefix-argument-p\b' src packages t` が export 行のみ |
+| 定義ファイル外で未参照の export | | 6 | `buffer-position`、`buffer-span`、`buffer-read-only-error-buffer`、`editor-bookmark`、`prefix-argument-magnitude`、`prefix-argument-negative-p` |
+| roadmap の自賛表現 | 2 | 2 | `grep -c 'actively hardened\|verified engineering baseline' docs/src/project/roadmap.md` |
+| `command-spec` 件数 | 120 | | `grep -ohE '\(command-spec\s+("[a-zA-Z0-9-]+"\|nil)' src/application/command-definitions*.lisp` |
+
+## 2. 処置台帳（P3 以降）
+
+| # | 発見元 | 対象 | 症状 | 判断 | 状態 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 基線 §1.1 | `t/integration/project-missing-root-test.lisp` | 一時ディレクトリの祖先にプロジェクトマーカーがあると errored になる | 未決 | open |
+| 2 | 基線 §1.1 | `t/integration/main-run-loom-test.lisp` ほか `%run-loom` を呼ぶテスト | 描画の escape 列がテストランナーの stdout に混入する | 未決 | open |
