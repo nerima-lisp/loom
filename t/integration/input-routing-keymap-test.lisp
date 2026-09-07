@@ -58,7 +58,7 @@
             (editor-state-keymap state) keymap)
       (let ((buffer (%selected-test-buffer)))
         (loom::%dispatch-key-event
-         (cl-tty-kit:make-key-event :type :special :code :control-@)
+         (cl-tty-kit:make-key-event :type :special :code :null)
          keymap-state)
         (buffer-set-point buffer 0 1)
         (let ((span (buffer-active-region-span buffer)))

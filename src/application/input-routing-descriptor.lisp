@@ -8,14 +8,17 @@
   (and (eq type :special)
        (keywordp code)
        (let ((name (symbol-name code)))
-         (and (= (length name) 9)
-              (string= "CONTROL-" name :end2 8)))))
+         (or (eq code :null)
+             (and (= (length name) 9)
+                  (string= "CONTROL-" name :end2 8))))))
 
 (defun %control-special-key-character (code)
-  (let ((character (char-downcase (char (symbol-name code) 8))))
-    (if (char= character #\@)
-        #\Space
-        character)))
+  (if (eq code :null)
+      #\Space
+      (let ((character (char-downcase (char (symbol-name code) 8))))
+        (if (char= character #\@)
+            #\Space
+            character))))
 
 (defun %key-event->descriptor (event)
   "Convert a CL-TTY-KIT:KEY-EVENT into the (MODIFIERS . CODE) descriptor
@@ -27,8 +30,8 @@ is a :CONTROL-<letter> keyword with no separate modifier, while kitty CSI-u
 decodes the same combo as a :CHARACTER event carrying the letter plus an
 explicit :CONTROL modifier. INSTALL-DEFAULT-KEYBINDINGS binds the latter
 shape, so a :SPECIAL :CONTROL-<letter> event is rewritten into it here. The
-plain-terminal encoding of C-Space is CONTROL-@, so that punctuation is
-normalized to Space as well. Every other event passes through verbatim,
+plain-terminal encoding of C-Space is :NULL, which is normalized to Space as
+well. Every other event passes through verbatim,
 wrapped as (MODIFIERS . CODE).
 
 The rewrite keeps whatever modifiers the event already carried. An ESC-prefixed
