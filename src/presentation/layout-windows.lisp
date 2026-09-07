@@ -10,22 +10,53 @@
 (defparameter +layout-mode-line-unselected-style+ '((:fg 8))
   "Style for the mode line of a leaf window that is not selected.")
 
+(defun %layout-buffer-diagnostics (buffer)
+  (let ((session (and *editor-state*
+                      (editor-state-lsp-session *editor-state*))))
+    (when (and session (buffer-path buffer))
+      (loom/feature/lsp:lsp-session-diagnostics session buffer))))
+
+(defun %layout-diagnostics-part (diagnostics)
+  (when diagnostics
+    (let ((counts (list (cons "error" 0)
+                        (cons "warning" 0)
+                        (cons "info" 0)
+                        (cons "hint" 0))))
+      (dolist (diagnostic diagnostics)
+        (incf (cdr (assoc (loom/feature/lsp:lsp-diagnostic-severity-name
+                           (loom/feature/lsp:lsp-diagnostic-severity diagnostic))
+                          counts
+                          :test #'string=))))
+      (with-output-to-string (output)
+        (write-string "  Diag:" output)
+        (dolist (entry counts)
+          (when (plusp (cdr entry))
+            (format output " ~A~D"
+                    (char (string-upcase (car entry)) 0)
+                    (cdr entry))))))))
+
 (defun %layout-mode-line-parts (renderer buffer)
-  (list (format nil "~A~A"
-                (if (buffer-modified-p buffer) "*" "-")
-                (if (buffer-read-only-p buffer) "%" "-"))
-        (format nil " ~A" (buffer-name buffer))
-        (format nil "  ~A"
-                (or (loom/feature/mode:major-mode-name
-                     (buffer-major-mode buffer))
-                    "Fundamental"))
-        (format nil "  Ln ~D, Col ~D"
-                (1+ (buffer-visible-point-line buffer))
-                (1+ (%layout-buffer-point-screen-column renderer buffer)))
-        (format nil "  ~A"
-                (if (loom/feature/mode:buffer-truncate-lines-p buffer)
-                    "Truncate"
-                    "Wrap"))))
+  (let ((parts
+          (list (format nil "~A~A"
+                        (if (buffer-modified-p buffer) "*" "-")
+                        (if (buffer-read-only-p buffer) "%" "-"))
+                (format nil " ~A" (buffer-name buffer))
+                (format nil "  ~A"
+                        (or (loom/feature/mode:major-mode-name
+                             (buffer-major-mode buffer))
+                            "Fundamental"))
+                (format nil "  Ln ~D, Col ~D"
+                        (1+ (buffer-visible-point-line buffer))
+                        (1+ (%layout-buffer-point-screen-column renderer buffer)))
+                (format nil "  ~A"
+                        (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+                            "Truncate"
+                            "Wrap")))))
+    (let ((diagnostics-part
+            (%layout-diagnostics-part (%layout-buffer-diagnostics buffer))))
+      (if diagnostics-part
+          (append parts (list diagnostics-part))
+          parts))))
 
 (defun %layout-mode-line-text (renderer buffer &optional workspace-name)
   "Return BUFFER's complete mode line text before width clipping."
@@ -103,6 +134,7 @@ the mode line or another footer in the remaining window rows."
 (defun %layout-draw-window-overlays (renderer leaf x-offset)
   (%layout-draw-window-buffer
    renderer leaf x-offset (%layout-window-content-height leaf))
+  (%layout-draw-diagnostics renderer leaf x-offset)
   ;; Region is drawn before matching parentheses so the latter remains legible
   ;; when its cells overlap the active region.
   (%layout-draw-region renderer leaf x-offset)
@@ -165,6 +197,41 @@ the mode line or another footer in the remaining window rows."
 
 (defparameter +layout-region-style+ '((:bg 2) (:fg 0))
   "Style marking the active region.")
+
+(defparameter +layout-diagnostic-style+ '((:bg 1) (:fg 7))
+  "Style marking text covered by an LSP diagnostic.")
+
+(defun %layout-lsp-diagnostic-span (buffer diagnostic)
+  (let* ((range (loom/feature/lsp:lsp-diagnostic-range diagnostic))
+         (start (loom/feature/lsp:lsp-range-start range))
+         (end (loom/feature/lsp:lsp-range-end range)))
+    (handler-case
+        (let* ((start-offset
+                 (%position-to-offset
+                  buffer
+                  (loom/feature/lsp:lsp-position-line start)
+                  (loom/feature/lsp:lsp-position-character start)))
+               (end-offset
+                 (%position-to-offset
+                  buffer
+                  (loom/feature/lsp:lsp-position-line end)
+                  (loom/feature/lsp:lsp-position-character end)))
+               (visible-start (buffer-narrow-start-offset buffer))
+               (visible-end (buffer-narrow-end-offset buffer))
+               (clipped-start (max start-offset visible-start))
+               (clipped-end (min end-offset visible-end)))
+          (when (< clipped-start clipped-end)
+            (make-buffer-span clipped-start clipped-end)))
+      (error () nil))))
+
+(defun %layout-draw-diagnostics (renderer window x-offset)
+  (let* ((buffer (loom/feature/window:window-buffer window))
+         (diagnostics (%layout-buffer-diagnostics buffer)))
+    (dolist (diagnostic diagnostics)
+      (let ((span (%layout-lsp-diagnostic-span buffer diagnostic)))
+        (when span
+          (%layout-draw-span renderer window x-offset span
+                             +layout-diagnostic-style+))))))
 
 (defun %layout-draw-region (renderer window x-offset)
   (let ((span (buffer-active-region-span

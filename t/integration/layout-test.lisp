@@ -6,6 +6,15 @@
 ;;;; call.
 (in-package #:loom/test)
 
+(defun %layout-install-diagnostics (state buffer diagnostics)
+  (let ((session (make-lsp-session
+                  :transport (make-instance '%fake-lsp-transport))))
+    (setf (editor-state-lsp-session state) session
+          (gethash (lsp-path-uri (buffer-path buffer))
+                   (loom/feature/lsp::lsp-session-diagnostic-table session))
+          diagnostics)
+    session))
+
 (describe
   "window buffer layout mode"
   (it
@@ -178,6 +187,77 @@
       (buffer-set-read-only buffer t)
       (expect (loom::%layout-mode-line-text renderer buffer)
               :to-equal "*% README.md  Markdown  Ln 1, Col 1  Wrap")))
+
+  (it
+    "shows diagnostic counts by severity when the selected buffer has a session"
+    (let* ((renderer (make-loom-renderer 80 1))
+           (buffer (make-buffer :name "main.nix"
+                                :path "/tmp/main.nix"
+                                :initial-content "abc"))
+           (state (make-editor-state :lsp-session nil))
+           (session
+             (%layout-install-diagnostics
+              state buffer
+              (list
+               (make-lsp-diagnostic
+                (make-lsp-range (make-lsp-position 0 0)
+                                (make-lsp-position 0 1))
+                "bad" :severity 1)
+               (make-lsp-diagnostic
+                (make-lsp-range (make-lsp-position 0 1)
+                                (make-lsp-position 0 2))
+                "warn" :severity 2)
+               (make-lsp-diagnostic
+                (make-lsp-range (make-lsp-position 0 2)
+                                (make-lsp-position 0 3))
+                "info" :severity 3)))))
+      (unwind-protect
+           (let ((*editor-state* state))
+             (expect (loom::%layout-mode-line-text renderer buffer)
+                     :to-equal
+                     "-- main.nix  Fundamental  Ln 1, Col 1  Truncate  Diag: E1 W1 I1"))
+        (lsp-session-stop session))))
+
+  (it
+    "omits diagnostics when there is no session or no diagnostics"
+    (let* ((renderer (make-loom-renderer 80 1))
+           (buffer (make-buffer :name "main.nix" :path "/tmp/main.nix"))
+           (state (make-editor-state :lsp-session nil)))
+      (let ((*editor-state* state))
+        (expect (loom::%layout-mode-line-text renderer buffer)
+                :to-equal
+                "-- main.nix  Fundamental  Ln 1, Col 1  Truncate"))
+      (let ((session (%layout-install-diagnostics state buffer nil)))
+        (unwind-protect
+             (let ((*editor-state* state))
+               (expect (loom::%layout-mode-line-text renderer buffer)
+                       :to-equal
+                       "-- main.nix  Fundamental  Ln 1, Col 1  Truncate"))
+          (lsp-session-stop session)))))
+
+  (it
+    "keeps diagnostic counts ahead of position and names when workspace width is tight"
+    (let* ((renderer (make-loom-renderer 40 1))
+           (buffer (make-buffer :name "非常に長いバッファ名"
+                                :path "/tmp/main.nix"))
+           (state (make-editor-state :lsp-session nil))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 0 0)
+                              (make-lsp-position 0 1))
+              "bad" :severity 1))
+           (session (%layout-install-diagnostics state buffer (list diagnostic))))
+      (unwind-protect
+           (let ((*editor-state* state))
+             (let ((text (loom::%layout-mode-line renderer buffer 40 "notes")))
+               (expect (<= (loom-renderer-string-width renderer text) 40)
+                       :to-be-truthy)
+               (expect (search "Diag: E1" text) :to-be-truthy)
+               (expect (search "Truncate" text) :to-be-truthy)
+               (expect (search "Ln" text) :to-be nil)
+               (expect (search "Fundamental" text) :to-be nil)
+               (expect (search "非常に長い" text) :to-be nil)))
+        (lsp-session-stop session))))
 
   (it
     "keeps full-width buffer names and point columns in screen cells"
