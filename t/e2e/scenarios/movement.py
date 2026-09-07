@@ -39,7 +39,7 @@ def _lines(count):
     return "\n".join(f"line{index}" for index in range(count)).encode()
 
 
-@scenario("forward-char", commands=["execute-extended-command", "forward-char"])
+@scenario("movement/forward-char", commands=["execute-extended-command", "forward-char"])
 def forward_char(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "forward.txt", b"abc\n")
@@ -50,11 +50,11 @@ def forward_char(binary):
             if not session.region_text("body").startswith("abc"):
                 raise AssertionError("forward-char changed the visible line")
             output, code = session.quit()
-    _assert_exit_zero("forward-char", output, code)
+    _assert_exit_zero("movement/forward-char", output, code)
 
 
 @scenario(
-    "backward-char",
+    "movement/backward-char",
     commands=["execute-extended-command", "end-of-buffer", "backward-char"],
 )
 def backward_char(binary):
@@ -67,11 +67,11 @@ def backward_char(binary):
             _mx(session, "backward-char")
             session.wait_for_region_cursor("body", 2)
             output, code = session.quit()
-    _assert_exit_zero("backward-char", output, code)
+    _assert_exit_zero("movement/backward-char", output, code)
 
 
 @scenario(
-    "backward-word",
+    "movement/backward-word",
     commands=["execute-extended-command", "end-of-buffer", "backward-word"],
 )
 def backward_word(binary):
@@ -84,10 +84,10 @@ def backward_word(binary):
             _mx(session, "backward-word")
             session.wait_for_region_cursor("body", 5)
             output, code = session.quit()
-    _assert_exit_zero("backward-word", output, code)
+    _assert_exit_zero("movement/backward-word", output, code)
 
 
-@scenario("forward-word", commands=["execute-extended-command", "forward-word"])
+@scenario("movement/forward-word", commands=["execute-extended-command", "forward-word"])
 def forward_word(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "forward-word.txt", b"one two\n")
@@ -96,11 +96,11 @@ def forward_word(binary):
             _mx(session, "forward-word")
             session.wait_for_region_cursor("body", 3)
             output, code = session.quit()
-    _assert_exit_zero("forward-word", output, code)
+    _assert_exit_zero("movement/forward-word", output, code)
 
 
 @scenario(
-    "previous-line",
+    "movement/previous-line",
     commands=["execute-extended-command", "goto-line", "previous-line"],
 )
 def previous_line(binary):
@@ -113,11 +113,11 @@ def previous_line(binary):
             _mx(session, "previous-line")
             session.wait_for_region_cursor("body", 0, index=0)
             output, code = session.quit()
-    _assert_exit_zero("previous-line", output, code)
+    _assert_exit_zero("movement/previous-line", output, code)
 
 
 @scenario(
-    "next-line",
+    "movement/next-line",
     commands=["execute-extended-command", "move-end-of-line", "next-line"],
 )
 def next_line(binary):
@@ -130,11 +130,11 @@ def next_line(binary):
             _mx(session, "next-line")
             session.wait_for_region_cursor("body", 4, index=1)
             output, code = session.quit()
-    _assert_exit_zero("next-line", output, code)
+    _assert_exit_zero("movement/next-line", output, code)
 
 
 @scenario(
-    "beginning-of-buffer",
+    "movement/beginning-of-buffer",
     commands=["execute-extended-command", "end-of-buffer", "beginning-of-buffer"],
 )
 def beginning_of_buffer(binary):
@@ -147,10 +147,10 @@ def beginning_of_buffer(binary):
             _mx(session, "beginning-of-buffer")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("beginning-of-buffer", output, code)
+    _assert_exit_zero("movement/beginning-of-buffer", output, code)
 
 
-@scenario("end-of-buffer", commands=["execute-extended-command", "end-of-buffer"])
+@scenario("movement/end-of-buffer", commands=["execute-extended-command", "end-of-buffer"])
 def end_of_buffer(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "end.txt", b"abc")
@@ -159,11 +159,11 @@ def end_of_buffer(binary):
             _mx(session, "end-of-buffer")
             session.wait_for_region_cursor("body", 3)
             output, code = session.quit()
-    _assert_exit_zero("end-of-buffer", output, code)
+    _assert_exit_zero("movement/end-of-buffer", output, code)
 
 
 @scenario(
-    "move-beginning-of-line",
+    "movement/move-beginning-of-line",
     commands=[
         "execute-extended-command",
         "move-end-of-line",
@@ -180,10 +180,10 @@ def move_beginning_of_line(binary):
             _mx(session, "move-beginning-of-line")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("move-beginning-of-line", output, code)
+    _assert_exit_zero("movement/move-beginning-of-line", output, code)
 
 
-@scenario("move-end-of-line", commands=["execute-extended-command", "move-end-of-line"])
+@scenario("movement/move-end-of-line", commands=["execute-extended-command", "move-end-of-line"])
 def move_end_of_line(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "line-end.txt", b"abc\n")
@@ -192,10 +192,10 @@ def move_end_of_line(binary):
             _mx(session, "move-end-of-line")
             session.wait_for_region_cursor("body", 3)
             output, code = session.quit()
-    _assert_exit_zero("move-end-of-line", output, code)
+    _assert_exit_zero("movement/move-end-of-line", output, code)
 
 
-@scenario("goto-line", commands=["execute-extended-command", "goto-line"])
+@scenario("movement/goto-line", commands=["execute-extended-command", "goto-line"])
 def goto_line(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "goto-line.txt", b"one\ntwo\nthree\n")
@@ -204,11 +204,11 @@ def goto_line(binary):
             _prompted_mx(session, "goto-line", "Go to line: ", "3")
             session.wait_for_region_cursor("body", 0, index=2)
             output, code = session.quit()
-    _assert_exit_zero("goto-line", output, code)
+    _assert_exit_zero("movement/goto-line", output, code)
 
 
 @scenario(
-    "scroll-up-command",
+    "movement/scroll-up-command",
     commands=["execute-extended-command", "goto-line", "scroll-up-command"],
 )
 def scroll_up_command(binary):
@@ -221,11 +221,11 @@ def scroll_up_command(binary):
             _mx(session, "scroll-up-command")
             session.wait_for_region_text("body", "line14")
             output, code = session.quit()
-    _assert_exit_zero("scroll-up-command", output, code)
+    _assert_exit_zero("movement/scroll-up-command", output, code)
 
 
 @scenario(
-    "scroll-down-command",
+    "movement/scroll-down-command",
     commands=[
         "execute-extended-command",
         "goto-line",
@@ -245,10 +245,10 @@ def scroll_down_command(binary):
             _mx(session, "scroll-down-command")
             session.wait_for_region_text("body", "line9")
             output, code = session.quit()
-    _assert_exit_zero("scroll-down-command", output, code)
+    _assert_exit_zero("movement/scroll-down-command", output, code)
 
 
-@scenario("backward-sexp", commands=["execute-extended-command", "end-of-buffer", "backward-sexp"])
+@scenario("movement/backward-sexp", commands=["execute-extended-command", "end-of-buffer", "backward-sexp"])
 def backward_sexp(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "backward-sexp.lisp", b"(a b) c")
@@ -261,10 +261,10 @@ def backward_sexp(binary):
             _mx(session, "backward-sexp")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("backward-sexp", output, code)
+    _assert_exit_zero("movement/backward-sexp", output, code)
 
 
-@scenario("forward-sexp", commands=["execute-extended-command", "forward-sexp"])
+@scenario("movement/forward-sexp", commands=["execute-extended-command", "forward-sexp"])
 def forward_sexp(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "forward-sexp.lisp", b"(a b) c")
@@ -275,11 +275,11 @@ def forward_sexp(binary):
             _mx(session, "forward-sexp")
             session.wait_for_region_cursor("body", 7)
             output, code = session.quit()
-    _assert_exit_zero("forward-sexp", output, code)
+    _assert_exit_zero("movement/forward-sexp", output, code)
 
 
 @scenario(
-    "backward-up-list",
+    "movement/backward-up-list",
     commands=["execute-extended-command", "forward-char", "backward-up-list"],
 )
 def backward_up_list(binary):
@@ -295,10 +295,10 @@ def backward_up_list(binary):
             _mx(session, "backward-up-list")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("backward-up-list", output, code)
+    _assert_exit_zero("movement/backward-up-list", output, code)
 
 
-@scenario("down-list", commands=["execute-extended-command", "down-list"])
+@scenario("movement/down-list", commands=["execute-extended-command", "down-list"])
 def down_list(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "down-list.lisp", b"(a b)")
@@ -307,7 +307,7 @@ def down_list(binary):
             _mx(session, "down-list")
             session.wait_for_region_cursor("body", 1)
             output, code = session.quit()
-    _assert_exit_zero("down-list", output, code)
+    _assert_exit_zero("movement/down-list", output, code)
 
 
 def _structural_scenario(binary, scenario_name, filename, initial, setup_column, command, expected):
@@ -326,7 +326,7 @@ def _structural_scenario(binary, scenario_name, filename, initial, setup_column,
 
 
 @scenario(
-    "backward-barf-sexp",
+    "movement/backward-barf-sexp",
     commands=[
         "execute-extended-command",
         "forward-char",
@@ -342,7 +342,7 @@ def backward_barf_sexp(binary):
 
 
 @scenario(
-    "backward-slurp-sexp",
+    "movement/backward-slurp-sexp",
     commands=[
         "execute-extended-command",
         "forward-char",
@@ -358,7 +358,7 @@ def backward_slurp_sexp(binary):
 
 
 @scenario(
-    "forward-barf-sexp",
+    "movement/forward-barf-sexp",
     commands=[
         "execute-extended-command",
         "forward-char",
@@ -374,7 +374,7 @@ def forward_barf_sexp(binary):
 
 
 @scenario(
-    "forward-slurp-sexp",
+    "movement/forward-slurp-sexp",
     commands=[
         "execute-extended-command",
         "forward-char",
@@ -390,7 +390,7 @@ def forward_slurp_sexp(binary):
 
 
 @scenario(
-    "raise-sexp",
+    "movement/raise-sexp",
     commands=[
         "execute-extended-command",
         "forward-char",
@@ -406,7 +406,7 @@ def raise_sexp(binary):
 
 
 @scenario(
-    "wrap-round",
+    "movement/wrap-round",
     commands=["execute-extended-command", "wrap-round", "save-buffer"],
 )
 def wrap_round(binary):
@@ -416,7 +416,7 @@ def wrap_round(binary):
 
 
 @scenario(
-    "search-backward",
+    "movement/search-backward",
     commands=["execute-extended-command", "end-of-buffer", "search-backward"],
 )
 def search_backward(binary):
@@ -429,10 +429,10 @@ def search_backward(binary):
             session.wait_for_region_text("minibuffer", "Found")
             session.wait_for_region_cursor("body", 19)
             output, code = session.quit()
-    _assert_exit_zero("search-backward", output, code)
+    _assert_exit_zero("movement/search-backward", output, code)
 
 
-@scenario("search-forward", commands=["execute-extended-command", "search-forward"])
+@scenario("movement/search-forward", commands=["execute-extended-command", "search-forward"])
 def search_forward(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "search-forward.txt", b"alpha needle omega needle")
@@ -442,11 +442,11 @@ def search_forward(binary):
             session.wait_for_region_text("minibuffer", "Found")
             session.wait_for_region_cursor("body", 6)
             output, code = session.quit()
-    _assert_exit_zero("search-forward", output, code)
+    _assert_exit_zero("movement/search-forward", output, code)
 
 
 @scenario(
-    "isearch-backward",
+    "movement/isearch-backward",
     commands=["execute-extended-command", "end-of-buffer", "isearch-backward"],
 )
 def isearch_backward(binary):
@@ -461,10 +461,10 @@ def isearch_backward(binary):
             session.send(keys.RET)
             session.wait_for_region_cursor("body", 19)
             output, code = session.quit()
-    _assert_exit_zero("isearch-backward", output, code)
+    _assert_exit_zero("movement/isearch-backward", output, code)
 
 
-@scenario("isearch-forward", commands=["execute-extended-command", "isearch-forward"])
+@scenario("movement/isearch-forward", commands=["execute-extended-command", "isearch-forward"])
 def isearch_forward(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "isearch-forward.txt", b"alpha needle omega needle")
@@ -476,11 +476,11 @@ def isearch_forward(binary):
             session.send(keys.RET)
             session.wait_for_region_cursor("body", 6)
             output, code = session.quit()
-    _assert_exit_zero("isearch-forward", output, code)
+    _assert_exit_zero("movement/isearch-forward", output, code)
 
 
 @scenario(
-    "exchange-point-and-mark",
+    "movement/exchange-point-and-mark",
     commands=[
         "execute-extended-command",
         "set-mark-command",
@@ -499,11 +499,11 @@ def exchange_point_and_mark(binary):
             _mx(session, "exchange-point-and-mark")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("exchange-point-and-mark", output, code)
+    _assert_exit_zero("movement/exchange-point-and-mark", output, code)
 
 
 @scenario(
-    "set-mark-command",
+    "movement/set-mark-command",
     commands=[
         "execute-extended-command",
         "set-mark-command",
@@ -521,11 +521,11 @@ def set_mark_command(binary):
             _mx(session, "exchange-point-and-mark")
             session.wait_for_region_cursor("body", 0)
             output, code = session.quit()
-    _assert_exit_zero("set-mark-command", output, code)
+    _assert_exit_zero("movement/set-mark-command", output, code)
 
 
 @scenario(
-    "fullwidth cursor column",
+    "movement/fullwidth cursor column",
     commands=["execute-extended-command", "forward-char"],
 )
 def fullwidth_cursor_column(binary):
@@ -536,11 +536,11 @@ def fullwidth_cursor_column(binary):
             _mx(session, "forward-char")
             session.wait_for_region_cursor("body", 2)
             output, code = session.quit()
-    _assert_exit_zero("fullwidth cursor column", output, code)
+    _assert_exit_zero("movement/fullwidth cursor column", output, code)
 
 
 @scenario(
-    "horizontal scroll follow",
+    "movement/horizontal scroll follow",
     commands=["execute-extended-command", "move-end-of-line"],
 )
 def horizontal_scroll_follow(binary):
@@ -554,10 +554,10 @@ def horizontal_scroll_follow(binary):
             if not row.startswith("fgh") or not row.rstrip().endswith("p"):
                 raise AssertionError(f"horizontal viewport did not follow point: {row!r}")
             output, code = session.quit()
-    _assert_exit_zero("horizontal scroll follow", output, code)
+    _assert_exit_zero("movement/horizontal scroll follow", output, code)
 
 
-@scenario("wrapped next-line", commands=["execute-extended-command", "next-line"])
+@scenario("movement/wrapped next-line", commands=["execute-extended-command", "next-line"])
 def wrapped_next_line(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = _write_file(directory, "wrapped.md", b"abcdefghijklmnop\nnext\n")
@@ -568,4 +568,4 @@ def wrapped_next_line(binary):
             session.wait_for_region_text("body", "mnop", index=1)
             session.wait_for_region_cursor("body", 0, index=1)
             output, code = session.quit()
-    _assert_exit_zero("wrapped next-line", output, code)
+    _assert_exit_zero("movement/wrapped next-line", output, code)

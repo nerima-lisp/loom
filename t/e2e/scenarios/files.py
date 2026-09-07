@@ -174,10 +174,17 @@ def project_file_commands(binary):
             session.wait_ready()
             session.send(keys.ctrl("x") + b"pr")
             session.wait_for_region_text("minibuffer", "Project root: ")
-            if root not in session.region_text("minibuffer"):
+            message = session.region_text("minibuffer").rstrip()
+            visible_root = message.removeprefix("Project root: ")
+            parent_length = len(os.path.dirname(root)) + 1
+            if not (
+                visible_root
+                and root.startswith(visible_root)
+                and len(visible_root) > parent_length
+            ):
                 raise AssertionError(
-                    f"project root message omitted {root!r}: "
-                    f"{session.region_text('minibuffer')!r}"
+                    f"project root message omitted project directory {root!r}: "
+                    f"{message!r}"
                 )
 
             session.send(keys.ctrl("x") + b"pf")
