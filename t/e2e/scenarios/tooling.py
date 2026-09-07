@@ -179,6 +179,8 @@ def format_current_buffer(binary):
             session.send(keys.RET)
             session.wait_for_text("Buffer formatted successfully")
             session.wait_for_text("LOWER")
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, b"LOWER\n")
             output, code = session.quit()
         assert_exit_zero("format-current-buffer", output, code)
 
@@ -222,4 +224,3 @@ def terminal_stop(binary):
             session.wait_for_text("Terminal stopped")
             output, code = session.quit()
         assert_exit_zero("terminal-stop", output, code)
-

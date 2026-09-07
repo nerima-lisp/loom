@@ -48,6 +48,14 @@ def _run_lsp_command(binary, command, expected):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _start(session)
+            if command not in ("lsp-diagnostics", "lsp-stop"):
+                session.extended_command("lsp-diagnostics")
+                session.wait_for_text("LSP diagnostics refreshed.")
+                session.extended_command("switch-to-buffer")
+                session.wait_for_text("Switch to buffer: ")
+                session.type("main.nix")
+                session.send(keys.RET)
+                session.wait_for_text("let")
             session.extended_command(command)
             session.wait_for_text(expected)
             output, code = session.quit()

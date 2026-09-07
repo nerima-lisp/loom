@@ -13,11 +13,10 @@ def _assert_exit_zero(name, output, code):
 
 
 def _assert_mode_line(session):
-    row = session.region_text("mode-line")
-    if "Ln " not in row:
-        raise AssertionError(
-            f"mode-line row is missing its line marker: {row!r}"
-        )
+    session.wait_until(
+        lambda screen: "Ln " in screen.text(session.layout.row("mode-line")),
+        what="the mode-line region to render",
+    )
 
 
 def _wait_for_body_text(session, substring, index=0):
