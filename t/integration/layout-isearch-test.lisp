@@ -66,7 +66,8 @@
 
    (it
      "highlights a search match spanning multiple logical lines"
-     (let* ((state (%fresh-layout-state :content "one two\nthree\nfour" :width 20 :height 3))
+     (let* ((state (%fresh-layout-state :content (format nil "one two~%three~%four")
+                                        :width 20 :height 3))
             (window (%layout-window state))
             (buffer (window-buffer window))
             (session (make-isearch-session buffer 0)))
@@ -83,6 +84,16 @@
                                               (cl-tty-kit:screen-cell
                                                screen column row))))
                  :to-be-truthy))))
+
+   (it
+     "returns the complete text bounds for an intermediate logical line"
+     (let* ((state (%fresh-layout-state :content (format nil "one two~%three~%four")
+                                        :width 20 :height 3))
+            (buffer (window-buffer (%layout-window state))))
+       (multiple-value-bind (start end)
+         (loom::%layout-span-line-run-bounds buffer 1 0 0 2 0)
+         (expect start :to-equal 0)
+         (expect end :to-equal 5))))
 
    (it
      "does not draw a match scrolled above the window"
