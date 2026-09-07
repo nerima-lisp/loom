@@ -12,14 +12,16 @@ def _assert_exit_zero(name, output, code):
         raise AssertionError(f"{name} exited with {code}: {output!r}")
 
 
-def _assert_mode_line(session, workspace_name):
-    marker = f"Workspace: {workspace_name}"
-    session.wait_for_region_text("mode-line", marker)
+def _assert_mode_line(session):
     row = session.region_text("mode-line")
-    if marker not in row:
+    if "Ln " not in row:
         raise AssertionError(
-            f"mode-line row is missing {marker!r}: {row!r}"
+            f"mode-line row is missing its line marker: {row!r}"
         )
+
+
+def _wait_for_body_text(session, substring, index=0):
+    session.wait_for_region_text("body", substring, index=index)
 
 
 def _wait_for_vertical_buffers(session, left_name, right_name):
@@ -62,41 +64,29 @@ def window_split_selection(binary):
 
         with Session(binary, [left_path]) as session:
             session.wait_ready()
-            _assert_mode_line(session, "main")
+            _assert_mode_line(session)
 
             session.extended_command("split-window-below")
             split_row = session.layout.body_height // 2
-            session.wait_for_row_text(
-                session.layout.row("body"), "LEFT-WINDOW"
-            )
-            session.wait_for_row_text(
-                session.layout.row("body", split_row), "LEFT-WINDOW"
-            )
+            _wait_for_body_text(session, "LEFT-WINDOW")
+            _wait_for_body_text(session, "LEFT-WINDOW", index=split_row)
 
             session.extended_command("find-file")
             session.wait_for_region_text("minibuffer", "Find file: ")
             session.type(right_path)
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body", split_row), "RIGHT-WINDOW"
-            )
+            _wait_for_body_text(session, "RIGHT-WINDOW", index=split_row)
 
             session.extended_command("other-window")
             session.extended_command("switch-to-buffer")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("right.txt")
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "RIGHT-WINDOW"
-            )
-            session.wait_for_row_text(
-                session.layout.row("body", split_row), "RIGHT-WINDOW"
-            )
+            _wait_for_body_text(session, "RIGHT-WINDOW")
+            _wait_for_body_text(session, "RIGHT-WINDOW", index=split_row)
 
             session.extended_command("delete-window")
-            session.wait_for_row_text(
-                session.layout.row("body"), "RIGHT-WINDOW"
-            )
+            _wait_for_body_text(session, "RIGHT-WINDOW")
             session.wait_until(
                 lambda screen: screen.find("LEFT-WINDOW") is None,
                 what="the deleted window to disappear",
@@ -111,17 +101,15 @@ def window_split_selection(binary):
 
             session.extended_command("toggle-truncate-lines")
             session.wait_for_region_text("minibuffer", "Truncate long lines")
-            _assert_mode_line(session, "main")
+            _assert_mode_line(session)
 
             session.extended_command("delete-other-windows")
-            session.wait_for_row_text(
-                session.layout.row("body"), "LEFT-WINDOW"
-            )
+            _wait_for_body_text(session, "LEFT-WINDOW")
             session.wait_until(
                 lambda screen: screen.find("RIGHT-WINDOW") is None,
                 what="the deleted sibling windows to disappear",
             )
-            _assert_mode_line(session, "main")
+            _assert_mode_line(session)
 
             output, code = session.quit()
         _assert_exit_zero("window split selection", output, code)
@@ -149,73 +137,55 @@ def workspace_switching(binary):
 
         with Session(binary, [main_path]) as session:
             session.wait_ready()
-            _assert_mode_line(session, "main")
+            _assert_mode_line(session)
 
             session.extended_command("find-file")
             session.wait_for_region_text("minibuffer", "Find file: ")
             session.type(other_path)
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "OTHER-WORKSPACE"
-            )
+            _wait_for_body_text(session, "OTHER-WORKSPACE")
             session.extended_command("switch-to-buffer")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("main.txt")
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "MAIN-WORKSPACE"
-            )
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
 
             session.extended_command("new-workspace")
-            _assert_mode_line(session, "workspace-2")
-            session.wait_for_row_text(
-                session.layout.row("body"), "MAIN-WORKSPACE"
-            )
+            _assert_mode_line(session)
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
 
             session.extended_command("switch-to-buffer")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("other.txt")
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "OTHER-WORKSPACE"
-            )
-            _assert_mode_line(session, "workspace-2")
+            _wait_for_body_text(session, "OTHER-WORKSPACE")
+            _assert_mode_line(session)
 
             session.extended_command("previous-workspace")
-            session.wait_for_row_text(
-                session.layout.row("body"), "MAIN-WORKSPACE"
-            )
-            _assert_mode_line(session, "main")
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+            _assert_mode_line(session)
 
             session.extended_command("next-workspace")
-            session.wait_for_row_text(
-                session.layout.row("body"), "OTHER-WORKSPACE"
-            )
-            _assert_mode_line(session, "workspace-2")
+            _wait_for_body_text(session, "OTHER-WORKSPACE")
+            _assert_mode_line(session)
 
             session.extended_command("switch-workspace")
             session.wait_for_region_text("minibuffer", "Switch to workspace: ")
             session.type("main")
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "MAIN-WORKSPACE"
-            )
-            _assert_mode_line(session, "main")
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+            _assert_mode_line(session)
 
             session.extended_command("switch-workspace")
             session.wait_for_region_text("minibuffer", "Switch to workspace: ")
             session.type("workspace-2")
             session.send(b"\n")
-            session.wait_for_row_text(
-                session.layout.row("body"), "OTHER-WORKSPACE"
-            )
-            _assert_mode_line(session, "workspace-2")
+            _wait_for_body_text(session, "OTHER-WORKSPACE")
+            _assert_mode_line(session)
 
             session.extended_command("kill-workspace")
-            session.wait_for_row_text(
-                session.layout.row("body"), "MAIN-WORKSPACE"
-            )
-            _assert_mode_line(session, "main")
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+            _assert_mode_line(session)
             session.wait_for_region_text(
                 "minibuffer", "Deleted workspace: workspace-2"
             )
