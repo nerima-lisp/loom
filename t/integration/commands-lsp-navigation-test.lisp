@@ -23,6 +23,24 @@
         (expect (length (%fake-sent-in-order transport)) :to-equal before))))
 
   (it
+    "drains a pending initialization before sending a completion request"
+    (let* ((*editor-state* (%lsp-navigation-state))
+           (transport (make-instance '%fake-lsp-transport))
+           (session (make-lsp-session :transport transport)))
+      (unwind-protect
+           (progn
+             (setf (editor-state-lsp-session *editor-state*) session)
+             (lsp-session-start session)
+             (%fake-push-initialize-response
+              transport
+              +lsp-navigation-capabilities+)
+             (lsp-completion-at-point)
+             (expect (lsp-session-initialized-p session) :to-be-truthy)
+             (expect (%lsp-last-request-method transport)
+                     :to-equal "textDocument/completion"))
+        (lsp-session-stop session))))
+
+  (it
     "says so and sends nothing when the server does not provide completion"
     (%with-lsp-navigation (transport session buffer :capabilities "{}")
       (let ((before (length (%fake-sent-in-order transport))))

@@ -24,6 +24,10 @@ addresses documents by URI, and a buffer that was never saved has none."
          (buffer (loom/application:%selected-buffer))
          (path (and buffer (loom:buffer-path buffer))))
     (when (and session
+               (not (lsp-session-initialized-p session))
+               (not (lsp-session-closed-p session)))
+      (%lsp-await-initialized session))
+    (when (and session
                (lsp-session-initialized-p session)
                (not (lsp-session-closed-p session))
                path)
