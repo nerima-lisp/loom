@@ -478,6 +478,8 @@
           cl-weave.packages.${ctx.system}.default
           paredit-cli.packages.${ctx.system}.default
           nixpkgs.legacyPackages.${ctx.system}.python3Packages.mkdocs-material
+          # The PTY end-to-end suite (t/e2e) reconstructs the screen with pyte.
+          (pkgs.python3.withPackages (ps: [ ps.pyte ]))
           loom-test
           loom-coverage
         ];
@@ -546,6 +548,26 @@
 
         # Verify the delivered package compiles and the image dumps.
         checks.build = ctx.executable;
+
+        # The PTY end-to-end suite against the delivered binary. It needs a
+        # real pseudo-terminal, which the Nix build sandbox does not provide,
+        # so it is an app run outside the sandbox (`nix run .#e2e`) rather
+        # than a `checks.*` derivation; ci.yml gives it its own job. `self`
+        # rather than `ctx.src`: the Lisp source filter above drops `.py`.
+        apps.e2e =
+          let
+            pkgs = nixpkgs.legacyPackages.${ctx.system};
+            python = pkgs.python3.withPackages (ps: [ ps.pyte ]);
+          in
+          {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "loom-e2e" ''
+                export LOOM_BINARY="${ctx.executable}/bin/loom"
+                exec "${python}/bin/python3" "${self}/t/e2e/loom-test.py" "$@"
+              ''
+            );
+          };
 
         # Expose the same isolated coverage derivation as a buildable package
         # and as a flake check. `ctx.cl.mkCoverageReport` supplies the package
