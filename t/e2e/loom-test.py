@@ -44,6 +44,23 @@ def _parse_args(argv):
     return parser.parse_args(argv)
 
 
+def _coverage_report():
+    all_command_names = set(commands.parse_command_names(_REPO_ROOT))
+    if not all_command_names:
+        raise SystemExit("command-spec catalogue is empty")
+    covered = covered_commands()
+    covered_known = covered & all_command_names
+    uncovered = sorted(all_command_names - covered)
+    unknown = sorted(covered - all_command_names)
+    print(f"commands covered: {len(covered_known)} / {len(all_command_names)}")
+    print(f"uncovered commands: {', '.join(uncovered) if uncovered else '(none)'}")
+    print(f"uncovered: {len(uncovered)}")
+    print(f"未カバー {len(uncovered)}")
+    if unknown:
+        print(f"unknown scenario command names: {', '.join(unknown)}")
+    return uncovered, unknown
+
+
 def main(argv):
     args = _parse_args(argv)
     registered = all_scenarios()
@@ -51,7 +68,8 @@ def main(argv):
     if args.list:
         for name, scenario_commands, _fn in registered:
             print(f"{name}\tcommands={','.join(scenario_commands) or '(none)'}")
-        return 0
+        uncovered, unknown = _coverage_report()
+        return 1 if uncovered or unknown else 0
 
     binary = _binary_from_arguments(args.binary)
     selected = [
@@ -76,13 +94,14 @@ def main(argv):
     total = len(selected)
     print(f"{passed} passed, {failed} failed, {total} total")
 
-    all_command_names = commands.parse_command_names(_REPO_ROOT)
-    covered = covered_commands() & set(all_command_names)
-    print(f"commands covered: {len(covered)} / {len(all_command_names)}")
+    uncovered, unknown = _coverage_report()
 
     if failed:
         return 1
-    if args.require_full_coverage and len(covered) < len(all_command_names):
+    if args.require_full_coverage or args.only is None:
+        if uncovered or unknown:
+            return 1
+    if unknown:
         return 1
     return 0
 

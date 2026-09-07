@@ -29,8 +29,8 @@ def edit_save_exit(binary):
             # src/ packages/ turns up no gutter feature): the buffer's first
             # column is screen column 0, so inserting "a" before "x" puts the
             # cursor at column 1 on row 0.
-            session.wait_for_cursor(0, 1)
-            row0 = session.screen.text(0)
+            session.wait_for_region_cursor("body", 1)
+            row0 = session.region_text("body")
             if not row0.startswith("ax"):
                 raise AssertionError(
                     f"row 0 after typing 'a' should start with 'ax', got {row0[:10]!r}"

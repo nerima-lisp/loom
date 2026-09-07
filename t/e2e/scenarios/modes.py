@@ -5,7 +5,7 @@ import tempfile
 
 from loom_e2e import keys
 from loom_e2e.registry import scenario
-from loom_e2e.session import MINIBUFFER_ROW, Session
+from loom_e2e.session import Session
 
 
 def _assert_exit_zero(name, output, code):
@@ -26,7 +26,7 @@ def major_mode_editing(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             session.extended_command("set-major-mode")
-            session.wait_for_row_text(MINIBUFFER_ROW, "Major mode: ")
+            session.wait_for_region_text("minibuffer", "Major mode: ")
             session.type("Python")
             session.send(keys.RET)
             session.send(keys.TAB)  # Python's four-column indentation

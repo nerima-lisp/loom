@@ -5,6 +5,8 @@ import pyte
 
 class Screen:
     def __init__(self, columns=80, rows=24):
+        self.columns = columns
+        self.rows = rows
         self._screen = pyte.Screen(columns, rows)
         # cl-tty-kit ends every drawn row with a bare LF, not CRLF, and pads
         # rows to the full terminal width. pyte's autowrap defers the wrap
@@ -28,6 +30,9 @@ class Screen:
 
     def lines(self):
         return list(self._screen.display)
+
+    def has_content(self):
+        return any(line.strip() for line in self._screen.display)
 
     @property
     def cursor(self):

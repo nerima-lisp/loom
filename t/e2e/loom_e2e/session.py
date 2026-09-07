@@ -8,16 +8,10 @@ import tempfile
 import time
 
 from . import keys
+from .layout import Layout
 from .process import LoomProcess
 from .screen import Screen
 
-
-# height=24 -> minibuffer-row = height-1 = 23, shortcuts-row = minibuffer-row-1
-# = 22 (src/presentation/frame-layout-cursor.lisp:%layout-minibuffer-row,
-# src/presentation/frame-layout.lisp:19), confirmed against a live capture's
-# own CUP escape sequences.
-SHORTCUT_ROW = 22
-MINIBUFFER_ROW = 23
 
 DEFAULT_TIMEOUT = 10.0
 
@@ -52,6 +46,7 @@ class Session:
         self.rows = rows
         self.process = None
         self.screen = None
+        self.layout = Layout(rows)
         self._scratch_dir = None
         self._home_dir = None
 
@@ -110,9 +105,9 @@ class Session:
                 )
 
     def wait_ready(self, timeout=DEFAULT_TIMEOUT):
-        """Wait for the initial frame (shortcut line populated)."""
+        """Wait for the initial frame to contain rendered content."""
         self.wait_until(
-            lambda screen: screen.text(SHORTCUT_ROW).strip() != "",
+            lambda screen: screen.has_content(),
             timeout, "the initial frame to render",
         )
 
@@ -128,11 +123,24 @@ class Session:
             timeout, f"row {row} to contain {substring!r}",
         )
 
+    def region_text(self, region, index=0):
+        return self.screen.text(self.layout.row(region, index))
+
+    def wait_for_region_text(self, region, substring, index=0, timeout=DEFAULT_TIMEOUT):
+        self.wait_until(
+            lambda screen: substring in screen.text(self.layout.row(region, index)),
+            timeout,
+            f"{region} row {index} to contain {substring!r}",
+        )
+
     def wait_for_cursor(self, row, col, timeout=DEFAULT_TIMEOUT):
         self.wait_until(
             lambda screen: screen.cursor == (row, col),
             timeout, f"cursor to reach (row={row}, col={col})",
         )
+
+    def wait_for_region_cursor(self, region, col, index=0, timeout=DEFAULT_TIMEOUT):
+        self.wait_for_cursor(self.layout.row(region, index), col, timeout)
 
     def wait_for_file(self, path, expected_bytes, timeout=DEFAULT_TIMEOUT):
         deadline = time.monotonic() + timeout
@@ -167,7 +175,7 @@ class Session:
     def extended_command(self, name, timeout=DEFAULT_TIMEOUT):
         """Invoke NAME through the real M-x key path."""
         self.send(keys.meta("x"))
-        self.wait_for_row_text(MINIBUFFER_ROW, "M-x ", timeout=timeout)
+        self.wait_for_region_text("minibuffer", "M-x ", timeout=timeout)
         self.type(name)
         self.send(keys.RET)
 
