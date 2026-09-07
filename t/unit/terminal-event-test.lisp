@@ -107,7 +107,7 @@
   "terminal event boundary translation"
   (it "translates every supported special key and control boundary"
     (dolist (case-data
-              '((:enter :literal 13) (:backspace :literal 127)
+              '((:enter :literal 10) (:backspace :literal 127)
                 (:tab :literal 9) (:backtab :csi "Z")
                 (:escape :literal 27) (:up :csi "A")
                 (:down :csi "B") (:right :csi "C") (:left :csi "D")

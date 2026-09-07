@@ -116,6 +116,27 @@
                   :to-be nil)
           (expect (loom::input-routing-decision-command decision) :to-be nil))))))
 
+  (it
+    "routes terminal special keys despite ordinary editor bindings"
+    (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
+           (keymap (make-keymap))
+           (keymap-state (make-keymap-state keymap))
+           (event (cl-tty-kit:make-key-event :type :special :code :enter)))
+      (keymap-define-key keymap (list (cons nil :enter))
+                         #'loom::newline-command)
+      (with-replaced-function
+          (loom/feature/terminal:terminal-input-event-p
+            (lambda (candidate)
+              (declare (ignore candidate))
+              t))
+        (let ((decision (loom::%classify-key-event event keymap-state)))
+          (expect (loom::input-routing-decision-terminal-event-p decision)
+                  :to-be t)
+          (expect (loom::input-routing-decision-command decision)
+                  :to-be #'loom::newline-command)
+          (expect (loom::input-routing-decision-self-insert-event-p decision)
+                  :to-be nil)))))
+
 (describe
   "%dispatch-key-event-action terminal routing"
   (it

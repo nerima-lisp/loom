@@ -68,6 +68,7 @@ class Session:
         env["HOME"] = self._home_dir
         env.pop("LOOM_INIT_FILE", None)
         env["TERM"] = "xterm-256color"
+        env["SHELL"] = "/bin/sh"
         env["LANG"] = locale
         env["LC_ALL"] = locale
 

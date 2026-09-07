@@ -48,6 +48,10 @@
         (keymap-state-keymap keymap-state)
         (append sequence (list descriptor)))))
 
+(defun %terminal-special-event-overrides-command-p (event command)
+  (and (eq (cl-tty-kit:key-event-type event) :special)
+       (not (eq command :prefix))))
+
 (defun %input-routing-context (event keymap-state)
   (let ((minibuffer (editor-state-minibuffer *editor-state*)))
     (%make-input-routing-context
@@ -79,7 +83,10 @@
            (%routing-command keymap-state sequence descriptor
                              minibuffer-was-active self-insert-event-p)))
     (values prefix-action
-            (and terminal-input-event-p (null command))
+            (and terminal-input-event-p
+                 (or (null command)
+                     (%terminal-special-event-overrides-command-p
+                      event command)))
             self-insert-event-p
             command)))
 
