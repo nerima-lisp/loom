@@ -79,6 +79,12 @@ worktree. Then fast-forward `main` to that commit, verify the commit and clean
 status from a main checkout, and remove the worktree with `git worktree
 remove`. Do not delete a worktree until its commit is reachable from `main`.
 
+When a named branch already contains the complete work unit, keep its existing
+commits and commit any remaining unstaged changes separately. Verify that the
+remote `main` tip is an ancestor of the branch, then push the branch tip to
+`main` as a fast-forward. After confirming the remote tip, remove the worktree
+and delete both the finished local branch and its remote branch.
+
 ## Verification
 
 Run the focused commands directly when iterating:
