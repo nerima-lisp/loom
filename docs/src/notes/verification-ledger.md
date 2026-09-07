@@ -68,6 +68,9 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | 1 | 基線 §1.1 | `t/integration/project-missing-root-test.lisp` | 一時ディレクトリの祖先にプロジェクトマーカーがあると errored になる | 未決 | open |
 | 2 | 基線 §1.1 | `t/integration/main-run-loom-test.lisp` ほか `%run-loom` を呼ぶテスト | 描画の escape 列がテストランナーの stdout に混入する | 未決 | open |
 | 3 | P1 ハーネス | `t/e2e/loom_e2e/screen.py`（観察のみ、製品側の処置は未決） | 描画は各行を全幅で埋めて素の LF で終える。pyte はこの列を LNM 無しで食わせると deferred autowrap が LF をまたいで残り、行が 1 つずれる。ハーネス側は LNM を有効にして回避した。実端末での見え方は作者の日常使用で問題が出ていないため製品側は据え置き | 観察 | open |
+| 4 | P2 PTY E2E | `t/e2e/scenarios/tooling.py:200-211` の `terminal` | `M-x terminal RET` 後に `/bin/sh` の警告は画面へ出るが、`printf terminal-e2e RET` は端末子プロセスへ届かず、画面に `Buffer *Loom-Terminal* is read-only` が出る。再現: `nix run .#e2e -- --only tooling/terminal` | 未決 | open |
+| 5 | P2 PTY E2E | `t/e2e/scenarios/lsp.py:92-95` の `lsp-completion-at-point` | nixd 起動経路後の completion で `No LSP session for this buffer` がミニバッファに出て、期待した completion 結果が現れない。再現: `nix run .#e2e -- --only lsp/completion` | 未決 | open |
+| 6 | P2 PTY E2E | `t/e2e/scenarios/lsp.py:97-100` の `lsp-find-definition` | nixd 起動経路後の definition で `No LSP session for this buffer` がミニバッファに出て、期待した定義結果が現れない。再現: `nix run .#e2e -- --only lsp/find-definition` | 未決 | open |
 
 ## 3. 進捗
 
@@ -75,4 +78,4 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | --- | --- | --- | --- |
 | P0 基線 | 完了 | `1420df3` | §1 |
 | P1 ハーネス | 完了 | `a8c7f09`（flake: pyte と `apps.e2e`）、`22b7415`（`t/e2e` 再構成） | `nix run .#e2e` を 2 回連続実行、いずれも `12 passed, 0 failed, 12 total`、`commands covered: 12 / 120`、exit 0。`nix run .#e2e -- --list` が 12 件を列挙。固定 sleep はハーネスから除去済み（`grep -rn 'time.sleep' t/e2e` はプロセス終了待ちの 1 箇所のみ） |
-| P2 全コマンド | 未着手 | | |
+| P2 全コマンド | 完了 | `a76ee02`, `a7cdca3`, `6f3db63`, `86d09a3`, `4298135` | `nix run .#e2e -- --list` は 120/120、未カバー 0。`nix run .#e2e` は 107 passed, 3 failed, 110 total。失敗 3 件は §2 の #4-#6 に記録済み |

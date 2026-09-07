@@ -175,7 +175,7 @@ def project_file_commands(binary):
             session.send(keys.ctrl("x") + b"pr")
             session.wait_for_region_text("minibuffer", "Project root: ")
             message = session.region_text("minibuffer").rstrip()
-            visible_root = message.removeprefix("Project root: ")
+            visible_root = message.removeprefix("Project root: ").rstrip("/\\")
             parent_length = len(os.path.dirname(root)) + 1
             if not (
                 visible_root
