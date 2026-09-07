@@ -3,29 +3,21 @@
 ;;;; Application layer: active-region helpers shared by kill/copy commands.
 (in-package #:loom)
 
-(defun %region-point-is-after-mark-p (point-line point-column mark-line mark-column)
-  "Return true when the point follows the mark in buffer order."
-  (or (> point-line mark-line)
-      (and (= point-line mark-line)
-           (> point-column mark-column))))
-
-(defun %active-region-bounds-from-points
-    (point-line point-column mark-line mark-column)
-  (multiple-value-bind (start-line start-column end-line end-column)
-      (%order-region point-line point-column mark-line mark-column)
-    (values start-line start-column end-line end-column
-            (%region-point-is-after-mark-p
-             point-line point-column mark-line mark-column))))
-
 (defun %active-region-bounds (buffer)
   "Return region bounds and coalescing direction for BUFFER, or NIL values."
-  (let ((point-line (buffer-point-line buffer))
-        (point-column (buffer-point-column buffer)))
-    (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-      (if mark-line
-          (%active-region-bounds-from-points
-           point-line point-column mark-line mark-column)
-          (values nil nil nil nil nil)))))
+  (let ((span (buffer-active-region-span buffer)))
+    (if span
+        (let* ((start (buffer-offset-position buffer
+                                              (buffer-span-start span)))
+               (end (buffer-offset-position buffer
+                                            (buffer-span-end span)))
+               (point-offset (buffer-point-offset buffer)))
+          (values (buffer-position-line start)
+                  (buffer-position-column start)
+                  (buffer-position-line end)
+                  (buffer-position-column end)
+                  (> point-offset (buffer-span-start span))))
+        (values nil nil nil nil nil))))
 
 (defun %message-no-active-region ()
   (minibuffer-message

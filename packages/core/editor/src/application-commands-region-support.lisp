@@ -29,30 +29,23 @@
                       (buffer-position-line start)
                       (buffer-position-column start))))
 
-(defun %region-mark-position-or-message (buffer)
+(defun buffer-active-region-span (buffer)
+  "Return BUFFER's active region as an absolute half-open span, or NIL when
+the mark is unset."
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-    (if mark-line
-        (values mark-line mark-column)
-        (progn
-          (minibuffer-message (editor-state-minibuffer *editor-state*)
-                              "The mark is not set now, so no region is active")
-          nil))))
-
-(defun %region-active-bounds (buffer mark-line mark-column)
-  (let* ((point-offset (buffer-point-offset buffer))
-         (mark-offset (%position-to-offset buffer mark-line mark-column))
-         (start-offset (min point-offset mark-offset))
-         (end-offset (max point-offset mark-offset))
-         (start (buffer-offset-position buffer start-offset))
-         (end (buffer-offset-position buffer end-offset)))
-    (values start end)))
+    (when mark-line
+      (let* ((point-offset (buffer-point-offset buffer))
+             (mark-offset (%position-to-offset buffer mark-line mark-column)))
+        (make-buffer-span (min point-offset mark-offset)
+                          (max point-offset mark-offset))))))
 
 (defun %narrow-to-active-region-or-message (buffer)
-  (multiple-value-bind (mark-line mark-column)
-      (%region-mark-position-or-message buffer)
-    (when mark-line
-      (multiple-value-bind (start end)
-          (%region-active-bounds buffer mark-line mark-column)
+  (let ((span (buffer-active-region-span buffer)))
+    (if span
+        (let ((start (buffer-offset-position buffer
+                                             (buffer-span-start span)))
+              (end (buffer-offset-position buffer
+                                           (buffer-span-end span))))
         (buffer-narrow-to-region
          buffer
          (buffer-position-line start)
@@ -62,7 +55,12 @@
         (minibuffer-message
          (editor-state-minibuffer *editor-state*)
          "Narrowed to the active region")
-        t))))
+        t)
+        (progn
+          (minibuffer-message
+           (editor-state-minibuffer *editor-state*)
+           "The mark is not set now, so no region is active")
+          nil))))
 
 (defun %widen-buffer-and-message (buffer)
   (buffer-widen buffer)
