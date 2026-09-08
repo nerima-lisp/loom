@@ -79,25 +79,38 @@
          (status (first all-parts))
          (parts (rest all-parts))
          (status-visible (%layout-truncate-to-width status width))
-         (remaining-after-status
-           (max 0 (- width
-                     (loom-renderer-string-width renderer status-visible))))
-         (workspace
-           (%layout-mode-line-workspace-suffix
-            renderer workspace-name remaining-after-status))
+         (prefix-width
+           (loom-renderer-string-width renderer "  Workspace: "))
          (remaining
-           (max 0 (- remaining-after-status
-                    (loom-renderer-string-width renderer workspace))))
-         (selected nil))
-    (dolist (part (reverse (rest parts)))
+           (max 0 (- width
+                    (loom-renderer-string-width renderer status-visible)
+                    prefix-width)))
+         (name (first parts))
+         (mode (second parts))
+         (position (third parts))
+         (wrap (fourth parts))
+         (diagnostics (fifth parts))
+         (selected nil)
+         (candidates (remove nil (list diagnostics wrap name mode position))))
+    (dolist (part candidates)
       (let ((part-width (loom-renderer-string-width renderer part)))
         (when (<= part-width remaining)
-          (push part selected)
+          (setf selected (append selected (list part)))
           (decf remaining part-width))))
-    (when (and (null selected) (plusp remaining))
-      (push (%layout-truncate-to-width (car (last parts)) remaining)
-            selected))
-    (format nil "~A~{~A~}~A" status-visible selected workspace)))
+    (let ((selected-in-display-order
+            (remove-if-not (lambda (part)
+                             (member part selected :test #'equal))
+                           parts)))
+      (format nil "~A~{~A~}~A"
+            status-visible
+            selected-in-display-order
+            (%layout-mode-line-workspace-suffix
+             renderer workspace-name
+             (max 0 (- width
+                       (loom-renderer-string-width renderer status-visible)
+                       (loom-renderer-string-width renderer
+                                                    (format nil "~{~A~}"
+                                                            selected-in-display-order)))))))))
 
 (defun %layout-mode-line (renderer buffer &optional width workspace-name)
   "Return BUFFER's mode line clipped to WIDTH cells from the right."
