@@ -30,7 +30,7 @@ def _fixture():
     path = write_buffer(
         directory.name,
         "main.nix",
-        b"let\n  value = 1;\nin\n  value\n",
+        b"# no definition here\nlet\n  value = 1;\nin\n  value\n",
     )
     return directory, path
 
