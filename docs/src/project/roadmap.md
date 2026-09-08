@@ -1,8 +1,7 @@
 # Roadmap
 
-loom is an actively hardened terminal editor. This page separates what is
-implemented today from what is deliberately deferred; the deferred items are
-not production-readiness claims.
+This page separates the current implementation from deliberately deferred
+work. Deferred items are not production-readiness claims.
 
 ## Implemented today
 
@@ -128,15 +127,13 @@ not production-readiness claims.
   [development guide](development.md) documents the test runner, PTY checks,
   coverage, and benchmark commands.
 
-## 2026 production-hardening status
+## 2026 status
 
-The 2026 refactor has established explicit domain/application/infrastructure/
-presentation boundaries, release-pinned Nerima Lisp dependencies, direct use
-of `cl-weave` for the test and coverage workflow, and an ASDF-integrated
-`concurrent-runtime-test`. The full Nix gate covers formatting, paredit
-syntax, tests, coverage, documentation, and all declared systems. This is a
-verified engineering baseline, not a claim that every deferred editor
-feature is complete.
+The source tree uses explicit domain/application/infrastructure/presentation
+boundaries, release-pinned dependencies, and an ASDF-integrated test and
+coverage workflow. The Nix gate runs formatting, paredit syntax, tests,
+coverage, documentation, and all declared systems. Deferred work remains
+listed below.
 
 ## Not yet implemented
 

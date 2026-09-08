@@ -39,3 +39,46 @@
         (expect (buffer-line buffer 1) :to-equal "hllo")
         (expect (buffer-line buffer 2) :to-equal "three")
         (expect buffer :to-have-point (cons 1 1))))))
+
+(describe
+  "buffer-active-region-span"
+  (it
+    "returns a single-line span when point follows mark"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 0 4)
+      (let ((span (buffer-active-region-span buffer)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(1 4)))))
+
+  (it
+    "orders a multiline span when point precedes mark"
+    (let ((buffer (make-buffer :initial-content (format nil "one~%two~%three"))))
+      (buffer-set-mark buffer 2 2)
+      (buffer-set-point buffer 0 1)
+      (let ((span (buffer-active-region-span buffer)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(1 10)))))
+
+  (it
+    "returns an empty span when point equals mark"
+    (let ((buffer (make-buffer :initial-content "hello")))
+      (buffer-set-mark buffer 0 2)
+      (buffer-set-point buffer 0 2)
+      (let ((span (buffer-active-region-span buffer)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(2 2)))))
+
+  (it
+    "clamps a mark whose old position is past the current buffer"
+    (let ((buffer (make-buffer :initial-content (format nil "all text~%"))))
+      (buffer-set-mark buffer 1 0)
+      (buffer-delete-region buffer 0 0 1 0)
+      (let ((span (buffer-active-region-span buffer)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(0 0)))))
+
+  (it
+    "returns nil when mark is unset"
+    (expect (buffer-active-region-span (make-buffer :initial-content "hello"))
+            :to-be nil)))

@@ -109,11 +109,32 @@ paredit inspect lint --output json path/to/file.lisp
 serial order. `t/unit/` verifies pure domain and application behavior, while
 `t/integration/` verifies package boundaries and external-system seams. The
 executable tier in `t/e2e/` is a separate Unix PTY suite run against the built
-binary:
+binary. It is a flake app rather than a `checks.*` derivation because the Nix
+build sandbox has no pseudo-terminal, so `nix flake check` does not run it:
 
 ```sh
-LOOM_BINARY="$PWD/result/bin/loom" python3 t/e2e/loom-test.py
+nix run .#e2e                      # every scenario
+nix run .#e2e -- --list            # scenario names
+nix run .#e2e -- --only project    # scenarios whose name contains "project"
 ```
+
+The CI workflow runs `nix flake check` and the PTY app as separate jobs. The
+PTY job builds `.#default` before running `nix run .#e2e` on `ubuntu-latest`,
+where a real pseudo-terminal is available outside the Nix build sandbox.
+
+The app builds `packages.default` and passes its `bin/loom` as `LOOM_BINARY`.
+To drive a different binary, run the entry point directly inside the
+development shell, which carries Python with `pyte`:
+
+```sh
+nix develop -c python3 t/e2e/loom-test.py --binary path/to/loom
+```
+
+Each scenario runs the editor under a fresh scratch `HOME` and a temporary
+directory, reconstructs the 80x24 screen from the PTY byte stream with
+`pyte`, and waits on screen state rather than fixed delays. The runner prints
+how many registered `command-spec` names the scenarios exercise; pass
+`--require-full-coverage` to fail when that count is short.
 
 The ordinary test process has a 1,800-second outer timeout and cl-weave's test
 runner gives each example a 40-second timeout. Coverage has a 1,800-second

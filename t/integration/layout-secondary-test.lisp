@@ -5,7 +5,7 @@
   "matching-parenthesis layout drawing"
   (it
     "marks both the adjacent parenthesis and its matching partner"
-    (let* ((state (%fresh-layout-state :content "(abc)" :width 8 :height 1))
+    (let* ((state (%fresh-layout-state :content "(abc)" :width 8 :height 2))
            (window (%layout-window state))
            (buffer (window-buffer window)))
       (buffer-set-point buffer 0 0)
@@ -16,6 +16,172 @@
                 :to-equal '(:bold (:fg 0) (:bg 5)))
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 4 0))
                 :to-equal '(:bold (:fg 0) (:bg 5)))))))
+
+(describe
+  "active region layout drawing"
+  (it
+    "highlights a single-line region without touching the mode line"
+    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 0 4)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (dolist (column '(1 2 3))
+          (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen column 0))
+                  :to-equal '((:fg 0) (:bg 2))))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 2))
+                :to-equal '(:reverse)))))
+
+  (it
+    "highlights each logical line of a multiline region"
+    (let* ((state (%fresh-layout-state
+                   :content (format nil "one~%two~%three")
+                   :width 8 :height 6))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 2 2)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 1))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 2))
+                :to-equal '((:fg 0) (:bg 2)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 2))
+                :to-be nil))))
+
+  (it
+    "does not draw an empty region"
+    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-mark buffer 0 2)
+      (buffer-set-point buffer 0 2)
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell (%layout-screen state) 2 0))
+              :to-be nil)))
+
+  (it
+    "keeps a region highlight aligned at a full-width horizontal scroll boundary"
+    (let* ((state (%fresh-layout-state :content "あい" :width 4 :height 3))
+           (window (%layout-window state))
+           (buffer (window-buffer window)))
+      (buffer-set-truncate-lines buffer t)
+      (buffer-set-mark buffer 0 1)
+      (buffer-set-point buffer 0 2)
+      (setf (window-scroll-column window) 1)
+      (loom::compose-frame state)
+      (let ((screen (%layout-screen state)))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                :to-be nil)
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+                :to-equal '((:fg 0) (:bg 2)))))))
+
+(describe
+  "LSP diagnostic layout drawing"
+  (it
+    "draws a diagnostic range and lets the region remain visible over overlap"
+    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+           (window (%layout-window state))
+           (buffer (make-buffer :name "main.nix"
+                                :path "/tmp/main.nix"
+                                :initial-content "hello"))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 0 1)
+                              (make-lsp-position 0 4))
+              "bad" :severity 1))
+           (session
+             (%layout-install-diagnostics
+              state buffer (list diagnostic))))
+      (unwind-protect
+           (progn
+             (window-set-buffer window buffer)
+             (buffer-set-mark buffer 0 0)
+             (buffer-set-point buffer 0 2)
+             (let ((*editor-state* state))
+               (loom::compose-frame state))
+             (let ((screen (%layout-screen state)))
+               (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                       :to-equal '((:fg 0) (:bg 2)))
+               (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+                       :to-equal '((:fg 0) (:bg 2)))
+               (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 0))
+                       :to-equal '((:fg 7) (:bg 1))))))
+        (lsp-session-stop session)))
+
+  (it
+    "maps a diagnostic range to absolute buffer offsets once"
+    (let* ((buffer (make-buffer :name "main.nix"
+                                :path "/tmp/main.nix"
+                                :initial-content (format nil "one~%two")))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 1 1)
+                              (make-lsp-position 1 2))
+              "bad")))
+      (let ((span (loom::%layout-lsp-diagnostic-span buffer diagnostic)))
+        (expect (list (buffer-span-start span) (buffer-span-end span))
+                :to-equal '(5 6)))))
+
+  (it
+    "clips diagnostics to the visible range and follows horizontal scroll"
+    (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 3))
+           (window (%layout-window state))
+           (buffer (make-buffer :name "main.nix"
+                                :path "/tmp/main.nix"
+                                :initial-content "0123456789"))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 0 6)
+                              (make-lsp-position 0 8))
+              "bad" :severity 1))
+           (session (%layout-install-diagnostics state buffer (list diagnostic))))
+      (unwind-protect
+           (progn
+             (window-set-buffer window buffer)
+             (buffer-set-truncate-lines buffer t)
+             (buffer-set-point buffer 0 8)
+             (setf (window-scroll-column window) 4)
+             (let ((*editor-state* state))
+               (loom::compose-frame state))
+             (let ((screen (%layout-screen state)))
+               (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 0))
+                       :to-equal '((:fg 7) (:bg 1)))
+               (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 3 0))
+                       :to-equal '((:fg 7) (:bg 1))))))
+        (lsp-session-stop session)))
+
+  (it
+    "does not draw diagnostics outside a narrowed buffer"
+    (let* ((state (%fresh-layout-state :content (format nil "first~%second")
+                                       :width 12 :height 4))
+           (window (%layout-window state))
+           (buffer (make-buffer :name "main.nix"
+                                :path "/tmp/main.nix"
+                                :initial-content (format nil "first~%second")))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 1 0)
+                              (make-lsp-position 1 3))
+              "bad" :severity 1))
+           (session (%layout-install-diagnostics state buffer (list diagnostic))))
+      (unwind-protect
+           (progn
+             (window-set-buffer window buffer)
+             (buffer-narrow-to-region buffer 0 0 0 5)
+             (let ((*editor-state* state))
+               (loom::compose-frame state))
+             (expect (cl-tty-kit:cell-style
+                      (cl-tty-kit:screen-cell (%layout-screen state) 0 0))
+                     :to-be nil))
+        (lsp-session-stop session))))
+
+  )
 
 (describe
   "%layout-path-label"

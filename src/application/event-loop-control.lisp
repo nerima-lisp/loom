@@ -26,7 +26,7 @@ unchanged when the terminal size could not be read or has not changed."
         (values last-width last-height))))
 
 (defparameter *event-loop-poll-interval* 0.05
-  "Maximum seconds between background terminal and auto-save polls.
+  "Maximum seconds between background terminal, LSP, and auto-save polls.
 
 The interval is only used while there is background work that needs a
 periodic turn.  With no live terminal session or auto-save target, the loop
@@ -37,6 +37,7 @@ keeps its original blocking read behavior.")
   (not (null
         (or (some #'loom/feature/terminal:terminal-session-alive-p
                   (editor-state-terminal-sessions *editor-state*))
+            (editor-state-lsp-session *editor-state*)
             (editor-state-auto-save-mode-p *editor-state*)
             (editor-state-auto-save-buffers *editor-state*)))))
 

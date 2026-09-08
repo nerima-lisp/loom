@@ -19,16 +19,39 @@
                         (cl-tty-kit:pad-string "" 40)
                         (cl-tty-kit:pad-string "" 40)
                         (cl-tty-kit:pad-string
-                         "Ln 1, Col 1  Workspace: main  C-h Help"
+                         (loom::%layout-mode-line
+                          (editor-state-renderer state)
+                          (window-buffer (%layout-window state))
+                          40
+                          "main")
                          40)
                         (cl-tty-kit:pad-string "status message" 40))))))
 
   (it
-    "shows the active workspace in the shortcut line"
+    "shows the current workspace in the selected mode line"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
            (tree (editor-state-window-tree state)))
       (setf (editor-state-workspaces state)
             (make-workspace-manager tree :name "notes"))
+      (loom::compose-frame state)
+      (expect (search "Workspace: notes"
+                      (cl-tty-kit:screen-row-string
+                       (%layout-screen state)
+                       4))
+              :to-be-truthy)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen state) 5)
+              :to-equal (cl-tty-kit:pad-string "" 40))))
+
+  (it
+    "updates the selected mode line after workspace navigation"
+    (let* ((state (%fresh-layout-state :name "*scratch*" :content "abc"))
+           (manager (editor-state-workspaces state)))
+      (workspace-manager-create
+       manager
+       (make-window-tree (make-buffer :name "notes") 40 6)
+       :name "notes")
+      (let ((*editor-state* state))
+        (next-workspace))
       (loom::compose-frame state)
       (expect (search "Workspace: notes"
                       (cl-tty-kit:screen-row-string
@@ -76,11 +99,12 @@
                 :to-equal (string (code-char #x2502))))))
 
   (it
-    "draws a separator line between two horizontally (top/bottom) split windows"
+    "uses the upper window's mode line at a top/bottom split boundary"
     (let* ((state (%fresh-layout-state :name "*scratch*" :content "hi"))
            (window-tree (editor-state-window-tree state)))
       (window-split window-tree (window-tree-selected-window window-tree) :horizontal)
       (loom::compose-frame state)
       (let ((screen (%layout-screen state)))
-        (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 1)
-                :to-equal (string (code-char #x2500)))))))
+        (expect (search "-- *scratch*"
+                        (cl-tty-kit:screen-row-string screen 2))
+                :to-be-truthy)))))

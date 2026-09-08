@@ -26,7 +26,7 @@
                (- point-column (1- width))))))))
 
 (defun %layout-keep-truncated-point-visible (renderer window)
-  (let ((height (loom/feature/window:window-height window))
+  (let ((height (%layout-window-content-height window))
         (width (loom/feature/window:window-width window))
         (buffer (loom/feature/window:window-buffer window)))
     (%layout-follow-truncated-line window buffer height)
@@ -39,7 +39,7 @@ The viewport is a (line, segment) pair rather than a line. When point is above
 it the pair simply becomes point's own; when point is below, the pair is walked
 back HEIGHT-1 rows from point instead of forward from the old position, so a
 jump to a distant line costs the window's height rather than the jump."
-  (let* ((height (loom/feature/window:window-height window))
+  (let* ((height (%layout-window-content-height window))
          (width (loom/feature/window:window-width window))
          (buffer (loom/feature/window:window-buffer window)))
     (when (and (plusp height) (plusp width))

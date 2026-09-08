@@ -17,7 +17,7 @@
 
 (defun %terminal-special-payload (code)
   (case code
-    (:enter (string (code-char 13)))
+    (:enter (string (code-char 10)))
     (:backspace (string (code-char 127)))
     (:tab (string (code-char 9)))
     (:escape (string (code-char 27)))

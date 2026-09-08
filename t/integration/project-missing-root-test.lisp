@@ -20,7 +20,9 @@
                 :file-tree nil
                 :renderer nil
                 :buffers (list buffer)
-                :kill-ring nil)))
+                :kill-ring nil))
+             (loom/feature/project::+project-marker-names+
+               '(".loom-missing-root-test-marker")))
         (host-kit:write-file-string "plain" path)
         (loom/feature/project::project-root)
         (expect (loom:minibuffer-message-string

@@ -58,7 +58,6 @@
       nil)))
 
 (defun %git-path-present-p (path)
-  "Return true when PATH contains a non-whitespace character."
   (and (stringp path)
        (not (string= (string-trim '(#\Space #\Tab #\Newline #\Return)
                                   path)

@@ -23,11 +23,12 @@
       buffer-narrow-to-region buffer-widen buffer-line-count buffer-line
       buffer-point-line buffer-point-column buffer-set-point buffer-mark
       buffer-set-mark buffer-insert-string buffer-delete-char
-      buffer-delete-region buffer-region-string buffer-modified-p
+      buffer-delete-region buffer-region-string buffer-active-region-span
+      buffer-modified-p
       buffer-read-only-p buffer-set-read-only buffer-read-only-error
-      buffer-read-only-error-buffer buffer-mark-saved buffer-mark-modified
-      buffer-offset buffer-position buffer-position-line
-      buffer-position-column buffer-span make-buffer-span buffer-span-start
+      buffer-mark-saved buffer-mark-modified
+      buffer-offset buffer-position-line
+      buffer-position-column make-buffer-span buffer-span-start
       buffer-span-end buffer-point-offset buffer-offset-position buffer-undo
       buffer-redo buffer-record-undo-boundary buffer-load buffer-save
       make-loom-renderer loom-renderer-width loom-renderer-height
@@ -63,7 +64,7 @@
       editor-state-format-on-save-p editor-state-format-command
       editor-state-before-save-hooks editor-state-after-save-hooks
       editor-state-terminal-sessions editor-state-prefix-argument
-      editor-bookmark editor-bookmark-p make-editor-bookmark
+      editor-bookmark-p make-editor-bookmark
       editor-bookmark-name editor-bookmark-buffer editor-bookmark-path
       editor-bookmark-buffer-name editor-bookmark-line editor-bookmark-column
       editor-path-string remember-recent-file add-before-save-hook
@@ -73,9 +74,9 @@
       prefix-argument-for-editor prefix-argument-action
       apply-prefix-argument-action prefix-argument-value-for-editor
       consume-prefix-argument-for-editor record-undo-boundary-for-command
-      prefix-argument prefix-argument-p make-prefix-argument
-      prefix-argument-magnitude prefix-argument-active-p
-      prefix-argument-explicit-p prefix-argument-negative-p
+      prefix-argument make-prefix-argument
+      prefix-argument-active-p
+      prefix-argument-explicit-p
       prefix-argument-value prefix-argument-universal prefix-argument-digit
       prefix-argument-negative prefix-argument-consume prefix-argument-reset
       loom-version main)))

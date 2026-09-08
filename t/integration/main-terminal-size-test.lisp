@@ -56,6 +56,12 @@
     "reports background work when auto-save buffers are present"
     (let ((loom::*editor-state* (make-editor-state)))
       (setf (editor-state-auto-save-buffers loom::*editor-state*) (list :buffer))
+      (expect (loom::%event-loop-background-work-p) :to-be t)))
+
+  (it
+    "reports background work when an LSP session is present"
+    (let ((loom::*editor-state* (make-editor-state)))
+      (setf (editor-state-lsp-session loom::*editor-state*) :session)
       (expect (loom::%event-loop-background-work-p) :to-be t))))
 
 (describe

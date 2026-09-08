@@ -14,9 +14,23 @@
     (setf (lsp-session-pending-initialize-id session)
           (%lsp-send-request
            session
-           "initialize"
+   "initialize"
            (%lsp-initialize-params session))))
   session)
+
+(defparameter *lsp-initialize-timeout-seconds* 1.0
+  "Maximum time a request command waits for the server initialization reply.")
+
+(defun %lsp-await-initialized (session)
+  (let ((deadline (+ (get-internal-real-time)
+                     (ceiling (* *lsp-initialize-timeout-seconds*
+                                internal-time-units-per-second)))))
+    (loop do (lsp-session-drain session)
+          until (or (lsp-session-initialized-p session)
+                    (lsp-session-closed-p session)
+                    (>= (get-internal-real-time) deadline))
+          do (sleep 0.01)))
+  (lsp-session-initialized-p session))
 
 (defun lsp-session-refresh (session buffer)
   "Drain responses and synchronize BUFFER during a render-loop turn."

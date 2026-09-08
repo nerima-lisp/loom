@@ -1,23 +1,7 @@
 ;;;; src/presentation/layout-minibuffer.lisp
 ;;;;
-;;;; Presentation layer: minibuffer and shortcut line rendering helpers.
+;;;; Presentation layer: minibuffer rendering helpers.
 (in-package #:loom)
-
-(defparameter +layout-shortcut-line+ "C-h Help  C-x C-s Save  C-s Find  C-x C-c Exit")
-
-(defun %layout-draw-shortcuts (renderer width row buffer &optional workspace-name)
-  "Draw the persistent command reminder immediately above the minibuffer."
-  (when (plusp width)
-    (let* ((text (format nil "Ln ~D, Col ~D  ~A"
-                         (1+ (buffer-visible-point-line buffer))
-                         (1+ (%layout-buffer-point-screen-column renderer buffer))
-                         (if workspace-name
-                             (format nil "Workspace: ~A  ~A"
-                                     workspace-name
-                                     +layout-shortcut-line+)
-                             +layout-shortcut-line+)))
-           (visible (%layout-truncate-to-width text width)))
-      (loom-renderer-write-string renderer 0 row visible :style '(:reverse)))))
 
 (defun %layout-minibuffer-line (minibuffer)
   "Return the single line of text MINIBUFFER should currently show at the

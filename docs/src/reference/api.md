@@ -1,9 +1,10 @@
 # API reference
 
-This page documents every symbol exported by the packages declared in
-`src/package-exports.lisp`. The headings follow those export groups; symbols that are
-useful mainly as accessors or predicates still appear so the public contract is
-searchable in one place. Line and column numbers throughout are zero-based; a
+This page documents the public symbols from the root `loom` package. Feature-package
+APIs are documented in `reference/api/features.md`; the package export declarations
+remain authoritative when the public surface changes. Symbols that are useful mainly
+as accessors or predicates still appear so the public contract is searchable in one
+place. Line and column numbers throughout are zero-based; a
 `(line . column)` pair denotes a position *between* characters, exactly like
 Emacs point, so end positions in a region are exclusive.
 
@@ -316,14 +317,6 @@ Mark `buffer` as modified and return `buffer`.
 Convert a zero-based line and column in `buffer` to its zero-based character
 offset.
 
-### `buffer-position`
-
-```lisp
-(loom:buffer-position buffer offset)
-```
-
-Convert a zero-based character `offset` to a `(line . column)` position.
-
 ### `buffer-position-line`
 
 ```lisp
@@ -339,14 +332,6 @@ Return the line component of a buffer position.
 ```
 
 Return the column component of a buffer position.
-
-### `buffer-span`
-
-```lisp
-(loom:buffer-span buffer)
-```
-
-Return the current span object associated with `buffer`'s point and mark.
 
 ### `make-buffer-span`
 
@@ -552,14 +537,6 @@ Draw a vertical separator of `height` cells at `(x, y)`.
 
 Clear the renderer's back buffer and return `renderer`.
 
-### `loom-renderer-make-cursor`
-
-```lisp
-(loom:loom-renderer-make-cursor renderer x y)
-```
-
-Create a cursor descriptor at terminal position `(x, y)` for presentation.
-
 ### `loom-renderer-draw-buffer`
 
 ```lisp
@@ -702,7 +679,7 @@ called with the final input string on confirm (e.g. RET); `on-cancel` on
 cancel (e.g. C-g). `on-change` is called with the current input after every
 edit to it, which is what lets a prompt act while it is still being typed
 rather than only at RET. `on-key` is called with each key event before it is
-classified, and consumes the event by returning true — that is how a caller
+classified, and consumes the event by returning true. That is how a caller
 keeps a chord like `C-s` from being typed into the input. Returns
 `minibuffer`.
 
@@ -1429,13 +1406,7 @@ Return canonical file paths in most-recent-first order. The list is bounded by
 (loom:editor-state-bookmarks state)
 ```
 
-Return the hash table of named `editor-bookmark` values attached to `state`.
-
-### `editor-bookmark`
-
-`editor-bookmark` stores a bookmark name, its buffer or file identity, and a
-line/column position. Use `make-editor-bookmark` to construct one and the
-`editor-bookmark-*` accessors to inspect it.
+Return the hash table of named bookmark values attached to `state`.
 
 ### `editor-path-string`
 
@@ -1570,14 +1541,6 @@ prefix arguments independently of the editor-state integration above.
 
 The prefix-argument value type.
 
-### `prefix-argument-p`
-
-```lisp
-(loom:prefix-argument-p object)
-```
-
-Return true when `object` is a prefix-argument value.
-
 ### `make-prefix-argument`
 
 ```lisp
@@ -1585,14 +1548,6 @@ Return true when `object` is a prefix-argument value.
 ```
 
 Construct a prefix-argument value.
-
-### `prefix-argument-magnitude`
-
-```lisp
-(loom:prefix-argument-magnitude argument)
-```
-
-Return the non-negative magnitude of `argument`.
 
 ### `prefix-argument-active-p`
 
@@ -1609,14 +1564,6 @@ Return true when `argument` represents an active prefix.
 ```
 
 Return true when the prefix was explicitly entered.
-
-### `prefix-argument-negative-p`
-
-```lisp
-(loom:prefix-argument-negative-p argument)
-```
-
-Return true when `argument` is negative.
 
 ### `prefix-argument-value`
 

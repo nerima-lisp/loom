@@ -13,15 +13,16 @@
   "Style for the match point currently sits on, so it reads apart from the rest.")
 
 (defun %layout-truncated-line-position (renderer window text line start)
-  (let* ((scroll-column (loom/feature/window:window-scroll-column window))
-         (visible-start
-           (loom-renderer-segment-column renderer text (cons 0 (length text))
-                                         scroll-column))
-         (draw-start (max start visible-start))
-         (column (max 0 (- (%layout-screen-column renderer text draw-start)
-                          scroll-column))))
-    (values draw-start column
-            (- line (loom/feature/window:window-scroll-line window)))))
+  (let* ((scroll-column (loom/feature/window:window-scroll-column window)))
+    (multiple-value-bind (visible-start leading-blank)
+        (loom-renderer-clip-index renderer text scroll-column)
+      (let* ((draw-start (max start visible-start))
+             (column (if (= draw-start visible-start)
+                         leading-blank
+                         (max 0 (- (%layout-screen-column renderer text draw-start)
+                                   scroll-column)))))
+        (values draw-start column
+                (- line (loom/feature/window:window-scroll-line window)))))))
 
 (defun %layout-truncated-line-visible-p (row height draw-start end column width)
   (and (<= 0 row)
@@ -31,7 +32,7 @@
 
 (defun %layout-draw-truncated-line-run (renderer window x y text line start end style)
   (let ((width (loom/feature/window:window-width window))
-        (height (loom/feature/window:window-height window)))
+        (height (%layout-window-content-height window)))
     (multiple-value-bind (draw-start column row)
         (%layout-truncated-line-position renderer window text line start)
       (when (%layout-truncated-line-visible-p row height draw-start end column width)
@@ -86,7 +87,7 @@
   (let* ((buffer (loom/feature/window:window-buffer window))
          (text (%layout-visible-line buffer line))
          (width (loom/feature/window:window-width window))
-         (height (loom/feature/window:window-height window))
+         (height (%layout-window-content-height window))
          (y (loom/feature/window:window-y window))
          (x (+ x-offset (loom/feature/window:window-x window))))
     (multiple-value-bind (start end) (%layout-line-run-bounds text start end)

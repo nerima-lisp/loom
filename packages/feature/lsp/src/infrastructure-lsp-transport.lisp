@@ -41,14 +41,19 @@
 (defun %close-lsp-resources (info input output error-output executor channel)
   (ignore-errors (close input))
   (when info
-    (ignore-errors (uiop:terminate-process info)))
+    (ignore-errors (uiop:terminate-process info :urgent t)))
   (ignore-errors (close output))
   (ignore-errors (close error-output))
+  (when channel
+    (ignore-errors (cl-concurrent-kit:close-channel channel)))
   (unwind-protect
        (when executor
          (ignore-errors
            (cl-concurrent-kit:shutdown-executor
-            executor :wait t :cancel-pending t)))
+            executor
+            :wait t
+            :cancel-pending t
+            :timeout (cl-date-kit:duration-of-millis 100))))
     (when channel
       (ignore-errors (cl-concurrent-kit:close-channel channel)))))
 

@@ -141,12 +141,13 @@
       (expect (buffer-point-column buffer) :to-equal 2))))
 
 (describe
-  "shortcut line column indicator"
+  "mode line column indicator"
   (it
     "reports Col in screen cells rather than characters"
     (let ((state (%fresh-layout-state :name "*scratch*" :content "あいう")))
       (buffer-set-point (window-buffer (%layout-window state)) 0 2)
-      (loom::compose-frame state)
       (expect (search "Ln 1, Col 5"
-                      (cl-tty-kit:screen-row-string (%layout-screen state) 4))
+                      (loom::%layout-mode-line-text
+                       (editor-state-renderer state)
+                       (window-buffer (%layout-window state))))
               :to-be-truthy))))
