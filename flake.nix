@@ -563,6 +563,7 @@
             type = "app";
             program = toString (
               pkgs.writeShellScript "loom-e2e" ''
+                export PATH="${pkgs.nixd}/bin:$PATH"
                 export LOOM_BINARY="${ctx.executable}/bin/loom"
                 exec "${python}/bin/python3" "${self}/t/e2e/loom-test.py" "$@"
               ''
