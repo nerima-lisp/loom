@@ -44,6 +44,8 @@
     (ignore-errors (uiop:terminate-process info :urgent t)))
   (ignore-errors (close output))
   (ignore-errors (close error-output))
+  (when channel
+    (ignore-errors (cl-concurrent-kit:close-channel channel)))
   (unwind-protect
        (when executor
          (ignore-errors
