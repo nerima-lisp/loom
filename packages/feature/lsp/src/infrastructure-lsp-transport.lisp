@@ -41,7 +41,7 @@
 (defun %close-lsp-resources (info input output error-output executor channel)
   (ignore-errors (close input))
   (when info
-    (ignore-errors (uiop:terminate-process info)))
+    (ignore-errors (uiop:terminate-process info :urgent t)))
   (ignore-errors (close output))
   (ignore-errors (close error-output))
   (unwind-protect
