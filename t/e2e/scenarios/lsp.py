@@ -26,7 +26,7 @@ def _fixture():
     with open(os.path.join(directory.name, "flake.nix"), "wb") as handle:
         handle.write(b"{}\n")
     with open(os.path.join(directory.name, ".loom-lsp"), "w", encoding="utf-8") as handle:
-        handle.write(_nixd_command() + "\n")
+        handle.write("exec " + _nixd_command() + "\n")
     path = write_buffer(
         directory.name,
         "main.nix",
