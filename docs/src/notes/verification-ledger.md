@@ -61,6 +61,25 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | roadmap の自賛表現 | 2 | 2 | `grep -c 'actively hardened\|verified engineering baseline' docs/src/project/roadmap.md` |
 | `command-spec` 件数 | 120 | | `grep -ohE '\(command-spec\s+("[a-zA-Z0-9-]+"\|nil)' src/application/command-definitions*.lisp` |
 
+### 1.5 Part 2 着手前の再測定
+
+対象は Part 1 完了後の `514c5a3` とし、Part 2 の編集前に親コミットを直接検査した。
+英語散文の em dash は 4 行 / 3 ファイル、`Return true` の docstring は 32 件で、うち
+3 件を署名の言い直しと判定した。公開 export の対象は 7 件、roadmap の自賛表現は 2 件だった。
+
+### 1.6 Part 2 完了時の再測定
+
+| 項目 | 着手前 | 完了後 | 判定とコマンド |
+| --- | ---: | ---: | --- |
+| 英語散文の em dash | 4 行 / 3 ファイル | 0 行 / 0 ファイル | `perl -ne 'print if /\\x{2014}/' README.md docs/src packages/README.md src packages .github` |
+| `Return true` docstring | 32 件、冗長 3 件 | 29 件、冗長 0 件 | `grep -rn '\"Return true' src packages` を全件再読 |
+| 対象 export | 7 件 | 0 件 | `src/package-exports.lisp` の全体トークン照合 |
+| roadmap の自賛表現 | 2 件 | 0 件 | `grep -Eic 'actively hardened|verified engineering baseline' docs/src/project/roadmap.md` |
+| SWANK のソケット実装 | 未実装 | 未実装 | `grep -rln 'socket\\|usocket\\|sb-bsd-sockets\\|swank' src packages` は出力なし、exit 1 |
+
+残った `successfully` は終了状態や処理結果を記述する文であり、署名だけを言い直す文ではない。
+`overall width/height` はウィンドウ寸法の用語であり、締めの言い直しではない。
+
 ## 2. 処置台帳（P3 以降）
 
 | # | 発見元 | 対象 | 症状 | 判断 | 状態 |
@@ -83,3 +102,4 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | P5 CI | 実装済み | `cb5022c` | `nix build .#default` は実測 3.73 秒、`nix run .#e2e` は実測 28.47 秒。いずれも exit 0。E2E は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`。この実測を根拠に E2E ジョブの `timeout-minutes` は 10 とした。CI の両ジョブは未実行 |
 | 統合（presentation） | 完了 | `9bbca23`, `cc0380d`, `f892bb4`, `e6ae4d5` | `nix run .#e2e` は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`、未カバー `0`、exit 0。launchctl 経由の in-process は `1427 passed, 0 skipped, 0 todo, 0 failed, 0 errored, 1427 total`、exit 0。`nix flake check` は `all checks passed!`、exit 0。`nix build --no-link --print-out-paths .#default` は exit 0。実PTY は mode-line、C-x 2/C-x 3 の mode-line 分離、C-SPC の緑背景、M-x terminal の `pty-integration` 出力を画面ダンプで確認し、exit 0 |
 | 診断可視化実機 | 完了 | this commit | 実 `nixd` を使った一時 PTY スクリプトが exit 0。診断付き画面は mode-line に `Diag: E1 W1`、診断範囲は赤背景、リージョン重畳は緑背景と診断範囲の赤背景を同一画面で確認。LSP セッション無しと診断ゼロでは `Diag:` が無く、40 列の長い日本語名でも mode-line は `cells=40` で折り返さなかった。 |
+| 要件書と slop | 完了 | this commit | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |

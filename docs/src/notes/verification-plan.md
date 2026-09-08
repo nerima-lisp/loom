@@ -7,22 +7,25 @@
 
 **背景**: in-process のテスト（`t/unit`、`t/integration`）は全コマンドの実装シンボルを参照して
 いるが、それは「関数が呼ばれる」ことの証明であり、raw-mode 端末で描画と入力経路を通した証明では
-ない。実バイナリを PTY で叩く E2E（`t/e2e`）は 12 シナリオしかなく、CI にも flake にも繋がって
-いない。
+ない。実バイナリを PTY で叩く E2E（`t/e2e`）は全 command-spec を照合し、CI の実PTYジョブ
+から実行する。
+
+この文書の P0 と P1 の件数は履歴である。現行のシナリオ数、被覆、slop 測定は検証台帳の最新行と
+`requirements-daily-driver.md` に合わせる。
 
 ### 1.1 確認済みの事実
 
 | 観点 | 事実 | 根拠（verified） |
 | --- | --- | --- |
 | 実行ファイル | `nix build .#default` が `bin/loom` を生成する。`.#loom` はソースと fasl だけのライブラリ派生で `bin/` を持たない | 両方を aarch64-darwin でビルドして中身を確認 |
-| PTY E2E | 現行 12 シナリオが aarch64-darwin で全件 PASS、exit 0 | `HOME=$(mktemp -d) LOOM_BINARY=<out>/bin/loom python3 t/e2e/loom-test.py` |
-| E2E の到達範囲 | `command-spec` 120 件中 12 件。file-tree、session と register、tooling、window と workspace の 4 グループはゼロ | `t/e2e/loom-test.py` の `main()` を `command-spec` 一覧と突き合わせ |
+| PTY E2E | 現行シナリオが aarch64-darwin で全件 PASS、exit 0 | `nix run .#e2e` |
+| E2E の到達範囲 | `command-spec` 120 件をシナリオのマニフェストと照合し、未カバー 0 | `nix run .#e2e -- --list` と全件実行 |
 | E2E の観測能力 | 生バイトの部分一致とディスク上のファイル内容のみ。画面グリッドとカーソル位置は見えない | `t/e2e/loom-test.py` の `LoomProcess` |
 | CI | `nix flake check` の単一ジョブ。sandbox に PTY が無く、実子プロセスを使う 3 テストが `LOOM_SANDBOXED_CHECK` で skip する | `flake.nix` の `checks.default`、`t/test-helpers-core.lisp` の `%sandboxed-check-p`、skip 3 箇所 |
 | 外部プロセス依存 | `terminal`（PTY 子）、`git-*` 5 件、`pipe-command`、`format-current-buffer`、`lsp-*` 6 件 | 各コマンドの実装から `cl-tty-kit:make-pty`、`vcs-kit:run-git`、`process-kit:run-shell`、`uiop:launch-program` への到達を確認 |
 | ダンプ済みバイナリ | 実行時に ASDF を読まないため、`asdf:operate` が停止する環境でも E2E は動く | `flake.nix` の `installSource = false` と実行結果 |
 | slop 基線 | 英語散文の em dash 4 行（3 ファイル）、署名を言い直す docstring 3 件、参照ゼロの export 1 件と定義ファイル外で未参照の export 6 件、roadmap の自賛表現 2 箇所 | `grep -rnP '\x{2014}'`、`grep -rn '"Return true' src packages`、`src/package-exports.lisp` の各シンボルを全体 grep |
-| 要件書の乖離 | `requirements-daily-driver.md` は FR-001 から FR-007 を未実装と記述しているが、実際は FR-009（SWANK）のみ未実装 | 同書が引く file:line を現コードと突き合わせ |
+| 要件書 | `requirements-daily-driver.md` は実装状態ではなく、判断と未実装境界を記録する | FR-000 から FR-010 の状態と判断理由を現行コード・検証結果と突き合わせ |
 | 部分実装と孤立コード | TODO と stub はゼロ、参照ゼロの defun はゼロ、`loom.asd` の `:file` と実ファイルは 1:1 | `grep -rniE 'TODO|FIXME|XXX|not yet|stub'`、defun 名の全体トークン計数、`comm` による対応確認 |
 | 利用可能な外部ツール | nixpkgs に pyte、nixd、typescript-language-server がある | `nix eval --raw 'nixpkgs#<attr>.version'` |
 

@@ -29,7 +29,6 @@
             collect name)))
 
 (defun %command-spec-named-p (spec name)
-  "Return true when SPEC has the command NAME."
   (and (getf spec :name)
        (string-equal name (getf spec :name))))
 
