@@ -50,7 +50,10 @@
        (when executor
          (ignore-errors
            (cl-concurrent-kit:shutdown-executor
-            executor :wait t :cancel-pending t)))
+            executor
+            :wait t
+            :cancel-pending t
+            :timeout (cl-date-kit:duration-of-millis 100))))
     (when channel
       (ignore-errors (cl-concurrent-kit:close-channel channel)))))
 
