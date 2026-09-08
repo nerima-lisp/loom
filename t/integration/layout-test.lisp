@@ -238,7 +238,7 @@
   (it
     "keeps diagnostic counts ahead of position and names when workspace width is tight"
     (let* ((renderer (make-loom-renderer 40 1))
-           (buffer (make-buffer :name "非常に長いバッファ名"
+           (buffer (make-buffer :name "これは診断件数確認用の非常に長い日本語バッファ名です.nix"
                                 :path "/tmp/main.nix"))
            (state (make-editor-state :lsp-session nil))
            (diagnostic

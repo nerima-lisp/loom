@@ -94,12 +94,9 @@
         (when (<= part-width remaining)
           (push part selected)
           (decf remaining part-width))))
-    (if selected
-        (when (plusp remaining)
-          (push (%layout-truncate-to-width (first parts) remaining) selected))
-        (when (plusp remaining)
-          (push (%layout-truncate-to-width (car (last parts)) remaining)
-                selected)))
+    (when (and (null selected) (plusp remaining))
+      (push (%layout-truncate-to-width (car (last parts)) remaining)
+            selected))
     (format nil "~A~{~A~}~A" status-visible selected workspace)))
 
 (defun %layout-mode-line (renderer buffer &optional width workspace-name)
