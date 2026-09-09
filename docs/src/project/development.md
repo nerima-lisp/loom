@@ -81,9 +81,12 @@ remove`. Do not delete a worktree until its commit is reachable from `main`.
 
 When a named branch already contains the complete work unit, keep its existing
 commits and commit any remaining unstaged changes separately. Verify that the
-remote `main` tip is an ancestor of the branch, then push the branch tip to
-`main` as a fast-forward. After confirming the remote tip, remove the worktree
-and delete both the finished local branch and its remote branch.
+branch tip is an ancestor of the current remote `main`, then push the branch tip
+to `main` as a fast-forward. If the branch tip is already in `main`, do not
+create a duplicate commit. After confirming the remote tip, remove the worktree
+and delete both the finished local branch and its remote branch. Worktrees
+outside the repository's active worktree root may be inspected but must be
+removed by the process that owns that location.
 
 ## Verification
 
