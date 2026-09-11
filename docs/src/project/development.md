@@ -86,7 +86,9 @@ to `main` as a fast-forward. If the branch tip is already in `main`, do not
 create a duplicate commit. After confirming the remote tip, remove the worktree
 and delete both the finished local branch and its remote branch. Worktrees
 outside the repository's active worktree root may be inspected but must be
-removed by the process that owns that location.
+removed by the process that owns that location. Treat a finished branch that
+is still checked out there as an owner-managed cleanup item and report it
+without deleting the worktree or branch from this workflow.
 
 ## Verification
 
