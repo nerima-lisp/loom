@@ -1,9 +1,3 @@
-;;;; src/application/commands-prompts.lisp
-;;;;
-;;;; Application layer: prompt orchestration macros shared by command entry
-;;;; points. The editor-state/session helper functions remain in
-;;;; commands-internal.lisp; this file exists so continuation-style prompt
-;;;; composition has its own compile/load boundary.
 (in-package #:loom/application)
 
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)

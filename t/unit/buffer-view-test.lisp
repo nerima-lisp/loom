@@ -1,8 +1,3 @@
-;;;; t/unit/buffer-view-test.lisp
-;;;;
-;;;; Domain layer: the visible-region and offset/coordinate helpers defined in
-;;;; packages/core/editor/src/domain-buffer-narrowing.lisp and
-;;;; packages/core/editor/src/domain-buffer-positions.lisp.
 (in-package #:loom/test)
 
 (describe

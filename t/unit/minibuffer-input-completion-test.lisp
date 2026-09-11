@@ -1,6 +1,3 @@
-;;;; t/unit/minibuffer-input-completion-test.lisp
-;;;;
-;;;; Completion behavior for src/application/minibuffer-input.lisp.
 (in-package #:loom/test)
 
 (describe

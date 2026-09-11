@@ -1,4 +1,3 @@
-;;;; t/integration/commands-lsp-navigation-test.lisp
 (in-package #:loom/test)
 
 (describe

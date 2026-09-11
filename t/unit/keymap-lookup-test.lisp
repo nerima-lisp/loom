@@ -1,7 +1,3 @@
-;;;; t/unit/keymap-lookup-test.lisp
-;;;;
-;;;; Domain layer: trie lookup and parent-shadowing behavior in
-;;;; src/domain/keymap.lisp.
 (in-package #:loom/test)
 
 (describe

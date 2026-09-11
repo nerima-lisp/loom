@@ -1,11 +1,6 @@
-;;;; packages/feature/file-tree/src/package.lisp
-;;;;
-;;;; The file-tree feature owns filesystem navigation and its concurrent
-;;;; directory-entry prefetch boundary.
 (defpackage #:loom/feature/file-tree
   (:use #:cl #:loom #:loom/application #:loom/feature/window)
   (:export
-   ;; Domain API
    #:make-file-tree
    #:file-tree-visible-p
    #:file-tree-toggle
@@ -14,7 +9,6 @@
    #:file-tree-entry-kind
    #:file-tree-move-selection
    #:file-tree-toggle-expand
-   ;; Infrastructure composition API
    #:file-tree-child-lister
    #:file-tree-install-child-lister
    #:file-tree-prefetch-paths
@@ -22,7 +16,6 @@
    #:file-tree-create-directory
    #:file-tree-rename
    #:file-tree-delete
-   ;; Infrastructure API
    #:loom-fs-list-directory
    #:make-loom-concurrent-runtime
    #:loom-concurrent-runtime-directory-entries
@@ -33,7 +26,6 @@
    #:loom-concurrent-runtime-prefetch
    #:loom-concurrent-runtime-drain
    #:loom-concurrent-runtime-shutdown
-   ;; Application API
    #:toggle-file-tree
    #:file-tree-select-next
    #:file-tree-select-previous

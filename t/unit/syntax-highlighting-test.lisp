@@ -1,6 +1,3 @@
-;;;; t/unit/syntax-highlighting-test.lisp
-;;;;
-;;;; Domain-layer tests for line-local Common Lisp token classification.
 (in-package #:loom/test)
 
 (defun %syntax-token-kinds (line)

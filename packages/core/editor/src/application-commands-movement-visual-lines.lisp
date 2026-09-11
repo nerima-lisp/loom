@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-movement-visual-lines.lisp
-;;;;
-;;;; Application layer: movement across renderer-wrapped screen rows.
 (in-package #:loom)
 
 (defun %visual-line-segments (renderer buffer line width)

@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-yank-support.lisp
-;;;;
-;;;; Application layer: yank command helpers shared by yank/yank-pop.
 (in-package #:loom)
 
 (defun %repeat-kill-text (text count)

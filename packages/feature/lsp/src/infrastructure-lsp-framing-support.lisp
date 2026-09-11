@@ -1,8 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-framing-support.lisp
-;;;;
-;;;; Internal UTF-8 helpers for LSP framing. Header parsing lives in
-;;;; infrastructure-lsp-headers.lisp; public framing entry points stay in
-;;;; infrastructure-lsp-framing.lisp.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-utf8-codepoint-width (code)

@@ -1,9 +1,3 @@
-;;;; t/package.lisp
-;;;
-;;; Imports the cl-weave DSL explicitly (no blanket :USE), so a future
-;;; cl-weave export never silently shadows a loom symbol. CL:DESCRIBE is
-;;; shadowed in favor of CL-WEAVE:DESCRIBE, per the cl-weave installation
-;;; contract (see e.g. cl-host-kit/t/package.lisp, nshell/t/package.lisp).
 (defpackage #:loom/test
   (:use #:cl #:loom #:loom/application
         #:loom/feature/mode

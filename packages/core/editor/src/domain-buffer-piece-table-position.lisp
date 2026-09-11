@@ -1,12 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table position and line mapping helpers
-;;;
-;;; Representation stays in domain-buffer-storage.lisp. These helpers map
-;;; between piece-table offsets, line/column positions, and line-oriented
-;;; views of the current buffer text.
-;;; ---------------------------------------------------------------------
 
 (defun %position-matches-p (current-line current-column line column)
   (and (= current-line line)

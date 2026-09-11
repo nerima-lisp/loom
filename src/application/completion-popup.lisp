@@ -1,13 +1,3 @@
-;;;; src/application/completion-popup.lisp
-;;;;
-;;;; The in-buffer candidate list: a transient overlay the user picks from
-;;;; while typing. It is deliberately not an LSP concept -- an item is a
-;;;; (LABEL . TEXT) pair and nothing more -- so the renderer and the input
-;;;; router can depend on it without depending on a language server.
-;;;;
-;;;; The minibuffer's own completion (src/application/minibuffer-completion.lisp)
-;;;; is a different thing: it completes a command name in the prompt line, not
-;;;; a symbol at point in a buffer.
 (in-package #:loom)
 
 (defstruct (editor-completion

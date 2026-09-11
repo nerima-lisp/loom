@@ -14,9 +14,6 @@ The name follows the conventional editor form, wrapping the complete file
                        :version nil
                        :defaults pathname))
            (file-name (format nil "#~A#" (file-namestring pathname))))
-      ;; Parse the complete sidecar name before merging it with the original
-      ;; directory.  Supplying the dotted file name as MAKE-PATHNAME's NAME
-      ;; component would make implementations escape the dot.
       (merge-pathnames (parse-namestring file-name) directory))))
 
 (defun auto-save-eligible-p (buffer)

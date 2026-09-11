@@ -1,6 +1,3 @@
-;;;; src/application/editor-state-support.lisp
-;;;;
-;;;; Application layer: editor-state-adjacent shared globals.
 (in-package #:loom)
 
 (defparameter *editor-recent-file-limit* 50

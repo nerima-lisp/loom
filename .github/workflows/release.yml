@@ -17,11 +17,8 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# Check tag/version alignment before spending time on the release build.
 jobs:
-  # Gate the release once, before any binary is built. Splitting this out of
-  # the matrix means the org invariants are checked a single time rather than
-  # once per target, and a mismatch fails before spending three SBCL image
-  # builds on a release that must not be published.
   verify:
     name: Verify the tagged tree
     runs-on: ubuntu-latest
@@ -34,10 +31,6 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref_name }}
           persist-credentials: false
 
-      # Enforces the org invariant "git tag == .asd :version" at the only point
-      # where it can still be corrected cheaply. Without this gate the two drift
-      # silently, which is how cl-boundary-kit reached :version 1.0.0 while its
-      # newest tag was still v0.6.0.
       - name: Verify tag matches .asd version
         env:
           PACKAGE: loom
@@ -56,19 +49,16 @@ jobs:
           cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      # Never publish a release that does not pass its own test suite.
       - name: Check flake
         run: nix flake check --print-build-logs
 
   release:
-    # One tarball, for the one platform `systems` declares. See
-    # PACKAGE_STANDARD.md "CI の粒度".
     name: build and publish x86_64-linux
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
-      contents: write # Create the GitHub Release and upload its assets.
+      contents: write
     env:
       RELEASE_REF: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
@@ -85,8 +75,7 @@ jobs:
       - name: Build release binary
         run: nix build --print-build-logs
 
-      # The dumped binary enters a raw-mode event loop, so the release gate
-      # needs the real PTY provided by the E2E app.
+      # Release validation needs a real PTY, so this runs outside the Nix sandbox.
       - name: Run PTY E2E
         run: nix run .#e2e
 
@@ -100,30 +89,7 @@ jobs:
           tar -czf "dist/${name}.tar.gz" -C dist "${name}"
           ( cd dist && shasum -a 256 "${name}.tar.gz" > "${name}.tar.gz.sha256" )
 
-      # Creates the release as an empty draft, with the tarball and checksum
-      # attached. This workflow does not produce a release body at all.
-      #
-      # As of the 2026-08-01 revision the GitHub Release description is the only
-      # canonical changelog in this org; there is no CHANGELOG.md to read from.
-      # See RELEASE_STANDARD.md. After this job goes green the maintainer fills
-      # the body in and publishes:
-      #
-      #   gh release edit "$RELEASE_REF" --notes-file <file> --draft=false
-      #
-      # `draft: true` is load-bearing. Publishing straight away would make "the
-      # maintainer forgot the notes" a user-visible state. A draft appears
-      # neither under "Latest release" nor in the default output of
-      # `gh release list`, so an unfinished release never reaches downstream.
-      #
-      # `generate_release_notes` is deliberately left off. Generated notes are a
-      # list of commit titles and PR numbers, and RELEASE_STANDARD.md requires
-      # the notes to be selected by "does a user of this package have to change
-      # their own code". That is a judgement no generator can make.
-      #
-      # Every `uses:` in this org references a 40-character SHA, never a mutable
-      # tag. Re-resolve before bumping, and do not copy a SHA you have not
-      # resolved yourself:
-      #   gh api repos/softprops/action-gh-release/git/ref/tags/v2 --jq .object.sha
+      # Leave the release as draft until a maintainer supplies the canonical notes.
       - name: Create draft release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:

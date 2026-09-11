@@ -1,4 +1,3 @@
-;;;; t/integration/kill-yank-region-test.lisp
 
 (in-package #:loom/test)
 

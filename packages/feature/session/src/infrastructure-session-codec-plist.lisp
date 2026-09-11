@@ -1,6 +1,3 @@
-;;;; packages/feature/session/src/infrastructure-session-codec-plist.lisp
-;;;;
-;;;; Fixed-shape plist helpers for session snapshot serialization.
 (in-package #:loom/feature/session)
 
 (defconstant +loom-session-version+ 5)

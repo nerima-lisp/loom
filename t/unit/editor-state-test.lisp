@@ -1,8 +1,3 @@
-;;;; t/unit/editor-state-test.lisp
-;;;;
-;;;; Editor-state operation tests.  These isolate save hooks, recent-file
-;;;; tracking, and transient yank bookkeeping from workspace-manager tests so
-;;;; the top-level state helpers stay observable as one slice.
 (in-package #:loom/test)
 
 (defmacro %editor-state-accessor-contract-test ()

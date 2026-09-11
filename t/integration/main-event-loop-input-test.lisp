@@ -1,4 +1,3 @@
-;;;; t/integration/main-event-loop-input-test.lisp
 (in-package #:loom/test)
 
 (describe

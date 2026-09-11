@@ -1,10 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-history.lisp
-;;;;
-;;;; Domain layer: buffer modification/read-only state and undo/redo history.
-;;;; This file keeps the public history protocol separate from the core
-;;;; buffer text/point/mark protocol in domain-buffer.lisp while sharing the
-;;;; same piece-table primitives and undo replay helpers from
-;;;; domain-buffer-storage.lisp and domain-buffer-piece-table-undo.lisp.
 
 (in-package #:loom)
 
@@ -42,22 +35,11 @@ calls to BUFFER-UNDO keep walking through the inverse history. The inverse
 group is also made available to BUFFER-REDO. Once the history is exhausted,
 further calls are a no-op (or signal, at the implementation's discretion).
 Returns BUFFER."
-  ;; BUFFER-UNDO keeps the existing ring behavior: its undo-list is a flat,
-  ;; most-recent-first sequence of edit entries and :BOUNDARY markers. The
-  ;; popped group's inverses are applied through the same mutation primitives
-  ;; as ordinary edits, so the inverse-of-the-inverse remains on the undo ring
-  ;; and the next BUFFER-UNDO call continues the ring-style walk. In parallel,
-  ;; the returned inverse actions are copied to the explicit redo-list. Replay
-  ;; passes CLEAR-REDO false, while ordinary edits clear redo history and start
-  ;; a new branch.
   (%ensure-buffer-writable buffer)
     (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
                        until (or (null entry) (eq entry :boundary))
                        collect entry)))
       (when group
-        ;; Put the boundary below this group's entries. Since GROUP is
-        ;; consumed newest-first, pushing each inverse reverses it back into
-        ;; the original edit order for BUFFER-REDO.
         (push :boundary (%buffer-redo-list buffer))
         (dolist (entry group)
           (push (%apply-undo-entry buffer entry)

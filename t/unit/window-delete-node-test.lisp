@@ -1,6 +1,3 @@
-;;;; t/unit/window-delete-node-test.lisp
-;;;;
-;;;; Internal window deletion node behavior.
 (in-package #:loom/test)
 
 (describe

@@ -1,10 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-accessors.lisp
-;;;;
-;;;; Domain layer: line/point/mark/region query APIs layered on top of the
-;;;; core buffer protocol in domain-buffer.lisp. Representation and
-;;;; piece-table mutation primitives stay in domain-buffer-storage.lisp and
-;;;; domain-buffer-piece-table.lisp; this file owns the public position-aware
-;;;; read/query operations and shared point/mark offset helpers.
 
 (in-package #:loom)
 

@@ -1,8 +1,3 @@
-;;;; src/application/startup.lisp
-;;;;
-;;;; Startup is the composition root for the executable. The detailed state
-;;;; assembly and service lifecycle live in startup-state.lisp and
-;;;; startup-services.lisp; this file keeps the CLI boundary and orchestration.
 (in-package #:loom)
 
 (defun loom-version ()

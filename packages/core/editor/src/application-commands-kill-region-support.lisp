@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-kill-region-support.lisp
-;;;;
-;;;; Application layer: active-region helpers shared by kill/copy commands.
 (in-package #:loom)
 
 (defun %active-region-bounds (buffer)

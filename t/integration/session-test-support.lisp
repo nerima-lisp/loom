@@ -1,6 +1,3 @@
-;;;; t/integration/session-test-support.lisp
-;;;;
-;;;; Shared helpers for session persistence integration tests.
 (in-package #:loom/test)
 
 (defun %session-test-workspace (&key (name "main")

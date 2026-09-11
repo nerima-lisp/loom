@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/application-sexp-motion-support.lisp
-;;;;
-;;;; Internal scanning primitives for S-expression motion.
-;;;;
 (in-package #:loom)
 
 (defun %sexp-filler-character-p (text classes offset)

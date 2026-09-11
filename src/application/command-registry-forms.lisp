@@ -1,8 +1,3 @@
-;;;; src/application/command-registry-forms.lisp
-;;;;
-;;;; Application-layer declarative command registry forms. These macros define
-;;;; the DSL surface that command catalog files write against; normalization
-;;;; and validation live in command-registry-build.lisp.
 (in-package #:loom/application)
 
 (defun %validate-command-metadata (name command help help-order)

@@ -1,10 +1,3 @@
-;;;; src/application/minibuffer-activation.lisp
-;;;;
-;;;; Application layer: minibuffer activation/message lifecycle. This file
-;;;; keeps state transitions separate from the minibuffer struct/query protocol
-;;;; in src/application/minibuffer.lisp, from history snapshot/install in
-;;;; src/application/minibuffer-history.lisp, and from keystroke-driven input
-;;;; handling in src/application/minibuffer-input.lisp.
 (in-package #:loom)
 
 (defun %minibuffer-deactivate (minibuffer)

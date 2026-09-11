@@ -1,8 +1,3 @@
-;;;; packages/feature/keyboard-macro/src/domain-keyboard-macro.lisp
-;;;;
-;;;; Domain layer: a keyboard macro is an ordered value object made from
-;;;; already-decoded key descriptors.  It contains no keymap or terminal
-;;;; knowledge; replay is an application concern.
 (in-package #:loom/feature/keyboard-macro)
 
 (defstruct (keyboard-macro-event

@@ -1,10 +1,3 @@
-;;;; t/unit/file-tree-test.lisp
-;;;;
-;;;; Domain layer: the pure file-tree state generics (packages/feature/file-tree/src/domain-file-tree.lisp)
-;;;; -- visibility, selection, expand/collapse, and FILE-TREE-ENTRIES'
-;;;; lazy depth-first flattening. No real filesystem access: each test that
-;;;; needs children installs a fake CHILD-LISTER via the public composition
-;;;; seam that infrastructure/filesystem.lisp uses in the real editor.
 (in-package #:loom/test)
 
 (defun %fake-lister (path)

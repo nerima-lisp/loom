@@ -1,6 +1,3 @@
-;;;; t/unit/window-delete-behavior-test.lisp
-;;;;
-;;;; Window deletion behavior.
 (in-package #:loom/test)
 
 (describe

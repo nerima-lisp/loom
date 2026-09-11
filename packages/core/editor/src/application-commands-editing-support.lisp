@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-editing-support.lisp
-;;;;
-;;;; Application layer: editing command helpers shared by public commands.
 (in-package #:loom)
 
 (defun %delete-char-forward-once ()

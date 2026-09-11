@@ -6,8 +6,6 @@
         (loop for chunk = (cl-tty-kit:pty-read pty)
               while (and chunk (string/= chunk ""))
               do (write-string chunk output))
-      ;; A PTY master commonly reports EIO for the final read after its
-      ;; child exits. Data accumulated before that read is still useful.
       (cl-tty-kit:pty-operation-failed () nil))))
 
 (defun %close-terminal-session (session)

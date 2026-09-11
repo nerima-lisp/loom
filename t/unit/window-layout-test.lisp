@@ -1,6 +1,3 @@
-;;;; t/unit/window-layout-test.lisp
-;;;;
-;;;; Window layout persistence behavior.
 (in-package #:loom/test)
 
 (describe

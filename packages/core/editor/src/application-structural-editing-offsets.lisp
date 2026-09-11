@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-structural-editing-offsets.lisp
-;;;;
-;;;; Application layer: point offsets after a planned structural edit.
 (in-package #:loom)
 
 (defun %structural-offset-after-insert (offset edit)

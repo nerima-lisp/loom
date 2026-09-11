@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-tooling.lisp
-;;;;
-;;;; Declarative command catalogue for tooling commands.
 (in-package #:loom)
 
 (define-command-spec-groups *tooling-command-spec-groups*

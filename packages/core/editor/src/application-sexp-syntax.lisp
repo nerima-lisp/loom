@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-sexp-syntax.lisp
-;;;;
-;;;; Reader-aware syntax classification shared by S-expression motion helpers.
 (in-package #:loom)
 
 (defmacro define-sexp-character-set (name characters)

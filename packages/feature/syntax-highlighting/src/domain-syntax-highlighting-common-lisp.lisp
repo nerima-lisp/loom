@@ -1,7 +1,3 @@
-;;;; packages/feature/syntax-highlighting/src/domain-syntax-highlighting-common-lisp.lisp
-;;;;
-;;;; Common Lisp-specific lexical classification built on the shared
-;;;; line-token utilities from domain-syntax-highlighting.lisp.
 
 (in-package #:loom/feature/syntax-highlighting)
 

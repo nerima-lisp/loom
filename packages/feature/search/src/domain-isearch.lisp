@@ -1,25 +1,12 @@
-;;;; packages/feature/search/src/domain-isearch.lisp
-;;;;
-;;;; Domain layer: the incremental-search session and its pure transitions.
-;;;; Everything here works on a buffer plus offsets and returns a new session
-;;;; state; moving point, prompting, and drawing belong to the application and
-;;;; presentation layers.
 (in-package #:loom/feature/search)
 
 (defstruct (isearch-session (:constructor %make-isearch-session)
                             (:conc-name %isearch-))
-  ;; The buffer the session was started in. A session never follows point into
-  ;; another buffer: the origin it can return to would mean nothing there.
   (buffer nil)
-  ;; Where point was when the search began, so C-g can put it back exactly.
   (origin-offset 0)
-  ;; Where the next search starts. A new character searches from here again so
-  ;; the match grows in place; a repeat moves it past the current match first.
   (search-offset 0)
   (direction :forward)
   (pattern "")
-  ;; The match point currently sits on, and every match in the buffer. The
-  ;; renderer distinguishes the first from the rest.
   (match nil)
   (matches nil)
   (failed-p nil))

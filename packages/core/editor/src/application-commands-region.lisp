@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-region.lisp
-;;;;
-;;;; Application layer: mark/region, buffer narrowing, and undo/redo commands.
 (in-package #:loom)
 
 (define-selected-buffer-command set-mark-command

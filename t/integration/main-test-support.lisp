@@ -1,4 +1,3 @@
-;;;; t/integration/main-test-support.lisp
 (in-package #:loom/test)
 
 (defun %fresh-full-editor-state (initial-content)

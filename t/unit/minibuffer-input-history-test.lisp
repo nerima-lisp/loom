@@ -1,6 +1,3 @@
-;;;; t/unit/minibuffer-input-history-test.lisp
-;;;;
-;;;; History navigation for src/application/minibuffer-input.lisp.
 (in-package #:loom/test)
 
 (describe

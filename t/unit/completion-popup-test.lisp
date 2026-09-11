@@ -1,6 +1,3 @@
-;;;; t/unit/completion-popup-test.lisp
-;;;;
-;;;; The candidate list value: selection movement and item accessors.
 (in-package #:loom/test)
 
 (defun %sample-completion (&optional (items '(("alpha" . "alpha")

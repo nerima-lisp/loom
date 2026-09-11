@@ -1,7 +1,3 @@
-;;;; t/integration/user-init-test.lisp
-;;;;
-;;;; Integration coverage for the optional startup file and its public
-;;;; command/keymap extension API.
 (in-package #:loom/test)
 
 (describe

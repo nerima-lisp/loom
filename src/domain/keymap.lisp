@@ -1,22 +1,5 @@
-;;;; src/domain/keymap.lisp
-;;;;
-;;;; Domain layer: key-sequence -> command lookup. This file owns the pure
-;;;; keymap trie; descriptor normalization lives in
-;;;; src/domain/keymap-descriptor.lisp, and incremental dispatch state lives in
-;;;; src/domain/keymap-state.lisp.
-;;;;
-;;;; A keymap maps key sequences (lists of key-event descriptors) to commands,
-;;;; supporting Emacs-style prefix keys (e.g. C-x C-s) via an explicit
-;;;; incremental dispatch state that accumulates key events across calls.
 (in-package #:loom)
 
-;;; A keymap is a trie: KEYMAP-TABLE maps one normalized key descriptor to
-;;; either a bound command (a function designator) or another hash-table
-;;; (making that prefix a :PREFIX node, per KEYMAP-LOOKUP). A keymap may also
-;;; have a parent; a local first-chord binding shadows the corresponding
-;;; parent subtree, while an absent local first chord falls through. MAKE-
-;;; KEYMAP's default constructor name is overridden (%MAKE-KEYMAP) since it
-;;; would otherwise clash with the MAKE-KEYMAP generic function below.
 
 (defstruct (keymap (:constructor %make-keymap))
   (parent nil)

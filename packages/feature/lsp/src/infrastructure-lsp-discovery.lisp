@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-discovery.lisp
-;;;;
-;;;; Infrastructure helpers for discovering a project-local LSP command.
 (in-package #:loom/feature/lsp)
 
 (defparameter +lsp-config-file-name+ ".loom-lsp"

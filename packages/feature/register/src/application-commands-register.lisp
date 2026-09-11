@@ -1,8 +1,3 @@
-;;;; packages/feature/register/src/application-commands-register.lisp
-;;;;
-;;;; Application layer: Emacs-style register commands.  The domain register
-;;;; bank owns values; these commands only obtain the current buffer/point and
-;;;; coordinate asynchronous minibuffer prompts.
 (in-package #:loom/feature/register)
 
 (defun %register-bank-for-editor ()

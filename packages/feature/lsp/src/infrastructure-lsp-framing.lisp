@@ -1,8 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-framing.lisp
-;;;;
-;;;; Pure UTF-8 and Content-Length framing for the LSP transport boundary.
-;;;; It has no process or thread state; UTF-8 and header helpers live in the
-;;;; support file, while this file keeps the public framing API.
 (in-package #:loom/feature/lsp)
 
 (defun loom-lsp-frame-encode (json)

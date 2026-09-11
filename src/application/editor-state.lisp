@@ -1,6 +1,3 @@
-;;;; src/application/editor-state.lisp
-;;;;
-;;;; Application layer: constructor logic for the top-level EDITOR-STATE.
 (in-package #:loom)
 
 (defun make-editor-state (&rest initargs)

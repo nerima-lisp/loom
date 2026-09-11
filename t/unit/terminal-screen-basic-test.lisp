@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-screen-basic-test.lisp
-;;;;
-;;;; Terminal screen baseline drawing behavior.
 (in-package #:loom/test)
 
 (describe

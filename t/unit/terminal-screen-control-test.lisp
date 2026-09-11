@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-screen-control-test.lisp
-;;;;
-;;;; Terminal screen control sequences, scrolling, and resizing.
 (in-package #:loom/test)
 
 (describe

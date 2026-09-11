@@ -1,10 +1,6 @@
-;;;; packages/feature/window/src/package.lisp
-;;;;
-;;;; The window feature owns window-tree domain operations and their commands.
 (defpackage #:loom/feature/window
   (:use #:cl #:loom #:loom/application)
   (:export
-   ;; Domain API
    #:make-window-tree
    #:window-tree-windows
    #:window-tree-selected-window
@@ -28,7 +24,6 @@
    #:window-width
    #:window-height
    #:window-tree-resize
-   ;; Application API
    #:split-window-below
    #:split-window-right
    #:other-window

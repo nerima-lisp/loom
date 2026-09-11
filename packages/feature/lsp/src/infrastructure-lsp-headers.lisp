@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-headers.lisp
-;;;;
-;;;; ASCII header parsing for the LSP framing boundary.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-header-octets (string)

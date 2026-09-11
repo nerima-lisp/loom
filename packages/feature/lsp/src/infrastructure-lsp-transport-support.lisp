@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-transport-support.lisp
-;;;;
-;;;; Internal helpers for the LSP child-process transport.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-buffer-after-frame (buffer used)

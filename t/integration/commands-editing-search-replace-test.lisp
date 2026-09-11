@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-search-replace-test.lisp
-;;;;
-;;;; Search replacement and regex command integration tests.
 (in-package #:loom/test)
 
 (describe

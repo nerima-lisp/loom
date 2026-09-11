@@ -1,8 +1,5 @@
 (in-package #:loom/feature/terminal)
 
-;;;; Screen-state operations shared by parser and CSI handlers:
-;;;; clearing regions, saving/restoring the cursor, and alternate-screen
-;;;; transitions.
 
 (defun %terminal-screen-clear-row (screen row start end)
   (let ((line (aref (terminal-screen-rows screen) row)))

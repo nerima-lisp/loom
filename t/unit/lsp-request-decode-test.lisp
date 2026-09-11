@@ -1,7 +1,3 @@
-;;;; t/unit/lsp-request-decode-test.lisp
-;;;;
-;;;; Decoding of the completion and definition responses, including the shapes
-;;;; the protocol allows a server to choose between.
 (in-package #:loom/test)
 
 (defun %decode-completion (json)

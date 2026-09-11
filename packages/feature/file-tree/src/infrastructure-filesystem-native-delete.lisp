@@ -1,7 +1,3 @@
-;;;; packages/feature/file-tree/src/infrastructure-filesystem-native-delete.lisp
-;;;;
-;;;; Native SBCL recursive deletion for file-tree paths, including symlink-safe
-;;;; directory traversal.
 (in-package #:loom/feature/file-tree)
 
 #+sbcl
@@ -16,8 +12,6 @@
 
 #+sbcl
 (defun %native-delete-path (path)
-  ;; An explicit stack keeps deletion safe for deep trees without depending on
-  ;; the Lisp call stack, while LSTAT makes symlinks leaf entries.
   (let ((stack (list (cons (%native-namestring path) nil))))
     (loop while stack
           for item = (pop stack)

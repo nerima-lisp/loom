@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/application-commands-lsp.lisp
-;;;;
-;;;; Application-layer commands for starting an LSP child process and showing
-;;;; diagnostics.  The session protocol owns transport, document versions,
-;;;; and diagnostic values; this file only turns those values into editor
-;;;; use-cases and a normal Loom buffer.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-start-discovery (buffer)

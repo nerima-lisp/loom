@@ -1,7 +1,3 @@
-;;;; src/application/input-routing-descriptor.lisp
-;;;;
-;;;; Key-event routing starts by converting CL-TTY-KIT events into the
-;;;; keymap descriptor shape that the editor domain understands.
 (in-package #:loom)
 
 (defun %control-special-key-p (type code)

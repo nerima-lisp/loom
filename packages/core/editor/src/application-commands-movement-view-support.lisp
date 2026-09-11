@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/application-commands-movement-view-support.lisp
-;;;;
-;;;; Application layer: movement helpers that depend on window scrolling or
-;;;; minibuffer-driven navigation.
 (in-package #:loom)
 
 (defmacro define-scroll-command (name documentation delta)
@@ -67,7 +63,4 @@
          (buffer (loom/feature/window:window-buffer window)))
     (setf (loom/feature/window:window-scroll-line window)
           (%scroll-window-target-line window buffer delta))
-    ;; The scroll line just moved, so whichever segment of the old line was on
-    ;; the first row means nothing now. A wrapping window's own point-following
-    ;; pass re-derives the pair on the next frame.
     (setf (loom/feature/window:window-scroll-sub-row window) 0)))

@@ -1,7 +1,3 @@
-;;;; t/unit/sexp-motion-test.lisp
-;;;;
-;;;; S-expression boundary arithmetic: what counts as structure, what is only
-;;;; text that looks like structure, and what an unbalanced form reports.
 (in-package #:loom/test)
 
 (describe

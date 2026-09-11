@@ -1,6 +1,3 @@
-;;;; src/application/input-routing-dispatch.lisp
-;;;;
-;;;; Event routing orchestration after the key event is classified.
 (in-package #:loom)
 
 (defun %dispatch-keymap-action (keymap-state decision)
@@ -31,9 +28,6 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
       (minibuffer-was-active
        (minibuffer-handle-key minibuffer event)
        :handled)
-      ;; The popup gets first refusal and then gets out of the way: a key it
-      ;; does not recognize dismisses it and falls through to the branches
-      ;; below, so typing keeps typing instead of being swallowed.
       ((%completion-popup-handle-key event) :handled)
       (terminal-event-p
        (loom/feature/terminal:terminal-handle-key-event event)

@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-session-state.lisp
-;;;;
-;;;; Application-layer state for one language-server session. JSON values and
-;;;; process I/O stay behind the
-;;;; infrastructure protocols; this file owns the persistent state visible to
-;;;; commands and the main event loop.
 (in-package #:loom/feature/lsp)
 
 (defparameter *lsp-shutdown-timeout-seconds* 0.25
@@ -22,9 +16,6 @@
   server-info
   (documents (make-hash-table :test #'equal))
   (diagnostic-table (make-hash-table :test #'equal))
-  ;; Response handlers for requests the user drove, keyed by JSON-RPC id.
-  ;; Initialize and shutdown keep their own dedicated slots because their
-  ;; responses change the session's lifecycle rather than returning a value.
   (pending-requests (make-hash-table))
   pending-shutdown-id
   (exit-sent-p nil)

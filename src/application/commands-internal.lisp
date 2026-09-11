@@ -1,30 +1,3 @@
-;;;; src/application/commands-internal.lisp
-;;;;
-;;;; Application layer: commands are the use-case entry points a keymap
-;;;; binding invokes, split by concern (movement, editing, search, file,
-;;;; window, misc, keybindings) into the sibling application/commands-*.lisp
-;;;; files this one is loaded ahead of.
-;;;;
-;;;; Commands are NOT declared as generic functions: each editable command is
-;;;; a plain, ordinary function of zero arguments that reads and mutates
-;;;; *EDITOR-STATE* (see application/editor-state.lisp) and the protocol
-;;;; operations declared in domain/, infrastructure/, and application/ when
-;;;; invoked. A keymap binds a key sequence directly to such a function (see
-;;;; KEYMAP-DEFINE-KEY), so command names are the vocabulary keymap bindings
-;;;; are written against. Commands are named after their Emacs equivalents
-;;;; where one exists (FORWARD-CHAR, KILL-LINE, SAVE-BUFFER, ...) so the
-;;;; mapping from a keybinding to its behavior stays obvious from
-;;;; domain/keymap.lisp alone.
-;;;;
-;;;; The shared use-case primitives in this file belong to LOOM/APPLICATION.
-;;;; Feature commands use that explicit package directly, while the kernel
-;;;; package inherits the names for the command files that remain in the
-;;;; composition root.
-;;;;
-;;;; %SELECTED-WINDOW/%SELECTED-BUFFER and the other helpers below are shared
-;;;; by command entry points throughout the tree. Prompt composition macros
-;;;; live in commands-prompts.lisp so their compile/load order is explicit and
-;;;; independent from editor-state helper functions.
 (in-package #:loom/application)
 
 (defun %selected-window ()

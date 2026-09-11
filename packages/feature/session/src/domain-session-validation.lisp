@@ -1,4 +1,3 @@
-;;;; packages/feature/session/src/domain-session-validation.lisp
 (in-package #:loom/feature/session)
 
 (defun validate-session-snapshot (snapshot)

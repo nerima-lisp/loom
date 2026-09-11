@@ -1,6 +1,3 @@
-;;;; src/application/commands-bookmark.lisp
-;;;;
-;;;; Application layer: bookmark commands.
 (in-package #:loom)
 
 (define-bookmark-command set-bookmark

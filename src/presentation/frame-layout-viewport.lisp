@@ -1,6 +1,3 @@
-;;;; src/presentation/frame-layout-viewport.lisp
-;;;;
-;;;; Presentation layer: keep the selected point inside a window viewport.
 (in-package #:loom)
 
 (defun %layout-follow-truncated-line (window buffer height)

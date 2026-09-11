@@ -1,7 +1,3 @@
-;;;; t/integration/session-application-test.lisp
-;;;;
-;;;; Session persistence tests cover the application round-trip that rebuilds
-;;;; buffers and window layout.
 (in-package #:loom/test)
 
 (describe

@@ -1,8 +1,5 @@
 (in-package #:loom/feature/evaluation)
 
-;;; Evaluation is intentionally trusted, just like loading the user's init
-;;; file.  The infrastructure boundary owns reader/eval and stream capture;
-;;; callers receive a domain value instead of a condition escaping the command.
 (defun %loom-evaluation-package ()
   (or (find-package "LOOM-USER")
       (error "The LOOM-USER package is not available.")))

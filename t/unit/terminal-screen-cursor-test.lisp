@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-screen-cursor-test.lisp
-;;;;
-;;;; Terminal screen cursor movement and editing behavior.
 (in-package #:loom/test)
 
 (describe

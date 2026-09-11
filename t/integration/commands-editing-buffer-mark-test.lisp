@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-buffer-mark-test.lisp
-;;;;
-;;;; Mark command integration tests.
 (in-package #:loom/test)
 
 (describe

@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-diagnostic-decode.lisp
-;;;;
-;;;; Diagnostic payload decoding for one Language Server Protocol session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-parse-position (object)

@@ -1,7 +1,3 @@
-;;;; t/unit/isearch-test.lisp
-;;;;
-;;;; The incremental-search session's pure transitions: what each keystroke
-;;;; selects, what a repeat advances to, and what a failure leaves alone.
 (in-package #:loom/test)
 
 (defun %isearch-match-start (session)

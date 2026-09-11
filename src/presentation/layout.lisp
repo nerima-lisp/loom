@@ -1,8 +1,3 @@
-;;;; src/presentation/layout.lisp
-;;;;
-;;;; Presentation layer: low-level draw helpers shared by frame composition.
-;;;; Window-tree rendering lives in layout-windows.lisp; this file keeps
-;;;; clipping and viewport math.
 (in-package #:loom)
 
 (defun %layout-truncate-to-width (text width)

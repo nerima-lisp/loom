@@ -1,6 +1,3 @@
-;;;; src/application/startup-services.lisp
-;;;;
-;;;; Startup-time infrastructure services that wrap the initial editor-state.
 (in-package #:loom)
 
 (defun %enable-concurrent-file-tree (state)

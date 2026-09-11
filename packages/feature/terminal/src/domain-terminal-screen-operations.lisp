@@ -1,9 +1,5 @@
 (in-package #:loom/feature/terminal)
 
-;;;; Screen write-path operations: cursor clamping, scrolling, line
-;;;; transitions, and character insertion. Screen-state control such as
-;;;; clearing and alternate-screen management lives in
-;;;; domain-terminal-screen-state.lisp.
 
 (defun %terminal-screen-clamp-cursor (screen)
   (setf (terminal-screen-cursor-row screen)

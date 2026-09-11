@@ -1,4 +1,3 @@
-;;;; packages/feature/session/src/domain-session-validation-metadata.lisp
 (in-package #:loom/feature/session)
 
 (defun %validate-session-list (value predicate message)

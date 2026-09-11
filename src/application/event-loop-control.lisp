@@ -1,7 +1,3 @@
-;;;; src/application/event-loop-control.lisp
-;;;;
-;;;; Event-loop control helpers that do not own the main loop itself:
-;;;; terminal sizing, background-work detection, and input wait policy.
 (in-package #:loom)
 
 (defun %initial-terminal-size ()

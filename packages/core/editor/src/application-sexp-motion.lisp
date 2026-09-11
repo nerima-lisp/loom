@@ -1,10 +1,3 @@
-;;;; packages/core/editor/src/application-sexp-motion.lisp
-;;;;
-;;;; Application-layer S-expression boundary helpers, the structural sibling of
-;;;; application-word-motion.lisp: both turn a text plus an offset into another
-;;;; offset, so the command entrypoints and the presentation layer can share one
-;;;; unit without depending on each other.
-;;;;
 (in-package #:loom)
 
 (defun %forward-sexp-offset (text offset &optional (classes

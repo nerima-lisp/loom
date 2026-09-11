@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-protocol-responses.lisp
-;;;;
-;;;; Response handlers for initialize/shutdown requests in one LSP session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-ensure-initialize-result-capabilities (result)

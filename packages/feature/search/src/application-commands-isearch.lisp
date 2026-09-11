@@ -1,10 +1,3 @@
-;;;; packages/feature/search/src/application-commands-isearch.lisp
-;;;;
-;;;; Application layer: incremental search. The difference from
-;;;; application-commands-search.lisp is not the searching but the prompt: this
-;;;; one acts on every keystroke instead of only on RET, so it drives the
-;;;; minibuffer's ON-CHANGE and ON-KEY hooks and keeps a live session in
-;;;; EDITOR-STATE-ISEARCH for the renderer to highlight.
 (in-package #:loom/feature/search)
 
 (defparameter +isearch-prompt+ "I-search: ")

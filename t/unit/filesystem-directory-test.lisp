@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-directory-test.lisp
-;;;;
-;;;; Directory creation edge cases and listing tests.
 (in-package #:loom/test)
 
 (describe

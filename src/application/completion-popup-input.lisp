@@ -1,12 +1,3 @@
-;;;; src/application/completion-popup-input.lisp
-;;;;
-;;;; Keystroke handling for an active completion popup, and the edit that
-;;;; accepting a candidate performs.
-;;;;
-;;;; The popup gets first refusal on a key and then gets out of the way: a key
-;;;; it does not recognize dismisses it and is *not* consumed, so the key still
-;;;; reaches its ordinary binding. Swallowing it would mean a stray popup
-;;;; silently eating the next character the user typed.
 (in-package #:loom)
 
 (defmacro define-completion-popup-key-set (name keys documentation)

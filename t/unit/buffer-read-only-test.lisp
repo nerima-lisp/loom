@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-read-only-test.lisp
 (in-package #:loom/test)
 
 (describe

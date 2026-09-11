@@ -1,8 +1,3 @@
-;;;; t/integration/editor-flow-test.lisp
-;;;;
-;;;; Exercise the application keymap against a disk-backed buffer. This is
-;;;; intentionally broader than a command unit test: input dispatch, buffer
-;;;; mutation, and the save command must agree on the same editor state.
 (in-package #:loom/test)
 
 (describe

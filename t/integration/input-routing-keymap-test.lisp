@@ -1,4 +1,3 @@
-;;;; t/integration/input-routing-keymap-test.lisp
 
 (in-package #:loom/test)
 

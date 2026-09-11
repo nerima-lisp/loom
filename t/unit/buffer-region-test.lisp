@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-region-test.lisp
 (in-package #:loom/test)
 
 (describe

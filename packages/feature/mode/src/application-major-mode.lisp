@@ -1,6 +1,3 @@
-;;;; packages/feature/mode/src/application-major-mode.lisp
-;;;;
-;;;; User-facing mode selection and small mode-aware editing commands.
 (in-package #:loom/feature/mode)
 
 (defun major-mode-keymap (mode fallback)

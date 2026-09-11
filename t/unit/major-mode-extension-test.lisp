@@ -1,6 +1,3 @@
-;;;; t/unit/major-mode-extension-test.lisp
-;;;;
-;;;; Extension-defined major-mode registration and validation.
 (in-package #:loom/test)
 
 (describe

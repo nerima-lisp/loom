@@ -1,8 +1,3 @@
-;;;; packages/feature/search/src/domain-buffer-search.lisp
-;;;;
-;;;; Domain layer: bounded regular-expression search over BUFFER's public text
-;;;; and position APIs. The piece-table implementation remains in buffer.lisp;
-;;;; this file owns search policy and span construction.
 (in-package #:loom/feature/search)
 
 (defparameter +regex-search-timeout-seconds+ 1.0

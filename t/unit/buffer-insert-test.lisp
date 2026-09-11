@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-insert-test.lisp
 (in-package #:loom/test)
 
 (describe

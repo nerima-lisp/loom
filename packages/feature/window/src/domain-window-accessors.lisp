@@ -1,7 +1,3 @@
-;;;; packages/feature/window/src/domain-window-accessors.lisp
-;;;;
-;;;; Public leaf-window coordinate and size accessors shared by presentation
-;;;; and application layers.
 (in-package #:loom/feature/window)
 
 (defun window-x (window)

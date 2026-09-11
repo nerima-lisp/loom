@@ -1,7 +1,3 @@
-;;;; src/application/event-loop-rendering.lisp
-;;;;
-;;;; Frame rendering and background refresh work for the main application
-;;;; event loop.
 (in-package #:loom)
 
 (defun %render-event-loop-frame (stream)

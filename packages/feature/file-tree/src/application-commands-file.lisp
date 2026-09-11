@@ -1,8 +1,3 @@
-;;;; packages/feature/file-tree/src/application-commands-file.lisp
-;;;;
-;;;; Application layer: file-open/recent commands (see
-;;;; application/commands-internal.lisp for the shared command-authoring
-;;;; convention every commands-*.lisp file follows).
 (in-package #:loom/feature/file-tree)
 
 (defun %make-file-buffer (path &key name initial-content)

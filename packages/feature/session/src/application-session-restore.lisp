@@ -1,7 +1,3 @@
-;;;; packages/feature/session/src/application-session-restore.lisp
-;;;;
-;;;; Application layer: rebuild live editor state from the validated
-;;;; session snapshot owned by the domain-session-* files.
 (in-package #:loom/feature/session)
 
 (defun %session-buffer-path (snapshot)

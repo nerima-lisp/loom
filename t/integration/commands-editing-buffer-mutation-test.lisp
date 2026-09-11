@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-buffer-mutation-test.lisp
-;;;;
-;;;; Buffer mutation command integration tests.
 (in-package #:loom/test)
 
 (describe

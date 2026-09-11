@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-windows.lisp
-;;;;
-;;;; Declarative command catalogue for window and workspace commands.
 (in-package #:loom)
 
 (define-command-spec-groups *windows-command-spec-groups*

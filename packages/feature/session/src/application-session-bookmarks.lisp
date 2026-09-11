@@ -1,7 +1,3 @@
-;;;; packages/feature/session/src/application-session-bookmarks.lisp
-;;;;
-;;;; Application-layer bookmark conversion shared by session snapshot and
-;;;; restore flows.
 (in-package #:loom/feature/session)
 
 (defun %session-path-string (path)

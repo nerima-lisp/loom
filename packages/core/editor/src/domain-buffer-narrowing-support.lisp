@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-narrowing-support.lisp
-;;;;
-;;;; Domain layer support: low-level helpers for narrowing/visible-region
-;;;; queries shared by domain-buffer-narrowing.lisp and
-;;;; domain-buffer-positions.lisp.
 (in-package #:loom)
 
 (defun %text-offset-to-position-values (text offset)

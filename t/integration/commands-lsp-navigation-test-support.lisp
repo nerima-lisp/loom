@@ -1,10 +1,5 @@
-;;;; t/integration/commands-lsp-navigation-test-support.lisp
 (in-package #:loom/test)
 
-;;; A macro lambda-list default is evaluated when the macro expands, which for
-;;; a form in this same file is during its compilation -- before a plain
-;;; DEFPARAMETER at the top of the file has run. EVAL-WHEN is what makes the
-;;; value exist early enough to be defaulted to.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter +lsp-navigation-capabilities+
     "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true}}"))

@@ -1,7 +1,3 @@
-;;;; packages/feature/file-tree/src/infrastructure-filesystem-native-paths.lisp
-;;;;
-;;;; Native pathname detection and metadata helpers for SBCL-specific file-tree
-;;;; filesystem operations.
 (in-package #:loom/feature/file-tree)
 
 (defparameter *loom-real-filesystem* (cl-boundary-kit:make-filesystem))

@@ -1,4 +1,3 @@
-;;;; t/integration/frame-layout-cursor-test.lisp
 
 (in-package #:loom/test)
 

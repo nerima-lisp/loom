@@ -1,8 +1,3 @@
-;;;; packages/feature/mode/src/domain-major-mode-registry.lisp
-;;;;
-;;;; Dynamic major-mode registration, validation, and removal.  This keeps
-;;;; write-side concerns separate from the static definitions and read APIs in
-;;;; domain-major-mode.lisp.
 (in-package #:loom/feature/mode)
 
 (defun %validate-major-mode-parent-and-aliases (key parent-key aliases)

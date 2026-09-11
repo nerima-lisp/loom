@@ -1,6 +1,3 @@
-;;;; src/application/editor-state-save-hooks.lisp
-;;;;
-;;;; Save-hook registration and dispatch for the shared EDITOR-STATE object.
 (in-package #:loom)
 
 (defun %add-editor-state-save-hook (hook state reader writer)

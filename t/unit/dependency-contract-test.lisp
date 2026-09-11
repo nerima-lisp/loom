@@ -1,6 +1,3 @@
-;;;; t/unit/dependency-contract-test.lisp
-;;;;
-;;;; Keeps loom.asd and flake.nix aligned on dependency declarations.
 (in-package #:loom/test)
 
 (defun repo-file-string (relative-path)

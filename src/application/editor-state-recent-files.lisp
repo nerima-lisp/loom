@@ -1,6 +1,3 @@
-;;;; src/application/editor-state-recent-files.lisp
-;;;;
-;;;; Recent-file normalization and list maintenance for EDITOR-STATE.
 (in-package #:loom)
 
 (defun editor-path-string (path)

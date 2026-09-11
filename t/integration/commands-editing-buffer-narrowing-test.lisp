@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-buffer-narrowing-test.lisp
-;;;;
-;;;; Buffer narrowing and narrowed search integration tests.
 (in-package #:loom/test)
 
 (describe

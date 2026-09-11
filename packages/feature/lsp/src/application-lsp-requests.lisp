@@ -1,12 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-requests.lisp
-;;;;
-;;;; User-driven LSP requests: capability checks, request dispatch, and the
-;;;; pending-response registry that pairs a reply with whoever asked for it.
-;;;;
-;;;; Diagnostics arrive unsolicited and are handled where they land. Completion
-;;;; and definition are different: a command asks, and the answer comes back on
-;;;; some later LSP-SESSION-DRAIN, so the asker has to leave behind something
-;;;; for the reply to find.
 (in-package #:loom/feature/lsp)
 
 (defun lsp-session-capability (session name)

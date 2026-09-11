@@ -1,7 +1,3 @@
-;;;; packages/feature/window/src/domain-window-deletion.lisp
-;;;;
-;;;; Window-tree deletion operations. These mutate existing split nodes while
-;;;; preserving selection and root layout invariants.
 (in-package #:loom/feature/window)
 
 (defun %window-first-leaf (node)

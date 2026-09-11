@@ -1,7 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-session-sync.lisp
-;;;;
-;;;; Buffer-to-document synchronization and diagnostic lookup for one
-;;;; language-server session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-buffer-uri (buffer-or-path)

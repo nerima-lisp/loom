@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-storage-test.lisp
 (in-package #:loom/test)
 
 (describe

@@ -1,4 +1,3 @@
-;;;; t/integration/layout-secondary-test.lisp
 (in-package #:loom/test)
 
 (describe

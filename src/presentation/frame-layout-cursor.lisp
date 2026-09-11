@@ -1,9 +1,3 @@
-;;;; src/presentation/frame-layout-cursor.lisp
-;;;;
-;;;; Presentation layer: cursor geometry for the composed frame.  The frame
-;;;; composition pass in frame-layout.lisp reuses the file-tree width helper
-;;;; from here so cursor placement and region sizing share one sidebar-width
-;;;; calculation.
 (in-package #:loom)
 
 (defun %layout-file-tree-width (file-tree-visible-p width)

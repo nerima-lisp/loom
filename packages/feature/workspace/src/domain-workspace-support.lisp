@@ -1,7 +1,3 @@
-;;;; packages/feature/workspace/src/domain-workspace-support.lisp
-;;;;
-;;;; Internal workspace structures and validation helpers shared by the public
-;;;; workspace domain API.
 (in-package #:loom/feature/workspace)
 
 (defstruct (workspace

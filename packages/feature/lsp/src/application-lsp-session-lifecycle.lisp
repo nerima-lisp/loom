@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-session-lifecycle.lisp
-;;;;
-;;;; Session lifecycle orchestration for one language-server session.
 (in-package #:loom/feature/lsp)
 
 (defun lsp-session-start (session)

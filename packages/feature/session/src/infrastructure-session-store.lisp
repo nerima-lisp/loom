@@ -1,8 +1,3 @@
-;;;; packages/feature/session/src/infrastructure-session-store.lisp
-;;;;
-;;;; Filesystem persistence for the domain session snapshot. The store keeps
-;;;; filesystem concerns separate from the codec that defines the versioned
-;;;; on-disk s-expression format.
 (in-package #:loom/feature/session)
 
 (defun %session-temporary-path (target)

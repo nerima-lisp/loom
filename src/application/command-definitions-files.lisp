@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-files.lisp
-;;;;
-;;;; Declarative command catalogue for file and project commands.
 (in-package #:loom)
 
 (define-command-spec-groups *files-command-spec-groups*

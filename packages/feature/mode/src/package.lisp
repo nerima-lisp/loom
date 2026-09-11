@@ -1,10 +1,6 @@
-;;;; packages/feature/mode/src/package.lisp
-;;;;
-;;;; Major-mode values and mode commands form one feature boundary.
 (defpackage #:loom/feature/mode
   (:use #:cl #:loom #:loom/application)
   (:export
-   ;; Domain API
    #:major-mode-known-p
    #:major-mode-from-name
    #:major-mode-name
@@ -21,7 +17,6 @@
    #:major-mode-definition
    #:register-major-mode
    #:unregister-major-mode
-   ;; Application API
    #:major-mode-keymap
    #:current-major-mode
    #:set-major-mode

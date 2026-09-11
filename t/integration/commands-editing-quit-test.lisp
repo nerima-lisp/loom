@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-quit-test.lisp
-;;;;
-;;;; Quit flow integration tests for editing commands.
 (in-package #:loom/test)
 
 (describe

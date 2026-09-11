@@ -1,6 +1,3 @@
-;;;; t/unit/keymap-state-test.lisp
-;;;;
-;;;; Domain layer: incremental dispatch state in src/domain/keymap-state.lisp.
 (in-package #:loom/test)
 
 (describe

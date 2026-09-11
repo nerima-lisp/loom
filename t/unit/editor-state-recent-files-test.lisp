@@ -1,6 +1,3 @@
-;;;; t/unit/editor-state-recent-files-test.lisp
-;;;;
-;;;; Recent-file tracking and transient yank-reset coverage for editor state.
 (in-package #:loom/test)
 
 (describe "editor bookmarks"

@@ -1,6 +1,3 @@
-;;;; t/integration/major-mode-keymap-dispatch-test.lisp
-;;;;
-;;;; Mode-local keymap dispatch with inherited and global fallbacks.
 (in-package #:loom/test)
 
 (describe

@@ -1,9 +1,3 @@
-;;;; packages/feature/register/src/domain-register.lisp
-;;;;
-;;;; Domain layer: named register values.  Registers are deliberately kept
-;;;; independent from buffers, minibuffers, and terminal I/O so the same
-;;;; value object can be used by commands, session persistence, or a future
-;;;; extension API.
 (in-package #:loom/feature/register)
 
 (defstruct (register-value

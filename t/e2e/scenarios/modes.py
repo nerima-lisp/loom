@@ -29,7 +29,7 @@ def major_mode_editing(binary):
             session.wait_for_region_text("minibuffer", "Major mode: ")
             session.type("Python")
             session.send(keys.RET)
-            session.send(keys.TAB)  # Python's four-column indentation
+            session.send(keys.TAB)
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, b"    value\n")
 

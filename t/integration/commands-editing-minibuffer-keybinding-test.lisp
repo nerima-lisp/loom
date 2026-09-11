@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-minibuffer-keybinding-test.lisp
-;;;;
-;;;; Search-related keybinding and goto-line integration tests.
 (in-package #:loom/test)
 
 (describe

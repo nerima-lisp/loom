@@ -1,7 +1,3 @@
-;;;; packages/feature/file-tree/src/domain-file-tree-navigation.lisp
-;;;;
-;;;; Domain layer: visible-entry enumeration and selection / expand-collapse
-;;;; navigation for FILE-TREE state.
 (in-package #:loom/feature/file-tree)
 
 (defun %file-tree-flatten-child (tree child-path kind depth active-paths)

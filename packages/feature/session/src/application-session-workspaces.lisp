@@ -1,7 +1,3 @@
-;;;; packages/feature/session/src/application-session-workspaces.lisp
-;;;;
-;;;; Application helpers for converting workspace/window state to and from
-;;;; validated session snapshots.
 (in-package #:loom/feature/session)
 
 (defun %session-indexed-layout (layout buffers)

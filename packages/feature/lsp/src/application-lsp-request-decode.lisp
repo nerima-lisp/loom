@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-request-decode.lisp
-;;;;
-;;;; Decoding for the request/response pairs a user drives directly --
-;;;; completion and definition -- as opposed to the diagnostics the server
-;;;; pushes on its own. Position and range parsing is shared with
-;;;; application-lsp-diagnostic-decode.lisp.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-completion-items (result)

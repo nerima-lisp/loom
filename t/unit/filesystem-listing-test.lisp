@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-listing-test.lisp
-;;;;
-;;;; Directory listing and pathname round-trip tests.
 (in-package #:loom/test)
 
 (describe

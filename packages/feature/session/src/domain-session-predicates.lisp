@@ -1,4 +1,3 @@
-;;;; packages/feature/session/src/domain-session-predicates.lisp
 (in-package #:loom/feature/session)
 
 (defun %session-nonnegative-integer-p (value)

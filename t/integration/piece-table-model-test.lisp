@@ -1,6 +1,3 @@
-;;;; t/integration/piece-table-model-test.lisp
-;;;;
-;;;; A deterministic model check for mixed edits against the public buffer API.
 (in-package #:loom/test)
 
 (defun %model-position-at (text offset)

@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-redo-test.lisp
 (in-package #:loom/test)
 
 (describe

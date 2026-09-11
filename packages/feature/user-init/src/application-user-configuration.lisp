@@ -1,7 +1,3 @@
-;;;; packages/feature/user-init/src/application-user-configuration.lisp
-;;;;
-;;;; Application-layer API for startup extensions. These operations validate
-;;;; all user input before changing the command registry or live keymap.
 (in-package #:loom/feature/user-init)
 
 (defun %resolve-user-command (command)

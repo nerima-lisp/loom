@@ -25,10 +25,10 @@ def keyboard_macro(binary):
 
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("x") + b"(")  # C-x ( start-kbd-macro
+            session.send(keys.ctrl("x") + b"(")
             session.type("a")
-            session.send(keys.ctrl("x") + b")")  # C-x ) end-kbd-macro
-            session.send(keys.ctrl("x") + b"e")  # C-x e call-last-kbd-macro
+            session.send(keys.ctrl("x") + b")")
+            session.send(keys.ctrl("x") + b"e")
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, b"aa\n")
 
@@ -45,7 +45,7 @@ def numeric_prefix(binary):
 
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("u"))  # universal-argument
+            session.send(keys.ctrl("u"))
             session.type("2a")
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, b"aa\n")

@@ -1,6 +1,3 @@
-;;;; packages/feature/mode/src/domain-major-mode-keywords.lisp
-;;;;
-;;;; Static language vocabularies used by built-in major-mode metadata.
 (in-package #:loom/feature/mode)
 
 (defparameter +typescript-keywords+

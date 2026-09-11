@@ -1,11 +1,5 @@
-;;;; src/presentation/layout-wrapping.lisp
-;;;;
-;;;; Presentation layer: logical lines translated into wrapped screen rows.
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Logical lines to screen rows
-;;; ---------------------------------------------------------------------
 
 (defun %layout-line-segments (renderer buffer line width)
   "Return the wrapped character ranges of BUFFER's visible LINE in WIDTH cells."

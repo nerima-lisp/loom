@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-delete-test.lisp
-;;;;
-;;;; Delete tests against the native filesystem.
 (in-package #:loom/test)
 
 (describe

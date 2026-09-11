@@ -1,8 +1,3 @@
-;;;; t/unit/minibuffer-test.lisp
-;;;;
-;;;; Application layer: the core minibuffer state/protocol
-;;;; (src/application/minibuffer.lisp). Input handling, completion, and key
-;;;; classification live in t/unit/minibuffer-input-test.lisp.
 (in-package #:loom/test)
 
 (describe

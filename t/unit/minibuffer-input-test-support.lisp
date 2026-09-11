@@ -1,6 +1,3 @@
-;;;; t/unit/minibuffer-input-test-support.lisp
-;;;;
-;;;; Shared helpers for minibuffer input handling tests.
 (in-package #:loom/test)
 
 (defun %char-key (character)

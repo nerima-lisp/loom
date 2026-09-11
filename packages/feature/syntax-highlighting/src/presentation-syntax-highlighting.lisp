@@ -1,8 +1,3 @@
-;;;; packages/feature/syntax-highlighting/src/presentation-syntax-highlighting.lisp
-;;;;
-;;;; Presentation-layer mapping from semantic syntax tokens to terminal
-;;;; styles.  The tokenizer stays in the domain layer; this file is the only
-;;;; place that chooses the visual treatment for each token kind.
 
 (in-package #:loom/feature/syntax-highlighting)
 

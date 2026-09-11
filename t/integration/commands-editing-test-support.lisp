@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-test-support.lisp
-;;;;
-;;;; Shared helpers for editing command integration tests.
 (in-package #:loom/test)
 
 (defmacro %with-selected-minibuffer-buffer ((minibuffer buffer initial-content

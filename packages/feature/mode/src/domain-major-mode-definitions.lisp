@@ -1,9 +1,3 @@
-;;;; packages/feature/mode/src/domain-major-mode-definitions.lisp
-;;;;
-;;;; Built-in major-mode metadata.  Lookup APIs live in
-;;;; domain-major-mode.lisp; registry state and mutation support live in
-;;;; domain-major-mode-registry-support.lisp and
-;;;; domain-major-mode-registry.lisp.
 (in-package #:loom/feature/mode)
 
 (defparameter +major-mode-definitions+

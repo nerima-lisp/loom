@@ -1,6 +1,3 @@
-;;;; src/presentation/layout-completion.lisp
-;;;;
-;;;; Presentation layer: completion popup rendering helpers.
 (in-package #:loom)
 
 (defconstant +layout-completion-rows+ 8)

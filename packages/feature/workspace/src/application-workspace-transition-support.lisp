@@ -1,6 +1,3 @@
-;;;; packages/feature/workspace/src/application-workspace-transition-support.lisp
-;;;;
-;;;; Application layer: shared workspace transition sequencing.
 (in-package #:loom/feature/workspace)
 
 (defun %announce-workspace (workspace)
@@ -12,9 +9,6 @@
   (let ((workspace (workspace-manager-create
                     manager
                     (%current-selection-workspace-tree))))
-    ;; Save the old tree before changing the manager's active index.  Creation
-    ;; appends without activating so the domain operation remains useful to
-    ;; callers that want to prepare a workspace before switching to it.
     (%switch-workspace-with
      manager
      (lambda (workspace-manager)

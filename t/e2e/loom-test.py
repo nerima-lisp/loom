@@ -16,7 +16,7 @@ if _THIS_DIR not in sys.path:
 
 from loom_e2e import commands  # noqa: E402
 from loom_e2e.registry import all_scenarios, covered_commands  # noqa: E402
-import scenarios  # noqa: E402,F401  (registers every @scenario)
+import scenarios  # noqa: E402,F401
 
 
 _REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))

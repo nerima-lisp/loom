@@ -1,6 +1,3 @@
-;;;; t/unit/minibuffer-input-classification-test.lisp
-;;;;
-;;;; Direct key classification coverage for src/application/minibuffer-input.lisp.
 (in-package #:loom/test)
 
 (describe

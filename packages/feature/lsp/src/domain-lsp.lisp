@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/domain-lsp.lisp
-;;;;
-;;;; Domain value objects for the Language Server Protocol.  The domain does
-;;;; not know how JSON is encoded or how a language server is launched; it
-;;;; only keeps the positions, ranges, diagnostics, and open document state
-;;;; that the application layer needs to present and synchronize.
 (in-package #:loom/feature/lsp)
 
 (defstruct (lsp-position

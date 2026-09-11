@@ -1,8 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-diagnostics-view.lisp
-;;;;
-;;;; Diagnostics presentation helpers for the LSP feature.  Session protocol
-;;;; code produces structured diagnostics; this file owns the Loom buffer and
-;;;; text rendering used to display them.
 (in-package #:loom/feature/lsp)
 
 (defparameter *lsp-diagnostics-buffer-name* "*Loom-Diagnostics*")

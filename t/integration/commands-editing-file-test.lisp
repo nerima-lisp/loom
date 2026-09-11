@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-file-test.lisp
-;;;;
-;;;; File-oriented editing command integration tests.
 (in-package #:loom/test)
 
 (describe

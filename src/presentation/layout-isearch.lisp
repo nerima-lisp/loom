@@ -1,10 +1,6 @@
-;;;; src/presentation/layout-isearch.lisp
 
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Incremental-search highlighting
-;;; ---------------------------------------------------------------------
 
 (defparameter +layout-isearch-match-style+ '((:bg 3) (:fg 0))
   "Style for a search match that is not the one point sits on.")

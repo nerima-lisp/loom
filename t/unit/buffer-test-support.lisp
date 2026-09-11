@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-test-support.lisp
 (in-package #:loom/test)
 
 (defmatcher :to-have-point (buffer expected)

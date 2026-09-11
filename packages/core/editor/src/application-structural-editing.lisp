@@ -1,14 +1,3 @@
-;;;; packages/core/editor/src/application-structural-editing.lisp
-;;;;
-;;;; Application layer: the offset arithmetic behind the structural editing
-;;;; commands, kept separate from the command entrypoints the way
-;;;; application-word-motion.lisp is kept separate from the motion commands.
-;;;;
-;;;; Every operation here is expressed as a list of edits against the visible
-;;;; text rather than as a rewritten string. Two reasons: a whole-region
-;;;; replacement would move every mark and point in the buffer, and moving one
-;;;; delimiter is what keeps the parentheses balanced by construction -- an
-;;;; operation that never writes an unmatched delimiter cannot produce one.
 (in-package #:loom)
 
 (defun %forward-slurp-target (text classes close)

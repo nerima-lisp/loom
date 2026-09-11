@@ -1,8 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table splice algorithms
-;;; ---------------------------------------------------------------------
 
 (defun %insert-piece-fragment-list (piece cursor offset new-piece)
   (let* ((piece-length (%piece-length piece))

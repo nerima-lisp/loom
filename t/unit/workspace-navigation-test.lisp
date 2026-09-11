@@ -1,7 +1,3 @@
-;;;; t/unit/workspace-navigation-test.lisp
-;;;;
-;;;; Workspace navigation tests. These keep switching and wraparound behavior
-;;;; separate from construction and editor-state invariants.
 (in-package #:loom/test)
 
 (describe "workspace manager navigation"

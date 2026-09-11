@@ -1,10 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-editing.lisp
-;;;;
-;;;; Domain layer: text mutation APIs layered on top of the core buffer
-;;;; protocol in domain-buffer.lisp. Query/accessor operations live in
-;;;; domain-buffer-accessors.lisp; representation and piece-table mutation
-;;;; primitives stay in domain-buffer-storage.lisp and
-;;;; domain-buffer-piece-table.lisp.
 
 (in-package #:loom)
 

@@ -1,17 +1,5 @@
-;;;; src/infrastructure/terminal-renderer.lisp
-;;;;
-;;;; Infrastructure layer: the renderer port. It owns a single CL-TTY-KIT
-;;;; screen/renderer pair. Primitive screen drawing helpers live in
-;;;; terminal-renderer-primitives.lisp, text width/truncation helpers live in
-;;;; terminal-renderer-text.lisp, and buffer-region drawing lives in
-;;;; terminal-renderer-buffer.lisp.
 (in-package #:loom)
 
-;;; LOOM-RENDERER wraps a single CL-TTY-KIT renderer object (itself already a
-;;; back-buffer screen plus previous-frame diff state -- see
-;;; CL-TTY-KIT:MAKE-RENDERER/CL-TTY-KIT:RENDERER-SCREEN). The concrete
-;;; renderer accessor remains private to infrastructure; presentation consumes
-;;; only the LOOM-RENDERER-* protocol below.
 (defstruct (loom-renderer
             (:conc-name %loom-renderer-)
             (:constructor %make-loom-renderer (cl-tty-renderer))
@@ -92,8 +80,5 @@ Returns RENDERER."
     (cl-tty-kit:renderer-render (%loom-renderer-cl-tty-renderer renderer)
                                  :stream output-stream
                                  :cursor cursor)
-    ;; Interactive terminal frames must be visible before the next input
-    ;; event. CL-TTY-KIT writes the escape sequence diff but does not own the
-    ;; stream's buffering policy.
     (finish-output output-stream))
   renderer)

@@ -1,12 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table normalization
-;;;
-;;; Adjacent slices from one source are represented as one piece. Keeping
-;;; this invariant in one small module lets splice operations focus on the
-;;; ranges they produce rather than on representation cleanup.
-;;; ---------------------------------------------------------------------
 
 (defun %adjacent-piece-p (previous piece)
   (and previous

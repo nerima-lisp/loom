@@ -1,4 +1,3 @@
-;;;; t/integration/input-routing-minibuffer-test.lisp
 
 (in-package #:loom/test)
 

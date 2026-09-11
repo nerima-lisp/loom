@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-screen-validation-test.lisp
-;;;;
-;;;; Terminal screen dimension validation behavior.
 (in-package #:loom/test)
 
 (describe

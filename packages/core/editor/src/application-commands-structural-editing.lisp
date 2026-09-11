@@ -1,13 +1,3 @@
-;;;; packages/core/editor/src/application-commands-structural-editing.lisp
-;;;;
-;;;; Application layer: paredit-style structural editing commands. The offset
-;;;; arithmetic lives in application-structural-editing.lisp; this file only
-;;;; drives it against the selected buffer and decides where point lands.
-;;;;
-;;;; Each command performs several edits, and all of them land in one undo
-;;;; group: the dispatcher records an undo boundary before a command runs and
-;;;; nothing here records another, so BUFFER-UNDO walks back over the whole
-;;;; operation rather than half of it.
 (in-package #:loom)
 
 (defun %run-structural-command (edit-function buffer text offset start)
@@ -80,7 +70,5 @@ typed belongs."
            (opening (%sexp-skip-forward-filler text classes offset)))
       (when edits
         (%apply-structural-edits buffer start edits)
-        ;; Both shapes %WRAP-ROUND-EDITS returns put the opening delimiter at
-        ;; OPENING, so point goes one past it without inspecting the edits.
         (%move-point-to-offset buffer (+ start opening 1)))))
   nil)

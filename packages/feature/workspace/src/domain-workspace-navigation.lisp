@@ -1,6 +1,3 @@
-;;;; packages/feature/workspace/src/domain-workspace-navigation.lisp
-;;;;
-;;;; Public workspace domain API for current-workspace lookup and navigation.
 (in-package #:loom/feature/workspace)
 
 (defun workspace-manager-current (manager)

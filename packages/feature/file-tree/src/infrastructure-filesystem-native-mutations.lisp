@@ -1,6 +1,3 @@
-;;;; packages/feature/file-tree/src/infrastructure-filesystem-native-mutations.lisp
-;;;;
-;;;; Native SBCL filesystem mutations for file-tree path creation and rename.
 (in-package #:loom/feature/file-tree)
 
 #+sbcl

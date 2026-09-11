@@ -1,11 +1,5 @@
-;;;; src/presentation/frame-layout.lisp
-;;;;
-;;;; Presentation layer: high-level frame composition.
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Frame composition
-;;; ---------------------------------------------------------------------
 
 (defun %layout-compute-regions (width height file-tree-visible-p)
   "Compute the row/column geometry COMPOSE-FRAME draws into, given the

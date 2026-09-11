@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-structural-editing-application.lisp
-;;;;
-;;;; Side-effecting application of the structural edit plan.
 (in-package #:loom)
 
 (defun %apply-structural-insertion (buffer start edit)

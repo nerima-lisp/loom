@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-ui.lisp
-;;;;
-;;;; Declarative command catalogue for UI and lifecycle commands.
 (in-package #:loom)
 
 (define-command-spec-groups *ui-command-spec-groups*

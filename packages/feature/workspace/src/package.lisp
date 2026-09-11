@@ -1,10 +1,6 @@
-;;;; packages/feature/workspace/src/package.lisp
-;;;;
-;;;; In-memory workspace (tab) state and its editor commands.
 (defpackage #:loom/feature/workspace
   (:use #:cl #:loom #:loom/application #:loom/feature/window)
   (:export
-   ;; Domain API
    #:workspace
    #:workspace-p
    #:make-workspace
@@ -24,7 +20,6 @@
    #:workspace-manager-next
    #:workspace-manager-previous
    #:workspace-manager-delete
-   ;; Application API
    #:new-workspace
    #:next-workspace
    #:previous-workspace

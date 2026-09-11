@@ -1,13 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table splice and extraction helpers
-;;;
-;;; Representation stays in domain-buffer-storage.lisp. Position and line
-;;; mapping live in domain-buffer-piece-table-position.lisp. This file owns
-;;; the low-level splice/extraction algorithms used by the higher-level edit
-;;; and accessor APIs.
-;;; ---------------------------------------------------------------------
 
 (defun %append-add-text (buffer text)
   "Append TEXT once and return its start offset and length in the add source."

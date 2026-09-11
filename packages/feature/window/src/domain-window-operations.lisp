@@ -1,8 +1,3 @@
-;;;; packages/feature/window/src/domain-window-operations.lisp
-;;;;
-;;;; Window-tree split, selection, buffer, and resize operations. Window
-;;;; deletion lives in domain-window-deletion.lisp so tree surgery remains
-;;;; isolated from the rest of the mutation protocol.
 (in-package #:loom/feature/window)
 
 (defun %window-replace (node target replacement)
@@ -20,8 +15,6 @@ mutating WINDOW-SPLIT-NODE children in place as it descends."
 (defun %window-install-split (tree window direction buffer rect1 rect2)
   (destructuring-bind (x1 y1 w1 h1) rect1
     (destructuring-bind (x2 y2 w2 h2) rect2
-      ;; Keep WINDOW's identity stable so existing references observe the
-      ;; first half after splitting.
       (setf (window-leaf-x window) x1
             (window-leaf-y window) y1
             (window-leaf-width window) w1

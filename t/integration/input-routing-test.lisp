@@ -1,8 +1,3 @@
-;;;; t/integration/input-routing-test.lisp
-;;;;
-;;;; Key-event routing and undo-boundary bookkeeping from
-;;;; src/application/input-routing-*.lisp. These tests need the editor-state
-;;;; helpers from commands-test.lisp but not the event-loop/startup harness.
 (in-package #:loom/test)
 
 (describe

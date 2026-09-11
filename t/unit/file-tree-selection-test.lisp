@@ -1,4 +1,3 @@
-;;;; t/unit/file-tree-selection-test.lisp
 (in-package #:loom/test)
 
 (defun %fake-lister (path)

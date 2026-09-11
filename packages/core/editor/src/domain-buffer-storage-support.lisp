@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-storage-support.lisp
-;;;;
-;;;; Internal piece-table storage helpers shared by buffer operations.
 (in-package #:loom)
 
 (defun %piece-source-text (buffer piece)

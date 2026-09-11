@@ -1,9 +1,3 @@
-;;;; src/infrastructure/terminal-renderer-text.lisp
-;;;;
-;;;; Infrastructure layer: screen-cell measurement helpers for the renderer
-;;;; protocol. The drawing port stays in terminal-renderer.lisp; this file
-;;;; owns only text width/truncation behavior shared by presentation code and
-;;;; buffer drawing.
 (in-package #:loom)
 
 (defun %loom-renderer-character-advance (character)

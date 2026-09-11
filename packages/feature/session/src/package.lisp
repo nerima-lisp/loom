@@ -1,10 +1,6 @@
-;;;; packages/feature/session/src/package.lisp
-;;;;
-;;;; Session snapshots are persisted infrastructure for the window feature.
 (defpackage #:loom/feature/session
   (:use #:cl #:loom #:loom/application #:loom/feature/window)
   (:export
-   ;; Domain and infrastructure API
    #:session-buffer-snapshot
    #:make-session-buffer-snapshot
    #:session-buffer-snapshot-name
@@ -38,6 +34,5 @@
    #:validate-session-snapshot
    #:session-store-read
    #:session-store-write
-   ;; Application API
    #:save-session
    #:load-session))

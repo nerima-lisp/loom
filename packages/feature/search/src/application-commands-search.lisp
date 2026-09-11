@@ -1,17 +1,3 @@
-;;;; packages/feature/search/src/application-commands-search.lisp
-;;;;
-;;;; Application layer: search and replace commands (see
-;;;; application/commands-internal.lisp for the shared command-authoring
-;;;; convention every commands-*.lisp file follows). The buffer-offset/
-;;;; position/span API these commands drive lives in domain/buffer.lisp;
-;;;; regex compilation and scanning stay there, while this file owns only
-;;;; prompting and dispatch around the domain operations.
-;;;;
-;;;; Both commands take a regular-expression pattern as the text they search
-;;;; for. REPLACE-STRING's replacement stays a literal string inserted
-;;;; as-is at each match: no $1-style capture-group expansion, which is what
-;;;; keeps replacement a per-match delete+insert (and so one undo entry per
-;;;; match) rather than a single whole-buffer rewrite.
 (in-package #:loom/feature/search)
 
 (defun %replace-span (buffer span new)

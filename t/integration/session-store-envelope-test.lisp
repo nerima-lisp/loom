@@ -1,6 +1,3 @@
-;;;; t/integration/session-store-envelope-test.lisp
-;;;;
-;;;; Session file envelope parsing tests.
 (in-package #:loom/test)
 
 (describe

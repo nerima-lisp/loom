@@ -1,8 +1,3 @@
-;;;; t/test-helpers-core.lisp
-;;;;
-;;;; Shared fixtures for unit and integration tests. Keeping these helpers
-;;;; outside a feature-specific test file makes the test taxonomy independent
-;;;; from ASDF load order.
 (in-package #:loom/test)
 
 (defun %fresh-editor-state (initial-content &key with-minibuffer)

@@ -1,6 +1,3 @@
-;;;; packages/feature/project/src/infrastructure-project-filesystem.lisp
-;;;;
-;;;; Filesystem operations for the pure project domain.
 (in-package #:loom/feature/project)
 
 (defun project-find-root (path)

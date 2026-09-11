@@ -1,7 +1,3 @@
-;;;; t/integration/prefix-argument-dispatch-test.lisp
-;;;;
-;;;; Exercise prefix arguments through the real decoded key-event dispatcher,
-;;;; covering repetition and pending keymaps.
 (in-package #:loom/test)
 
 (defun %prefix-event (code &optional modifiers)

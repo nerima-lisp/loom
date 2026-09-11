@@ -1,7 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-protocol-send.lisp
-;;;;
-;;;; Outgoing JSON-RPC message construction and transport writes for one
-;;;; Language Server Protocol session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-send-object (session object)

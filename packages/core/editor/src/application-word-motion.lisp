@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/application-word-motion.lisp
-;;;;
-;;;; Application-layer word-boundary helpers shared by movement and kill
-;;;; commands. These stay separate from the command entrypoints so both files
-;;;; depend on one small text/offset unit instead of depending on each other.
 (in-package #:loom)
 
 (defun %word-character-p (character)

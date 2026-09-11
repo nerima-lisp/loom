@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-search-navigation-test.lisp
-;;;;
-;;;; Search navigation command integration tests.
 (in-package #:loom/test)
 
 (describe

@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-file-tree.lisp
-;;;;
-;;;; Declarative command catalogue for file tree commands.
 (in-package #:loom)
 
 (define-command-spec-groups *file-tree-command-spec-groups*

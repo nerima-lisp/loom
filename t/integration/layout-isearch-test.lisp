@@ -1,6 +1,3 @@
-;;;; t/integration/layout-isearch-test.lisp
-;;;;
-;;;; Incremental-search presentation drawing and viewport clipping.
 (in-package #:loom/test)
 
  (describe

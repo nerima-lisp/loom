@@ -1,8 +1,3 @@
-;;;; src/presentation/layout-file-tree.lisp
-;;;;
-;;;; Presentation layer: file-tree sidebar rendering helpers. Shared width
-;;;; clipping remains in layout.lisp; this file owns only file-tree-specific
-;;;; label and row drawing.
 (in-package #:loom)
 
 (defun %layout-path-label (path)

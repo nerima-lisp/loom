@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-session-test.lisp
-;;;;
-;;;; PTY-backed terminal session lifecycle and transcript handling.
 (in-package #:loom/test)
 
 (describe

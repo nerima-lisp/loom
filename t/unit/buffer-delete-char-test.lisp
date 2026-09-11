@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-delete-char-test.lisp
 (in-package #:loom/test)
 
 (describe

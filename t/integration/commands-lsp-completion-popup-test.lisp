@@ -1,4 +1,3 @@
-;;;; t/integration/commands-lsp-completion-popup-test.lisp
 (in-package #:loom/test)
 
 (describe

@@ -1,9 +1,3 @@
-;;;; src/application/command-definitions.lisp
-;;;;
-;;;; Composition-root catalogue for commands exposed by the editor.  The
-;;;; registry implementation lives in application/command-registry.lisp;
-;;;; keeping this data separate from command handlers makes the catalogue
-;;;; readable and lets keybinding installation consume one declarative model.
 (in-package #:loom)
 
 (define-command-spec-catalog

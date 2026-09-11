@@ -1,12 +1,5 @@
-;;;; packages/feature/window/src/application-window-buffer-support.lisp
-;;;;
-;;;; Application layer: buffer-switching and buffer-kill helpers for window
-;;;; commands.
 (in-package #:loom/feature/window)
 
-;; SWITCH-TO-BUFFER searches EDITOR-STATE's session-wide registry, so buffers
-;; opened through FIND-FILE or the file-tree remain available after they leave
-;; a window. The selected window changes only after a matching name is found.
 (defun %buffer-name-completion-candidates (input)
   "Return all registered buffer names as candidates for INPUT."
   (declare (ignore input))

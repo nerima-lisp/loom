@@ -1,6 +1,3 @@
-;;;; t/integration/session-store-layout-validation-test.lisp
-;;;;
-;;;; Session snapshot layout validation tests.
 (in-package #:loom/test)
 
 (describe

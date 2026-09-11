@@ -1,7 +1,3 @@
-;;;; src/application/command-registry.lisp
-;;;;
-;;;; Application-layer runtime registry queries for commands exposed through
-;;;; M-x and for the default key descriptors attached to those commands.
 (in-package #:loom/application)
 
 (defparameter *command-specs* nil

@@ -1,14 +1,5 @@
-;;;; src/application/commands-quit.lisp
-;;;;
-;;;; Application layer: quit flow and modified-buffer confirmation.
 (in-package #:loom)
 
-;; LOOM-QUIT carries no data: it exists only so src/main.lisp's event loop
-;; can HANDLER-CASE on a type it, not a plain return value, to tell a real
-;; quit apart from every other command's return value. SIGNAL rather than
-;; ERROR is deliberate -- an unhandled LOOM-QUIT (e.g. this command called
-;; outside the real event loop, such as from a test) is a harmless no-op
-;; instead of an unwanted error.
 (define-condition loom-quit (condition) ()
   (:documentation
    "Signaled by SAVE-BUFFERS-KILL-TERMINAL to ask the main event loop in
@@ -26,8 +17,6 @@ src/main.lisp to exit cleanly."))
        (append displayed registered)
        :test (function eq))))
 
-  ;; A CL-PROLOG-KIT rulebase keeps the quit-prompt answer table declarative.
-  ;; FIND-EXTENDED-COMMAND uses the explicit registry for name lookup.
   (cl-prolog-kit:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)
      (:when (and ?has-path (string-equal ?answer "s"))))

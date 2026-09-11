@@ -1,6 +1,3 @@
-;;;; t/integration/prefix-argument-macro-test.lisp
-;;;;
-;;;; Exercise prefix arguments through keyboard macro replay.
 (in-package #:loom/test)
 
 (describe

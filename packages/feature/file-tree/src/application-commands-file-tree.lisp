@@ -1,7 +1,3 @@
-;;;; packages/feature/file-tree/src/application-commands-file-tree.lisp
-;;;;
-;;;; Application layer: file-tree commands that compose the file-tree domain
-;;;; with the editor state and minibuffer protocol.
 (in-package #:loom/feature/file-tree)
 
 (defun toggle-file-tree ()
@@ -91,12 +87,6 @@
    (%invalidate-file-tree-path old-path)
    (%invalidate-file-tree-path new-path)))
 
-;; No confirmation prompt: unlike create/rename, delete needs no typed input,
-;; only a yes/no confirmation, and the minibuffer protocol as it stands
-;; (application/minibuffer.lisp) only offers a free-text ON-CONFIRM/ON-CANCEL
-;; prompt, not a dedicated y-or-n-p; a free-text "type anything to confirm"
-;; prompt would not actually reduce accidental deletes over just deleting
-;; directly, so this deletes the selection immediately.
 (%define-file-tree-selected-path-command
  file-tree-delete-command
  "Delete the selected file-tree entry from disk."

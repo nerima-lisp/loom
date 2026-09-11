@@ -1,7 +1,3 @@
-;;;; src/application/startup-cli.lisp
-;;;;
-;;;; Declarative command-line application data. Runtime startup orchestration
-;;;; remains in startup.lisp so the executable boundary is easy to inspect.
 (in-package #:loom)
 
 (defun %make-loom-app ()

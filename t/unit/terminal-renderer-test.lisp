@@ -1,10 +1,3 @@
-;;;; t/unit/terminal-renderer-test.lisp
-;;;;
-;;;; Infrastructure layer: LOOM-RENDERER-* against a real CL-TTY-KIT
-;;;; renderer/screen pair and a real DOMAIN/BUFFER.LISP MAKE-BUFFER buffer --
-;;;; LOOM-RENDERER-DRAW-BUFFER only ever calls BUFFER-LINE-COUNT/BUFFER-LINE,
-;;;; both of which MAKE-BUFFER satisfies directly, so no test double is
-;;;; needed here.
 (in-package #:loom/test)
 
 (defun %lines-buffer (&rest lines)

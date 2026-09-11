@@ -1,8 +1,3 @@
-;;;; src/main.lisp
-;;;;
-;;;; Executable entry point. Startup, event-loop, and input-dispatch
-;;;; responsibilities live under src/application/ so the composition root can
-;;;; be tested independently from the binary trampoline.
 (in-package #:loom)
 
 (defun %main-exit-code (&optional (argv (uiop:raw-command-line-arguments)))

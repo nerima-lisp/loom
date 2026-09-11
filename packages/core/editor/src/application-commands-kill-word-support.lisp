@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-kill-word-support.lisp
-;;;;
-;;;; Application layer helpers shared by word-oriented kill commands.
 (in-package #:loom)
 
 (defun %walk-word-offset (text point count stepper)

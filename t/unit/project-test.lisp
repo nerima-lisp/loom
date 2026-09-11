@@ -1,6 +1,3 @@
-;;;; t/unit/project-test.lisp
-;;;;
-;;;; Pure project boundary, path, and search-result rules.
 (in-package #:loom/test)
 
 (describe

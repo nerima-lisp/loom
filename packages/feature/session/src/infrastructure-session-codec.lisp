@@ -1,7 +1,3 @@
-;;;; packages/feature/session/src/infrastructure-session-codec.lisp
-;;;;
-;;;; Session snapshot serialization and validation helpers shared by the
-;;;; persistent session store.
 (in-package #:loom/feature/session)
 
 (defun %session-sexp (snapshot)

@@ -1,8 +1,3 @@
-;;;; packages/feature/window/src/domain-window-layout.lisp
-;;;;
-;;;; Window-tree layout description and restoration. This keeps the public
-;;;; persistence-facing layout protocol separate from the core window model in
-;;;; domain-window.lisp and the mutating operations in domain-window-operations.lisp.
 (in-package #:loom/feature/window)
 
 (defun window-tree-layout (tree)

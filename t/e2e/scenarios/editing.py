@@ -25,10 +25,7 @@ def edit_save_exit(binary):
             session.wait_ready()
             session.type("a")
 
-            # loom draws no line-number gutter (grep -rn "gutter\\|line-number"
-            # src/ packages/ turns up no gutter feature): the buffer's first
-            # column is screen column 0, so inserting "a" before "x" puts the
-            # cursor at column 1 on row 0.
+            # Screen coordinates start at column 0 because there is no gutter.
             session.wait_for_region_cursor("body", 1)
             row0 = session.region_text("body")
             if not row0.startswith("ax"):

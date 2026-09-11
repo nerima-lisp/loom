@@ -1,6 +1,3 @@
-;;;; t/integration/major-mode-comment-line-test.lisp
-;;;;
-;;;; Comment-line behavior for mode-aware editing commands.
 (in-package #:loom/test)
 
 (describe

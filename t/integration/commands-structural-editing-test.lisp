@@ -1,7 +1,3 @@
-;;;; t/integration/commands-structural-editing-test.lisp
-;;;;
-;;;; Structural editing commands against a real buffer: what they write, where
-;;;; they leave point, that one command is one undo step, and their bindings.
 (in-package #:loom/test)
 
 (describe

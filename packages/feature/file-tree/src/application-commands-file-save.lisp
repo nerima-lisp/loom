@@ -1,6 +1,3 @@
-;;;; packages/feature/file-tree/src/application-commands-file-save.lisp
-;;;;
-;;;; Application layer: file-save/write commands and helpers.
 (in-package #:loom/feature/file-tree)
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)

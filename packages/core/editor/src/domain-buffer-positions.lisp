@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-positions.lisp
-;;;;
-;;;; Domain layer: buffer offset and position value types plus conversions
-;;;; layered on top of the core buffer protocol in domain-buffer.lisp.
 (in-package #:loom)
 
 (deftype buffer-offset ()

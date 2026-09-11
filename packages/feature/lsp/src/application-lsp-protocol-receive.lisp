@@ -1,8 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-protocol-receive.lisp
-;;;;
-;;;; Incoming transport draining for one Language Server Protocol session.
-;;;; Message routing, response handling, request construction, and diagnostic
-;;;; payload decoding stay in neighboring protocol slices.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-handle-publish-diagnostics (session message)

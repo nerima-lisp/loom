@@ -1,4 +1,3 @@
-;;;; packages/feature/file-tree/src/infrastructure-file-tree-filesystem-support.lisp
 
 (in-package #:loom/feature/file-tree)
 

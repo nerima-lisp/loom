@@ -1,6 +1,3 @@
-;;;; packages/feature/workspace/src/domain-workspace.lisp
-;;;;
-;;;; Public workspace domain API for construction and lifecycle operations.
 (in-package #:loom/feature/workspace)
 
 (defun make-workspace-manager-from-workspaces (workspaces

@@ -1,4 +1,3 @@
-;;;; t/unit/terminal-renderer-cursor-test.lisp
 
 (in-package #:loom/test)
 

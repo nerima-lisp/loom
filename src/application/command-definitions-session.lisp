@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-session.lisp
-;;;;
-;;;; Declarative command catalogue for session, bookmark, and register commands.
 (in-package #:loom)
 
 (define-command-spec-groups *session-command-spec-groups*

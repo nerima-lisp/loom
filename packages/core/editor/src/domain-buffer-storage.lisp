@@ -1,14 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Representation
-;;;
-;;; A piece table stores immutable initial text plus an append-only add buffer.
-;;; Edits split and join compact piece metadata instead of copying unaffected text.
-;;; :CONC-NAME and :CONSTRUCTOR are both overridden so the struct's auto-generated accessor/constructor
-;;; names (BUFFER-NAME, MAKE-BUFFER, ...) don't collide with the protocol's
-;;; exported generic functions of the same names above.
-;;; ---------------------------------------------------------------------
 
 (defstruct (piece (:constructor %make-piece) (:conc-name %piece-))
   "A contiguous slice of a piece table source."
@@ -30,23 +21,13 @@ modified-p, read-only state, and undo/redo state."
   (original "" :type string)
   (add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0))
   (pieces nil :type list)
-  ;; Narrowing is represented as absolute offsets in the full piece-table
-  ;; text.  The end is exclusive; a widened buffer always has [0, full
-  ;; length], which lets edits keep the invariant without a separate flag.
   (narrow-start-offset 0 :type integer)
   (narrow-end-offset 0 :type integer)
   (point-line 0 :type integer)
   (point-column 0 :type integer)
   (mark-line nil :type %maybe-line/column)
   (mark-column nil :type %maybe-line/column)
-  ;; A buffer owns only the opaque mode identity.  Mode-specific behaviour
-  ;; belongs to feature packages, keeping the core editor independent of
-  ;; language packages.
   (major-mode :fundamental)
-  ;; :DEFAULT defers to the major mode; T and NIL are explicit user choices.
-  ;; Like MAJOR-MODE this is an opaque display preference the core buffer never
-  ;; interprets -- resolving :DEFAULT needs mode metadata, which lives in a
-  ;; feature package.
   (truncate-lines :default)
   (read-only-p nil :type boolean)
   (modified-p nil)
@@ -65,13 +46,6 @@ modified-p, read-only state, and undo/redo state."
   (when (%buffer-read-only-p buffer)
     (error 'buffer-read-only-error :buffer buffer)))
 
-;;; ---------------------------------------------------------------------
-;;; Internal helpers
-;;;
-;;; These are defined before the generics below so nothing here forward-
-;;; references a not-yet-defined function; each helper only calls struct
-;;; accessors and earlier helpers, never the exported generics themselves.
-;;; ---------------------------------------------------------------------
 
 (defun %split-newlines (string)
   "Split STRING on #\\Newline into a list of line-strings. A STRING with no

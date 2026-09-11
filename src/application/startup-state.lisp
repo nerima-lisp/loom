@@ -1,7 +1,3 @@
-;;;; src/application/startup-state.lisp
-;;;;
-;;;; Startup-state assembly: path resolution, initial buffer selection, and
-;;;; the first *EDITOR-STATE* shape before async services are attached.
 (in-package #:loom)
 
 (defun %startup-file-and-root (argument)

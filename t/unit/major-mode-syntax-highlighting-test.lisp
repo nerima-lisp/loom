@@ -1,6 +1,3 @@
-;;;; t/unit/major-mode-syntax-highlighting-test.lisp
-;;;;
-;;;; Mode-aware syntax highlighting behavior for generic and Lisp tokenizers.
 (in-package #:loom/test)
 
 (describe

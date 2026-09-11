@@ -1,10 +1,3 @@
-;;;; src/application/event-loop.lisp
-;;;;
-;;;; The application event loop owns the main loop and dispatch sequencing.
-;;;; Terminal sizing and input wait policy live in event-loop-control.lisp;
-;;;; frame rendering/background refresh work lives in event-loop-rendering.lisp;
-;;;; input decoding itself is isolated in input-dispatch.lisp; startup and
-;;;; resource lifecycle are isolated in startup.lisp.
 (in-package #:loom)
 
 (defun %read-and-dispatch-event-loop-input (input-stream buffer decoder keymap-state)

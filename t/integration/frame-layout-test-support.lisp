@@ -1,4 +1,3 @@
-;;;; t/integration/frame-layout-test-support.lisp
 
 (in-package #:loom/test)
 

@@ -1,6 +1,3 @@
-;;;; src/application/commands-bookmark-support.lisp
-;;;;
-;;;; Application layer: bookmark state, lookup helpers, and prompt wrappers.
 (in-package #:loom)
 
 (defun %bookmark-table ()

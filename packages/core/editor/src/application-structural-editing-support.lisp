@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-structural-editing-support.lisp
-;;;;
-;;;; Shared list-boundary and delimiter helpers for structural editing.
 (in-package #:loom)
 
 (defun %structural-list-close (text classes open)

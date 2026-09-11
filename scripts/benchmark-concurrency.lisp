@@ -1,5 +1,3 @@
-;;;; Compare synchronous and cl-concurrent-kit-backed directory listing.
-;;;; Usage: nix develop -c sbcl --script scripts/benchmark-concurrency.lisp
 
 (require :asdf)
 
@@ -70,7 +68,6 @@
                     collect (format nil "/loom-benchmark/~2,'0D/" index)))
        (directory-lister
          (lambda (path)
-          ;; Model the latency that makes independent directory reads worth scheduling.
           (sleep 0.01)
           (list (cons (format nil "~Afile" path) :file))))
        (sync-start (get-internal-real-time))

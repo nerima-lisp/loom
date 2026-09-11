@@ -1,6 +1,3 @@
-;;;; src/application/input-routing-decision.lisp
-;;;;
-;;;; Data-only classification for one decoded key event before dispatch.
 (in-package #:loom)
 
 (defstruct (input-routing-decision

@@ -1,4 +1,3 @@
-;;;; t/integration/session-workspace-application-test.lisp
 
 (in-package #:loom/test)
 

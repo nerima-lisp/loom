@@ -1,4 +1,3 @@
-;;;; t/unit/buffer-undo-test.lisp
 (in-package #:loom/test)
 
 (describe

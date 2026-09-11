@@ -1,6 +1,3 @@
-;;;; src/application/commands-keybinding-spec.lisp
-;;;;
-;;;; Application layer: normalization helpers for command-spec key forms.
 (in-package #:loom/application)
 
 (defparameter +defkeys-modifiers+ '(:control :alt)

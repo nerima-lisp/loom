@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-narrowing.lisp
-;;;;
-;;;; Domain layer: visible-region queries and narrowing APIs layered on top of
-;;;; the core buffer protocol in domain-buffer.lisp.
 (in-package #:loom)
 
 (defun buffer-narrow-start-offset (buffer)

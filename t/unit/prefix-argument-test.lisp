@@ -1,8 +1,3 @@
-;;;; t/unit/prefix-argument-test.lisp
-;;;;
-;;;; The prefix value object is deliberately independent from key dispatch:
-;;;; these examples pin down its state transitions before integration tests
-;;;; exercise the terminal event path.
 (in-package #:loom/test)
 
 (describe

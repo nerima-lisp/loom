@@ -29,7 +29,7 @@ def project_find_file(binary):
 
         with Session(binary, [main_path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("x") + b"pf")  # C-x p f: project-find-file
+            session.send(keys.ctrl("x") + b"pf")
             session.wait_for_text("Project file: ")
             session.type("src/other.txt")
             session.send(keys.RET)
@@ -58,16 +58,11 @@ def project_search(binary):
 
         with Session(binary, [source_path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("x") + b"ps")  # C-x p s: project-search
+            session.send(keys.ctrl("x") + b"ps")
             session.wait_for_text("Project search: ")
             session.type("needle")
             session.send(keys.RET)
-            # project-search renders its "Matches:" summary synchronously as
-            # part of the same event-loop turn as RET
-            # (src/application/event-loop.lisp:%run-event-loop-turn always
-            # renders after a dispatched chunk); polling wait_for_text alone
-            # is sufficient, unlike the fixed-sleep-then-C-p "wake" the
-            # original harness used.
+            # Rendering occurs in the same event-loop turn as RET.
             session.wait_for_text("Matches:")
             if session.screen.find("src/main.py:1") is None:
                 raise AssertionError(

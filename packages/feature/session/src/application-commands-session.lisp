@@ -1,8 +1,3 @@
-;;;; packages/feature/session/src/application-commands-session.lisp
-;;;;
-;;;; Application layer: save/load commands. Snapshot conversion lives in
-;;;; application-session-snapshot.lisp; restore helpers live in
-;;;; application-session-restore.lisp.
 (in-package #:loom/feature/session)
 
 (defun %session-path-present-p (path)

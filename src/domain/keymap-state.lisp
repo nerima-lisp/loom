@@ -1,8 +1,3 @@
-;;;; src/domain/keymap-state.lisp
-;;;;
-;;;; Domain layer: incremental keymap dispatch state. This file owns the
-;;;; state machine that accumulates key descriptors across calls and resolves
-;;;; them through src/domain/keymap.lisp's trie lookup.
 (in-package #:loom)
 
 (defstruct (keymap-state (:constructor %make-keymap-state))

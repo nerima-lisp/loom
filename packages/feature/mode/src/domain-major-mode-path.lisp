@@ -1,8 +1,3 @@
-;;;; packages/feature/mode/src/domain-major-mode-path.lisp
-;;;;
-;;;; Pure path-to-major-mode inference.  The mode registry and metadata stay
-;;;; in DOMAIN-MAJOR-MODE; this file contains only the path normalization and
-;;;; extension/filename matching used by file-opening features.
 (in-package #:loom/feature/mode)
 
 (defparameter *major-mode-path-rules*

@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-test-support.lisp
-;;;;
-;;;; Shared fixtures for filesystem boundary tests.
 (in-package #:loom/test)
 
 (defun %fake-path (name)

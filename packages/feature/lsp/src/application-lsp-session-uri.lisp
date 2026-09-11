@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-session-uri.lisp
-;;;
-;;; URI and language metadata derived from file-backed LSP documents.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-uri-path-character-p (character)

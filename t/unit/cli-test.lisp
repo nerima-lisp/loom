@@ -1,7 +1,3 @@
-;;;; t/unit/cli-test.lisp
-;;;;
-;;;; The CLI contract is independent from the terminal event loop: argument
-;;;; parsing must select the right action and preserve an optional file path.
 (in-package #:loom/test)
 
 (describe

@@ -1,4 +1,3 @@
-;;;; packages/feature/mode/src/domain-major-mode-registry-support.lisp
 
 (in-package #:loom/feature/mode)
 

@@ -1,25 +1,3 @@
-;;;; Generate a cl-weave/SB-COVER HTML report for the loom/test suite.
-;;;;
-;;;; Usage:  sbcl --script scripts/coverage.lisp
-;;;;
-;;;; Mirrors nshell's scripts/coverage.lisp and run-tests.lisp's own
-;;;; source-registry setup: inside `nix develop` the sibling systems
-;;;; (cl-tty-kit, cl-host-kit, cl-history-kit, cl-prolog-kit, cl-cli, cl-weave)
-;;;; are already on the ASDF source registry; for a plain ghq checkout only
-;;;; the sibling roots required by loom are registered. When
-;;;; CL_SOURCE_REGISTRY is already set, those local roots are not prepended:
-;;;; otherwise a dirty sibling checkout could shadow pinned Nix inputs.
-;;;;
-;;;; Load Loom after SB-COVER is enabled so its local source components are
-;;;; compiled with instrumentation. Do not use ASDF's :force :all here:
-;;;; dependencies are immutable Nix store paths, so forcing the complete graph
-;;;; would try to write FASLs beside those dependencies and fail with EACCES.
-;;;;
-;;;; SB-EXT:WITH-TIMEOUT bounds the whole run at 1800s, matching
-;;;; `flake.nix`'s own `checks.default` `timeoutSeconds`: forcing both Loom
-;;;; systems is still slower than a cached test run. The development alias
-;;;; adds an OS-level timeout as well, so a stuck child process cannot outlive
-;;;; the Lisp-level guard.
 
 (require :asdf)
 
@@ -146,13 +124,9 @@
                (handler-case
                    (sb-ext:with-timeout +coverage-timeout-seconds+
                      (progress "loading loom")
-                     ;; Recompile Loom's local components so SB-COVER sees
-                     ;; the current source instead of an ASDF-cached FASL.
                      (asdf:load-system :loom :force t)
                      (progress "loading loom/test")
                      (asdf:load-system :loom/test)
-                     ;; cl-weave owns test execution and coverage collection;
-                     ;; its no-test and empty-expression guards reject vacuous runs.
                      (progress "running tests")
                      (let* ((source-pathnames
                            (%coverage-source-pathnames root))
@@ -164,14 +138,7 @@
                                        :reporter :spec
                                        :stream *standard-output*
                                        :pass-with-no-tests nil
-                                       ;; Coverage instrumentation makes the
-                                       ;; subprocess-based CLI integration
-                                       ;; test substantially slower than the
-                                       ;; normal test run.
                                        :timeout-ms +coverage-test-timeout-ms+
-                                       ;; Coverage is intentionally deterministic:
-                                       ;; subprocess-backed tests must not race
-                                       ;; with parallel workers during teardown.
                                        :max-workers 1
                                        :coverage t
                                        :coverage-include-pathnames source-pathnames))

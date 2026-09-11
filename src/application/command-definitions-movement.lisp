@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-movement.lisp
-;;;;
-;;;; Declarative command catalogue for movement commands.
 (in-package #:loom)
 
 (define-command-spec-groups *movement-command-spec-groups*

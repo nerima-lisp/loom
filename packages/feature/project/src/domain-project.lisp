@@ -1,6 +1,3 @@
-;;;; packages/feature/project/src/domain-project.lisp
-;;;;
-;;;; Pure project boundaries, path rules, and search result shaping.
 (in-package #:loom/feature/project)
 
 (defparameter +project-marker-names+

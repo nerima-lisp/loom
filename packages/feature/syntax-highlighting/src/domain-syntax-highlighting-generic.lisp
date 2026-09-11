@@ -1,6 +1,3 @@
-;;;; packages/feature/syntax-highlighting/src/domain-syntax-highlighting-generic.lisp
-;;;;
-;;;; Shared lightweight tokenization for non-Common Lisp major modes.
 
 (in-package #:loom/feature/syntax-highlighting)
 

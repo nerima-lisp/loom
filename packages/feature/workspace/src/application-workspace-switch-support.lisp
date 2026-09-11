@@ -1,6 +1,3 @@
-;;;; packages/feature/workspace/src/application-workspace-switch-support.lisp
-;;;;
-;;;; Application layer: shared workspace switching and minibuffer helpers.
 (in-package #:loom/feature/workspace)
 
 (defun %workspace-manager ()

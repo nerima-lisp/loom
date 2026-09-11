@@ -1,4 +1,3 @@
-;;;; t/integration/main-cli-test.lisp
 (in-package #:loom/test)
 
 (describe

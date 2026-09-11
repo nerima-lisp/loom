@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/application-commands-movement.lisp
-;;;;
-;;;; Application layer: point-movement commands. Shared word-boundary helpers
-;;;; live in application-word-motion.lisp so kill commands can reuse the same
-;;;; text/offset logic without depending on this command file.
 (in-package #:loom)
 
 (define-repeating-command forward-char

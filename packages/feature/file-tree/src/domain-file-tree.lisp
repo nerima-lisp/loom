@@ -1,39 +1,5 @@
-;;;; packages/feature/file-tree/src/domain-file-tree.lisp
-;;;;
-;;;; Domain layer: file-tree state construction, visibility, and child-lister
-;;;; installation. Visible-entry enumeration and selection / expand-collapse
-;;;; navigation live in domain-file-tree-navigation.lisp. The generics that
-;;;; actually touch the filesystem
-;;;; (FILE-TREE-CREATE-FILE, FILE-TREE-CREATE-DIRECTORY, FILE-TREE-RENAME,
-;;;; FILE-TREE-DELETE, all wrapping CL-HOST-KIT) live in
-;;;; infrastructure/filesystem.lisp instead, since they are I/O rather than
-;;;; pure tree state.
-;;;;
-;;;; A file tree is the collapsible sidebar file browser rooted at a directory,
-;;;; backed by CL-HOST-KIT for filesystem access.
 (in-package #:loom/feature/file-tree)
 
-;;; This domain layer has no dependency on CL-HOST-KIT, so it cannot itself
-;;; list a directory's children. Instead FILE-TREE carries a CHILD-LISTER
-;;; slot: a function of one argument PATH returning a list of (CHILD-PATH .
-;;; :FILE-or-:DIRECTORY) conses, called lazily -- only for directories that
-;;; are currently expanded (plus the root, whose direct children are always
-;;; shown at depth 0). It defaults to a pure stub that reports every
-;;; directory as childless, so a FILE-TREE is usable standalone (e.g. in
-;;; tests) with no filesystem access at all. The infrastructure layer
-;;; overrides it post-construction with the infrastructure lister, e.g.
-;;; The infrastructure layer installs LOOM-FS-LIST-DIRECTORY as the lister.
-;;; Expand/collapse state is a hash-table of currently-expanded directory
-;;; paths (EQUAL-keyed, so string or pathname paths both work as long as a
-;;; given tree is consistent about which it uses).
-;;;
-;;; FILE-TREE's own visibility and selection slots are named SHOWN and
-;;; SELECTION rather than VISIBLE-P/SELECTED-PATH, so their auto-generated
-;;; accessors (FILE-TREE-SHOWN, FILE-TREE-SELECTION) don't clash with the
-;;; FILE-TREE-VISIBLE-P / FILE-TREE-SELECTED-PATH generic functions below.
-;;; MAKE-FILE-TREE's default constructor name is likewise overridden
-;;; (%MAKE-FILE-TREE) to avoid clashing with the MAKE-FILE-TREE generic
-;;; function.
 
 (defun %default-child-lister (path)
   "Default FILE-TREE-CHILD-LISTER: performs no filesystem access at all and

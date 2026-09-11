@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-macros.lisp
-;;;;
-;;;; Declarative command catalogue for macros and evaluation commands.
 (in-package #:loom)
 
 (define-command-spec-groups *macros-command-spec-groups*

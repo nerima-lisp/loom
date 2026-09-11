@@ -1,6 +1,3 @@
-;;;; t/integration/session-store-buffer-validation-test.lisp
-;;;;
-;;;; Session snapshot buffer validation tests.
 (in-package #:loom/test)
 
 (describe

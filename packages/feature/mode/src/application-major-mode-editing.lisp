@@ -1,6 +1,3 @@
-;;;; packages/feature/mode/src/application-major-mode-editing.lisp
-;;;;
-;;;; Mode-aware buffer editing commands.
 (in-package #:loom/feature/mode)
 
 (defun buffer-truncate-lines-p (buffer)

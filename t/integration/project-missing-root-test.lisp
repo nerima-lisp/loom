@@ -1,6 +1,3 @@
-;;;; t/integration/project-missing-root-test.lisp
-;;;;
-;;;; Real temporary-directory coverage for missing project roots.
 (in-package #:loom/test)
 
 (describe

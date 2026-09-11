@@ -1,6 +1,3 @@
-;;;; t/integration/advanced-test.lisp
-;;;;
-;;;; High-level cl-weave registrations over the real Loom buffer protocol.
 (in-package #:loom/test)
 
 (describe

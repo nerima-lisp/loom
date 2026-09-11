@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/application-commands-kill.lisp
-;;;;
-;;;; Application layer: kill commands (see
-;;;; application/commands-internal.lisp for the shared command-authoring
-;;;; convention every commands-*.lisp file follows).
 (in-package #:loom)
 
 (defun kill-line ()

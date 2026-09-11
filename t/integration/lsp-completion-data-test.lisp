@@ -1,6 +1,3 @@
-;;;; t/integration/lsp-completion-data-test.lisp
-;;;;
-;;;; Pure completion-prefix and popup-item transformations.
 (in-package #:loom/test)
 
 (describe

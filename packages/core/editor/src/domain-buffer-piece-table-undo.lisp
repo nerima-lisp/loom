@@ -1,11 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table undo replay
-;;;
-;;; Core splice/mutation algorithms live in domain-buffer-piece-table.lisp.
-;;; This file owns replaying recorded undo entries through those primitives.
-;;; ---------------------------------------------------------------------
 
 (defun %replay-insert-entry (buffer line column text)
   (multiple-value-bind (end-line end-column)

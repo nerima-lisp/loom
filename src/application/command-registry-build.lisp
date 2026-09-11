@@ -1,8 +1,3 @@
-;;;; src/application/command-registry-build.lisp
-;;;;
-;;;; Application-layer command registry normalization, validation, and
-;;;; composition macros. The declarative COMMAND-SPEC surface lives in
-;;;; command-registry-forms.lisp.
 (in-package #:loom/application)
 
 (defun %parse-command-spec-form (spec)

@@ -1,10 +1,3 @@
-;;;; src/application/minibuffer-completion.lisp
-;;;;
-;;;; Application layer: minibuffer completion. This file keeps candidate
-;;;; matching and the public MINIBUFFER-COMPLETE entrypoint separate from
-;;;; keystroke classification/history navigation in
-;;;; src/application/minibuffer-input.lisp and from the core minibuffer
-;;;; state/activation protocol in src/application/minibuffer.lisp.
 (in-package #:loom)
 
 (defun %minibuffer-prefix-match-p (prefix candidate)

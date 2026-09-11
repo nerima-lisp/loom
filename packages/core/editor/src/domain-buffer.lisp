@@ -1,31 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer.lisp
-;;;;
-;;;; Domain layer: the core public buffer protocol. Pure
-;;;; text-storage/point-mark/undo state and logic with no dependency on
-;;;; cl-tty-kit, cl-host-kit, or
-;;;; cl-history-kit -- BUFFER-LOAD/BUFFER-SAVE describe file I/O in their
-;;;; contract but only their DEFGENERIC (name, docstring, argument list) is
-;;;; declared here; their real, disk-touching :METHOD bodies live in
-;;;; infrastructure/filesystem.lisp instead, since they are I/O rather than
-;;;; pure buffer state -- see that file's header comment.
-;;;;
-;;;; A buffer owns text content, point, mark, and an optional backing file
-;;;; path. Piece-table representation lives in domain-buffer-storage.lisp;
-;;;; piece-table mutation and position helpers live in
-;;;; domain-buffer-piece-table.lisp; line/point/mark/region accessor APIs live
-;;;; in domain-buffer-accessors.lisp; text mutation APIs live in
-;;;; domain-buffer-editing.lisp; low-level narrowing helpers live in
-;;;; domain-buffer-narrowing-support.lisp; visible-region APIs live in
-;;;; domain-buffer-narrowing.lisp; offset/position helpers layered on top of
-;;;; this protocol live in domain-buffer-positions.lisp;
-;;;; modification/read-only state and undo/redo history live in
-;;;; domain-buffer-history.lisp.
-;;;;
-;;;; Indexing convention, fixed for the whole protocol: line and column
-;;;; numbers are zero-based. Line 0 is the first line of a buffer; column 0 is
-;;;; the character before the first character of a line. A (line . column)
-;;;; pair denotes a position *between* characters, exactly like Emacs point,
-;;;; so END values in a region are exclusive.
 (in-package #:loom)
 
 (defun %buffer-initial-pieces (original)

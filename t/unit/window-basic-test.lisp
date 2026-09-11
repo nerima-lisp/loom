@@ -1,6 +1,3 @@
-;;;; t/unit/window-basic-test.lisp
-;;;;
-;;;; Basic in-memory window-tree behavior.
 (in-package #:loom/test)
 
 (describe

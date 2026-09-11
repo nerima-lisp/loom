@@ -1,23 +1,5 @@
-;;;; src/application/input-dispatch.lisp
-;;;;
-;;;; The input boundary translates terminal bytes into application events and
-;;;; routes those events to the editor state. It deliberately owns no
-;;;; terminal rendering or startup lifecycle; those concerns live in
-;;;; event-loop.lisp and startup.lisp respectively.
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Raw input reading
-;;;
-;;; CL-TTY-KIT:DECODE-INPUT-CHUNK accepts either a string or an octet vector
-;;; (see infrastructure/terminal-renderer.lisp's sibling library,
-;;; input-decode.lisp, for that contract), so this reads octets directly off
-;;; the supplied input stream via READ-BYTE rather than going through a character
-;;; decode first -- SBCL's stdin fd-stream is bivalent (READ-BYTE and
-;;; READ-CHAR both work on it), and reading octets sidesteps ever needing to
-;;; worry about the input stream's external-format matching what the terminal
-;;; actually sent.
-;;; ---------------------------------------------------------------------
 
 (defun %drain-buffered-octets (buffer start-count input-stream)
   "Read the octets already waiting on INPUT-STREAM into BUFFER, filling it

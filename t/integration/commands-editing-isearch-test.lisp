@@ -1,8 +1,3 @@
-;;;; t/integration/commands-editing-isearch-test.lisp
-;;;;
-;;;; Incremental search driven the way a user drives it: real key events
-;;;; through the minibuffer, so the ON-CHANGE and ON-KEY hooks are exercised
-;;;; rather than the session transitions being called directly.
 (in-package #:loom/test)
 
 (defun %control-key (character)

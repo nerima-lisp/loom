@@ -1,6 +1,3 @@
-;;;; src/infrastructure/terminal-renderer-text-wrapping.lisp
-;;;;
-;;;; Infrastructure layer: wrapped screen-cell rows and vertical movement.
 (in-package #:loom)
 
 (defun %loom-renderer-wrap-segment-end (string start width)

@@ -1,6 +1,3 @@
-;;;; t/unit/window-delete-other-windows-test.lisp
-;;;;
-;;;; Collapse non-selected windows.
 (in-package #:loom/test)
 
 (describe

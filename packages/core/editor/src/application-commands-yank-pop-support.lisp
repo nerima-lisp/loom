@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-yank-pop-support.lisp
-;;;;
-;;;; Application layer: yank-pop helpers layered on top of yank support.
 (in-package #:loom)
 
 (defun %valid-yank-pop-context-p (buffer ring start end ranges last-buffer index)

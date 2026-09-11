@@ -1,6 +1,3 @@
-;;;; src/presentation/layout-minibuffer.lisp
-;;;;
-;;;; Presentation layer: minibuffer rendering helpers.
 (in-package #:loom)
 
 (defun %layout-minibuffer-line (minibuffer)

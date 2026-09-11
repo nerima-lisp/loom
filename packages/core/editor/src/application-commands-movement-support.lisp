@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/application-commands-movement-support.lisp
-;;;;
-;;;; Application layer: internal point-movement helpers shared by movement
-;;;; commands without exposing another public command surface.
 (in-package #:loom)
 
 (defun %move-point-to-position (buffer position)

@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/application-commands-lsp-navigation.lisp
-;;;;
-;;;; Definition commands ask the server and return
-;;;; immediately: the reply arrives on a later LSP-SESSION-DRAIN, which the
-;;;; event loop runs between frames, so the effect of these commands shows up
-;;;; on a subsequent frame rather than before they return.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-push-jump-origin (buffer line column)

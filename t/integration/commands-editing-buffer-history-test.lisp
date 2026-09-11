@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-buffer-history-test.lisp
-;;;;
-;;;; Buffer history command integration tests.
 (in-package #:loom/test)
 
 (describe

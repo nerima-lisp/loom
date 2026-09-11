@@ -1,9 +1,3 @@
-;;;; packages/feature/lsp/src/infrastructure-lsp-transport.lisp
-;;;;
-;;;; Infrastructure boundary for a language-server child process.  The process
-;;;; reader is asynchronous: the editor's main lane only calls the non-blocking
-;;;; RECEIVE operation while rendering a frame.  Pure JSON-RPC framing lives in
-;;;; infrastructure-lsp-framing.lisp.
 (in-package #:loom/feature/lsp)
 
 (defgeneric lsp-transport-send (transport json)

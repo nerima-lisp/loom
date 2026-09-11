@@ -1,4 +1,3 @@
-;;;; t/integration/main-startup-test.lisp
 (in-package #:loom/test)
 
 (describe

@@ -1,6 +1,3 @@
-;;;; t/integration/commands-sexp-test.lisp
-;;;;
-;;;; Structural motion commands and their default C-M- bindings.
 (in-package #:loom/test)
 
 (describe

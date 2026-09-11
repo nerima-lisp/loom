@@ -1,4 +1,3 @@
-;;;; src/infrastructure/terminal-renderer-cursor.lisp
 (in-package #:loom)
 
 (defun loom-renderer-resize (renderer width height)

@@ -1,4 +1,3 @@
-;;;; t/test-helpers-lsp.lisp
 (in-package #:loom/test)
 
 (defclass %fake-lsp-transport ()

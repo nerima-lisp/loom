@@ -1,11 +1,6 @@
-;;;; packages/feature/lsp/src/package.lisp
-;;;;
-;;;; The public LSP package exposes values and session operations. JSON,
-;;;; framing, and process lifecycle remain private infrastructure concerns.
 (defpackage #:loom/feature/lsp
   (:use #:cl #:loom #:loom/application)
   (:export
-   ;; Stable LSP values and session operations are the feature's public API.
    #:lsp-position
    #:make-lsp-position
    #:lsp-position-p
@@ -46,7 +41,6 @@
    #:lsp-session-last-error
    #:lsp-path-uri
    #:lsp-discover-command
-   ;; Application API
    #:lsp-start
    #:lsp-stop
    #:lsp-diagnostics

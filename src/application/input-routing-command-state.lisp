@@ -1,7 +1,3 @@
-;;;; src/application/input-routing-command-state.lisp
-;;;;
-;;;; Command-routing helpers that mutate editor-local routing state while
-;;;; remaining independent from the event-loop byte-reading path.
 (in-package #:loom)
 
 (defun record-undo-boundary-for-command (self-insert-p)

@@ -1,7 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-protocol-helpers.lisp
-;;;;
-;;;; Shared JSON-RPC helpers, response matching, and stop finalization for
-;;;; one Language Server Protocol session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-json-error-message (value)

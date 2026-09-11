@@ -1,6 +1,3 @@
-;;;; t/unit/terminal-event-test.lisp
-;;;;
-;;;; Terminal key and paste event translation.
 (in-package #:loom/test)
 
 (describe

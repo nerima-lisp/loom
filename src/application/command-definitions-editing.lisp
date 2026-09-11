@@ -1,6 +1,3 @@
-;;;; src/application/command-definitions-editing.lisp
-;;;;
-;;;; Declarative command catalogue for editing commands.
 (in-package #:loom)
 
 (define-command-spec-groups *editing-command-spec-groups*

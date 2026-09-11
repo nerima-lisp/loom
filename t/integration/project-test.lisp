@@ -1,6 +1,3 @@
-;;;; t/integration/project-test.lisp
-;;;;
-;;;; Real temporary-directory traversal, project search, and project commands.
 (in-package #:loom/test)
 
 (describe

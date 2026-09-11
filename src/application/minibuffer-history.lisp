@@ -1,9 +1,3 @@
-;;;; src/application/minibuffer-history.lisp
-;;;;
-;;;; Application layer: minibuffer history snapshot/install. This file keeps
-;;;; the serializable history boundary separate from the minibuffer's core
-;;;; state/activation protocol in src/application/minibuffer.lisp and from
-;;;; interactive history navigation in src/application/minibuffer-input.lisp.
 (in-package #:loom)
 
 (defun minibuffer-history-entries (minibuffer)

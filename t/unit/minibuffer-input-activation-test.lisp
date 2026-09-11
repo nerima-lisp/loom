@@ -1,7 +1,3 @@
-;;;; t/unit/minibuffer-input-activation-test.lisp
-;;;;
-;;;; Activation, cancellation, editing, and inactive behavior for
-;;;; src/application/minibuffer-input.lisp.
 (in-package #:loom/test)
 
 (describe

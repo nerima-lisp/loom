@@ -1,6 +1,3 @@
-;;;; t/integration/session-command-test.lisp
-;;;;
-;;;; Session persistence tests cover the public save/load commands.
 (in-package #:loom/test)
 
 (describe

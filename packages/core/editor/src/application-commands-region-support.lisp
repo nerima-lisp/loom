@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/application-commands-region-support.lisp
-;;;;
-;;;; Application layer helpers for mark/region commands.
 (in-package #:loom)
 
 (defun %set-mark-at-point (buffer)

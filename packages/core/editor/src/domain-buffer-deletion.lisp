@@ -1,6 +1,3 @@
-;;;; packages/core/editor/src/domain-buffer-deletion.lisp
-;;;;
-;;;; Domain layer: deletion APIs and their point/range coordination.
 
 (in-package #:loom)
 

@@ -1,6 +1,3 @@
-;;;; t/integration/major-mode-test.lisp
-;;;;
-;;;; Mode inference at the file boundary and mode-aware editing commands.
 (in-package #:loom/test)
 
 (defun %loom-test-parent-dispatch-command (hit)

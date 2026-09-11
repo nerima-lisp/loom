@@ -1,21 +1,5 @@
-;;;; packages/feature/file-tree/src/infrastructure-buffer-filesystem.lisp
-;;;;
-;;;; Infrastructure layer: the disk-backed BUFFER-LOAD / BUFFER-SAVE methods
-;;;; for the buffer protocol declared in packages/core/editor/src/domain-buffer.lisp.
-;;;; The pure buffer domain owns text state and editing logic; actual file I/O
-;;;; lives here so tests can swap *LOOM-FILESYSTEM* for an in-memory fake.
-;;;;
 (in-package #:loom/feature/file-tree)
 
-;;; ---------------------------------------------------------------------
-;;; BUFFER-LOAD / BUFFER-SAVE: the real, disk-backed :METHOD bodies for the
-;;; generics declared (name, docstring, argument list only) in
-;;; domain/buffer.lisp. domain/buffer.lisp is deliberately pure text-storage
-;;; state with no dependency on CL-HOST-KIT -- see that file's header
-;;; comment -- so the actual file I/O lives here instead, same split as
-;;; FILE-TREE-CREATE-FILE and friends in
-;;; infrastructure-file-tree-filesystem.lisp.
-;;; ---------------------------------------------------------------------
 
 (defmethod buffer-load (path)
   (let ((content (if (%native-path-operation-p path)

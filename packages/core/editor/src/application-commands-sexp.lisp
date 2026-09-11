@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/application-commands-sexp.lisp
-;;;;
-;;;; Application layer: structural motion commands. The offset arithmetic lives
-;;;; in application-sexp-motion.lisp; this file only turns it into point and
-;;;; kill-ring effects on the selected buffer.
 (in-package #:loom)
 
 (defun %sexp-motion-context ()

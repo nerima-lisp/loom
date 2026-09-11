@@ -1,10 +1,3 @@
-;;;; src/application/minibuffer-input.lisp
-;;;;
-;;;; Application layer: minibuffer keystroke handling. This file keeps key
-;;;; classification, history navigation, and the public
-;;;; MINIBUFFER-HANDLE-KEY entrypoint separate from completion in
-;;;; src/application/minibuffer-completion.lisp and from the minibuffer's
-;;;; core state/activation protocol in src/application/minibuffer.lisp.
 (in-package #:loom)
 
 (defun %control-g-key-p (key-event)

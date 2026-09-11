@@ -1,14 +1,5 @@
 (in-package #:loom)
 
-;;; ---------------------------------------------------------------------
-;;; Piece-table edit operations
-;;;
-;;; Representation stays in domain-buffer-storage.lisp. Position and line
-;;; mapping live in domain-buffer-piece-table-position.lisp. Low-level
-;;; splice/extraction helpers live in domain-buffer-piece-table-support.lisp.
-;;; This file keeps the higher-level edit operations that update narrowing and
-;;; undo/redo state; undo replay lives in domain-buffer-piece-table-undo.lisp.
-;;; ---------------------------------------------------------------------
 
 (defun %update-after-insert (buffer was-narrowed-p old-length text-length)
   (if was-narrowed-p

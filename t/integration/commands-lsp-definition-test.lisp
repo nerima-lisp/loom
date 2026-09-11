@@ -1,6 +1,3 @@
-;;;; t/integration/commands-lsp-definition-test.lisp
-;;;;
-;;;; LSP definition navigation integration tests.
 (in-package #:loom/test)
 
 (describe

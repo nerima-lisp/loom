@@ -1,7 +1,3 @@
-;;;; src/application/editor-state-operations.lisp
-;;;;
-;;;; Application-layer EDITOR-STATE helpers that do not justify their own
-;;;; compilation unit yet.
 (in-package #:loom)
 
 (defun %clear-last-yank ()

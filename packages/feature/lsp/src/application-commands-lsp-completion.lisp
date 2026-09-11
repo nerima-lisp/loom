@@ -1,8 +1,3 @@
-;;;; packages/feature/lsp/src/application-commands-lsp-completion.lisp
-;;;;
-;;;; Completion command and its data transformation boundary. The request is
-;;;; asynchronous; this command only schedules it and stores the result when
-;;;; the session drain receives the reply.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-symbol-character-p (character)

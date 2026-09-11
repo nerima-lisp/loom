@@ -1,9 +1,3 @@
-;;;; packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp
-;;;;
-;;;; Application layer: start/stop/replay commands for the keyboard-macro
-;;;; domain value.  Input recording itself is completed by main.lisp after a
-;;;; command succeeds, so command keys cannot accidentally become part of the
-;;;; macro that they control.
 (in-package #:loom/feature/keyboard-macro)
 
 (defun start-kbd-macro ()

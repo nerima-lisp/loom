@@ -1,6 +1,3 @@
-;;;; src/application/input-routing-effects.lisp
-;;;;
-;;;; Mutating helpers used by input-routing dispatch after classification.
 (in-package #:loom)
 
 (defun %prepare-dispatched-command-state (command)

@@ -1,7 +1,3 @@
-;;;; packages/feature/syntax-highlighting/src/domain-syntax-highlighting.lisp
-;;;;
-;;;; Line-local Common Lisp lexical classification.  This module returns
-;;;; semantic tokens without depending on terminal or rendering packages.
 
 (in-package #:loom/feature/syntax-highlighting)
 

@@ -1,8 +1,3 @@
-;;;; t/unit/structural-editing-test.lisp
-;;;;
-;;;; The edit lists behind the structural editing commands, checked by applying
-;;;; them to a string. Working on text rather than on a buffer keeps each case
-;;;; readable as a before/after pair.
 (in-package #:loom/test)
 
 (defun %apply-edits-to-string (text edits)

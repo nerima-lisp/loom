@@ -1,6 +1,3 @@
-;;;; t/unit/workspace-test.lisp
-;;;;
-;;;; Workspace construction/lifecycle tests and editor-state invariants.
 (in-package #:loom/test)
 
 (describe "workspace manager"

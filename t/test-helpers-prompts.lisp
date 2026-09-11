@@ -1,4 +1,3 @@
-;;;; t/test-helpers-prompts.lisp
 (in-package #:loom/test)
 
 (defun %save-buffer-prompt-string (buffer)

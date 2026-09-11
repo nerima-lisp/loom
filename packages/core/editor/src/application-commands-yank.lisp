@@ -1,8 +1,3 @@
-;;;; packages/core/editor/src/application-commands-yank.lisp
-;;;;
-;;;; Application layer: yank commands (see
-;;;; application/commands-internal.lisp for the shared command-authoring
-;;;; convention every commands-*.lisp file follows).
 (in-package #:loom)
 
 (defun yank ()

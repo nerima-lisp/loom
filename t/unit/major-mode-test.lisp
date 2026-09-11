@@ -1,6 +1,3 @@
-;;;; t/unit/major-mode-test.lisp
-;;;;
-;;;; Pure major-mode metadata, path inference, and mode-aware tokenization.
 (in-package #:loom/test)
 
 (defun %mode-token-kinds (line mode)

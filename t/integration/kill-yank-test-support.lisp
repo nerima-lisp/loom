@@ -1,4 +1,3 @@
-;;;; t/integration/kill-yank-test-support.lisp
 
 (in-package #:loom/test)
 

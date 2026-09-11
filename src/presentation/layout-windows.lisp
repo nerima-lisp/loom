@@ -1,7 +1,3 @@
-;;;; src/presentation/layout-windows.lisp
-;;;;
-;;;; Presentation of window buffers, mode lines, separators, and matching
-;;;; parentheses.
 (in-package #:loom)
 
 (defparameter +layout-mode-line-selected-style+ '(:reverse)
@@ -145,8 +141,6 @@ the mode line or another footer in the remaining window rows."
   (%layout-draw-window-buffer
    renderer leaf x-offset (%layout-window-content-height leaf))
   (%layout-draw-diagnostics renderer leaf x-offset)
-  ;; Region is drawn before matching parentheses so the latter remains legible
-  ;; when its cells overlap the active region.
   (%layout-draw-region renderer leaf x-offset)
   (%layout-draw-matching-paren renderer leaf x-offset)
   (%layout-draw-isearch renderer leaf x-offset)

@@ -1,7 +1,3 @@
-;;;; packages/core/editor/src/application-sexp-motion-tokens.lisp
-;;;;
-;;;; Application-layer S-expression token boundary helpers.
-;;;;
 (in-package #:loom)
 
 (defun %sexp-string-run-end (classes start)

@@ -1,4 +1,3 @@
-;;;; t/integration/main-terminal-size-test.lisp
 (in-package #:loom/test)
 
 (describe

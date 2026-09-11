@@ -1,7 +1,3 @@
-;;;; packages/feature/workspace/src/application-commands-workspace.lisp
-;;;;
-;;;; Application layer: workspace commands synchronize the active workspace's
-;;;; window tree with EDITOR-STATE before changing views.
 (in-package #:loom/feature/workspace)
 
 (defmacro %define-workspace-cycle-command (name docstring switcher)
@@ -31,8 +27,6 @@
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((name "Switch to workspace: "
              :completion-function #'%workspace-name-candidates))
-    ;; Save the old view before changing the manager's active index.  The
-    ;; selected workspace owns the tree that will become visible next.
     (%switch-workspace-named (%workspace-manager) name)))
 
 (defun kill-workspace ()

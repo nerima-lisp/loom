@@ -1,4 +1,3 @@
-;;;; t/integration/main-input-test.lisp
 (in-package #:loom/test)
 
 (describe

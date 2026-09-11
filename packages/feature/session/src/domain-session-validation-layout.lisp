@@ -1,4 +1,3 @@
-;;;; packages/feature/session/src/domain-session-validation-layout.lisp
 (in-package #:loom/feature/session)
 
 (defun %validate-session-layout-leaf (node buffer-count)

@@ -1,6 +1,3 @@
-;;;; t/integration/prefix-argument-action-test.lisp
-;;;;
-;;;; Exercise direct prefix-argument actions without key dispatch.
 (in-package #:loom/test)
 
 (describe

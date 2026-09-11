@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-commands-lsp-context.lisp
-;;;;
-;;;; Shared request context and user-facing message handling for LSP commands.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-navigation-session ()

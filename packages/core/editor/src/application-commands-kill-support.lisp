@@ -1,16 +1,5 @@
-;;;; packages/core/editor/src/application-commands-kill-support.lisp
-;;;;
-;;;; Application layer: kill-ring support shared by kill commands.
 (in-package #:loom)
 
-;; Unlike Emacs's KILL-RING-MAX (~120 by default), nothing previously capped
-;; how many entries EDITOR-STATE-KILL-RING could accumulate: repeated
-;; kill-line/kill-region calls in a long session would grow it without bound,
-;; holding onto arbitrarily large amounts of killed text indefinitely (a
-;; low-severity memory/security concern as well as wasted work walking a
-;; needlessly long list). +KILL-RING-MAX+ mirrors Emacs's default; %KILL-
-;; RING-PUSH is the single place both KILL-LINE and KILL-REGION funnel
-;; through so the cap is enforced consistently.
 (defconstant +kill-ring-max+ 120
   "Maximum number of entries kept in EDITOR-STATE-KILL-RING. Oldest entries
 (the tail of the list, since new kills are pushed onto the front) are

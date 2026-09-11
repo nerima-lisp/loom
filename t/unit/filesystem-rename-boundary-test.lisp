@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-rename-boundary-test.lisp
-;;;;
-;;;; Rename and buffer filesystem boundary tests.
 (in-package #:loom/test)
 
 (describe

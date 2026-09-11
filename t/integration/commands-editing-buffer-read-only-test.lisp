@@ -1,6 +1,3 @@
-;;;; t/integration/commands-editing-buffer-read-only-test.lisp
-;;;;
-;;;; Read-only command integration tests.
 (in-package #:loom/test)
 
 (describe

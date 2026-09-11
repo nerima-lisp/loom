@@ -1,10 +1,3 @@
-;;;; packages/feature/session/src/domain-session-snapshot.lisp
-;;;;
-;;;; Domain layer: validated, side-effect-free session snapshots. The snapshot
-;;;; contains enough editor state to rebuild buffers and a window tree, but it
-;;;; deliberately contains no pathname objects, streams, or terminal handles.
-;;;; Serialization and filesystem policy live in infrastructure/session-store.lisp;
-;;;; conversion to and from EDITOR-STATE lives in application/commands-session.lisp.
 (in-package #:loom/feature/session)
 
 (defstruct session-buffer-snapshot

@@ -1,9 +1,3 @@
-;;;; t/integration/layout-test.lisp
-;;;;
-;;;; Presentation drawing helpers below COMPOSE-FRAME: layout helper behavior
-;;;; that is easiest to lock in either by drawing directly through those
-;;;; helpers or by using the syntax-highlighting renderer entry points they
-;;;; call.
 (in-package #:loom/test)
 
 (defun %layout-install-diagnostics (state buffer diagnostics)
@@ -77,10 +71,6 @@
 
 (describe
   "zero-width and zero-height draw regions"
-  ;; COMPOSE-FRAME never derives a zero WIDTH/HEIGHT for these from a real
-  ;; terminal in current tests, so each drawing helper is reached directly
-  ;; (LOOM:: qualification) to lock in that a degenerate region is a no-op
-  ;; rather than an error.
   (it
     "%layout-draw-file-tree does nothing for a zero-width sidebar"
     (with-layout-state (state)

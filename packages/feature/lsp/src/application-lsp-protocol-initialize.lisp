@@ -1,7 +1,3 @@
-;;;; packages/feature/lsp/src/application-lsp-protocol-initialize.lisp
-;;;;
-;;;; Initialize request parameters and advertised client capabilities for
-;;;; one Language Server Protocol session.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-client-capabilities ()

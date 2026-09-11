@@ -1,8 +1,3 @@
-;;;; packages/feature/window/src/application-commands-window.lisp
-;;;;
-;;;; Application layer: window-management and file-tree sidebar commands (see
-;;;; application/commands-internal.lisp for the shared command-authoring
-;;;; convention every commands-*.lisp file follows).
 (in-package #:loom/feature/window)
 
 (define-selected-tree-window-command split-window-below

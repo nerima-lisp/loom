@@ -1,7 +1,3 @@
-;;;; packages/feature/session/src/application-session-snapshot.lisp
-;;;;
-;;;; Application layer: convert the live editor state to the validated
-;;;; session snapshot owned by the domain-session-* files.
 (in-package #:loom/feature/session)
 
 (defun %session-buffer-snapshot (buffer)
@@ -48,8 +44,6 @@
   "Return a validated snapshot of the current editor state."
   (let* ((manager (%session-workspace-manager))
          (current (%session-current-workspace manager)))
-    ;; The visible editor tree is authoritative for the active workspace at
-    ;; the instant a save starts; inactive workspaces already own their trees.
     (%session-sync-active-workspace-tree current)
     (let ((buffers (%session-snapshot-buffers manager)))
       (validate-session-snapshot (%session-snapshot-data manager buffers)))))

@@ -1,6 +1,3 @@
-;;;; packages/feature/file-tree/src/infrastructure-filesystem-native-io.lisp
-;;;;
-;;;; Native SBCL file I/O helpers for file-tree and buffer persistence.
 (in-package #:loom/feature/file-tree)
 
 #+sbcl

@@ -1,6 +1,3 @@
-;;;; packages/feature/lsp/src/application-commands-lsp-support.lisp
-;;;;
-;;;; Internal helpers for LSP command prompting and session startup.
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-buffer-directory (buffer)

@@ -1,6 +1,3 @@
-;;;; t/integration/session-store-roundtrip-test.lisp
-;;;;
-;;;; Session store round-trip and atomic write tests.
 (in-package #:loom/test)
 
 (describe

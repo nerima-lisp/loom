@@ -1,7 +1,3 @@
-;;;; t/integration/workspace-test.lisp
-;;;;
-;;;; Workspace application commands must exchange complete window trees while
-;;;; leaving the view stored in the inactive workspace untouched.
 (in-package #:loom/test)
 
 (describe "workspace commands"

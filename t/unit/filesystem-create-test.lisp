@@ -1,6 +1,3 @@
-;;;; t/unit/filesystem-create-test.lisp
-;;;;
-;;;; FILE-TREE-CREATE-FILE and FILE-TREE-CREATE-DIRECTORY boundary tests.
 (in-package #:loom/test)
 
 (describe
