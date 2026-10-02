@@ -4,10 +4,14 @@
   "Return SPEC normalized as (NAME COMMAND KEYS HELP HELP-ORDER)."
   (unless (and (consp spec) (eq (first spec) 'command-spec))
     (error "Expected a COMMAND-SPEC form, got: ~S" spec))
-  (destructuring-bind (operator name command &key keys help help-order) spec
+  (destructuring-bind (operator name command &rest options) spec
     (declare (ignore operator))
-    (%validate-command-metadata name command help help-order)
-    (list name command keys help help-order)))
+    (%validate-command-options options)
+    (let ((keys (getf options :keys))
+          (help (getf options :help))
+          (help-order (getf options :help-order)))
+      (%validate-command-metadata name command help help-order keys)
+      (list name command keys help help-order))))
 
 (defun %command-spec-group-p (spec)
   (and (consp spec)
@@ -16,7 +20,12 @@
 (defun %collect-command-spec-entry (spec)
   (if (%command-spec-group-p spec)
       (destructuring-bind (operator group-name &body group-specs) spec
-        (declare (ignore operator group-name))
+        (declare (ignore operator))
+        (unless (and (stringp group-name) (plusp (length group-name)))
+          (error "COMMAND-SPEC-GROUP name must be a non-empty string: ~S"
+                 group-name))
+        (unless group-specs
+          (error "COMMAND-SPEC-GROUP must contain at least one COMMAND-SPEC"))
         (%collect-command-spec-entries group-specs))
       (list (%parse-command-spec-form spec))))
 

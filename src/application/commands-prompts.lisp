@@ -18,10 +18,26 @@ WITH-PROMPTS is that chain written once, as a macro that expands BINDINGS
 into nested MINIBUFFER-ACTIVATE/:ON-CONFIRM continuations, so a multi-prompt
 command reads top-to-bottom like ordinary sequential code instead of as a
 hand-nested pyramid of lambdas."
-  (labels ((expand-bindings (bindings)
+  (labels ((validate-binding (binding)
+             (unless (and (consp binding)
+                          (symbolp (first binding))
+                          (consp (rest binding)))
+               (error "WITH-PROMPTS binding must be (VARIABLE PROMPT ...): ~S"
+                      binding))
+             (let ((options (cddr binding)))
+               (unless (evenp (length options))
+                 (error "WITH-PROMPTS binding options must be keyword/value pairs: ~S"
+                        binding))
+               (loop for (key value) on options by #'cddr
+                     unless (eq key :completion-function)
+                       do (error "Unknown WITH-PROMPTS binding option: ~S" key)
+                     finally (return value))))
+           (expand-bindings (bindings)
              (if bindings
-                 (destructuring-bind (var prompt &key completion-function)
-                     (first bindings)
+                 (let* ((binding (first bindings))
+                        (var (first binding))
+                        (prompt (second binding))
+                        (completion-function (validate-binding binding)))
                    `(loom:minibuffer-activate ,minibuffer-var ,prompt
                                               :on-confirm (lambda (,var)
                                                             ,(expand-bindings (rest bindings)))
