@@ -18,7 +18,7 @@ jobs:
   check:
     name: nix flake check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,7 +30,27 @@ jobs:
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Check flake
-        run: nix flake check --print-build-logs
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 1800s \
+            nix flake check --print-build-logs 2>&1 | tee "$RUNNER_TEMP/loom-flake-check.log"
+
+      - name: Publish coverage baseline
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          summary_lines="$(grep -E 'COVERAGE-(EXPRESSIONS|BRANCHES) ' "$RUNNER_TEMP/loom-flake-check.log" || true)"
+          if [[ -n "$summary_lines" ]]; then
+            {
+              echo '### Coverage baseline'
+              echo
+              echo '```text'
+              printf '%s\n' "$summary_lines"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Coverage baseline was not emitted by the flake check.' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Check diff hygiene
         run: git diff --check
@@ -38,7 +58,7 @@ jobs:
   e2e:
     name: PTY E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,4 +73,4 @@ jobs:
         run: nix build .#default --print-build-logs
 
       - name: Run PTY E2E
-        run: nix run .#e2e
+        run: timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
