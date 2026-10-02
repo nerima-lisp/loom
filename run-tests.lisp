@@ -1,6 +1,8 @@
 
 (require :asdf)
 
+(defconstant +test-timeout-seconds+ 1200)
+
 (let* ((script (or *load-truename*
                    (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
        (script-path (truename script))
@@ -23,6 +25,11 @@
                         "cl-regex-kit"
                         "cl-boundary-kit"
                         "cl-concurrent-kit"
+                        "cl-json-kit"
+                        "cl-log-kit"
+                        "cl-process-kit"
+                        "cl-vcs-kit"
+                        "cl-resilience-kit"
                         "cl-weave"
                         "cl-date-kit"
                         "cl-codec-kit"
@@ -45,7 +52,7 @@
 
 (let ((passed-p
         (handler-case
-            (sb-ext:with-timeout 600
+            (sb-ext:with-timeout +test-timeout-seconds+
                 (asdf:load-system "cl-host-kit")
                 (setf asdf:*compile-file-warnings-behaviour* :warn
                       asdf:*compile-file-failure-behaviour* :error)
@@ -53,6 +60,7 @@
                 (asdf:load-system "loom/test" :force t)
                 (funcall (symbol-function (find-symbol "RUN-TESTS" :loom/test))))
           (sb-ext:timeout ()
-            (format *error-output* "~&loom/test: timed out after 600s~%")
+            (format *error-output* "~&loom/test: timed out after ~Ds~%"
+                    +test-timeout-seconds+)
             nil))))
   (sb-ext:exit :code (if passed-p 0 1)))

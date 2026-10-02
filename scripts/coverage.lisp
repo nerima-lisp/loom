@@ -43,6 +43,11 @@
                         "cl-regex-kit"
                         "cl-boundary-kit"
                         "cl-concurrent-kit"
+                        "cl-json-kit"
+                        "cl-log-kit"
+                        "cl-process-kit"
+                        "cl-vcs-kit"
+                        "cl-resilience-kit"
                         "cl-weave"
                         "cl-date-kit"
                         "cl-codec-kit"
@@ -192,6 +197,7 @@
     (let ((index (merge-pathnames #P"cover-index.html" coverage-dir)))
       (unless (probe-file index)
         (error "Coverage report did not produce ~A." index))
+      (format t "COVERAGE-REPORT ~A~%" index)
       (progress (format nil "report available at ~A" index)))
     (progress (if passed-p "completed successfully" "completed with failures"))
     (sb-ext:exit :code (if passed-p 0 1))))

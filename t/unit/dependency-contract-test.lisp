@@ -74,6 +74,33 @@
                   (uiop:string-prefix-p "cl" token))
           collect (camel-case-identifier->kebab-case token)))
 
+(defun quoted-strings-in (string)
+  (loop with start = 0
+        for quote = (position #\" string :start start)
+        while quote
+        for end = (position #\" string :start (1+ quote))
+        do (unless end
+             (error "Unterminated quoted string in ~S." string))
+        collect (subseq string (1+ quote) end)
+        do (setf start (1+ end))))
+
+(defun script-sibling-names (relative-path)
+  (let* ((source (repo-file-string relative-path))
+         (marker "(sibling-names '(")
+         (start (search marker source))
+         (end (and start
+                   (search "))" source :start2 (+ start (length marker))))))
+    (unless (and start end)
+      (error "Missing sibling-names list in ~A." relative-path))
+    (quoted-strings-in (subseq source start end))))
+
+(defun all-asdf-dependencies ()
+  (remove-duplicates
+   (append (system-dependencies "loom")
+           (remove "loom" (system-dependencies "loom/test")
+                   :test #'string=))
+   :test #'string=))
+
 (describe
   "dependency declaration contracts"
   (it
@@ -98,4 +125,25 @@
     "keeps cl-weave explicit in flake.nix test-only dependencies"
     (expect (flake-dependency-block-names "lispCheckDependencies ="
                                           "timeoutSeconds =")
-            :to-contain "cl-weave")))
+            :to-contain "cl-weave"))
+
+  (it
+    "keeps run-tests and coverage on the same local dependency set"
+    (expect (sort (script-sibling-names "run-tests.lisp") #'string<)
+            :to-equal
+            (sort (script-sibling-names "scripts/coverage.lisp") #'string<)))
+
+  (it
+    "keeps every ASDF dependency available to both standalone runners"
+    (let ((runner-dependencies
+            (script-sibling-names "run-tests.lisp")))
+      (expect (sort (all-asdf-dependencies) #'string<)
+              :to-equal
+              (sort (remove "loom" runner-dependencies :test #'string=)
+                    #'string<))))
+
+  (it
+    "keeps runner dependencies declared by an ASDF system"
+    (let ((declared-dependencies (all-asdf-dependencies)))
+      (dolist (dependency (script-sibling-names "run-tests.lisp"))
+        (expect declared-dependencies :to-contain dependency)))))

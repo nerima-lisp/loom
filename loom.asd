@@ -24,265 +24,723 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "src/package-exports")
-   (:file "src/package-application")
-   (:file "src/package")
-   (:file "packages/feature/mode/src/package")
-   (:file "packages/feature/syntax-highlighting/src/package")
-   (:file "packages/feature/project/src/package")
-   (:file "packages/feature/search/src/package")
-   (:file "packages/feature/window/src/package")
-   (:file "packages/feature/workspace/src/package")
-   (:file "packages/feature/file-tree/src/package")
-   (:file "packages/feature/evaluation/src/package")
-   (:file "packages/feature/shell/src/package")
-   (:file "packages/feature/format/src/package")
-   (:file "packages/feature/auto-save/src/package")
-   (:file "packages/feature/terminal/src/package")
-   (:file "packages/feature/git/src/package")
-   (:file "packages/feature/keyboard-macro/src/package")
-   (:file "packages/feature/register/src/package")
-   (:file "packages/feature/session/src/package")
-   (:file "packages/feature/user-init/src/package")
-   (:file "packages/feature/lsp/src/package")
-   (:file "src/package-user")
-   (:file "packages/feature/mode/src/domain-major-mode-keywords")
-   (:file "packages/feature/mode/src/domain-major-mode-definitions")
-   (:file "packages/feature/mode/src/domain-major-mode-registry-support")
-   (:file "packages/feature/mode/src/domain-major-mode")
-   (:file "packages/feature/mode/src/domain-major-mode-registry")
-   (:file "packages/feature/mode/src/domain-major-mode-path")
-   (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
-   (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-common-lisp")
-   (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-generic")
-   (:file "packages/feature/project/src/domain-project")
-   (:file "packages/core/editor/src/domain-buffer-storage")
-   (:file "packages/core/editor/src/domain-buffer-storage-support")
-   (:file "packages/core/editor/src/domain-buffer-piece-table-position")
-   (:file "packages/core/editor/src/domain-buffer-piece-table-coalescing")
-   (:file "packages/core/editor/src/domain-buffer-piece-table-splicing")
-   (:file "packages/core/editor/src/domain-buffer-piece-table-support")
-   (:file "packages/core/editor/src/domain-buffer-piece-table")
-   (:file "packages/core/editor/src/domain-buffer-piece-table-undo")
-   (:file "packages/core/editor/src/domain-buffer")
-   (:file "packages/core/editor/src/domain-buffer-accessors")
-   (:file "packages/core/editor/src/domain-buffer-editing")
-   (:file "packages/core/editor/src/domain-buffer-deletion")
-   (:file "packages/core/editor/src/domain-buffer-history")
-   (:file "packages/core/editor/src/domain-buffer-narrowing-support")
-   (:file "packages/core/editor/src/domain-buffer-narrowing")
-   (:file "packages/core/editor/src/domain-buffer-positions")
-   (:file "packages/core/editor/src/domain-prefix-argument")
-   (:file "packages/feature/search/src/domain-buffer-search")
-   (:file "packages/feature/search/src/domain-isearch")
-   (:file "packages/feature/window/src/domain-window")
-   (:file "packages/feature/window/src/domain-window-support")
-   (:file "packages/feature/window/src/domain-window-layout")
-   (:file "packages/feature/window/src/domain-window-operations")
-   (:file "packages/feature/window/src/domain-window-accessors")
-   (:file "packages/feature/window/src/domain-window-deletion")
-   (:file "packages/feature/workspace/src/domain-workspace-support")
-   (:file "packages/feature/workspace/src/domain-workspace")
-   (:file "packages/feature/workspace/src/domain-workspace-navigation")
-   (:file "packages/feature/session/src/domain-session-snapshot")
-   (:file "packages/feature/session/src/domain-session-predicates")
-   (:file "packages/feature/session/src/domain-session-validation-metadata")
-   (:file "packages/feature/session/src/domain-session-validation-layout")
-   (:file "packages/feature/session/src/domain-session-validation")
-   (:file "packages/feature/session/src/infrastructure-session-codec-plist")
-   (:file "packages/feature/session/src/infrastructure-session-codec")
-   (:file "packages/feature/evaluation/src/domain-evaluation")
-   (:file "packages/feature/auto-save/src/domain-auto-save")
-               (:file "packages/feature/terminal/src/domain-terminal-support")
-               (:file "packages/feature/terminal/src/domain-terminal")
-               (:file "packages/feature/terminal/src/domain-terminal-screen-operations")
-               (:file "packages/feature/terminal/src/domain-terminal-screen-state")
-               (:file "packages/feature/terminal/src/domain-terminal-csi-screen-operations")
-               (:file "packages/feature/terminal/src/domain-terminal-csi-cursor")
-               (:file "packages/feature/terminal/src/domain-terminal-csi-edit")
-               (:file "packages/feature/terminal/src/domain-terminal-parser-csi")
-               (:file "packages/feature/terminal/src/domain-terminal-parser")
-               (:file "packages/feature/terminal/src/domain-terminal-session")
-   (:file "packages/feature/shell/src/domain-shell")
-   (:file "packages/feature/git/src/domain-git")
-   (:file "packages/feature/lsp/src/domain-lsp")
-   (:file "src/domain/keymap-descriptor")
-   (:file "src/domain/keymap")
-   (:file "src/domain/keymap-state")
-   (:file "packages/feature/file-tree/src/domain-file-tree")
-   (:file "packages/feature/file-tree/src/domain-file-tree-navigation")
-   (:file "src/infrastructure/terminal-renderer")
-   (:file "src/infrastructure/terminal-renderer-cursor")
-   (:file "src/infrastructure/terminal-renderer-text")
-   (:file "src/infrastructure/terminal-renderer-text-wrapping")
-   (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-paths")
-   (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-mutations")
-   (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-io")
-   (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-delete")
-   (:file "packages/feature/file-tree/src/infrastructure-file-tree-directory-listing")
-   (:file "packages/feature/file-tree/src/infrastructure-file-tree-filesystem-support")
-   (:file "packages/feature/file-tree/src/infrastructure-file-tree-filesystem")
-   (:file "packages/feature/file-tree/src/infrastructure-buffer-filesystem")
-   (:file "packages/feature/auto-save/src/infrastructure-auto-save")
-   (:file "packages/feature/terminal/src/infrastructure-terminal")
-   (:file "packages/feature/terminal/src/infrastructure-terminal-session-runtime")
-   (:file "packages/feature/project/src/infrastructure-project-filesystem")
-   (:file "packages/feature/session/src/infrastructure-session-store")
-   (:file "packages/feature/user-init/src/infrastructure-user-init")
-   (:file "packages/feature/evaluation/src/infrastructure-lisp-evaluator")
-   (:file "packages/feature/shell/src/infrastructure-shell")
-   (:file "packages/feature/git/src/infrastructure-git")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-framing-support")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-headers")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-framing")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-discovery")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-transport-support")
-   (:file "packages/feature/lsp/src/infrastructure-lsp-transport")
-   (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-state")
-   (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-prefetch")
-   (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-results")
-   (:file "packages/feature/register/src/domain-register")
-   (:file "packages/feature/keyboard-macro/src/domain-keyboard-macro")
-   (:file "src/application/editor-state-bookmarks")
-   (:file "src/application/editor-state-support")
-   (:file "src/application/editor-state-types")
-   (:file "src/application/editor-state")
-   (:file "src/application/editor-state-save-hooks")
-   (:file "src/application/editor-state-recent-files")
-   (:file "src/application/editor-state-operations")
-   (:file "src/application/input-routing-descriptor")
-   (:file "src/application/minibuffer")
-   (:file "src/application/minibuffer-activation")
-   (:file "src/application/minibuffer-history")
-   (:file "src/application/minibuffer-completion")
-   (:file "src/application/completion-popup")
-   (:file "src/application/completion-popup-input")
-   (:file "src/application/minibuffer-input")
-   (:file "src/application/commands-prompts")
-   (:file "src/application/commands-internal")
-   (:file "src/application/command-registry-forms")
-    (:file "src/application/command-registry-build")
-    (:file "src/application/command-registry")
-    (:file "packages/feature/mode/src/application-major-mode-support")
-    (:file "packages/feature/mode/src/application-major-mode")
-    (:file "packages/feature/mode/src/application-major-mode-editing")
-   (:file "packages/feature/project/src/application-commands-project")
-   (:file "packages/core/editor/src/application-commands-prefix-argument-support")
-  (:file "packages/core/editor/src/application-commands-prefix-argument")
-   (:file "packages/core/editor/src/application-word-motion")
-   (:file "packages/core/editor/src/application-sexp-syntax")
-   (:file "packages/core/editor/src/application-sexp-motion-support")
-               (:file "packages/core/editor/src/application-sexp-motion-tokens")
-               (:file "packages/core/editor/src/application-sexp-motion")
-   (:file "packages/core/editor/src/application-structural-editing-support")
-   (:file "packages/core/editor/src/application-structural-editing")
-   (:file "packages/core/editor/src/application-structural-editing-offsets")
-   (:file "packages/core/editor/src/application-structural-editing-application")
-   (:file "packages/core/editor/src/application-commands-movement-support")
-   (:file "packages/core/editor/src/application-commands-movement-view-support")
-   (:file "packages/core/editor/src/application-commands-movement-visual-lines")
-   (:file "packages/core/editor/src/application-commands-movement")
-  (:file "packages/core/editor/src/application-commands-editing-support")
-  (:file "packages/core/editor/src/application-commands-editing")
-  (:file "packages/core/editor/src/application-commands-yank-support")
-  (:file "packages/core/editor/src/application-commands-yank-pop-support")
-  (:file "packages/core/editor/src/application-commands-region-support")
-   (:file "packages/core/editor/src/application-commands-region")
-   (:file "packages/core/editor/src/application-commands-kill-support")
-   (:file "packages/core/editor/src/application-commands-kill-region-support")
-   (:file "packages/core/editor/src/application-commands-kill-word-support")
-   (:file "packages/core/editor/src/application-commands-kill")
-   (:file "packages/core/editor/src/application-commands-sexp")
-   (:file "packages/core/editor/src/application-commands-structural-editing")
-   (:file "packages/core/editor/src/application-commands-yank")
-   (:file "packages/feature/register/src/application-commands-register")
-   (:file "packages/feature/keyboard-macro/src/application-commands-keyboard-macro")
-   (:file "packages/feature/search/src/application-commands-search")
-   (:file "packages/feature/search/src/application-commands-isearch")
-   (:file "packages/feature/file-tree/src/application-commands-file")
-   (:file "packages/feature/file-tree/src/application-commands-file-save")
-   (:file "packages/feature/window/src/application-window-buffer-support")
-   (:file "packages/feature/window/src/application-commands-window")
-   (:file "packages/feature/workspace/src/application-workspace-switch-support")
-   (:file "packages/feature/workspace/src/application-workspace-transition-support")
-   (:file "packages/feature/workspace/src/application-commands-workspace")
-   (:file "packages/feature/file-tree/src/application-commands-file-tree")
-   (:file "packages/feature/session/src/application-session-bookmarks")
-   (:file "packages/feature/session/src/application-session-workspaces")
-   (:file "packages/feature/session/src/application-session-snapshot")
-   (:file "packages/feature/session/src/application-session-restore")
-   (:file "packages/feature/session/src/application-commands-session")
-   (:file "packages/feature/evaluation/src/application-commands-evaluation")
-   (:file "packages/feature/shell/src/application-commands-shell")
-   (:file "packages/feature/format/src/application-format-buffer")
-   (:file "packages/feature/format/src/application-commands-format")
-   (:file "packages/feature/auto-save/src/application-auto-save-support")
-   (:file "packages/feature/auto-save/src/application-commands-auto-save")
-   (:file "packages/feature/terminal/src/application-terminal-input-support")
-   (:file "packages/feature/terminal/src/application-terminal-input")
-   (:file "packages/feature/terminal/src/application-commands-terminal")
-   (:file "packages/feature/git/src/application-commands-git-support")
-   (:file "packages/feature/git/src/application-commands-git")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-send")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-initialize")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-helpers")
-   (:file "packages/feature/lsp/src/application-lsp-diagnostic-decode")
-   (:file "packages/feature/lsp/src/application-lsp-request-decode")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-responses")
-   (:file "packages/feature/lsp/src/application-lsp-requests")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-routing")
-   (:file "packages/feature/lsp/src/application-lsp-protocol-receive")
-   (:file "packages/feature/lsp/src/application-lsp-session-state")
-   (:file "packages/feature/lsp/src/application-lsp-session-uri")
-   (:file "packages/feature/lsp/src/application-lsp-session-sync")
-   (:file "packages/feature/lsp/src/application-lsp-session-lifecycle")
-   (:file "packages/feature/lsp/src/application-lsp-diagnostics-view")
-   (:file "packages/feature/lsp/src/application-commands-lsp-support")
-   (:file "packages/feature/lsp/src/application-commands-lsp-context")
-   (:file "packages/feature/lsp/src/application-commands-lsp")
-   (:file "packages/feature/lsp/src/application-commands-lsp-completion")
-   (:file "packages/feature/lsp/src/application-commands-lsp-navigation")
-   (:file "src/application/commands-misc")
-   (:file "src/application/commands-bookmark-support")
-   (:file "src/application/commands-bookmark")
-   (:file "src/application/commands-quit")
-   (:file "src/application/command-definitions-movement")
-   (:file "src/application/command-definitions-editing")
-   (:file "src/application/command-definitions-files")
-   (:file "src/application/command-definitions-windows")
-   (:file "src/application/command-definitions-session")
-   (:file "src/application/command-definitions-macros")
-   (:file "src/application/command-definitions-tooling")
-   (:file "src/application/command-definitions-file-tree")
-   (:file "src/application/command-definitions-ui")
-   (:file "src/application/command-definitions")
-   (:file "src/application/commands-keybinding-spec")
-   (:file "src/application/commands-keybindings")
-   (:file "packages/feature/user-init/src/application-user-configuration")
-   (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
-   (:file "src/presentation/layout")
-   (:file "src/presentation/layout-wrapping")
-   (:file "src/presentation/layout-windows")
-   (:file "src/presentation/layout-isearch")
-   (:file "src/presentation/layout-minibuffer")
-   (:file "src/presentation/layout-completion")
-   (:file "src/presentation/layout-file-tree")
-   (:file "src/presentation/frame-layout-cursor")
-   (:file "src/presentation/frame-layout-viewport")
-   (:file "src/presentation/frame-layout")
-   (:file "src/application/input-routing-command-state")
-   (:file "src/application/input-routing-decision")
-   (:file "src/application/input-routing-effects")
-   (:file "src/application/input-routing-dispatch")
-   (:file "src/application/input-dispatch")
-    (:file "src/application/event-loop-rendering")
-    (:file "src/application/event-loop-control")
-    (:file "src/application/event-loop")
-   (:file "src/application/startup-state")
-   (:file "src/application/startup-services")
-   (:file "src/application/startup")
-   (:file "src/application/startup-cli")
-   (:file "src/main"))
+  (
+   (:module "bootstrap"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/package-exports")
+     (:file "src/package-application")
+     (:file "src/package")
+    ))
+   (:module "feature-mode-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/mode/src/package")
+    ))
+   (:module "feature-syntax-highlighting-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/syntax-highlighting/src/package")
+    ))
+   (:module "feature-project-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/project/src/package")
+    ))
+   (:module "feature-search-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/search/src/package")
+    ))
+   (:module "feature-window-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/window/src/package")
+    ))
+   (:module "feature-workspace-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/workspace/src/package")
+    ))
+   (:module "feature-file-tree-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/package")
+    ))
+   (:module "feature-evaluation-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/evaluation/src/package")
+    ))
+   (:module "feature-shell-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/shell/src/package")
+    ))
+   (:module "feature-format-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/format/src/package")
+    ))
+   (:module "feature-auto-save-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/auto-save/src/package")
+    ))
+   (:module "feature-terminal-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/terminal/src/package")
+    ))
+   (:module "feature-git-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/git/src/package")
+    ))
+   (:module "feature-keyboard-macro-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/keyboard-macro/src/package")
+    ))
+   (:module "feature-register-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/register/src/package")
+    ))
+   (:module "feature-session-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/session/src/package")
+    ))
+   (:module "feature-user-init-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/user-init/src/package")
+    ))
+   (:module "feature-lsp-package"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/lsp/src/package")
+    ))
+   (:module "bootstrap-2"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/package-user")
+    ))
+   (:module "feature-mode-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/mode/src/domain-major-mode-keywords")
+     (:file "packages/feature/mode/src/domain-major-mode-definitions")
+     (:file "packages/feature/mode/src/domain-major-mode-registry-support")
+     (:file "packages/feature/mode/src/domain-major-mode")
+     (:file "packages/feature/mode/src/domain-major-mode-registry")
+     (:file "packages/feature/mode/src/domain-major-mode-path")
+    ))
+   (:module "feature-syntax-highlighting-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
+     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-common-lisp")
+     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-generic")
+    ))
+   (:module "feature-project-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/project/src/domain-project")
+    ))
+   (:module "core-editor-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/core/editor/src/domain-buffer-storage")
+     (:file "packages/core/editor/src/domain-buffer-storage-support")
+     (:file "packages/core/editor/src/domain-buffer-piece-table-position")
+     (:file "packages/core/editor/src/domain-buffer-piece-table-coalescing")
+     (:file "packages/core/editor/src/domain-buffer-piece-table-splicing")
+     (:file "packages/core/editor/src/domain-buffer-piece-table-support")
+     (:file "packages/core/editor/src/domain-buffer-piece-table")
+     (:file "packages/core/editor/src/domain-buffer-piece-table-undo")
+     (:file "packages/core/editor/src/domain-buffer")
+     (:file "packages/core/editor/src/domain-buffer-accessors")
+     (:file "packages/core/editor/src/domain-buffer-editing")
+     (:file "packages/core/editor/src/domain-buffer-deletion")
+     (:file "packages/core/editor/src/domain-buffer-history")
+     (:file "packages/core/editor/src/domain-buffer-narrowing-support")
+     (:file "packages/core/editor/src/domain-buffer-narrowing")
+     (:file "packages/core/editor/src/domain-buffer-positions")
+     (:file "packages/core/editor/src/domain-prefix-argument")
+    ))
+   (:module "feature-search-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/search/src/domain-buffer-search")
+     (:file "packages/feature/search/src/domain-isearch")
+    ))
+   (:module "feature-window-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/window/src/domain-window")
+     (:file "packages/feature/window/src/domain-window-support")
+     (:file "packages/feature/window/src/domain-window-layout")
+     (:file "packages/feature/window/src/domain-window-operations")
+     (:file "packages/feature/window/src/domain-window-accessors")
+     (:file "packages/feature/window/src/domain-window-deletion")
+    ))
+   (:module "feature-workspace-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/workspace/src/domain-workspace-support")
+     (:file "packages/feature/workspace/src/domain-workspace")
+     (:file "packages/feature/workspace/src/domain-workspace-navigation")
+    ))
+   (:module "feature-session-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/session/src/domain-session-snapshot")
+     (:file "packages/feature/session/src/domain-session-predicates")
+     (:file "packages/feature/session/src/domain-session-validation-metadata")
+     (:file "packages/feature/session/src/domain-session-validation-layout")
+     (:file "packages/feature/session/src/domain-session-validation")
+    ))
+   (:module "feature-session-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/session/src/infrastructure-session-codec-plist")
+     (:file "packages/feature/session/src/infrastructure-session-codec")
+    ))
+   (:module "feature-evaluation-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/evaluation/src/domain-evaluation")
+    ))
+   (:module "feature-auto-save-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/auto-save/src/domain-auto-save")
+    ))
+   (:module "feature-terminal-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/terminal/src/domain-terminal-support")
+     (:file "packages/feature/terminal/src/domain-terminal")
+     (:file "packages/feature/terminal/src/domain-terminal-screen-operations")
+     (:file "packages/feature/terminal/src/domain-terminal-screen-state")
+     (:file "packages/feature/terminal/src/domain-terminal-csi-screen-operations")
+     (:file "packages/feature/terminal/src/domain-terminal-csi-cursor")
+     (:file "packages/feature/terminal/src/domain-terminal-csi-edit")
+     (:file "packages/feature/terminal/src/domain-terminal-parser-csi")
+     (:file "packages/feature/terminal/src/domain-terminal-parser")
+     (:file "packages/feature/terminal/src/domain-terminal-session")
+    ))
+   (:module "feature-shell-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/shell/src/domain-shell")
+    ))
+   (:module "feature-git-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/git/src/domain-git")
+    ))
+   (:module "feature-lsp-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/lsp/src/domain-lsp")
+    ))
+   (:module "root-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/domain/keymap-descriptor")
+     (:file "src/domain/keymap")
+     (:file "src/domain/keymap-state")
+    ))
+   (:module "feature-file-tree-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/domain-file-tree")
+     (:file "packages/feature/file-tree/src/domain-file-tree-navigation")
+    ))
+   (:module "root-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/infrastructure/terminal-renderer")
+     (:file "src/infrastructure/terminal-renderer-cursor")
+     (:file "src/infrastructure/terminal-renderer-text")
+     (:file "src/infrastructure/terminal-renderer-text-wrapping")
+    ))
+   (:module "feature-file-tree-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-paths")
+     (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-mutations")
+     (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-io")
+     (:file "packages/feature/file-tree/src/infrastructure-filesystem-native-delete")
+     (:file "packages/feature/file-tree/src/infrastructure-file-tree-directory-listing")
+     (:file "packages/feature/file-tree/src/infrastructure-file-tree-filesystem-support")
+     (:file "packages/feature/file-tree/src/infrastructure-file-tree-filesystem")
+     (:file "packages/feature/file-tree/src/infrastructure-buffer-filesystem")
+    ))
+   (:module "feature-auto-save-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/auto-save/src/infrastructure-auto-save")
+    ))
+   (:module "feature-terminal-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/terminal/src/infrastructure-terminal")
+     (:file "packages/feature/terminal/src/infrastructure-terminal-session-runtime")
+    ))
+   (:module "feature-project-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/project/src/infrastructure-project-filesystem")
+    ))
+   (:module "feature-session-infrastructure-2"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/session/src/infrastructure-session-store")
+    ))
+   (:module "feature-user-init-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/user-init/src/infrastructure-user-init")
+    ))
+   (:module "feature-evaluation-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/evaluation/src/infrastructure-lisp-evaluator")
+    ))
+   (:module "feature-shell-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/shell/src/infrastructure-shell")
+    ))
+   (:module "feature-git-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/git/src/infrastructure-git")
+    ))
+   (:module "feature-lsp-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/lsp/src/infrastructure-lsp-framing-support")
+     (:file "packages/feature/lsp/src/infrastructure-lsp-headers")
+     (:file "packages/feature/lsp/src/infrastructure-lsp-framing")
+     (:file "packages/feature/lsp/src/infrastructure-lsp-discovery")
+     (:file "packages/feature/lsp/src/infrastructure-lsp-transport-support")
+     (:file "packages/feature/lsp/src/infrastructure-lsp-transport")
+    ))
+   (:module "feature-file-tree-infrastructure-2"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-state")
+     (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-prefetch")
+     (:file "packages/feature/file-tree/src/infrastructure-concurrent-runtime-results")
+    ))
+   (:module "feature-register-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/register/src/domain-register")
+    ))
+   (:module "feature-keyboard-macro-domain"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/keyboard-macro/src/domain-keyboard-macro")
+    ))
+   (:module "root-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/application/editor-state-bookmarks")
+     (:file "src/application/editor-state-support")
+     (:file "src/application/editor-state-types")
+     (:file "src/application/editor-state")
+     (:file "src/application/editor-state-save-hooks")
+     (:file "src/application/editor-state-recent-files")
+     (:file "src/application/editor-state-operations")
+     (:file "src/application/input-routing-descriptor")
+     (:file "src/application/minibuffer")
+     (:file "src/application/minibuffer-activation")
+     (:file "src/application/minibuffer-history")
+     (:file "src/application/minibuffer-completion")
+     (:file "src/application/completion-popup")
+     (:file "src/application/completion-popup-input")
+     (:file "src/application/minibuffer-input")
+     (:file "src/application/commands-prompts")
+     (:file "src/application/commands-internal")
+     (:file "src/application/command-registry-forms")
+     (:file "src/application/command-registry-build")
+     (:file "src/application/command-registry")
+    ))
+   (:module "feature-mode-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/mode/src/application-major-mode-support")
+     (:file "packages/feature/mode/src/application-major-mode")
+     (:file "packages/feature/mode/src/application-major-mode-editing")
+    ))
+   (:module "feature-project-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/project/src/application-commands-project")
+    ))
+   (:module "core-editor-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/core/editor/src/application-commands-prefix-argument-support")
+     (:file "packages/core/editor/src/application-commands-prefix-argument")
+     (:file "packages/core/editor/src/application-word-motion")
+     (:file "packages/core/editor/src/application-sexp-syntax")
+     (:file "packages/core/editor/src/application-sexp-motion-support")
+     (:file "packages/core/editor/src/application-sexp-motion-tokens")
+     (:file "packages/core/editor/src/application-sexp-motion")
+     (:file "packages/core/editor/src/application-structural-editing-support")
+     (:file "packages/core/editor/src/application-structural-editing")
+     (:file "packages/core/editor/src/application-structural-editing-offsets")
+     (:file "packages/core/editor/src/application-structural-editing-application")
+     (:file "packages/core/editor/src/application-commands-movement-support")
+     (:file "packages/core/editor/src/application-commands-movement-view-support")
+     (:file "packages/core/editor/src/application-commands-movement-visual-lines")
+     (:file "packages/core/editor/src/application-commands-movement")
+     (:file "packages/core/editor/src/application-commands-editing-support")
+     (:file "packages/core/editor/src/application-commands-editing")
+     (:file "packages/core/editor/src/application-commands-yank-support")
+     (:file "packages/core/editor/src/application-commands-yank-pop-support")
+     (:file "packages/core/editor/src/application-commands-region-support")
+     (:file "packages/core/editor/src/application-commands-region")
+     (:file "packages/core/editor/src/application-commands-kill-support")
+     (:file "packages/core/editor/src/application-commands-kill-region-support")
+     (:file "packages/core/editor/src/application-commands-kill-word-support")
+     (:file "packages/core/editor/src/application-commands-kill")
+     (:file "packages/core/editor/src/application-commands-sexp")
+     (:file "packages/core/editor/src/application-commands-structural-editing")
+     (:file "packages/core/editor/src/application-commands-yank")
+    ))
+   (:module "feature-register-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/register/src/application-commands-register")
+    ))
+   (:module "feature-keyboard-macro-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/keyboard-macro/src/application-commands-keyboard-macro")
+    ))
+   (:module "feature-search-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/search/src/application-commands-search")
+     (:file "packages/feature/search/src/application-commands-isearch")
+    ))
+   (:module "feature-file-tree-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/application-commands-file")
+     (:file "packages/feature/file-tree/src/application-commands-file-save")
+    ))
+   (:module "feature-window-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/window/src/application-window-buffer-support")
+     (:file "packages/feature/window/src/application-commands-window")
+    ))
+   (:module "feature-workspace-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/workspace/src/application-workspace-switch-support")
+     (:file "packages/feature/workspace/src/application-workspace-transition-support")
+     (:file "packages/feature/workspace/src/application-commands-workspace")
+    ))
+   (:module "feature-file-tree-application-2"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/file-tree/src/application-commands-file-tree")
+    ))
+   (:module "feature-session-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/session/src/application-session-bookmarks")
+     (:file "packages/feature/session/src/application-session-workspaces")
+     (:file "packages/feature/session/src/application-session-snapshot")
+     (:file "packages/feature/session/src/application-session-restore")
+     (:file "packages/feature/session/src/application-commands-session")
+    ))
+   (:module "feature-evaluation-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/evaluation/src/application-commands-evaluation")
+    ))
+   (:module "feature-shell-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/shell/src/application-commands-shell")
+    ))
+   (:module "feature-format-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/format/src/application-format-buffer")
+     (:file "packages/feature/format/src/application-commands-format")
+    ))
+   (:module "feature-auto-save-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/auto-save/src/application-auto-save-support")
+     (:file "packages/feature/auto-save/src/application-commands-auto-save")
+    ))
+   (:module "feature-terminal-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/terminal/src/application-terminal-input-support")
+     (:file "packages/feature/terminal/src/application-terminal-input")
+     (:file "packages/feature/terminal/src/application-commands-terminal")
+    ))
+   (:module "feature-git-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/git/src/application-commands-git-support")
+     (:file "packages/feature/git/src/application-commands-git")
+    ))
+   (:module "feature-lsp-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/lsp/src/application-lsp-protocol-send")
+     (:file "packages/feature/lsp/src/application-lsp-protocol-initialize")
+     (:file "packages/feature/lsp/src/application-lsp-protocol-helpers")
+     (:file "packages/feature/lsp/src/application-lsp-diagnostic-decode")
+     (:file "packages/feature/lsp/src/application-lsp-request-decode")
+     (:file "packages/feature/lsp/src/application-lsp-protocol-responses")
+     (:file "packages/feature/lsp/src/application-lsp-requests")
+     (:file "packages/feature/lsp/src/application-lsp-protocol-routing")
+     (:file "packages/feature/lsp/src/application-lsp-protocol-receive")
+     (:file "packages/feature/lsp/src/application-lsp-session-state")
+     (:file "packages/feature/lsp/src/application-lsp-session-uri")
+     (:file "packages/feature/lsp/src/application-lsp-session-sync")
+     (:file "packages/feature/lsp/src/application-lsp-session-lifecycle")
+     (:file "packages/feature/lsp/src/application-lsp-diagnostics-view")
+     (:file "packages/feature/lsp/src/application-commands-lsp-support")
+     (:file "packages/feature/lsp/src/application-commands-lsp-context")
+     (:file "packages/feature/lsp/src/application-commands-lsp")
+     (:file "packages/feature/lsp/src/application-commands-lsp-completion")
+     (:file "packages/feature/lsp/src/application-commands-lsp-navigation")
+    ))
+   (:module "root-application-2"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/application/commands-misc")
+     (:file "src/application/commands-bookmark-support")
+     (:file "src/application/commands-bookmark")
+     (:file "src/application/commands-quit")
+     (:file "src/application/command-definitions-movement")
+     (:file "src/application/command-definitions-editing")
+     (:file "src/application/command-definitions-files")
+     (:file "src/application/command-definitions-windows")
+     (:file "src/application/command-definitions-session")
+     (:file "src/application/command-definitions-macros")
+     (:file "src/application/command-definitions-tooling")
+     (:file "src/application/command-definitions-file-tree")
+     (:file "src/application/command-definitions-ui")
+     (:file "src/application/command-definitions")
+     (:file "src/application/commands-keybinding-spec")
+     (:file "src/application/commands-keybindings")
+    ))
+   (:module "feature-user-init-application"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/user-init/src/application-user-configuration")
+    ))
+   (:module "feature-syntax-highlighting-presentation"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
+    ))
+   (:module "root-presentation"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/presentation/layout")
+     (:file "src/presentation/layout-wrapping")
+     (:file "src/presentation/layout-windows")
+     (:file "src/presentation/layout-isearch")
+     (:file "src/presentation/layout-minibuffer")
+     (:file "src/presentation/layout-completion")
+     (:file "src/presentation/layout-file-tree")
+     (:file "src/presentation/frame-layout-cursor")
+     (:file "src/presentation/frame-layout-viewport")
+     (:file "src/presentation/frame-layout")
+    ))
+   (:module "root-application-3"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/application/input-routing-command-state")
+     (:file "src/application/input-routing-decision")
+     (:file "src/application/input-routing-effects")
+     (:file "src/application/input-routing-dispatch")
+     (:file "src/application/input-dispatch")
+     (:file "src/application/event-loop-rendering")
+     (:file "src/application/event-loop-control")
+     (:file "src/application/event-loop")
+     (:file "src/application/startup-state")
+     (:file "src/application/startup-services")
+     (:file "src/application/startup")
+     (:file "src/application/startup-cli")
+    ))
+   (:module "root-entrypoint"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "src/main")
+    ))
+  )
   :build-operation "program-op"
   :build-pathname "loom"
   :entry-point "loom:main"
