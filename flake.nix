@@ -361,7 +361,8 @@
         let
           pkgs = nixpkgs.legacyPackages.${ctx.system};
           loom-test = pkgs.writeShellScriptBin "loom-test" ''
-            exec sbcl --script "$PWD/run-tests.lisp" "$@"
+            exec timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s \
+              sbcl --script "$PWD/run-tests.lisp" "$@"
           '';
           loom-coverage = pkgs.writeShellScriptBin "loom-coverage" ''
             exec env LOOM_COVERAGE_DIR="''${LOOM_COVERAGE_DIR:-$PWD/coverage}" \
@@ -383,7 +384,7 @@
         devShells.default = ctx.generated.devShells.default.overrideAttrs (previous: {
           shellHook = previous.shellHook + ''
             export LOOM_ROOT=$PWD
-            alias test='cd "$LOOM_ROOT" && sbcl --script "$LOOM_ROOT/run-tests.lisp"'
+            alias test='cd "$LOOM_ROOT" && timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s sbcl --script "$LOOM_ROOT/run-tests.lisp"'
             alias coverage='cd "$LOOM_ROOT" && LOOM_COVERAGE_DIR="$LOOM_ROOT/coverage" timeout --signal=TERM --kill-after=15s ${toString coverage-timeout-seconds}s sbcl --script "$LOOM_ROOT/scripts/coverage.lisp"'
             echo ""
             echo "loom development environment"
