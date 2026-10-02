@@ -81,8 +81,8 @@
         for end = (position #\" string :start (1+ quote))
         do (unless end
              (error "Unterminated quoted string in ~S." string))
-           (collect (subseq string (1+ quote) end))
-           (setf start (1+ end))))
+        collect (subseq string (1+ quote) end)
+        do (setf start (1+ end))))
 
 (defun script-sibling-names (relative-path)
   (let* ((source (repo-file-string relative-path))
