@@ -61,6 +61,48 @@ SKIP rather than hang or fail there, while still running everywhere else
 \(a plain `sbcl --script run-tests.lisp`, `nix develop`'s `test` alias\)."
   (uiop:getenvp "LOOM_SANDBOXED_CHECK"))
 
+(defmacro skip-in-sandbox (reason &body body)
+  "Skip BODY only for checks running in the Nix build sandbox."
+  `(if (%sandboxed-check-p)
+       (skip ,reason)
+       (progn ,@body)))
+
+(defmacro with-test-mock ((name &optional implementation) &body body)
+  "Bind NAME to a cl-weave mock and dispose it after BODY."
+  `(let ((,name (make-mock-function ,@(when implementation
+                                      (list implementation)))))
+     (unwind-protect
+          (progn ,@body)
+       (dispose-mock ,name))))
+
+(defmacro with-test-spy ((name symbol) &body body)
+  "Bind NAME to a restored cl-weave spy for SYMBOL around BODY."
+  `(let ((,name (spy-on ',symbol)))
+     (unwind-protect
+          (progn ,@body)
+       (mock-restore ,name))))
+
+(defmacro expect-snapshot (actual key)
+  "Match ACTUAL against the cl-weave snapshot identified by KEY."
+  `(expect ,actual :to-match-snapshot ,key))
+
+(defun assert-frame-text (backend expected)
+  "Assert EXPECTED against the last structured frame from BACKEND.
+
+The CL-TUI-KIT testing system is resolved when this helper is used so the
+shared test package remains loadable before the UI dependency is present."
+  (let ((package (find-package "CL-TUI-KIT/TESTING")))
+    (unless package
+      (error "CL-TUI-KIT/TESTING is required for frame assertions."))
+    (flet ((external-function (name)
+             (let ((symbol (find-symbol name package)))
+               (unless (and symbol (fboundp symbol))
+                 (error "CL-TUI-KIT/TESTING does not export ~A." name))
+               symbol)))
+      (funcall (external-function "ASSERT-SURFACE-TEXT")
+               (funcall (external-function "TEST-BACKEND-LAST-FRAME") backend)
+               expected))))
+
 (defun %fresh-file-tree (root)
   "Build a FILE-TREE rooted at ROOT with a real, disk-backed child-lister
 \(LOOM-FS-LIST-DIRECTORY, the same one MAIN wires up in

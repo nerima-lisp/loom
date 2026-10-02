@@ -20,12 +20,33 @@
         #:loom/feature/lsp)
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
+   #:after-all
+   #:after-each
+   #:around-each
+   #:before-all
+   #:before-each
+   #:describe-each
    #:it
    #:it-each
+   #:it-fuzz
+   #:it-isolated
+   #:it-property
    #:expect
    #:signals
    #:skip
+   #:with-continuation-result
+   #:with-continuation-values
+   #:with-mocked-functions
+   #:with-snapshot-updates
    #:run-all
+   #:make-mock-function
+   #:mock-calls
+   #:mock-results
+   #:mock-return-value
+   #:mock-return-values
+   #:mock-restore
+   #:spy-on
+   #:dispose-mock
    #:defmatcher
    #:with-soft-assertions
    #:with-replaced-function)
