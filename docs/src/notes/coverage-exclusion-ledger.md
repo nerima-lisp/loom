@@ -13,11 +13,17 @@ nix develop -c timeout --signal=TERM --kill-after=15s 1800s \
   sbcl --script scripts/coverage.lisp
 ```
 
-The initial run reached the Nix environment setup but did not produce a
-coverage report before the outer process was interrupted after the runner
-stopped producing child processes. No expression or branch percentage is
-recorded until `COVERAGE-EXPRESSIONS` and `COVERAGE-BRANCHES` are emitted by
-the command.
+The baseline from CI run 37049435388 is:
+
+```text
+COVERAGE-EXPRESSIONS 19779/20684 (95.62%)
+COVERAGE-BRANCHES 1876/2000 (93.80%)
+```
+
+The local macOS reproduction was also attempted with the same outer timeout;
+it stopped during the Nix dependency build before the runner emitted markers.
+The CI result is the reproducible baseline because it completed the canonical
+Linux flake check.
 
 ## Exclusions
 
