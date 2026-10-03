@@ -93,10 +93,10 @@
                (use old new))))
            (outer-activate (third expansion))
            (inner-activate (third (fifth outer-activate))))
-      (expect (getf (cddr outer-activate) :completion-function)
+      (expect (getf (cdddr outer-activate) :completion-function)
               :to-equal
               '(function old-completion))
-      (expect (getf (cddr inner-activate) :completion-function)
+      (expect (getf (cdddr inner-activate) :completion-function)
               :to-equal
               '(function new-completion))))
   (it "rejects malformed prompt binding options"
