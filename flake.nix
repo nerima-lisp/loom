@@ -161,11 +161,7 @@
           || (type == "regular" && sourceFile);
       };
 
-      # CI targets Linux; aarch64-darwin is the development platform.
-      systems = [
-        "x86_64-linux"
-        "aarch64-darwin"
-      ];
+      systems = [ "x86_64-linux" ];
 
       meta = {
         description = "Terminal text editor with Emacs-like keybindings, written in Common Lisp";

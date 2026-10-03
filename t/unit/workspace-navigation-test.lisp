@@ -7,6 +7,7 @@
 
   (it "rejects invalid workspace indexes"
     (let ((manager (make-workspace-manager (make-window-tree :main 80 24))))
+      (expect (workspace-manager-current-name manager) :to-equal "main")
       (cl-weave:it-each
           ((-1) (1))
           "rejects workspace index ~D"

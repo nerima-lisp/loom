@@ -174,8 +174,10 @@
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
-              (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*))))))))
+              (let ((output (make-string-output-stream)))
+                (loom::%run-event-loop output *standard-input*)
+                (expect (> (length (get-output-stream-string output)) 0)
+                        :to-be-truthy)))))))))
 
   (it
     "continues after a timeout status and stops at end-of-input"
