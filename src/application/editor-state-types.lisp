@@ -1,5 +1,9 @@
 (in-package #:loom)
 
+(defun %default-editor-state-keyboard-macro ()
+  "Create the fresh keyboard-macro value used by a new editor state."
+  (loom/feature/keyboard-macro:make-keyboard-macro))
+
 (defstruct (editor-state
             (:constructor %make-editor-state
                 (&key window-tree workspaces minibuffer keymap file-tree
@@ -12,7 +16,7 @@
                       (last-command-self-insert-p nil) (lsp-session nil)
                       (registers nil)
                       (keyboard-macro
-                       (loom/feature/keyboard-macro:make-keyboard-macro))
+                       (%default-editor-state-keyboard-macro))
                       (isearch nil)
                       (jump-origins nil)
                       (completion nil) (auto-save-mode-p nil)

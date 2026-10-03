@@ -82,4 +82,27 @@
       (expect (sixth outer-activate) :to-equal :on-cancel)
       (expect (seventh outer-activate) :to-equal '(lambda () (bail m)))
       (expect (sixth inner-activate) :to-equal :on-cancel)
-      (expect (seventh inner-activate) :to-equal '(lambda () (bail m))))))
+      (expect (seventh inner-activate) :to-equal '(lambda () (bail m)))))
+  (it "preserves completion functions in each generated activation"
+    (let* ((expansion
+             (macroexpand-1
+              '(loom/application:with-prompts
+                   (m (foo))
+                 ((old "Old: " :completion-function #'old-completion)
+                  (new "New: " :completion-function #'new-completion))
+               (use old new))))
+           (outer-activate (third expansion))
+           (inner-activate (third (fifth outer-activate))))
+      (expect (getf (cdddr outer-activate) :completion-function)
+              :to-equal
+              '(function old-completion))
+      (expect (getf (cdddr inner-activate) :completion-function)
+              :to-equal
+              '(function new-completion))))
+  (it "rejects malformed prompt binding options"
+    (dolist (form
+              '((loom/application:with-prompts
+                    (m (foo)) ((old "Old: " :unknown t)) (use old))
+                (loom/application:with-prompts
+                    (m (foo)) ((old "Old: " :completion-function)) (use old))))
+      (signals error (macroexpand-1 form)))))
