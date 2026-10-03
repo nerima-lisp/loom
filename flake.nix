@@ -161,10 +161,9 @@
           || (type == "regular" && sourceFile);
       };
 
-      # CI targets Linux; aarch64-darwin is the development platform.
+      # CI and release targets x86_64 Linux only.
       systems = [
         "x86_64-linux"
-        "aarch64-darwin"
       ];
 
       meta = {
