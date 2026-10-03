@@ -1,5 +1,95 @@
 (in-package #:loom/test)
 
+(defun %package-export-snapshot (package-name)
+  "Return a stable snapshot key for PACKAGE-NAME's external symbols."
+  (let ((hash 2166136261))
+    (labels ((mix (string)
+               (loop for character across string
+                     do (setf hash
+                              (logand #xffffffff
+                                      (* (logxor hash (char-code character))
+                                         16777619))))))
+      (mix package-name)
+      (dolist (name (sort (loop for symbol being the external-symbols
+                                of (find-package package-name)
+                                collect (symbol-name symbol))
+                          #'string<))
+        (mix " ")
+        (mix name)))
+    hash))
+
+(defparameter +package-export-snapshots+
+  '(("LOOM" . #x2B4304D4)
+    ("LOOM/APPLICATION" . #xFABFDEB5)
+    ("LOOM-USER" . #x14B89E80)
+    ("LOOM/FEATURE/AUTO-SAVE" . #xA3B35463)
+    ("LOOM/FEATURE/EVALUATION" . #x147099EC)
+    ("LOOM/FEATURE/FILE-TREE" . #x796F55CE)
+    ("LOOM/FEATURE/FORMAT" . #x1B81B618)
+    ("LOOM/FEATURE/GIT" . #x85B4C1D1)
+    ("LOOM/FEATURE/KEYBOARD-MACRO" . #x6258058D)
+    ("LOOM/FEATURE/LSP" . #xAC241E03)
+    ("LOOM/FEATURE/MODE" . #xA68FB22C)
+    ("LOOM/FEATURE/PROJECT" . #x6985A7BD)
+    ("LOOM/FEATURE/REGISTER" . #x63EE2BAF)
+    ("LOOM/FEATURE/SEARCH" . #x92328356)
+    ("LOOM/FEATURE/SESSION" . #x8A2B4F71)
+    ("LOOM/FEATURE/SHELL" . #xFD8E0C33)
+    ("LOOM/FEATURE/SYNTAX-HIGHLIGHTING" . #xB9B2D62E)
+    ("LOOM/FEATURE/TERMINAL" . #x057201CD)
+    ("LOOM/FEATURE/USER-INIT" . #x19687ACF)
+    ("LOOM/FEATURE/WINDOW" . #xE26B6FB5)
+    ("LOOM/FEATURE/WORKSPACE" . #x961E188B)))
+
+(defparameter +package-use-snapshots+
+  '(("LOOM" "CL" "LOOM/APPLICATION")
+    ("LOOM/APPLICATION" "CL")
+    ("LOOM-USER" "CL" "LOOM" "LOOM/FEATURE/LSP" "LOOM/FEATURE/MODE"
+     "LOOM/FEATURE/USER-INIT")
+    ("LOOM/FEATURE/AUTO-SAVE" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/EVALUATION" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")
+    ("LOOM/FEATURE/FILE-TREE" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")
+    ("LOOM/FEATURE/FORMAT" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/SHELL")
+    ("LOOM/FEATURE/GIT" "CL" "LOOM" "LOOM/APPLICATION" "LOOM/FEATURE/PROJECT"
+     "LOOM/FEATURE/WINDOW" "VCS-KIT")
+    ("LOOM/FEATURE/KEYBOARD-MACRO" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/LSP" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/MODE" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/PROJECT" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/REGISTER" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/SEARCH" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/SESSION" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")
+    ("LOOM/FEATURE/SHELL" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")
+    ("LOOM/FEATURE/SYNTAX-HIGHLIGHTING" "CL" "LOOM" "LOOM/FEATURE/MODE")
+    ("LOOM/FEATURE/TERMINAL" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")
+    ("LOOM/FEATURE/USER-INIT" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/WINDOW" "CL" "LOOM" "LOOM/APPLICATION")
+    ("LOOM/FEATURE/WORKSPACE" "CL" "LOOM" "LOOM/APPLICATION"
+     "LOOM/FEATURE/WINDOW")))
+
+(defun %package-use-names (package-name)
+  (sort (mapcar #'package-name (package-use-list (find-package package-name)))
+        #'string<))
+
+(describe
+  "package boundary contracts"
+  (it "matches the checked-in external symbol snapshots"
+    (dolist (snapshot +package-export-snapshots+)
+      (expect (%package-export-snapshot (car snapshot))
+              :to-equal
+              (cdr snapshot))))
+  (it "matches the allowed package dependency directions"
+    (dolist (snapshot +package-use-snapshots+)
+      (expect (%package-use-names (first snapshot))
+              :to-equal
+              (sort (copy-list (rest snapshot)) #'string<)))))
+
 (describe
   "command-spec validation"
   (it "expands the package export definition into a defpackage form"
@@ -35,12 +125,28 @@
                :help-order 10))))
       (expect (getf (rest expansion) :help) :to-equal "Move forward")
       (expect (getf (rest expansion) :help-order) :to-equal 10)))
+  (it "preserves valid key metadata"
+    (let ((expansion
+            (macroexpand-1
+             '(loom/application:command-spec
+               "forward-char" forward-char
+               :keys (((:control #\f)))))))
+      (expect (getf (rest expansion) :keys)
+              :to-equal
+              '(((:control #\f))))))
   (it "rejects invalid optional command metadata"
     (dolist (form
               '((loom/application:command-spec
                  "forward-char" forward-char :help 42)
                 (loom/application:command-spec
                  "forward-char" forward-char :help-order "first")))
+      (signals error (macroexpand-1 form))))
+  (it "rejects unknown or incomplete command options"
+    (dolist (form
+              '((loom/application:command-spec
+                 "forward-char" forward-char :unknown t)
+                (loom/application:command-spec
+                 "forward-char" forward-char :help)))
       (signals error (macroexpand-1 form))))
   (it "rejects a non-string command-spec name"
     (signals error
@@ -58,6 +164,11 @@
           (loom/application:command-spec-group
               "movement"
             (not-a-command-spec))))))
+  (it "rejects empty command groups"
+    (signals error
+      (macroexpand-1
+       '(loom/application:define-command-specs
+          (loom/application:command-spec-group "movement")))))
   (it "rejects an atom registry entry"
     (signals error
       (macroexpand-1 '(loom/application:define-command-specs 42))))
