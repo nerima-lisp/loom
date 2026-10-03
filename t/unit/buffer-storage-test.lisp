@@ -204,6 +204,8 @@
 
   (it
     "recognizes narrowing only when the visible interval is reduced"
+    (let ((buffer (make-buffer :initial-content "abcd")))
+      (expect (loom::%buffer-narrowed-p buffer) :to-be-falsy))
     (cl-weave:it-each
         ((0 4 nil)
          (1 4 t)
