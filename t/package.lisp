@@ -32,6 +32,7 @@
    #:it-isolated
    #:it-property
    #:it-skip-if
+   #:expect-has-assertions
    #:expect
    #:expect-poll
    #:expect-rejects
@@ -64,6 +65,8 @@
    #:with-restored-hash-table
    #:with-snapshot-updates
    #:run-all
+   #:list-tests
+   #:clear-tests
    #:run-isolated
    #:isolated-result-status
    #:isolated-result-stdout
@@ -85,10 +88,26 @@
 
 (in-package #:loom/test)
 
+(before-each
+  (expect-has-assertions))
+
+(defun %run-test-suite (&key name-filter)
+  "Run the selected specs after proving collection was non-empty."
+  (let ((selected-tests
+          (list-tests :reporter :sexp
+                      :stream (make-broadcast-stream)
+                      :name-filter name-filter)))
+    (unless selected-tests
+      (error "loom test suite collected no tests"))
+    (unless (run-all :reporter :spec
+                     :timeout-ms 40000
+                     :name-filter name-filter
+                     :pass-with-no-tests nil)
+      (error "loom test suite failed")))
+  t)
+
 (defun run-tests ()
-  "Run every registered spec, signalling on any failure so ASDF's TEST-OP fails."
-  (unless (run-all :reporter :spec :timeout-ms 40000
-                   :pass-with-no-tests nil)
-    (error "loom test suite failed"))
+  "Run every registered spec, signalling on collection or assertion failure."
+  (%run-test-suite)
   (format t "~&loom/test: successful completion with 0 failures~%")
   t)

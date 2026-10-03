@@ -67,6 +67,34 @@ SKIP rather than hang or fail there, while still running everywhere else
        (skip ,reason)
        (progn ,@body)))
 
+(describe
+  "test runner integrity"
+  (it
+    "rejects a selector that collects no tests"
+    (signals error
+      (%run-test-suite :name-filter "loom/test/this-test-does-not-exist")))
+
+  (it
+    "rejects an empty test body"
+    (skip-in-sandbox
+     "isolated SBCL is unavailable in the Nix build sandbox"
+     (let ((result
+             (run-isolated
+              '(progn
+                 (clear-tests)
+                 (before-each (expect-has-assertions))
+                 (it "empty body")
+                 (unless (run-all :reporter :sexp
+                                  :stream (make-broadcast-stream)
+                                  :pass-with-no-tests nil)
+                   (uiop:quit 0))
+                 (uiop:quit 1))
+              :systems '("loom/test")
+              :package "loom/test"
+              :timeout 30)))
+       (expect (isolated-result-status result) :to-be :pass)
+       (expect (isolated-result-exit-code result) :to-be 0)))))
+
 (defmacro with-test-mock ((name &optional implementation) &body body)
   "Bind NAME to a cl-weave mock and dispose it after BODY."
   `(let ((,name (make-mock-function ,@(when implementation
