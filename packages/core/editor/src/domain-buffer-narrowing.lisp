@@ -70,7 +70,8 @@ new region. Returns BUFFER."
   buffer)
 
 (defun buffer-widen (buffer)
-  "Make all of BUFFER's full text visible and editable. Returns BUFFER."
+  "Remove narrowing so all of BUFFER's text is visible.
+Leave BUFFER's read-only state unchanged. Returns BUFFER."
   (setf (%buffer-narrow-start-offset buffer) 0
         (%buffer-narrow-end-offset buffer) (%buffer-full-length buffer))
   buffer)

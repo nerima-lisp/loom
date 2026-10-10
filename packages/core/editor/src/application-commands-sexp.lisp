@@ -36,8 +36,9 @@ rather than guessing."
 (define-sexp-motion-command forward-sexp
   "Move point past the next S-expression (C-M-f).
 
-Parentheses inside a string, inside a comment, or in a #\\ character literal
-are text rather than structure and are stepped over as part of their atom."
+The scanner ignores delimiters in strings and #\\ character literals and
+skips line comments and block comments. A block comment ends at the first
+|#; nested block comments are not tracked."
   %forward-sexp-offset)
 
 (define-sexp-motion-command backward-sexp

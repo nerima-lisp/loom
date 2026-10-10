@@ -1,17 +1,18 @@
 # API reference
 
-This page documents the public symbols from the root `loom` package. Feature-package
-APIs are documented in `reference/api/features.md`; the package export declarations
-remain authoritative when the public surface changes. Symbols that are useful mainly
-as accessors or predicates still appear so the public contract is searchable in one
-place. Line and column numbers throughout are zero-based; a
+This page documents selected major APIs from the root `loom` package and the feature
+packages used in the examples. It is not an exhaustive export listing.
+Feature-package APIs are documented in `reference/api/features.md`; the
+authoritative export declarations are in
+[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp).
+Line and column numbers throughout are zero-based; a
 `(line . column)` pair denotes a position *between* characters, exactly like
 Emacs point, so end positions in a region are exclusive.
 
 ## Application
 
-These symbols expose the command-specification and keybinding layer used by
-the editor's interactive commands.
+These symbols from `loom/application` expose the command-specification and
+keybinding layer used by the editor's interactive commands.
 
 ### `%selected-window`
 
@@ -64,7 +65,9 @@ Return command names available for extended-command completion.
 
 ### `find-extended-command`
 
-Look up a command specification by its interactive name.
+Return the registered command for its interactive name, or `NIL` if none matches.
+Lookup trims spaces and tabs and ignores case; it does not return the command
+specification.
 
 ### `defkeys-single-chord-p`
 
@@ -72,11 +75,21 @@ Return true when a key definition describes one chord rather than a sequence.
 
 ### `defkeys-chord`
 
-Define a key binding for one chord in a keymap.
+```lisp
+(loom/application:defkeys-chord spec)
+```
+
+Convert one command-spec chord to a runtime key descriptor, a
+`(modifiers . code)` cons. Supported modifiers are `:control` and `:alt`.
 
 ### `defkeys-key-sequence`
 
-Define a key binding for a sequence of chords in a keymap.
+```lisp
+(loom/application:defkeys-key-sequence key-form)
+```
+
+Convert a single chord or a sequence of chords to a list of runtime key
+descriptors. Neither converter installs keymap bindings.
 
 ### `install-default-keybindings`
 
@@ -116,8 +129,9 @@ Return `buffer`'s display name, as a string.
 (loom:buffer-path buffer)
 ```
 
-Return the pathname/namestring `buffer` is associated with, or `nil` if it
-has never been loaded from or saved to a file.
+Return the pathname/namestring `buffer` is associated with, or `nil` when no
+path is associated. `make-buffer` can associate a path without loading or
+saving a file.
 
 ### `buffer-major-mode`
 
@@ -125,7 +139,9 @@ has never been loaded from or saved to a file.
 (loom:buffer-major-mode buffer)
 ```
 
-Return the major-mode object currently associated with `buffer`, or `nil`.
+Return the major-mode identity associated with `buffer`, initially
+`:fundamental`. The core stores this identity without interpreting it;
+feature packages provide its semantics.
 
 ### `buffer-set-major-mode`
 
@@ -133,7 +149,7 @@ Return the major-mode object currently associated with `buffer`, or `nil`.
 (loom:buffer-set-major-mode buffer mode)
 ```
 
-Associate `mode` with `buffer` and return `buffer`.
+Store `mode` as `buffer`'s major-mode identity and return `buffer`.
 
 ### `buffer-truncate-lines`
 
@@ -254,8 +270,11 @@ Delete a single character adjacent to point: the character before point
 (loom:buffer-delete-region buffer start-line start-column end-line end-column)
 ```
 
-Delete the text between the two positions (end exclusive), moving point to
-the start position. Returns the deleted text as a string.
+Delete the text between the two positions (end exclusive), clamped to the
+visible region. The end must not precede the start. A nonempty deletion moves
+point to the clamped start; an empty range leaves point and undo history
+unchanged. Returns the deleted text as a string. Read-only buffers signal an
+error even for an empty range.
 
 ### `buffer-region-string`
 
@@ -754,7 +773,7 @@ strings.
 ### `make-window-tree`
 
 ```lisp
-(loom:make-window-tree initial-buffer width height)
+(loom/feature/window:make-window-tree initial-buffer width height)
 ```
 
 Create and return a new window tree with a single, initially selected
@@ -763,7 +782,7 @@ window displaying `initial-buffer` over the full `width` by `height` area.
 ### `window-tree-windows`
 
 ```lisp
-(loom:window-tree-windows tree)
+(loom/feature/window:window-tree-windows tree)
 ```
 
 Return a list of every leaf window in `tree`, in stable order.
@@ -771,7 +790,7 @@ Return a list of every leaf window in `tree`, in stable order.
 ### `window-tree-selected-window`
 
 ```lisp
-(loom:window-tree-selected-window tree)
+(loom/feature/window:window-tree-selected-window tree)
 ```
 
 Return `tree`'s currently selected (focused) window.
@@ -779,7 +798,7 @@ Return `tree`'s currently selected (focused) window.
 ### `window-tree-layout`
 
 ```lisp
-(loom:window-tree-layout tree)
+(loom/feature/window:window-tree-layout tree)
 ```
 
 Return the serializable layout description of `tree`.
@@ -787,16 +806,16 @@ Return the serializable layout description of `tree`.
 ### `make-window-tree-from-layout`
 
 ```lisp
-(loom:make-window-tree-from-layout layout width height &key selected-index)
+(loom/feature/window:make-window-tree-from-layout layout width height &key selected-index)
 ```
 
-Reconstruct a window tree from `layout`, resolving its leaf buffers from
-`buffers`.
+Reconstruct a window tree from `layout`, whose leaf nodes contain the buffers
+to display.
 
 ### `window-tree-selected-index`
 
 ```lisp
-(loom:window-tree-selected-index tree)
+(loom/feature/window:window-tree-selected-index tree)
 ```
 
 Return the index of the selected leaf window in `tree`.
@@ -804,7 +823,7 @@ Return the index of the selected leaf window in `tree`.
 ### `window-tree-select-index`
 
 ```lisp
-(loom:window-tree-select-index tree index)
+(loom/feature/window:window-tree-select-index tree index)
 ```
 
 Select the leaf window at `index` and return it.
@@ -812,7 +831,7 @@ Select the leaf window at `index` and return it.
 ### `window-tree-width`
 
 ```lisp
-(loom:window-tree-width tree)
+(loom/feature/window:window-tree-width tree)
 ```
 
 Return `tree`'s width in terminal columns.
@@ -820,7 +839,7 @@ Return `tree`'s width in terminal columns.
 ### `window-tree-height`
 
 ```lisp
-(loom:window-tree-height tree)
+(loom/feature/window:window-tree-height tree)
 ```
 
 Return `tree`'s height in terminal rows.
@@ -828,7 +847,7 @@ Return `tree`'s height in terminal rows.
 ### `window-split`
 
 ```lisp
-(loom:window-split tree window direction)
+(loom/feature/window:window-split tree window direction)
 ```
 
 Split `window` into two along `direction` (`:horizontal`, i.e. `C-x 2`, or
@@ -838,7 +857,7 @@ moves to the new window, which is returned.
 ### `window-select-next`
 
 ```lisp
-(loom:window-select-next tree)
+(loom/feature/window:window-select-next tree)
 ```
 
 Select the next window in `tree`, cycling back to the first after the last
@@ -847,24 +866,25 @@ Select the next window in `tree`, cycling back to the first after the last
 ### `window-delete`
 
 ```lisp
-(loom:window-delete tree window)
+(loom/feature/window:window-delete tree window)
 ```
 
 Delete `window` from `tree` when another leaf can remain selected, then
-return `tree`.
+return the selected window. If `window` is the only leaf, leave the tree unchanged
+and return that window.
 
 ### `window-delete-other-windows`
 
 ```lisp
-(loom:window-delete-other-windows tree window)
+(loom/feature/window:window-delete-other-windows tree window)
 ```
 
-Remove every leaf except `window` and return the resulting tree.
+Remove every leaf except `window`, select it, and return that window.
 
 ### `window-buffer`
 
 ```lisp
-(loom:window-buffer window)
+(loom/feature/window:window-buffer window)
 ```
 
 Return the buffer currently displayed in `window`.
@@ -872,7 +892,7 @@ Return the buffer currently displayed in `window`.
 ### `window-set-buffer`
 
 ```lisp
-(loom:window-set-buffer window buffer)
+(loom/feature/window:window-set-buffer window buffer)
 ```
 
 Display `buffer` in `window` (`C-x b`), replacing what it previously showed.
@@ -881,7 +901,7 @@ Returns `window`.
 ### `window-x`
 
 ```lisp
-(loom:window-x window)
+(loom/feature/window:window-x window)
 ```
 
 Return `window`'s left edge, in terminal columns, relative to its tree's
@@ -890,7 +910,7 @@ origin.
 ### `window-y`
 
 ```lisp
-(loom:window-y window)
+(loom/feature/window:window-y window)
 ```
 
 Return `window`'s top edge, in terminal rows, relative to its tree's origin.
@@ -898,7 +918,7 @@ Return `window`'s top edge, in terminal rows, relative to its tree's origin.
 ### `window-width`
 
 ```lisp
-(loom:window-width window)
+(loom/feature/window:window-width window)
 ```
 
 Return `window`'s width in terminal columns.
@@ -906,7 +926,7 @@ Return `window`'s width in terminal columns.
 ### `window-height`
 
 ```lisp
-(loom:window-height window)
+(loom/feature/window:window-height window)
 ```
 
 Return `window`'s height in terminal rows.
@@ -914,8 +934,8 @@ Return `window`'s height in terminal rows.
 ### `window-scroll-line`
 
 ```lisp
-(loom:window-scroll-line window)
-(setf (loom:window-scroll-line window) line)
+(loom/feature/window:window-scroll-line window)
+(setf (loom/feature/window:window-scroll-line window) line)
 ```
 
 Return or set `window`'s zero-based first visible buffer line.
@@ -923,20 +943,21 @@ Return or set `window`'s zero-based first visible buffer line.
 ### `window-scroll-column`
 
 ```lisp
-(loom:window-scroll-column window)
-(setf (loom:window-scroll-column window) column)
+(loom/feature/window:window-scroll-column window)
+(setf (loom/feature/window:window-scroll-column window) column)
 ```
 
 Return or set `window`'s leftmost visible screen column. This counts terminal
 cells rather than buffer characters, so it stays comparable with the two cells
 a full-width character occupies. Unlike `window-scroll-line` it is not part of
-`window-tree-layout`, so a session restore starts every window unscrolled.
+`window-tree-layout`, so restoring a session resets the horizontal offset to
+`0` while preserving the saved vertical scroll line.
 
 ### `window-scroll-sub-row`
 
 ```lisp
-(loom:window-scroll-sub-row window)
-(setf (loom:window-scroll-sub-row window) row)
+(loom/feature/window:window-scroll-sub-row window)
+(setf (loom/feature/window:window-scroll-sub-row window) row)
 ```
 
 Return or set which wrapped segment of `window-scroll-line` occupies the
@@ -947,16 +968,19 @@ like `window-scroll-column` it is transient rather than part of
 ### `window-tree-resize`
 
 ```lisp
-(loom:window-tree-resize tree width height)
+(loom/feature/window:window-tree-resize tree width height)
 ```
 
 Resize `tree` to `width`/`height`, re-laying-out every window
 proportionally. Returns `tree`.
 
+The following interactive window commands use `loom:*editor-state*` and take
+no arguments.
+
 ### `split-window-below`
 
 ```lisp
-(loom:split-window-below tree)
+(loom/feature/window:split-window-below)
 ```
 
 Split the selected window horizontally and return the new selected window.
@@ -964,7 +988,7 @@ Split the selected window horizontally and return the new selected window.
 ### `split-window-right`
 
 ```lisp
-(loom:split-window-right tree)
+(loom/feature/window:split-window-right)
 ```
 
 Split the selected window vertically and return the new selected window.
@@ -972,53 +996,57 @@ Split the selected window vertically and return the new selected window.
 ### `other-window`
 
 ```lisp
-(loom:other-window tree)
+(loom/feature/window:other-window)
 ```
 
-Select the next window in `tree` and return it.
+Select the next window in the current window tree and return it.
 
 ### `delete-window`
 
 ```lisp
-(loom:delete-window tree)
+(loom/feature/window:delete-window)
 ```
 
-Delete the selected window and return the resulting tree.
+Delete the selected window and return the remaining selected window. If it
+is the only window, leave it unchanged.
 
 ### `delete-other-windows`
 
 ```lisp
-(loom:delete-other-windows tree)
+(loom/feature/window:delete-other-windows)
 ```
 
-Keep only the selected window and return the resulting tree.
+Keep only the selected window and return it.
 
 ### `switch-to-buffer`
 
 ```lisp
-(loom:switch-to-buffer tree buffer)
+(loom/feature/window:switch-to-buffer)
 ```
 
-Display `buffer` in the selected window and return that window.
+Prompt for a registered buffer's name and display it in the selected window.
 
 ### `kill-buffer`
 
 ```lisp
-(loom:kill-buffer tree buffer)
+(loom/feature/window:kill-buffer)
 ```
 
-Remove `buffer` from the window tree's buffer set and return the updated tree.
+Prompt for a buffer's name and remove it from the editor's registry, replacing
+it in windows displaying it. A modified buffer prompts for discard or
+cancellation, and for saving when it has an associated path.
 
 ## File tree
 
 ### `make-file-tree`
 
 ```lisp
-(loom:make-file-tree root-path)
+(loom/feature/file-tree:make-file-tree root-path)
 ```
 
 Create and return a new file tree rooted at `root-path`; initially not
-visible, every directory starts collapsed.
+visible, every directory starts collapsed. Its default child lister performs
+no filesystem access and returns no children; install a lister to populate it.
 
 ### `file-tree-child-lister`
 
@@ -1052,7 +1080,7 @@ prefetch.
 ### `file-tree-visible-p`
 
 ```lisp
-(loom:file-tree-visible-p tree)
+(loom/feature/file-tree:file-tree-visible-p tree)
 ```
 
 Return true if `tree`'s sidebar is currently shown.
@@ -1060,7 +1088,7 @@ Return true if `tree`'s sidebar is currently shown.
 ### `file-tree-toggle`
 
 ```lisp
-(loom:file-tree-toggle tree)
+(loom/feature/file-tree:file-tree-toggle tree)
 ```
 
 Toggle whether `tree`'s sidebar is shown. Returns the new visibility state.
@@ -1068,7 +1096,7 @@ Toggle whether `tree`'s sidebar is shown. Returns the new visibility state.
 ### `file-tree-entries`
 
 ```lisp
-(loom:file-tree-entries tree)
+(loom/feature/file-tree:file-tree-entries tree)
 ```
 
 Return the flattened list of currently visible entries in `tree`, respecting
@@ -1077,15 +1105,16 @@ expand/collapse state, as `(path . depth)` conses in display order.
 ### `file-tree-entry-kind`
 
 ```lisp
-(loom:file-tree-entry-kind tree path)
+(loom/feature/file-tree:file-tree-entry-kind tree path)
 ```
 
-Return whether `path` is a file or directory entry in `tree`.
+Return `:file` or `:directory` for a currently reachable entry in `tree`, or
+`nil` if the path is not reachable. Collapsed directories are not searched.
 
 ### `file-tree-selected-path`
 
 ```lisp
-(loom:file-tree-selected-path tree)
+(loom/feature/file-tree:file-tree-selected-path tree)
 ```
 
 Return the path of `tree`'s currently selected entry, or `nil`.
@@ -1093,7 +1122,7 @@ Return the path of `tree`'s currently selected entry, or `nil`.
 ### `file-tree-move-selection`
 
 ```lisp
-(loom:file-tree-move-selection tree direction)
+(loom/feature/file-tree:file-tree-move-selection tree direction)
 ```
 
 Move `tree`'s selection cursor by one visible entry in `direction` (`:up` or
@@ -1102,7 +1131,7 @@ Move `tree`'s selection cursor by one visible entry in `direction` (`:up` or
 ### `file-tree-toggle-expand`
 
 ```lisp
-(loom:file-tree-toggle-expand tree path)
+(loom/feature/file-tree:file-tree-toggle-expand tree path)
 ```
 
 Toggle the expand/collapse state of the directory at `path`. Signals an
@@ -1112,57 +1141,70 @@ state.
 ### `file-tree-create-file`
 
 ```lisp
-(loom:file-tree-create-file tree path)
+(loom/feature/file-tree:file-tree-create-file tree path)
 ```
 
-Create a new, empty file at `path` on disk (`cl-host-kit`-backed).
+Create a new, empty regular file through `*loom-filesystem*`. Signals an error
+if `path` already exists and returns `path`.
 
 ### `file-tree-create-directory`
 
 ```lisp
-(loom:file-tree-create-directory tree path)
+(loom/feature/file-tree:file-tree-create-directory tree path)
 ```
 
-Create a new, empty directory at `path` on disk.
+Create a new, empty directory through `*loom-filesystem*`. Signals an error if
+`path` already exists and returns `path`.
 
 ### `file-tree-rename`
 
 ```lisp
-(loom:file-tree-rename tree old-path new-path)
+(loom/feature/file-tree:file-tree-rename tree old-path new-path)
 ```
 
-Rename the entry at `old-path` to `new-path` on disk.
+Move or rename the entry at `old-path` to `new-path` through
+`*loom-filesystem*`. Signals an error if `old-path` is missing or
+`new-path` already exists, and returns `new-path`.
 
 ### `file-tree-delete`
 
 ```lisp
-(loom:file-tree-delete tree path)
+(loom/feature/file-tree:file-tree-delete tree path)
 ```
 
-Delete the entry at `path` from disk.
+Delete the file or directory at `path` recursively through the filesystem
+dispatch. Signals an error if `path` does not exist and returns `tree`.
+
+These mutations use the direct native path only with the real filesystem and a
+wild pathname; other paths use the CL-BOUNDARY-KIT or CL-HOST-KIT boundary.
 
 ### `loom-fs-list-directory`
 
 ```lisp
-(loom:loom-fs-list-directory path)
+(loom/feature/file-tree:loom-fs-list-directory path)
 ```
 
 List `path`'s direct children as `(child-path . :file-or-:directory)`
 conses, via `cl-host-kit`. This is the infrastructure lister used for real,
-disk-backed sidebar listings.
+disk-backed sidebar listings. Directories precede files, and each group is
+sorted by namestring. Symbolic links and other special entries are omitted.
+
+The following interactive file commands use `loom:*editor-state*` and take
+no arguments. Paths are read from the minibuffer when needed.
 
 ### `toggle-file-tree`
 
 ```lisp
-(loom:toggle-file-tree state)
+(loom/feature/file-tree:toggle-file-tree)
 ```
 
-Toggle the file-tree sidebar in `state` and return the new visibility state.
+Toggle the current editor's file-tree sidebar and return the new visibility
+state.
 
 ### `file-tree-select-next`
 
 ```lisp
-(loom:file-tree-select-next tree)
+(loom/feature/file-tree:file-tree-select-next)
 ```
 
 Select the next visible file-tree entry and return its path.
@@ -1170,7 +1212,7 @@ Select the next visible file-tree entry and return its path.
 ### `file-tree-select-previous`
 
 ```lisp
-(loom:file-tree-select-previous tree)
+(loom/feature/file-tree:file-tree-select-previous)
 ```
 
 Select the previous visible file-tree entry and return its path.
@@ -1178,66 +1220,71 @@ Select the previous visible file-tree entry and return its path.
 ### `file-tree-open-selected`
 
 ```lisp
-(loom:file-tree-open-selected state)
+(loom/feature/file-tree:file-tree-open-selected)
 ```
 
-Open the selected file-tree entry in the current editor state.
+Open the selected file or toggle the selected directory's expansion.
 
 ### `file-tree-create-file-command`
 
 ```lisp
-(loom:file-tree-create-file-command state)
+(loom/feature/file-tree:file-tree-create-file-command)
 ```
 
-Create a file through the file-tree command interface.
+Prompt for a path and create a file.
 
 ### `file-tree-create-directory-command`
 
 ```lisp
-(loom:file-tree-create-directory-command state)
+(loom/feature/file-tree:file-tree-create-directory-command)
 ```
 
-Create a directory through the file-tree command interface.
+Prompt for a path and create a directory.
 
 ### `file-tree-rename-command`
 
 ```lisp
-(loom:file-tree-rename-command state)
+(loom/feature/file-tree:file-tree-rename-command)
 ```
 
-Rename the selected file-tree entry through the command interface.
+Prompt for a new path and rename the selected file-tree entry.
 
 ### `file-tree-delete-command`
 
 ```lisp
-(loom:file-tree-delete-command state)
+(loom/feature/file-tree:file-tree-delete-command)
 ```
 
-Delete the selected file-tree entry through the command interface.
+Delete the selected file-tree entry.
 
 ### `find-file`
 
 ```lisp
-(loom:find-file state path)
+(loom/feature/file-tree:find-file)
 ```
 
-Open `path` in the editor state, reusing an existing buffer when possible.
+Prompt for a path and load its file into a new buffer. If the file does not
+exist, create an empty buffer associated with that path without writing it.
 
 ### `save-buffer`
 
 ```lisp
-(loom:save-buffer state)
+(loom/feature/file-tree:save-buffer)
 ```
 
-Save the selected buffer and return the resulting buffer.
+Save the selected buffer to its associated path, prompting for a path if it
+has none.
 
 ### `write-file`
 
 ```lisp
-(loom:write-file state path)
+(loom/feature/file-tree:write-file)
 ```
 
-Write the selected buffer to `path` and return the buffer.
+Prompt for a path and display a new buffer carrying the selected buffer's
+text, point, and mark under that path. Save it unless the target already
+exists; an existing target produces an overwrite warning, and `C-x C-s`
+confirms the overwrite. The original buffer remains registered.
 
 ## Auto-save feature
 
@@ -1296,12 +1343,16 @@ running loom session.
 ### `make-editor-state`
 
 ```lisp
-(loom:make-editor-state &key window-tree minibuffer keymap file-tree renderer kill-ring workspaces auto-save-mode-p auto-save-buffers auto-save-last-run-at after-save-hooks terminal-sessions)
+(loom:make-editor-state &rest initargs)
 ```
 
 Construct an `editor-state`. If `workspaces` is omitted, the supplied
 `window-tree` becomes the named `main` workspace. Supplying `workspaces` is
 useful when restoring a session or constructing multiple named views.
+`initargs` are the editor-state constructor's keyword arguments, including
+`:buffers`, `:recent-files`, `:bookmarks`, `:concurrent-runtime`, `:lsp-session`,
+`:registers`, `:keyboard-macro`, `:isearch`, `:completion`, `:prefix-argument`,
+`:format-on-save-p`, `:format-command`, and the before/after-save hook lists.
 
 ### `editor-state-window-tree`
 
@@ -1397,8 +1448,9 @@ Return the buffers currently owned by `state`.
 (loom:editor-state-recent-files state)
 ```
 
-Return canonical file paths in most-recent-first order. The list is bounded by
-`loom:*editor-recent-file-limit*`.
+Return remembered file paths in most-recent-first order. When remembering a
+path, Loom uses its truename if available, otherwise its pathname namestring.
+The list is bounded by `loom:*editor-recent-file-limit*`.
 
 ### `editor-state-bookmarks`
 
@@ -1471,10 +1523,12 @@ Return the pending prefix argument attached to `state`, or `nil`.
 ### `self-insert-command`
 
 ```lisp
-(loom:self-insert-command state key-event)
+(loom:self-insert-command character)
 ```
 
-Insert the character represented by `key-event` into the selected buffer.
+Insert `character` into the selected buffer of `*editor-state*`, repeated
+according to `*current-prefix-argument*` (one insertion when it is `nil`).
+A zero or negative prefix inserts nothing.
 
 ### `*current-prefix-argument*`
 
@@ -1487,50 +1541,58 @@ The dynamically-bound prefix argument available while a command executes.
 ### `prefix-argument-for-editor`
 
 ```lisp
-(loom:prefix-argument-for-editor state)
+(loom:prefix-argument-for-editor)
 ```
 
-Return the prefix argument currently accumulated for `state`.
+Return the prefix argument attached to `*editor-state*`, creating one when
+none is attached.
 
 ### `prefix-argument-action`
 
 ```lisp
-(loom:prefix-argument-action state action)
+(loom:prefix-argument-action descriptor argument)
 ```
 
-Apply a prefix-argument `action` to `state`.
+Decode a key descriptor against `argument`. Return `(kind . value)` for a
+universal, digit, or negative-prefix action, or `nil` for an ordinary key.
+This function does not mutate `argument`.
 
 ### `apply-prefix-argument-action`
 
 ```lisp
-(loom:apply-prefix-argument-action state action)
+(loom:apply-prefix-argument-action kind value)
 ```
 
-Apply a decoded prefix-argument action to the editor state.
+Apply the decoded `kind` (`:universal`, `:digit`, or `:negative`) and `value`
+to the prefix argument attached to `*editor-state*`. `:digit` uses `value`;
+the other kinds ignore it. An unknown kind signals an error.
 
 ### `prefix-argument-value-for-editor`
 
 ```lisp
-(loom:prefix-argument-value-for-editor state)
+(loom:prefix-argument-value-for-editor)
 ```
 
-Return the numeric value represented by `state`'s pending prefix argument.
+Return the numeric value of `*editor-state*`'s pending prefix argument.
 
 ### `consume-prefix-argument-for-editor`
 
 ```lisp
-(loom:consume-prefix-argument-for-editor state)
+(loom:consume-prefix-argument-for-editor)
 ```
 
-Return and clear the pending prefix argument for `state`.
+Return the pending numeric prefix of `*editor-state*`, or 1 when inactive,
+and reset its prefix-argument object to the inactive state.
 
 ### `record-undo-boundary-for-command`
 
 ```lisp
-(loom:record-undo-boundary-for-command state)
+(loom:record-undo-boundary-for-command self-insert-p)
 ```
 
-Record an undo boundary for the selected buffer before or after a command.
+Record an undo boundary for the selected buffer when `self-insert-p` differs
+from the previous command's self-insert flag. Consecutive self inserts share
+one undo group. Update the flag in `*editor-state*`.
 
 ## Numeric prefix arguments
 
@@ -1544,10 +1606,10 @@ The prefix-argument value type.
 ### `make-prefix-argument`
 
 ```lisp
-(loom:make-prefix-argument &key value explicit-p negative-p)
+(loom:make-prefix-argument)
 ```
 
-Construct a prefix-argument value.
+Construct an inactive prefix-argument object with numeric value 1.
 
 ### `prefix-argument-active-p`
 
@@ -1579,7 +1641,8 @@ Return the signed numeric value of `argument`.
 (loom:prefix-argument-universal argument)
 ```
 
-Apply a universal-prefix action to `argument` and return the updated value.
+Activate an inactive `argument` with magnitude 4, or multiply an active
+argument's magnitude by 4. Return the mutated argument object.
 
 ### `prefix-argument-digit`
 
@@ -1587,7 +1650,9 @@ Apply a universal-prefix action to `argument` and return the updated value.
 (loom:prefix-argument-digit argument digit)
 ```
 
-Append `digit` to `argument` and return the updated value.
+Use `digit` as the first explicit digit, or append it to an already explicit
+magnitude. `digit` must be an integer from 0 through 9. Return the mutated
+argument object.
 
 ### `prefix-argument-negative`
 
@@ -1595,7 +1660,8 @@ Append `digit` to `argument` and return the updated value.
 (loom:prefix-argument-negative argument)
 ```
 
-Apply a negative-prefix action to `argument` and return the updated value.
+Activate `argument` if needed, toggle its sign, and return the mutated
+argument object.
 
 ### `prefix-argument-consume`
 
@@ -1603,7 +1669,8 @@ Apply a negative-prefix action to `argument` and return the updated value.
 (loom:prefix-argument-consume argument)
 ```
 
-Return the value consumed by a command from `argument`.
+Return the numeric value of an active `argument`, or 1 when inactive, then
+reset the argument object.
 
 ### `prefix-argument-reset`
 
@@ -1611,7 +1678,8 @@ Return the value consumed by a command from `argument`.
 (loom:prefix-argument-reset argument)
 ```
 
-Return the inactive/reset form of `argument`.
+Reset `argument` to inactive with magnitude 1 and clear its explicit and
+negative flags. Return the mutated argument object.
 
 ## Concurrent file-tree runtime
 
@@ -1626,7 +1694,7 @@ runtime.
 ### `make-loom-concurrent-runtime`
 
 ```lisp
-(loom:make-loom-concurrent-runtime
+(loom/feature/file-tree:make-loom-concurrent-runtime
   &key directory-lister (parallelism 4) (queue-capacity 64))
 ```
 
@@ -1638,7 +1706,7 @@ bounded submission queue of `queue-capacity`. The total in-flight bound is
 ### `loom-concurrent-runtime-directory-entries`
 
 ```lisp
-(loom:loom-concurrent-runtime-directory-entries runtime path)
+(loom/feature/file-tree:loom-concurrent-runtime-directory-entries runtime path)
   => (values entries present-p)
 ```
 
@@ -1648,7 +1716,7 @@ cache entry exists, including an empty directory.
 ### `loom-concurrent-runtime-directory-error`
 
 ```lisp
-(loom:loom-concurrent-runtime-directory-error runtime path)
+(loom/feature/file-tree:loom-concurrent-runtime-directory-error runtime path)
   => (values condition present-p)
 ```
 
@@ -1658,7 +1726,7 @@ whether an error was recorded.
 ### `loom-concurrent-runtime-prime-directory`
 
 ```lisp
-(loom:loom-concurrent-runtime-prime-directory runtime path entries)
+(loom/feature/file-tree:loom-concurrent-runtime-prime-directory runtime path entries)
 ```
 
 Seed `path`'s cache from a synchronous listing, advance its generation, and
@@ -1667,7 +1735,7 @@ clear its cached error. Returns `entries`.
 ### `loom-concurrent-runtime-invalidate-directory`
 
 ```lisp
-(loom:loom-concurrent-runtime-invalidate-directory runtime path)
+(loom/feature/file-tree:loom-concurrent-runtime-invalidate-directory runtime path)
 ```
 
 Advance `path`'s generation and remove its cached entries, error, and pending
@@ -1676,7 +1744,7 @@ promise. Returns the runtime.
 ### `loom-concurrent-runtime-invalidate-path`
 
 ```lisp
-(loom:loom-concurrent-runtime-invalidate-path runtime path)
+(loom/feature/file-tree:loom-concurrent-runtime-invalidate-path runtime path)
 ```
 
 Invalidate `path` and its parent directory, then return the runtime. File-tree
@@ -1686,7 +1754,7 @@ stale.
 ### `loom-concurrent-runtime-prefetch`
 
 ```lisp
-(loom:loom-concurrent-runtime-prefetch runtime paths)
+(loom/feature/file-tree:loom-concurrent-runtime-prefetch runtime paths)
   => (values promises accepted-count)
 ```
 
@@ -1698,17 +1766,18 @@ skipped rather than blocking the render lane.
 ### `loom-concurrent-runtime-drain`
 
 ```lisp
-(loom:loom-concurrent-runtime-drain runtime)
-  => applied-count
+(loom/feature/file-tree:loom-concurrent-runtime-drain runtime)
+  => drained-count
 ```
 
-Apply all currently available worker results on the calling thread and
-return the number applied. Results from older generations are discarded.
+Drain all currently available worker results on the calling thread and
+return the number drained. Apply results from the current generation and
+discard older results; both count toward the return value.
 
 ### `loom-concurrent-runtime-shutdown`
 
 ```lisp
-(loom:loom-concurrent-runtime-shutdown runtime)
+(loom/feature/file-tree:loom-concurrent-runtime-shutdown runtime)
 ```
 
 Stop the worker pool, close the result channel, and return `runtime`.
@@ -1722,7 +1791,7 @@ Feature-specific public interfaces are documented in the [Feature APIs reference
 ## CLI and commands
 
 `loom:main` delegates argument parsing to `cl-cli` using application name
-`loom` and version `0.1.0`. The CLI accepts `--help`/`-h`,
+`loom` and the package version declared in `loom.asd`. The CLI accepts `--help`/`-h`,
 `--version`/`-V`, and one optional positional `path`; a file opens in the
 first window, a directory becomes the file-tree root, and no path defaults to
 `.`. There are no subcommands.
@@ -1734,9 +1803,9 @@ the top-level keymap. The declarative catalogue is maintained in
 candidates, and M-x lookup. The registry includes movement, editing,
 search/replace, file, window, file-tree, help, keyboard-quit, and quit
 commands. `M-x` invokes `execute-extended-command`, which prompts for a
-command name and dispatches a registered command. Command functions are
-intentionally not exported; use the keymap or `M-x` entry points for
-interactive invocation.
+command name and dispatches a registered command. The window and file-tree
+command entry points above are exported by their feature packages. Use the
+keymap or `M-x` for interactive invocation.
 
 ## Entry point
 
@@ -1746,6 +1815,8 @@ interactive invocation.
 (loom:main)
 ```
 
-Entry point for the `loom` binary (the `:toplevel` `save-lisp-and-die`
-dumps). Initializes `*editor-state*`, then runs the terminal session and
-event loop until the user quits (`C-x C-c`) or stdin reaches EOF.
+Runtime entry point for the `loom` binary. It dispatches raw command-line
+arguments through `cl-cli` and exits with the returned status. The ASDF
+`program-op` build uses `loom:main` as the dumped image's `:toplevel` for
+`sb-ext:save-lisp-and-die`; the build operation is separate from this runtime
+function.

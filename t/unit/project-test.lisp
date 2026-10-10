@@ -8,7 +8,13 @@
     (expect (project-marker-name-p "flake.nix") :to-be-truthy)
     (expect (project-marker-name-p "unknown.marker") :to-be-falsy)
     (expect (project-marker-names) :to-contain ".git")
-    (expect (project-ignored-directory-names) :to-contain "target")))
+    (expect (project-ignored-directory-names) :to-contain "target"))
+
+  (it
+    "recognizes every configured marker in original, lowercase, and uppercase forms"
+    (dolist (marker (project-marker-names))
+      (dolist (candidate (list marker (string-downcase marker) (string-upcase marker)))
+        (expect (project-marker-name-p candidate) :to-be-truthy)))))
 
 (describe
   "project path boundaries"

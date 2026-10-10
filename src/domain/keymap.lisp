@@ -10,12 +10,11 @@
   (%make-keymap :parent parent))
 
 (defun keymap-define-key (keymap key-sequence command)
-  "Bind KEY-SEQUENCE -- a list of key-event descriptors, each shaped like a
-CL-TTY-KIT key-event (or a lighter descriptor an implementation chooses to
-accept, e.g. a (TYPE CODE MODIFIERS) list) -- to COMMAND, a function
-designator of zero arguments that operates on *EDITOR-STATE* when invoked. A
-KEY-SEQUENCE that is a strict prefix of another bound sequence implicitly
-becomes a prefix key (see KEYMAP-LOOKUP). Returns KEYMAP."
+  "Bind KEY-SEQUENCE, a list of (MODIFIERS . CODE) descriptors or bare
+character/keyword codes, to COMMAND, a function designator of zero arguments
+that operates on *EDITOR-STATE* when invoked. A KEY-SEQUENCE that is a strict
+prefix of another bound sequence implicitly becomes a prefix key (see
+KEYMAP-LOOKUP). Returns KEYMAP."
   (let ((normalized (mapcar #'normalize-key-descriptor key-sequence))
         (table (keymap-table keymap)))
     (loop for (key . rest) on normalized

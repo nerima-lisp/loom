@@ -136,6 +136,7 @@
               ".lisp"
               ".md"
               ".nix"
+              ".patch"
               ".yml"
               ".yaml"
               ".css"
@@ -152,6 +153,7 @@
             type == "directory"
             && !(builtins.elem pathName [
               ".git"
+              ".jj"
               ".serena"
               ".worktrees"
               "coverage"
@@ -205,7 +207,11 @@
           };
           clTtyKit = sibling {
             name = "cl-tty-kit";
-            source = cl-tty-kit;
+            source = nixpkgs.legacyPackages.${ctx.system}.applyPatches {
+              name = "cl-tty-kit-wide-character-source";
+              src = cl-tty-kit;
+              patches = [ ./patches/cl-tty-kit-wide-character-rendering.patch ];
+            };
             dependencies = [
               clCodecKit
               clConcurrentKit
@@ -329,6 +335,7 @@
           clRegexKit
           clBoundaryKit
           clConcurrentKit
+          clDateKit
           clJsonKit
           clLogKit
           clProcessKit

@@ -81,8 +81,8 @@ remove`. Do not delete a worktree until its commit is reachable from `main`.
 
 When a named branch already contains the complete work unit, keep its existing
 commits and commit any remaining unstaged changes separately. Verify that the
-branch tip is an ancestor of the current remote `main`, then push the branch tip
-to `main` as a fast-forward. If the branch tip is already in `main`, do not
+current remote `main` is an ancestor of the branch tip, then push the branch
+tip to `main` as a fast-forward. If the branch tip is already in `main`, do not
 create a duplicate commit. After confirming the remote tip, remove the worktree
 and delete both the finished local branch and its remote branch. Worktrees
 outside the repository's active worktree root may be inspected but must be
@@ -143,9 +143,11 @@ how many registered `command-spec` names the scenarios exercise; pass
 
 The ordinary test process has a 1,800-second outer timeout and cl-weave's test
 runner gives each example a 40-second timeout. Coverage has a 1,800-second
-outer timeout;
-the PTY suite gives each interaction 10 seconds. These limits are part of the
-development contract and should be changed only with a measured reason.
+outer timeout. The PTY runner applies a 10-second deadline to each complete
+scenario, reserving five seconds for cleanup. Real cleanup must be verified
+against that total budget; the current failures are recorded in the
+[verification ledger](../notes/verification-ledger.md). These limits are part
+of the development contract and should be changed only with a measured reason.
 
 Feature code that invokes an external command uses `run-shell-command`, which
 has a 30-second default timeout. Callers can pass `:timeout-seconds` when a

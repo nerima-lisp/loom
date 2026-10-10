@@ -11,7 +11,9 @@
         (%perform-yank buffer text count)))))
 
 (defun yank-pop ()
-  "Replace the previous yank with the next entry in the kill ring."
+  "Replace the previous yank, advancing through the kill ring by the numeric prefix.
+The default is one entry; negative values reverse direction, zero keeps the
+same entry, and the index wraps around the ring."
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (let ((buffer (%selected-buffer)))
     (multiple-value-bind (ring start ranges index repeat-count)

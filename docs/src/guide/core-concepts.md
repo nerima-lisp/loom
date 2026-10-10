@@ -71,15 +71,16 @@ narrowed buffers leave the original text unchanged.
 ## Git status, staging, and diff
 
 `C-x g` and `M-x git-status` run `git status --short --branch` from the current
-project root and show standard output, standard error, and the exit status in
-the read-only `*Loom-Git-Status*` buffer. `M-x git-diff` displays the
+project root and show standard output in the read-only `*Loom-Git-Status*`
+buffer, falling back to standard error when standard output is empty.
+`M-x git-diff` displays the
 working-tree patch and `M-x git-diff-staged` displays the index patch in the
-read-only `*Loom-Git-Diff*` buffer. Git's standard output, standard error, and
-non-zero exit status remain visible in the result buffer. `M-x git-stage-file`
+read-only `*Loom-Git-Diff*` buffer, with the same output selection.
+Non-zero exit statuses are reported in the minibuffer. `M-x git-stage-file`
 prompts for a repository path and runs `git add` from the project root;
 `M-x git-unstage-file` removes that path from the index with
-`git restore --staged`. Paths are shell-quoted before execution, and each
-command reports its Git exit status in the minibuffer.
+`git restore --staged`. Paths are passed as arguments after `--`, not as shell
+command text. Both index commands report their outcome in the minibuffer.
 
 ## Terminal sessions
 
@@ -98,10 +99,12 @@ terminal capabilities remain a follow-up concern.
 
 ## Auto-save
 
-`M-x auto-save-mode` enables or disables automatic saving for all registered
-buffers, while `M-x toggle-auto-save` controls the selected buffer. The event
-loop periodically writes modified, writable file-backed buffers to a
-`#file-name#` sidecar without clearing their modified state. Unmodified and
+`M-x auto-save-mode` toggles the global mode, while `M-x toggle-auto-save`
+toggles the selected buffer's individual registration. Auto-save is enabled
+when either is active: removing an individual registration does not disable it
+while global mode is active, and disabling global mode preserves individual
+registrations. The event loop periodically writes modified, writable file-backed
+buffers to a `#file-name#` sidecar without clearing their modified state. Unmodified and
 read-only buffers are skipped. A normal buffer save runs the editor state's
 after-save hooks, which can remove the sidecar or trigger other save-follow-up
 work.
@@ -110,9 +113,10 @@ work.
 
 Directory discovery runs through a bounded concurrent runtime. Workers perform
 filesystem work, while cache updates and rendering are drained on the
-editor's render lane. A generation identifies the current request, allowing
-stale results to be discarded when the user changes directory or refreshes the
-tree.
+editor's render lane. Each directory has its own generation. Priming or
+invalidating that directory advances its generation, so results from an older
+generation are discarded. Navigating to or expanding a directory does not by
+itself advance the generation.
 
 This boundary keeps background I/O from mutating editor-visible state at
 arbitrary times. The lifecycle is explicit: create the runtime, prime or

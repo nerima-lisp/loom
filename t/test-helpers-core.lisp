@@ -52,20 +52,14 @@ test instead of repeating buffer construction and point setup."
   (window-buffer (window-tree-selected-window (editor-state-window-tree *editor-state*))))
 
 (defun %sandboxed-check-p ()
-  "True inside `checks.default`'s Nix sandbox, where LOOM_SANDBOXED_CHECK is
-set (see flake.nix's `overrideOutputs`).  A test that spawns a real child
-process and waits on its output depends on OS-level PTY/pipe delivery that
-the Nix Linux build sandbox does not reliably provide -- see
-.github/workflows/ci.yml's \"a real PTY/TTY\" note -- so such a test should
-SKIP rather than hang or fail there, while still running everywhere else
-\(a plain `sbcl --script run-tests.lisp`, `nix develop`'s `test` alias\)."
+  "Detect the sandbox-check flag set by flake.nix for test and coverage builds.
+The three real-process tests using this predicate skip when the flag is set;
+it does not detect the operating system or whether a PTY is available."
   (uiop:getenvp "LOOM_SANDBOXED_CHECK"))
 
 (defun %fresh-file-tree (root)
-  "Build a FILE-TREE rooted at ROOT with a real, disk-backed child-lister
-\(LOOM-FS-LIST-DIRECTORY, the same one MAIN wires up in
-%INITIALIZE-EDITOR-STATE\), for exercising the file-tree application
-  commands \(commands-window.lisp\) against a real temporary directory."
+  "Install the disk-backed child-lister used by %MAKE-STARTUP-EDITOR-STATE.
+File-tree command tests can then operate on a real temporary directory."
   (let ((tree (make-file-tree root)))
     (loom/feature/file-tree:file-tree-install-child-lister
      tree

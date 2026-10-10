@@ -8,9 +8,9 @@
   "The captured result of one shell command invocation.
 
 COMMAND is the command string passed to the shell.  DIRECTORY is the
-canonical directory in which it ran.  OUTPUT and ERROR-OUTPUT preserve the
-two process streams separately so callers can display or inspect them
-independently."
+canonical directory in which it ran.  OUTPUT contains captured stdout.
+ERROR-OUTPUT contains captured stderr unless the command timed out; on
+timeout, it contains a timeout diagnostic instead."
   command
   directory
   output

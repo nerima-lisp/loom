@@ -1,10 +1,9 @@
 (in-package #:loom/feature/search)
 
 (defparameter +regex-search-timeout-seconds+ 1.0
-  "Deadline for each regex operation in the search feature.
-
-Keeping this policy beside the regex domain logic makes the core editor
-independent of search-engine concerns while still bounding the event loop.")
+  "Timeout in seconds passed to each regex scan or match-enumeration call.
+A search cycle may make two such calls; this is not a deadline for the entire
+search command.")
 
 (defun %scan-next-occurrence (text pattern start)
   "Return the domain-local regex match at or after START, with wrap-around."

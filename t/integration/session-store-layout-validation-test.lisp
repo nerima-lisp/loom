@@ -189,3 +189,34 @@
                   (make-session-bookmark-snapshot
                    :name "spot" :path nil :buffer-name nil :line 0 :column 0)))
       (signals error (validate-session-snapshot snapshot))))
+
+(describe
+  "session-store cyclic snapshot validation"
+  (it
+    "rejects cycles with diagnostics that remain printable outside validation"
+    (dolist (case '(:snapshot :layout :buffer :index))
+      (let* ((snapshot (%session-test-snapshot))
+             (cycle (list :cycle)))
+        (expect (validate-session-snapshot snapshot) :to-be snapshot)
+        (setf (cdr cycle) cycle)
+        (ecase case
+          (:snapshot (setf snapshot cycle))
+          (:layout
+           (let ((node (list :split :horizontal '(:leaf 0 0) nil)))
+             (setf (fourth node) node
+                   (session-workspace-snapshot-layout
+                    (first (session-snapshot-workspaces snapshot))) node)))
+          (:buffer
+           (let ((buffer (first (session-snapshot-buffers snapshot))))
+             (setf (session-buffer-snapshot-name buffer) buffer)))
+          (:index
+           (setf (session-snapshot-current-workspace-index snapshot) cycle)))
+        (let ((condition (handler-case
+                             (progn (validate-session-snapshot snapshot) nil)
+                           (error (condition) condition))))
+          (expect (typep condition 'error) :to-be-truthy)
+          (let* ((*print-circle* nil)
+                 (message (princ-to-string condition)))
+            (expect message :to-contain "validate-session-snapshot:")
+            (expect message :to-contain "#1#")
+            (expect (< (length message) 4096) :to-be-truthy)))))))

@@ -1,7 +1,8 @@
 (in-package #:loom/feature/lsp)
 
 (defun lsp-session-start (session)
-  "Send the LSP initialize request for SESSION once."
+  "Send initialize unless SESSION is already initialized or an initialization
+request is pending."
   (when (lsp-session-closed-p session)
     (error "Cannot start a closed LSP session"))
   (when (lsp-session-pending-shutdown-id session)
@@ -68,10 +69,9 @@
 (defun lsp-session-stop (session &key (timeout *lsp-shutdown-timeout-seconds*))
   "Gracefully stop SESSION, falling back to EXIT after TIMEOUT seconds.
 
-The operation is idempotent. An initialized server receives a shutdown
-request and, when it acknowledges that request, the required exit
-notification. A non-responsive or malformed server still receives EXIT
-before the transport is closed."
+The operation is idempotent. For an initialized session, the client attempts
+a shutdown request and waits for acknowledgement or TIMEOUT. EXIT is
+attempted before closing the transport; delivery is not guaranteed."
   (check-type timeout (real 0))
   (unless (lsp-session-closed-p session)
     (if (lsp-session-initialized-p session)

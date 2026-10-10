@@ -59,10 +59,10 @@ parenthesis that belongs to an enclosing list, or an unbalanced opening one."
                                             (%sexp-syntax-classes text)))
   "Return (VALUES PAREN MATCH) for the parenthesis point at OFFSET is next to.
 
-Point is adjacent to a parenthesis either by sitting on an opening one or by
-sitting just after a closing one, which is how Emacs decides. Returns NIL when
-point is next to no parenthesis, and NIL for MATCH when the parentheses do not
-balance -- an unbalanced list must not be shown a match it does not have."
+Point is adjacent when on an opening delimiter or just after a closing one.
+Returns NIL when point is next to no delimiter, and NIL for MATCH when the
+scanner finds no match. The scanner counts delimiter depth without checking
+that opening and closing delimiter types agree."
   (cond
     ((and (< offset (length text))
           (%sexp-open-p text classes offset))

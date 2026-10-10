@@ -32,7 +32,8 @@ when point is not inside a list, or when the list it is inside never closes."
                   (member character +sexp-close-characters+ :test #'char=))))))
 
 (defun %forward-barf-delimiter (text target delimiter)
-  "Return DELIMITER positioned after the expression at TARGET."
+  "Return DELIMITER for insertion at TARGET before the last expression.
+Append a space when the character at TARGET requires separation."
   (if (%structural-separator-needed-p text target)
       (concatenate 'string delimiter " ")
       delimiter))

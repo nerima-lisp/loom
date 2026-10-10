@@ -47,9 +47,9 @@ BUFFER's point on its current line."
   (%buffer-point-column buffer))
 
 (defun buffer-set-point (buffer line column)
-  "Move BUFFER's point to the zero-based (LINE, COLUMN) position, clamping
-or signalling an error on an out-of-range position at the implementation's
-discretion. Returns BUFFER."
+  "Move BUFFER's point to the zero-based (LINE, COLUMN) position.
+Clamp LINE and COLUMN to valid text bounds, then clamp the resulting offset
+to BUFFER's visible region. Returns BUFFER."
   (multiple-value-bind (clamped-line clamped-column) (%clamp-position buffer line column)
     (let ((offset
             (%clamp-offset-to-narrowing

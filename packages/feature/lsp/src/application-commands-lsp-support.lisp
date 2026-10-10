@@ -22,6 +22,51 @@
              (unless (string= trimmed "") trimmed)))
       discovered-command))
 
+(defun %lsp-confirm-discovered-command (command root configuration buffer minibuffer)
+  (let* ((window (loom/application:%selected-window))
+         (scroll-line (loom/feature/window:window-scroll-line window))
+         (scroll-column (loom/feature/window:window-scroll-column window))
+         (scroll-sub-row (loom/feature/window:window-scroll-sub-row window))
+         (review (make-buffer
+                  :name "*LSP command review*"
+                  :initial-content
+                  (format nil "Discovered LSP command~%PageDown/C-v: next; PageUp/M-v: previous~%Config: ~A~%Directory: ~A~%Command: ~A~%"
+                          configuration root command))))
+    ;; The single-line minibuffer truncates long paths; review them in a wrapped buffer.
+    (buffer-set-truncate-lines review nil)
+    (buffer-set-read-only review t)
+    (loom/feature/window:window-set-buffer window review)
+    (labels ((restore-buffer ()
+               (loom/feature/window:window-set-buffer window buffer)
+               (setf (loom/feature/window:window-scroll-line window) scroll-line
+                     (loom/feature/window:window-scroll-column window) scroll-column
+                     (loom/feature/window:window-scroll-sub-row window) scroll-sub-row))
+             (review-key (key-event)
+               (let* ((descriptor (loom::%key-event->descriptor key-event))
+                      (movement
+                        (cond
+                          ((or (equal descriptor '(nil . :page-down))
+                               (equal descriptor '((:control) . #\v)))
+                           #'loom::%next-visual-line-once)
+                          ((or (equal descriptor '(nil . :page-up))
+                               (equal descriptor '((:alt) . #\v)))
+                           #'loom::%previous-visual-line-once))))
+                 (when movement
+                   (dotimes (row (max 1 (1- (loom/feature/window:window-height window))))
+                     (funcall movement))
+                   t))))
+      (loom:minibuffer-activate
+       minibuffer "Run discovered LSP command? Type yes: "
+       :on-key #'review-key
+       :on-cancel (lambda ()
+                    (restore-buffer)
+                    (minibuffer-message minibuffer "Quit"))
+       :on-confirm (lambda (answer)
+                     (restore-buffer)
+                     (if (string= answer "yes")
+                         (%lsp-start-with-command command root buffer minibuffer)
+                         (minibuffer-message minibuffer "LSP start cancelled.")))))))
+
 (defun %install-lsp-session (new-session)
   (let ((old-session (editor-state-lsp-session *editor-state*)))
     (setf (editor-state-lsp-session *editor-state*) new-session)

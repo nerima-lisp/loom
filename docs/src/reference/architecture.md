@@ -12,7 +12,7 @@ src/
 │                    keybinding composition.
 ├── infrastructure/  Shared terminal rendering boundary.
 ├── presentation/    Shared screen composition from editor state.
-└── main.lisp        Composition root: CLI definition and raw-terminal loop.
+└── main.lisp        Executable trampoline into the cl-cli application.
 
 packages/
 ├── core/editor/     Reusable buffer storage and movement/editing vocabulary.
@@ -30,10 +30,10 @@ compatibility facade is maintained.
 
 The piece-table representation and pure mutation/range helpers live in
 `packages/core/editor/src/domain-buffer-storage.lisp`;
-`packages/core/editor/src/domain-buffer.lisp` exposes the buffer protocol and
-position/span types over that state. Keeping these responsibilities separate
-makes the representation invariants independently testable without introducing
-an I/O boundary into the domain layer.
+`packages/core/editor/src/domain-buffer.lisp` exposes the buffer protocol over
+that state, and `domain-buffer-positions.lisp` defines position/span types.
+Keeping these responsibilities separate makes the representation invariants
+independently testable without introducing an I/O boundary into the domain layer.
 
 The buffer protocol keeps the existing Emacs-style undo ring and an explicit
 redo history. Undo/redo replay uses storage primitives without clearing redo;
@@ -45,10 +45,11 @@ marks buffers loaded from non-writable real files read-only and refuses to save
 read-only buffers. `C-x C-q` changes the state explicitly at the command layer.
 
 The window feature follows the same split: `domain-window.lisp` contains the
-tree model, layout calculation, and serialization, while
+tree model, `domain-window-support.lisp` calculates window rectangles, and
+`domain-window-layout.lisp` describes and reconstructs layouts.
 `domain-window-operations.lisp` contains split, selection, buffer assignment,
-and resize mutations. The operation file depends on the model but not on the
-terminal renderer.
+scroll, and resize mutations. The operation file depends on the model but not
+on the terminal renderer.
 
 Terminal input protocol values follow the same data/logic boundary in
 `packages/feature/terminal/src/application-terminal-input-support.lisp`.
@@ -86,12 +87,12 @@ buffer-facing boundary methods live in
 `*editor-state*` special variable, minibuffer state, command registry, and
 keybinding composition. The editor state also owns the bounded canonical
 recent-file list and the named-bookmark table: file-tree commands update the
-recent-file list when files are opened or saved, while the shared misc
-commands create, resolve, list, and delete bookmarks. Feature application
-files orchestrate their own domain and infrastructure boundaries. Minibuffer code calls `cl-tty-kit` and
+recent-file list when files are opened or saved, while `commands-bookmark.lisp`
+and `commands-bookmark-support.lisp` create, resolve, list, and delete bookmarks.
+Feature application files orchestrate their own domain and infrastructure
+boundaries. Minibuffer code calls `cl-tty-kit` and
 `cl-history-kit` directly, and the M-x registry uses the local command
-specifications directly. There is no wrapper layer whose only purpose is to
-hide a package that already provides the required operation. `make-editor-state`
+specifications directly. `make-editor-state`
 also establishes the workspace invariant: when a caller does not supply a
 manager, the initial window tree is installed as the named `main` workspace.
 Commands therefore require a manager instead of reconstructing one through an
@@ -129,14 +130,20 @@ The editor-agnostic candidate state and key handling live in
 bounded popup around its buffer anchor.
 `lsp-discover-command`, in `infrastructure-lsp-discovery.lisp`, searches the
 current path's ancestor directories for the nearest `.loom-lsp`; its first
-non-empty, non-comment line is the trusted server command. `lsp-start` presents that command as the default, while an
-explicit prompt value overrides it. Dynamic registration and requests beyond
+non-empty, non-comment line supplies the server shell command. `lsp-start`
+presents it as the default, but RET only opens a wrapped review of the configuration
+pathname, execution directory, and command. Only an exact `yes` at the trust prompt
+permits process construction. PageDown/C-v and PageUp/M-v move through wrapped
+review rows without editing the trust answer. Blank, rejected, invalid, or cancelled confirmation
+leaves the existing session unchanged. An explicit command prompt value overrides
+discovery without this extra confirmation; command shell syntax is preserved.
+Dynamic registration and requests beyond
 the current completion/definition/diagnostics/document-sync slice remain
 outside this boundary.
 
 The shell feature keeps process execution and presentation data separate:
 `domain-shell.lisp` defines the captured command result,
-`infrastructure-shell.lisp` runs a command through UIOP while preserving
+`infrastructure-shell.lisp` runs a command through `cl-process-kit` while preserving
 standard output, standard error, the working directory, and the exit code, and
 `application-commands-shell.lisp` implements `M-!`/`M-x pipe-command`. The
 interactive command runs in the selected file's parent directory and appends
@@ -150,20 +157,22 @@ zero exit status. The command runs in the file's directory when available and
 preserves point and mark offsets; read-only and narrowed buffers are rejected
 before process execution. The replacement is recorded as one undo group.
 
-The Git feature reuses project-root discovery and the shell result boundary.
+The Git feature reuses project-root discovery and runs Git through `cl-vcs-kit`.
 `C-x g` runs concise branch-aware status at the current project root and
 renders the captured output in a generated read-only `*Loom-Git-Status*` buffer.
 `M-x git-diff` and `M-x git-diff-staged` use the same boundary for working-tree
 and index patches, rendering both in the read-only `*Loom-Git-Diff*` buffer.
+These buffers show stdout, falling back to stderr when stdout is empty;
+non-zero exit statuses are reported in the minibuffer.
 `M-x git-stage-file` and `M-x git-unstage-file` reuse the same project-root
-lookup to run index mutations after a minibuffer path prompt. Paths are quoted
-as POSIX shell words before they reach the shell command boundary. Non-zero Git
-exits remain visible as result data or minibuffer status, so an uncommitted or
-non-repository directory does not turn process status into an editor failure.
+lookup to run index mutations after a minibuffer path prompt. Paths are passed
+as arguments after `--`, not as shell command text. The index commands report
+their outcome in the minibuffer.
 
 The terminal feature owns PTY-backed child-process sessions. Its domain object
-`domain-terminal.lisp` owns the bounded `terminal-screen` model and ANSI
-rendering parser, while `domain-terminal-session.lisp` owns the running PTY
+`domain-terminal.lisp` owns the bounded `terminal-screen` model;
+`domain-terminal-parser.lisp` owns the ANSI parser, while
+`domain-terminal-session.lisp` owns the running PTY
 process, selected buffer, raw output, liveness, and exit state. The
 infrastructure layer starts, reads, writes, resizes, and closes the PTY; the
 application layer translates key events and exposes `terminal` and
@@ -175,9 +184,10 @@ switching; it is not a full VT terminal emulator.
 The auto-save feature keeps its sidecar naming and eligibility rules in
 `domain-auto-save.lisp`; `infrastructure-auto-save.lisp` writes the complete
 buffer text without changing the buffer's normal modified state, and
-`application-commands-auto-save.lisp` owns global/per-buffer mode and interval
-gating. The event loop invokes the pass after input dispatch, so auto-save does
-not introduce a second writer thread into the editor state.
+`application-commands-auto-save.lisp` owns global/per-buffer mode commands.
+`application-auto-save-support.lisp` selects enabled buffers and gates passes
+by the configured interval. The event loop invokes the pass after input dispatch,
+so auto-save does not introduce a second writer thread into the editor state.
 
 The bounded asynchronous directory-listing runtime is split across
 `packages/feature/file-tree/src/infrastructure-concurrent-runtime-state.lisp`
@@ -198,7 +208,7 @@ functions that read and mutate `*editor-state*`, which lets keymaps store bare
 function designators. `src/application/command-definitions.lisp` is the
 declarative command catalogue; `src/application/command-registry.lisp` owns
 specification storage, completion candidates, and M-x lookup.
-`commands-internal.lisp` supplies the continuation-based `with-prompts` flow
+`commands-prompts.lisp` supplies the continuation-based `with-prompts` flow
 used by prompts, while `commands-keybindings.lisp` installs the default
 bindings separately from the prompt protocol.
 
@@ -225,9 +235,10 @@ presentation layer includes the active workspace name in the shortcut/status
 line. Session v5 persists every workspace's layout and selected window.
 
 `src/presentation/layout.lisp` composes the current state into screen regions;
-`src/presentation/layout-minibuffer.lisp` owns minibuffer and completion-popup
-rendering so the main layout module remains focused on geometry and region
-composition. Frame composition is kept in
+`src/presentation/layout-minibuffer.lisp` owns minibuffer rendering, and
+`src/presentation/layout-completion.lisp` draws the completion popup. The main
+layout module remains focused on geometry and region composition. Frame
+composition is kept in
 `src/presentation/frame-layout.lisp`, while truncation and wrapping viewport
 following live in `src/presentation/frame-layout-viewport.lisp`; the former
 does not duplicate the latter's point-visibility rules.
@@ -260,15 +271,16 @@ is what keeps a jump costing the window's height rather than the distance
 full-width character does not shift it.
 
 Structural motion needs to know which parentheses are structure.
-`packages/core/editor/src/application-sexp-motion.lisp` classifies the whole
+`packages/core/editor/src/application-sexp-syntax.lisp` classifies the whole
 visible text in one left-to-right pass -- reader state is what decides a
 character's class, so there is no reading one in isolation -- and marks strings,
 `;` and `#| |#` comments, and the payload of a `#\` character literal as
 something other than code. `forward-sexp` and its siblings, `kill-sexp`, and
 `%layout-draw-matching-paren` all work against that classification, which is why
 a parenthesis inside a string is stepped over as part of its atom rather than
-counted, and why an unbalanced form is shown no partner at all instead of a
-wrong one. `C-M-` chords made the key-form shape variable-length, so
+counted. Matching uses delimiter depth without checking that opening and closing
+types agree; no partner is shown when the scanner cannot find a corresponding
+depth. `C-M-` chords made the key-form shape variable-length, so
 `defkeys-chord` validates modifiers and code explicitly rather than relying on
 a fixed arity, and `%key-event->descriptor` keeps the `:alt` an ESC-prefixed
 Ctrl+letter carries instead of discarding it.
@@ -295,11 +307,15 @@ renderer has to read it: `%layout-draw-isearch` repaints every match, and the
 one point sits on in a second style, using the same row and column geometry the
 buffer text was drawn with. It is transient and never reaches session v5.
 
-`src/application/startup.lisp` is the composition root for argv parsing,
-editor-state construction, terminal-session setup, and asynchronous resource
-shutdown. `src/application/event-loop.lisp` owns frame rendering, resize
+`src/application/startup-cli.lisp` defines the CLI application, and
+`src/main.lisp` is the executable trampoline that dispatches argv through
+`cl-cli`. `src/application/startup.lisp` coordinates editor-state construction,
+the terminal session, and asynchronous resource shutdown;
+`src/application/startup-services.lisp` establishes the terminal session.
+`src/application/event-loop.lisp` owns frame rendering, resize
 polling, and the event-loop boundary. `src/application/input-dispatch.lisp`
 owns raw-octet reading, event decoding, and dispatch to minibuffer,
+self-insert, or the global keymap.
 
 Startup failures cross the application boundary through `cl-log-kit` directly.
 The logger emits a human-readable error on `*error-output*` while retaining the
@@ -308,8 +324,6 @@ remain useful in a terminal and are also identifiable by process supervisors.
 The dependency is declared in both `loom.asd` and the flake's runtime
 `lispDependencies`; the dependency contract test keeps those declarations in
 sync.
-self-insert, or the global keymap. `src/main.lisp` is only the executable
-trampoline.
 
 ## Toolkit Foundation
 
@@ -332,7 +346,8 @@ trampoline.
   regular-expression engine used by search-forward and replace-string,
   bounded by the editor's regex search timeout.
 - **[cl-cli](https://github.com/nerima-lisp/cl-cli)** parses the root
-  positional argument and the `--help`/`--version` options in `main.lisp`.
+  positional argument and the `--help`/`--version` options using the application
+  defined in `startup-cli.lisp` and dispatched by `main.lisp`.
 - **[cl-json-kit](https://github.com/nerima-lisp/cl-json-kit)** parses and
   constructs the JSON objects exchanged by the LSP service.
 - **[cl-concurrent-kit](https://github.com/nerima-lisp/cl-concurrent-kit)**
@@ -341,8 +356,8 @@ trampoline.
 
 The main ASDF system declares these direct runtime dependencies: `cl-tty-kit`,
 `cl-host-kit`, `cl-history-kit`, `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`,
-`cl-boundary-kit`, `cl-json-kit`, `cl-concurrent-kit`, `cl-log-kit`,
-`cl-vcs-kit`, and `cl-resilience-kit`. The
+`cl-boundary-kit`, `cl-date-kit`, `cl-json-kit`, `cl-concurrent-kit`, `cl-log-kit`,
+`cl-process-kit`, `cl-vcs-kit`, and `cl-resilience-kit`. The
 test system adds `cl-weave`, `cl-date-kit`, `cl-codec-kit`, `cl-parser-kit`,
 `cl-regex-kit`, `cl-boundary-kit`, `cl-concurrent-kit`, `cl-process-kit`, and
 `cl-vcs-kit`; these are explicit because the tests exercise their public
@@ -427,6 +442,4 @@ accepted task count, and the derived speedup:
 nix develop -c sbcl --script scripts/benchmark-concurrency.lisp
 ```
 
-The benchmark is observational and does not establish a performance target;
-the 2026 refactor objective is the bounded, race-safe file-tree runtime and
-its test coverage, not an unimplemented feature claim.
+The benchmark is observational and does not establish a performance target.

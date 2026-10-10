@@ -37,7 +37,8 @@
           ((<= 0 above) above))))
 
 (defun %layout-completion-origin (renderer window completion height)
-  "Return the popup origin, or NIL when its anchor is off screen."
+  "Return a popup origin when the anchor row is visible, its column is
+nonnegative, and vertical placement fits; otherwise return NIL."
   (multiple-value-bind (column row)
       (%layout-buffer-cell renderer window
                            (loom/feature/window:window-buffer window)

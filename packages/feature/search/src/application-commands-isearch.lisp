@@ -104,8 +104,8 @@ would have been recognized there."
 (defun isearch-forward ()
   "Search forward as the pattern is typed (C-s).
 
-Each keystroke moves point to the next match, a further C-s advances to the one
-after it and C-r turns around, RET keeps point where the search left it and
+Editing the pattern selects a match from the session's search offset; C-s repeats
+forward and C-r repeats backward. RET keeps point where the search left it and
 files the pattern in the minibuffer history, and C-g puts point back where the
 search started. When nothing matches, the prompt says so and point stops
 moving."

@@ -17,15 +17,9 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
   "Save BUFFER to PATH via BUFFER-SAVE, unless PATH already names an
 existing, unrelated file.
 
-BUFFER-SAVE's real method (infrastructure/filesystem.lisp) writes via
-HOST-KIT:WRITE-FILE-STRING with default :IF-EXISTS :SUPERSEDE semantics,
-which would silently clobber such a file, so HOST-KIT:FILE-EXISTS-P
-(exported by cl-host-kit) guards it: on a hit, warn instead of writing
-rather than building a general confirmation-dialog subsystem -- BUFFER is
-already installed in its window with PATH attached by the caller, so the
-user's very next C-x C-s goes through SAVE-BUFFER's ordinary
-already-has-a-path fast path and writes for real, which serves as the
-required second, explicit confirmation."
+HOST-KIT:FILE-EXISTS-P guards the first save because BUFFER-SAVE can overwrite
+an existing file. BUFFER is already installed in its window with PATH attached,
+so a second C-x C-s takes SAVE-BUFFER's existing-path branch and overwrites it."
   (if (host-kit:file-exists-p path)
       (minibuffer-message
        (editor-state-minibuffer *editor-state*)
@@ -47,14 +41,8 @@ required second, explicit confirmation."
     buffer))
 
 (defun %prompt-and-save-new-buffer (window buffer)
-  "Prompt for a path and save BUFFER (which has none yet) under it.
-
-The buffer protocol exposes no operation to attach a path to an existing
-buffer after the fact (BUFFER-PATH has no SETF method); instead of reaching
-into domain/buffer.lisp's internal %BUFFER-PATH slot, this builds a fresh
-buffer carrying the same text and the new path via the public
-MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
-%TRANSFER-POINT-AND-MARK and %SAVE-BUFFER-OR-WARN-OVERWRITE)."
+  "Prompt for a path, replace BUFFER in WINDOW with a file buffer, and save it.
+The replacement retains text, point, and mark, but not undo history."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((path "Save file: "))
@@ -77,7 +65,7 @@ MAKE-BUFFER/BUFFER-TEXT operations, swaps it into WINDOW, and saves it (see
 
 The selected window visits a fresh buffer carrying the original text and
 point/mark, leaving the previous buffer in the session registry as a separate
-buffer, like Emacs's C-x C-w visit behavior."
+buffer. Undo history is not transferred."
   (let* ((window (%selected-window))
          (buffer (loom/feature/window:window-buffer window)))
     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)

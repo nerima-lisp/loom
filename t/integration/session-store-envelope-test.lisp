@@ -73,4 +73,39 @@
           (reject "empty-buffers.sexp"
                   (format nil
                           "(:loom-session 5 :buffers () :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
-                          valid-workspace-form)))))))
+                          valid-workspace-form))
+          (reject "cyclic-recent-files.sexp"
+                  (format nil
+                          "(:loom-session 5 :buffers (~A) :recent-files #1=(\"recent\" . #1#) :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-buffer-form
+                          valid-workspace-form))
+          (reject "cyclic-top-level.sexp"
+                  (format nil
+                          "#1=(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0 . #1#)"
+                          valid-buffer-form
+                          valid-workspace-form))
+          (reject "cyclic-version.sexp"
+                  (format nil
+                          "(:loom-session #1=(5 . #1#) :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces (~A) :current-workspace-index 0)"
+                          valid-buffer-form
+                          valid-workspace-form))
+          (reject "cyclic-layout.sexp"
+                  (format nil
+                          "(:loom-session 5 :buffers (~A) :recent-files () :bookmarks () :command-history () :workspaces ((:name \"main\" :layout #1=(:split :horizontal (:leaf 0 0) #1#) :selected-window-index 0)) :current-workspace-index 0)"
+                          valid-buffer-form))))))
+
+  (it
+    "keeps cyclic input diagnostics printable after the reader unwinds"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "cyclic.sexp" directory)))
+        (host-kit:write-file-string "#1=(:loom-session 5 . #1#)" path)
+        (let ((condition (handler-case
+                             (progn (session-store-read path) nil)
+                           (error (condition) condition))))
+          (expect (typep condition 'error) :to-be-truthy)
+          (let* ((*print-circle* nil)
+                 (message (princ-to-string condition)))
+            (expect message :to-contain "session-store-read: cannot read")
+            (expect message :to-contain "expected a keyword plist")
+            (expect message :to-contain "#1#")
+            (expect (< (length message) 4096) :to-be-truthy)))))))

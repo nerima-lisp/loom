@@ -109,7 +109,9 @@
                                                             selected-in-display-order)))))))))
 
 (defun %layout-mode-line (renderer buffer &optional width workspace-name)
-  "Return BUFFER's mode line clipped to WIDTH cells from the right."
+  "Clip BUFFER's mode line from the right without WORKSPACE-NAME.
+With WORKSPACE-NAME, select fields by priority and fit the workspace suffix
+into the remaining width."
   (let ((width (or width (loom-renderer-width renderer))))
     (if workspace-name
         (%layout-mode-line-workspace renderer buffer width workspace-name)
@@ -214,12 +216,16 @@ the mode line or another footer in the remaining window rows."
                  (%position-to-offset
                   buffer
                   (loom/feature/lsp:lsp-position-line start)
-                  (loom/feature/lsp:lsp-position-character start)))
+                  (loom/feature/lsp:lsp-character-to-column
+                   (buffer-line buffer (loom/feature/lsp:lsp-position-line start))
+                   (loom/feature/lsp:lsp-position-character start))))
                (end-offset
                  (%position-to-offset
                   buffer
                   (loom/feature/lsp:lsp-position-line end)
-                  (loom/feature/lsp:lsp-position-character end)))
+                  (loom/feature/lsp:lsp-character-to-column
+                   (buffer-line buffer (loom/feature/lsp:lsp-position-line end))
+                   (loom/feature/lsp:lsp-position-character end))))
                (visible-start (buffer-narrow-start-offset buffer))
                (visible-end (buffer-narrow-end-offset buffer))
                (clipped-start (max start-offset visible-start))

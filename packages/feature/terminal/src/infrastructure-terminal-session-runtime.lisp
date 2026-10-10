@@ -48,13 +48,16 @@
     (buffer-set-read-only buffer t)))
 
 (defun %poll-terminal-session-pty (session pty)
-  (let ((chunk (%terminal-read-available pty)))
+  ;; Observe exit before draining so a child that exits during this poll gets
+  ;; another read on the next poll instead of losing its final output.
+  (let* ((alive-p (cl-tty-kit:pty-alive-p pty))
+         (chunk (%terminal-read-available pty)))
     (unless (string= chunk "")
       (terminal-session-feed-output session chunk)
       (%replace-terminal-buffer
        (terminal-session-buffer session)
        (terminal-session-output session)))
-    (unless (cl-tty-kit:pty-alive-p pty)
+    (unless alive-p
       (%close-terminal-session session))))
 
 (defun terminal-session-poll (session)
@@ -67,14 +70,15 @@
   session)
 
 (defun terminal-session-send (session text)
-  "Send TEXT to SESSION's PTY, returning SESSION when it is alive."
+  "Send TEXT and return SESSION when it is alive and has a PTY; otherwise NIL."
   (when (and (terminal-session-alive-p session)
              (terminal-session-pty session))
     (cl-tty-kit:pty-write (terminal-session-pty session) text)
     session))
 
 (defun terminal-session-resize (session columns rows)
-  "Resize SESSION's screen and PTY to COLUMNS by ROWS."
+  "For positive integer dimensions, resize SESSION's screen and its live PTY.
+Return SESSION whether or not resizing occurs."
   (when (and (integerp columns)
              (plusp columns)
              (integerp rows)

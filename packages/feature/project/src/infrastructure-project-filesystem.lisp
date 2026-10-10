@@ -50,7 +50,7 @@
      (loom/feature/file-tree:loom-fs-list-directory directory))))
 
 (defun project-list-files (root)
-  "Return regular files below ROOT, excluding generated/vendor directories."
+  "Return regular files below ROOT, excluding PROJECT-IGNORED-DIRECTORY-NAMES."
   (let ((files nil))
     (%project-walk-files-cps
      (project-directory-path root)
@@ -59,7 +59,8 @@
     (sort files #'string< :key #'namestring)))
 
 (defun project-search-files (root query)
-  "Search text files below ROOT and return path/match plist entries."
+  "Read regular files below ROOT and return path/match plist entries.
+Skip files whose loading or search signals an error."
   (loop for path in (project-list-files root)
         for matches = (ignore-errors
                         (project-search-lines query

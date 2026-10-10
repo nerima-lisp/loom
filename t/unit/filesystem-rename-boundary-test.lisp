@@ -56,7 +56,68 @@
       (signals error
         (file-tree-rename nil
                           (merge-pathnames "missing.txt" dir)
-                          (merge-pathnames "new.txt" dir))))))
+                          (merge-pathnames "new.txt" dir)))))
+
+  (it
+    "moves a directory inside the file-tree root"
+    (host-kit:with-temporary-directory (root)
+      (let ((old-path (merge-pathnames "old/" root))
+            (new-path (merge-pathnames "new/" root))
+            (tree (make-file-tree root)))
+        (file-tree-create-directory tree old-path)
+        (expect (file-tree-rename tree old-path new-path) :to-equal new-path)
+        (expect (host-kit:directory-exists-p old-path) :to-be-falsy)
+        (expect (host-kit:directory-exists-p new-path) :to-be-truthy))))
+
+  (it
+    "rejects a rename destination outside the file-tree root"
+    (host-kit:with-temporary-directory (outside)
+      (host-kit:with-temporary-directory (root)
+        (let ((old-path (merge-pathnames "old.txt" root))
+              (new-path (merge-pathnames "new.txt" outside))
+              (tree (make-file-tree root)))
+          (host-kit:write-file-string "contents" old-path)
+          (signals error (file-tree-rename tree old-path new-path))
+          (expect (host-kit:path-exists-p old-path) :to-be-truthy)
+          (expect (host-kit:path-exists-p new-path) :to-be-falsy))))))
+
+(describe
+  "file-tree missing root boundary"
+  (it
+    "rejects creating a sibling of a missing root without a trailing slash"
+    (host-kit:with-temporary-directory (base)
+      (let ((tree (make-file-tree (merge-pathnames "missing-root" base)))
+            (sibling (merge-pathnames "sibling.txt" base)))
+        (signals error (file-tree-create-file tree sibling))
+        (expect (host-kit:path-exists-p sibling) :to-be-falsy))))
+
+  (it
+    "preserves a sibling when deleting through a missing root"
+    (host-kit:with-temporary-directory (base)
+      (let ((tree (make-file-tree (merge-pathnames "missing-root" base)))
+            (sibling (merge-pathnames "sibling.txt" base)))
+        (host-kit:write-file-string "contents" sibling)
+        (signals error (file-tree-delete tree sibling))
+        (expect (host-kit:read-file-string sibling) :to-equal "contents"))))
+
+  (it
+    "preserves a sibling when renaming through a missing root"
+    (host-kit:with-temporary-directory (base)
+      (let ((tree (make-file-tree (merge-pathnames "missing-root" base)))
+            (sibling (merge-pathnames "sibling.txt" base))
+            (destination (merge-pathnames "renamed.txt" base)))
+        (host-kit:write-file-string "contents" sibling)
+        (signals error (file-tree-rename tree sibling destination))
+        (expect (host-kit:read-file-string sibling) :to-equal "contents")
+        (expect (host-kit:path-exists-p destination) :to-be-falsy))))
+
+  (it
+    "allows a child directory under a missing root without a trailing slash"
+    (host-kit:with-temporary-directory (base)
+      (let ((tree (make-file-tree (merge-pathnames "missing-root" base)))
+            (child (merge-pathnames "missing-root/child/" base)))
+        (expect (file-tree-create-directory tree child) :to-equal child)
+        (expect (host-kit:directory-exists-p child) :to-be-truthy)))))
 
 (describe
   "buffer-load / buffer-save through the filesystem boundary"

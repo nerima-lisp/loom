@@ -7,9 +7,9 @@ This is the single domain gate used both before writing a session and after
 reading one. It rejects malformed or out-of-range state before any editor
 state is replaced."
   (unless (typep snapshot 'session-snapshot)
-    (error "validate-session-snapshot: not a session snapshot: ~S" snapshot))
+    (%session-error "validate-session-snapshot: not a session snapshot: ~S" snapshot))
   (let ((buffers (session-snapshot-buffers snapshot)))
-    (unless (and (listp buffers) (consp buffers))
+    (unless (and (%session-proper-list-p buffers) (consp buffers))
       (error "validate-session-snapshot: a session needs one or more buffers"))
     (dolist (buffer buffers)
       (%validate-session-buffer buffer))

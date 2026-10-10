@@ -9,9 +9,6 @@ combines raw-mode editing, window management, interactive PTY terminal sessions,
 shell commands, Git status, diff, and staging commands, code-formatting integration,
 auto-save, feature slices, and a bounded concurrent file-tree runtime.
 
-The full documentation is published at
-[nerima-lisp.github.io/loom](https://nerima-lisp.github.io/loom/).
-
 ## Quick Start
 
 With [Nix](https://nixos.org/download) and flakes enabled:
@@ -46,7 +43,7 @@ github:nerima-lisp/loom`.
 - [Roadmap](https://nerima-lisp.github.io/loom/project/roadmap/)
 - [Development](https://nerima-lisp.github.io/loom/project/development/)
 
-The complete public export list is maintained in
+The authoritative public export declarations are maintained in
 [`src/package-exports.lisp`](src/package-exports.lisp). The current command catalogue is in
 [`src/application/command-definitions.lisp`](src/application/command-definitions.lisp),
 and M-x lookup is implemented by
@@ -64,7 +61,7 @@ nix fmt -- --ci
 # Reproducible, bounded test run
 nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-test
 
-# Release-oriented checks
+# Verification gates
 LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
 nix run .#e2e
 ```
@@ -73,6 +70,11 @@ nix run .#e2e
 syntax check, formatting check, build, documentation, test, and coverage
 checks. Use the `paredit` command in the development shell for structural
 inspection and edits when changing Lisp source.
+
+The Nix check is the in-process gate. Sandbox3 may skip PTY-dependent checks
+when no usable PTY is available; those skips do not cover PTY behavior.
+`nix run .#e2e` is a separate PTY gate and must be run on a PTY-capable
+environment.
 
 Coverage can be promoted to a quality gate with optional percentage thresholds:
 

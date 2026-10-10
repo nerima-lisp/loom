@@ -9,7 +9,7 @@
   %exchange-point-and-mark-or-message)
 
 (define-selected-buffer-command mark-whole-buffer
-  "Set the mark at the end and point at the beginning of the buffer (C-x h)."
+  "Set mark at the end and point at the start of the visible region (C-x h)."
   %mark-whole-buffer-region)
 
 (define-selected-buffer-command narrow-to-region
@@ -17,7 +17,7 @@
   %narrow-to-active-region-or-message)
 
 (define-selected-buffer-command widen
-  "Make the selected buffer's complete text visible and editable."
+  "Make the selected buffer's full text visible without changing read-only state."
   %widen-buffer-and-message)
 
 (define-selected-buffer-command toggle-read-only

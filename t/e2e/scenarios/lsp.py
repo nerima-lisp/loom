@@ -16,22 +16,24 @@ def _nixd_command():
     command = shutil.which("nixd")
     if command:
         return command
-    return subprocess.check_output(
+    store_path = subprocess.check_output(
         ["nix", "eval", "--raw", "nixpkgs#nixd"], text=True
     ).strip()
+    executable = os.path.join(store_path, "bin", "nixd")
+    if not os.path.isfile(executable) or not os.access(executable, os.X_OK):
+        raise RuntimeError(
+            "nixd package output does not contain an executable bin/nixd"
+        )
+    return executable
 
 
-def _fixture():
+def _fixture(contents=b"# no definition here\nlet\n  value = 1;\nin\n  value\n"):
     directory = tempfile.TemporaryDirectory(prefix="loom-e2e-lsp-")
     with open(os.path.join(directory.name, "flake.nix"), "wb") as handle:
         handle.write(b"{}\n")
     with open(os.path.join(directory.name, ".loom-lsp"), "w", encoding="utf-8") as handle:
         handle.write("exec " + _nixd_command() + "\n")
-    path = write_buffer(
-        directory.name,
-        "main.nix",
-        b"# no definition here\nlet\n  value = 1;\nin\n  value\n",
-    )
+    path = write_buffer(directory.name, "main.nix", contents)
     return directory, path
 
 
@@ -39,7 +41,20 @@ def _start(session):
     session.extended_command("lsp-start")
     session.wait_for_text("LSP command [RET for")
     session.send(keys.RET)
+    session.wait_for_text("Run discovered LSP command? Type yes: ")
+    session.type("yes")
+    session.send(keys.RET)
     session.wait_for_text("LSP started.")
+
+
+def _select_main_buffer(session, expected_text):
+    session.extended_command("lsp-diagnostics")
+    session.wait_for_text("LSP diagnostics refreshed.")
+    session.extended_command("switch-to-buffer")
+    session.wait_for_text("Switch to buffer: ")
+    session.type("main.nix")
+    session.send(keys.RET)
+    session.wait_for_text(expected_text)
 
 
 def _run_lsp_command(binary, command, expected):
@@ -49,13 +64,7 @@ def _run_lsp_command(binary, command, expected):
             session.wait_ready()
             _start(session)
             if command not in ("lsp-diagnostics", "lsp-stop"):
-                session.extended_command("lsp-diagnostics")
-                session.wait_for_text("LSP diagnostics refreshed.")
-                session.extended_command("switch-to-buffer")
-                session.wait_for_text("Switch to buffer: ")
-                session.type("main.nix")
-                session.send(keys.RET)
-                session.wait_for_text("let")
+                _select_main_buffer(session, "let")
             session.extended_command(command)
             session.wait_for_text(expected)
             output, code = session.quit()
@@ -75,6 +84,165 @@ def lsp_start(binary):
         assert_exit_zero("lsp-start", output, code)
     finally:
         directory.cleanup()
+
+
+@scenario("lsp/trust-reject", commands=["lsp-start"])
+def lsp_trust_reject(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lsp-") as directory:
+        # Discovery canonicalizes paths, including macOS's /tmp symlink.
+        directory = os.path.realpath(directory)
+        configuration = os.path.join(directory, ".loom-lsp")
+        marker = os.path.join(directory, "spawned")
+        command = "printf spawned > " + marker
+        with open(configuration, "w", encoding="utf-8") as handle:
+            handle.write(command + "\n")
+        path = write_buffer(directory, "main.lisp", b"(+ 1 2)\n")
+        review_lines = (
+            "Config: " + configuration,
+            "Directory: " + directory,
+            "Command: " + command,
+        )
+        # Screen.find searches individual rows; retain the complete provenance
+        # assertions even when the platform's temporary pathname exceeds 80 cells.
+        columns = max(80, max(map(len, review_lines)) + 1)
+        with Session(binary, [path], columns=columns) as session:
+            session.wait_ready()
+            for answer in ("", "no", "YES", " yes", "yes ", None):
+                session.extended_command("lsp-start")
+                session.wait_for_text("LSP command [RET for")
+                session.send(keys.RET)
+                session.wait_for_text("Run discovered LSP command? Type yes: ")
+                for line in review_lines:
+                    session.wait_for_text(line)
+                if answer is None:
+                    session.send(keys.ctrl("g"))
+                    session.wait_for_text("Quit")
+                else:
+                    session.type(answer)
+                    session.send(keys.RET)
+                    session.wait_for_text("LSP start cancelled.")
+                session.wait_for_text("(+ 1 2)")
+                assert not os.path.exists(marker), "rejected LSP command was spawned"
+            output, code = session.quit()
+        assert_exit_zero("lsp-trust-reject", output, code)
+
+
+@scenario("lsp/trust-review", commands=["lsp-start", "lsp-stop"])
+def lsp_trust_review(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lsp-") as directory:
+        directory = os.path.realpath(directory)
+        configuration = os.path.join(directory, ".loom-lsp")
+        marker = os.path.join(directory, "spawned")
+        pid_file = os.path.join(directory, "nixd.pid")
+        tail = "REVIEW_END_UNIQUE"
+        command = (
+            "printf spawned > " + marker
+            + "; printf '%s\\n' $$ > " + pid_file + "; exec " + _nixd_command()
+            + " # " + "review-content " * 120 + tail
+        )
+        with open(configuration, "w", encoding="utf-8") as handle:
+            handle.write(command + "\n")
+        write_buffer(directory, "flake.nix", b"{}\n")
+        source = "let value = 1; in missingValue"
+        path = write_buffer(directory, "main.nix", (source + "\n").encode("utf-8"))
+        prompt = "Run discovered LSP command? Type yes: "
+        with Session(binary, [path], columns=80, rows=10) as session:
+            session.wait_ready()
+            session.wait_for_text(source)
+            original = session.screen.lines()[:session.layout.body_height]
+            for answer in ("yes", ""):
+                session.extended_command("lsp-start")
+                session.wait_for_text("LSP command [RET for")
+                session.send(keys.RET)
+                session.wait_for_text(prompt)
+                session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
+                session.type(answer)
+                session.wait_until(
+                    lambda screen: session.region_text("minibuffer").rstrip()
+                    == (prompt + answer).rstrip(),
+                    what="unchanged trust input",
+                )
+                for forward, backward in (
+                    (b"\x1b[6~", b"\x1b[5~"),
+                    (keys.ctrl("v"), keys.meta("v")),
+                ):
+                    session.send(forward * 12)
+                    session.wait_until(
+                        lambda screen: tail in "".join(
+                            screen.lines()[:session.layout.body_height]
+                        ),
+                        what="wrapped command tail after paging forward",
+                    )
+                    assert session.region_text("minibuffer").rstrip() == (prompt + answer).rstrip()
+                    assert not os.path.exists(marker), "reviewed LSP command was spawned"
+                    assert not os.path.exists(pid_file), "reviewed LSP command recorded a PID"
+                    session.send(backward * 12)
+                    session.wait_for_text("Discovered LSP command")
+                    assert session.region_text("minibuffer").rstrip() == (prompt + answer).rstrip()
+                    assert not os.path.exists(marker), "reviewed LSP command was spawned"
+                    assert not os.path.exists(pid_file), "reviewed LSP command recorded a PID"
+                session.send(keys.ctrl("g") if answer else keys.RET)
+                session.wait_for_text("Quit" if answer else "LSP start cancelled.")
+                session.wait_until(
+                    lambda screen: screen.lines()[:session.layout.body_height] == original,
+                    what="original buffer viewport restored",
+                )
+                assert not os.path.exists(marker), "rejected LSP command was spawned"
+                assert not os.path.exists(pid_file), "rejected LSP command recorded a PID"
+            session.extended_command("lsp-start")
+            session.wait_for_text("LSP command [RET for")
+            session.send(keys.RET)
+            session.wait_for_text(prompt)
+            session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
+            session.type("yes")
+            session.wait_until(
+                lambda screen: session.region_text("minibuffer").rstrip() == prompt + "yes",
+                what="unchanged affirmative trust input",
+            )
+            session.send(b"\x1b[6~" * 12)
+            session.wait_until(
+                lambda screen: tail in "".join(
+                    screen.lines()[:session.layout.body_height]
+                ),
+                what="wrapped command tail before confirmation",
+            )
+            assert session.region_text("minibuffer").rstrip() == prompt + "yes"
+            assert not os.path.exists(marker), "unconfirmed LSP command was spawned"
+            assert not os.path.exists(pid_file), "unconfirmed LSP command recorded a PID"
+            session.send(b"\x1b[5~" * 12)
+            session.wait_for_text("Discovered LSP command")
+            assert session.region_text("minibuffer").rstrip() == prompt + "yes"
+            assert not os.path.exists(marker), "unconfirmed LSP command was spawned"
+            assert not os.path.exists(pid_file), "unconfirmed LSP command recorded a PID"
+            session.send(keys.RET)
+            session.wait_for_file(marker, b"spawned")
+            session.wait_for_text("LSP started.")
+            session.wait_for_region_text("mode-line", "Diag:")
+            with open(pid_file, encoding="utf-8") as handle:
+                pid = int(handle.read().strip())
+            assert pid > 1, "invalid nixd PID"
+            os.kill(pid, 0)
+            session.wait_until(
+                lambda screen: screen.lines()[:session.layout.body_height] == original,
+                what="original buffer viewport restored after confirmation",
+            )
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+
+            def nixd_exited(screen):
+                try:
+                    os.kill(pid, 0)
+                except ProcessLookupError:
+                    return True
+                return False
+
+            session.wait_until(nixd_exited, what="nixd process to exit after lsp-stop")
+            session.wait_until(
+                lambda screen: screen.lines()[:session.layout.body_height] == original,
+                what="original buffer viewport preserved after LSP cleanup",
+            )
+            output, code = session.quit()
+        assert_exit_zero("lsp-trust-review", output, code)
 
 
 @scenario("lsp/stop", commands=["lsp-stop"])
@@ -102,9 +270,92 @@ def lsp_completion(binary):
     _run_lsp_command(binary, "lsp-completion-at-point", "No completions")
 
 
+@scenario("lsp/completion-success", commands=["lsp-completion-at-point"])
+def lsp_completion_success(binary):
+    source = "let completionValue = 1; in comp"
+    directory, path = _fixture((source + "\n").encode("utf-8"))
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            _select_main_buffer(session, source)
+            # Diagnostics arrive after initialization and didOpen, not just spawn.
+            session.wait_for_region_text("mode-line", "Diag:")
+            session.send(keys.ctrl("f") * len(source))
+            session.wait_for_region_cursor("body", len(source))
+            session.extended_command("lsp-completion-at-point")
+            session.wait_for_region_text("body", "completionValue", index=1)
+            session.send(keys.RET)
+            completed = "let completionValue = 1; in completionValue"
+            session.wait_for_region_text("body", completed)
+            session.wait_for_region_cursor("body", len(completed))
+            session.extended_command("save-buffer")
+            session.wait_for_file(path, (completed + "\n").encode("utf-8"))
+            output, code = session.quit()
+        assert_exit_zero("lsp-completion-success", output, code)
+    finally:
+        directory.cleanup()
+
+
 @scenario("lsp/find-definition", commands=["lsp-find-definition"])
 def lsp_find_definition(binary):
     _run_lsp_command(binary, "lsp-find-definition", "No definition found")
+
+
+@scenario(
+    "lsp/find-definition-success",
+    commands=["lsp-find-definition", "lsp-pop-definition"],
+)
+def lsp_find_definition_success(binary):
+    directory, path = _fixture(b"let\n  value = 1;\nin\n  value\n")
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            _select_main_buffer(session, "let")
+            session.send(keys.ctrl("n") * 3 + keys.ctrl("f") * 2)
+            session.wait_for_region_cursor("body", 2, index=3)
+            session.extended_command("lsp-find-definition")
+            session.wait_for_region_cursor("body", 2, index=1)
+            session.wait_for_region_text("body", "value = 1;", index=1)
+            session.extended_command("lsp-pop-definition")
+            session.wait_for_region_cursor("body", 2, index=3)
+            session.wait_for_region_text("body", "value", index=3)
+            output, code = session.quit()
+        assert_exit_zero("lsp-find-definition-success", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/find-definition-unicode",
+    commands=["lsp-find-definition", "lsp-pop-definition"],
+)
+def lsp_find_definition_unicode(binary):
+    prefix = "  /* 😀 */ "
+    source = f"let\n{prefix}value = 1;\nin\n{prefix}value\n"
+    directory, path = _fixture(source.encode("utf-8"))
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            _select_main_buffer(session, "let")
+            # nixd rejects the identifier's first UTF-16 offsets after an
+            # astral character; probe inside it while preserving the offset test.
+            session.send(keys.ctrl("n") * 3 + keys.ctrl("f") * (len(prefix) + 2))
+            # The emoji occupies one buffer character but two screen cells.
+            column = len(prefix) + 1
+            session.wait_for_region_cursor("body", column + 2, index=3)
+            session.extended_command("lsp-find-definition")
+            session.wait_for_region_cursor("body", column, index=1)
+            session.wait_for_region_text("body", "value = 1;", index=1)
+            session.extended_command("lsp-pop-definition")
+            session.wait_for_region_cursor("body", column + 2, index=3)
+            session.wait_for_region_text("body", "value", index=3)
+            output, code = session.quit()
+        assert_exit_zero("lsp-find-definition-unicode", output, code)
+    finally:
+        directory.cleanup()
 
 
 @scenario("lsp/pop-definition", commands=["lsp-pop-definition"])

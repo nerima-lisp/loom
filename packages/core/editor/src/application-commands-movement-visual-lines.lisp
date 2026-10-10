@@ -7,8 +7,7 @@
   "Return (VALUES RENDERER BUFFER WINDOW WIDTH) when the selected window wraps.
 
 Returns NIL when the buffer truncates instead, or when there is no measurable
-window: the caller then falls back to logical line movement, which is what
-truncation makes screen rows and logical lines mean anyway."
+window; the caller then falls back to logical line movement."
   (let* ((window (and *editor-state* (%selected-window)))
          (buffer (and window (loom/feature/window:window-buffer window)))
          (renderer (and *editor-state* (editor-state-renderer *editor-state*)))
@@ -69,8 +68,8 @@ truncation makes screen rows and logical lines mean anyway."
 Returns NIL when the buffer is not wrapping, so the ordinary logical movement
 runs instead. Within a wrapped logical line the move stays on that line and
 changes segment; at either end of it the move crosses to the neighbouring
-logical line's first or last segment. The goal column is carried in cells so a
-full-width character does not shift the column under a vertical move."
+logical line's first or last segment. The renderer supplies the goal in cells
+and maps it back to a character column in the target segment."
   (multiple-value-bind (renderer buffer window width) (%visual-line-move-context)
     (declare (ignore window))
     (when renderer

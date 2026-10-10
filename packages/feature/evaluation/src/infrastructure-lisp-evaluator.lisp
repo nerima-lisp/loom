@@ -32,7 +32,7 @@
     (values form-count (nreverse value-lines) error-message)))
 
 (defun %evaluate-lisp-forms (source output-stream)
-  "Evaluate SOURCE forms and return count, values, and an optional error."
+  "Return the number of forms read, formatted value lines, and NIL or error text."
   (let ((form-count 0)
         (value-lines nil)
         (error-message nil))
@@ -48,7 +48,8 @@
     (values form-count value-lines error-message)))
 
 (defun evaluate-lisp-source (source)
-  "Evaluate every form in SOURCE in LOOM-USER and return an evaluation result.
+  "Read and evaluate SOURCE forms in LOOM-USER until EOF or the first error,
+and return an evaluation result.
 
 Reader and evaluation errors are captured in the returned result.  Reader
 evaluation syntax such as #. is disabled, while the evaluated forms otherwise

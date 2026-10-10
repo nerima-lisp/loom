@@ -1,5 +1,21 @@
 (in-package #:loom/feature/lsp)
 
+(defun lsp-column-to-character (text column)
+  "Convert a character column in TEXT to the default LSP UTF-16 offset."
+  (loop for index below (min column (length text))
+        sum (if (> (char-code (char text index)) #xffff) 2 1)))
+
+(defun lsp-character-to-column (text character)
+  "Convert a UTF-16 offset to a character column, clamped to TEXT's end.
+An offset inside a surrogate pair maps to the character's start."
+  (loop with offset = 0
+        for value across text
+        for column from 0
+        for width = (if (> (char-code value) #xffff) 2 1)
+        when (> (+ offset width) character) do (return column)
+        do (incf offset width)
+        finally (return (length text))))
+
 (defstruct (lsp-position
             (:constructor make-lsp-position
                 (&optional (line 0) (character 0))))

@@ -12,7 +12,7 @@ calls, starting with no keys accumulated."
   (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil))
 
 (defun keymap-state-dispatch (state key-event)
-  "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) into
+  "Feed one KEY-EVENT descriptor, as accepted by KEYMAP-DEFINE-KEY, into
 STATE. Appends KEY-EVENT to the sequence accumulated so far and looks it up
 in STATE's keymap:
 

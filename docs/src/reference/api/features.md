@@ -12,7 +12,7 @@ Return true when a mode name is registered.
 
 ### `major-mode-from-name`
 
-Return the major-mode object identified by a name.
+Return the registered mode's canonical keyword, or `nil` for an unknown name.
 
 ### `major-mode-name`
 
@@ -38,7 +38,7 @@ Return the syntax keyword table for a major mode.
 
 Return true when a mode displays long lines truncated rather than wrapped. Code
 modes truncate; `markdown`, `org`, and `text` wrap. A mode that declares nothing
-truncates, which is what loom did before the setting existed.
+truncates.
 
 ### `buffer-truncate-lines-p`
 
@@ -73,8 +73,9 @@ Infer and return a major mode for a pathname.
 
 ```lisp
 (loom/feature/mode:register-major-mode
- mode &key name aliases parent extensions filenames comment-prefix
- indentation-width language-id keywords keybindings)
+ mode &key name aliases (parent :fundamental) extensions filenames
+ comment-prefix (indentation-width 2) language-id keywords
+ keybindings (truncate-lines t))
 ```
 
 Register an extension-defined major mode and return its canonical keyword.
@@ -104,7 +105,12 @@ Return the major mode currently active in the selected buffer.
 
 ### `set-major-mode`
 
-Set the selected buffer's major mode and return the mode.
+```lisp
+(loom/feature/mode:set-major-mode)
+```
+
+Prompt for a mode name and apply it to the selected buffer. Return the
+activated minibuffer, not a mode value.
 
 ### `toggle-truncate-lines`
 
@@ -153,19 +159,74 @@ Tokenize one source line using an explicitly supplied major mode.
 
 ```lisp
 (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
- renderer line x y width &optional mode)
+ renderer line x y width &optional (mode :common-lisp) (start-column 0))
 ```
 
-Draw one highlighted source line through the renderer.
+Draw one highlighted source line through the renderer. `start-column` is a
+horizontal offset in screen cells.
 
 ### `syntax-draw-buffer`
 
 ```lisp
 (loom/feature/syntax-highlighting:syntax-draw-buffer
- renderer buffer x y width height &key start-line)
+ renderer buffer x y width height &key (start-line 0) (start-column 0))
 ```
 
 Draw the visible portion of `buffer` with line-local syntax styles.
+
+## File tree feature
+
+Public symbols from `loom/feature/file-tree`.
+
+Manage the file sidebar, directory listings, and file commands. See the
+[File tree API](../api.md#file-tree) for signatures and detailed contracts.
+
+### Tree navigation
+
+`make-file-tree`, `file-tree-visible-p`, `file-tree-toggle`,
+`file-tree-entries`, `file-tree-selected-path`, `file-tree-entry-kind`,
+`file-tree-move-selection`, `file-tree-toggle-expand`
+
+Construct, inspect, and navigate the sidebar tree.
+
+### Directory providers
+
+`file-tree-child-lister`, `file-tree-install-child-lister`,
+`file-tree-prefetch-paths`, `loom-fs-list-directory`
+
+Inspect or install a child-listing provider, prefetch paths, and list a directory.
+
+### Filesystem operations
+
+`file-tree-create-file`, `file-tree-create-directory`,
+`file-tree-rename`, `file-tree-delete`
+
+Perform filesystem changes through the tree API.
+
+### Concurrent runtime
+
+`make-loom-concurrent-runtime`, `loom-concurrent-runtime-directory-entries`,
+`loom-concurrent-runtime-directory-error`, `loom-concurrent-runtime-prime-directory`,
+`loom-concurrent-runtime-invalidate-directory`, `loom-concurrent-runtime-invalidate-path`,
+`loom-concurrent-runtime-prefetch`, `loom-concurrent-runtime-drain`,
+`loom-concurrent-runtime-shutdown`
+
+Manage the concurrent directory-listing cache and its lifecycle.
+
+### Sidebar commands
+
+`toggle-file-tree`, `file-tree-select-next`, `file-tree-select-previous`,
+`file-tree-open-selected`, `file-tree-create-file-command`,
+`file-tree-create-directory-command`, `file-tree-rename-command`,
+`file-tree-delete-command`
+
+Interactive commands for sidebar navigation and filesystem changes.
+
+### File commands
+
+`find-file`, `visit-file`, `recent-file`, `save-buffer`, `write-file`
+
+Visit files, select recent files, and save buffers.
 
 ## Project feature
 
@@ -225,7 +286,12 @@ Run the interactive project search command.
 
 ### `project-root`
 
-Return the project root associated with the current editor context.
+```lisp
+(loom/feature/project:project-root)
+```
+
+Display the current project root, or a no-root message, in the minibuffer.
+Use `project-find-root` to obtain a root pathname programmatically.
 
 ## Search feature
 
@@ -364,6 +430,10 @@ Public symbols from `loom/feature/shell`.
 
 The captured result value for one shell command invocation.
 
+### `shell-command-result-p`
+
+Return true when an object is a shell command result.
+
 ### `make-shell-command-result`
 
 Construct a shell command result with its command, directory, output streams,
@@ -391,9 +461,22 @@ Render the result for a command-result buffer.
 
 ### `run-shell-command`
 
+```lisp
+(loom/feature/shell:run-shell-command
+ command &key directory (input nil input-supplied-p)
+ (timeout-seconds loom/feature/shell:*shell-command-timeout-seconds*))
+```
+
 Run a shell command in an optional directory and return a captured result.
 When supplied, `:input` is sent to standard input. Non-zero exit status is
-represented in the result instead of signaled.
+represented in the result instead of signaled. A timeout returns exit code
+124 and a timeout message in the error-output field, retaining captured stdout.
+`command` and supplied `input` must be strings; `timeout-seconds` must be a
+non-negative real. Invalid arguments or directory resolution can signal errors.
+
+### `*shell-command-timeout-seconds*`
+
+The default shell-command timeout in seconds, initially `30`.
 
 ### `pipe-command`
 
@@ -406,58 +489,129 @@ Public symbols from `loom/feature/format`.
 
 ### `format-buffer-with-command`
 
-Send the complete selected buffer text to a formatter command and replace the
+```lisp
+(loom/feature/format:format-buffer-with-command
+ command &optional buffer)
+```
+
+Send the complete buffer text to a formatter command and replace the
 buffer only when the command exits successfully. The formatter runs in the
 buffer's file directory when available; point and mark are restored by their
 text offsets and the replacement is undoable as one edit.
 
-Read-only and narrowed buffers are rejected before the command is started.
+Return a `shell-command-result`, including unsuccessful process results.
+Invalid command or buffer types, read-only buffers, and narrowed buffers signal
+errors before the command is started. The default buffer is the selected buffer.
 
 ### `format-current-buffer`
 
 Prompt for a formatter command and format the selected buffer.
 
+### `set-format-command`
+
+```lisp
+(loom/feature/format:set-format-command command &optional (state loom:*editor-state*))
+```
+
+Store and return the command after trimming surrounding whitespace. Signal an
+error for a non-string command, an empty trimmed command, or a missing state.
+
+### `format-on-save-mode`
+
+```lisp
+(loom/feature/format:format-on-save-mode
+ &optional (enabled-p nil enabled-p-supplied-p) (state loom:*editor-state*))
+```
+
+Toggle formatting before save when `enabled-p` is omitted, or set it from the
+supplied value. Return the resulting boolean. Signal an error for a missing
+state or when enabling without a configured formatter command.
+
+### `format-before-save`
+
+```lisp
+(loom/feature/format:format-before-save buffer &optional (state loom:*editor-state*))
+```
+
+Attempt formatting when the state enables format-on-save and has a command.
+Return `buffer`; caught formatter errors and unsuccessful exits are reported
+in the state's minibuffer when present, rather than propagated by this hook.
+
+### `set-format-command-command`
+
+```lisp
+(loom/feature/format:set-format-command-command)
+```
+
+Prompt for the format-on-save command. Report configuration errors in the
+minibuffer. Return the activated minibuffer.
+
+## Auto-save feature
+
+Public symbols from `loom/feature/auto-save`.
+
+Write recovery sidecars for eligible modified file buffers. See the
+[Auto-save API](../api.md#auto-save-feature) for signatures and detailed contracts.
+
+### Configuration and eligibility
+
+`*auto-save-interval*`, `auto-save-path`, `auto-save-eligible-p`
+
+Configure the interval, derive a sidecar path, and check buffer eligibility.
+
+### Recovery files
+
+`write-auto-save-file`, `delete-auto-save-file`, `auto-save-buffer-to-file`
+
+Write or remove a sidecar, or save a buffer's recovery text.
+
+### Enablement
+
+`auto-save-enabled-p`, `auto-save-mode`, `toggle-auto-save`
+
+Inspect, set, or toggle auto-save enablement.
+
+### Save passes
+
+`auto-save-current-buffer`, `maybe-auto-save`
+
+Run auto-save for the selected buffer or an interval-controlled save pass.
+
 ## Git feature
 
 Public symbols from `loom/feature/git`.
 
-### `git-status-command`
+### `*git-command-timeout-seconds*`
 
-Return the concise branch-aware status command used by the Git feature.
+The Git-command timeout in seconds, initially `30`. It is used for both the
+resilience deadline and the `cl-vcs-kit` process timeout.
 
 ### `run-git-status`
 
-Run Git status in a directory and return its captured shell command result.
+Run Git status in a directory and return its captured process result from
+`cl-vcs-kit`.
 
 ### `git-status`
 
 Run status from the current project root and display the captured result in the
-read-only `*Loom-Git-Status*` buffer.
-
-### `git-diff-command`
-
-Return `git diff` for the working tree or `git diff --cached` for the index.
+read-only `*Loom-Git-Status*` buffer. The buffer shows stdout, falling back to
+stderr when stdout is empty. Non-zero exit statuses are reported in the minibuffer.
 
 ### `run-git-diff`
 
 Run the working-tree or staged Git diff in a directory and return its captured
-shell command result.
+process result from `cl-vcs-kit`.
 
 ### `git-diff`, `git-diff-staged`
 
 Display the working-tree or staged diff from the current project root in the
-read-only `*Loom-Git-Diff*` buffer. Captured output includes standard output,
-standard error, and the process exit status.
-
-### `git-stage-command`, `git-unstage-command`
-
-Build shell-quoted `git add -- PATH` and `git restore --staged -- PATH`
-commands for a repository path.
+read-only `*Loom-Git-Diff*` buffer, using the same output selection and
+minibuffer exit-status reporting as `git-status`.
 
 ### `run-git-stage`, `run-git-unstage`
 
 Run the corresponding index operation in a directory and return its captured
-shell command result.
+process result from `cl-vcs-kit`. Paths are passed as arguments after `--`.
 
 ### `git-stage-file`, `git-unstage-file`
 
@@ -474,20 +628,81 @@ The PTY-backed child-process session object. It records the program, arguments,
 directory, terminal buffer, raw output, a bounded ANSI screen model, liveness,
 and exit code.
 
-### `start-terminal-session`, `terminal-session-poll`, `terminal-session-send`,
+### `terminal-session-p`
+
+Return true when an object is a terminal session.
+
+### Session metadata
+
+`terminal-session-name`, `terminal-session-program`, `terminal-session-args`,
+`terminal-session-directory`, `terminal-session-buffer`, `terminal-session-pty`
+
+Return the session's name, program, arguments, working directory, display buffer,
+or PTY handle.
+
+### Session state
+
+`terminal-session-raw-output`, `terminal-session-alive-p`,
+`terminal-session-exit-code`, `terminal-session-screen`
+
+Return the cumulative raw PTY output, liveness flag, recorded exit code, or
+bounded screen model. The exit code is initially `nil`.
+
+### `terminal-session-output`
+
+```lisp
+(loom/feature/terminal:terminal-session-output session)
+```
+
+Return the current visible screen as a string, not the cumulative raw output.
+
+### `terminal-session-feed-output`
+
+```lisp
+(loom/feature/terminal:terminal-session-feed-output session text)
+```
+
+Append `text` to raw output, feed it into the screen model, and return `session`.
+Signal a type error when `text` is not a string. This function does not itself
+replace the display buffer's text.
+
+### `terminal-session-for-buffer`
+
+```lisp
+(loom/feature/terminal:terminal-session-for-buffer buffer &optional (state loom:*editor-state*))
+```
+
+Return the state's session whose display buffer is `eq` to `buffer`, or `nil`.
+
+### Session lifecycle
+
+`start-terminal-session`, `terminal-session-poll`, `terminal-session-send`,
 `terminal-session-resize`, `stop-terminal-session`
 
 Start, poll, write to, resize, or stop a terminal session. Polling updates the
-session's ANSI-stripped transcript buffer and bounded screen model, and closes
-the PTY after process exit.
+session's bounded screen model and replaces the read-only buffer with the
+current visible screen. It closes the PTY after process exit.
 
-### `terminal-screen`, `make-terminal-screen`, `terminal-screen-feed`,
+### Screen operations
+
+`terminal-screen`, `make-terminal-screen`, `terminal-screen-feed`,
 `terminal-screen-text`, `terminal-screen-resize`
 
 Create and inspect the bounded ANSI screen model. It supports common
 cursor-addressed movement, line and character erasure, cursor save/restore, and
 minimal alternate-screen switching; it is not a complete VT compatibility
 layer.
+
+### `terminal-screen-p`
+
+Return true when an object is a terminal screen.
+
+### Screen geometry
+
+`terminal-screen-width`, `terminal-screen-height`,
+`terminal-screen-cursor-row`, `terminal-screen-cursor-column`
+
+Return the screen's column count, row count, or zero-based cursor coordinates.
 
 ### `poll-terminal-sessions`, `resize-terminal-sessions`
 
@@ -502,7 +717,7 @@ control keys, and supported special keys.
 
 Interactive commands for starting a PTY session in the selected context and
 stopping the session shown by the selected terminal buffer. The selected
-terminal presents the transcript and the bounded ANSI screen model.
+terminal displays the current bounded ANSI screen, not a cumulative transcript.
 
 ## Keyboard-macro feature
 
@@ -656,6 +871,54 @@ Store the selected buffer's point in a named register.
 
 Move point to the position stored in a named register.
 
+## Window feature
+
+Public symbols from `loom/feature/window`.
+
+Manage split-window layouts, selection, geometry, and buffer views. See the
+[Window API](../api.md#window) for signatures and detailed contracts.
+
+### Window trees
+
+`make-window-tree`, `make-window-tree-from-layout`, `window-tree-windows`,
+`window-tree-layout`
+
+Construct a window tree and inspect its leaves or layout.
+
+### Window selection
+
+`window-tree-selected-window`, `window-tree-selected-index`,
+`window-tree-select-index`, `window-select-next`
+
+Inspect or change the selected window.
+
+### Geometry
+
+`window-tree-width`, `window-tree-height`, `window-tree-resize`,
+`window-x`, `window-y`, `window-width`, `window-height`
+
+Inspect or update tree and window geometry.
+
+### Buffer views
+
+`window-buffer`, `window-set-buffer`, `window-scroll-line`,
+`window-scroll-column`, `window-scroll-sub-row`
+
+Inspect or update a window's buffer and scroll position.
+
+### Layout operations
+
+`window-split`, `window-delete`, `window-delete-other-windows`
+
+Change the split layout.
+
+### Window commands
+
+`split-window-below`, `split-window-right`, `other-window`,
+`delete-window`, `delete-other-windows`, `switch-to-buffer`, `kill-buffer`
+
+Interactive commands for managing windows and their buffers.
+
 ## Workspace feature
 
 Public symbols from `loom/feature/workspace`.
@@ -663,6 +926,10 @@ Public symbols from `loom/feature/workspace`.
 ### `workspace`
 
 The value type for one named workspace and its independent window tree.
+
+### `workspace-p`
+
+Return true when an object is a workspace.
 
 ### `make-workspace`
 
@@ -679,6 +946,10 @@ Return the window tree owned by a workspace.
 ### `workspace-manager`
 
 The ordered collection of named workspaces and its active index.
+
+### `workspace-manager-p`
+
+Return true when an object is a workspace manager.
 
 ### `make-workspace-manager`
 
@@ -725,7 +996,9 @@ Cycle through workspaces, wrapping at either end.
 
 Delete a named workspace; the final remaining workspace cannot be deleted.
 
-### `new-workspace`, `switch-workspace`, `next-workspace`,
+### Workspace commands
+
+`new-workspace`, `switch-workspace`, `next-workspace`,
 `previous-workspace`, `kill-workspace`
 
 Interactive commands for creating, selecting, cycling, and deleting
@@ -788,6 +1061,14 @@ buffer name, line, and column.
 
 Construct a bookmark snapshot for session persistence.
 
+### Bookmark snapshot fields
+
+`session-bookmark-snapshot-name`, `session-bookmark-snapshot-path`,
+`session-bookmark-snapshot-buffer-name`, `session-bookmark-snapshot-line`,
+`session-bookmark-snapshot-column`
+
+Return the bookmark snapshot's name, path, buffer name, line, or column.
+
 ### `session-workspace-snapshot`
 
 The serializable value type for one named workspace, including its layout and
@@ -833,17 +1114,10 @@ Construct a complete session snapshot.
 
 Return the buffer snapshots in a session snapshot.
 
-### `session-snapshot-layout`
-
-Return the window layout in a session snapshot.
-
-### `session-snapshot-selected-window-index`
-
-Return the selected-window index in a session snapshot.
-
 ### `session-snapshot-workspaces`
 
-Return the named workspace snapshots in a session snapshot.
+Return the named workspace snapshots in a session snapshot. Each workspace
+snapshot owns its layout and selected-window index.
 
 ### `session-snapshot-current-workspace-index`
 
@@ -891,6 +1165,19 @@ Load the user's initialization file and apply its configuration.
 
 Public symbols from `loom/feature/lsp`.
 
+### `lsp-column-to-character`
+
+`(lsp-column-to-character text column)` converts a zero-based Common Lisp
+character column in `text` to an LSP UTF-16 code-unit offset. Columns beyond
+the string's end are clamped to its length.
+
+### `lsp-character-to-column`
+
+`(lsp-character-to-column text character)` converts an LSP UTF-16 code-unit
+offset to a zero-based Common Lisp character column. An offset inside a
+surrogate pair maps to that character's start; offsets beyond the string's
+end map to its length.
+
 ### `lsp-position`
 
 The LSP position value type.
@@ -909,7 +1196,7 @@ Return an LSP position's zero-based line.
 
 ### `lsp-position-character`
 
-Return an LSP position's zero-based character.
+Return an LSP position's zero-based UTF-16 code-unit offset within its line.
 
 ### `lsp-range`
 
@@ -1017,11 +1304,18 @@ Refresh an LSP session's pending diagnostics and server state.
 
 ### `lsp-session-sync-buffer`
 
-Synchronize a buffer's current text with the language server.
+For an initialized session and a file-backed buffer, send `didOpen` for a new
+document or full-text `didChange` when the text differs. Unchanged text sends
+neither notification. Return the session.
 
 ### `lsp-session-diagnostics`
 
-Return diagnostics currently associated with a session.
+```lisp
+(loom/feature/lsp:lsp-session-diagnostics session buffer-or-path)
+```
+
+Return a copy of the diagnostic list for the specified buffer or pathname,
+or `nil` when no diagnostics are stored for its URI.
 
 ### `lsp-session-stop`
 
@@ -1072,6 +1366,13 @@ configuration exists.
 ### `lsp-start`
 
 Start LSP support for the current editor context.
+RET at the command prompt selects the discovered `.loom-lsp` command for review,
+showing its configuration pathname, execution directory, and unchanged shell
+command. Use PageDown/C-v and PageUp/M-v to navigate wrapped review rows without
+changing the trust answer. Type exactly `yes` at the trust prompt to start it; any other answer or
+C-g cancels without constructing a process or replacing the existing session.
+An explicitly typed command overrides discovery and starts without the extra
+trust prompt. Confirmation is required on each discovered-command start.
 
 ### `lsp-stop`
 
@@ -1079,29 +1380,76 @@ Stop LSP support for the current editor context.
 
 ### `lsp-diagnostics`
 
-Return diagnostics for the selected buffer.
+```lisp
+(loom/feature/lsp:lsp-diagnostics)
+```
+
+Refresh the session and display the selected file buffer's diagnostics in the
+read-only diagnostics buffer. Report missing session/file context or a refresh
+error in the minibuffer. Use `lsp-session-diagnostics` to obtain a diagnostic list.
 
 ### `lsp-request-completion`
 
-Request completion at a document position. The request is not sent when the
+Request completion at a zero-based document position, with the character
+offset measured in UTF-16 code units. The caller must synchronize the document
+before requesting completion. The request is not sent when the
 server does not advertise `completionProvider`; the callback receives the
 decoded completion items or an error message.
 
 ### `lsp-request-definition`
 
-Request the definition at a document position. The request is not sent when
+Request the definition at a zero-based document position, with the character
+offset measured in UTF-16 code units. The caller must synchronize the document
+before requesting a definition. The request is not sent when
 the server does not advertise `definitionProvider`; the callback receives
 decoded locations or an error message.
 
 ### `lsp-completion-item`
 
-Represent one completion candidate. `lsp-completion-item-label` is displayed,
-while `lsp-completion-item-text` prefers `insertText` when present and falls
-back to the label. `detail` and `kind` preserve optional server metadata.
+The value type for one completion candidate.
+
+### `make-lsp-completion-item`
+
+```lisp
+(loom/feature/lsp:make-lsp-completion-item label &key insert-text detail kind)
+```
+
+Construct a completion candidate with optional insertion text and server metadata.
+
+### `lsp-completion-item-p`
+
+Return true when an object is a completion item.
+
+### Completion item fields
+
+`lsp-completion-item-label`, `lsp-completion-item-insert-text`,
+`lsp-completion-item-detail`, `lsp-completion-item-kind`
+
+Return the display label, optional insertion text, detail, or kind.
+
+### `lsp-completion-item-text`
+
+Return the insertion text when non-`nil`, otherwise the display label.
 
 ### `lsp-location`
 
 Represent a definition target as a URI and an LSP range.
+
+### `make-lsp-location`
+
+```lisp
+(loom/feature/lsp:make-lsp-location uri range)
+```
+
+Construct a definition target from its URI and range.
+
+### `lsp-location-p`
+
+Return true when an object is an LSP location.
+
+### `lsp-location-uri`, `lsp-location-range`
+
+Return a location's URI or range.
 
 ### `lsp-completion-at-point`
 
@@ -1118,5 +1466,6 @@ Request the definition at point and visit the returned local file. Bound to
 Return point to the origin of the most recent definition jump. Bound to
 `M-,`.
 
-The complete export contract remains
+Feature exports are defined in each `packages/feature/<name>/src/package.lisp`;
+core exports are defined in
 [`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp).

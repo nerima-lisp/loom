@@ -69,4 +69,4 @@ or unsupported input is reported as a session-store-read error."
                                 :external-format :utf-8)
           (%read-session-stream stream))
       (error (condition)
-        (error "session-store-read: cannot read ~A: ~A" pathname condition)))))
+        (%session-error "session-store-read: cannot read ~A: ~A" pathname condition)))))

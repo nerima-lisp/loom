@@ -51,7 +51,8 @@
     (%lsp-send-document-open session uri document text)))
 
 (defun lsp-session-sync-buffer (session buffer)
-  "Send a full-text open or change notification for BUFFER."
+  "For an initialized SESSION and file-backed BUFFER, send didOpen for a new
+document or full-text didChange when its text differs."
   (unless (loom:buffer-p buffer)
     (error "LSP buffer synchronization needs a BUFFER: ~S" buffer))
   (let ((uri (%lsp-buffer-uri buffer)))

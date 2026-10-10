@@ -5,26 +5,29 @@
                (%session-nonnegative-integer-p (second node))
                (< (second node) buffer-count)
                (%session-nonnegative-integer-p (third node)))
-    (error "validate-session-snapshot: malformed leaf ~S" node))
+    (%session-error "validate-session-snapshot: malformed leaf ~S" node))
   1)
 
-(defun %validate-session-layout-split (node buffer-count)
+(defun %validate-session-layout-split (node buffer-count seen-nodes)
   (unless (and (= (length node) 4)
                (member (second node) '(:horizontal :vertical)))
-    (error "validate-session-snapshot: malformed split ~S" node))
-  (+ (%validate-session-layout-node (third node) buffer-count)
-     (%validate-session-layout-node (fourth node) buffer-count)))
+    (%session-error "validate-session-snapshot: malformed split ~S" node))
+  (+ (%validate-session-layout-node (third node) buffer-count seen-nodes)
+     (%validate-session-layout-node (fourth node) buffer-count seen-nodes)))
 
-(defun %validate-session-layout-node (node buffer-count)
+(defun %validate-session-layout-node (node buffer-count &optional seen-nodes)
   "Validate one layout NODE and return its number of leaf windows."
-  (unless (listp node)
-    (error "validate-session-snapshot: malformed layout node ~S" node))
-  (case (first node)
-    (:leaf (%validate-session-layout-leaf node buffer-count))
-    (:split (%validate-session-layout-split node buffer-count))
-    (otherwise
-     (error "validate-session-snapshot: unknown layout node ~S"
-            (first node)))))
+  (unless (%session-proper-list-p node)
+    (%session-error "validate-session-snapshot: malformed layout node ~S" node))
+  (when (member node seen-nodes :test #'eq)
+    (%session-error "validate-session-snapshot: cyclic layout node ~S" node))
+  (let ((seen-nodes (cons node seen-nodes)))
+    (case (first node)
+      (:leaf (%validate-session-layout-leaf node buffer-count))
+      (:split (%validate-session-layout-split node buffer-count seen-nodes))
+      (otherwise
+       (%session-error "validate-session-snapshot: unknown layout node ~S"
+              (first node))))))
 
 (defun %validate-session-layout (layout buffer-count)
   "Validate indexed LAYOUT and return its number of leaf windows."
@@ -32,7 +35,7 @@
 
 (defun %validate-session-workspace (workspace buffer-count)
   (unless (typep workspace 'session-workspace-snapshot)
-    (error "validate-session-snapshot: invalid workspace snapshot ~S"
+    (%session-error "validate-session-snapshot: invalid workspace snapshot ~S"
            workspace))
   (unless (%session-nonempty-string-p
            (session-workspace-snapshot-name workspace))
@@ -45,14 +48,15 @@
           (session-workspace-snapshot-selected-window-index workspace)))
     (unless (and (%session-nonnegative-integer-p selected-index)
                  (< selected-index window-count))
-      (error "validate-session-snapshot: workspace selected window index ~S is out of range"
+      (%session-error "validate-session-snapshot: workspace selected window index ~S is out of range"
              selected-index)))
   workspace)
 
 (defun %validate-session-workspaces (snapshot buffer-count)
   "Validate workspace views and the active workspace index."
   (let ((workspaces (session-snapshot-workspaces snapshot)))
-    (unless (consp workspaces)
+    (unless (and (%session-proper-list-p workspaces)
+                 (consp workspaces))
       (error "validate-session-snapshot: workspaces must be a non-empty list"))
     (dolist (workspace workspaces)
       (%validate-session-workspace workspace buffer-count))
@@ -66,5 +70,5 @@
   (let ((current-index (session-snapshot-current-workspace-index snapshot)))
     (unless (and (%session-nonnegative-integer-p current-index)
                  (< current-index (length workspaces)))
-      (error "validate-session-snapshot: current workspace index ~S is out of range"
+      (%session-error "validate-session-snapshot: current workspace index ~S is out of range"
              current-index))))

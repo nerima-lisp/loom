@@ -16,7 +16,7 @@
   "Return (VALUES SESSION BUFFER URI LINE CHARACTER) when a request can be sent.
 
 A request needs an initialized session and a file-backed buffer: a server
-addresses documents by URI, and a buffer that was never saved has none."
+addresses documents by URI, and a buffer with no associated path has none."
   (let* ((session (%lsp-navigation-session))
          (buffer (loom/application:%selected-buffer))
          (path (and buffer (loom:buffer-path buffer))))

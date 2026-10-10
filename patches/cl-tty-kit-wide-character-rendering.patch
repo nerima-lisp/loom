@@ -1,0 +1,232 @@
+--- a/src/render-style.lisp
++++ b/src/render-style.lisp
+@@ -146,7 +146,7 @@
+     (declare (type simple-vector cells)
+              (type fixnum start end))
+     (let ((active-prefix nil))
++      (do ((index start))
+-      (do ((index start (1+ index)))
+           ((>= index end)
+            (when active-prefix
+              (%write-ansi-reset-style stream))
+@@ -160,7 +160,13 @@
+             (when prefix
+               (write-string prefix stream))
+             (setf active-prefix prefix))
++          (write-char (%render-safe-cell-character (cell-char cell)) stream)
++          ;; A wide glyph already occupies its following spacer on the terminal.
++          (incf index (if (and (= 2 (%character-width (cell-char cell)))
++                               (< (1+ index) end)
++                               (char= #\Space (cell-char (aref cells (1+ index)))))
++                          2
++                          1))))))
+-          (write-char (%render-safe-cell-character (cell-char cell)) stream)))))
+ 
+   (defun %cell-range-rendered-length (cells start end)
+     "Return the byte count %WRITE-CELL-RANGE emits for CELLS in [START, END)."
+@@ -169,7 +175,7 @@
+     (let ((active-prefix nil)
+           (output-length 0))
+       (declare (type fixnum output-length))
++      (do ((index start))
+-      (do ((index start (1+ index)))
+           ((>= index end)
+            (when active-prefix
+              (incf output-length +ansi-reset-style-length+))
+@@ -183,4 +189,9 @@
+             (when prefix
+               (incf output-length (length prefix)))
+             (setf active-prefix prefix))
++          (incf output-length)
++          (incf index (if (and (= 2 (%character-width (cell-char cell)))
++                               (< (1+ index) end)
++                               (char= #\Space (cell-char (aref cells (1+ index)))))
++                          2
++                          1)))))))
+-          (incf output-length))))))
+--- a/src/render-diff-plan.lisp
++++ b/src/render-diff-plan.lisp
+@@ -42,6 +42,17 @@
+                (equal (%cell-style-sequence left)
+                       (%cell-style-sequence right))))))
+ 
++(defun %wide-spacer-replaced-p (cells previous-cells index row-start)
++  ;; Replacing a wide lead must also clear its terminal continuation cell.
++  (and (> index row-start)
++       (char= #\Space (cell-char (aref previous-cells index)))
++       (= 2 (%character-width (cell-char (aref previous-cells (1- index)))))
++       (/= 2 (%character-width (cell-char (aref cells (1- index)))))))
++
++(defun %diff-cell-equal-p (cells previous-cells index row-start)
++  (and (%cell-equal-p (aref cells index) (aref previous-cells index))
++       (not (%wide-spacer-replaced-p cells previous-cells index row-start))))
++
+ (defmacro %render-blank-cell-p (cell)
+   `(let ((cell ,cell))
+      (and (char= (cell-char cell) #\Space) (null (%cell-style-sequence cell)))))
+@@ -132,18 +143,25 @@
+                          (+ full-row-start width)))
+                     (blank-suffix-start nil))
+                (declare (type fixnum full-row-start row-start row-end))
++               (when (and (< row-end (+ full-row-start width))
++                          (%wide-spacer-replaced-p cells previous-cells row-end
++                                                   full-row-start))
++                 (incf row-end))
+                (let ((last-index -1) (last-same-p nil)) (labels ((same-cell-p (index)
+                                                                               (if (= index last-index)
+                                                                                   last-same-p
+                                                                                   (setf last-index index
+                                                                                         last-same-p
++                                                                                        (and (not (%wide-spacer-replaced-p
++                                                                                                   cells previous-cells index
++                                                                                                   full-row-start))
++                                                                                             (or (and changed-since
+-                                                                                        (or (and changed-since
+                                                                                                  (zerop
+                                                                                                   (sbit (the simple-bit-vector
+                                                                                                              (aref row-dirty-bits y))
+                                                                                                         (- index full-row-start))))
+                                                                                             (%cell-equal-p (aref cells index)
++                                                                                                           (aref previous-cells index))))))))
+-                                                                                                           (aref previous-cells index)))))))
+                                                           (do ((index row-start))
+                                                               ((>= index row-end))
+                                                             (declare (type fixnum index))
+--- a/src/render-diff.lisp
++++ b/src/render-diff.lisp
+@@ -1,6 +1,14 @@
+ (in-package #:cl-tty-kit)
+ 
++(defun %wide-cell-range-start (cells start row-start)
++  ;; Repaint the lead glyph when a diff begins in its spacer.
++  (if (and (> start row-start)
++           (char= #\Space (cell-char (aref cells start)))
++           (= 2 (%character-width (cell-char (aref cells (1- start))))))
++      (1- start)
++      start))
++
++(defmacro %write-diff-run (cells previous-cells start-index row-end stream render-start row-start)
+-(defmacro %write-diff-run (cells previous-cells start-index row-end stream)
+   `(let ((cells ,cells)
+          (previous-cells ,previous-cells)
+          (start-index ,start-index)
+@@ -12,10 +20,9 @@
+             (do ((index start-index (1+ index)))
+                 ((>= index row-end) row-end)
+               (declare (type fixnum index))
++              (when (%diff-cell-equal-p cells previous-cells index ,row-start)
+-              (when (%cell-equal-p (aref cells index)
+-                                   (aref previous-cells index))
+                 (return index)))))
++       (%write-cell-range cells ,render-start end-index stream)
+-       (%write-cell-range cells start-index end-index stream)
+        end-index)))
+ 
+ (defmacro %diff-render-length (screen previous max-length)
+@@ -50,28 +57,31 @@
+                     (do ((index row-start))
+                         ((>= index row-end))
+                       (declare (type fixnum index))
++                      (if (%diff-cell-equal-p cells previous-cells index row-start)
+-                      (if (%cell-equal-p (aref cells index) (aref previous-cells index))
+                           (incf index)
++                          (let* ((render-start (%wide-cell-range-start cells index row-start))
++                                 (x (- render-start row-start)))
++                            (declare (type fixnum x render-start))
+-                          (let ((x (- index row-start)))
+-                            (declare (type fixnum x))
+                             (when (and (null blank-suffix-start)
+                                        (%render-blank-cell-p (aref cells index)))
+                               (setf blank-suffix-start
+                                     (%row-blank-suffix-start cells row-start width)))
++                            (if (and (= render-start index)
++                                     blank-suffix-start (>= x blank-suffix-start))
+-                            (if (and blank-suffix-start (>= x blank-suffix-start))
+                                 (progn
+                                   (count-output (%diff-cursor-length x y))
+                                   (count-output 4)
+                                   (setf index row-end))
+                                 (progn
+                                   (count-output (%diff-cursor-length x y))
++                                  (let ((end-index
++                                          (do ((end index (1+ end)))
++                                              ((>= end row-end) row-end)
++                                            (when (%diff-cell-equal-p cells previous-cells end row-start)
++                                              (return end)))))
++                                    (count-output
++                                     (%cell-range-rendered-length cells render-start end-index))
++                                    (setf index end-index))))))))))))))
+-                                  (do ()
+-                                      ((or (>= index row-end)
+-                                           (%cell-equal-p
+-                                            (aref cells index)
+-                                            (aref previous-cells index))))
+-                                    (count-output (%cell-rendered-length (aref cells index)))
+-                                    (incf index))))))))))))))
+ 
+ (defmacro %write-diff (screen previous stream)
+   "Write the sparse changes from PREVIOUS to SCREEN to STREAM."
+@@ -97,22 +107,24 @@
+            (do ((index row-start))
+                ((>= index row-end))
+              (declare (type fixnum index))
++             (if (%diff-cell-equal-p cells previous-cells index row-start)
+-             (if (%cell-equal-p (aref cells index) (aref previous-cells index))
+                  (incf index)
++                 (let* ((render-start (%wide-cell-range-start cells index row-start))
++                        (x (- render-start row-start)))
++                   (declare (type fixnum x render-start))
+-                 (let ((x (- index row-start)))
+-                   (declare (type fixnum x))
+                    (when (and (null blank-suffix-start)
+                               (%render-blank-cell-p (aref cells index)))
+                      (setf blank-suffix-start
+                            (%row-blank-suffix-start cells row-start width)))
+                    (%write-ansi-move-cursor (1+ y) (1+ x) stream)
+                    (setf wrote-output-p t)
++                   (if (and (= render-start index)
++                            blank-suffix-start (>= x blank-suffix-start))
+-                   (if (and blank-suffix-start (>= x blank-suffix-start))
+                        (progn
+                          (%write-ansi-clear-line stream)
+                          (setf index row-end))
+                        (setf index
++                             (%write-diff-run cells previous-cells index row-end stream render-start row-start)))))))))))
+-                             (%write-diff-run cells previous-cells index row-end stream)))))))))))
+ 
+ (defmacro %screen-render-length (screen)
+   `(let ((screen ,screen))
+@@ -155,7 +167,7 @@
+   "Return a lower bound for a complete repaint of SCREEN."
+   `(let ((screen ,screen))
+      (+ 10
++        (* (screen-height screen) (ceiling (screen-width screen) 2))
+-        (length (screen-cells screen))
+         (let ((height (screen-height screen)))
+           (declare (type fixnum height))
+           (if (zerop height) 0 (1- height))))))
+@@ -186,6 +198,11 @@
+                  do (incf row)
+                  (setf row-start row-end
+                        row-end (+ row-end width)))
++           (let ((render-start (%wide-cell-range-start cells start row-start)))
++             (when (< render-start start)
++               (setf start render-start)
++               (when (minusp end)
++                 (setf end row-end))))
+            (let ((x (- start row-start)))
+              (declare (type fixnum x))
+              (%write-ansi-move-cursor (1+ row) (1+ x) stream)
+@@ -209,6 +226,12 @@
+         (let ((start (aref operations operation-index))
+               (end (aref operations (1+ operation-index))))
+           (declare (type fixnum start end))
++          (let ((render-start (%wide-cell-range-start
++                               cells start (* width (floor start width)))))
++            (when (< render-start start)
++              (setf start render-start)
++              (when (minusp end)
++                (setf end (* width (1+ (floor start width)))))))
+           (incf length
+                 (%diff-cursor-length (mod start width)
+                                      (floor start width)))

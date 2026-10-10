@@ -31,7 +31,39 @@
       (%with-real-paths (dir (path "new-file.txt"))
         (expect (file-tree-create-file nil path) :to-equal path)
         (expect (host-kit:read-file-string path) :to-equal "")
-        (signals error (file-tree-create-file nil path))))))
+        (signals error (file-tree-create-file nil path)))))
+
+  (it
+    "creates a file inside the file-tree root"
+    (host-kit:with-temporary-directory (root)
+      (let ((path (merge-pathnames "inside.txt" root))
+            (tree (make-file-tree root)))
+        (expect (file-tree-create-file tree path) :to-equal path)
+        (expect (host-kit:read-file-string path) :to-equal ""))))
+
+  (it
+    "rejects creating a file outside the file-tree root"
+    (host-kit:with-temporary-directory (outside)
+      (host-kit:with-temporary-directory (root)
+        (let ((path (merge-pathnames "outside.txt" outside))
+              (tree (make-file-tree root)))
+          (signals error (file-tree-create-file tree path))
+          (expect (host-kit:path-exists-p path) :to-be-falsy)))))
+
+  #+sbcl
+  (it
+    "creates a literal wildcard filename inside a literal wildcard directory"
+    (host-kit:with-temporary-directory (root)
+      (let* ((tree (make-file-tree root))
+             (directory (merge-pathnames "literal*directory/" root))
+             (path (merge-pathnames "literal*file.txt" directory))
+             (native-path (sb-ext:parse-native-namestring (namestring path))))
+        (file-tree-create-directory tree directory)
+        (expect (file-tree-create-file tree path) :to-equal path)
+        (expect (host-kit:read-file-string native-path) :to-equal "")
+        (expect (loom/feature/file-tree::%file-tree-canonical-pathname native-path)
+                :to-equal (truename native-path))
+        (signals error (file-tree-create-file tree path))))))
 
 (describe
   "file-tree-create-directory"
@@ -57,4 +89,32 @@
       (%with-real-paths (dir (path "subdir/"))
         (expect (file-tree-create-directory nil path) :to-equal path)
         (expect (host-kit:directory-exists-p path) :to-be-truthy)
-        (signals error (file-tree-create-directory nil path))))))
+        (signals error (file-tree-create-directory nil path)))))
+
+  (it
+    "creates a directory inside the file-tree root"
+    (host-kit:with-temporary-directory (root)
+      (let ((path (merge-pathnames "inside/" root))
+            (tree (make-file-tree root)))
+        (expect (file-tree-create-directory tree path) :to-equal path)
+        (expect (host-kit:directory-exists-p path) :to-be-truthy))))
+
+  (it
+    "rejects creating a directory outside the file-tree root"
+    (host-kit:with-temporary-directory (outside)
+      (host-kit:with-temporary-directory (root)
+        (let ((path (merge-pathnames "outside/" outside))
+              (tree (make-file-tree root)))
+          (signals error (file-tree-create-directory tree path))
+          (expect (host-kit:path-exists-p path) :to-be-falsy)))))
+
+  #+sbcl
+  (it
+    "rejects creating a literal wildcard directory outside the file-tree root"
+    (host-kit:with-temporary-directory (outside)
+      (host-kit:with-temporary-directory (root)
+        (let* ((path (merge-pathnames "literal*directory/" outside))
+               (native-path (sb-ext:parse-native-namestring (namestring path)))
+               (tree (make-file-tree root)))
+          (signals error (file-tree-create-directory tree path))
+          (expect (host-kit:path-exists-p native-path) :to-be-falsy))))))

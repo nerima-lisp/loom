@@ -22,7 +22,8 @@
     json))
 
 (defun lsp-session-drain (session)
-  "Consume all currently available transport messages without blocking."
+  "Drain currently available transport messages; response handlers and shutdown
+cleanup run synchronously."
   (unless (lsp-session-closed-p session)
     (loop while (not (lsp-session-closed-p session))
           do (handler-case

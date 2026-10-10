@@ -4,7 +4,7 @@
 (defun %default-child-lister (path)
   "Default FILE-TREE-CHILD-LISTER: performs no filesystem access at all and
 reports PATH as always having no children. Real directory listing is an
-infrastructure concern (CL-HOST-KIT); this stub only keeps a fresh FILE-TREE
+infrastructure concern (CL-HOST-KIT); this fallback keeps a fresh FILE-TREE
 usable in isolation, e.g. in domain-layer tests."
   (declare (ignore path))
   nil)

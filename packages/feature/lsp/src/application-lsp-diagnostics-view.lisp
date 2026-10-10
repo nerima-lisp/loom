@@ -25,7 +25,7 @@
     (buffer-mark-saved buffer)))
 
 (defun %lsp-diagnostic-text-line (diagnostic)
-  "Render DIAGNOSTIC to a single text line."
+  "Format DIAGNOSTIC for display, preserving embedded newlines."
   (let* ((range (lsp-diagnostic-range diagnostic))
          (start (lsp-range-start range))
          (severity (lsp-diagnostic-severity diagnostic))

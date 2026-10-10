@@ -36,6 +36,13 @@ multiple-cursors は作者が使っておらず、今後も使う意思がない
 `cl-tty-kit:char-width` を通した表示セル列を使う。全角文字の前にある point が
 画面上で左にずれないことを受け入れ条件とする。
 
+The Nix build applies a project-local patch to the pinned renderer. It omits
+wide-character continuation cells from ANSI output and clears those cells when
+a wide character is replaced by a narrow one. Regression tests cover full and
+incremental output, row boundaries, and output-length estimates. These tests do
+not replace the author's terminal checks for FR-001 through FR-003; see the
+[verification ledger](verification-ledger.md).
+
 ### FR-002: 横スクロール
 
 **状態: 実装済み。**

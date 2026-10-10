@@ -1,7 +1,7 @@
 (in-package #:loom/test)
 
 (defun %fresh-wrapping-state (&key content (width 20) (height 6))
-  "A layout state whose buffer wraps, so screen rows outnumber logical lines."
+  "Enable visual wrapping so layout tests can cover rows within a logical line."
   (let ((state (%fresh-layout-state :content content
                                     :width width
                                     :height height)))

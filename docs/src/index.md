@@ -3,7 +3,7 @@
 A terminal text editor for SBCL with Emacs-style keybindings. Its direct
 runtime dependencies include `cl-tty-kit`, `cl-host-kit`, `cl-history-kit`,
 `cl-prolog-kit`, `cl-cli`, `cl-regex-kit`, `cl-boundary-kit`,
-`cl-concurrent-kit`, `cl-json-kit`, `cl-log-kit`, `cl-process-kit`,
+`cl-concurrent-kit`, `cl-date-kit`, `cl-json-kit`, `cl-log-kit`, `cl-process-kit`,
 `cl-vcs-kit`, and `cl-resilience-kit`.
 
 ```sh
@@ -27,8 +27,9 @@ nix run github:nerima-lisp/loom
 ## Where to go next
 
 - [Getting started](getting-started.md) -- build loom and open a file.
-- [API reference](reference/api.md) -- the complete public export contract;
-  `src/package-exports.lisp` remains authoritative when the package surface changes.
+- [API reference](reference/api.md) -- selected editor APIs and the public
+  feature APIs. Core exports are defined in `src/package-exports.lisp`, and
+  feature exports in each `packages/feature/<name>/src/package.lisp`.
 - [Architecture](reference/architecture.md) -- the layered design and the
   toolkit family it builds on.
 - [Roadmap](project/roadmap.md) -- what is implemented and what is not, yet.
