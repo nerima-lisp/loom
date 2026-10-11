@@ -210,7 +210,10 @@
             source = nixpkgs.legacyPackages.${ctx.system}.applyPatches {
               name = "cl-tty-kit-wide-character-source";
               src = cl-tty-kit;
-              patches = [ ./patches/cl-tty-kit-wide-character-rendering.patch ];
+              patches = [
+                ./patches/cl-tty-kit-wide-character-rendering.patch
+                ./patches/cl-tty-kit-prolog-test-dependency.patch
+              ];
             };
             dependencies = [
               clCodecKit
@@ -414,59 +417,80 @@
         });
       };
 
-      extraOutputs = ctx: {
-        packages.test = ctx.generated.checks.default.overrideAttrs (previous: {
-          installPhase = ''
-            runHook preInstall
-            mkdir -p "$out"
-            runHook postInstall
-          '';
-          LOOM_SANDBOXED_CHECK = "1";
-        });
+      extraOutputs =
+        ctx:
+        let
+          deps = siblingsFor ctx;
+          ttyCheck = ctx.cl.lispDerivation (
+            deps.clTtyKit.args
+            // {
+              lispCheckDependencies = [
+                deps.clPrologKit
+                deps.clWeave
+              ];
+            }
+          );
+        in
+        {
+          packages.test = ctx.generated.checks.default.overrideAttrs (previous: {
+            installPhase = ''
+              runHook preInstall
+              mkdir -p "$out"
+              runHook postInstall
+            '';
+            LOOM_SANDBOXED_CHECK = "1";
+          });
 
-        checks.build = ctx.executable;
+          checks.build = ctx.executable;
 
-        # Run PTY tests outside the Nix sandbox.
-        apps.e2e =
-          let
-            pkgs = nixpkgs.legacyPackages.${ctx.system};
-            python = pkgs.python3.withPackages (ps: [ ps.pyte ]);
-          in
-          {
-            type = "app";
-            program = toString (
-              pkgs.writeShellScript "loom-e2e" ''
-                export PATH="${pkgs.nixd}/bin:$PATH"
-                export LOOM_BINARY="${ctx.executable}/bin/loom"
-                exec "${python}/bin/python3" "${self}/t/e2e/loom-test.py" "$@"
-              ''
-            );
+          checks.cl-tty-kit = ctx.cl.mkScriptCheck {
+            drv = ttyCheck;
+            entryPointText = builtins.readFile ./scripts/check-cl-tty-kit.lisp;
+            timeoutSeconds = 600;
+            killAfterSeconds = 30;
           };
 
-        # Coverage runs in the Nix sandbox and needs the skip signal.
-        packages.coverage =
-          (ctx.cl.mkCoverageReport {
-            drv = ctx.package;
-            entryPointText = coverage-entry-point-text;
-            timeoutSeconds = coverage-timeout-seconds;
-          }).overrideAttrs
-            (previous: {
-              LOOM_SANDBOXED_CHECK = "1";
-            });
-        checks.coverage =
-          (ctx.cl.mkCoverageReport {
-            drv = ctx.package;
-            entryPointText = coverage-entry-point-text;
-            timeoutSeconds = coverage-timeout-seconds;
-          }).overrideAttrs
-            (previous: {
-              LOOM_SANDBOXED_CHECK = "1";
-            });
+          # Run PTY tests outside the Nix sandbox.
+          apps.e2e =
+            let
+              pkgs = nixpkgs.legacyPackages.${ctx.system};
+              python = pkgs.python3.withPackages (ps: [ ps.pyte ]);
+            in
+            {
+              type = "app";
+              program = toString (
+                pkgs.writeShellScript "loom-e2e" ''
+                  export PATH="${pkgs.nixd}/bin:$PATH"
+                  export LOOM_BINARY="${ctx.executable}/bin/loom"
+                  exec "${python}/bin/python3" "${self}/t/e2e/loom-test.py" "$@"
+                ''
+              );
+            };
 
-        checks.paredit-lint = paredit-cli.lib.${ctx.system}.mkLintCheck {
-          inherit (ctx) src;
-          name = "loom-paredit-lint";
+          # Coverage runs in the Nix sandbox and needs the skip signal.
+          packages.coverage =
+            (ctx.cl.mkCoverageReport {
+              drv = ctx.package;
+              entryPointText = coverage-entry-point-text;
+              timeoutSeconds = coverage-timeout-seconds;
+            }).overrideAttrs
+              (previous: {
+                LOOM_SANDBOXED_CHECK = "1";
+              });
+          checks.coverage =
+            (ctx.cl.mkCoverageReport {
+              drv = ctx.package;
+              entryPointText = coverage-entry-point-text;
+              timeoutSeconds = coverage-timeout-seconds;
+            }).overrideAttrs
+              (previous: {
+                LOOM_SANDBOXED_CHECK = "1";
+              });
+
+          checks.paredit-lint = paredit-cli.lib.${ctx.system}.mkLintCheck {
+            inherit (ctx) src;
+            name = "loom-paredit-lint";
+          };
         };
-      };
     };
 }
