@@ -42,10 +42,12 @@ nix-store --store "$store" --gc --print-live > "$scratch/live-paths"
 grep -Fx "$package" "$scratch/live-paths"
 printf 'Verified complete closure and profile GC root.\n'
 if [[ $(uname -s) == Linux ]]; then
-  # nix run enters the isolated store's mount namespace, not the host store.
-  nix run --store "$store" --offline "$package" -- --version > "$scratch/version"
+  # nix shell enters the isolated store's mount namespace, not the host store.
+  nix shell --store "$store" --offline "$package" \
+    --command "$package/bin/loom" --version > "$scratch/version"
   grep -Ex 'loom [0-9]+\.[0-9]+\.[0-9]+' "$scratch/version"
-  nix run --store "$store" --offline "$package" -- --help > "$scratch/help"
+  nix shell --store "$store" --offline "$package" \
+    --command "$package/bin/loom" --help > "$scratch/help"
   grep -F 'Usage: loom [PATH]' "$scratch/help"
   printf 'Verified offline Linux startup from the restored archive.\n'
 else
