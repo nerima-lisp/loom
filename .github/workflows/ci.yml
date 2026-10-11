@@ -96,4 +96,6 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/package-release.sh result loom-ci-x86_64-linux "$RUNNER_TEMP/dist"
-          bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz"
+          # The runner restricts unprivileged mounts; keep the restored store isolated.
+          sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
+            bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz"

@@ -84,7 +84,9 @@ jobs:
           set -euo pipefail
           name="loom-${RELEASE_REF}-x86_64-linux"
           bash scripts/package-release.sh result "$name" dist
-          bash scripts/test-release.sh "dist/${name}.tar.gz"
+          # The runner restricts unprivileged mounts; keep the restored store isolated.
+          sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
+            bash scripts/test-release.sh "dist/${name}.tar.gz"
 
       # Leave the release as draft until a maintainer supplies the canonical notes.
       - name: Create draft release
