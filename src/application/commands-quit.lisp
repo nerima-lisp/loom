@@ -3,11 +3,11 @@
 (define-condition loom-quit (condition) ()
   (:documentation
    "Signaled by SAVE-BUFFERS-KILL-TERMINAL to ask the main event loop in
-src/main.lisp to exit cleanly."))
+src/application/event-loop.lisp to exit cleanly."))
 
 (progn
   (defun %quit-buffer-list ()
-    "Return displayed buffers followed by hidden registered buffers."
+    "Return displayed and registered buffers with duplicates removed."
     (let ((displayed
             (mapcar (function loom/feature/window:window-buffer)
                     (loom/feature/window:window-tree-windows

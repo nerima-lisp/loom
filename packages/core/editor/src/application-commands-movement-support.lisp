@@ -1,13 +1,11 @@
 (in-package #:loom)
 
 (defun %move-point-to-position (buffer position)
-  "Move BUFFER point to POSITION."
   (buffer-set-point buffer
                     (buffer-position-line position)
                     (buffer-position-column position)))
 
 (defun %move-point-to-offset (buffer offset)
-  "Move BUFFER point to OFFSET."
   (%move-point-to-position buffer
                            (buffer-offset-position buffer offset)))
 

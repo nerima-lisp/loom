@@ -83,6 +83,24 @@
               :to-equal 6)))
 
   (it
+    "sends UTF-16 completion positions while preserving the popup anchor"
+    (%with-lsp-navigation (transport session buffer
+                           :content (format nil "~C fo" (code-char #x1f600)))
+      (buffer-set-point buffer 0 4)
+      (lsp-completion-at-point)
+      (let* ((request (%parse-lsp-json
+                       (car (last (%fake-sent-in-order transport)))))
+             (position (gethash "position" (gethash "params" request))))
+        (expect (gethash "character" position) :to-equal 5))
+      (%fake-push-and-drain
+       transport session
+       (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"label\":\"foobar\"}]}"
+               (%lsp-last-request-id transport)))
+      (expect (editor-completion-column
+               (editor-state-completion *editor-state*))
+              :to-equal 2)))
+
+  (it
     "reports an empty reply rather than opening an empty popup"
     (%with-lsp-navigation (transport session buffer)
       (loom/feature/lsp:lsp-completion-at-point)

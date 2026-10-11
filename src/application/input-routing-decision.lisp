@@ -88,7 +88,7 @@
             command)))
 
 (defun %classify-key-event (event keymap-state)
-  "Return the immutable routing decision for EVENT in KEYMAP-STATE."
+  "Classify EVENT before the mutating dispatch step."
   (let* ((context (%input-routing-context event keymap-state))
          (minibuffer-was-active
            (input-routing-context-minibuffer-was-active context))

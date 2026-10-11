@@ -128,6 +128,20 @@
                 :to-equal '(5 6)))))
 
   (it
+    "maps UTF-16 diagnostic positions after a supplementary character"
+    (let* ((buffer (make-buffer :name "main.nix"
+                                :initial-content
+                                (format nil "~Cab" (code-char #x1f600))))
+           (diagnostic
+             (make-lsp-diagnostic
+              (make-lsp-range (make-lsp-position 0 2)
+                              (make-lsp-position 0 3))
+              "bad"))
+           (span (loom::%layout-lsp-diagnostic-span buffer diagnostic)))
+      (expect (list (buffer-span-start span) (buffer-span-end span))
+              :to-equal '(1 2))))
+
+  (it
     "clips diagnostics to the visible range and follows horizontal scroll"
     (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 3))
            (window (%layout-window state))

@@ -30,9 +30,12 @@
       ((null buffer)
        (%lsp-navigation-message (format nil "Cannot open ~A" path)))
       (t
-       (loom:buffer-set-point buffer
-                              (lsp-position-line position)
-                              (lsp-position-character position))
+       (let ((line (max 0 (min (lsp-position-line position)
+                              (1- (loom:buffer-line-count buffer))))))
+         (loom:buffer-set-point
+          buffer line
+          (lsp-character-to-column (loom:buffer-line buffer line)
+                                   (lsp-position-character position))))
        buffer))))
 
 (defun %lsp-definition-response (buffer line character locations error-message)
@@ -58,8 +61,10 @@ back even when the jump crossed into another file."
       ((not (lsp-session-capability session "definitionProvider"))
        (%lsp-navigation-message "Server does not provide definitions"))
       (t
+       (lsp-session-sync-buffer session buffer)
        (lsp-request-definition
-        session uri line character
+        session uri line
+        (lsp-column-to-character (loom:buffer-line buffer line) character)
         (lambda (locations error-message)
           (%lsp-definition-response
            buffer line character locations error-message)))

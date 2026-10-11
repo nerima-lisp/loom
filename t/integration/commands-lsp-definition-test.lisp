@@ -50,6 +50,26 @@
       (expect buffer :to-have-point (cons 2 1))))
 
   (it
+    "converts UTF-16 definition positions and preserves the jump origin"
+    (%with-lsp-navigation (transport session buffer
+                           :content (format nil "~C foo bar" (code-char #x1f600)))
+      (buffer-set-point buffer 0 8)
+      (lsp-find-definition)
+      (let* ((request (%parse-lsp-json
+                       (car (last (%fake-sent-in-order transport)))))
+             (position (gethash "position" (gethash "params" request))))
+        (expect (gethash "character" position) :to-equal 9))
+      (%fake-push-and-drain
+       transport session
+       (format nil
+               "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":{\"uri\":\"~A\",\"range\":{\"start\":{\"line\":0,\"character\":7},\"end\":{\"line\":0,\"character\":10}}}}"
+               (%lsp-last-request-id transport)
+               (lsp-path-uri "/tmp/main.lisp")))
+      (expect buffer :to-have-point (cons 0 6))
+      (lsp-pop-definition)
+      (expect buffer :to-have-point (cons 0 8))))
+
+  (it
     "reports an empty result rather than jumping nowhere"
     (%with-lsp-navigation (transport session buffer)
       (buffer-set-point buffer 0 1)
@@ -118,6 +138,48 @@
       (expect (minibuffer-message-string
                (editor-state-minibuffer *editor-state*))
               :to-equal "No jump to return from"))))
+
+(describe
+  "LSP navigation synchronization"
+  (it-each
+      (("completion" loom/feature/lsp:lsp-completion-at-point "textDocument/completion")
+       ("definition" loom/feature/lsp:lsp-find-definition "textDocument/definition"))
+      "opens the document before requesting ~A" (label command method)
+    (declare (ignore label))
+    (%with-lsp-navigation (transport session buffer)
+      (funcall command)
+      (expect (mapcar (lambda (json) (gethash "method" (%parse-lsp-json json)))
+                      (%fake-sent-in-order transport))
+              :to-equal (list "initialize" "initialized" "textDocument/didOpen" method))
+      (let ((document (gethash "textDocument"
+                               (gethash "params" (%fake-sent-message transport 2)))))
+        (expect (gethash "uri" document) :to-equal (lsp-path-uri "/tmp/main.lisp"))
+        (expect (gethash "text" document) :to-equal "foo")
+        (expect (gethash "version" document) :to-equal 1))))
+
+  (it-each
+      (("completion" loom/feature/lsp:lsp-completion-at-point "textDocument/completion")
+       ("definition" loom/feature/lsp:lsp-find-definition "textDocument/definition"))
+      "sends edits before requesting ~A without resending unchanged text" (label command method)
+    (declare (ignore label))
+    (%with-lsp-navigation (transport session buffer)
+      (lsp-session-sync-buffer session buffer)
+      (buffer-insert-string buffer "!")
+      (funcall command)
+      (expect (mapcar (lambda (json) (gethash "method" (%parse-lsp-json json)))
+                      (%fake-sent-in-order transport))
+              :to-equal (list "initialize" "initialized" "textDocument/didOpen"
+                              "textDocument/didChange" method))
+      (let* ((params (gethash "params" (%fake-sent-message transport 3)))
+             (document (gethash "textDocument" params)))
+        (expect (gethash "version" document) :to-equal 2)
+        (expect (gethash "text" (first (gethash "contentChanges" params)))
+                :to-equal "!foo"))
+      (funcall command)
+      (expect (mapcar (lambda (json) (gethash "method" (%parse-lsp-json json)))
+                      (%fake-sent-in-order transport))
+              :to-equal (list "initialize" "initialized" "textDocument/didOpen"
+                              "textDocument/didChange" method method)))))
 
 (describe
   "LSP navigation keybindings"

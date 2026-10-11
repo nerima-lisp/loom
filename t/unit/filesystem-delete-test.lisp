@@ -51,4 +51,14 @@
     "signals an error when path does not exist"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "missing.txt" dir)))
-        (signals error (file-tree-delete nil path))))))
+        (signals error (file-tree-delete nil path)))))
+
+  (it
+    "rejects deletion outside the file-tree root"
+    (host-kit:with-temporary-directory (outside)
+      (host-kit:with-temporary-directory (root)
+        (let ((path (merge-pathnames "preserved.txt" outside))
+              (tree (make-file-tree root)))
+          (host-kit:write-file-string "keep me" path)
+          (signals error (file-tree-delete tree path))
+          (expect (host-kit:path-exists-p path) :to-be-truthy))))))

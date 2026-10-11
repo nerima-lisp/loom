@@ -57,10 +57,10 @@ ran off the end of the history, both leave the input untouched."
     (and on-key (funcall on-key key-event) t)))
 
 (defun %minibuffer-notify-change (minibuffer)
-  "Tell MINIBUFFER's ON-CHANGE hook that the input text just changed.
+  "Notify MINIBUFFER's ON-CHANGE hook with the current input.
 
-Only the branches that actually edit the input call this; confirm and cancel do
-not, because by then the session they would notify is already over."
+Editing-key branches notify this hook even when the input is unchanged;
+confirm and cancel do not."
   (let ((on-change (%minibuffer-on-change minibuffer)))
     (when on-change
       (funcall on-change (%minibuffer-input minibuffer)))))
@@ -121,7 +121,7 @@ not, because by then the session they would notify is already over."
 (defun minibuffer-handle-key (minibuffer key-event)
   "Feed one KEY-EVENT (as returned by CL-TTY-KIT:DECODE-INPUT-CHUNK) to an
 active MINIBUFFER: ordinary character events are appended to the input,
-Backspace/Delete edit it, Up/Down recall history (when MINIBUFFER was created
+Backspace edits it, Up/Down recall history (when MINIBUFFER was created
 with one, via CL-HISTORY-KIT:HISTORY-PREVIOUS/HISTORY-NEXT), RET invokes the
 ON-CONFIRM callback passed to MINIBUFFER-ACTIVATE after deactivating the
 current prompt (so the callback may activate a next prompt),

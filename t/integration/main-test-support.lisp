@@ -1,9 +1,8 @@
 (in-package #:loom/test)
 
 (defun %fresh-full-editor-state (initial-content)
-  "Build a complete *EDITOR-STATE*, unlike %FRESH-EDITOR-STATE in
-commands-test.lisp: a real minibuffer, file-tree, renderer, and the default
-keybindings, for exercising %RUN-EVENT-LOOP end to end."
+  "Include a minibuffer, file-tree, renderer, and default keybindings so
+event-loop tests can exercise input routing and frame composition together."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (window-tree (make-window-tree buffer 80 24)))
     (make-editor-state :window-tree window-tree

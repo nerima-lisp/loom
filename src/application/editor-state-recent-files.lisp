@@ -9,7 +9,8 @@
                       path-object)))))
 
 (defun %bounded-recent-files (path-string files limit)
-  "Return PATH-STRING followed by unique FILES, bounded by LIMIT."
+  "Prepend PATH-STRING, remove its existing occurrences from FILES, and
+truncate to LIMIT."
   (let ((unique-files (cons path-string
                             (remove path-string files :test #'string=))))
     (subseq unique-files

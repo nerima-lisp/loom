@@ -36,7 +36,7 @@
   (%isearch-pattern session))
 
 (defun isearch-session-match (session)
-  "Return the BUFFER-SPAN point currently sits on, or NIL."
+  "Return SESSION's selected BUFFER-SPAN, or NIL when it has no current match."
   (%isearch-match session))
 
 (defun isearch-session-matches (session)
@@ -91,12 +91,10 @@ it clears the match without reporting one."
     session))
 
 (defun isearch-repeat (session direction)
-  "Return SESSION advanced to the next match in DIRECTION.
-
-Repeating with no pattern yet is what re-runs the previous search in Emacs;
-here it simply leaves the session alone rather than inventing one. A repeat
-that finds nothing new leaves the current match in place, so point stops moving
-once the pattern has failed."
+  "Set SESSION's direction and reapply its current pattern.
+When a current match exists, search one character beyond its start in DIRECTION,
+wrapping as needed. An empty pattern yields no match without failure; a nonempty
+pattern with no match clears the session match and sets the failure flag."
   (check-type direction (member :forward :backward))
   (setf (%isearch-direction session) direction)
   (let ((match (%isearch-match session)))

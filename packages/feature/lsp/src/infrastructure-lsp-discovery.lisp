@@ -32,10 +32,7 @@ their arguments and quoting."
   (let ((contents
           (handler-case
               (host-kit:read-file-string configuration)
-            (file-error (condition)
-              (declare (ignore condition))
-              nil)
-            (pathname-error (condition)
+            (host-kit:host-operation-failed (condition)
               (declare (ignore condition))
               nil))))
     (%lsp-config-command contents)))
@@ -50,7 +47,8 @@ values when no usable configuration is found.  Reading a malformed or
 unreadable configuration is intentionally treated as no discovery so the
 interactive command can continue to offer its explicit prompt."
   (multiple-value-bind (root configuration)
-      (%lsp-config-path path)
+      (handler-case (%lsp-config-path path)
+        (file-error () (values nil nil)))
     (let ((command (and configuration
                         (%lsp-read-config-command configuration))))
       (if command

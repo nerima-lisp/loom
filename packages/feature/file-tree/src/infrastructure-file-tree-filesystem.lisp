@@ -2,9 +2,9 @@
 
 
 (defun file-tree-create-file (tree path)
-  "Create a new, empty regular file on disk at PATH (via *LOOM-FILESYSTEM*).
+  "Create an empty regular file at PATH through native or configured filesystem dispatch.
 Signals an error if PATH already exists. Returns PATH."
-  (declare (ignorable tree))
+  (%file-tree-assert-native-path-within-root tree path)
   (%dispatch-native-path-operation
       (path)
       (%native-create-file path)
@@ -13,9 +13,9 @@ Signals an error if PATH already exists. Returns PATH."
   path)
 
 (defun file-tree-create-directory (tree path)
-  "Create a new, empty directory on disk at PATH (via *LOOM-FILESYSTEM*). Signals
+  "Create an empty directory at PATH through native or configured filesystem dispatch. Signals
 an error if PATH already exists. Returns PATH."
-  (declare (ignorable tree))
+  (%file-tree-assert-native-path-within-root tree path)
   (%dispatch-native-path-operation
       (path)
       (progn
@@ -30,10 +30,11 @@ an error if PATH already exists. Returns PATH."
   path)
 
 (defun file-tree-rename (tree old-path new-path)
-  "Move/rename the file or directory at OLD-PATH to NEW-PATH on disk (via
-*LOOM-FILESYSTEM*). Signals an error if OLD-PATH does not exist or
+  "Move the file or directory at OLD-PATH to NEW-PATH through filesystem dispatch.
+Signals an error if OLD-PATH does not exist or
 NEW-PATH already does. Returns NEW-PATH."
-  (declare (ignorable tree))
+  (%file-tree-assert-native-path-within-root tree old-path)
+  (%file-tree-assert-native-path-within-root tree new-path)
   (%dispatch-native-path-operation
         (old-path new-path)
         (progn
@@ -54,8 +55,9 @@ NEW-PATH already does. Returns NEW-PATH."
   new-path)
 
 (defun file-tree-delete (tree path)
-  "Delete the file or directory at PATH from disk (via CL-HOST-KIT).
+  "Delete the file or directory at PATH through native or host filesystem dispatch.
 Signals an error if PATH does not exist. Returns TREE."
+  (%file-tree-assert-native-path-within-root tree path)
   (%dispatch-native-path-operation
         (path)
         (%native-delete-path path)

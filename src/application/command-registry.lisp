@@ -17,7 +17,7 @@
                      :end2 (length prefix))))
 
 (defun command-completion-candidates (input)
-  "Return named command specs whose names begin with INPUT."
+  "Return registered command names matching the normalized INPUT prefix."
   (let ((prefix (%normalized-command-name input)))
     (loop for spec in *command-specs*
           for name = (getf spec :name)

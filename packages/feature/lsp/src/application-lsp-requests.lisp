@@ -15,7 +15,7 @@ extra test."
 (defun %lsp-request (session method params handler)
   "Send METHOD with PARAMS and register HANDLER for the matching response.
 
-HANDLER is called with (RESULT ERROR-MESSAGE): exactly one is non-NIL. It runs
+HANDLER is called with (RESULT ERROR-MESSAGE); both may be NIL on success. It runs
 during LSP-SESSION-DRAIN, which the event loop calls between frames, so it may
 touch editor state but must not block."
   (let ((id (%lsp-send-request session method params)))

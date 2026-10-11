@@ -1,7 +1,7 @@
 (in-package #:loom)
 
 (defun %word-character-p (character)
-  "Return true when CHARACTER belongs to an Emacs-style word."
+  "Return true for an alphanumeric CHARACTER or underscore."
   (or (alphanumericp character)
       (char= character #\_)))
 

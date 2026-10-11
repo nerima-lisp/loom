@@ -41,8 +41,8 @@
 
 (defgeneric buffer-path (buffer)
   (:documentation
-   "Return the pathname/namestring BUFFER is associated with, or NIL if the
-buffer has never been loaded from or saved to a file.")
+   "Return the pathname/namestring associated with BUFFER, or NIL when no
+path is associated.")
   (:method (buffer)
     (%buffer-path buffer)))
 
@@ -85,23 +85,13 @@ boolean needs mode metadata and belongs to a feature package.")
 
 (defgeneric buffer-load (path)
   (:documentation
-   "Read the file at PATH via CL-HOST-KIT:READ-FILE-STRING and return a new
+   "Read the file at PATH and return a new
 buffer (as if by MAKE-BUFFER) whose BUFFER-PATH is PATH, whose initial text
 is the file's contents, and whose BUFFER-NAME is derived from PATH's
-filename. BUFFER-MODIFIED-P is false on the returned buffer.
-
-Declared here (name, docstring, argument list) only; the real, disk-touching
-:METHOD lives in infrastructure/filesystem.lisp, matching how the
-disk-touching FILE-TREE-* generics are split from domain/file-tree.lisp
-into that same file."))
+filename. BUFFER-MODIFIED-P is false on the returned buffer."))
 
 (defgeneric buffer-save (buffer)
   (:documentation
-   "Write BUFFER's contents (as returned by BUFFER-TEXT) to BUFFER-PATH via
-CL-HOST-KIT:WRITE-FILE-STRING. Signals an error if BUFFER has no associated
-path. On success, clears BUFFER-MODIFIED-P. Returns BUFFER.
-
-Declared here (name, docstring, argument list) only; the real, disk-touching
-:METHOD lives in infrastructure/filesystem.lisp, matching how the
-disk-touching FILE-TREE-* generics are split from domain/file-tree.lisp
-into that same file."))
+   "Write BUFFER's contents (as returned by BUFFER-TEXT) to BUFFER-PATH.
+Signals an error if BUFFER has no associated path. On success, clears
+BUFFER-MODIFIED-P. Returns BUFFER."))

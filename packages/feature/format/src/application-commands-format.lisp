@@ -83,11 +83,9 @@ formatter command to have been configured first."
          (%format-error-message "Format-on-save" condition))))))
 
 (defun format-before-save (buffer &optional (state *editor-state*))
-  "Format BUFFER in place before STATE writes it to disk.
-
-Formatter failures are reported as data and do not prevent the ordinary save
-from proceeding; this keeps an unavailable formatter from making a buffer
-unsaveable."
+  "Attempt to format BUFFER when format-on-save is enabled in STATE.
+Report nonzero formatter exits and caught errors in STATE's minibuffer when
+present, and return BUFFER."
   (when (and state
              (editor-state-format-on-save-p state)
              (editor-state-format-command state))

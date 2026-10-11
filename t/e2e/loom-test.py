@@ -9,13 +9,15 @@ instead of raw-byte substrings and fixed sleeps.
 import argparse
 import os
 import sys
+import unittest
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 
 from loom_e2e import commands  # noqa: E402
-from loom_e2e.registry import all_scenarios, covered_commands  # noqa: E402
+from loom_e2e.deadline import run_scenario  # noqa: E402
+from loom_e2e.registry import all_scenarios  # noqa: E402
 import scenarios  # noqa: E402,F401
 
 
@@ -39,16 +41,19 @@ def _parse_args(argv):
     parser.add_argument("--list", action="store_true", help="list scenario names and exit")
     parser.add_argument(
         "--require-full-coverage", action="store_true",
-        help="exit 1 when a registered command-spec is not exercised by any scenario",
+        help="exit 1 when a registered command-spec is not exercised by selected scenarios",
     )
     return parser.parse_args(argv)
 
 
-def _coverage_report():
+def _coverage_report(selected):
     all_command_names = set(commands.parse_command_names(_REPO_ROOT))
     if not all_command_names:
         raise SystemExit("command-spec catalogue is empty")
-    covered = covered_commands()
+    covered = {
+        command for _, scenario_commands, _ in selected
+        for command in scenario_commands
+    }
     covered_known = covered & all_command_names
     uncovered = sorted(all_command_names - covered)
     unknown = sorted(covered - all_command_names)
@@ -61,6 +66,19 @@ def _coverage_report():
     return uncovered, unknown
 
 
+def _run_deadline_preflight():
+    suite = unittest.defaultTestLoader.discover(
+        start_dir=_THIS_DIR,
+        pattern="test_deadline.py",
+        top_level_dir=_THIS_DIR,
+    )
+    if suite.countTestCases() == 0:
+        raise SystemExit("deadline preflight discovered no tests")
+    result = unittest.TextTestRunner(stream=sys.stderr, verbosity=1).run(suite)
+    if not result.wasSuccessful():
+        raise SystemExit("deadline preflight failed")
+
+
 def main(argv):
     args = _parse_args(argv)
     registered = all_scenarios()
@@ -68,7 +86,7 @@ def main(argv):
     if args.list:
         for name, scenario_commands, _fn in registered:
             print(f"{name}\tcommands={','.join(scenario_commands) or '(none)'}")
-        uncovered, unknown = _coverage_report()
+        uncovered, unknown = _coverage_report(registered)
         return 1 if uncovered or unknown else 0
 
     binary = _binary_from_arguments(args.binary)
@@ -79,11 +97,12 @@ def main(argv):
     if not selected:
         raise SystemExit(f"--only {args.only!r} matched no scenario")
 
+    _run_deadline_preflight()
     passed = 0
     failed = 0
     for name, _scenario_commands, fn in selected:
         try:
-            fn(binary)
+            run_scenario(fn, binary)
         except (AssertionError, OSError, TimeoutError) as error:
             failed += 1
             print(f"FAIL {name}: {error}", file=sys.stderr)
@@ -94,7 +113,7 @@ def main(argv):
     total = len(selected)
     print(f"{passed} passed, {failed} failed, {total} total")
 
-    uncovered, unknown = _coverage_report()
+    uncovered, unknown = _coverage_report(selected)
 
     if failed:
         return 1

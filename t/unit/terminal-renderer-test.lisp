@@ -1,5 +1,146 @@
 (in-package #:loom/test)
 
+(describe
+  "wide-character ANSI output"
+  (it-each
+      (("あX" "あX   ")
+       ("😀X" "😀X   ")
+       ("あ X" "あ X  ")
+       ("😀 X" "😀 X  ")
+       ("A X" "A X   "))
+      "renders ~S without emitting a wide-character spacer"
+      (text expected)
+    (let ((screen (cl-tty-kit:make-screen 6 1)))
+      (cl-tty-kit:screen-write-string screen 0 0 text)
+      (let* ((cells (cl-tty-kit::screen-cells screen))
+             (output (with-output-to-string (stream)
+                       (cl-tty-kit::%write-cell-range cells 0 6 stream))))
+        (expect output :to-equal expected)
+        (expect (cl-tty-kit::%cell-range-rendered-length cells 0 6)
+                :to-equal (length output)))))
+
+  (it
+    "preserves style transitions after a wide character"
+    (let ((screen (cl-tty-kit:make-screen 6 1)))
+      (cl-tty-kit:screen-write-string screen 0 0 "あ" :style '(:bold))
+      (cl-tty-kit:screen-write-string screen 2 0 "X")
+      (let* ((cells (cl-tty-kit::screen-cells screen))
+             (output (with-output-to-string (stream)
+                       (cl-tty-kit::%write-cell-range cells 0 6 stream))))
+        (expect output :to-contain (format nil "あ~C[0mX" #\Escape))
+        (expect (cl-tty-kit::%cell-range-rendered-length cells 0 6)
+                :to-equal (length output)))))
+
+  (it
+    "does not consume the first cell of the next row"
+    (let ((renderer (cl-tty-kit:make-renderer 4 2)))
+      (cl-tty-kit:screen-write-string (cl-tty-kit:renderer-screen renderer)
+                                     2 0 "あ")
+      (cl-tty-kit:screen-write-string (cl-tty-kit:renderer-screen renderer)
+                                     0 1 "X")
+      (expect (cl-tty-kit:renderer-render renderer)
+              :to-contain (format nil "  あ~%X   "))))
+
+  (it-each
+      ((2 "あ") (-1 "あ  "))
+      "repaints the wide lead when a planned update starts in its spacer (end ~S)"
+      (end expected)
+    (let* ((screen (cl-tty-kit:make-screen 4 1))
+           (plan (cl-tty-kit::%make-screen-diff-plan screen)))
+      (cl-tty-kit:screen-write-string screen 0 0 "あ")
+      (cl-tty-kit::%record-diff-operation plan 1 end)
+      (let ((output (with-output-to-string (stream)
+                      (cl-tty-kit::%write-diff-plan screen plan stream))))
+        (expect output :to-equal (format nil "~C[1;1H~A" #\Escape expected))
+        (expect (cl-tty-kit::%diff-plan-rendered-length screen plan)
+                :to-equal (length output)))))
+
+  (it
+    "repaints the wide lead for an unplanned spacer update"
+    (let ((screen (cl-tty-kit:make-screen 12 2))
+          (previous (cl-tty-kit:make-screen 12 2)))
+      (cl-tty-kit:screen-write-string screen 0 0 "あX")
+      (cl-tty-kit:screen-write-string previous 0 0 "あX")
+      (cl-tty-kit:screen-write-string previous 1 0 "A")
+      (let ((repaint nil)
+            (output nil))
+        (setf output
+              (with-output-to-string (stream)
+                (setf repaint
+                      (nth-value 2
+                        (cl-tty-kit::%write-preferred-diff screen previous stream)))))
+        (expect repaint :to-be-falsy)
+        (expect output :to-equal (format nil "~C[1;1Hあ" #\Escape)))))
+
+  (it
+    "counts unplanned wide-only updates exactly and prefers the shorter diff"
+    (let ((screen (cl-tty-kit:make-screen 12 1))
+          (previous (cl-tty-kit:make-screen 12 1)))
+      (cl-tty-kit:screen-write-string screen 0 0 "ああああああ")
+      (cl-tty-kit:screen-write-string previous 0 0 "AAAAAAAAAAAA")
+      (let ((output (with-output-to-string (stream)
+                      (cl-tty-kit::%write-diff screen previous stream))))
+        (expect (cl-tty-kit::%diff-render-length
+                 screen previous most-positive-fixnum)
+                :to-equal (length output))
+        (let ((stream (make-string-output-stream)))
+          (expect (nth-value 2
+                    (cl-tty-kit::%write-preferred-diff screen previous stream))
+                  :to-be-falsy)
+          (expect (get-output-stream-string stream) :to-equal output)))))
+
+  (it-each
+      ((6 "あ") (-1 "あ  "))
+      "normalizes a planned spacer update on the second row (end ~S)"
+      (end expected)
+    (let* ((screen (cl-tty-kit:make-screen 4 2))
+           (plan (cl-tty-kit::%make-screen-diff-plan screen)))
+      (cl-tty-kit:screen-write-string screen 0 1 "あ")
+      (cl-tty-kit::%record-diff-operation plan 5 end)
+      (let ((output (with-output-to-string (stream)
+                      (cl-tty-kit::%write-diff-plan screen plan stream))))
+        (expect output :to-equal (format nil "~C[2;1H~A" #\Escape expected))
+        (expect (cl-tty-kit::%diff-plan-rendered-length screen plan)
+                :to-equal (length output)))))
+
+  (it-each
+      ((0 0 "あ") (3 1 "😀") (10 1 "あ"))
+      "clears a replaced wide spacer in an unplanned diff at ~S, ~S"
+      (column row glyph)
+    (let ((previous (cl-tty-kit:make-screen 12 2)))
+      (cl-tty-kit:screen-write-string previous column row glyph)
+      (let ((screen (cl-tty-kit:screen-copy previous)))
+        (cl-tty-kit:screen-write-string screen column row "X")
+        (let ((output (with-output-to-string (stream)
+                        (cl-tty-kit::%write-diff screen previous stream))))
+          (expect output :to-equal
+                  (format nil "~C[~D;~DHX " #\Escape (1+ row) (1+ column)))
+          (expect (cl-tty-kit::%diff-render-length
+                   screen previous most-positive-fixnum)
+                  :to-equal (length output))))))
+
+  (it-each
+      ((0 0 "あ") (3 1 "😀") (10 1 "あ"))
+      "clears a replaced wide spacer beyond the dirty end at ~S, ~S"
+      (column row glyph)
+    (let* ((renderer (cl-tty-kit:make-renderer 12 2))
+           (screen (cl-tty-kit:renderer-screen renderer)))
+      (cl-tty-kit:screen-write-string screen column row glyph)
+      (cl-tty-kit:renderer-render renderer)
+      (cl-tty-kit:screen-write-string screen column row "X")
+      (let ((output (cl-tty-kit:renderer-render renderer)))
+        (expect output :to-equal
+                (format nil "~C[~D;~DHX " #\Escape (1+ row) (1+ column)))
+        (expect (cl-tty-kit:renderer-render renderer) :to-equal ""))))
+
+  (it
+    "keeps the repaint lower bound valid for wide-only rows"
+    (let ((screen (cl-tty-kit:make-screen 6 2)))
+      (dotimes (row 2)
+        (cl-tty-kit:screen-write-string screen 0 row "あ😀あ"))
+      (expect (cl-tty-kit::%minimum-screen-render-length screen)
+              :to-be-less-than-or-equal (cl-tty-kit::%screen-render-length screen)))))
+
 (defun %lines-buffer (&rest lines)
   "Return a fresh buffer whose content is LINES joined by newlines, for
 LOOM-RENDERER-DRAW-BUFFER tests that only care about BUFFER-LINE-COUNT and

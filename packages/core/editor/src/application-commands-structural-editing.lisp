@@ -11,9 +11,8 @@
   "Define a zero-argument structural editing command.
 
 EDIT-FUNCTION returns the edits to apply, or NIL when the operation has nothing
-to act on -- no enclosing list, nothing left to slurp, an unbalanced form. NIL
-leaves the buffer untouched rather than guessing, because a structural command
-that half-applies is exactly the failure these commands exist to avoid."
+to act on -- no enclosing list, nothing left to slurp, or no closing delimiter
+found by the depth scanner. NIL leaves the buffer untouched."
   `(defun ,name ()
      ,documentation
      (multiple-value-call #'%run-structural-command #',edit-function
@@ -23,8 +22,8 @@ that half-applies is exactly the failure these commands exist to avoid."
 (define-structural-command forward-slurp-sexp
   "Move the enclosing list's closing delimiter past the next expression (C-<right>).
 
-`(a) b' becomes `(a b)'. The delimiter moves rather than being deleted and
-retyped, so the parentheses cannot come out unbalanced."
+`(a) b' becomes `(a b)' by inserting the closing delimiter at the new position
+and deleting it at the old position."
   %forward-slurp-edits)
 
 (define-structural-command forward-barf-sexp

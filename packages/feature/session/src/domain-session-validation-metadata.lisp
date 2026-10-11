@@ -1,7 +1,17 @@
 (in-package #:loom/feature/session)
 
+(defun %session-error (control &rest arguments)
+  (let ((*print-circle* t))
+    (error "~A" (apply #'format nil control arguments))))
+
+(defun %session-proper-list-p (value)
+  (and (listp value)
+       (handler-case
+           (integerp (list-length value))
+         (type-error () nil))))
+
 (defun %validate-session-list (value predicate message)
-  (unless (and (listp value) (every predicate value))
+  (unless (and (%session-proper-list-p value) (every predicate value))
     (error "validate-session-snapshot: ~A" message))
   value)
 
@@ -9,7 +19,7 @@
   (let ((names (mapcar name-reader objects)))
     (unless (= (length names)
                (length (remove-duplicates names :test #'string=)))
-      (error "validate-session-snapshot: ~A: ~S" message names)))
+      (%session-error "validate-session-snapshot: ~A: ~S" message names)))
   objects)
 
 (defun %session-buffer-identity-valid-p (buffer)
@@ -34,16 +44,16 @@
 
 (defun %validate-session-buffer (buffer)
   (unless (typep buffer 'session-buffer-snapshot)
-    (error "validate-session-snapshot: invalid buffer snapshot ~S" buffer))
+    (%session-error "validate-session-snapshot: invalid buffer snapshot ~S" buffer))
   (unless (and (%session-buffer-identity-valid-p buffer)
                (%session-buffer-position-valid-p buffer)
                (%session-buffer-state-valid-p buffer))
-    (error "validate-session-snapshot: malformed buffer snapshot ~S" buffer))
+    (%session-error "validate-session-snapshot: malformed buffer snapshot ~S" buffer))
   buffer)
 
 (defun %validate-session-bookmark (bookmark)
   (unless (typep bookmark 'session-bookmark-snapshot)
-    (error "validate-session-snapshot: invalid bookmark snapshot ~S"
+    (%session-error "validate-session-snapshot: invalid bookmark snapshot ~S"
            bookmark))
   (unless (and (%session-nonempty-string-p
                 (session-bookmark-snapshot-name bookmark))
@@ -55,7 +65,7 @@
                 (session-bookmark-snapshot-line bookmark))
                (%session-nonnegative-integer-p
                 (session-bookmark-snapshot-column bookmark)))
-    (error "validate-session-snapshot: malformed bookmark snapshot ~S"
+    (%session-error "validate-session-snapshot: malformed bookmark snapshot ~S"
            bookmark))
   bookmark)
 
@@ -67,7 +77,7 @@
     (%validate-session-list
      recent-files #'%session-nonempty-string-p
      "recent files must be a list of non-empty strings")
-    (unless (listp bookmarks)
+    (unless (%session-proper-list-p bookmarks)
       (error "validate-session-snapshot: bookmarks must be a list"))
     (mapc #'%validate-session-bookmark bookmarks)
     (%validate-session-unique-names

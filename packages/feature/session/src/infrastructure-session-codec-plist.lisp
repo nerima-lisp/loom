@@ -7,12 +7,6 @@
         when (eq (first tail) key)
           return (second tail)))
 
-(defun %session-proper-list-p (value)
-  (and (listp value)
-       (handler-case
-           (integerp (list-length value))
-         (type-error () nil))))
-
 (defun %session-keyword-plist-p (value)
   (and (%session-proper-list-p value)
        (evenp (length value))
@@ -27,9 +21,9 @@
 
 (defun %validate-session-plist (value expected-keys context)
   (unless (%session-keyword-plist-p value)
-    (error "~A: expected a keyword plist, got ~S" context value))
+    (%session-error "~A: expected a keyword plist, got ~S" context value))
   (unless (%session-plist-keys-valid-p value expected-keys)
-    (error "~A: unexpected or duplicate fields in ~S" context value))
+    (%session-error "~A: unexpected or duplicate fields in ~S" context value))
   value)
 
 (defparameter +loom-session-top-level-keys+
@@ -38,7 +32,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %session-codec-field-p (field)
-    (and (listp field)
+    (and (%session-proper-list-p field)
          (= (length field) 2)
          (keywordp (first field))
          (symbolp (second field))))

@@ -15,12 +15,12 @@
         (session-snapshot-current-workspace-index snapshot)))
 
 (defun %session-required-list (value message)
-  (unless (listp value)
+  (unless (%session-proper-list-p value)
     (error "session: ~A must be a proper list" message))
   value)
 
 (defun %session-required-string-list (value message)
-  (unless (and (listp value)
+  (unless (and (%session-proper-list-p value)
                (every #'stringp value))
     (error "session: ~A must be a list of strings" message))
   value)
@@ -46,7 +46,7 @@
   (%validate-session-plist value +loom-session-top-level-keys+ "session")
   (let ((version (%session-plist-value value :loom-session)))
     (unless (eql version +loom-session-version+)
-      (error "session: unsupported version ~S" version))
+      (%session-error "session: unsupported version ~S" version))
     (let ((serialized-buffers (%session-plist-value value :buffers))
           (recent-files (%session-plist-value value :recent-files))
           (serialized-bookmarks (%session-plist-value value :bookmarks))

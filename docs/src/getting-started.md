@@ -21,6 +21,11 @@ nix profile install github:nerima-lisp/loom
 loom
 ```
 
+Release archives contain the complete Nix runtime closure, rather than a
+standalone executable. See the
+[archive installation instructions](https://github.com/nerima-lisp/loom/blob/main/INSTALL.md)
+for checksum verification, import, and profile installation.
+
 Consumers inside the nerima-lisp organization should pin a reviewed commit or
 release tag when one is available, rather than following the default branch:
 

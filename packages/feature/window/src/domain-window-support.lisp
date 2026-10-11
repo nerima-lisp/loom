@@ -2,11 +2,8 @@
 
 (defgeneric %window-collect-leaves (node)
   (:documentation
-   "Return every WINDOW-LEAF under NODE, depth-first, first child before
-second child. A method per node type -- rather than an ETYPECASE branching
-on both -- since WINDOW-LEAF and WINDOW-SPLIT-NODE are the tree's only two
-node shapes and this is the recursion's exhaustive base/recursive-case
-split, not a true either/or decision within one case.")
+   "Return every WINDOW-LEAF under NODE in depth-first order,
+first child before second child.")
   (:method ((node window-leaf)) (list node))
   (:method ((node window-split-node))
     (append (%window-collect-leaves (first (window-split-node-children node)))
@@ -32,8 +29,7 @@ integer division and giving any extra row/column to the first child. Returns
   (:documentation
    "Recompute every leaf rect under NODE to fill (X Y W H), recursing into
 WINDOW-SPLIT-NODE children using the same proportional halving rule as
-%WINDOW-SPLIT-RECTS. A method per node type, matching %WINDOW-COLLECT-LEAVES'
-own base-case/recursive-case split across the tree's only two node shapes.")
+%WINDOW-SPLIT-RECTS.")
   (:method ((node window-leaf) x y w h)
     (setf (window-leaf-x node) x
           (window-leaf-y node) y

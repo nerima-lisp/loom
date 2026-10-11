@@ -13,7 +13,8 @@
       enabled)))
 
 (defun toggle-auto-save ()
-  "Toggle automatic saving for the selected buffer only."
+  "Toggle the selected buffer's membership in the per-buffer auto-save list.
+Global auto-save mode still enables saving when the buffer is absent from it."
   (let* ((state *editor-state*)
          (buffer (and state (%selected-buffer))))
     (unless (and state buffer)

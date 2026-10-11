@@ -4,8 +4,8 @@
   "Return PATH's last path component (file or directory name) for display in
 the file-tree sidebar, e.g. a pathname printing as \"/root/sub/\" becomes
 \"sub\" and \"/root/a.txt\" becomes \"a.txt\". Works for both real pathnames
-(as LOOM-FS-LIST-DIRECTORY returns) and the plain path strings t/file-tree-
-test.lisp's fake child-lister uses, since both print to a slash-delimited
+(as LOOM-FS-LIST-DIRECTORY returns) and the plain path strings the test
+child-lister uses, since both print to a slash-delimited
 string via NAMESTRING/identity."
   (let* ((full (if (stringp path) path (namestring path)))
          (trimmed (string-right-trim "/" full))

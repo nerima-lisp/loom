@@ -37,11 +37,11 @@ buffer draws one row per logical line, which makes the two the same thing."
   %backward-word-once %forward-word-once)
 
 (define-buffer-boundary-command beginning-of-buffer
-  "Move point to the beginning of the buffer (M-<)."
+  "Move point to the beginning of the buffer's visible region (M-<)."
   (buffer-narrow-start-offset buffer))
 
 (define-buffer-boundary-command end-of-buffer
-  "Move point to the end of the buffer (M->)."
+  "Move point to the end of the buffer's visible region (M->)."
   (buffer-narrow-end-offset buffer))
 
 (define-scroll-command scroll-up-command
@@ -53,7 +53,7 @@ buffer draws one row per logical line, which makes the two the same thing."
   -1)
 
 (defun goto-line ()
-  "Prompt for a one-based line number and move point there."
+  "Prompt for a one-based line number within the visible region and move point there."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((input "Go to line: "))

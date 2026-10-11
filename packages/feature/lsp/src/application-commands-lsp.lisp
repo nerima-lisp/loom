@@ -2,9 +2,9 @@
 
 (defun %lsp-start-discovery (buffer)
   (let ((path (or (buffer-path buffer) (truename "."))))
-    (multiple-value-bind (command root)
+    (multiple-value-bind (command root configuration)
         (lsp-discover-command path)
-      (values command (or root (%lsp-buffer-directory buffer))))))
+      (values command (or root (%lsp-buffer-directory buffer)) configuration))))
 
 (defun %lsp-start-with-command (command root buffer minibuffer)
   (if command
@@ -16,21 +16,22 @@
 (defun lsp-start ()
   "Start an LSP session, offering the project-local command when available.
 
-`.loom-lsp` is discovered before the prompt.  Pressing RET accepts the first
-usable command line from that file; typing a command continues to override
-the discovered value explicitly."
+`.loom-lsp` is discovered before the prompt.  RET selects its command for
+review; only an exact yes at the trust prompt runs it.  Typing a command
+continues to override the discovered value explicitly."
   (let ((buffer (loom/application:%selected-buffer)))
-    (multiple-value-bind (discovered-command discovered-root)
+    (multiple-value-bind (discovered-command discovered-root configuration)
         (%lsp-start-discovery buffer)
-    (loom/application:with-prompts
-        (minibuffer (editor-state-minibuffer *editor-state*)
-                         :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((typed-command (%lsp-command-prompt-string discovered-command)))
-      (%lsp-start-with-command
-       (%normalize-lsp-command typed-command discovered-command)
-       discovered-root
-       buffer
-       minibuffer)))))
+      (loom/application:with-prompts
+          (minibuffer (editor-state-minibuffer *editor-state*)
+                      :on-cancel (minibuffer-message minibuffer "Quit"))
+        ((typed-command (%lsp-command-prompt-string discovered-command)))
+        (let ((override (%normalize-lsp-command typed-command nil)))
+          (if (and discovered-command (null override))
+              (%lsp-confirm-discovered-command
+               discovered-command discovered-root configuration buffer minibuffer)
+              (%lsp-start-with-command
+               override discovered-root buffer minibuffer)))))))
 
 (defun lsp-stop ()
   "Stop the current LSP session, if one exists."

@@ -97,6 +97,44 @@
       (expect (buffer-text buffer) :to-contain "hello")
       (expect (buffer-read-only-p buffer) :to-be-truthy)))
 
+  (it "captures output arriving between an empty read and child exit"
+    (let* ((buffer (make-buffer :name "*Loom-Terminal*"))
+           (session
+             (loom/feature/terminal::%make-terminal-session
+              "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer :pty))
+           output-ready output-read closed)
+      (with-replaced-function
+          (cl-tty-kit:pty-read
+           (lambda (pty)
+             (declare (ignore pty))
+             (when (and output-ready (not output-read))
+               (setf output-read t)
+               "terminal-ready")))
+        (with-replaced-function
+            (cl-tty-kit:pty-alive-p
+             (lambda (pty)
+               (declare (ignore pty))
+               (setf output-ready t)
+               nil))
+          (with-replaced-function
+              (cl-tty-kit:pty-exit-code
+               (lambda (pty)
+                 (declare (ignore pty))
+                 0))
+            (with-replaced-function
+                (cl-tty-kit:close-pty
+                 (lambda (pty)
+                   (declare (ignore pty))
+                   (setf closed t)))
+              (terminal-session-poll session)))))
+      (expect (terminal-session-raw-output session)
+              :to-equal "terminal-ready")
+      (expect (buffer-text buffer) :to-contain "terminal-ready")
+      (expect (terminal-session-exit-code session) :to-be 0)
+      (expect closed :to-be-truthy)
+      (expect (terminal-session-alive-p session) :to-be nil)
+      (expect (terminal-session-pty session) :to-be nil)))
+
   (it "keeps invalid resize requests out of the screen and PTY"
     (let ((session
             (loom/feature/terminal::%make-terminal-session

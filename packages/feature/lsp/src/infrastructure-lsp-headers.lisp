@@ -1,5 +1,11 @@
 (in-package #:loom/feature/lsp)
 
+(defconstant +lsp-max-header-bytes+ (* 64 1024)
+  "Maximum number of octets accepted before an LSP header terminator.")
+
+(defconstant +lsp-max-frame-body-bytes+ (* 16 1024 1024)
+  "Maximum UTF-8 body size accepted for one LSP frame.")
+
 (defun %lsp-header-octets (string)
   (let ((octets (make-array (length string)
                             :element-type '(unsigned-byte 8))))
@@ -32,10 +38,17 @@
                          (subseq line (1+ colon))))))
 
 (defun %lsp-content-length-value (value)
-  (handler-case
-      (parse-integer value :junk-allowed nil)
-    (error (condition)
-      (error "Invalid Content-Length: ~S (~A)" value condition))))
+  (let ((length-value
+          (handler-case
+              (parse-integer value :junk-allowed nil)
+            (error (condition)
+              (error "Invalid Content-Length: ~S (~A)" value condition)))))
+    (when (minusp length-value)
+      (error "LSP frame has a negative Content-Length: ~D" length-value))
+    (when (> length-value +lsp-max-frame-body-bytes+)
+      (error "LSP frame Content-Length ~D exceeds the maximum of ~D"
+             length-value +lsp-max-frame-body-bytes+))
+    length-value))
 
 (defun %lsp-header-lines (header)
   (loop with start = 0

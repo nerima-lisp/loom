@@ -1,6 +1,8 @@
 (defpackage #:loom/feature/lsp
   (:use #:cl #:loom #:loom/application)
   (:export
+   #:lsp-column-to-character
+   #:lsp-character-to-column
    #:lsp-position
    #:make-lsp-position
    #:lsp-position-p

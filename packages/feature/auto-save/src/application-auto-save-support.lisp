@@ -1,7 +1,7 @@
 (in-package #:loom/feature/auto-save)
 
 (defparameter *auto-save-interval* 5
-  "Minimum number of seconds between automatic save passes.")
+  "Interval in seconds between automatic save passes, unless FORCE bypasses it.")
 
 (defun %auto-save-message (control &rest arguments)
   (let ((minibuffer (and *editor-state*

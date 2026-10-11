@@ -3,6 +3,35 @@
 (describe
   "LSP domain values"
   (it
+    "round trips UTF-16 positions at every character boundary"
+    (dolist (text (list "" "abc" "日本語"
+                       (format nil "a~Cb~Cc" (code-char #x1f600)
+                               (code-char #x1f642))))
+      (loop for column from 0 to (length text)
+            do (expect
+                (loom/feature/lsp:lsp-character-to-column
+                 text (loom/feature/lsp:lsp-column-to-character text column))
+                :to-equal column))))
+
+  (it
+    "counts supplementary characters as two UTF-16 units"
+    (let ((text (format nil "a~Cb~C" (code-char #x1f600) (code-char #x1f642))))
+      (expect (loop for column from 0 to 4
+                    collect (loom/feature/lsp:lsp-column-to-character text column))
+              :to-equal '(0 1 3 4 6))
+      (expect (loop for character from 0 to 6
+                    collect (loom/feature/lsp:lsp-character-to-column text character))
+              :to-equal '(0 1 1 2 3 3 4))))
+
+  (it
+    "clamps UTF-16 offsets beyond the end of a line"
+    (expect (loom/feature/lsp:lsp-character-to-column "" 10) :to-equal 0)
+    (expect (loom/feature/lsp:lsp-character-to-column "日本語" 10) :to-equal 3)
+    (expect (loom/feature/lsp:lsp-character-to-column
+             (string (code-char #x1f600)) 10)
+            :to-equal 1))
+
+  (it
     "defaults an omitted position to the document origin"
     (let ((position (make-lsp-position)))
       (expect (list (lsp-position-line position)

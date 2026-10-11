@@ -22,11 +22,11 @@ unchanged when the terminal size could not be read or has not changed."
         (values last-width last-height))))
 
 (defparameter *event-loop-poll-interval* 0.05
-  "Maximum seconds between background terminal, LSP, and auto-save polls.
+  "Input-wait timeout in seconds while terminal, LSP, or auto-save work is active.
 
 The interval is only used while there is background work that needs a
-periodic turn.  With no live terminal session or auto-save target, the loop
-keeps its original blocking read behavior.")
+periodic turn.  With no live terminal session, LSP session, auto-save mode,
+or auto-save buffers, the loop keeps its original blocking read behavior.")
 
 (defun %event-loop-background-work-p ()
   "Whether the event loop must wake up without a keyboard byte."

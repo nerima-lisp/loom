@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 # Check tag/version alignment before spending time on the release build.
@@ -23,19 +23,32 @@ jobs:
     name: Verify the tagged tree
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      commit: ${{ steps.version.outputs.commit }}
     env:
       RELEASE_REF: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
+      - name: Require a version tag
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          ref: ${{ github.event_name == 'push' && github.sha || format('refs/tags/{0}', env.RELEASE_REF) }}
           persist-credentials: false
 
       - name: Verify tag matches .asd version
+        id: version
         env:
           PACKAGE: loom
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
+          if [[ "$EVENT_NAME" == push ]]; then
+            [[ "$(git rev-parse HEAD)" == "$EVENT_COMMIT" ]]
+          fi
           asd_version="$(sed -n 's/^[[:space:]]*:version "\([^"]*\)".*/\1/p' "$PACKAGE.asd" | head -n1)"
           tag_version="${RELEASE_REF#v}"
           echo "asd=$asd_version tag=$tag_version"
@@ -43,6 +56,7 @@ jobs:
             echo "::error::Tag $RELEASE_REF does not match $PACKAGE.asd version $asd_version" >&2
             exit 1
           fi
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/nix-setup
         with:
@@ -51,6 +65,12 @@ jobs:
 
       - name: Check flake
         run: nix flake check --print-build-logs
+
+      - name: Test release archive input validation
+        run: python3 -B t/release/test-archives.py -v
+
+      - name: Test release workflow guards
+        run: python3 -B t/release/test-workflow.py -v
 
   release:
     name: build and publish x86_64-linux
@@ -64,7 +84,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          ref: ${{ needs.verify.outputs.commit }}
           persist-credentials: false
 
       - uses: ./.github/actions/nix-setup
@@ -83,18 +103,35 @@ jobs:
         run: |
           set -euo pipefail
           name="loom-${RELEASE_REF}-x86_64-linux"
-          mkdir -p "dist/${name}"
-          cp result/bin/loom "dist/${name}/"
-          cp README.md LICENSE "dist/${name}/"
-          tar -czf "dist/${name}.tar.gz" -C dist "${name}"
-          ( cd dist && shasum -a 256 "${name}.tar.gz" > "${name}.tar.gz.sha256" )
+          bash scripts/package-release.sh result "$name" dist
+          # The runner restricts unprivileged mounts; keep the restored store isolated.
+          sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
+            bash scripts/test-release.sh "dist/${name}.tar.gz" "${RELEASE_REF#v}"
+
+      - name: Verify the release tag has not moved
+        env:
+          VERIFIED_COMMIT: ${{ needs.verify.outputs.commit }}
+        run: |
+          set -euo pipefail
+          tag_refs="$(git ls-remote origin "refs/tags/$RELEASE_REF" "refs/tags/$RELEASE_REF^{}")"
+          tag_commit="$(printf '%s\n' "$tag_refs" | awk '$2 ~ /\^\{\}$/ { print $1 }')"
+          if [[ -z "$tag_commit" ]]; then
+            tag_commit="$(printf '%s\n' "$tag_refs" | awk 'NF == 2 { print $1 }')"
+          fi
+          [[ "$tag_commit" == "$VERIFIED_COMMIT" ]]
 
       # Leave the release as draft until a maintainer supplies the canonical notes.
       - name: Create draft release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
-        with:
-          tag_name: ${{ env.RELEASE_REF }}
-          draft: true
-          files: |
-            dist/*.tar.gz
-            dist/*.sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          releases="$(gh api "repos/$GH_REPO/releases" --paginate --jq '.[].tag_name')"
+          if grep -Fxq "$RELEASE_REF" <<< "$releases"; then
+            echo "::error::A release already exists for $RELEASE_REF; refusing to replace it." >&2
+            exit 1
+          fi
+          name="loom-${RELEASE_REF}-x86_64-linux"
+          gh release create "$RELEASE_REF" "dist/$name.tar.gz" "dist/$name.tar.gz.sha256" \
+            --draft --verify-tag --title "$RELEASE_REF" --notes ""

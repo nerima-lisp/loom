@@ -34,7 +34,13 @@ error; an incomplete frame is a normal result for a streaming reader."
   (check-type octets (vector (unsigned-byte 8)))
   (let ((header-end (%lsp-find-header-end octets)))
     (unless header-end
+      (when (> (length octets) +lsp-max-header-bytes+)
+        (error "LSP header exceeds the maximum of ~D octets"
+               +lsp-max-header-bytes+))
       (return-from loom-lsp-frame-decode (values nil 0 :incomplete)))
+    (when (> header-end +lsp-max-header-bytes+)
+      (error "LSP header exceeds the maximum of ~D octets"
+             +lsp-max-header-bytes+))
     (multiple-value-bind (body-start body-end status)
         (%lsp-frame-body-range
          octets header-end (%lsp-header-string (subseq octets 0 header-end)))

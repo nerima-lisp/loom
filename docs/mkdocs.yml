@@ -82,6 +82,7 @@ nav:
   - Project:
       - Development: project/development.md
       - Roadmap: project/roadmap.md
+      - Daily-driver Checklist: notes/daily-driver-checklist.md
 
 not_in_nav: |
   notes/

@@ -73,7 +73,7 @@
        (sync-start (get-internal-real-time))
        (sync-results (mapcar directory-lister paths))
       (sync-ms (%benchmark-milliseconds sync-start (get-internal-real-time)))
-       (runtime (loom:make-loom-concurrent-runtime
+       (runtime (loom/feature/file-tree:make-loom-concurrent-runtime
                  :directory-lister directory-lister
                  :parallelism 4
                  :queue-capacity 8))
@@ -86,7 +86,7 @@
          (multiple-value-bind (promises accepted-count)
              (let ((submit-start (get-internal-real-time)))
                (multiple-value-bind (submitted count)
-                   (loom:loom-concurrent-runtime-prefetch runtime paths)
+                   (loom/feature/file-tree:loom-concurrent-runtime-prefetch runtime paths)
                 (setf async-submit-ms
                       (%benchmark-milliseconds submit-start (get-internal-real-time)))
                 (values submitted count)))
@@ -95,10 +95,10 @@
              (cl-concurrent-kit:await
               promise
               :timeout (cl-date-kit:duration-of-seconds 5)))
-           (loom:loom-concurrent-runtime-drain runtime)
+           (loom/feature/file-tree:loom-concurrent-runtime-drain runtime)
             (setf async-results
                   (mapcar (lambda (path)
-                            (loom:loom-concurrent-runtime-directory-entries runtime path))
+                            (loom/feature/file-tree:loom-concurrent-runtime-directory-entries runtime path))
                           paths))
             (unless (equal sync-results async-results)
               (error "Synchronous and asynchronous results differ: sync=~S async=~S" sync-results async-results))
@@ -106,4 +106,4 @@
         (format t "~&paths=~D~%sync-ms=~,2F~%async-submit-ms=~,2F~%async-total-ms=~,2F~%accepted=~D~%speedup=~,2Fx~%"
                 (length paths) sync-ms async-submit-ms async-total-ms accepted
                 (if (plusp async-total-ms) (/ sync-ms async-total-ms) 0.0)))
-    (loom:loom-concurrent-runtime-shutdown runtime)))
+    (loom/feature/file-tree:loom-concurrent-runtime-shutdown runtime)))

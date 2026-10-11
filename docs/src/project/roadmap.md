@@ -23,9 +23,10 @@ work. Deferred items are not production-readiness claims.
   trees with `C-x t 2`, `C-x t o`, `C-x t n`, `C-x t p`, and `C-x t k`; the
   active workspace is shown in the shortcut line and persisted by sessions.
 - **File-tree sidebar** (`C-x C-t`) -- navigate, and create/rename/delete
-  files and directories on disk, using `cl-boundary-kit` for normal
-  operations and direct `cl-host-kit` calls where filesystem guarantees
-  require them.
+  files and directories on disk, using `cl-boundary-kit` for normal and
+  testable operations. The direct native path is limited to the real
+  filesystem with wild pathnames; `cl-host-kit` covers host-level filesystem
+  paths that require it.
 - **File I/O** -- `find-file` (`C-x C-f`), `save-buffer` (`C-x C-s`).
 - **Regular-expression search and replacement** -- `C-s`, `M-%`, and
   `M-g g`, using `cl-regex-kit` patterns with a bounded search operation.
@@ -40,13 +41,16 @@ work. Deferred items are not production-readiness claims.
   double-buffered renderer.
 - **Interactive PTY terminals** -- `M-x terminal` starts a child process,
   translates editor key events into terminal input, polls output, handles
-  resize, and exposes a read-only transcript plus a bounded ANSI screen model.
+  resize, and displays the current bounded ANSI screen in a read-only buffer.
+  The session retains cumulative raw output separately.
 - **Bounded concurrent file-tree runtime** -- `cl-concurrent-kit` workers
   prefetch uncached directory listings, while generation checks, cache
   invalidation, and render-lane draining prevent stale results from changing
   editor state. The default is four workers with a queue capacity of 64.
-- **Syntax highlighting** -- line-local Common Lisp highlighting is modeled as
-  a pure feature domain and rendered through the presentation boundary.
+- **Syntax highlighting** -- Common Lisp uses a reader-aware, line-local
+  tokenizer; other modes use a lightweight tokenizer with mode-specific
+  keywords and comment prefixes. Tokens are rendered through the presentation
+  boundary. Multiline reader state is not retained.
 - **Major modes and project navigation** -- buffers infer a mode from their
   path, `M-x set-major-mode` can override it, and `C-x p f`, `C-x p s`, and
   `C-x p r` find files, search project contents, and show the project root.
@@ -62,16 +66,19 @@ work. Deferred items are not production-readiness claims.
   branch-aware status from the current project root; `M-x git-diff` and
   `M-x git-diff-staged` display working-tree and index patches; and
   `M-x git-stage-file` / `M-x git-unstage-file` prompt for a repository path
-  before changing the index. All captured status and diff output, including
-  stderr and exit status, remains visible in read-only result buffers, while
-  staging commands report their exit status in the minibuffer.
+  before changing the index. Read-only result buffers show standard output,
+  falling back to standard error when standard output is empty. Failed commands
+  report their exit status in the minibuffer; staging commands report their
+  outcome there as well.
 - **Auto-save** -- `M-x auto-save-mode` enables global automatic saving and
   `M-x toggle-auto-save` enables it for the selected buffer; modified writable
   file-backed buffers are written to `#file-name#` sidecars from the event loop
   without clearing their normal modified state.
 - **LSP client slice** -- `lsp-start`, `lsp-stop`, and `lsp-diagnostics` use a
   project-local `.loom-lsp` command when available (while allowing an
-  explicit prompt override), negotiate initialization capabilities,
+  explicit prompt override). A discovered command requires review of its
+  configuration path, directory, and command, followed by the exact answer
+  `yes` before execution. The client negotiates initialization capabilities,
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
   `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
   `shutdown`/`exit` handshake with a timeout fallback. `lsp-completion-at-point`
@@ -87,9 +94,8 @@ work. Deferred items are not production-readiness claims.
 - **Structural editing** -- `C-<right>` and `C-<left>` slurp and barf forward,
   `C-M-<left>` and `C-M-<right>` do the same backward, `M-(` wraps the next
   expression, `M-s` splices the enclosing list away and `M-r` raises the
-  expression at point out of it. A delimiter is moved rather than deleted and
-  retyped, so an operation cannot leave the parentheses unbalanced, and each
-  one is a single undo step.
+  expression at point out of it. These commands transform delimiters and group
+  each successful edit into a single undo step.
 - **Incremental search** -- `C-s` and `C-r` move point to the next match on
   every keystroke, highlight all matches with the current one distinguished,
   advance or turn around on a further `C-s`/`C-r`, keep point on RET while
@@ -119,7 +125,7 @@ work. Deferred items are not production-readiness claims.
   optional positional path are supported. A file opens in the first window,
   a directory becomes the file-tree root, and no path defaults to `.`. See
   `*loom-app*` in
-  [`src/application/startup.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/startup.lisp).
+  [`src/application/startup-cli.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/startup-cli.lisp).
 - **Integrated test, coverage, and benchmark paths** -- the `loom/test` ASDF
   component order is declared in [`loom.asd`](https://github.com/nerima-lisp/loom/blob/main/loom.asd)
   and loads unit and integration coverage in serial order. It includes
@@ -127,21 +133,24 @@ work. Deferred items are not production-readiness claims.
   [development guide](development.md) documents the test runner, PTY checks,
   coverage, and benchmark commands.
 
-## 2026 status
+## Verification scope
 
 The source tree uses explicit domain/application/infrastructure/presentation
 boundaries, release-pinned dependencies, and an ASDF-integrated test and
 coverage workflow. The Nix gate runs formatting, paredit syntax, tests,
-coverage, documentation, and all declared systems. Deferred work remains
+coverage, and documentation for the selected host system. Results for other
+declared systems require separate execution. Deferred work remains
 listed below.
+
+The Nix check is the in-process gate. Sandbox3 may skip PTY-dependent checks
+when no usable PTY is available. `nix run .#e2e` is the separate PTY gate and
+must be assessed independently.
 
 ## Not yet implemented
 
-These are follow-up phases rather than claims that the current editor is a
-complete Lem or Emacs replacement:
-
-- **Richer LSP protocol surface.** The discovered or prompted server command
-  remains trusted input; dynamic registration and requests beyond the current
+- **Richer LSP protocol surface.** Command confirmation is not a sandbox;
+  approved discovered commands and explicit overrides run with the user's
+  permissions. Dynamic registration and requests beyond the current
   completion, definition, diagnostics, and document-sync slice remain future
   work.
 - **Broader editing surface.** A richer package/extension distribution story
@@ -152,12 +161,15 @@ complete Lem or Emacs replacement:
   interactive terminal application integrations, richer Git staging and diff
   UI, and additional language modes remain future work.
 
-## Released changes
+## Release status
 
-### v0.1.0
+Release readiness for the implemented feature set requires recorded results
+from both verification gates and the author's completed
+[manual checklist](../notes/daily-driver-checklist.md). Unperformed checks are
+not passes. The deferred features above are outside that release scope.
 
-The initial release consolidates the 2026 editor modernization, bounded concurrent
-file-tree runtime, integrated unit/integration/e2e test paths, and the
-session-wide buffer registry with `switch-to-buffer` lookup.
-
-Release artifacts and release notes are managed through [GitHub Releases](https://github.com/nerima-lisp/loom/releases).
+The Nix build patches the pinned renderer's wide-character output. Regression
+tests check ANSI text placement as well as cursor geometry, including replacement
+of wide characters by narrow ones. The
+[verification ledger](../notes/verification-ledger.md) records the observed
+checks and remaining acceptance criteria.

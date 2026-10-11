@@ -16,10 +16,10 @@
   (copy-list +project-ignored-directory-names+))
 
 (defun project-marker-name-p (name)
-  "Return true when NAME is one of the configured project markers."
-  (member (string-downcase (princ-to-string name))
+  "Return true when NAME matches a configured marker case-insensitively."
+  (member (princ-to-string name)
           +project-marker-names+
-          :test #'string=))
+          :test #'string-equal))
 
 (defun project-directory-path (path)
   "Return PATH as a directory pathname, dropping a file component if any."
@@ -56,7 +56,7 @@
         (setf current parent)))))
 
 (defun project-relative-path (root path)
-  "Return PATH relative to ROOT, with a stable slash-free prefix."
+  "Return PATH's namestring relative to ROOT, removing a leading ./ when present."
   (let ((relative (enough-namestring (pathname path)
                                     (project-directory-path root))))
     (if (and (>= (length relative) 2)

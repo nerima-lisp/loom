@@ -92,6 +92,18 @@
           (loom/feature/lsp::%lsp-utf8-encode (string surrogate)))))
     (let ((crlf (%lsp-crlf)))
       (signals error
+        (loom/feature/lsp::loom-lsp-frame-decode
+         (%lsp-raw-frame
+          (format nil "Content-Length: ~D~A~A"
+                  (1+ loom/feature/lsp::+lsp-max-frame-body-bytes+)
+                  crlf crlf)
+          #())))
+      (signals error
+        (loom/feature/lsp::loom-lsp-frame-decode
+         (make-array (1+ loom/feature/lsp::+lsp-max-header-bytes+)
+                     :element-type '(unsigned-byte 8)
+                     :initial-element (char-code #\A))))
+      (signals error
         (loom/feature/lsp::%lsp-header-octets
          (format nil "Content-Léngth: 0~A~A" crlf crlf)))
       (signals error

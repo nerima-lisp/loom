@@ -73,9 +73,11 @@ end-of-line. A no-op at the very end of the buffer."
 (defun buffer-delete-region (buffer start-line start-column end-line end-column)
   "Delete the text between the zero-based (START-LINE, START-COLUMN) and
 (END-LINE, END-COLUMN) positions (end exclusive). The end position must not
-precede the start position. Moves point to the start position. Marks BUFFER
-as modified and records undo information. Returns the deleted text as a
-string."
+precede the start position. Clamp the range to BUFFER's visible region.
+A nonempty deletion moves point to the clamped start, marks BUFFER modified,
+and records undo information. An empty range leaves point and history
+unchanged. Returns the deleted text as a string, empty for an empty range.
+Read-only BUFFER signals BUFFER-READ-ONLY-ERROR even for an empty range."
   (when (or (< end-line start-line)
             (and (= end-line start-line) (< end-column start-column)))
     (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"

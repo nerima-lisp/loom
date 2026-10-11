@@ -51,9 +51,11 @@ nothing'."
       ((not (lsp-session-capability session "completionProvider"))
        (%lsp-navigation-message "Server does not provide completion"))
       (t
+       (lsp-session-sync-buffer session buffer)
        (let ((anchor (%lsp-completion-prefix-column buffer line character)))
          (lsp-request-completion
-          session uri line character
+          session uri line
+          (lsp-column-to-character (loom:buffer-line buffer line) character)
           (lambda (items error-message)
             (%show-lsp-completion-response
              buffer line anchor items error-message))))

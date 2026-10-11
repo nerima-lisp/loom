@@ -35,9 +35,7 @@ Trusts its callers -- %CLAMP-POSITION, BUFFER-LINE (which validates
 LINE-NUMBER itself before calling this), and BUFFER-DELETE-CHAR's
 backward/forward helpers (which derive it from BUFFER's own point) -- to
 never pass an out-of-range LINE-NUMBER; this is an internal helper, not a
-system boundary. The scan ends either at the newline closing LINE-NUMBER or,
-for BUFFER's last line, at the end of the pieces, since that line has no
-closing newline; both leave TEXT holding the answer."
+system boundary."
   (let ((current-line 0)
         (text (make-string-output-stream)))
     (block scan
