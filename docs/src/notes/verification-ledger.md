@@ -523,8 +523,9 @@ Each command exited 0. The archive suite selected and passed all 30 tests; the
 workflow suite selected and passed all 11 tests. The new cases execute the real
 archive script or workflow shell bodies with isolated Nix, Git, and GitHub CLI
 fixtures. They do not establish real Linux store restoration or live GitHub
-release behavior for these changes. The earlier Linux CI run predates these
-corrections. No release was created, published, or overwritten during validation.
+release behavior. The Linux CI results below cover real store restoration on
+the corrected revision. No release was created, published, or overwritten during
+validation.
 
 The following static checks also exited 0:
 
@@ -537,7 +538,8 @@ paredit --dry-run inspect check --file scripts/check-cl-tty-kit.lisp
 An independent source review found no additional concrete implementation defect
 in the release corrections. The workflow fixtures execute extracted shell bodies,
 not GitHub's checkout expressions, output wiring, permissions, or job scheduling.
-Those connections were inspected in source; they still require live CI validation.
+Those connections were inspected in source. The CI workflow subsequently ran on
+GitHub; the release workflow itself has not been invoked for these corrections.
 
 ### Darwin lower-level verification
 
@@ -555,6 +557,96 @@ completed inside the existing gate. This result clears the Darwin lower-level
 check for the diagnostic change; it does not establish the cause of the earlier
 timeouts or validate the release corrections on Linux.
 
-The author's eleven real-terminal acceptance rows remain `Not run`. The current
-release corrections require a new Linux CI run before release; previous green
-CI runs do not cover them. No draft or published release has been created.
+### Linux CI on the corrected revision
+
+[CI run 38130828081](https://github.com/nerima-lisp/loom/actions/runs/38130828081)
+completed successfully on `1e30fd01b66bfa50ebe5199dbfd9c19fa813813b`.
+All three jobs passed: sandboxed checks, real PTY E2E, and offline archive
+restoration. The following commands exited 0 in those jobs:
+
+```sh
+python3 -B t/release/test-archives.py -v
+python3 -B t/release/test-workflow.py -v
+timeout --signal=TERM --kill-after=15s 1800s nix flake check --print-build-logs
+nix build .#default --print-build-logs
+timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+bash scripts/package-release.sh result loom-ci-x86_64-linux "$RUNNER_TEMP/dist"
+sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
+  bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz" "$version"
+```
+
+The archive and workflow fixture suites passed 30 and 11 tests respectively.
+The lower-level suite passed all 1,696 tests without skips. The Loom suite passed
+1,506 tests and skipped three real-child-process cases in the sandbox: terminal
+session output, LSP session lifecycle errors, and LSP transport roundtrip. There
+were no failed or errored tests. The coverage run selected the same suite and
+reported 20,081/20,991 expressions (95.66%) and 1,917/2,042 branches (93.88%).
+
+Outside the sandbox, the E2E preflight passed 30 tests and all 117 PTY scenarios
+passed. The manifest comparison reported 120/120 commands covered and none
+uncovered. This is separate evidence from the sandboxed child-process skips.
+
+The archive job packaged 29 store paths, restored the complete closure into an
+empty store, verified the profile GC root, and started the restored executable
+offline on Linux. Its version check compared the complete output against the
+source version, `0.1.0`; the help output contained `Usage: loom [PATH]`.
+
+### Darwin verification on the corrected revision
+
+The real PTY E2E run used the same corrected source revision:
+
+```sh
+nix run path:.#e2e --no-update-lock-file
+```
+
+It exited 0 after passing all 30 preflight tests and 117 PTY scenarios. The
+manifest comparison reported 120/120 commands covered and none uncovered.
+
+The full Darwin check did not pass on its first run:
+
+```sh
+nix flake check path:. --no-update-lock-file --print-build-logs
+```
+
+It exited 1. The Loom suite reported 1,505 passed, three skipped, one failed,
+and zero errored, out of 1,509 tests. The failure was `MAIN CLI integration >
+passes process arguments to cl-cli and exits successfully`, which exceeded the
+unchanged 40-second per-test limit after 40.315 seconds. The test source is
+unchanged from the preceding revision. This result does not establish a code
+regression or an environmental cause. The interrupted coverage check is not a
+passing result.
+
+An isolated rebuild of the same immutable test derivation also exited 1 after
+the same case exceeded its limit at 40.251 seconds. Outside the Nix sandbox,
+both the isolated CLI cases and the complete suite passed with the pinned SBCL,
+an empty home directory, and the same dependency registry. A sandbox diagnostic
+run with child-start, source-registry, and system-load tracing then passed. That
+instrumented run was not used to clear the production gate.
+
+After these probes, the unmodified test and coverage derivations were rebuilt:
+
+```sh
+nix build '/nix/store/2cbxjyph3i5kd2m4pb1c5qyn4f6pakym-loom-test-0.1.0.drv^*' --no-link --print-build-logs
+nix build '/nix/store/054g2q9ikpd00s0752gpjgpp6460s1bw-loom-coverage-0.1.0.drv^*' --no-link --print-build-logs
+```
+
+Both exited 0 on the corrected source revision. Each selected all 1,509 tests
+and reported 1,506 passed, three skipped, zero failed, and zero errored. The
+previously failing CLI case passed in 1.363 seconds in the uninstrumented test
+run. Its assertions and 40-second limit were unchanged. The coverage run
+reported 20,085/20,995 expressions (95.67%) and 1,917/2,042 branches (93.88%),
+wrote its HTML report, and completed successfully. These passing rebuilds do
+not explain the earlier timeouts; no timing-related production change was made.
+
+The full Darwin check was then repeated with the updated verification record.
+The same `nix flake check path:. --no-update-lock-file --print-build-logs`
+command exited 0, reporting all eight checks passed. The Loom and coverage
+checks each passed 1,506 tests with three skips, zero failures, and zero errors;
+the CLI case passed in 1.978 seconds in the test check. The parser check read
+443 Lisp files without errors, and the configured Nix formatter completed
+without changes. That formatter does not check Markdown. Linux results above
+are from the separate CI run, not from this Darwin invocation.
+
+The author's eleven real-terminal acceptance rows remain `Not run`. Automated
+checks do not establish Japanese IME usability or author acceptance. No draft
+or published release has been created.
