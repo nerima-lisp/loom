@@ -362,3 +362,32 @@ sbcl --script run-tests.lisp
 It exited 0 with 1,509 passes, no skips, and no failures or errors out of 1,509
 tests. This exercises the three cases skipped in the sandbox; it does not
 establish Linux behavior or replace author acceptance.
+
+### Linux CI verification
+
+[CI run 38114178710](https://github.com/nerima-lisp/loom/actions/runs/38114178710)
+checked commit `3dbc8a11d999ccd2e6a8d1ffec1d25d965beaa9a` on x86_64-linux.
+Both jobs completed successfully. The workflow ran:
+
+```sh
+timeout --signal=TERM --kill-after=15s 1800s nix flake check --print-build-logs
+nix build .#default --print-build-logs
+timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+```
+
+All six flake checks passed: build, tests, formatting, strict documentation,
+structural lint, and coverage. Both test and coverage runs reported 1,506 passes,
+three sandbox skips, and no failures or errors out of 1,509 tests. Coverage was
+20,081/20,991 expressions (95.66%) and 1,917/2,042 branches (93.88%). Structural
+lint inspected 442 Lisp and ASDF files without errors; formatting changed no
+files. The workflow's diff-hygiene check also passed.
+
+The PTY job built the executable from the same commit and passed all 117
+scenarios, covering all 120 registered commands with none uncovered. Its
+deadline preflight passed all 30 tests. This includes the real-server LSP
+scenarios and the wide-character rendering scenarios described above.
+
+Together with the preceding aarch64-darwin results, this establishes the two
+automated platform gates for this source revision. The author's real-terminal
+[acceptance checklist](daily-driver-checklist.md) remains unrun; these results
+do not clear that release gate.
