@@ -476,17 +476,85 @@ completed successfully:
 All three CI jobs exited successfully. These Linux results do not establish
 the author's real-terminal acceptance or a completed release.
 
-On aarch64-darwin, the same lower-level check failed twice, including one
-unchanged retry:
+On aarch64-darwin, the same lower-level check failed in three unchanged
+attempts:
 
 ```sh
 nix build path:.#checks.aarch64-darwin.cl-tty-kit --no-link --no-update-lock-file --print-build-logs
 ```
 
-Both attempts exited 1 with `test suite timed out after 120 seconds` during
-compilation. Neither produced a test-count summary, so neither establishes a
+All attempts exited 1 with `test suite timed out after 120 seconds` during
+compilation. None produced a test-count summary, so none establishes a
 passing suite or a test-case regression. The timeout covers loading the test
 system as well as running it. The host had high load during these attempts;
 its contribution to the timeout is unverified. No timeout or assertion was
-changed. The Darwin lower-level gate and the author's real-terminal acceptance
-remain unresolved, and release has not proceeded.
+changed. These attempts did not clear the Darwin lower-level gate. A subsequent
+passing run is recorded below; the author's real-terminal acceptance remains
+outstanding, and release has not proceeded.
+
+### Release guard corrections
+
+The push-triggered release now checks out the event commit and verifies that
+the checkout matches it before recording the build revision. Manual runs still
+resolve the requested tag once. Both trigger paths use the same per-tag
+concurrency group, and the live remote tag check remains before draft creation.
+
+Archive validation now requires the expected numeric version and compares the
+restored executable's complete version output with that exact line. The previous
+check accepted a different numeric version and extra output; isolated fixtures
+reproduced both defects before the correction. Both workflow callers supply the
+expected version.
+
+Draft creation refuses a tag that already has a release. It uses create-only
+GitHub CLI operations and exact asset paths rather than updating an existing
+release or replacing its assets. Release-list and creation errors remain fatal.
+The remote-tag check is not an atomic guarantee against an external tag update
+between that check and creation.
+
+Local checks on aarch64-darwin passed:
+
+```sh
+bash -n scripts/test-release.sh
+python3 -B t/release/test-archives.py -v
+python3 -B t/release/test-workflow.py -v
+```
+
+Each command exited 0. The archive suite selected and passed all 30 tests; the
+workflow suite selected and passed all 11 tests. The new cases execute the real
+archive script or workflow shell bodies with isolated Nix, Git, and GitHub CLI
+fixtures. They do not establish real Linux store restoration or live GitHub
+release behavior for these changes. The earlier Linux CI run predates these
+corrections. No release was created, published, or overwritten during validation.
+
+The following static checks also exited 0:
+
+```sh
+nix run nixpkgs#actionlint -- .github/workflows/release.yml .github/workflows/ci.yml
+nix run nixpkgs#shellcheck -- scripts/test-release.sh
+paredit --dry-run inspect check --file scripts/check-cl-tty-kit.lisp
+```
+
+An independent source review found no additional concrete implementation defect
+in the release corrections. The workflow fixtures execute extracted shell bodies,
+not GitHub's checkout expressions, output wiring, permissions, or job scheduling.
+Those connections were inspected in source; they still require live CI validation.
+
+### Darwin lower-level verification
+
+The lower-level check now logs test-system loading and compilation progress before
+running the full suite. Its 120-second timeout still covers loading and execution;
+the selected suite, assertions, and rejection of an empty suite are unchanged.
+
+```sh
+nix build path:.#checks.aarch64-darwin.cl-tty-kit --no-link --no-update-lock-file --print-build-logs
+```
+
+This run exited 0 after reporting 1,696 passed, zero skipped, zero todo, zero
+failed, and zero errored, out of 1,696 tests. Both compilation and execution
+completed inside the existing gate. This result clears the Darwin lower-level
+check for the diagnostic change; it does not establish the cause of the earlier
+timeouts or validate the release corrections on Linux.
+
+The author's eleven real-terminal acceptance rows remain `Not run`. The current
+release corrections require a new Linux CI run before release; previous green
+CI runs do not cover them. No draft or published release has been created.

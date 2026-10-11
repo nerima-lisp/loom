@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# != 1 ]]; then
-  echo "Usage: bash scripts/test-release.sh ARCHIVE" >&2
+if [[ $# != 2 ]]; then
+  echo "Usage: bash scripts/test-release.sh ARCHIVE EXPECTED_VERSION" >&2
+  exit 64
+fi
+expected_version=$2
+if [[ ! $expected_version =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+  echo "EXPECTED_VERSION must be strict numeric semver (MAJOR.MINOR.PATCH)." >&2
   exit 64
 fi
 archive=$(realpath "$1")
@@ -39,7 +44,8 @@ if [[ $(uname -s) == Linux ]]; then
   # nix shell enters the isolated store's mount namespace, not the host store.
   nix shell --store "$store" --offline "$package" \
     --command "$package/bin/loom" --version > "$scratch/version"
-  grep -Ex 'loom [0-9]+\.[0-9]+\.[0-9]+' "$scratch/version"
+  printf 'loom %s\n' "$expected_version" > "$scratch/expected-version"
+  cmp "$scratch/expected-version" "$scratch/version"
   nix shell --store "$store" --offline "$package" \
     --command "$package/bin/loom" --help > "$scratch/help"
   grep -F 'Usage: loom [PATH]' "$scratch/help"

@@ -32,6 +32,9 @@ jobs:
       - name: Test release archive input validation
         run: python3 -B t/release/test-archives.py -v
 
+      - name: Test release workflow guards
+        run: python3 -B t/release/test-workflow.py -v
+
       - name: Check flake
         run: |
           set -o pipefail
@@ -98,7 +101,8 @@ jobs:
       - name: Package and restore in an empty store
         run: |
           set -euo pipefail
+          version="$(sed -n 's/^[[:space:]]*:version "\([^"]*\)".*/\1/p' loom.asd | head -n1)"
           bash scripts/package-release.sh result loom-ci-x86_64-linux "$RUNNER_TEMP/dist"
           # The runner restricts unprivileged mounts; keep the restored store isolated.
           sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
-            bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz"
+            bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz" "$version"

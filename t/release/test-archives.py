@@ -344,5 +344,156 @@ class PackageTests(unittest.TestCase):
                 self.assertFalse((self.root / "escaped").exists())
 
 
+class RuntimeVersionTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.scratch = self.root / "scratch"
+        self.scratch.mkdir()
+        self.stub = self.root / "stub-bin"
+        self.stub.mkdir()
+        self.log = self.root / "calls"
+        self.version = self.root / "version-output"
+        self.version.write_bytes(b"loom 0.1.0\n")
+        self.package = "/nix/store/" + "0" * 32 + "-loom-0.1.0"
+        contents = dict(CONTENTS)
+        contents["store-path"] = contents["closure-paths"] = (self.package + "\n").encode()
+        self.archive = self.root / f"{NAME}.tar.gz"
+        with tarfile.open(self.archive, "w:gz") as output:
+            info, _ = member(NAME, tarfile.DIRTYPE, mode=0o755)
+            output.addfile(info)
+            for filename, data in contents.items():
+                info, data = member(f"{NAME}/{filename}", data=data)
+                output.addfile(info, io.BytesIO(data))
+        digest = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        Path(str(self.archive) + ".sha256").write_text(f"{digest}  {self.archive.name}\n")
+        # These stubs never delegate to Nix or access the real store.
+        nix_stub = """#!/usr/bin/env python3
+import os
+from pathlib import Path
+import sys
+
+args = sys.argv[1:]
+package = os.environ["LOOM_RUNTIME_PACKAGE"]
+scratch = Path(os.environ["TMPDIR"]).resolve()
+if args.count("--store") != 1:
+    sys.exit("isolated store required")
+index = args.index("--store")
+store = Path(args[index + 1]).resolve()
+if store.name != "store" or store.parent.parent != scratch:
+    sys.exit("store outside fixture")
+command = Path(sys.argv[0]).name
+action = None
+if command == "nix-store":
+    if args == ["--store", str(store), "--import"]:
+        if sys.stdin.buffer.read() != b"fixture closure\\x00\\xff":
+            sys.exit("unexpected closure")
+        action = "import"
+        print(package)
+    elif args == ["--store", str(store), "--query", "--requisites", package]:
+        action = "requisites"
+        print(package)
+    elif args == ["--store", str(store), "--verify", "--check-contents"]:
+        action = "verify"
+    elif args == ["--store", str(store), "--gc", "--print-live"]:
+        action = "gc"
+        print(package)
+elif command == "nix":
+    if args == ["path-info", "--store", str(store), "--all"]:
+        action = "path-info"
+    elif args == ["profile", "install", "--store", str(store), "--offline",
+                  "--profile", str(store.parent / "profile"), package]:
+        action = "profile"
+        (store.parent / "profile").symlink_to(store / "fixture-package")
+    elif args == ["shell", "--store", str(store), "--offline", package,
+                  "--command", package + "/bin/loom", "--version"]:
+        action = "version"
+        sys.stdout.buffer.write(Path(os.environ["LOOM_RUNTIME_OUTPUT"]).read_bytes())
+    elif args == ["shell", "--store", str(store), "--offline", package,
+                  "--command", package + "/bin/loom", "--help"]:
+        action = "help"
+        print("Usage: loom [PATH]")
+if action is None:
+    sys.exit("unexpected stub invocation")
+with open(os.environ["LOOM_RUNTIME_LOG"], "a") as log:
+    log.write(action + "\\n")
+"""
+        for command in ("nix", "nix-store"):
+            executable = self.stub / command
+            executable.write_text(nix_stub)
+            executable.chmod(0o755)
+        uname = self.stub / "uname"
+        uname.write_text('#!/usr/bin/env bash\n[[ $# == 1 && $1 == -s ]] || exit 64\nprintf "Linux\\n"\n')
+        uname.chmod(0o755)
+        self.environment = dict(
+            os.environ,
+            PATH=str(self.stub) + os.pathsep + os.environ["PATH"],
+            TMPDIR=str(self.scratch),
+            PYTHONDONTWRITEBYTECODE="1",
+            LOOM_RUNTIME_PACKAGE=self.package,
+            LOOM_RUNTIME_OUTPUT=str(self.version),
+            LOOM_RUNTIME_LOG=str(self.log),
+        )
+
+    def run_release(self, *arguments):
+        self.log.write_text("")
+        return subprocess.run(
+            ["bash", str(ROOT / "scripts/test-release.sh"), *arguments],
+            cwd=self.root,
+            env=self.environment,
+            capture_output=True,
+        )
+
+    def calls(self):
+        return self.log.read_text().splitlines()
+
+    def test_known_good_runtime_version(self):
+        for expected in ("0.1.0", "0.0.0", "12.34.56"):
+            with self.subTest(expected=expected):
+                self.version.write_bytes(f"loom {expected}\n".encode())
+                result = self.run_release(str(self.archive), expected)
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(self.calls(), [
+                    "path-info", "import", "requisites", "verify", "profile", "gc", "version", "help",
+                ])
+
+    def test_mismatched_runtime_version(self):
+        self.version.write_bytes(b"loom 9.9.9\n")
+        result = self.run_release(str(self.archive), "0.1.0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("import", self.calls())
+        self.assertIn("version", self.calls())
+        self.assertNotIn("help", self.calls())
+
+    def test_extra_runtime_version_output(self):
+        for output in (b"loom 0.1.0\nextra\n", b"extra\nloom 0.1.0\n",
+                       b"loom 0.1.0\nloom 0.1.0\n", b"loom 0.1.0 extra\n",
+                       b"loom 0.1.0\r\n", b"loom 0.1.0", b""):
+            with self.subTest(output=output):
+                self.version.write_bytes(output)
+                result = self.run_release(str(self.archive), "0.1.0")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("version", self.calls())
+                self.assertNotIn("help", self.calls())
+
+    def test_invalid_expected_versions_do_not_restore(self):
+        for expected in ("", "v0.1.0", "0.1", "0.1.0-rc1", "0.1.0+build",
+                         "01.2.3", "1.02.3", "1.2.03", "0.1.0\n", "0.1.0 extra"):
+            with self.subTest(expected=expected):
+                result = self.run_release(str(self.archive), expected)
+                self.assertEqual(result.returncode, 64)
+                self.assertEqual(self.calls(), [])
+                self.assertEqual(list(self.scratch.iterdir()), [])
+
+    def test_missing_arguments_do_not_restore(self):
+        for arguments in ((), (str(self.archive),), (str(self.archive), "0.1.0", "extra")):
+            with self.subTest(argument_count=len(arguments)):
+                result = self.run_release(*arguments)
+                self.assertEqual(result.returncode, 64)
+                self.assertEqual(self.calls(), [])
+                self.assertEqual(list(self.scratch.iterdir()), [])
+
+
 if __name__ == "__main__":
     unittest.main()
