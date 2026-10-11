@@ -13,7 +13,7 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Both jobs run repository code without a write-capable checkout token.
+# Jobs run repository code without a write-capable checkout token.
 jobs:
   check:
     name: nix flake check
@@ -74,3 +74,26 @@ jobs:
 
       - name: Run PTY E2E
         run: timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+
+  release-archive:
+    name: Offline release archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build default package
+        run: nix build .#default --print-build-logs
+
+      - name: Package and restore in an empty store
+        run: |
+          set -euo pipefail
+          bash scripts/package-release.sh result loom-ci-x86_64-linux "$RUNNER_TEMP/dist"
+          bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz"

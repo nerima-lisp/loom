@@ -83,11 +83,8 @@ jobs:
         run: |
           set -euo pipefail
           name="loom-${RELEASE_REF}-x86_64-linux"
-          mkdir -p "dist/${name}"
-          cp result/bin/loom "dist/${name}/"
-          cp README.md LICENSE "dist/${name}/"
-          tar -czf "dist/${name}.tar.gz" -C dist "${name}"
-          ( cd dist && shasum -a 256 "${name}.tar.gz" > "${name}.tar.gz.sha256" )
+          bash scripts/package-release.sh result "$name" dist
+          bash scripts/test-release.sh "dist/${name}.tar.gz"
 
       # Leave the release as draft until a maintainer supplies the canonical notes.
       - name: Create draft release

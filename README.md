@@ -35,6 +35,10 @@ inputs.loom = {
 For a profile installation from the default branch, run `nix profile install
 github:nerima-lisp/loom`.
 
+For release archives, follow the [archive installation instructions](INSTALL.md).
+Archives include the Nix runtime closure and require Nix; they are not standalone
+executables.
+
 ## Documentation
 
 - [Getting started](https://nerima-lisp.github.io/loom/getting-started/)
