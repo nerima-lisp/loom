@@ -21,7 +21,7 @@
 | PTY E2E | 独立した PTY gate。現行の pass 状態はこの文書では主張しない | `nix run .#e2e` |
 | E2E の到達範囲 | 現行の `command-spec` 集合とシナリオのマニフェストを照合し、未カバーを報告する | `nix run .#e2e -- --list` と全件実行 |
 | E2E observations | pyte reconstructs the screen grid and cursor. Scenarios can also assert saved file bytes | `t/e2e/loom_e2e/session.py`, `screen.py` |
-| CI | `nix flake check` と実 PTY E2E の 2 ジョブ。PTY ジョブは sandbox 外で `nix run .#e2e` を実行する | `.github/workflows/ci.yml` の `check`/`e2e` jobs |
+| CI | Sandboxed checks, real PTY E2E, and offline release archive restoration run in separate jobs. PTY E2E runs `nix run .#e2e` outside the sandbox | `.github/workflows/ci.yml`, `check`, `e2e`, and `release-archive` jobs |
 | 外部プロセス依存 | `terminal`（PTY 子）、`git-*` 5 件、`pipe-command`、`format-current-buffer`、`lsp-*` 6 件 | 各コマンドの実装から `cl-tty-kit:make-pty`、`vcs-kit:run-git`、`process-kit:run-shell`、`uiop:launch-program` への到達を確認 |
 | Historical measurements | Ledger results apply only to the source and environment recorded there | [verification-ledger.md](verification-ledger.md) |
 | 要件書 | `requirements-daily-driver.md` は実装状態ではなく、判断と未実装境界を記録する | FR-000 から FR-010 の状態と判断理由を現行コード・検証結果と突き合わせ |
@@ -73,7 +73,7 @@
 | 判断 | 根拠 | 却下した代替 |
 | --- | --- | --- |
 | 画面復元に pyte を使う | nixpkgs にあり、検証器が検証対象と別コードになる | loom 自身の ANSI スクリーンモデル。対象と検証器が同一コードで、描画バグを両側が同じ向きに持つ |
-| E2E は Nix sandbox 外の app として実行する | sandbox に PTY が無い。`ci.yml` 冒頭が「実 PTY を要する仕事は第 2 ジョブ」と明記している | `checks.e2e` として sandbox 内で実行する。起動すらできない |
+| Run E2E as an app outside the Nix sandbox | The sandbox does not provide a PTY. The CI `e2e` job runs `nix run .#e2e` separately from `nix flake check` | Run E2E as a sandboxed check, where the required PTY is unavailable |
 | LSP 実サーバは nixd | 作者の対象言語に Nix が含まれ、単一バイナリで Node 依存が無い。typescript-language-server は第 2 候補 | `cat` などの偽サーバ。in-process テストが既に持っており、実プロトコル交換を証明しない |
 | Retain the requirements document | It records display-row movement, deferred display-mode persistence, and deferred SWANK support. Session snapshots are supported independently of display-mode persistence | Delete the decisions and rely on implementation alone |
 | Decide failed commands individually | Each failure needs evidence and a repair or removal decision | Remove command groups without checking their behavior |

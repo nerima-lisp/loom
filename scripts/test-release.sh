@@ -12,20 +12,14 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/loom-release-test.XXXXXX")
 # Nix rejects store parents that are symlinks, including /tmp on macOS.
 scratch=$(realpath "$scratch")
 printf 'Release test scratch: %s\n' "$scratch"
-(
-  cd "$(dirname "$archive")"
-  shasum -a 256 -c "$name.tar.gz.sha256"
-)
-printf '%s\n' "$name/" "$name/INSTALL.md" "$name/LICENSE" \
-  "$name/closure-paths" "$name/loom.closure" "$name/store-path" \
-  | LC_ALL=C sort > "$scratch/expected-files"
-tar -tzf "$archive" | LC_ALL=C sort > "$scratch/archive-files"
-diff -u "$scratch/expected-files" "$scratch/archive-files"
-tar -xzf "$archive" -C "$scratch"
+# Validate a private copy so extraction uses the bytes whose digest was checked.
+cp "$archive" "$scratch/$name.tar.gz"
+cp "$archive.sha256" "$scratch/$name.tar.gz.sha256"
+python3 "$(dirname "${BASH_SOURCE[0]}")/unpack-release.py" "$scratch/$name.tar.gz" "$scratch"
 directory="$scratch/$name"
 [[ $(wc -l < "$directory/store-path") -eq 1 ]]
 package=$(< "$directory/store-path")
-[[ $package == /nix/store/*-loom-* ]]
+[[ $package =~ ^/nix/store/[a-z0-9]{32}-loom-[a-zA-Z0-9._+-]+$ ]]
 store="$scratch/store"
 nix path-info --store "$store" --all > "$scratch/before-import"
 [[ ! -s $scratch/before-import ]]

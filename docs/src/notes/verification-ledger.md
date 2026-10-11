@@ -391,3 +391,56 @@ Together with the preceding aarch64-darwin results, this establishes the two
 automated platform gates for this source revision. The author's real-terminal
 [acceptance checklist](daily-driver-checklist.md) remains unrun; these results
 do not clear that release gate.
+
+### Release archive validation
+
+The archive verifier now checks the digest against the exact archive basename
+and copies only the expected regular files into a private directory. It rejects
+duplicate or unexpected members, traversal paths, links, special files, and
+sparse files before extraction. Archive ownership and executable or special
+permission bits are not restored. Packaging refuses existing artifacts,
+including dangling symbolic links.
+
+On aarch64-darwin with Python 3.9.6, the following run passed all 25 tests; exit 0:
+
+```sh
+python3 -B t/release/test-archives.py -v
+```
+
+The known-good controls include GNU and PAX archives, reversed member order,
+and an archive produced by the packaging script. The packaging fixture replaces
+`nix-store` with a checked stub; this run does not establish real closure import
+or offline startup.
+
+The same dangling-link cases were also run against the preceding published
+packaging script without changing the working copy:
+
+```sh
+LOOM_PACKAGE_REVISION=1c2a2600ff40bd91396749570d8381d9bea75667 \
+  python3 -B t/release/test-archives.py -v \
+  PackageTests.test_dangling_directory \
+  PackageTests.test_dangling_archive \
+  PackageTests.test_dangling_checksum
+```
+
+That comparison exited 1: the directory case passed, but the archive and
+checksum cases created their dangling links' targets. Both cases pass with
+the current script and leave the target absent.
+
+The release workflow checks out an explicit version tag, records the verified
+commit, and builds that commit rather than resolving the tag again. Before
+creating a draft release, it checks the live remote tag against the verified
+commit. Shell syntax, ShellCheck, and actionlint passed; these static checks do
+not establish a live release run. The author's real-terminal acceptance remains
+required before release.
+
+The current checkout also passed the exact PTY app on aarch64-darwin:
+
+```sh
+nix run path:.#e2e --no-update-lock-file
+```
+
+It exited 0: all 30 deadline preflight tests and all 117 scenarios passed,
+covering all 120 registered commands. This confirms the current automated
+terminal gate, not real-terminal input-method behavior or the cause of earlier
+intermittent failures.

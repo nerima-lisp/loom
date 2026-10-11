@@ -29,6 +29,9 @@ jobs:
           cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Test release archive input validation
+        run: python3 -B t/release/test-archives.py -v
+
       - name: Check flake
         run: |
           set -o pipefail

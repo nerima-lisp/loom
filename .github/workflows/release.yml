@@ -23,15 +23,23 @@ jobs:
     name: Verify the tagged tree
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      commit: ${{ steps.version.outputs.commit }}
     env:
       RELEASE_REF: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
+      - name: Require a version tag
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          ref: refs/tags/${{ env.RELEASE_REF }}
           persist-credentials: false
 
       - name: Verify tag matches .asd version
+        id: version
         env:
           PACKAGE: loom
         run: |
@@ -43,6 +51,7 @@ jobs:
             echo "::error::Tag $RELEASE_REF does not match $PACKAGE.asd version $asd_version" >&2
             exit 1
           fi
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/nix-setup
         with:
@@ -51,6 +60,9 @@ jobs:
 
       - name: Check flake
         run: nix flake check --print-build-logs
+
+      - name: Test release archive input validation
+        run: python3 -B t/release/test-archives.py -v
 
   release:
     name: build and publish x86_64-linux
@@ -64,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          ref: ${{ needs.verify.outputs.commit }}
           persist-credentials: false
 
       - uses: ./.github/actions/nix-setup
@@ -87,6 +99,18 @@ jobs:
           # The runner restricts unprivileged mounts; keep the restored store isolated.
           sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
             bash scripts/test-release.sh "dist/${name}.tar.gz"
+
+      - name: Verify the release tag has not moved
+        env:
+          VERIFIED_COMMIT: ${{ needs.verify.outputs.commit }}
+        run: |
+          set -euo pipefail
+          tag_refs="$(git ls-remote origin "refs/tags/$RELEASE_REF" "refs/tags/$RELEASE_REF^{}")"
+          tag_commit="$(printf '%s\n' "$tag_refs" | awk '$2 ~ /\^\{\}$/ { print $1 }')"
+          if [[ -z "$tag_commit" ]]; then
+            tag_commit="$(printf '%s\n' "$tag_refs" | awk 'NF == 2 { print $1 }')"
+          fi
+          [[ "$tag_commit" == "$VERIFIED_COMMIT" ]]
 
       # Leave the release as draft until a maintainer supplies the canonical notes.
       - name: Create draft release

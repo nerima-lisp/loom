@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -o noclobber
 
 if [[ $# != 3 ]]; then
   echo "Usage: bash scripts/package-release.sh STORE_PATH NAME OUTPUT_DIRECTORY" >&2
@@ -16,7 +17,7 @@ fi
 mkdir -p "$output"
 output=$(realpath "$output")
 directory="$output/$name"
-if [[ -e $directory || -e $output/$name.tar.gz || -e $output/$name.tar.gz.sha256 ]]; then
+if [[ -e $directory || -L $directory || -e $output/$name.tar.gz || -L $output/$name.tar.gz || -e $output/$name.tar.gz.sha256 || -L $output/$name.tar.gz.sha256 ]]; then
   echo "Refusing to overwrite release artifacts." >&2
   exit 1
 fi
@@ -31,7 +32,7 @@ done < "$directory/closure-paths"
 # Export does not include references automatically; pass the entire closure.
 nix-store --export "${paths[@]}" > "$directory/loom.closure"
 cp INSTALL.md LICENSE "$directory/"
-tar -czf "$output/$name.tar.gz" -C "$output" "$name"
+tar -czf - -C "$output" "$name" > "$output/$name.tar.gz"
 (
   cd "$output"
   shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256"
