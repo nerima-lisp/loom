@@ -444,3 +444,49 @@ It exited 0: all 30 deadline preflight tests and all 117 scenarios passed,
 covering all 120 registered commands. This confirms the current automated
 terminal gate, not real-terminal input-method behavior or the cause of earlier
 intermittent failures.
+
+### Lower-level terminal library gate
+
+The full `cl-tty-kit/test` system initially failed to load because it still
+depended on the former `cl-prolog` system and package. No tests ran in that
+attempt. The compatibility patch updates the test dependency and package
+references to `cl-prolog-kit`; it does not change the test assertions. Prolog
+and the test runner are check-only dependencies, not runtime dependencies.
+
+The `cl-tty-kit` flake check loads the entire test system and calls
+`cl-weave:run-all` without a test filter. An empty selection is a failure.
+The upstream suite's 120-second timeout is retained, with the script check's
+600-second process limit and 30-second termination grace period.
+
+[Linux CI for `7f7fdb8d9434dd96debd059b99de7344162c7076`](https://github.com/nerima-lisp/loom/actions/runs/38121695300)
+completed successfully:
+
+- `nix flake check --print-build-logs`: all seven checks passed. The lower-level
+  suite passed all 1,696 tests, with no skips, failures, or errors. Loom's test
+  and coverage runs each passed 1,506 tests and skipped three out of 1,509.
+  Coverage was 20,081/20,991 expressions (95.66%) and 1,917/2,042 branches
+  (93.88%).
+- `nix run .#e2e`: the deadline preflight passed all 30 tests. All 117 PTY
+  scenarios passed, covering all 120 registered commands with none uncovered.
+- `python3 -B t/release/test-archives.py -v`: all 25 tests passed.
+- The offline archive job packaged the real closure, restored it into an empty
+  store, verified closure completeness and its profile GC root, and started the
+  restored executable without network access.
+
+All three CI jobs exited successfully. These Linux results do not establish
+the author's real-terminal acceptance or a completed release.
+
+On aarch64-darwin, the same lower-level check failed twice, including one
+unchanged retry:
+
+```sh
+nix build path:.#checks.aarch64-darwin.cl-tty-kit --no-link --no-update-lock-file --print-build-logs
+```
+
+Both attempts exited 1 with `test suite timed out after 120 seconds` during
+compilation. Neither produced a test-count summary, so neither establishes a
+passing suite or a test-case regression. The timeout covers loading the test
+system as well as running it. The host had high load during these attempts;
+its contribution to the timeout is unverified. No timeout or assertion was
+changed. The Darwin lower-level gate and the author's real-terminal acceptance
+remain unresolved, and release has not proceeded.
