@@ -28,7 +28,7 @@ featureは必要なcore packageを`:import-from`し、root packageはfeatureの�
 |---|---|
 | `loom/core/buffer` | 付録1に列挙したbuffer APIすべて。追加で`buffer`、`buffer-position`、`buffer-position-p`、`buffer-span`、`buffer-span-p`、`buffer-read-only-error-buffer`をexportする |
 | `loom/core/window-tree` | `window-tree`、`window-tree-p`、`make-window-tree`、`window-tree-windows`、`window-tree-selected-window`、`window-tree-layout`、`make-window-tree-from-layout`、`window-tree-selected-index`、`window-tree-select-index`、`window-tree-width`、`window-tree-height`、`window-split`、`window-select-next`、`window-delete`、`window-delete-other-windows`、`window-buffer`、`window-set-buffer`、`window-scroll-line`、`window-scroll-column`、`window-scroll-sub-row`、`window-x`、`window-y`、`window-width`、`window-height`、`window-tree-resize` |
-| `loom/core/command` | 付録1のkeymapとprefix argument APIに加え、`install-default-keybindings`、`command-completion-candidates`、`find-extended-command`、`help-summary-message`、`defkeys-single-chord-p`、`defkeys-chord`、`defkeys-key-sequence`をexportする。追加で`keymap`、`keymap-p`、`keymap-state`、`keymap-state-p`、`key-event->descriptor`、`register-command-spec`、`register-key-command`、`command-specs`、`find-command-spec`、`register-buffer-keymap-provider`、`keymap-for-buffer`、`invoke-command`をexportする |
+| `loom/core/command` | 付録1のkeymapとprefix argument APIに加え、`install-default-keybindings`、`command-completion-candidates`、`find-extended-command`、`help-summary-message`、`defkeys-single-chord-p`、`defkeys-chord`、`defkeys-key-sequence`をexportする。追加で`keymap`、`keymap-p`、`keymap-state`、`keymap-state-p`、`key-event->descriptor`、`register-command-spec`、`register-key-command`、`command-specs`、`find-command-spec`、`register-buffer-keymap-provider`、`keymap-for-buffer`、`invoke-command`、`repeat-command`をexportする |
 | `loom/core/minibuffer` | 付録1に列挙したminibuffer APIすべて。追加で`minibuffer`、`minibuffer-p`、`with-prompts`、`register-message-sink`をexportする |
 | `loom/core/editor-session` | `*editor-session*`、`editor-session`、`editor-session-p`、`make-editor-session`、`call-with-editor-session`、`editor-session-slice`、`editor-session-slice-names`、`register-slice-state`、`register-session-hook`、`run-session-hooks`、`register-cli-option`、`startup-context`、`startup-context-argv`、`startup-context-options`、`startup-context-file-requests`、`register-visual-row-layout`、`register-buffer-truncate-policy`、`buffer-truncate-lines-p`、`register-hit-test-provider`、`hit-test-buffer-position`、`request-terminal-clipboard-write`、`register-background-work`、`notify-background-work-ready`、`poll-ready-background-work`、`cancel-background-work`、`frame-snapshot`、`frame-snapshot-width`、`frame-snapshot-height`、`frame-snapshot-cell`、`frame-snapshot-cursor`、`render-operation`、`render-operation-p`、`make-render-operation`、`next-visual-line-once`、`previous-visual-line-once` |
 
@@ -60,9 +60,14 @@ featureはinput、prompt、completion、historyの操作関数を通じてminibu
 rootはevent dispatchの間`call-with-editor-session`を呼び、feature commandは`editor-session-slice`で自分のstateを取得します。
 `*editor-state*`と個別slot accessorを維持する案は、34個の状態をroot packageへ再結合するため却下します（`src/application/editor-state-types.lisp:3-60`）。
 `next-visual-line-once`と`previous-visual-line-once`もここからexportし、LSPのprivate参照を置き換えます。
-visual row計算にはrenderer packageを直接呼ばず、rootが`register-visual-row-layout`で注入する計算関数を使います。
-この関数境界は推定です。
-coreがrendererを呼ぶ案は仕様の層方向と逆になるため却下し、実装前にcallbackの引数と戻り値を検証します（`packages/core/editor/src/application-commands-movement-visual-lines.lisp:3-17,31-39,85-89`）。
+visual row計算にはrenderer packageを直接呼ばず、rootが`register-visual-row-layout`で注入するlayout関数を使います（`packages/core/editor/src/application-commands-movement-visual-lines.lisp:3-17,31-39,85-89`）。
+`register-visual-row-layout(owner, function)`のfunctionは`(session buffer logical-line window-width)`を受け、visual row順のsegment listを返します。segmentは`(start-column end-column cell-prefix-widths)`で、columnはbuffer内の0-based character index、endはexclusive、`cell-prefix-widths`はsegment先頭から各character境界までの累積terminal cell幅を含むvectorです。vectorの要素数は`1 + end-column - start-column`、先頭値は0、以降は非減少とします。
+rootのcallbackはrendererの`loom-renderer-wrap-segments`が返すcharacter rangeと`loom-renderer-string-width`の結果からこの値を作ります。coreは現在pointのsegmentとcell offsetを求め、隣のvisual rowでは同じcell offsetを超えない最大のcharacter境界へpointを移します。別のlogical lineへ移るときは次行の先頭segmentまたは前行の末尾segmentを使い、buffer境界ではpointを範囲内に保ちます。
+bufferがtruncate mode、usable widthがない、layout providerが未登録、またはproviderがnilを返す場合はlogical line movementへfallbackします。空行は`(0 0 #(0))`の一segmentとして扱います。coreはcallback返却値を呼出し中だけ読み、変更しません。
+coreがrendererを呼ぶ案は仕様の層方向と逆になるため採りません。
+
+scroll commandは`core/command:repeat-command(forward, backward)`を呼びます。callbackは引数なしの一回分の操作です。repeat APIはinput dispatchがdynamic bindingした現在のprefix valueを使い、未指定なら1回、正の値なら`forward`、負の値なら`backward`を絶対値回数だけ逐次実行し、0なら何もしません。prefix state自体は変更しません。
+従って`C-u 4 C-v`はscroll-up invocation一つのtraceを記録したうえで、page scrollを4回行います。scroll commandは`%repeat-command`、`%command-prefix-count`へ依存しません。repeat callbackは内部の一操作であり、command gatewayを再度呼びません。
 
 既存コードは機能境界ごとに次のpathへ移します。
 
@@ -77,7 +82,7 @@ coreがrendererを呼ぶ案は仕様の層方向と逆になるため却下し�
 | `src/application/editor-state-recent-files.lisp` | `packages/feature/files/src/` | files slice、仕様4.2の151行目 |
 | `src/application/editor-state-operations.lisp`の`%clear-last-yank` | `packages/feature/kill-ring/src/` | yank状態を一括clearする操作、`src/application/editor-state-operations.lisp:3-14` |
 | `packages/feature/window/src/application-commands-window.lisp`のbuffer commandと`application-window-buffer-support.lisp` | `packages/feature/buffers/src/` | buffer registrationとkill lifecycle、仕様4.2の152行目 |
-| `packages/core/editor/src/application-commands-movement-view-support.lisp` | scroll commandを`packages/feature/window/src/application-commands-window-scroll.lisp`へ、`goto-line`とprompt helperを`packages/feature/buffers/src/application-commands-goto-line.lisp`へ分割する | scrollはwindow操作、goto-lineはbuffer command。scroll実装はcore/window-tree APIを使う。`packages/core/editor/src/application-commands-movement-view-support.lisp:3-66` |
+| `packages/core/editor/src/application-commands-movement-view-support.lisp` | scroll commandを`packages/feature/window/src/application-commands-window-scroll.lisp`へ、`goto-line`とprompt helperを`packages/feature/buffers/src/application-commands-goto-line.lisp`へ分割する | scrollはwindow操作で、`core/window-tree` APIとprefix-awareな`core/command:repeat-command`を使う。goto-lineはbuffer command。`packages/core/editor/src/application-commands-movement-view-support.lisp:3-66` |
 | `packages/core/editor/src/application-commands-sexp.lisp` | `packages/feature/lisp-structure/src/application-commands-sexp.lisp` | S式移動と構造編集の実装。移動keyは全modeのglobal mapへ登録し、`kill-sexp`はlang-lispのmode mapだけへ登録する。仕様4.2の164行目、11.6の495行目 |
 | `src/application/commands-internal.lisp`のselected-window helperとbuffer registry helper | core API呼び出しへ分割し、buffer registryは`feature/buffers`へ移す | `src/application/commands-internal.lisp:3-43` |
 | `src/application/commands-prompts.lisp`の`with-prompts` | `packages/core/minibuffer/src/` | prompt continuation helper、`src/application/commands-prompts.lisp:3-35` |
@@ -505,6 +510,8 @@ W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します
 | S6 | W3-10/11が編集できるslice test path不足 | Done | W3-10、W3-11を含む各sliceに`src/`、`t/`、`t/paths.sexp`、`t/e2e/`の編集範囲を明記する。section 6 |
 | S7 | `:mouse` route exportのowner不一致 | Done | W3-1がcore/commandの`:paste`、`:mouse` routeを追加し、W3-8は消費だけを行う。sections 1、6 |
 | S8 | buffer/mode/message/save APIのowner不足 | Done | buffer registry/result-buffer、mode問い合わせ、`*Messages*` owner、file-save移設先を定める。sections 2、6 |
+| R2-1 | visual-row layout callback契約未確定 | Done | renderer rangeとcell-prefix幅の戻り値、point変換、logical-line fallbackを定める。section 1 |
+| R2-2 | scroll移設後のprefix/repeat API未確定 | Done | `core/command:repeat-command`が動的prefixを使い、正負の向きと反復回数を決める。section 1 |
 
 ## 付録 調査根拠表
 
