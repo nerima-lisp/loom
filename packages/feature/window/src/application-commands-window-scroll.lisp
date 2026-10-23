@@ -14,7 +14,7 @@
     (max 0 (min max-scroll (+ (window-scroll-line window) (* delta page))))))
 
 (defun %scroll-window (delta)
-  (let* ((window (%selected-window))
+  (let* ((window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
          (buffer (window-buffer window)))
     (setf (window-scroll-line window) (%scroll-window-target-line window
                                                                   buffer

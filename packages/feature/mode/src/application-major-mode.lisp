@@ -16,8 +16,8 @@ bindings added after mode activation are still visible through the parent.
 
 (defun current-major-mode ()
   "Return the selected buffer's major mode, defaulting to FUNDAMENTAL."
-  (if (loom/application:%selected-buffer)
-      (loom:buffer-major-mode (loom/application:%selected-buffer))
+  (if (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
+      (loom:buffer-major-mode (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
       :fundamental))
 
 (defun set-major-mode ()
@@ -29,10 +29,10 @@ bindings added after mode activation are still visible through the parent.
       ((input "Major mode: "
                :completion-function #'%major-mode-completion-candidates))
     (let ((mode (major-mode-from-name input)))
-      (if (and mode (loom/application:%selected-buffer))
+      (if (and mode (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
           (progn
             (loom:buffer-set-major-mode
-             (loom/application:%selected-buffer)
+             (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
              mode)
             (loom:minibuffer-message minibuffer
                                 (format nil "Mode: ~A" (major-mode-name mode))))

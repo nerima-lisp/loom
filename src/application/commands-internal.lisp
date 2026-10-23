@@ -1,30 +1,5 @@
 (in-package #:loom/application)
 
-(defun %selected-window ()
-  "Return *EDITOR-STATE*'s currently selected window."
-  (loom/feature/window:window-tree-selected-window
-   (loom:editor-state-window-tree loom:*editor-state*)))
-
-(defun %selected-window-tree ()
-  "Return *EDITOR-STATE*'s current window tree."
-  (loom:editor-state-window-tree loom:*editor-state*))
-
-(defun %selected-buffer ()
-  "Return the buffer displayed in *EDITOR-STATE*'s currently selected window."
-  (loom/feature/window:window-buffer (%selected-window)))
-
-(defmacro define-selected-buffer-command (name docstring target)
-  "Define NAME as a zero-argument command forwarding the selected buffer to TARGET."
-  `(defun ,name ()
-     ,docstring
-     (,target (%selected-buffer))))
-
-(defmacro define-selected-tree-window-command (name docstring target &rest arguments)
-  "Define NAME as a zero-argument command forwarding the selected tree and window to TARGET."
-  `(defun ,name ()
-     ,docstring
-     (,target (%selected-window-tree) (%selected-window) ,@arguments)))
-
 (defun %editor-buffers ()
   "Return the buffers known to the current editor session."
   (loom:editor-state-buffers loom:*editor-state*))

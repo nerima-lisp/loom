@@ -6,7 +6,7 @@
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (with-nonnegative-command-prefix (count)
     (let ((text (first (editor-state-kill-ring *editor-state*)))
-          (buffer (%selected-buffer)))
+          (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
       (when (and text (plusp count))
         (%perform-yank buffer text count)))))
 
@@ -15,7 +15,7 @@
 The default is one entry; negative values reverse direction, zero keeps the
 same entry, and the index wraps around the ring."
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (ring start ranges index repeat-count)
         (%yank-pop-context buffer)
       (if ring

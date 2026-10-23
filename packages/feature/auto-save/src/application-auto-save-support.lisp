@@ -13,7 +13,7 @@
 (defun auto-save-enabled-p (&optional buffer)
   "Return true when automatic saving is enabled for BUFFER."
   (let* ((state *editor-state*)
-         (buffer (or buffer (and state (%selected-buffer)))))
+         (buffer (or buffer (and state (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))))
     (and state
          buffer
          (or (editor-state-auto-save-mode-p state)
@@ -23,13 +23,13 @@
 
 (defun auto-save-buffer (&optional buffer)
   "Auto-save BUFFER when its mode and contents allow it."
-  (let ((buffer (or buffer (%selected-buffer))))
+  (let ((buffer (or buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
     (when (and (auto-save-enabled-p buffer)
                (auto-save-eligible-p buffer))
       (auto-save-buffer-to-file buffer))))
 
 (defun %auto-save-targets (state)
-  (let* ((selected (%selected-buffer))
+  (let* ((selected (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (buffers (remove-duplicates
                    (append (copy-list (editor-state-buffers state))
                            (list selected))

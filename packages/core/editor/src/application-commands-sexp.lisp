@@ -5,7 +5,7 @@
 
 Motion is computed against the visible text, so a narrowed buffer cannot move
 point outside its own region, and the offsets are translated back by START."
-  (let* ((buffer (%selected-buffer))
+  (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (start (buffer-narrow-start-offset buffer))
          (text (buffer-visible-text buffer))
          (offset (%clamp-sexp-motion-offset

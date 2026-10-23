@@ -16,8 +16,7 @@
           (let* ((buffer (make-buffer :name "main.lisp"
                                       :path path
                                       :initial-content "(+ 1 2)"))
-                 (window (window-tree-selected-window
-                          (editor-state-window-tree *editor-state*)))
+                 (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                  (transport (make-instance '%fake-lsp-transport))
                  (old-transport (make-instance '%fake-lsp-transport))
                  (old-session (make-lsp-session :transport old-transport))
@@ -105,8 +104,7 @@
                                     (merge-pathnames ".loom-lsp" directory))
         (%with-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp" :path path))
-                 (window (window-tree-selected-window
-                          (editor-state-window-tree *editor-state*)))
+                 (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                  (transport (make-instance '%fake-lsp-transport))
                  (session (make-lsp-session :transport transport))
                  (constructor-count 0))
@@ -241,8 +239,7 @@
                                     (merge-pathnames ".loom-lsp" directory))
         (%with-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp" :path path))
-                 (window (window-tree-selected-window
-                          (editor-state-window-tree *editor-state*)))
+                 (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                  (transport (make-instance '%fake-lsp-transport))
                  (original-make-session
                    (symbol-function 'loom/feature/lsp::make-lsp-session))

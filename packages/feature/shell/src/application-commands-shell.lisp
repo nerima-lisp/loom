@@ -10,7 +10,7 @@
       (%register-buffer (make-buffer :name *shell-command-result-buffer-name*))))
 
 (defun %shell-command-directory ()
-  (let ((path (buffer-path (%selected-buffer))))
+  (let ((path (buffer-path (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
     (if path
         (namestring
          (make-pathname :name nil :type nil :defaults (pathname path)))
@@ -30,7 +30,7 @@
      buffer
      (format nil "~A~A" prefix (shell-command-result-text result)))
     (buffer-mark-saved buffer)
-    (loom/feature/window:window-set-buffer (%selected-window) buffer)
+    (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
     (minibuffer-message
      (editor-state-minibuffer *editor-state*)
      (if (shell-command-result-success-p result)

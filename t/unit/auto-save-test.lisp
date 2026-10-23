@@ -142,7 +142,7 @@
         (%with-minibuffer-state (minibuffer "text")
           (let ((state *editor-state*))
             (setf (editor-state-buffers state) (list buffer))
-            (window-set-buffer (%selected-window) buffer)
+            (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
             (expect (auto-save-current-buffer) :to-be nil)
             (expect (minibuffer-message-string minibuffer)
                     :to-equal "Auto-save skipped")
@@ -160,7 +160,7 @@
   "automatic save selection boundaries"
   (it "rejects toggling a buffer when no selected buffer is active"
     (%with-minibuffer-state (minibuffer "text")
-      (window-set-buffer (%selected-window) nil)
+      (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) nil)
       (signals error (toggle-auto-save)))))
 
 (describe
@@ -202,7 +202,7 @@
           (declare (ignore minibuffer))
           (let ((state *editor-state*))
             (setf (editor-state-buffers state) (list buffer buffer))
-            (window-set-buffer (%selected-window) buffer)
+            (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
             (buffer-mark-modified buffer)
             (auto-save-mode t)
             (expect (maybe-auto-save :force t :now 100)

@@ -54,7 +54,7 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
         (values line column end-line end-column)))))
 
 (defun %kill-line-once (&key coalesce)
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (line column end-line end-column)
         (%kill-line-range buffer)
       (when line

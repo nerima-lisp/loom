@@ -4,8 +4,7 @@
        (:use ,@use)
        (:export ,@(mapcar #'string exports))))
   (defparameter +loom/application-exports+
-    '(define-selected-buffer-command define-selected-tree-window-command
-      %selected-window %selected-window-tree %selected-buffer %editor-buffers %register-buffer
+    '(%editor-buffers %register-buffer
       %unregister-buffer %order-region with-prompts
       command-spec command-spec-group define-command-spec-groups
       build-command-specs define-command-specs

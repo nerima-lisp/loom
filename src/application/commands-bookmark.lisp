@@ -2,7 +2,7 @@
 
 (define-bookmark-command set-bookmark
     ("Set bookmark: ") (bookmark-name minibuffer)
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (if (string= bookmark-name "")
         (minibuffer-message minibuffer "Bookmark name cannot be empty")
         (progn
@@ -33,7 +33,7 @@
         minibuffer
         (format nil "Bookmark target is unavailable: ~A" bookmark-name)))
       (t
-       (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
+       (loom/core/window-tree:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
        (buffer-set-point buffer
                          (editor-bookmark-line bookmark)
                          (editor-bookmark-column bookmark))))))

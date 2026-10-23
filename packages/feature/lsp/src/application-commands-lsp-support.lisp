@@ -22,9 +22,7 @@
    discovered-command))
 
 (defun %lsp-confirm-discovered-command (command root configuration buffer minibuffer)
-  (let* ((window (loom/core/window-tree:window-tree-selected-window
- (loom/core/editor-session:editor-state-window-tree
-  loom/core/editor-session:*editor-state*)))
+  (let* ((window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
          (scroll-line (loom/feature/window:window-scroll-line window))
          (scroll-column (loom/feature/window:window-scroll-column window))
          (scroll-sub-row (loom/feature/window:window-scroll-sub-row window))

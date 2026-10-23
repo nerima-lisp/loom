@@ -1,7 +1,7 @@
 (in-package #:loom/feature/project)
 
 (defun %project-start-path ()
-  (let ((buffer (loom/application:%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (or (and buffer (buffer-path buffer))
         (truename "."))))
 
@@ -18,7 +18,7 @@
         (let ((buffer (buffer-load path)))
           (loom/application:%register-buffer buffer)
           (loom/feature/window:window-set-buffer
-           (loom/application:%selected-window)
+           (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))
            buffer))
         (minibuffer-message minibuffer
                             (format nil "File not found: ~A"

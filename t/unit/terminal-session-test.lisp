@@ -148,7 +148,7 @@
               (expect (terminal) :to-be session)))
           (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
                   :to-be-truthy)
-          (expect (window-buffer (%selected-window)) :to-be buffer)
+          (expect (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))) :to-be buffer)
           (expect (minibuffer-message-string minibuffer)
                   :to-equal
                   "Terminal started")))))

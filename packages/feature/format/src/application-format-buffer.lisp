@@ -42,7 +42,7 @@
     (when mark-offset
       (%format-set-position-from-offset buffer mark-offset :mark t))))
 
-(defun format-buffer-with-command (command &optional (buffer (%selected-buffer)))
+(defun format-buffer-with-command (command &optional (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
   "Format BUFFER by sending its complete text to COMMAND.
 
 The command runs in BUFFER's file directory when one exists.  Its standard

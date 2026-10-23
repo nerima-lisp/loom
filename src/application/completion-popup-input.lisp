@@ -37,7 +37,7 @@
 
 (defun %completion-popup-anchored-p (completion buffer)
   "Return true when BUFFER point still belongs to COMPLETION's anchor."
-  (and (eq buffer (%selected-buffer))
+  (and (eq buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
        (= (editor-completion-line completion) (buffer-point-line buffer))
        (<= (editor-completion-column completion)
            (buffer-point-column buffer))))

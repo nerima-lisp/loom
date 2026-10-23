@@ -11,7 +11,7 @@
        (loom/feature/file-tree:file-tree-prefetch-paths
         (editor-state-file-tree *editor-state*)))))
   (let ((session (editor-state-lsp-session *editor-state*))
-        (buffer (%selected-buffer)))
+        (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when (and session (buffer-path buffer))
       (loom/feature/lsp:lsp-session-refresh session buffer)))
   (compose-frame *editor-state*)

@@ -16,7 +16,7 @@
   "Toggle the selected buffer's membership in the per-buffer auto-save list.
 Global auto-save mode still enables saving when the buffer is absent from it."
   (let* ((state *editor-state*)
-         (buffer (and state (%selected-buffer))))
+         (buffer (and state (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
     (unless (and state buffer)
       (error "No selected buffer is active"))
     (if (member buffer (editor-state-auto-save-buffers state) :test #'eq)
@@ -37,7 +37,7 @@ Global auto-save mode still enables saving when the buffer is absent from it."
   (handler-case
       (let ((path (auto-save-buffer)))
         (if path
-            (%auto-save-message "Auto-saved ~A" (buffer-name (%selected-buffer)))
+            (%auto-save-message "Auto-saved ~A" (buffer-name (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
             (%auto-save-message "Auto-save skipped"))
         path)
     (error (condition)

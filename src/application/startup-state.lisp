@@ -28,7 +28,7 @@ the scratch buffer and is itself the root."
 
 (defun %make-startup-window-tree (initial-buffer width height)
   "Build the single-window layout for INITIAL-BUFFER."
-  (loom/feature/window:make-window-tree initial-buffer width (max 1 (1- height))))
+  (loom/core/window-tree:make-window-tree initial-buffer width (max 1 (1- height))))
 
 (defun %make-startup-hooks ()
   "Return the editor-state save hook lists used at startup."

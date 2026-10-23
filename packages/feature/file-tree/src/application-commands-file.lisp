@@ -17,7 +17,7 @@
 (defun %show-buffer-in-selected-window (buffer)
   "Register BUFFER and display it in the selected window."
   (%register-buffer buffer)
-  (loom/feature/window:window-set-buffer (%selected-window) buffer))
+  (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer))
 
 (defun %visit-existing-file (path)
   "Load PATH, display it in the selected window, and refresh recency."
@@ -33,7 +33,7 @@ prompt to run. Returns the buffer, or NIL when PATH does not exist."
   (let ((existing (probe-file path)))
     (when existing
       (%visit-existing-file existing)
-      (%selected-buffer))))
+      (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
 
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.

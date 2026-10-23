@@ -28,8 +28,7 @@
       (let* ((buffer (make-buffer :name "main.lisp"
                                   :path "/tmp/main.lisp"
                                   :initial-content "(+ 1 2)"))
-             (window (window-tree-selected-window
-                      (editor-state-window-tree *editor-state*)))
+             (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
              (old-transport (make-instance '%fake-lsp-transport))
              (old-session (make-lsp-session :transport old-transport))
              (new-transport (make-instance '%fake-lsp-transport))

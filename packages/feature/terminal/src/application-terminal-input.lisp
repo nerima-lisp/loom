@@ -1,7 +1,7 @@
 (in-package #:loom/feature/terminal)
 
 (defun %terminal-session-for-selected-buffer ()
-  (terminal-session-for-buffer (%selected-buffer)))
+  (terminal-session-for-buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
 
 (defun %terminal-event-kind-acceptable-p (event)
   (let ((kind (cl-tty-kit:key-event-kind event)))

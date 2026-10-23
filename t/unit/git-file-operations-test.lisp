@@ -4,9 +4,12 @@
     "git file operations"
   (it "uses the project directory when no project root is found"
     (let ((selected-buffer (make-buffer :name "notes" :path #P"/repo/src/notes.lisp")))
-      (with-replaced-function
-          (loom/feature/git::%selected-buffer
-           (lambda () selected-buffer))
+      (let ((loom/core/editor-session:*editor-state*
+             (loom/core/editor-session:make-editor-state
+              :window-tree
+              (loom/core/window-tree:make-window-tree selected-buffer 80 24)
+              :buffers
+              (list selected-buffer))))
         (with-replaced-function
             (project-find-root
              (lambda (path)

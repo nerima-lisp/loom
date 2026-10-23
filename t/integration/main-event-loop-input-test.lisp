@@ -12,7 +12,7 @@
            (composed nil)
            (presented nil))
       (window-set-buffer
-       (window-tree-selected-window (editor-state-window-tree *editor-state*))
+       (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))
        buffer)
       (setf (editor-state-concurrent-runtime *editor-state*) :runtime
             (editor-state-lsp-session *editor-state*) :session)
@@ -141,8 +141,7 @@
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
                                      *standard-input*)))
-          (expect (buffer-line (window-buffer (window-tree-selected-window
-                                               (editor-state-window-tree *editor-state*)))
+          (expect (buffer-line (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                                0)
                   :to-equal "a")))))
 
@@ -158,8 +157,7 @@
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
                                      *standard-input*)))
-          (expect (length (buffer-line (window-buffer (window-tree-selected-window
-                                                       (editor-state-window-tree *editor-state*)))
+          (expect (length (buffer-line (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                                        0))
                   :to-equal 4096)))))
 

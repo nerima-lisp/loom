@@ -12,7 +12,7 @@
         (setf (terminal-session-alive-p session) t
               (editor-state-terminal-sessions *editor-state*) (list session))
         (%register-buffer buffer)
-        (window-set-buffer (%selected-window) buffer)
+        (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
         (with-replaced-function
             (stop-terminal-session
              (lambda (candidate)

@@ -4,7 +4,7 @@
 (defparameter *git-diff-buffer-name* "*Loom-Git-Diff*")
 
 (defun %git-status-directory ()
-  (let* ((buffer (%selected-buffer))
+  (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (path (and buffer (buffer-path buffer)))
          (start (or path (truename "."))))
     (or (project-find-root start)
@@ -42,7 +42,7 @@
              (buffer (%replace-git-result-buffer
                       (%git-result-buffer buffer-name)
                       (git-result-text result))))
-        (window-set-buffer (%selected-window) buffer)
+        (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
         (minibuffer-message
          (editor-state-minibuffer *editor-state*)
          (if (vcs-kit:process-success-p result)

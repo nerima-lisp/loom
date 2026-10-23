@@ -109,10 +109,7 @@ would have been recognized there."
 (defun %isearch-start (direction)
   "Open an incremental-search prompt in DIRECTION over the selected buffer."
   (let* ((buffer
-          (loom/core/window-tree:window-buffer
-           (loom/core/window-tree:window-tree-selected-window
-            (loom/core/editor-session:editor-state-window-tree
-             loom/core/editor-session:*editor-state*))))
+          (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (minibuffer
           (loom/core/editor-session:editor-state-minibuffer
            loom/core/editor-session:*editor-state*)))

@@ -35,7 +35,7 @@ expansion."
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((old "Replace (regex): ")
        (new "With: "))
-    (let* ((buffer (%selected-buffer))
+    (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
            (count (%perform-replacement buffer old new (buffer-point-offset buffer))))
       (if (plusp count)
           (minibuffer-message minibuffer (format nil "Replaced ~D occurrence(s)" count))
@@ -55,7 +55,7 @@ expansion."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((pattern prompt))
-    (let* ((buffer (%selected-buffer))
+    (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
            (span (funcall search-fn buffer pattern)))
       (%report-search-result minibuffer buffer span))))
 

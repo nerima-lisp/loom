@@ -18,7 +18,7 @@
 A request needs an initialized session and a file-backed buffer: a server
 addresses documents by URI, and a buffer with no associated path has none."
   (let* ((session (%lsp-navigation-session))
-         (buffer (loom/application:%selected-buffer))
+         (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (path (and buffer (loom:buffer-path buffer))))
     (when (and session
                (not (lsp-session-initialized-p session))

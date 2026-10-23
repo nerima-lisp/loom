@@ -52,7 +52,7 @@ The replacement retains text, point, and mark, but not undo history."
 
 (defun save-buffer ()
   "Save the selected buffer, prompting for a path first if it has none."
-  (let* ((window (%selected-window))
+  (let* ((window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
          (buffer (loom/feature/window:window-buffer window)))
     (if (buffer-path buffer)
         (progn
@@ -66,7 +66,7 @@ The replacement retains text, point, and mark, but not undo history."
 The selected window visits a fresh buffer carrying the original text and
 point/mark, leaving the previous buffer in the session registry as a separate
 buffer. Undo history is not transferred."
-  (let* ((window (%selected-window))
+  (let* ((window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
          (buffer (loom/feature/window:window-buffer window)))
     (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                    :on-cancel (minibuffer-message minibuffer "Quit"))

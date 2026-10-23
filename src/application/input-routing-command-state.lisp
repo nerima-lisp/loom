@@ -8,7 +8,7 @@ commands. Consecutive self inserts therefore collapse into one undo group,
 while switching to any other command starts a new group."
   (unless (eq self-insert-p
               (editor-state-last-command-self-insert-p *editor-state*))
-    (buffer-record-undo-boundary (%selected-buffer)))
+    (buffer-record-undo-boundary (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
   (setf (editor-state-last-command-self-insert-p *editor-state*) self-insert-p))
 
 (defmacro define-command-name-set (name names documentation)

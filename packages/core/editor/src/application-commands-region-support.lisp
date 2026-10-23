@@ -3,12 +3,9 @@
 (defmacro define-selected-buffer-command (name docstring target)
   `(defun ,name ()
      ,docstring
-     (,target (%selected-buffer))))
+     (,target (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
 
-(defun %selected-buffer ()
-  (loom/core/window-tree:window-buffer
-   (loom/core/window-tree:window-tree-selected-window
-    (editor-state-window-tree *editor-state*))))
+
 
 (defun %set-mark-at-point (buffer)
   (buffer-set-mark buffer (buffer-point-line buffer) (buffer-point-column buffer)))

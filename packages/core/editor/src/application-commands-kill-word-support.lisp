@@ -40,7 +40,7 @@ text should be prepended when coalescing into the newest kill-ring entry."
      (values nil nil nil))))
 
 (defun %execute-word-kill (positive-step negative-step &key prepend-when-positive)
-  (let* ((buffer (%selected-buffer))
+  (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (count (%command-prefix-count))
          (start-offset (buffer-narrow-start-offset buffer))
          (point (- (buffer-point-offset buffer) start-offset))

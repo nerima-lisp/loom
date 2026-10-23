@@ -47,7 +47,7 @@
             (minibuffer "selected" (buffer (buffer-load path)))
           (setf (editor-state-buffers *editor-state*) (list buffer))
           (window-set-buffer
-           (window-tree-selected-window (editor-state-window-tree *editor-state*))
+           (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))
            buffer)
           (buffer-insert-string buffer "!")
           (loom/feature/window:kill-buffer)

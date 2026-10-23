@@ -34,7 +34,7 @@
 (%define-register-command copy-to-register
   "Copy the active region to a named register without changing the buffer."
   "Copy region to register: "
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
       (if mark-line
           (multiple-value-bind (start-line start-column end-line end-column)
@@ -57,7 +57,7 @@
   "Insert register: "
   (let ((text (register-bank-text (%register-bank-for-editor) name)))
     (if text
-        (buffer-insert-string (%selected-buffer) text)
+        (buffer-insert-string (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))) text)
         (minibuffer-message
          minibuffer
          (format nil "Register ~A does not contain text" name)))))
@@ -65,7 +65,7 @@
 (%define-register-command point-to-register
   "Store the selected buffer's current point in a named register."
   "Point to register: "
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (register-bank-put-position
      (%register-bank-for-editor)
      name
@@ -78,7 +78,7 @@
 (%define-register-command jump-to-register
   "Move point to the position stored in a named register."
   "Jump to register: "
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (line column)
         (register-bank-position (%register-bank-for-editor) name)
       (if line

@@ -26,7 +26,7 @@
        (values (%goto-line-target-line buffer line) nil)))))
 
 (defun %goto-visible-line-input (minibuffer input)
-  (let ((buffer (%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (target-line error-message)
         (%goto-line-target buffer input)
       (if target-line

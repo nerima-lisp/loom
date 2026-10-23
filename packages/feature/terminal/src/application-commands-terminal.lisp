@@ -16,7 +16,7 @@
       (let ((session (start-terminal-session)))
         (push session (editor-state-terminal-sessions *editor-state*))
         (%register-buffer (terminal-session-buffer session))
-        (window-set-buffer (%selected-window) (terminal-session-buffer session))
+        (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) (terminal-session-buffer session))
         (multiple-value-bind (columns rows) (cl-tty-kit:terminal-size)
           (terminal-session-resize session columns rows))
         (terminal-session-poll session)

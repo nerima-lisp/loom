@@ -49,7 +49,7 @@ test instead of repeating buffer construction and point setup."
 
 (defun %selected-test-buffer ()
   "Return the buffer displayed in the fresh editor state's sole window."
-  (window-buffer (window-tree-selected-window (editor-state-window-tree *editor-state*))))
+  (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
 
 (defun %sandboxed-check-p ()
   "Detect the sandbox-check flag set by flake.nix for test and coverage builds.

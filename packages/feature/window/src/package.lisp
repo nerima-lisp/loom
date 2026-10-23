@@ -1,5 +1,5 @@
 (defpackage #:loom/feature/window
-            (:use #:cl #:loom #:loom/application)
+            (:use #:cl #:loom)
             (:import-from #:loom/core/window-tree
                           #:make-window-tree
                           #:window-tree-windows

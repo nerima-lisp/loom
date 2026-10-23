@@ -11,7 +11,7 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
 
 (defun toggle-truncate-lines ()
   "Flip the selected buffer between truncating and wrapping long lines."
-  (let ((buffer (loom/application:%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when buffer
       (let ((truncate (not (buffer-truncate-lines-p buffer))))
         (loom:buffer-set-truncate-lines buffer truncate)
@@ -22,7 +22,7 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
 
 (defun indent-for-tab-command ()
   "Insert spaces until point reaches the selected mode's indentation stop."
-  (let ((buffer (loom/application:%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when buffer
       (let* ((width (max 1 (major-mode-indentation-width
                             (loom:buffer-major-mode buffer))))
@@ -80,7 +80,7 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
 
 (defun comment-line ()
   "Toggle the current line's comment marker according to its major mode."
-  (let* ((buffer (loom/application:%selected-buffer))
+  (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (mode (and buffer (loom:buffer-major-mode buffer)))
          (prefix (and mode (major-mode-comment-prefix mode))))
     (cond

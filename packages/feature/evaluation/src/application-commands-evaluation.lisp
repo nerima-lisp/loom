@@ -32,7 +32,7 @@
 
 (defun %display-evaluation-result (buffer result)
   (buffer-mark-saved buffer)
-  (loom/feature/window:window-set-buffer (%selected-window) buffer)
+  (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
   (let ((minibuffer (editor-state-minibuffer *editor-state*)))
     (when minibuffer
       (minibuffer-message minibuffer (%evaluation-status-message result)))))
@@ -60,4 +60,4 @@
 
 (defun eval-buffer ()
   "Evaluate the selected buffer's complete contents in LOOM-USER."
-  (%evaluate-and-display (buffer-text (%selected-buffer))))
+  (%evaluate-and-display (buffer-text (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))

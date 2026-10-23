@@ -12,8 +12,7 @@
                    (terpri stream))
                  (format stream "line~D" line))))))
       (let ((window
-              (window-tree-selected-window
-               (editor-state-window-tree *editor-state*))))
+              (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
         (loom/feature/window:scroll-up-command)
         (expect (window-scroll-line window) :to-equal 23)
         (loom/feature/window:scroll-up-command)

@@ -5,7 +5,7 @@
         (loom:editor-state-jump-origins loom:*editor-state*)))
 
 (defun %lsp-selected-buffer-for-path (path)
-  (let ((selected (loom/application:%selected-buffer)))
+  (let ((selected (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when (and selected
                (loom:buffer-path selected)
                (equal (namestring (pathname (loom:buffer-path selected)))
@@ -76,7 +76,7 @@ back even when the jump crossed into another file."
     (if origin
         (destructuring-bind (buffer line column) origin
           (loom/feature/window:window-set-buffer
-           (loom/application:%selected-window) buffer)
+           (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
           (loom:buffer-set-point buffer line column))
         (%lsp-navigation-message "No jump to return from")))
   nil)

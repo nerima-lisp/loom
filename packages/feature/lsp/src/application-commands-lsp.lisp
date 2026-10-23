@@ -19,7 +19,7 @@
 `.loom-lsp` is discovered before the prompt.  RET selects its command for
 review; only an exact yes at the trust prompt runs it.  Typing a command
 continues to override the discovered value explicitly."
-  (let ((buffer (loom/application:%selected-buffer)))
+  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (discovered-command discovered-root configuration)
         (%lsp-start-discovery buffer)
       (loom/application:with-prompts
@@ -52,7 +52,7 @@ continues to override the discovered value explicitly."
       buffer
       (lsp-session-diagnostics session buffer)))
     (loom/feature/window:window-set-buffer
-     (loom/application:%selected-window)
+     (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))
      diagnostics-buffer)))
 
 (defun %lsp-refresh-diagnostics (session buffer)
@@ -72,7 +72,7 @@ continues to override the discovered value explicitly."
 (defun lsp-diagnostics ()
   "Refresh and display diagnostics for the selected file-backed buffer."
   (let* ((session (editor-state-lsp-session *editor-state*))
-         (buffer (loom/application:%selected-buffer))
+         (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
          (minibuffer (editor-state-minibuffer *editor-state*)))
     (cond
       ((null session)
