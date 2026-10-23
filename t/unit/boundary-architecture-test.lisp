@@ -10,9 +10,10 @@
     readtable))
 
 (defparameter *boundary-package-map*
+  ;; LOOM is shared by root and core files; src/main.lisp adds the composition-root layer.
   '(("LOOM/APPLICATION" ("root") (:application) "src/package-application.lisp")
     ("LOOM" ("root" "core")
-     (:domain :application :infrastructure :presentation :core)
+     (:domain :application :infrastructure :presentation :core :composition-root)
      "src/package.lisp")
     ("LOOM/FEATURE/MODE" ("feature/mode") (:domain :application)
      "packages/feature/mode/src/package.lisp")
@@ -58,6 +59,7 @@
     ("LOOM-USER" ("root") (:composition-root) "src/package-user.lisp")))
 
 (defparameter *boundary-report-vs-fail* :report)
+;; Snapshot exact findings from current sources; entries mark matches KNOWN, not approved.
 (defparameter *boundary-allowlist*
   '(
     ("root"
@@ -248,6 +250,19 @@
      (:layer-direction "src/presentation/layout.lisp" 34 "PRESENTATION call to BUFFER-VISIBLE-POINT-COLUMN (DOMAIN)")
      (:layer-direction "src/presentation/layout.lisp" 38 "PRESENTATION call to WINDOW-HEIGHT (DOMAIN)")
      (:layer-direction "src/presentation/layout.lisp" 5 "PRESENTATION call to LOOM-RENDERER-TRUNCATE-STRING (INFRASTRUCTURE)")
+     (:d1-cycle "src/application/command-definitions-files.lisp" 22 "C1 root <-> feature/auto-save")
+     (:d1-cycle "src/application/command-definitions-session.lisp" 26 "C1 root <-> feature/register")
+     (:d1-cycle "src/application/command-definitions-session.lisp" 5 "C1 root <-> feature/session")
+     (:d1-cycle "src/application/command-definitions-tooling.lisp" 11 "C1 root <-> feature/git")
+     (:d1-cycle "src/application/command-definitions-tooling.lisp" 5 "C1 root <-> feature/shell")
+     (:d1-cycle "src/application/commands-internal.lisp" 5 "C1 root <-> feature/window")
+     (:d1-cycle "src/application/commands-internal.lisp" 5 "C3 loom/application <-> window")
+     (:d1-cycle "src/application/editor-state.lisp" 13 "C1 root <-> feature/workspace")
+     (:d1-cycle "src/package-user.lisp" 2 "C1 root <-> feature/lsp")
+     (:d1-cycle "src/package-user.lisp" 2 "C1 root <-> feature/mode")
+     (:d1-cycle "src/package-user.lisp" 2 "C1 root <-> feature/user-init")
+     (:d1-cycle "src/package.lisp" 1 "C2 loom <-> loom/application")
+     (:d1-cycle "src/presentation/layout-wrapping.lisp" 66 "C1 root <-> feature/syntax-highlighting")
      )
     ("core"
      (:domain-io "packages/core/editor/src/domain-buffer-piece-table-position.lisp" 48 "WRITE-CHAR")
@@ -266,6 +281,7 @@
      (:package-direction "packages/core/editor/src/application-commands-movement-visual-lines.lisp" 12 "core -> feature/window (LOOM/FEATURE/WINDOW:WINDOW-BUFFER)")
      (:package-direction "packages/core/editor/src/application-commands-movement-visual-lines.lisp" 14 "core -> feature/window (LOOM/FEATURE/WINDOW:WINDOW-WIDTH)")
      (:package-direction "packages/core/editor/src/application-commands-movement-visual-lines.lisp" 16 "core -> feature/mode (LOOM/FEATURE/MODE:BUFFER-TRUNCATE-LINES-P)")
+     (:package-direction "src/package.lisp" 1 "core -> root (package-use LOOM -> LOOM/APPLICATION)")
      )
     ("feature/mode"
      (:package-direction "packages/feature/mode/src/application-major-mode-editing.lisp" 14 "feature/mode -> root (LOOM/APPLICATION:%SELECTED-BUFFER)")
@@ -308,6 +324,8 @@
      (:package-direction "packages/feature/mode/src/application-major-mode.lisp" 35 "feature/mode -> root (LOOM/APPLICATION:%SELECTED-BUFFER)")
      (:package-direction "packages/feature/mode/src/application-major-mode.lisp" 37 "feature/mode -> root (LOOM:MINIBUFFER-MESSAGE)")
      (:package-direction "packages/feature/mode/src/application-major-mode.lisp" 39 "feature/mode -> root (LOOM:MINIBUFFER-MESSAGE)")
+     (:package-direction "packages/feature/mode/src/package.lisp" 2 "feature/mode -> root (package-use LOOM/FEATURE/MODE -> LOOM)")
+     (:package-direction "packages/feature/mode/src/package.lisp" 2 "feature/mode -> root (package-use LOOM/FEATURE/MODE -> LOOM/APPLICATION)")
      )
     ("feature/syntax-highlighting"
      (:layer-direction "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting.lisp" 22 "PRESENTATION call to LOOM-RENDERER-TRUNCATE-STRING (INFRASTRUCTURE)")
@@ -318,6 +336,7 @@
      (:layer-direction "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting.lisp" 75 "PRESENTATION call to BUFFER-VISIBLE-LINE-COUNT (DOMAIN)")
      (:layer-direction "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting.lisp" 81 "PRESENTATION call to BUFFER-VISIBLE-LINE (DOMAIN)")
      (:layer-direction "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting.lisp" 85 "PRESENTATION call to BUFFER-MAJOR-MODE (DOMAIN)")
+     (:package-direction "packages/feature/syntax-highlighting/src/package.lisp" 2 "feature/syntax-highlighting -> root (package-use LOOM/FEATURE/SYNTAX-HIGHLIGHTING -> LOOM)")
      )
     ("feature/project"
      (:domain-io "packages/feature/project/src/domain-project.lisp" 31 "DIRECTORY")
@@ -333,6 +352,8 @@
      (:package-direction "packages/feature/project/src/application-commands-project.lisp" 33 "feature/project -> root (LOOM/APPLICATION:WITH-PROMPTS)")
      (:package-direction "packages/feature/project/src/application-commands-project.lisp" 4 "feature/project -> root (LOOM/APPLICATION:%SELECTED-BUFFER)")
      (:package-direction "packages/feature/project/src/application-commands-project.lisp" 76 "feature/project -> root (LOOM/APPLICATION:WITH-PROMPTS)")
+     (:package-direction "packages/feature/project/src/package.lisp" 2 "feature/project -> root (package-use LOOM/FEATURE/PROJECT -> LOOM)")
+     (:package-direction "packages/feature/project/src/package.lisp" 2 "feature/project -> root (package-use LOOM/FEATURE/PROJECT -> LOOM/APPLICATION)")
      )
     ("feature/search"
      (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" 100 "feature/search -> root (LOOM:*EDITOR-STATE*)")
@@ -345,16 +366,25 @@
      (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" 94 "feature/search -> root (LOOM/APPLICATION:%SELECTED-BUFFER)")
      (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" 95 "feature/search -> root (LOOM:*EDITOR-STATE*)")
      (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" 95 "feature/search -> root (LOOM:EDITOR-STATE-MINIBUFFER)")
+     (:package-direction "packages/feature/search/src/package.lisp" 2 "feature/search -> root (package-use LOOM/FEATURE/SEARCH -> LOOM)")
+     (:package-direction "packages/feature/search/src/package.lisp" 2 "feature/search -> root (package-use LOOM/FEATURE/SEARCH -> LOOM/APPLICATION)")
      )
     ("feature/window"
+     (:d1-cycle "packages/feature/window/src/package.lisp" 2 "C4 core <-> window")
+     (:package-direction "packages/feature/window/src/package.lisp" 2 "feature/window -> root (package-use LOOM/FEATURE/WINDOW -> LOOM)")
+     (:package-direction "packages/feature/window/src/package.lisp" 2 "feature/window -> root (package-use LOOM/FEATURE/WINDOW -> LOOM/APPLICATION)")
      )
     ("feature/workspace"
+     (:package-direction "packages/feature/workspace/src/package.lisp" 2 "feature/workspace -> root (package-use LOOM/FEATURE/WORKSPACE -> LOOM)")
+     (:package-direction "packages/feature/workspace/src/package.lisp" 2 "feature/workspace -> root (package-use LOOM/FEATURE/WORKSPACE -> LOOM/APPLICATION)")
      )
     ("feature/file-tree"
      (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" 12 "APPLICATION call to LOOM-CONCURRENT-RUNTIME-INVALIDATE-PATH (INFRASTRUCTURE)")
      (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" 86 "APPLICATION call to FILE-TREE-RENAME (INFRASTRUCTURE)")
      (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" 94 "APPLICATION call to FILE-TREE-DELETE (INFRASTRUCTURE)")
      (:package-direction "packages/feature/file-tree/src/infrastructure-buffer-filesystem.lisp" 26 "feature/file-tree -> root (LOOM:BUFFER-READ-ONLY-ERROR)")
+     (:package-direction "packages/feature/file-tree/src/package.lisp" 2 "feature/file-tree -> root (package-use LOOM/FEATURE/FILE-TREE -> LOOM)")
+     (:package-direction "packages/feature/file-tree/src/package.lisp" 2 "feature/file-tree -> root (package-use LOOM/FEATURE/FILE-TREE -> LOOM/APPLICATION)")
      )
     ("feature/evaluation"
      (:domain-io "packages/feature/evaluation/src/domain-evaluation.lisp" 24 "WRITE-STRING")
@@ -363,6 +393,8 @@
      (:domain-io "packages/feature/evaluation/src/domain-evaluation.lisp" 53 "TERPRI")
      (:layer-direction "packages/feature/evaluation/src/application-commands-evaluation.lisp" 48 "APPLICATION call to EVALUATE-LISP-SOURCE (INFRASTRUCTURE)")
      (:package-direction "packages/feature/evaluation/src/infrastructure-lisp-evaluator.lisp" 4 "feature/evaluation -> root (FIND-PACKAGE LOOM-USER)")
+     (:package-direction "packages/feature/evaluation/src/package.lisp" 2 "feature/evaluation -> root (package-use LOOM/FEATURE/EVALUATION -> LOOM)")
+     (:package-direction "packages/feature/evaluation/src/package.lisp" 2 "feature/evaluation -> root (package-use LOOM/FEATURE/EVALUATION -> LOOM/APPLICATION)")
      )
     ("feature/shell"
      (:domain-io "packages/feature/shell/src/domain-shell.lisp" 15 "DIRECTORY")
@@ -370,16 +402,22 @@
      (:domain-io "packages/feature/shell/src/domain-shell.lisp" 29 "TERPRI")
      (:domain-io "packages/feature/shell/src/domain-shell.lisp" 5 "DIRECTORY")
      (:layer-direction "packages/feature/shell/src/application-commands-shell.lisp" 50 "APPLICATION call to RUN-SHELL-COMMAND (INFRASTRUCTURE)")
+     (:package-direction "packages/feature/shell/src/package.lisp" 3 "feature/shell -> root (package-use LOOM/FEATURE/SHELL -> LOOM)")
+     (:package-direction "packages/feature/shell/src/package.lisp" 3 "feature/shell -> root (package-use LOOM/FEATURE/SHELL -> LOOM/APPLICATION)")
      )
     ("feature/format"
      (:layer-direction "packages/feature/format/src/application-format-buffer.lisp" 66 "APPLICATION call to RUN-SHELL-COMMAND (INFRASTRUCTURE)")
      (:package-direction "packages/feature/format/src/application-format-buffer.lisp" 55 "feature/format -> root (LOOM:BUFFER-P)")
      (:package-direction "packages/feature/format/src/application-format-buffer.lisp" 58 "feature/format -> root (LOOM:BUFFER-P)")
+     (:package-direction "packages/feature/format/src/package.lisp" 3 "feature/format -> root (package-use LOOM/FEATURE/FORMAT -> LOOM)")
+     (:package-direction "packages/feature/format/src/package.lisp" 3 "feature/format -> root (package-use LOOM/FEATURE/FORMAT -> LOOM/APPLICATION)")
      )
     ("feature/auto-save"
      (:domain-io "packages/feature/auto-save/src/domain-auto-save.lisp" 10 "DIRECTORY")
      (:domain-io "packages/feature/auto-save/src/domain-auto-save.lisp" 17 "DIRECTORY")
      (:layer-direction "packages/feature/auto-save/src/application-auto-save-support.lisp" 29 "APPLICATION call to AUTO-SAVE-BUFFER-TO-FILE (INFRASTRUCTURE)")
+     (:package-direction "packages/feature/auto-save/src/package.lisp" 3 "feature/auto-save -> root (package-use LOOM/FEATURE/AUTO-SAVE -> LOOM)")
+     (:package-direction "packages/feature/auto-save/src/package.lisp" 3 "feature/auto-save -> root (package-use LOOM/FEATURE/AUTO-SAVE -> LOOM/APPLICATION)")
      )
     ("feature/terminal"
      (:domain-io "packages/feature/terminal/src/domain-terminal-session.lisp" 10 "DIRECTORY")
@@ -398,9 +436,13 @@
      (:layer-direction "packages/feature/terminal/src/application-commands-terminal.lisp" 40 "APPLICATION call to STOP-TERMINAL-SESSION (INFRASTRUCTURE)")
      (:layer-direction "packages/feature/terminal/src/application-terminal-input.lisp" 4 "APPLICATION call to TERMINAL-SESSION-FOR-BUFFER (INFRASTRUCTURE)")
      (:package-direction "packages/feature/terminal/src/infrastructure-terminal.lisp" 3 "feature/terminal -> root (LOOM:*EDITOR-STATE*)")
+     (:package-direction "packages/feature/terminal/src/package.lisp" 3 "feature/terminal -> root (package-use LOOM/FEATURE/TERMINAL -> LOOM)")
+     (:package-direction "packages/feature/terminal/src/package.lisp" 3 "feature/terminal -> root (package-use LOOM/FEATURE/TERMINAL -> LOOM/APPLICATION)")
      )
     ("feature/git"
      (:layer-direction "packages/feature/git/src/application-commands-git-support.lisp" 10 "APPLICATION call to PROJECT-FIND-ROOT (INFRASTRUCTURE)")
+     (:package-direction "packages/feature/git/src/package.lisp" 3 "feature/git -> root (package-use LOOM/FEATURE/GIT -> LOOM)")
+     (:package-direction "packages/feature/git/src/package.lisp" 3 "feature/git -> root (package-use LOOM/FEATURE/GIT -> LOOM/APPLICATION)")
      )
     ("feature/keyboard-macro"
      (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" 36 "feature/keyboard-macro -> root (LOOM:KEYMAP-STATE-SEQUENCE)")
@@ -414,12 +456,18 @@
      (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" 66 "feature/keyboard-macro -> root (LOOM:*CURRENT-PREFIX-ARGUMENT*)")
      (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" 67 "feature/keyboard-macro -> root (LOOM:CONSUME-PREFIX-ARGUMENT-FOR-EDITOR)")
      (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" 68 "feature/keyboard-macro -> root (LOOM:SELF-INSERT-COMMAND)")
+     (:package-direction "packages/feature/keyboard-macro/src/package.lisp" 2 "feature/keyboard-macro -> root (package-use LOOM/FEATURE/KEYBOARD-MACRO -> LOOM)")
+     (:package-direction "packages/feature/keyboard-macro/src/package.lisp" 2 "feature/keyboard-macro -> root (package-use LOOM/FEATURE/KEYBOARD-MACRO -> LOOM/APPLICATION)")
      )
     ("feature/register"
+     (:package-direction "packages/feature/register/src/package.lisp" 2 "feature/register -> root (package-use LOOM/FEATURE/REGISTER -> LOOM)")
+     (:package-direction "packages/feature/register/src/package.lisp" 2 "feature/register -> root (package-use LOOM/FEATURE/REGISTER -> LOOM/APPLICATION)")
      )
     ("feature/session"
      (:layer-direction "packages/feature/session/src/application-commands-session.lisp" 34 "APPLICATION call to SESSION-STORE-WRITE (INFRASTRUCTURE)")
      (:layer-direction "packages/feature/session/src/application-commands-session.lisp" 42 "APPLICATION call to SESSION-STORE-READ (INFRASTRUCTURE)")
+     (:package-direction "packages/feature/session/src/package.lisp" 2 "feature/session -> root (package-use LOOM/FEATURE/SESSION -> LOOM)")
+     (:package-direction "packages/feature/session/src/package.lisp" 2 "feature/session -> root (package-use LOOM/FEATURE/SESSION -> LOOM/APPLICATION)")
      )
     ("feature/user-init"
      (:package-direction "packages/feature/user-init/src/application-user-configuration.lisp" 28 "feature/user-init -> root (LOOM/APPLICATION:DEFKEYS-KEY-SEQUENCE)")
@@ -428,6 +476,8 @@
      (:package-direction "packages/feature/user-init/src/application-user-configuration.lisp" 62 "feature/user-init -> root (LOOM/APPLICATION:*COMMAND-SPECS*)")
      (:package-direction "packages/feature/user-init/src/application-user-configuration.lisp" 7 "feature/user-init -> root (LOOM/APPLICATION:FIND-EXTENDED-COMMAND)")
      (:package-direction "packages/feature/user-init/src/infrastructure-user-init.lisp" 20 "feature/user-init -> root (FIND-PACKAGE LOOM-USER)")
+     (:package-direction "packages/feature/user-init/src/package.lisp" 2 "feature/user-init -> root (package-use LOOM/FEATURE/USER-INIT -> LOOM)")
+     (:package-direction "packages/feature/user-init/src/package.lisp" 2 "feature/user-init -> root (package-use LOOM/FEATURE/USER-INIT -> LOOM/APPLICATION)")
      )
     ("feature/lsp"
      (:layer-direction "packages/feature/lsp/src/application-commands-lsp.lisp" 6 "APPLICATION call to LSP-DISCOVER-COMMAND (INFRASTRUCTURE)")
@@ -477,6 +527,8 @@
      (:package-direction "packages/feature/lsp/src/application-lsp-diagnostics-view.lisp" 8 "feature/lsp -> root (LOOM/APPLICATION:%EDITOR-BUFFERS)")
      (:package-direction "packages/feature/lsp/src/application-lsp-session-sync.lisp" 5 "feature/lsp -> root (LOOM:BUFFER-P)")
      (:package-direction "packages/feature/lsp/src/application-lsp-session-sync.lisp" 56 "feature/lsp -> root (LOOM:BUFFER-P)")
+     (:package-direction "packages/feature/lsp/src/package.lisp" 2 "feature/lsp -> root (package-use LOOM/FEATURE/LSP -> LOOM)")
+     (:package-direction "packages/feature/lsp/src/package.lisp" 2 "feature/lsp -> root (package-use LOOM/FEATURE/LSP -> LOOM/APPLICATION)")
      )
     ))
 
@@ -783,6 +835,7 @@
 
 (defun boundary-introspected-edges (records)
   (labels ((option-line (source-name option)
+             ;; Unqualified keywords such as :USE have an empty package name in scanner tokens.
              (let* ((path (boundary-package-definition-file source-name))
                     (record (find path records :key #'boundary-record-path
                                   :test #'string=))
@@ -791,7 +844,7 @@
                            (find-if
                             (lambda (item)
                               (and (boundary-token-head-p item)
-                                   (null (boundary-token-package item))
+                                   (or (null (boundary-token-package item)) (string= "" (boundary-token-package item)))
                                    (string-equal (boundary-token-symbol item) option)))
                             (boundary-scan-source (boundary-record-text record) record)))))
                (if token (boundary-token-line token) 1))))
@@ -824,8 +877,9 @@
                                     (boundary-package-definition-file source-name)
                                     (option-line source-name "IMPORT-FROM")
                                     (format nil "import ~A::~A" (package-name home)
-                                            (symbol-name symbol))))))))
-              edges)))))
+                                            (symbol-name symbol)))))))))
+              ;; DO-SYMBOLS returns NIL, so return the accumulated edges after iteration.
+              edges))))
 
 (defun boundary-edge-key (edge)
   (list (boundary-edge-source-package edge) (boundary-edge-target-package edge)
@@ -1105,6 +1159,8 @@
                                       (boundary-token-symbol token))))))
 
 (defun boundary-d1-cycle-findings (edges)
+  ;; Cycle pairs: C1 root/feature; C2 LOOM/LOOM-APPLICATION;
+  ;; C3 LOOM/APPLICATION/window; C4 core/window.
   (let ((pairs nil))
     (labels ((edge-between (from to predicate)
                (find-if (lambda (edge)
@@ -1211,7 +1267,7 @@
     (dolist (reference (sort (copy-list internal-refs)
                              #'string< :key #'prin1-to-string))
       (format t "  ~A:~D ~A~%" (second reference) (third reference) (fourth reference)))
-    (format t "Limits: package-qualified references and :: locations are scanned lexically, including both reader-conditional branches. Direct FIND-PACKAGE, FIND-SYMBOL, and INTERN calls with literal package designators are resolved only in forms read in the active host branch. Layer checks match list-head tokens to top-level defun/defgeneric/defmethod/defmacro definitions, including definitions under eval-when/progn; macro expansion, local bindings, computed package names, and indirect calls are unresolved.")
+    (format t "Limits: package-qualified references and :: locations are scanned lexically, including both reader-conditional branches. Direct FIND-PACKAGE, FIND-SYMBOL, and INTERN calls with literal package designators are resolved only in forms read in the active host branch. Layer checks match list-head tokens to top-level defun/defgeneric/defmethod/defmacro definitions, including definitions under eval-when/progn; macro expansion, local bindings, computed package names, function-designator references such as #'foo, and indirect calls are unresolved.~%")
     (when (and (eq *boundary-report-vs-fail* :fail) new)
       (error "Boundary architecture has ~D unallowlisted findings" (length new)))))
 
@@ -1229,6 +1285,17 @@
                            (boundary-d1-cycle-findings edges)))
          (internal-refs (boundary-internal-references records)))
     (unless records (error "No Lisp components found in ASDF system loom"))
+    (dolist (record records)
+      (let* ((package (boundary-record-package record))
+             (row (and package
+                       (boundary-package-row (package-name package))))
+             (layer (boundary-record-layer record)))
+        ;; Package declarations are metadata, so they have no source layer.
+        (unless (or (eq layer :declaration)
+                    (and row (member layer (third row))))
+          (error "Package layer map mismatch for ~A in ~A: ~A"
+                 (or (and package (package-name package)) "<no package>")
+                 (boundary-record-path record) layer))))
     (boundary-report
      (remove-duplicates
       findings
@@ -1303,6 +1370,92 @@
                   nil)
               (error () t))
             :to-equal t)
+    (let* ((edges
+            (list
+             (make-boundary-edge
+              :source-package "LOOM/APPLICATION" :target-package "LOOM/FEATURE/WINDOW"
+              :source-slice "root" :target-slice "feature/window"
+              :file "synthetic/application.lisp" :line 5 :reference "application -> window")
+             (make-boundary-edge
+              :source-package "LOOM/FEATURE/WINDOW" :target-package "LOOM/APPLICATION"
+              :source-slice "feature/window" :target-slice "root"
+              :file "synthetic/window.lisp" :line 3 :reference "window -> application")
+             (make-boundary-edge
+              :source-package "LOOM" :target-package "LOOM/FEATURE/WINDOW"
+              :source-slice "core" :target-slice "feature/window"
+              :file "synthetic/core.lisp" :line 8 :reference "core -> window")
+             (make-boundary-edge
+              :source-package "LOOM/FEATURE/WINDOW" :target-package "LOOM"
+              :source-slice "feature/window" :target-slice "core"
+              :file "synthetic/window.lisp" :line 9 :reference "window -> core")))
+           (findings (boundary-d1-cycle-findings edges)))
+      (expect (not (null (find "C3 loom/application <-> window" findings
+                               :key #'boundary-finding-reference :test #'string=)))
+              :to-equal t)
+      (expect (not (null (find "C4 core <-> window" findings
+                               :key #'boundary-finding-reference :test #'string=)))
+              :to-equal t))
+    (let ((target-package nil)
+          (use-source nil)
+          (import-source nil))
+      (unwind-protect
+          (let* ((suffix (symbol-name (gensym "BOUNDARY-EDGE-")))
+                 (target-name (format nil "~A-TARGET" suffix))
+                 (use-name (format nil "~A-USE" suffix))
+                 (import-name (format nil "~A-IMPORT" suffix))
+                 (records
+                  (list
+                   (make-boundary-record
+                    :path "synthetic/target-package.lisp" :slice "core"
+                    :layer :declaration
+                    :text (format nil "(defpackage ~A)" target-name))
+                   (make-boundary-record
+                    :path "synthetic/use-package.lisp" :slice "feature/test"
+                    :layer :declaration
+                    :text (format nil "(defpackage ~A~%  (:use ~A))"
+                                  use-name target-name))
+                   (make-boundary-record
+                    :path "synthetic/import-package.lisp" :slice "feature/test"
+                    :layer :declaration
+                    :text (format nil "(defpackage ~A~%  (:import-from ~A #:private-edge))"
+                                  import-name target-name)))))
+            (setf target-package (make-package target-name :use nil)
+                  use-source (make-package use-name :use nil)
+                  import-source (make-package import-name :use nil))
+            (cl:use-package target-package use-source)
+            (cl:import (list (cl:intern "PRIVATE-EDGE" target-package)) import-source)
+            (let* ((*boundary-package-map*
+                    (list
+                     (list target-name '("core") '(:core)
+                           "synthetic/target-package.lisp")
+                     (list use-name '("feature/test") '(:application)
+                           "synthetic/use-package.lisp")
+                     (list import-name '("feature/test") '(:application)
+                           "synthetic/import-package.lisp")))
+                   (edges (boundary-introspected-edges records))
+                   (use-edge
+                    (find-if (lambda (edge)
+                               (and (string= (boundary-edge-source-package edge) use-name)
+                                    (string= (boundary-edge-target-package edge) target-name)))
+                             edges))
+                   (import-edge
+                    (find-if (lambda (edge)
+                               (and (string= (boundary-edge-source-package edge) import-name)
+                                    (string= (boundary-edge-target-package edge) target-name)))
+                             edges)))
+              (expect (and use-edge
+                           (= (boundary-edge-line use-edge) 2)
+                           (string= (boundary-edge-reference use-edge)
+                                    (format nil "package-use ~A -> ~A" use-name target-name)))
+                      :to-equal t)
+              (expect (and import-edge
+                           (= (boundary-edge-line import-edge) 2)
+                           (string= (boundary-edge-reference import-edge)
+                                    (format nil "import ~A::PRIVATE-EDGE" target-name)))
+                      :to-equal t)))
+        (when import-source (delete-package import-source))
+        (when use-source (delete-package use-source))
+        (when target-package (delete-package target-package))))
     t))
 
 (describe
