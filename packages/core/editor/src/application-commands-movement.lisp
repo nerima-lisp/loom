@@ -14,11 +14,11 @@
 In a wrapping buffer a screen row is one wrapped segment, so the move follows
 what the user can see, matching Emacs's LINE-MOVE-VISUAL default. A truncating
 buffer draws one row per logical line, which makes the two the same thing."
-  %next-visual-line-once %previous-visual-line-once)
+  next-visual-line-once previous-visual-line-once)
 
 (define-repeating-command previous-line
   "Move point up one screen row, repeating for the active numeric prefix."
-  %previous-visual-line-once %next-visual-line-once)
+  previous-visual-line-once next-visual-line-once)
 
 (define-current-line-boundary-command move-beginning-of-line
   "Move point to the beginning of the current line."
@@ -43,14 +43,6 @@ buffer draws one row per logical line, which makes the two the same thing."
 (define-buffer-boundary-command end-of-buffer
   "Move point to the end of the buffer's visible region (M->)."
   (buffer-narrow-end-offset buffer))
-
-(define-scroll-command scroll-up-command
-  "Scroll down by roughly one page, repeating for the active prefix (C-v)."
-  1)
-
-(define-scroll-command scroll-down-command
-  "Scroll up by roughly one page, repeating for the active prefix (M-v)."
-  -1)
 
 (defun goto-line ()
   "Prompt for a one-based line number within the visible region and move point there."

@@ -14,13 +14,13 @@
       (let ((window
               (window-tree-selected-window
                (editor-state-window-tree *editor-state*))))
-        (loom::scroll-up-command)
+        (loom/feature/window:scroll-up-command)
         (expect (window-scroll-line window) :to-equal 23)
-        (loom::scroll-up-command)
+        (loom/feature/window:scroll-up-command)
         (expect (window-scroll-line window) :to-equal 26)
-        (loom::scroll-down-command)
+        (loom/feature/window:scroll-down-command)
         (expect (window-scroll-line window) :to-equal 3)
-        (loom::scroll-down-command)
+        (loom/feature/window:scroll-down-command)
         (expect (window-scroll-line window) :to-equal 0))))
 
   (it
@@ -41,4 +41,14 @@
         (loom::open-line)
         (expect (buffer-text buffer) :to-equal (format nil "he~%llo"))
         (expect (buffer-point-line buffer) :to-equal 0)
-        (expect (buffer-point-column buffer) :to-equal 2)))))
+        (expect (buffer-point-column buffer) :to-equal 2))))
+
+  (it
+    "falls back to logical movement when visual layout is unavailable"
+    (let ((*editor-state* (%fresh-editor-state (format nil "first~%second")))
+          (loom::*visual-row-layout-function* nil))
+      (let ((buffer (%selected-test-buffer)))
+        (buffer-set-point buffer 0 1)
+        (next-visual-line-once)
+        (expect (buffer-point-line buffer) :to-equal 1)
+        (expect (buffer-point-column buffer) :to-equal 1)))))

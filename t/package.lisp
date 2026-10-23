@@ -18,6 +18,7 @@
         #:loom/feature/session
         #:loom/feature/user-init
         #:loom/feature/lsp)
+  (:shadowing-import-from #:loom/feature/mode #:buffer-truncate-lines-p)
   (:shadowing-import-from #:cl-weave #:describe)
   (:import-from #:cl-weave
    #:it

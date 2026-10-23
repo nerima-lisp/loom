@@ -1,89 +1,141 @@
 (in-package #:loom)
 
-(defun %visual-line-segments (renderer buffer line width)
-  (loom-renderer-wrap-segments renderer (buffer-line buffer line) width))
+(defun %visual-line-segments (session buffer line width)
+  (and *visual-row-layout-function*
+       (funcall *visual-row-layout-function* session buffer line width)))
 
 (defun %visual-line-move-context ()
-  "Return (VALUES RENDERER BUFFER WINDOW WIDTH) when the selected window wraps.
+  (let* ((session *editor-state*)
+         (window (and session (%selected-window)))
+         (buffer (and window (loom/core/window-tree:window-buffer window)))
+         (width (and window (loom/core/window-tree:window-width window))))
+    (when
+        (and session
+             window
+             buffer
+             width
+             (plusp width)
+             (not (buffer-truncate-lines-p session buffer)))
+      (values session buffer window width))))
 
-Returns NIL when the buffer truncates instead, or when there is no measurable
-window; the caller then falls back to logical line movement."
-  (let* ((window (and *editor-state* (%selected-window)))
-         (buffer (and window (loom/feature/window:window-buffer window)))
-         (renderer (and *editor-state* (editor-state-renderer *editor-state*)))
-         (width (and window (loom/feature/window:window-width window))))
-    (when (and window buffer renderer (plusp width)
-               (not (loom/feature/mode:buffer-truncate-lines-p buffer)))
-      (values renderer buffer window width))))
+(defun %move-point-into-segment (buffer line segment goal)
+  (let ((start (first segment))
+        (widths (third segment)))
+    (buffer-set-point buffer
+                      line
+                      (loop with target-column = start
+                            for offset from 1 below (length widths)
+                            while (<= (aref widths offset) goal)
+                            do (setf target-column (+ start offset))
+                            finally (return target-column)))))
 
-(defun %move-point-into-segment (renderer buffer line segment goal)
-  "Put point on LINE at the character GOAL cells into SEGMENT."
-  (buffer-set-point buffer line
-                    (loom-renderer-segment-column
-                     renderer (buffer-line buffer line) segment goal)))
-
-(defun %visual-line-edge-segment (renderer buffer line width edge)
-  (let ((segments (%visual-line-segments renderer buffer line width)))
-    (if (eq edge :first)
-        (first segments)
-        (car (last segments)))))
-
-(defun %visual-line-move-state (renderer buffer width)
+(defun %visual-line-move-state (session buffer width)
   (let* ((line (buffer-point-line buffer))
          (text (buffer-line buffer line))
          (column (buffer-point-column buffer))
-         (segments (loom-renderer-wrap-segments renderer text width))
-         (index (%loom-segment-index segments column)))
-    (values line text segments index
-            (loom-renderer-segment-cells
-             renderer text (nth index segments) column))))
+         (segments (%visual-line-segments session buffer line width)))
+    (when segments
+      (let* ((index
+              (or
+               (position-if
+                (lambda (segment)
+                  (and (<= (first segment) column) (< column (second segment))))
+                segments)
+               (max 0 (1- (length segments)))))
+             (segment (nth index segments))
+             (offset
+              (max 0
+                   (min (- column (first segment))
+                        (1- (length (third segment))))))
+             (goal (aref (third segment) offset)))
+        (values line text segments index goal)))))
 
-(defun %visual-line-move-next (renderer buffer width line text segments index goal)
+(defun %visual-line-move-next (session buffer
+                                       width
+                                       line
+                                       text
+                                       segments
+                                       index
+                                       goal)
   (if (< (1+ index) (length segments))
-      (%move-point-into-segment renderer buffer line
-                                (nth (1+ index) segments) goal)
+      (progn
+        (%move-point-into-segment buffer line (nth (1+ index) segments) goal)
+        t)
       (let ((next-line (1+ line)))
         (if (< next-line (buffer-line-count buffer))
-            (%move-point-into-segment
-             renderer buffer next-line
-             (%visual-line-edge-segment renderer buffer next-line width :first)
-             goal)
-            (buffer-set-point buffer line (length text))))))
+            (let ((next-segments
+                   (%visual-line-segments session buffer next-line width)))
+              (when next-segments
+                (%move-point-into-segment buffer
+                                          next-line
+                                          (first next-segments)
+                                          goal)
+                t))
+            (progn
+              (buffer-set-point buffer line (length text))
+              t)))))
 
-(defun %visual-line-move-previous (renderer buffer width line segments index goal)
+(defun %visual-line-move-previous (session buffer
+                                           width
+                                           line
+                                           segments
+                                           index
+                                           goal)
   (if (plusp index)
-      (%move-point-into-segment renderer buffer line
-                                (nth (1- index) segments) goal)
+      (progn
+        (%move-point-into-segment buffer line (nth (1- index) segments) goal)
+        t)
       (let ((previous-line (1- line)))
-        (when (>= previous-line 0)
-          (%move-point-into-segment
-           renderer buffer previous-line
-           (%visual-line-edge-segment
-            renderer buffer previous-line width :last)
-           goal)))))
+        (if (>= previous-line 0)
+            (let ((previous-segments
+                   (%visual-line-segments session buffer previous-line width)))
+              (when previous-segments
+                (%move-point-into-segment buffer
+                                          previous-line
+                                          (car (last previous-segments))
+                                          goal)
+                t))
+            t))))
 
 (defun %visual-line-move (direction)
-  "Move point one screen row DIRECTION -- :NEXT or :PREVIOUS -- and return true.
-
-Returns NIL when the buffer is not wrapping, so the ordinary logical movement
-runs instead. Within a wrapped logical line the move stays on that line and
-changes segment; at either end of it the move crosses to the neighbouring
-logical line's first or last segment. The renderer supplies the goal in cells
-and maps it back to a character column in the target segment."
-  (multiple-value-bind (renderer buffer window width) (%visual-line-move-context)
+  "Move one visual row and return NIL when its layout is unavailable."
+  (multiple-value-bind (session buffer window width) (%visual-line-move-context)
     (declare (ignore window))
-    (when renderer
+    (when session
       (multiple-value-bind (line text segments index goal)
-          (%visual-line-move-state renderer buffer width)
-        (ecase direction
-          (:next (%visual-line-move-next renderer buffer width line text
-                                          segments index goal))
-          (:previous (%visual-line-move-previous renderer buffer width line
-                                                  segments index goal)))
-        t))))
+          (%visual-line-move-state session buffer width)
+        (when segments
+          (ecase direction
+            (:next
+             (%visual-line-move-next session
+                                     buffer
+                                     width
+                                     line
+                                     text
+                                     segments
+                                     index
+                                     goal))
+            (:previous
+             (%visual-line-move-previous session buffer width line segments index goal))))))))
 
-(defun %next-visual-line-once ()
+(defun next-visual-line-once ()
   (or (%visual-line-move :next) (%next-line-once)))
 
-(defun %previous-visual-line-once ()
+(defun previous-visual-line-once ()
   (or (%visual-line-move :previous) (%previous-line-once)))
+
+(defun register-visual-row-layout (owner function)
+  (unless (functionp function)
+    (error "Visual row layout must be a function"))
+  (when
+      (and *visual-row-layout-owner*
+           (not (equal *visual-row-layout-owner* owner)))
+    (error "Visual row layout is already registered by ~S"
+           *visual-row-layout-owner*))
+  (setf *visual-row-layout-owner* owner
+        *visual-row-layout-function* function)
+  function)
+
+(defun buffer-truncate-lines-p (session buffer)
+  (and *buffer-truncate-policy-function*
+       (not (null (funcall *buffer-truncate-policy-function* session buffer)))))

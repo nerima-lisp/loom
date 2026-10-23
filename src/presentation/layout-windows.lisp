@@ -271,3 +271,27 @@ the mode line or another footer in the remaining window rows."
         (dolist (local (list paren match))
           (%layout-draw-matching-paren-at
            renderer window x-offset buffer start local))))))
+
+(defun %visual-row-layout (session buffer logical-line window-width)
+  (let ((renderer (editor-state-renderer session)))
+    (when renderer
+      (let* ((text (buffer-line buffer logical-line))
+             (ranges (loom-renderer-wrap-segments renderer text window-width)))
+        (mapcar
+         (lambda (range)
+           (let* ((start (car range))
+                  (end (cdr range))
+                  (widths (make-array (1+ (- end start)) :initial-element 0)))
+             (loop for column from start below end
+                   for index from 1
+                   do (setf (aref widths index)
+                            (+ (aref widths (1- index))
+                               (loom-renderer-string-width
+                                renderer
+                                (subseq text column (1+ column))))))
+             (list start end widths)))
+         ranges)))))
+
+(eval-when (:load-toplevel :execute)
+  (register-visual-row-layout :core/presentation
+                              (function %visual-row-layout)))

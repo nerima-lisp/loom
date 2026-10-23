@@ -47,10 +47,10 @@
                         (cond
                           ((or (equal descriptor '(nil . :page-down))
                                (equal descriptor '((:control) . #\v)))
-                           #'loom::%next-visual-line-once)
+                           #'loom:next-visual-line-once)
                           ((or (equal descriptor '(nil . :page-up))
                                (equal descriptor '((:alt) . #\v)))
-                           #'loom::%previous-visual-line-once))))
+                           #'loom:previous-visual-line-once))))
                  (when movement
                    (dotimes (row (max 1 (1- (loom/feature/window:window-height window))))
                      (funcall movement))

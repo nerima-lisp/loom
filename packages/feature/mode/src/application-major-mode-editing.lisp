@@ -88,3 +88,12 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
       ((null prefix) (%comment-line-no-prefix-message mode))
       (t (%comment-line-toggle-buffer buffer prefix))))
   nil)
+
+(defun %registered-buffer-truncate-policy (session buffer)
+  (declare (ignore session))
+  (buffer-truncate-lines-p buffer))
+
+(eval-when (:load-toplevel :execute)
+  (loom:register-buffer-truncate-policy
+   :feature/mode
+   (function %registered-buffer-truncate-policy)))

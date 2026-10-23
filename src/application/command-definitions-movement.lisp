@@ -154,13 +154,13 @@
                     :needs-region NIL
                     :external NIL
                     :modes (:all))
-      (command-spec "scroll-up-command" scroll-up-command :keys ((:control #\v))
+      (command-spec "scroll-up-command" loom/feature/window:scroll-up-command :keys ((:control #\v))
                     :mutates NIL
                     :prompts NIL
                     :needs-region NIL
                     :external NIL
                     :modes (:all))
-      (command-spec "scroll-down-command" scroll-down-command :keys ((:alt #\v))
+      (command-spec "scroll-down-command" loom/feature/window:scroll-down-command :keys ((:alt #\v))
                     :mutates NIL
                     :prompts NIL
                     :needs-region NIL

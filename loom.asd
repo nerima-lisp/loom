@@ -573,10 +573,7 @@ root source tree responsible for every feature."
     :pathname "."
     :serial t
     :components
-    (
-     (:file "packages/feature/window/src/application-window-buffer-support")
-     (:file "packages/feature/window/src/application-commands-window")
-    ))
+    ((:file "packages/feature/window/src/application-window-buffer-support") (:file "packages/feature/window/src/application-commands-window") (:file "packages/feature/window/src/application-commands-window-scroll")))
    (:module "feature-workspace-application"
     :pathname "."
     :serial t

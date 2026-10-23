@@ -1,5 +1,6 @@
 (defpackage #:loom/feature/syntax-highlighting
   (:use #:cl #:loom #:loom/feature/mode)
+  (:shadowing-import-from #:loom/feature/mode #:buffer-truncate-lines-p)
   (:export
    #:syntax-token
    #:syntax-token-p

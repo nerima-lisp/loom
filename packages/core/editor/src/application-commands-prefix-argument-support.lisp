@@ -72,3 +72,7 @@
       (:universal (values :universal nil))
       (:negative (values :negative nil))
       (otherwise (values nil nil)))))
+
+(defun repeat-command (forward backward)
+  "Repeat the active prefix using one-step callbacks."
+  (%repeat-command (%command-prefix-count) forward backward))

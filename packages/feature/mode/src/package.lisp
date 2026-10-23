@@ -1,5 +1,6 @@
 (defpackage #:loom/feature/mode
   (:use #:cl #:loom #:loom/application)
+  (:shadow #:buffer-truncate-lines-p)
   (:export
    #:major-mode-known-p
    #:major-mode-from-name

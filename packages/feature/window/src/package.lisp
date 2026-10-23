@@ -53,7 +53,7 @@
                      #:delete-window
                      #:delete-other-windows
                      #:switch-to-buffer
-                     #:kill-buffer))
+                     #:kill-buffer #:scroll-up-command #:scroll-down-command))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (let ((source (find-package "LOOM/CORE/WINDOW-TREE"))

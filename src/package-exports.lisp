@@ -81,4 +81,4 @@
       prefix-argument-value prefix-argument-universal prefix-argument-digit
       prefix-argument-negative prefix-argument-consume prefix-argument-reset
       loom-version main))
-  (setf +loom-exports+ (append +loom-exports+ '(invoke-command buffer-position-offset buffer-clamped-position-offset))))
+  (setf +loom-exports+ (append +loom-exports+ (quote (invoke-command repeat-command register-visual-row-layout register-buffer-truncate-policy buffer-truncate-lines-p next-visual-line-once previous-visual-line-once buffer-position-offset buffer-clamped-position-offset)))))
