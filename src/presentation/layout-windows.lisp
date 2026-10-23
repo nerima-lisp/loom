@@ -213,14 +213,14 @@ the mode line or another footer in the remaining window rows."
          (end (loom/feature/lsp:lsp-range-end range)))
     (handler-case
         (let* ((start-offset
-                 (%position-to-offset
+                 (buffer-position-offset
                   buffer
                   (loom/feature/lsp:lsp-position-line start)
                   (loom/feature/lsp:lsp-character-to-column
                    (buffer-line buffer (loom/feature/lsp:lsp-position-line start))
                    (loom/feature/lsp:lsp-position-character start))))
                (end-offset
-                 (%position-to-offset
+                 (buffer-position-offset
                   buffer
                   (loom/feature/lsp:lsp-position-line end)
                   (loom/feature/lsp:lsp-character-to-column

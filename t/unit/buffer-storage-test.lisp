@@ -83,17 +83,15 @@
       (signals error (buffer-save buffer)))))
 
 (describe
-  "piece table storage"
+  "buffer edits"
+  (it "replays grouped edits through the public buffer API" (let ((buffer (make-buffer :initial-content (format nil "alpha~%omega")))) (buffer-set-point buffer 0 5) (buffer-insert-string buffer "-beta") (expect (buffer-text buffer) :to-equal (format nil "alpha-beta~%omega")) (buffer-delete-region buffer 1 1 1 3) (expect (buffer-text buffer) :to-equal (format nil "alpha-beta~%oga")) (buffer-undo buffer) (expect (buffer-text buffer) :to-equal (format nil "alpha~%omega")) (buffer-redo buffer) (expect (buffer-text buffer) :to-equal (format nil "alpha-beta~%oga"))))
+
   (it
-    "preserves initial text while later edits use the add buffer"
-    (let ((buffer (make-buffer :initial-content (format nil "alpha~%omega"))))
-      (buffer-set-point buffer 0 5)
-      (buffer-insert-string buffer "-beta")
-      (buffer-delete-region buffer 1 1 1 3)
-      (expect (buffer-text buffer) :to-equal (format nil "alpha-beta~%oga"))
-      (expect (loom::%buffer-original buffer) :to-equal (format nil "alpha~%omega"))
-      (expect (length (loom::%buffer-add-buffer buffer)) :to-equal 5)
-      (expect (length (loom::%buffer-pieces buffer)) :to-equal 4))))
+    "extracts a region spanning inserted text"
+    (let ((buffer (make-buffer :initial-content "abcd")))
+      (buffer-set-point buffer 0 2)
+      (buffer-insert-string buffer "XY")
+      (expect (buffer-region-string buffer 0 1 0 5) :to-equal "bXYc"))))
 
   (it
     "extracts a region spanning original and added pieces"
@@ -103,35 +101,37 @@
       (expect (buffer-region-string buffer 0 1 0 5) :to-equal "bXYc")))
 
   (it
-    "keeps the original source stable across edits and history replay"
+    "keeps edits replayable through the buffer API"
     (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
       (buffer-set-point buffer 0 3)
       (buffer-insert-string buffer "-edited")
       (buffer-set-point buffer 1 0)
       (buffer-delete-region buffer 1 0 1 3)
       (expect (buffer-text buffer) :to-equal (format nil "one-edited~%"))
-      (expect (loom::%buffer-original buffer) :to-equal (format nil "one~%two"))
       (buffer-undo buffer)
       (expect (buffer-text buffer) :to-equal (format nil "one~%two"))
       (buffer-redo buffer)
-      (expect (buffer-text buffer) :to-equal (format nil "one-edited~%"))
-      (expect (loom::%pieces-text buffer) :to-equal (buffer-text buffer))))
+      (expect (buffer-text buffer) :to-equal (format nil "one-edited~%"))))
 
 (describe
-  "%raw-insert-at and %raw-delete-region"
+  "empty buffer edits"
   (it
-    "%raw-insert-at is a no-op for an empty string"
+    "leaves text and point unchanged for an empty insertion"
     (let ((buffer (make-buffer :initial-content "hello")))
-      (loom::%raw-insert-at buffer 0 2 "")
-      (expect (buffer-line buffer 0) :to-equal "hello")
-      (expect (length (loom::%buffer-pieces buffer)) :to-equal 1)))
+      (buffer-set-point buffer 0 2)
+      (buffer-insert-string buffer "")
+      (expect (buffer-text buffer) :to-equal "hello")
+      (expect buffer :to-have-point (cons 0 2))
+      (expect (buffer-modified-p buffer) :to-be-falsy)))
 
   (it
-    "%raw-delete-region is a no-op for an empty (start = end) region"
+    "leaves text and point unchanged for an empty deletion"
     (let ((buffer (make-buffer :initial-content "hello")))
-      (loom::%raw-delete-region buffer 0 2 0 2)
-      (expect (buffer-line buffer 0) :to-equal "hello")
-      (expect (length (loom::%buffer-pieces buffer)) :to-equal 1))))
+      (buffer-set-point buffer 0 2)
+      (buffer-delete-region buffer 0 2 0 2)
+      (expect (buffer-text buffer) :to-equal "hello")
+      (expect buffer :to-have-point (cons 0 2))
+      (expect (buffer-modified-p buffer) :to-be-falsy))))
 
 (describe
   "buffer-read-only-error reporting"
@@ -147,63 +147,63 @@
                   :to-equal "Buffer *locked* is read-only"))))))
 
 (describe
-  "piece-table position helpers"
+  "buffer positions"
   (it
-    "tracks full text length without materializing the piece table"
-    (let ((buffer (make-buffer :initial-content (format nil "one~%two"))))
-      (expect (loom::%buffer-full-length buffer)
-              :to-equal (length (buffer-text buffer)))
-      (buffer-set-point buffer 0 3)
-      (buffer-insert-string buffer "-edited")
-      (expect (loom::%buffer-full-length buffer)
-              :to-equal (length (buffer-text buffer)))
-      (buffer-delete-region buffer 1 0 1 3)
-      (expect (loom::%buffer-full-length buffer)
-              :to-equal (length (buffer-text buffer)))))
+    "maps offsets across lines and clamps them to text bounds"
+    (let* ((buffer (make-buffer :initial-content (format nil "ab~%cd")))
+           (position (buffer-offset-position buffer 99)))
+      (expect (buffer-position-line position) :to-equal 1)
+      (expect (buffer-position-column position) :to-equal 2)
+      (setf position (buffer-offset-position buffer 2))
+      (expect (buffer-position-line position) :to-equal 0)
+      (expect (buffer-position-column position) :to-equal 2)))
 
   (cl-weave:it-property
-      "splits every generated character into one line"
+      "keeps each generated character on one line"
       ((character (cl-weave:gen-character :alphabet "abc")))
-    (let ((lines (loom::%split-newlines (string character))))
-      (expect lines :to-equal (list (string character)))))
+    (let ((buffer (make-buffer :initial-content (string character))))
+      (expect (buffer-line-count buffer) :to-equal 1)
+      (expect (buffer-line buffer 0) :to-equal (string character))))
 
   (cl-weave:it-property
-      "advances a point by generated single-line text"
+      "moves point after generated single-line insertions"
       ((column (cl-weave:gen-integer :min 0 :max 32))
        (character (cl-weave:gen-character :alphabet "abc")))
-    (multiple-value-bind (line end-column)
-        (loom::%advance-position 2 column (string character))
-      (expect line :to-equal 2)
-      (expect end-column :to-equal (1+ column))))
+    (let ((buffer (make-buffer
+                   :initial-content (make-string column :initial-element #\a))))
+      (buffer-set-point buffer 0 column)
+      (buffer-insert-string buffer (string character))
+      (expect (buffer-point-column buffer) :to-equal (1+ column))))
 
   (it
-    "preserves empty lines around generated newlines"
+    "preserves empty lines around newlines"
     (dolist (text (list ""
                         (string #\Newline)
                         (format nil "a~%")
                         (format nil "~%a")
                         (format nil "a~%~%b")))
-      (expect (length (loom::%split-newlines text))
-              :to-equal (1+ (count #\Newline text)))))
+      (let ((buffer (make-buffer :initial-content text)))
+        (expect (buffer-line-count buffer)
+                :to-equal (1+ (count #\Newline text))))))
 
   (it
-    "advances across multiple generated lines"
-    (let ((text (format nil "a~%b")))
-    (multiple-value-bind (line column)
-        (loom::%advance-position 3 4 text)
-      (expect line :to-equal (+ 3 (count #\Newline text)))
-      (expect column :to-equal
-              (length (subseq text (1+ (or (position #\Newline text :from-end t) -1)))))))))
+    "moves point across inserted lines"
+    (let ((buffer (make-buffer :initial-content "x")))
+      (buffer-set-point buffer 0 1)
+      (buffer-insert-string buffer (format nil "a~%b"))
+      (expect (buffer-point-line buffer) :to-equal 1)
+      (expect (buffer-point-column buffer) :to-equal 1))))
 
   (it
-    "advances to column zero after a trailing newline"
-    (multiple-value-bind (line column)
-        (loom::%advance-position 1 7 (format nil "prefix~%"))
-      (expect line :to-equal 2)
-      (expect column :to-equal 0)))
+    "moves point to the next line after a trailing newline"
+    (let ((buffer (make-buffer :initial-content "prefix")))
+      (buffer-set-point buffer 0 6)
+      (buffer-insert-string buffer (string #\Newline))
+      (expect (buffer-point-line buffer) :to-equal 1)
+      (expect (buffer-point-column buffer) :to-equal 0)))
 
   (it
-    "recognizes narrowing only when the visible interval is reduced"
+    "recognizes narrowing through the buffer API"
     (cl-weave:it-each
         ((0 4 nil)
          (1 4 t)
@@ -211,8 +211,8 @@
         "narrowing interval [~D, ~D) is ~:[not narrowed~;narrowed~]"
         (start end expected)
       (let ((buffer (make-buffer :initial-content "abcd")))
-        (setf (loom::%buffer-narrow-start-offset buffer) start
-              (loom::%buffer-narrow-end-offset buffer) end)
+        (when expected
+          (buffer-narrow-to-region buffer 0 start 0 end))
         (if expected
-            (expect (loom::%buffer-narrowed-p buffer) :to-be-truthy)
-            (expect (loom::%buffer-narrowed-p buffer) :to-be-falsy)))))
+            (expect (buffer-narrowed-p buffer) :to-be-truthy)
+            (expect (buffer-narrowed-p buffer) :to-be-falsy)))))

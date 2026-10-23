@@ -44,28 +44,28 @@
 
 (describe
   "narrowing boundary calculations"
-  (it "maps offsets across lines and clamps them to text bounds"
-    (multiple-value-bind (line column)
-        (loom::%text-offset-to-position-values (format nil "ab~%cd") 99)
-      (expect line :to-equal 1)
-      (expect column :to-equal 2))
-    (multiple-value-bind (line column)
-        (loom::%text-offset-to-position-values (format nil "ab~%cd") 2)
-      (expect line :to-equal 0)
-      (expect column :to-equal 2)))
+  (it
+    "maps offsets across lines and clamps them to text bounds"
+    (let* ((buffer (make-buffer :initial-content (format nil "ab~%cd")))
+           (position (buffer-offset-position buffer 99)))
+      (expect (buffer-position-line position) :to-equal 1)
+      (expect (buffer-position-column position) :to-equal 2)
+      (setf position (buffer-offset-position buffer 2))
+      (expect (buffer-position-line position) :to-equal 0)
+      (expect (buffer-position-column position) :to-equal 2)))
 
-  (it "rejects a narrowing region whose end precedes its start"
-    (expect (handler-case
-                (progn
-                  (loom::%validate-narrow-region-order 1 2 1 1)
-                  nil)
-              (error () t))
-            :to-be-truthy))
+  (it
+    "rejects a narrowing region whose end precedes its start"
+    (let ((buffer (make-buffer :initial-content (format nil "ab~%cd"))))
+      (signals error
+        (buffer-narrow-to-region buffer 0 2 0 1))))
 
-  (it "clamps point and mark offsets to the visible region"
+  (it
+    "clamps point and mark to the visible region"
     (let ((buffer (make-buffer :initial-content "0123456789")))
+      (buffer-set-point buffer 0 0)
+      (buffer-set-mark buffer 0 9)
       (buffer-narrow-to-region buffer 0 2 0 7)
-      (loom::%clamp-buffer-point-and-mark-to-visible-region buffer 0 99)
       (expect buffer :to-have-point (cons 0 2))
       (multiple-value-bind (line column) (buffer-mark buffer)
         (expect line :to-equal 0)

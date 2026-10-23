@@ -57,4 +57,4 @@
    #:buffer-redo
    #:buffer-record-undo-boundary
    #:buffer-load
-   #:buffer-save))
+   #:buffer-save #:buffer-position-offset #:buffer-clamped-position-offset))

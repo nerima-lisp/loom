@@ -41,3 +41,11 @@ accepted as the position just after its last visible character."
   (multiple-value-bind (line column)
       (%offset-to-position-values buffer offset)
     (%make-buffer-position line column)))
+(defun buffer-position-offset (buffer line column)
+  "Return the text offset at LINE and COLUMN in BUFFER."
+  (%position-to-offset buffer line column))
+(defun buffer-clamped-position-offset (buffer line column)
+  "Return the nearest valid text offset for LINE and COLUMN in BUFFER."
+  (multiple-value-bind (clamped-line clamped-column)
+      (%clamp-position buffer line column)
+    (%position-to-offset buffer clamped-line clamped-column)))

@@ -12,8 +12,7 @@
 
   (it
     "reports the missing file path without sending a request"
-    (%with-lsp-navigation (transport session buffer)
-      (setf (loom::%buffer-path buffer) nil)
+    (%with-lsp-navigation (transport session buffer :path nil)
       (let ((before (length (%fake-sent-in-order transport))))
         (loom/feature/lsp:lsp-find-definition)
         (expect (minibuffer-message-string

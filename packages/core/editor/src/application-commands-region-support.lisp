@@ -27,18 +27,13 @@
                       (buffer-position-column start))))
 
 (defun buffer-active-region-span (buffer)
-  "Return BUFFER's active region as an absolute half-open span, or NIL when
-the mark is unset."
+  "Return the active region as an absolute half-open span, or NIL if the mark is unset."
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
     (when mark-line
-      (multiple-value-bind (clamped-mark-line clamped-mark-column)
-          (%clamp-position buffer mark-line mark-column)
-        (let* ((point-offset (buffer-point-offset buffer))
-               (mark-offset (%position-to-offset buffer
-                                                  clamped-mark-line
-                                                  clamped-mark-column)))
-          (make-buffer-span (min point-offset mark-offset)
-                            (max point-offset mark-offset)))))))
+      (let* ((point-offset (buffer-point-offset buffer))
+             (mark-offset (buffer-clamped-position-offset buffer mark-line mark-column)))
+        (make-buffer-span (min point-offset mark-offset)
+                          (max point-offset mark-offset))))))
 
 (defun %narrow-to-active-region-or-message (buffer)
   (let ((span (buffer-active-region-span buffer)))
