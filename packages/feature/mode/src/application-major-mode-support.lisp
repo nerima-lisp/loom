@@ -22,7 +22,10 @@
            (if (and parent-mode (not (eq parent-mode mode)))
                (%build-major-mode-keymap parent-mode fallback (cons mode seen))
                fallback))
-         (keymap (loom:make-keymap :parent parent-keymap)))
+         (keymap
+           (loom:make-keymap
+            :parent parent-keymap
+            :name (string-downcase (symbol-name mode)))))
     (dolist (binding (major-mode-keybindings mode))
       (loom:keymap-define-key
        keymap

@@ -20,6 +20,7 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
         (minibuffer-was-active
           (input-routing-decision-minibuffer-was-active decision))
         (prefix-action (input-routing-decision-prefix-action decision))
+        (descriptor (input-routing-decision-descriptor decision))
         (terminal-event-p
           (input-routing-decision-terminal-event-p decision))
         (self-insert-event-p
@@ -36,7 +37,9 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
        (if (eq (car prefix-action) :universal)
            (invoke-command
             (loom/application:find-extended-command "universal-argument")
-            :key)
+            :key
+            (list descriptor)
+            "global")
            (apply-prefix-argument-action (car prefix-action)
                                          (cdr prefix-action)))
        :handled)

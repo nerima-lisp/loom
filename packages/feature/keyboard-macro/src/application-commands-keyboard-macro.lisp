@@ -46,8 +46,8 @@
                  (keymap-state-dispatch
                   keymap-state
                   descriptor
-                  (lambda (command)
-                    (loom:invoke-command command :macro)))))
+                  (lambda (command sequence keymap-name)
+                    (loom:invoke-command command :macro sequence keymap-name)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset argument)))))
 
@@ -61,7 +61,9 @@
         (if (eq (car prefix-action) :universal)
             (loom:invoke-command
              (loom/application:find-extended-command "universal-argument")
-             :macro)
+             :macro
+             (list descriptor)
+             "global")
             (loom:apply-prefix-argument-action (car prefix-action)
                                                 (cdr prefix-action)))
         (%replay-keyboard-macro-dispatch-key descriptor keymap-state

@@ -29,8 +29,8 @@
                  (keymap-state-dispatch
                   keymap-state
                   descriptor
-                  (lambda (command)
-                    (invoke-command command :key)))))
+                  (lambda (command sequence keymap-name)
+                    (invoke-command command :key sequence keymap-name)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset prefix-argument)))
     (unless (eq dispatch-result :pending)

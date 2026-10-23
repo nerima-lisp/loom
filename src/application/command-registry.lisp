@@ -105,14 +105,14 @@
 (defun command-catalog-json ()
   "Return the registered command catalogue as a JSON array string."
   (json-kit:stringify (mapcar #'%command-spec-json *command-specs*)))
-(defun record-command-trace (command route)
-  "Append one JSONL event for registered COMMAND when tracing is enabled.
-Return a diagnostic string if the event cannot be written."
+(defun record-command-trace (command route &optional entry)
+  "Append one JSONL event for COMMAND when tracing is enabled.
+ENTRY is an optional canonical key trace identity."
   (unless (keywordp route)
     (error "Command trace route must be a keyword: ~S" route))
   (let* ((trace-file (uiop:getenv "LOOM_TRACE_COMMANDS"))
-         (spec (find-if (lambda (entry)
-                          (eq command (getf entry :command)))
+         (spec (find-if (lambda (registered)
+                          (eq command (getf registered :command)))
                         *command-specs*)))
     (when (and trace-file spec)
       (handler-case
@@ -122,22 +122,25 @@ Return a diagnostic string if the event cannot be written."
             (let ((trace-path (uiop:parse-native-namestring trace-file)))
               (when (wild-pathname-p trace-path)
                 (error "LOOM_TRACE_COMMANDS path must not contain wildcards"))
-              (let* ((sequence (1+ *command-trace-sequence*))
+              (let* ((trace-sequence (1+ *command-trace-sequence*))
+                     (fields
+                       (list (cons "command" (%command-spec-identifier spec))
+                             (cons "route" (%catalog-symbol-name route))
+                             (cons "seq" trace-sequence)
+                             (cons "pid" (sb-posix:getpid))))
                      (line
                        (json-kit:stringify
                         (json-kit:make-json-object
-                         (list (cons "command"
-                                     (%command-spec-identifier spec))
-                               (cons "route" (%catalog-symbol-name route))
-                               (cons "seq" sequence)
-                               (cons "pid" (sb-posix:getpid)))))))
+                         (if entry
+                             (append fields (list (cons "entry" entry)))
+                             fields)))))
                 (with-open-file (stream trace-path
                                         :direction :output
                                         :if-exists :append
                                         :if-does-not-exist :create)
                   (write-line line stream)
                   (finish-output stream))
-                (setf *command-trace-sequence* sequence)
+                (setf *command-trace-sequence* trace-sequence)
                 nil)))
         (error (condition)
           (format nil "Could not append LOOM_TRACE_COMMANDS to ~A: ~A"

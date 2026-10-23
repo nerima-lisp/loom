@@ -5,9 +5,9 @@ import os
 import tempfile
 
 from loom_e2e import keys
+from loom_e2e.path_generation import _key_entry
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
-
 
 @scenario(
     "runtime/command-trace",
@@ -80,3 +80,38 @@ def command_trace(binary):
             range(1, len(expected) + 1)
         ):
             raise AssertionError(f"unexpected command trace: {trace_rows!r}")
+
+        key_entries = {
+            (event["command"], event["route"]): event["entry"].encode("utf-8")
+            for event in trace_rows
+            if "entry" in event
+        }
+        expected_key_entries = {
+            ("save-buffer", "key"): _key_entry(
+                {
+                    "keymap": "global",
+                    "sequence": [
+                        {"key": "x", "modifiers": ["control"]},
+                        {"key": "s", "modifiers": ["control"]},
+                    ],
+                }
+            ).encode("utf-8"),
+            ("universal-argument", "key"): _key_entry(
+                {
+                    "keymap": "global",
+                    "sequence": [{"key": "u", "modifiers": ["control"]}],
+                }
+            ).encode("utf-8"),
+            ("kill-line", "macro"): _key_entry(
+                {
+                    "keymap": "global",
+                    "sequence": [{"key": "k", "modifiers": ["control"]}],
+                }
+            ).encode("utf-8"),
+        }
+        for event_key, expected_entry in expected_key_entries.items():
+            if key_entries.get(event_key) != expected_entry:
+                raise AssertionError(
+                    f"unexpected key entry for {event_key}: "
+                    f"{key_entries.get(event_key)!r} != {expected_entry!r}"
+                )

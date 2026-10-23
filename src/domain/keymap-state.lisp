@@ -11,15 +11,16 @@ in-progress prefix-key accumulation across successive KEYMAP-STATE-DISPATCH
 calls, starting with no keys accumulated."
   (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil))
 
-(defun keymap-state-dispatch (state key-event &optional command-invoker)
-  "Feed KEY-EVENT into STATE and invoke a bound command through COMMAND-INVOKER.
+(defun keymap-state-dispatch (state key-event command-invoker)
+  "Feed KEY-EVENT into STATE and invoke bindings through COMMAND-INVOKER.
 
-COMMAND-INVOKER, when present, receives the command designator. Prefixes return
-:PENDING and unbound keys return NIL."
+COMMAND-INVOKER receives the command, normalized key sequence, and owning
+keymap name. Prefixes return :PENDING and unbound keys return NIL."
   (setf (keymap-state-sequence state)
         (append (keymap-state-sequence state) (list key-event)))
-  (let ((result (keymap-lookup (keymap-state-keymap state)
-                               (keymap-state-sequence state))))
+  (multiple-value-bind (result owner)
+      (keymap-lookup (keymap-state-keymap state)
+                     (keymap-state-sequence state))
     (cond
       ((eq result :prefix)
        :pending)
@@ -27,7 +28,8 @@ COMMAND-INVOKER, when present, receives the command designator. Prefixes return
        (setf (keymap-state-sequence state) nil)
        nil)
       (t
-       (setf (keymap-state-sequence state) nil)
-       (if command-invoker
-           (funcall command-invoker result)
-           (funcall result))))))
+       (let ((sequence
+               (mapcar #'normalize-key-descriptor
+                       (keymap-state-sequence state))))
+         (setf (keymap-state-sequence state) nil)
+         (funcall command-invoker result sequence (keymap-name owner)))))))

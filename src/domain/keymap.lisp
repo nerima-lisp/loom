@@ -2,12 +2,13 @@
 
 
 (defstruct (keymap (:constructor %make-keymap))
+  (name "global")
   (parent nil)
   (table (make-hash-table :test #'equal)))
 
-(defun make-keymap (&key parent)
-  "Create and return a new, empty keymap with optional PARENT."
-  (%make-keymap :parent parent))
+(defun make-keymap (&key parent (name (if parent (keymap-name parent) "global")))
+  "Create an empty keymap with optional PARENT and NAME."
+  (%make-keymap :name name :parent parent))
 
 (defun keymap-define-key (keymap key-sequence command)
   "Bind KEY-SEQUENCE, a list of (MODIFIERS . CODE) descriptors or bare
@@ -61,14 +62,12 @@ fallbacks."
     (%keymap-lookup-table (keymap-table keymap) normalized)))
 
 (defun keymap-lookup (keymap key-sequence)
-  "Look up KEY-SEQUENCE (a list of key-event descriptors, as in
-KEYMAP-DEFINE-KEY) in KEYMAP. Returns the bound command function designator
-if KEY-SEQUENCE names a complete binding, the keyword :PREFIX if KEY-SEQUENCE
-is a strict prefix of one or more bindings, or NIL if KEY-SEQUENCE is bound
-to nothing."
+  "Look up KEY-SEQUENCE in KEYMAP.
+The second value is the keymap that owns the binding, or NIL."
   (multiple-value-bind (value local-p)
       (%keymap-local-lookup keymap key-sequence)
-    (if local-p
-        value
-        (and (keymap-parent keymap)
-             (keymap-lookup (keymap-parent keymap) key-sequence)))))
+    (cond
+      (local-p (values value keymap))
+      ((keymap-parent keymap)
+       (keymap-lookup (keymap-parent keymap) key-sequence))
+      (t (values nil nil)))))
