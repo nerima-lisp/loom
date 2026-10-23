@@ -106,9 +106,12 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | P5 CI | 実装済み | `cb5022c` | `nix build .#default` は実測 3.73 秒、`nix run .#e2e` は実測 28.47 秒。いずれも exit 0。E2E は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`。この実測を根拠に E2E ジョブの `timeout-minutes` は 10 とした。CI の両ジョブは未実行 |
 | 統合（presentation） | 完了 | `9bbca23`, `cc0380d`, `f892bb4`, `e6ae4d5` | `nix run .#e2e` は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`、未カバー `0`、exit 0。launchctl 経由の in-process は `1427 passed, 0 skipped, 0 todo, 0 failed, 0 errored, 1427 total`、exit 0。`nix flake check` は `all checks passed!`、exit 0。`nix build --no-link --print-out-paths .#default` は exit 0。実PTY は mode-line、C-x 2/C-x 3 の mode-line 分離、C-SPC の緑背景、M-x terminal の `pty-integration` 出力を画面ダンプで確認し、exit 0 |
 | 診断可視化実機 | 完了 | `514c5a3`, `ed0b49c` | 実 `nixd` を使った一時 PTY スクリプトが exit 0。診断付き画面は mode-line に `Diag: E1 W1`、診断範囲は赤背景、リージョン重畳は緑背景と診断範囲の赤背景を同一画面で確認。LSP セッション無しと診断ゼロでは `Diag:` が無く、40 列の長い日本語名でも mode-line は `cells=40` で折り返さなかった。 |
-| 要件書と slop | 完了 | `ccb2c34` | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |
+| P4 Documentation: 要件書と slop | 完了 | `ccb2c34` | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |
 
 ## 4. Development verification and open criteria
+
+This section groups evidence by gate and workstream, not chronology. Use the
+phase table in section 3 for project order.
 
 The table records intermediate working-source checks on aarch64-darwin across
 evolving source revisions. Per-row source SHAs were not recorded, and the check
@@ -827,7 +830,7 @@ records whether a scenario completed without an exception. W0-4 must use
 | Scenario failure handling | Done | The runner catches scenario `Exception` values at the scenario boundary, saves a failed result, and continues the suite. CLI tests cover `ValueError`, `KeyError`, `TypeError`, and `RuntimeError`. |
 | Duplicate scenario names | Done | The registry raises `ValueError` when a duplicate scenario name is decorated. |
 | PTY output classification | Done | `pty_output` is an effect observation. The four CLI scenarios were `effect-verified`; `observation_class` is the single verification criterion. |
-| Trace line counts | Done | Each observation records `trace_lines` from the live JSONL file plus completed sessions. The resize self-test recorded counts from 0 through 5 alongside a five-line trace. |
+| Trace line counts | Done | Each `Session` observation method snapshots `trace_lines` when called, before internal reads and matching. This is a conservative boundary: trace rows appended after the method begins cannot be counted for that observation. The resize self-test recorded counts from 0 through 5 alongside a five-line trace. |
 
 ### Other review cleanup
 
@@ -878,11 +881,11 @@ derivation reported 1507 passed, 3 skipped, and 0 failed or errored.
 
 ### W0-4 path generation and coverage report
 
-The branch was rebased onto W0-2 revision `7ce2539` and then onto
-`origin/main` at `9c37502`. The E2E report evaluated W0-4 source commit
-`b415ab1`. On aarch64-darwin,
-`env HOME="$(mktemp -d)" nix run .#e2e` exited 0. The preflight ran 126 Python
-tests; all passed.
+The W0-4 report evaluated source commit
+`d22873984258842af0271716b88d9818b34ac4de` on aarch64-darwin. The command
+`env HOME="$(mktemp -d)" nix run .#e2e` exited 0. Its preflight ran 135 Python
+tests; all passed. The runner prints the temporary artifact directory and the
+`path-coverage.json` path within it.
 
 The eleven real-terminal acceptance rows in the
 [author checklist](daily-driver-checklist.md) remain `Not run`.
@@ -891,6 +894,14 @@ All 120 E2E scenarios completed without an exception (`status=passed`), and
 command coverage was 120/120. These counts do not mean that path coverage
 passed. The W0-2 observation contract excludes preconditions from classification;
 only scenarios classified as `effect-verified` qualify for path acceptance.
+The classifier removes `purpose=precondition` observations first. It reports
+`none` when none remain, `effect-verified` when one or more effect types remain
+and every effect has an `expected` value with `passed=true`, and
+`effect-unverified` when any effect lacks either condition. With no effect
+types, only `exit_code` observations produce `exit-code-only`; other remaining
+types produce `observations-only`. Effect types are `screen_text`, `cell_attrs`,
+`cursor`, `file_bytes`, `external_state`, and `pty_output`; the implementation
+is in `t/e2e/loom_e2e/results.py`.
 
 | Scenario observation class | Scenarios |
 | --- | ---: |
@@ -908,14 +919,45 @@ only ledger file.
 
 The generated catalog contains 750 required paths. The report marked 0 as
 passing and 0 as excluded. It lists 749 paths as `not-in-ledger` and one as
-`no-trace`; the JSON report includes all 750 failed path IDs in `missing_paths`.
-The `no-trace` row is the generated R1 key path for `save-buffer` in
-`file and buffer commands`. Its result is `effect-verified`, and the trace has
-the `save-buffer` command before effect observations. The trace records route
-`key` but omits the encoded key sequence, so it cannot establish that this
-particular key path ran.
+`no-observation`; the JSON report includes all 750 failed path IDs in
+`missing_paths`.
 
-| Rule | Required | `not-in-ledger` | `no-trace` |
+The `no-observation` row is the generated R1 key path for `save-buffer` in
+`file and buffer commands`. The scenario is globally `effect-verified`, but its
+`file_bytes` observation is a precondition because `wait_for_file` records file
+waits that way, including the wait after saving. The scenario types `!` into
+the buffer before invoking `save-buffer`; the resulting screen text `!beta`
+would still appear if saving wrote nothing. The screen observation therefore
+cannot verify the file effect declared by the `:observe (:file_bytes)` field in
+the `t/paths.sexp` path ledger. No non-precondition `file_bytes` observation is
+available. The scenario is unchanged; W3-3 must add the file-effect assertion.
+
+Current trace rows contain `command`, `route`, `seq`, and `pid`, but no `entry`.
+A key path therefore cannot pass the trace check until its exact entry is
+recorded. The missing entry is not this path's current failure reason because
+it fails the declared-effect-type check first.
+
+The one matched path fails the declared-effect check before trace attribution,
+so the attribution-window rule adds no further count change in this run. The
+remaining 749 paths fail ledger lookup.
+
+The report attributes an observation only to the latest traced command included
+by its `trace_lines` snapshot. That command's trace row must match the path's
+route and, when available, entry; the next trace row closes the attribution
+window. Every command listed by the generated path needs a declared effect
+observation in its own window. The `t/paths.sexp` ledger's `:observe` types
+define which observations can satisfy that requirement. This prevents a screen
+value that already existed before `save-buffer`, or an effect from only the last
+command in a multi-command scenario, from covering the path.
+
+Each `Session` observation method snapshots `trace_lines` when called. For
+values read inside the method, this is before sampling, matching, and
+serialization. A trace row appended after that snapshot is excluded, even if
+it appears before the observation record is serialized.
+The report therefore fails closed when the snapshot cannot prove that a target
+command was already traced; it does not infer ordering from a later file read.
+
+| Rule | Required | `not-in-ledger` | `no-observation` |
 | --- | ---: | ---: | ---: |
 | R1 | 218 | 217 | 1 |
 | R2 | 211 | 211 | 0 |
@@ -929,7 +971,7 @@ particular key path ran.
 Lane IDs refer to the W3 ownership table in section 11.6 of
 [`requirements-modern-editor.md`](requirements-modern-editor.md#116-w3).
 
-| Lane | Required | `not-in-ledger` | `no-trace` |
+| Lane | Required | `not-in-ledger` | `no-observation` |
 | --- | ---: | ---: | ---: |
 | W3-1 | 9 | 9 | 0 |
 | W3-2 | 20 | 20 | 0 |
@@ -944,8 +986,7 @@ Lane IDs refer to the W3 ownership table in section 11.6 of
 | W3-10 | 175 | 175 | 0 |
 | W3-11 | 84 | 84 | 0 |
 
-`nix flake check --print-build-logs` exited 0 on aarch64-darwin. Its
-`cl-tty-kit-script-check` reported 1696 passed, 0 skipped, 0 failed, and 0
-errored. Nix omitted `x86_64-linux`, and warned that the E2E app lacks `meta`.
-The flake check used the same application and test source revision, `b415ab1`,
-and included the ledger changes recorded in this section.
+On this source commit, `nix flake check --print-build-logs` exited 0 on
+aarch64-darwin. All eight checks passed; the coverage derivation reported 1507
+passed, 3 skipped, and 0 failed or errored. Nix omitted `x86_64-linux` and
+warned that the E2E app lacks `meta`.
