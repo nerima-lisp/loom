@@ -881,8 +881,7 @@ scenario was already `exit-code-only` in the baseline and is not part of the
 100 transitions.
 
 After the final rebase, `nix flake check --print-build-logs` exited 0 with all
-six checks passing on aarch64-darwin; Nix omitted x86_64-linux. The coverage
-derivation reported 1507 passed, 3 skipped, and 0 failed or errored. During its
-install phase, Nix's temporary-directory audit helper reported a segmentation
-fault in its file-classifier pipeline. The derivation and flake check still
-exited 0, but completion of that scan is unverified.
+eight checks passing on aarch64-darwin; Nix omitted x86_64-linux. The coverage
+derivation reported 1507 passed, 3 skipped, and 0 failed or errored. Its build
+log contained no broken-pipe or segmentation-fault report from the temporary-
+directory audit helper.
