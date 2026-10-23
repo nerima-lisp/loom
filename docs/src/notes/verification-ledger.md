@@ -829,7 +829,7 @@ records whether a scenario completed without an exception. W0-4 must use
 | S1 | Done | The self-test expands the PTY from 8 to 12 rows, drains already available PTY bytes before resizing, and checks the mode line at the new row after input triggers a redraw. With the redraw call in `src/application/event-loop.lisp` temporarily disabled, the same scenario failed on a blank mode-line row. The temporary source change was restored. |
 | S2 | Done | Public `observe_*` methods no longer accept `passed=`. Screen-text observations read the selected screen region or row from `Session.screen`; assertions use the observation result. |
 | S3 | Closed by W0-3 | W0-3 removed the wrapper from `t/e2e/scenarios/trace.py` and records `session.trace_bytes`. The final `runtime/command-trace` result is `effect-verified` and records the expected 13 trace events. |
-| S4 | Done | Every runner-produced `result.json` contains `binary_realpath` and `declared_commands`. All 120 final-run paths resolved to executable files. |
+| S4 | Done | Every runner-produced `result.json` contains `binary_realpath` and `declared_commands`. All 120 `binary_realpath` values pointed to executable files, and all 120 declared command lists were present. |
 | S5 | Done | The runner catches scenario `Exception` values at the scenario boundary, saves a failed result, and continues the suite. CLI tests cover `ValueError`, `KeyError`, `TypeError`, and `RuntimeError`. |
 | S6 | Done | The registry raises `ValueError` when a duplicate scenario name is decorated. |
 | S7 | Done | `pty_output` is an effect observation. The four CLI scenarios were `effect-verified`; `observation_class` is the single verification criterion. |
@@ -855,7 +855,7 @@ in both runs. No timeout was extended.
 The final full run after rebasing on `origin/main` used
 `env HOME=$(mktemp -d) nix run .#e2e` and returned 0: 120/120 scenarios passed
 and 120/120 commands were covered. Its artifacts are under
-`/tmp/loom-e2e-results-no7boehd`. The baseline artifacts at
+`/tmp/loom-e2e-results-7d8h0ncu`. The baseline artifacts at
 `/tmp/loom-e2e-results-gm7cy0bw` classified 114 scenarios as
 `effect-verified`; the final run classified 18 that way. Of the 114 baseline
 scenarios, 100 now have a stricter classification: 97 are `exit-code-only` and
@@ -879,3 +879,10 @@ effect types without a passing expected value. `runtime/command-trace` remains
 `effect-verified`: W0-3 now observes the nonempty trace. The `startup directory`
 scenario was already `exit-code-only` in the baseline and is not part of the
 100 transitions.
+
+After the final rebase, `nix flake check --print-build-logs` exited 0 with all
+six checks passing on aarch64-darwin; Nix omitted x86_64-linux. The coverage
+derivation reported 1507 passed, 3 skipped, and 0 failed or errored. During its
+install phase, Nix's temporary-directory audit helper reported a segmentation
+fault in its file-classifier pipeline. The derivation and flake check still
+exited 0, but completion of that scan is unverified.
