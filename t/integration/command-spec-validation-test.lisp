@@ -101,14 +101,25 @@
                   (loom/application:command-spec "kill-line" kill-line))))))
       (expect (third expansion)
               :to-equal
-              '(list
-                (list :name "forward-char"
-                      :command (quote forward-char)
-                      :keys (quote nil)
-                      :help nil
-                      :help-order nil)
-                (list :name "kill-line"
-                      :command (quote kill-line)
-                      :keys (quote nil)
-                      :help nil
-                      :help-order nil))))))
+              (quote
+                (list
+                  (list :name "forward-char"
+                        :command (quote forward-char)
+                        :keys (quote nil)
+                        :help nil
+                        :help-order nil
+                        :mutates nil
+                        :prompts (quote nil)
+                        :needs-region nil
+                        :external (quote nil)
+                        :modes (quote (:all)))
+                  (list :name "kill-line"
+                        :command (quote kill-line)
+                        :keys (quote nil)
+                        :help nil
+                        :help-order nil
+                        :mutates nil
+                        :prompts (quote nil)
+                        :needs-region nil
+                        :external (quote nil)
+                        :modes (quote (:all)))))))))
