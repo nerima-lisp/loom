@@ -12,8 +12,11 @@ class PathReportTests(unittest.TestCase):
         self.root = Path(self._temporary.name)
         self.repo_root = self.root / "repo"
         self.artifacts_dir = self.root / "artifacts"
+        self.binary_path = self.root / "loom"
         self.repo_root.mkdir()
         self.artifacts_dir.mkdir()
+        self.binary_path.write_text("test binary", encoding="utf-8")
+        self.binary_realpath = str(self.binary_path.resolve())
         self.required = {
             "id": "r1/save-buffer/key",
             "commands": ["save-buffer"],
@@ -41,11 +44,16 @@ class PathReportTests(unittest.TestCase):
         status="passed",
         trace_route="key",
         trace_name="trace.jsonl",
+        observation_class="effect-verified",
+        trace_entry=None,
     ):
         scenario_dir = self.artifacts_dir / "files-save-buffer"
         scenario_dir.mkdir(exist_ok=True)
         result = {
             "scenario": self.ledger["scenario"],
+            "binary_realpath": self.binary_realpath,
+            "declared_commands": list(self.ledger["commands"]),
+            "observation_class": observation_class,
             "observations": observations,
             "artifacts": {"trace": trace_name},
         }
@@ -54,10 +62,15 @@ class PathReportTests(unittest.TestCase):
         (scenario_dir / "result.json").write_text(
             json.dumps(result), encoding="utf-8"
         )
+        if trace_entry is None:
+            trace_entry = self.required["entry"].split(";prompt:", 1)[0]
         with (scenario_dir / "trace.jsonl").open("w", encoding="utf-8") as handle:
             for command in trace_commands:
                 handle.write(
-                    json.dumps({"command": command, "route": trace_route}) + "\n"
+                    json.dumps(
+                        {"command": command, "route": trace_route, "entry": trace_entry}
+                    )
+                    + "\n"
                 )
 
     def _report(
@@ -69,6 +82,7 @@ class PathReportTests(unittest.TestCase):
             list(exclusions),
             self.artifacts_dir,
             self.repo_root,
+            self.binary_realpath,
             selected_scenarios,
         )
 
@@ -77,6 +91,10 @@ class PathReportTests(unittest.TestCase):
             "type": "file_bytes",
             "actual": {"encoding": "base64", "data": "bmV3", "length": 3},
             "expected": {"encoding": "base64", "data": "bmV3", "length": 3},
+            "passed": True,
+            "sequence": 0,
+            "trace_lines": 1,
+            "purpose": "scenario",
             **overrides,
         }
 
@@ -102,7 +120,8 @@ class PathReportTests(unittest.TestCase):
 
     def test_exit_code_only_result_is_not_pass(self):
         self._write_scenario(
-            [{"type": "exit_code", "actual": 0, "expected": 0, "passed": True}]
+            [{"type": "exit_code", "actual": 0, "expected": 0, "passed": True}],
+            observation_class="exit-code-only",
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-observation")
@@ -123,6 +142,43 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-trace")
         self.assertEqual(report["paths"][0]["missing_commands"], ["save-buffer"])
+
+    def test_key_route_without_the_encoded_sequence_is_not_pass(self):
+        self._write_scenario(
+            [self._matching_observation()], trace_entry="key"
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-trace")
+        self.assertEqual(path["missing_commands"], ["save-buffer"])
+
+    def test_trace_must_precede_the_effect_observation(self):
+        self._write_scenario([self._matching_observation(trace_lines=0)])
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+
+    def test_declared_commands_must_include_the_path_target(self):
+        self._write_scenario([self._matching_observation()])
+        result_path = next(self.artifacts_dir.rglob("result.json"))
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        result["declared_commands"] = []
+        result_path.write_text(json.dumps(result), encoding="utf-8")
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "mismatch")
+        self.assertEqual(path["missing_declared_commands"], ["save-buffer"])
+
+    def test_result_must_name_the_expected_binary(self):
+        self._write_scenario([self._matching_observation()])
+        result_path = next(self.artifacts_dir.rglob("result.json"))
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        result["binary_realpath"] = str(self.root / "other-loom")
+        result_path.write_text(json.dumps(result), encoding="utf-8")
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(
+            report["paths"][0]["reason"],
+            "scenario result used a different binary",
+        )
 
     def test_trace_from_another_scenario_is_not_used(self):
         other_scenario = self.artifacts_dir / "other-scenario"
@@ -181,6 +237,9 @@ class PathReportTests(unittest.TestCase):
         result_path = next(self.artifacts_dir.rglob("result.json"))
         result = {
             "scenario": self.ledger["scenario"],
+            "binary_realpath": self.binary_realpath,
+            "declared_commands": ["save-buffer"],
+            "observation_class": "effect-verified",
             "observations": [self._matching_observation()],
             "artifacts": {"trace": "trace.jsonl"},
         }
@@ -225,6 +284,10 @@ class PathReportTests(unittest.TestCase):
                     "type": "screen_text",
                     "actual": "saved",
                     "expected": "saved",
+                    "passed": True,
+                    "sequence": 0,
+                    "trace_lines": 1,
+                    "purpose": "scenario",
                 }
             ]
         )
@@ -237,11 +300,33 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-observation")
 
-    def test_matching_observation_passes_without_trusting_passed_flag(self):
-        self._write_scenario([self._matching_observation(passed=False)])
+    def test_effect_unverified_classification_prevents_pass(self):
+        self._write_scenario(
+            [self._matching_observation(passed=False)],
+            observation_class="effect-unverified",
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "no-observation")
+        self.assertTrue(report["has_failures"])
+
+    def test_pty_output_is_a_verified_effect_observation(self):
+        self.required["observe"] = ["pty_output"]
+        self.ledger["observe"] = ["pty_output"]
+        self._write_scenario(
+            [
+                self._matching_observation(
+                    type="pty_output",
+                    actual="saved",
+                    expected="saved",
+                    match="contains",
+                )
+            ]
+        )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
-        self.assertFalse(report["has_failures"])
+        self.assertEqual(
+            report["scenario_observation_classes"]["effect-verified"], 1
+        )
 
     def test_valid_exclusion_is_excluded_without_artifacts(self):
         (self.repo_root / "evidence.txt").write_text("reason\n", encoding="utf-8")
@@ -277,9 +362,19 @@ class PathReportTests(unittest.TestCase):
                     "actual": "ready",
                     "expected": "ready",
                     "purpose": "precondition",
+                    "sequence": 0,
+                    "trace_lines": 0,
                 },
-                {"type": "exit_code", "actual": 0, "expected": 0},
-            ]
+                {
+                    "type": "exit_code",
+                    "actual": 0,
+                    "expected": 0,
+                    "sequence": 1,
+                    "trace_lines": 0,
+                    "purpose": "scenario",
+                },
+            ],
+            observation_class="exit-code-only",
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-observation")
@@ -293,6 +388,10 @@ class PathReportTests(unittest.TestCase):
                     "type": "cell_attrs",
                     "actual": {"data": "X", "reverse": True, "bold": False},
                     "expected": {"reverse": True},
+                    "passed": True,
+                    "sequence": 0,
+                    "trace_lines": 1,
+                    "purpose": "scenario",
                 }
             ]
         )
@@ -301,25 +400,33 @@ class PathReportTests(unittest.TestCase):
 
     def test_match_mode_and_rollups_are_reflected_in_report(self):
         self.required["commands"] = ["save-buffer", "undo"]
+        self.ledger["commands"] = ["save-buffer", "undo"]
         self.required["observe"] = ["screen_text"]
+        self.ledger["observe"] = ["screen_text"]
         self._write_scenario(
             [
                 {
                     "type": "screen_text",
                     "actual": "file saved",
                     "expected": "saved",
+                    "passed": True,
+                    "sequence": 0,
+                    "trace_lines": 2,
+                    "purpose": "scenario",
                     "match": "contains",
                 }
             ],
             trace_commands=("save-buffer", "undo"),
         )
-        self.ledger["commands"] = ["save-buffer", "undo"]
-        self.ledger["observe"] = ["screen_text"]
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
         self.assertEqual(report["by_rule"]["r1"]["pass"], 1)
         self.assertEqual(report["by_lane"]["W3-3"]["total"], 1)
+        self.assertEqual(
+            report["scenario_observation_classes"]["effect-verified"], 1
+        )
         self.assertIn("1 pass", render_summary(report))
+        self.assertIn("effect-verified: 1", render_summary(report))
         destination = self.root / "reports" / "coverage.json"
         write_report(report, destination)
         self.assertEqual(json.loads(destination.read_text(encoding="utf-8")), report)

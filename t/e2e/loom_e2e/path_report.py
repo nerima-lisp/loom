@@ -16,7 +16,21 @@ _STATUSES = (
     "excluded",
 )
 _EFFECT_TYPES = frozenset(
-    {"screen_text", "cell_attrs", "cursor", "file_bytes", "external_state"}
+    {
+        "screen_text",
+        "cell_attrs",
+        "cursor",
+        "file_bytes",
+        "external_state",
+        "pty_output",
+    }
+)
+_OBSERVATION_CLASSES = (
+    "none",
+    "effect-verified",
+    "effect-unverified",
+    "exit-code-only",
+    "observations-only",
 )
 
 
@@ -112,7 +126,7 @@ def _read_trace(result_path, result, artifacts_dir):
     if not trace_path.is_file():
         return None, "trace.jsonl artifact does not exist"
 
-    commands = set()
+    commands = []
     try:
         with trace_path.open(encoding="utf-8") as handle:
             for line_number, line in enumerate(handle, 1):
@@ -126,7 +140,10 @@ def _read_trace(result_path, result, artifacts_dir):
                     route = record.get("route")
                     if route is not None and not isinstance(route, str):
                         return None, f"trace line {line_number} has an invalid route"
-                    commands.add((command, route))
+                    entry = record.get("entry")
+                    if "entry" in record and not isinstance(entry, str):
+                        return None, f"trace line {line_number} has an invalid entry"
+                    commands.append((command, route, line_number, entry))
     except (
         OSError,
         UnicodeError,
@@ -153,12 +170,51 @@ def _entry_route(entry):
     return None
 
 
+def _entry_trace_identity(entry):
+    if not isinstance(entry, str):
+        return None
+    route_entry = entry.strip().split(";prompt:", 1)[0]
+    prefix, separator, payload = route_entry.partition(":")
+    if prefix.lower() == "key" and separator and payload:
+        return route_entry
+    return None
+
+
 def _observe_types(path):
     return {
         observation.strip().lower().removeprefix(":")
         for observation in _as_list(path.get("observe"))
         if isinstance(observation, str) and observation.strip()
     }
+
+
+def _observation_class(observations):
+    if not isinstance(observations, list):
+        observations = []
+    observed = [
+        observation
+        for observation in observations
+        if isinstance(observation, Mapping)
+        and observation.get("purpose") != "precondition"
+    ]
+    if not observed:
+        return "none"
+    effects = [
+        observation
+        for observation in observed
+        if observation.get("type") in _EFFECT_TYPES
+    ]
+    if effects:
+        if all(
+            "expected" in observation and observation.get("passed") is True
+            for observation in effects
+        ):
+            return "effect-verified"
+        return "effect-unverified"
+    observed_types = {observation.get("type") for observation in observed}
+    if observed_types and observed_types <= {"exit_code"}:
+        return "exit-code-only"
+    return "observations-only"
 
 
 def _non_empty(value):
@@ -241,12 +297,44 @@ def _group_counts(items, field):
     return {name: _counts(group) for name, group in sorted(groups.items())}
 
 
+def _scenario_observation_counts(artifacts_by_scenario, selected_scenarios):
+    counts = {name: 0 for name in _OBSERVATION_CLASSES}
+    counts.update(missing=0, invalid=0)
+    if selected_scenarios is None:
+        scenario_names = sorted(
+            name for name in artifacts_by_scenario if name is not None
+        )
+    else:
+        scenario_names = sorted(selected_scenarios)
+
+    for scenario in scenario_names:
+        matches = artifacts_by_scenario.get(scenario, [])
+        if not matches:
+            counts["missing"] += 1
+            continue
+        if len(matches) != 1 or matches[0][1] is None:
+            counts["invalid"] += 1
+            continue
+        result = matches[0][1]
+        actual = result.get("observation_class")
+        computed = _observation_class(result.get("observations"))
+        if actual != computed or actual not in _OBSERVATION_CLASSES:
+            counts["invalid"] += 1
+        else:
+            counts[actual] += 1
+
+    if selected_scenarios is None:
+        counts["invalid"] += len(artifacts_by_scenario.get(None, []))
+    return counts
+
+
 def _classify_path(
     required,
     ledger,
     exclusion,
     artifacts_by_scenario,
     artifacts_dir,
+    expected_binary_realpath,
     selected_scenarios,
 ):
     item = {
@@ -317,45 +405,81 @@ def _classify_path(
         item["reason"] = "generated path and ledger entry do not match"
         return item
 
-    trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)
     targets = [
         command.strip()
         for command in item["commands"]
         if isinstance(command, str) and command.strip()
     ]
-    expected_route = _entry_route(generated_entry)
-    missing_commands = (
-        sorted(
-            command
-            for command in set(targets)
-            if not any(
-                traced_command == command
-                and (expected_route is None or route == expected_route)
-                for traced_command, route in trace_commands
-            )
+    actual_binary_realpath = result.get("binary_realpath")
+    if (
+        not isinstance(actual_binary_realpath, str)
+        or not actual_binary_realpath
+        or not isinstance(expected_binary_realpath, str)
+        or not expected_binary_realpath
+    ):
+        item["status"] = "mismatch"
+        item["reason"] = "scenario result does not identify the expected binary"
+        return item
+    try:
+        actual_binary = Path(actual_binary_realpath)
+        expected_binary = Path(expected_binary_realpath)
+        binary_matches = (
+            actual_binary.is_absolute()
+            and expected_binary.is_absolute()
+            and actual_binary.resolve() == expected_binary.resolve()
         )
-        if trace_commands is not None
-        else targets
-    )
-    if not targets or trace_error is not None or missing_commands:
-        item["status"] = "no-trace"
-        item["reason"] = trace_error or (
-            (
-                "trace.jsonl does not contain every target command on route "
-                f"{expected_route!r}: "
-                if expected_route is not None
-                else "trace.jsonl does not contain every target command: "
-            )
-            + ", ".join(missing_commands)
-            if missing_commands
-            else "generated path has no traceable target command"
-        )
-        item["missing_commands"] = missing_commands
+    except (OSError, RuntimeError):
+        binary_matches = False
+    if not binary_matches:
+        item["status"] = "mismatch"
+        item["reason"] = "scenario result used a different binary"
+        return item
+
+    declared_commands = result.get("declared_commands")
+    if not isinstance(declared_commands, list) or any(
+        not isinstance(command, str) or not command
+        for command in declared_commands
+    ):
+        item["status"] = "mismatch"
+        item["reason"] = "scenario result has invalid declared_commands"
+        return item
+    missing_declared = sorted(set(targets) - set(declared_commands))
+    if missing_declared:
+        item["status"] = "mismatch"
+        item["reason"] = "scenario does not declare every generated target command"
+        item["missing_declared_commands"] = missing_declared
+        return item
+
+    scenario_status = result.get("status")
+    if scenario_status != "passed":
+        item["status"] = "mismatch"
+        item["reason"] = f"scenario result status is {scenario_status!r}"
         return item
 
     observations = result.get("observations")
     if not isinstance(observations, list):
         observations = []
+    actual_observation_class = result.get("observation_class")
+    computed_observation_class = _observation_class(observations)
+    item["scenario_observation_class"] = actual_observation_class
+    if actual_observation_class != computed_observation_class:
+        item["status"] = "mismatch"
+        item["reason"] = (
+            "scenario observation_class does not match its observations"
+        )
+        return item
+    if actual_observation_class not in _OBSERVATION_CLASSES:
+        item["status"] = "mismatch"
+        item["reason"] = "scenario has an unknown observation_class"
+        return item
+    if actual_observation_class != "effect-verified":
+        item["status"] = "no-observation"
+        item["reason"] = (
+            "scenario observation_class is "
+            f"{actual_observation_class!r}, not 'effect-verified'"
+        )
+        return item
+
     generated_observe = _observe_types(required)
     ledger_observe = _observe_types(ledger)
     allowed_observations = generated_observe & ledger_observe
@@ -394,16 +518,72 @@ def _classify_path(
         item["mismatches"] = mismatches
         return item
 
-    scenario_status = result.get("status")
-    if scenario_status != "passed":
-        item["status"] = "mismatch"
-        item["reason"] = f"scenario result status is {scenario_status!r}"
+    if not targets:
+        item["status"] = "no-trace"
+        item["reason"] = "generated path has no traceable target command"
+        return item
+
+    trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)
+    if trace_error is not None:
+        item["status"] = "no-trace"
+        item["reason"] = trace_error
+        item["missing_commands"] = targets
+        return item
+
+    expected_route = _entry_route(generated_entry)
+    expected_entry = _entry_trace_identity(generated_entry)
+    effect_observations = [
+        observation
+        for observation in expected_effects
+        if isinstance(observation.get("trace_lines"), int)
+        and not isinstance(observation.get("trace_lines"), bool)
+        and observation.get("trace_lines") >= 0
+    ]
+    if len(effect_observations) != len(expected_effects):
+        item["status"] = "no-trace"
+        item["reason"] = "effect observation has an invalid trace_lines count"
+        item["missing_commands"] = targets
+        return item
+
+    def _before_observation(observation):
+        trace_lines = observation["trace_lines"]
+        return all(
+            any(
+                traced_command == command
+                and (expected_route is None or route == expected_route)
+                and (expected_entry is None or entry == expected_entry)
+                and line_number <= trace_lines
+                for traced_command, route, line_number, entry in trace_commands
+            )
+            for command in set(targets)
+        )
+
+    if not any(_before_observation(observation) for observation in effect_observations):
+        item["status"] = "no-trace"
+        item["reason"] = (
+            "target command trace rows do not precede a matching effect observation"
+        )
+        item["missing_commands"] = sorted(
+            command
+            for command in set(targets)
+            if not any(
+                traced_command == command
+                and (expected_route is None or route == expected_route)
+                and (expected_entry is None or entry == expected_entry)
+                and any(
+                    line_number <= observation["trace_lines"]
+                    for observation in effect_observations
+                )
+                for traced_command, route, line_number, entry in trace_commands
+            )
+        )
         return item
 
     item["status"] = "pass"
     item["failed"] = False
     item["reason"] = (
-        "all target commands are traced and an expected effect observation matches"
+        "the expected binary, declared commands, prior trace rows, and effect "
+        "observation are verified"
     )
     if exclusion_error is not None:
         item["failed"] = True
@@ -419,6 +599,7 @@ def build_report(
     exclusions,
     artifacts_dir,
     repo_root,
+    expected_binary_realpath,
     selected_scenarios=None,
 ):
     """Return path classifications, rollups, and failure state as JSON-safe data."""
@@ -453,6 +634,7 @@ def build_report(
             exclusion,
             artifacts_by_scenario,
             artifacts_dir,
+            expected_binary_realpath,
             selected,
         )
         paths.append(item)
@@ -465,6 +647,7 @@ def build_report(
             "lane": item["lane"],
             "commands": item["commands"],
             "scenario": item["scenario"],
+            "scenario_observation_class": item.get("scenario_observation_class"),
             "status": item["status"],
             "reason": item["reason"],
             "failure_reasons": item["failure_reasons"],
@@ -477,6 +660,9 @@ def build_report(
         "counts": counts,
         "by_rule": _group_counts(paths, "rule"),
         "by_lane": _group_counts(paths, "lane"),
+        "scenario_observation_classes": _scenario_observation_counts(
+            artifacts_by_scenario, selected
+        ),
         "missing_paths": missing_paths,
         "has_failures": any(item["failed"] for item in paths),
     }
@@ -503,6 +689,10 @@ def render_summary(report_dict):
             f"  {name}: pass={group['pass']} excluded={group['excluded']} "
             f"failures={group['failures']} total={group['total']}"
         )
+    lines.append("Scenario observation classes:")
+    for name, count in report_dict["scenario_observation_classes"].items():
+        if count:
+            lines.append(f"  {name}: {count}")
     if report_dict["missing_paths"]:
         lines.append("Missing or failing paths:")
         for item in report_dict["missing_paths"]:

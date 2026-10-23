@@ -120,6 +120,9 @@ class CoverageCliTests(unittest.TestCase):
             self.path_report.call_args.kwargs["selected_scenarios"],
             {"forward"},
         )
+        self.assertEqual(
+            self.path_report.call_args.args[2], os.path.realpath("loom")
+        )
 
     def test_unmatched_filter_runs_nothing(self):
         with self.assertRaisesRegex(SystemExit, "matched no scenario"):

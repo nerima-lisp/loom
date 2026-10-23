@@ -94,7 +94,9 @@ def _coverage_report(selected, catalog):
     return uncovered, unknown
 
 
-def _path_coverage_report(catalog, artifacts_dir, selected_scenarios=None):
+def _path_coverage_report(
+    catalog, artifacts_dir, expected_binary_realpath, selected_scenarios=None
+):
     ledger_paths, exclusions = read_path_ledgers(_REPO_ROOT)
     required_paths = generate_required_paths(catalog)
     report = build_path_report(
@@ -103,6 +105,7 @@ def _path_coverage_report(catalog, artifacts_dir, selected_scenarios=None):
         exclusions,
         artifacts_dir,
         _REPO_ROOT,
+        expected_binary_realpath,
         selected_scenarios=selected_scenarios,
     )
     report_path = os.path.join(artifacts_dir, "path-coverage.json")
@@ -236,6 +239,7 @@ def main(argv):
     path_report = _path_coverage_report(
         catalog,
         artifacts_dir,
+        os.path.realpath(binary),
         selected_scenarios={name for name, _scenario_commands, _fn in selected},
     )
 
