@@ -24,16 +24,13 @@
                              :array-type :list
                              :object-type :hash-table))
            (required-fields
-             '("name" "group" "keys" "mutates" "prompts"
-               "needs-region" "external" "modes")))
+             '("name" "mx-eligible" "group" "keys" "mutates" "prompts" "needs-region" "external" "modes")))
       (expect (length catalog) :to-equal 120)
       (expect (loop for entry in catalog
                     always (loop for field in required-fields
                                   always (nth-value 1 (gethash field entry))))
               :to-be t)
-      (expect (some (lambda (entry)
-                      (json-kit:json-null-p (gethash "name" entry)))
-                    catalog)
+      (expect (some (lambda (entry) (and (equal (gethash "name" entry) "execute-extended-command") (json-kit:json-false-p (gethash "mx-eligible" entry)))) catalog)
               :to-be t)))
 
   (it "serializes a fixed command spec with the declared JSON shape"
@@ -54,7 +51,7 @@
                                   :object-type :hash-table))
            (binding (first (gethash "keys" entry)))
            (chord (first (gethash "sequence" binding))))
-      (expect (json-kit:json-null-p (gethash "name" entry)) :to-be t)
+      (expect (and (equal (gethash "name" entry) "forward-char") (json-kit:json-false-p (gethash "mx-eligible" entry))) :to-be t)
       (expect (gethash "group" entry) :to-equal "movement")
       (expect (gethash "keymap" binding) :to-equal "global")
       (expect (gethash "modifiers" chord) :to-equal '("control"))
@@ -67,29 +64,38 @@
       (expect (gethash "external" entry) :to-equal '("rg"))
       (expect (gethash "modes" entry) :to-equal '("common-lisp"))))
 
-  (it "appends trace events in sequence order with their dispatch routes"
-    (host-kit:with-temporary-directory (directory)
-      (let ((trace-path
-              (namestring (merge-pathnames "commands.jsonl" directory)))
-            (loom/application::*command-trace-sequence* 0))
-        (with-replaced-function
-            (uiop:getenv
-             (lambda (name)
-               (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
-          (loom/application:record-command-trace
-           (loom/application:find-extended-command "forward-char") :key)
-          (loom/application:record-command-trace
-           (loom/application:find-extended-command "backward-char") :mx))
-        (with-open-file (stream trace-path)
-          (let ((key-event (json-kit:parse (read-line stream)))
-                (m-x-event (json-kit:parse (read-line stream))))
-            (expect (gethash "command" key-event) :to-equal "forward-char")
-            (expect (gethash "route" key-event) :to-equal "key")
-            (expect (gethash "seq" key-event) :to-equal 1)
-            (expect (gethash "command" m-x-event) :to-equal "backward-char")
-            (expect (gethash "route" m-x-event) :to-equal "mx")
-            (expect (gethash "seq" m-x-event) :to-equal 2)
-            (expect (read-line stream nil) :to-be nil))))))
+  (it "appends trace events with extensible routes and process identifiers"
+  (host-kit:with-temporary-directory (directory)
+    (let ((trace-path
+            (namestring (merge-pathnames "commands.jsonl" directory)))
+          (loom/application::*command-trace-sequence* 0))
+      (with-replaced-function
+          (uiop:getenv
+           (lambda (name)
+             (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
+        (loom/application:record-command-trace
+         (loom/application:find-extended-command "forward-char") :key)
+        (loom/application:record-command-trace
+         (loom/application:find-extended-command "backward-char") :mx)
+        (loom/application:record-command-trace
+         (loom/application:find-extended-command "next-line") :mouse))
+      (with-open-file (stream trace-path)
+        (let ((key-event (json-kit:parse (read-line stream)))
+              (m-x-event (json-kit:parse (read-line stream)))
+              (mouse-event (json-kit:parse (read-line stream))))
+          (expect (gethash "command" key-event) :to-equal "forward-char")
+          (expect (gethash "route" key-event) :to-equal "key")
+          (expect (gethash "seq" key-event) :to-equal 1)
+          (expect (gethash "command" m-x-event) :to-equal "backward-char")
+          (expect (gethash "route" m-x-event) :to-equal "mx")
+          (expect (gethash "seq" m-x-event) :to-equal 2)
+          (expect (gethash "command" mouse-event) :to-equal "next-line")
+          (expect (gethash "route" mouse-event) :to-equal "mouse")
+          (expect (gethash "seq" mouse-event) :to-equal 3)
+          (expect (gethash "pid" key-event) :to-equal (sb-posix:getpid))
+          (expect (gethash "pid" m-x-event) :to-equal (sb-posix:getpid))
+          (expect (gethash "pid" mouse-event) :to-equal (sb-posix:getpid))
+          (expect (read-line stream nil) :to-be nil))))))
 
   (it "continues key and M-x commands when trace writes fail"
     (host-kit:with-temporary-directory (directory)

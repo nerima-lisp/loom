@@ -9,19 +9,19 @@
                     :mutates nil
                     :prompts (:free-string)
                     :needs-region nil
-                    :external ("platform shell")
+                    :external ("shell")
                     :modes (:all))
       (command-spec "terminal" loom/feature/terminal:terminal
                     :mutates nil
                     :prompts nil
                     :needs-region nil
-                    :external ("$SHELL or sh fallback")
+                    :external ("shell")
                     :modes (:all))
       (command-spec "terminal-stop" loom/feature/terminal:terminal-stop
                     :mutates nil
                     :prompts nil
                     :needs-region nil
-                    :external ("active shell")
+                    :external ("shell")
                     :modes (:all))
       (command-spec "git-status" loom/feature/git:git-status
                     :keys (((:control #\x) #\g))
@@ -71,7 +71,7 @@
                     :mutates t
                     :prompts (:free-string)
                     :needs-region nil
-                    :external ("platform shell")
+                    :external ("shell")
                     :modes (:all))
       (command-spec "format-on-save-mode"
                     loom/feature/format:format-on-save-mode
@@ -93,7 +93,7 @@
                     :mutates nil
                     :prompts (:free-string :yes-no)
                     :needs-region nil
-                    :external ("configured LSP server")
+                    :external ("lsp-server")
                     :modes (:all))
       (command-spec "lsp-stop" loom/feature/lsp:lsp-stop
                     :help "M-x lsp-stop"
@@ -101,7 +101,7 @@
                     :mutates nil
                     :prompts nil
                     :needs-region nil
-                    :external ("configured LSP server")
+                    :external ("lsp-server")
                     :modes (:all))
       (command-spec "lsp-diagnostics" loom/feature/lsp:lsp-diagnostics
                     :help "M-x lsp-diagnostics"
@@ -109,15 +109,15 @@
                     :mutates nil
                     :prompts nil
                     :needs-region nil
-                    :external ("configured LSP server")
+                    :external ("lsp-server")
                     :modes (:all))
       (command-spec "lsp-completion-at-point"
                     loom/feature/lsp:lsp-completion-at-point
                     :keys ((:control :alt #\i))
                     :mutates nil
-                    :prompts (:completion)
+                    :prompts nil
                     :needs-region nil
-                    :external ("configured LSP server")
+                    :external ("lsp-server")
                     :modes (:all))
       (command-spec "lsp-find-definition"
                     loom/feature/lsp:lsp-find-definition
@@ -125,7 +125,7 @@
                     :mutates nil
                     :prompts nil
                     :needs-region nil
-                    :external ("configured LSP server")
+                    :external ("lsp-server")
                     :modes (:all))
       (command-spec "lsp-pop-definition"
                     loom/feature/lsp:lsp-pop-definition

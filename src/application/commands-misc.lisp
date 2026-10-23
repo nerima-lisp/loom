@@ -14,12 +14,7 @@
               #'loom/application:command-completion-candidates))
     (let ((spec (loom/application:find-extended-command-spec input)))
       (if spec
-          (let ((command (getf spec :command)))
-            (let ((trace-error
-                    (loom/application:record-command-trace command :mx)))
-              (when trace-error
-                (minibuffer-message minibuffer trace-error)))
-            (funcall command))
+          (invoke-command (getf spec :command) :mx)
           (minibuffer-message
            minibuffer
            (format nil "Unknown command: ~A" input))))))
@@ -29,3 +24,11 @@
   (minibuffer-message
    (editor-state-minibuffer *editor-state*)
    (loom/application:help-summary-message)))
+(defun invoke-command (command route)
+  "Trace registered COMMAND through ROUTE and then execute it."
+  (let ((trace-error
+          (loom/application:record-command-trace command route))
+        (minibuffer (editor-state-minibuffer *editor-state*)))
+    (when (and trace-error minibuffer)
+      (minibuffer-message minibuffer trace-error)))
+  (funcall command))

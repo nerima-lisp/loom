@@ -43,7 +43,11 @@
          (let ((loom:*current-prefix-argument*
                  (loom:prefix-argument-value-for-editor)))
            (setf dispatch-result
-                 (keymap-state-dispatch keymap-state descriptor)))
+                 (keymap-state-dispatch
+                  keymap-state
+                  descriptor
+                  (lambda (command)
+                    (loom:invoke-command command :macro)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset argument)))))
 
@@ -54,8 +58,12 @@
            (%replay-keyboard-macro-prefix-action descriptor keymap-state
                                                  argument)))
     (if prefix-action
-        (loom:apply-prefix-argument-action (car prefix-action)
-                                            (cdr prefix-action))
+        (if (eq (car prefix-action) :universal)
+            (loom:invoke-command
+             (loom/application:find-extended-command "universal-argument")
+             :macro)
+            (loom:apply-prefix-argument-action (car prefix-action)
+                                                (cdr prefix-action)))
         (%replay-keyboard-macro-dispatch-key descriptor keymap-state
                                               argument))))
 

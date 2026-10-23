@@ -33,8 +33,12 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
        (loom/feature/terminal:terminal-handle-key-event event)
        :handled)
       (prefix-action
-       (apply-prefix-argument-action (car prefix-action)
-                                     (cdr prefix-action))
+       (if (eq (car prefix-action) :universal)
+           (invoke-command
+            (loom/application:find-extended-command "universal-argument")
+            :key)
+           (apply-prefix-argument-action (car prefix-action)
+                                         (cdr prefix-action)))
        :handled)
       (self-insert-event-p
        (%dispatch-self-insert-event event)

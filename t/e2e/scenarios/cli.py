@@ -1,5 +1,6 @@
 """Command-line argument handling: no editor session is ever entered."""
 
+import json
 import os
 import tempfile
 
@@ -33,6 +34,27 @@ def version_flag(binary):
         session.observe_exit_code(code, expected=0)
         session.assert_pty_output(output, b"loom 0.1.0")
     _assert_exit_zero("--version", output, code)
+
+
+@scenario("--dump-catalog", commands=[])
+def dump_catalog(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        alias = os.path.join(directory, "loom-alias")
+        os.symlink(os.path.abspath(binary), alias)
+        with Session(alias, ["--dump-catalog"]) as session:
+            output, code = session.process.wait()
+
+    _assert_exit_zero("--dump-catalog", output, code)
+    catalog = json.loads(output.decode("utf-8"))
+    if len(catalog) != 120:
+        raise AssertionError(f"--dump-catalog returned {len(catalog)} commands")
+    dispatcher = [
+        command
+        for command in catalog
+        if command["name"] == "execute-extended-command"
+    ]
+    if len(dispatcher) != 1 or dispatcher[0]["mx-eligible"]:
+        raise AssertionError(f"unexpected M-x dispatcher catalog entry: {dispatcher!r}")
 
 
 @scenario("invalid option", commands=[])

@@ -18,7 +18,10 @@
   (it "accepts a valid command-spec command"
     (let ((expansion
             (macroexpand-1
-             '(loom/application:command-spec "forward-char" forward-char))))
+             '(loom/application:command-spec
+               "forward-char" forward-char
+               :mutates nil :prompts nil :needs-region nil
+               :external nil :modes (:all)))))
       (expect (first expansion) :to-be 'list)
       (expect (getf (rest expansion) :name) :to-equal "forward-char")
       (expect (getf (rest expansion) :command)
@@ -32,16 +35,39 @@
              '(loom/application:command-spec
                "forward-char" forward-char
                :help "Move forward"
-               :help-order 10))))
+               :help-order 10
+               :mutates nil :prompts nil :needs-region nil
+               :external nil :modes (:all)))))
       (expect (getf (rest expansion) :help) :to-equal "Move forward")
       (expect (getf (rest expansion) :help-order) :to-equal 10)))
-  (it "rejects invalid optional command metadata"
+  (it "rejects malformed and missing command metadata"
     (dolist (form
-              '((loom/application:command-spec
-                 "forward-char" forward-char :help 42)
-                (loom/application:command-spec
-                 "forward-char" forward-char :help-order "first")))
-      (signals error (macroexpand-1 form))))
+             '((loom/application:command-spec
+                "forward-char" forward-char :help 42)
+               (loom/application:command-spec
+                "forward-char" forward-char :help-order "first")))
+      (signals error (macroexpand-1 form)))
+    (let ((metadata '(:mutates nil
+                      :prompts nil
+                      :needs-region nil
+                      :external nil
+                      :modes (:all))))
+      (dolist (missing-key '(:mutates :prompts :needs-region :external :modes))
+        (let ((form
+                (append '(loom/application:command-spec
+                          "forward-char" forward-char)
+                        (loop for (key value) on metadata by #'cddr
+                              unless (eq key missing-key)
+                                append (list key value)))))
+          (signals error (macroexpand-1 form))
+          (signals error
+            (loom/application::%parse-command-spec-form form)))))
+    (signals error
+      (loom/application::%parse-command-spec-form
+       '(loom/application:command-spec
+         "forward-char" forward-char
+         :mutates nil :prompts nil :needs-region nil
+         :external ("platform shell") :modes (:all)))))
   (it "rejects a non-string command-spec name"
     (signals error
       (macroexpand-1 '(loom/application:command-spec 42 forward-char))))
@@ -65,40 +91,40 @@
     (signals error
       (macroexpand-1
        '(loom/application:define-command-specs
-          (loom/application:command-spec 42 forward-char)))))
+          (loom/application:command-spec 42 forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
   (it "rejects a non-symbol registry command"
     (signals error
       (macroexpand-1
        '(loom/application:define-command-specs
-          (loom/application:command-spec "forward-char" 42)))))
+          (loom/application:command-spec "forward-char" 42 :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
   (it "rejects duplicate registry names case-insensitively"
     (signals error
       (macroexpand-1
        '(loom/application:define-command-specs
-          (loom/application:command-spec "forward-char" forward-char)
+          (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
           (loom/application:command-spec-group
               "movement"
-            (loom/application:command-spec "kill-line" kill-line))
+            (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))
           (loom/application:command-spec-group
               "editing"
-            (loom/application:command-spec "FORWARD-CHAR" backward-char))))))
+            (loom/application:command-spec "FORWARD-CHAR" backward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
   (it "rejects duplicate names across grouped spec variables"
     (signals error
       (loom/application:build-command-specs
        '((loom/application:command-spec-group
              "movement"
-           (loom/application:command-spec "forward-char" forward-char)))
+           (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))
        '((loom/application:command-spec-group
              "editing"
-           (loom/application:command-spec "FORWARD-CHAR" backward-char))))))
+           (loom/application:command-spec "FORWARD-CHAR" backward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
   (it "flattens grouped command specs into the explicit registry"
     (let ((expansion
             (macroexpand-1
              '(loom/application:define-command-specs
                 (loom/application:command-spec-group
                     "movement"
-                  (loom/application:command-spec "forward-char" forward-char)
-                  (loom/application:command-spec "kill-line" kill-line))))))
+                  (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
+                  (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
       (expect (third expansion)
               :to-equal
               (quote

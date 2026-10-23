@@ -44,15 +44,14 @@
              (error "--dump-catalog should bypass CL-CLI dispatch")))
         (let ((*standard-output* output-stream))
           (setf exit-code
-                (loom::%main-exit-code '("bin/loom" "--dump-catalog")))))
+                (loom::%main-exit-code '("loom-alias" "--dump-catalog")))))
       (expect exit-code :to-equal 0)
       (let* ((catalog
                (json-kit:parse (get-output-stream-string output-stream)
                                :array-type :list
                                :object-type :hash-table))
              (required-fields
-               '("name" "group" "keys" "mutates" "prompts"
-                 "needs-region" "external" "modes")))
+               '("name" "mx-eligible" "group" "keys" "mutates" "prompts" "needs-region" "external" "modes")))
         (expect (length catalog) :to-equal 120)
         (expect (loop for entry in catalog
                       always (loop for field in required-fields

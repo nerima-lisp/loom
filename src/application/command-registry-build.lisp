@@ -5,12 +5,18 @@
   (unless (and (consp spec) (eq (first spec) 'command-spec))
     (error "Expected a COMMAND-SPEC form, got: ~S" spec))
   (destructuring-bind
-      (operator name command &key keys help help-order mutates prompts needs-region
-                              external (modes '(:all)))
+      (operator name command &key keys help help-order
+                               (mutates nil mutates-p)
+                               (prompts nil prompts-p)
+                               (needs-region nil needs-region-p)
+                               (external nil external-p)
+                               (modes '(:all) modes-p))
       spec
     (declare (ignore operator))
-    (%validate-command-metadata name command help help-order mutates prompts
-                                needs-region external modes)
+    (%validate-command-metadata
+     name command help help-order
+     mutates mutates-p prompts prompts-p
+     needs-region needs-region-p external external-p modes modes-p)
     (list name command group keys help help-order mutates prompts needs-region
           external modes)))
 

@@ -11,19 +11,11 @@ in-progress prefix-key accumulation across successive KEYMAP-STATE-DISPATCH
 calls, starting with no keys accumulated."
   (%make-keymap-state :keymap keymap :root-keymap keymap :sequence nil))
 
-(defun keymap-state-dispatch (state key-event)
-  "Feed one KEY-EVENT descriptor, as accepted by KEYMAP-DEFINE-KEY, into
-STATE. Appends KEY-EVENT to the sequence accumulated so far and looks it up
-in STATE's keymap:
+(defun keymap-state-dispatch (state key-event &optional command-invoker)
+  "Feed KEY-EVENT into STATE and invoke a bound command through COMMAND-INVOKER.
 
-- If the accumulated sequence is a prefix (KEYMAP-LOOKUP returns :PREFIX),
-  returns the keyword :PENDING and keeps the accumulated sequence for the
-  next call.
-- If the accumulated sequence resolves to a bound command, invokes that
-  command (a function of zero arguments) and returns its return value,
-  resetting STATE's accumulated sequence to empty.
-- If the accumulated sequence is bound to nothing, resets STATE's
-  accumulated sequence to empty and returns NIL."
+COMMAND-INVOKER, when present, receives the command designator. Prefixes return
+:PENDING and unbound keys return NIL."
   (setf (keymap-state-sequence state)
         (append (keymap-state-sequence state) (list key-event)))
   (let ((result (keymap-lookup (keymap-state-keymap state)
@@ -36,4 +28,6 @@ in STATE's keymap:
        nil)
       (t
        (setf (keymap-state-sequence state) nil)
-       (funcall result)))))
+       (if command-invoker
+           (funcall command-invoker result)
+           (funcall result))))))

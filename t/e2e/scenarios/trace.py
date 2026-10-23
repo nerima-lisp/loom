@@ -16,6 +16,14 @@ from loom_e2e.session import Session
         "execute-extended-command",
         "forward-char",
         "backward-char",
+        "start-kbd-macro",
+        "kill-line",
+        "end-kbd-macro",
+        "next-line",
+        "call-last-kbd-macro",
+        "universal-argument",
+        "previous-line",
+        "save-buffer",
         "save-buffers-kill-terminal",
     ],
 )
@@ -25,7 +33,7 @@ def command_trace(binary):
         trace_path = os.path.join(directory, "commands.jsonl")
         wrapper_path = os.path.join(directory, "loom-with-trace")
         with open(path, "wb") as handle:
-            handle.write(b"abc\n")
+            handle.write(b"abc\ndef\n")
         with open(wrapper_path, "w", encoding="utf-8") as handle:
             handle.write("#!/bin/sh\n")
             handle.write(
@@ -42,6 +50,14 @@ def command_trace(binary):
             session.wait_for_region_cursor("body", 1)
             session.extended_command("backward-char")
             session.wait_for_region_cursor("body", 0)
+            session.send(keys.ctrl("x") + b"(")
+            session.send(keys.ctrl("k"))
+            session.send(keys.ctrl("x") + b")")
+            session.send(keys.ctrl("n"))
+            session.send(keys.ctrl("x") + b"e")
+            session.send(keys.ctrl("u"))
+            session.send(keys.ctrl("p"))
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
             output, code = session.quit()
 
         if code != 0:
@@ -52,10 +68,24 @@ def command_trace(binary):
         with open(trace_path, encoding="utf-8") as handle:
             events = [json.loads(line) for line in handle]
         expected = [
-            {"command": "forward-char", "route": "key", "seq": 1},
-            {"command": "execute-extended-command", "route": "key", "seq": 2},
-            {"command": "backward-char", "route": "mx", "seq": 3},
-            {"command": "save-buffers-kill-terminal", "route": "key", "seq": 4},
+            ("forward-char", "key"),
+            ("execute-extended-command", "key"),
+            ("backward-char", "mx"),
+            ("start-kbd-macro", "key"),
+            ("kill-line", "key"),
+            ("end-kbd-macro", "key"),
+            ("next-line", "key"),
+            ("call-last-kbd-macro", "key"),
+            ("kill-line", "macro"),
+            ("universal-argument", "key"),
+            ("previous-line", "key"),
+            ("save-buffer", "key"),
+            ("save-buffers-kill-terminal", "key"),
         ]
-        if events != expected:
+        actual = [(event["command"], event["route"]) for event in events]
+        pids = {event["pid"] for event in events}
+        sequences = [event["seq"] for event in events]
+        if actual != expected or len(pids) != 1 or sequences != list(
+            range(1, len(expected) + 1)
+        ):
             raise AssertionError(f"unexpected command trace: {events!r}")

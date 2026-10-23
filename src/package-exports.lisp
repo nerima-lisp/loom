@@ -80,4 +80,5 @@
       prefix-argument-explicit-p
       prefix-argument-value prefix-argument-universal prefix-argument-digit
       prefix-argument-negative prefix-argument-consume prefix-argument-reset
-      loom-version main)))
+      loom-version main))
+  (setf +loom-exports+ (append +loom-exports+ '(invoke-command))))

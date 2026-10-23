@@ -49,10 +49,10 @@
                     :keys (((:control #\x) (:control #\s)))
                     :help "C-x C-s Save"
                     :help-order 14
-                    :mutates NIL
+                    :mutates t
                     :prompts (:free-string)
                     :needs-region NIL
-                    :external NIL
+                    :external ("shell")
                     :modes (:all))
       (command-spec "auto-save-mode" loom/feature/auto-save:auto-save-mode
                     :mutates NIL

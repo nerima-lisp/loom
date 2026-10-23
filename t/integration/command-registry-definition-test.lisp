@@ -10,17 +10,13 @@
                    *sample-command-spec-groups*
                  (loom/application:command-spec-group
                      "movement"
-                   (loom/application:command-spec
-                       "forward-char"
-                     forward-char)))))))
+                   (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))))
       (expect expansion
               :to-equal
               '(defparameter *sample-command-spec-groups*
                  '((loom/application:command-spec-group
                        "movement"
-                     (loom/application:command-spec
-                       "forward-char"
-                       forward-char))))))))
+                     (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))))
 (describe
   "define-command-spec-groups validation"
   (it "rejects malformed groups during macroexpansion"
@@ -38,8 +34,8 @@
     (let ((expansion
             (macroexpand-1
              '(loom/application:define-command-specs
-               (loom/application:command-spec "forward-char" forward-char)
-               (loom/application:command-spec "kill-line" kill-line)))))
+               (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
+               (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
       (expect (first expansion) :to-equal 'defparameter)
       (expect (second expansion)
               :to-equal 'loom/application:*command-specs*)
@@ -76,21 +72,21 @@
     (signals error
       (macroexpand-1
        '(loom/application:define-command-specs
-         (loom/application:command-spec "Forward-Char" forward-char)
-         (loom/application:command-spec "forward-char" backward-char))))))
+         (loom/application:command-spec "Forward-Char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
+         (loom/application:command-spec "forward-char" backward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
 
 (describe
   "define-command-spec-catalog"
-  (it "preserves groups and default metadata when composing spec variables"
+  (it "preserves groups and metadata when composing spec variables"
     (let ((loom/application:*command-specs* nil)
           (movement-specs
             '((loom/application:command-spec-group
                 "movement"
-                (loom/application:command-spec "forward-char" forward-char))))
+                (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))
           (editing-specs
             '((loom/application:command-spec-group
                 "editing"
-                (loom/application:command-spec "kill-line" kill-line)))))
+                (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
       (eval
        `(let ((movement-specs ',movement-specs)
               (editing-specs ',editing-specs))
