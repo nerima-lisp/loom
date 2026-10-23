@@ -5,12 +5,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     cl-nix-forge = {
-      url = "github:nerima-lisp/cl-nix-forge/v0.5.0";
+      url = "github:nerima-lisp/cl-nix-forge/v0.6.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     cl-weave = {
-      url = "github:nerima-lisp/cl-weave/v1.3.0";
+      url = "github:nerima-lisp/cl-weave/v1.4.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.paredit-cli.follows = "paredit-cli";
     };
@@ -26,7 +26,7 @@
     };
     # cl-tty-kit requires these transitive libraries explicitly.
     cl-codec-kit = {
-      url = "github:nerima-lisp/cl-codec-kit/v0.5.0";
+      url = "github:nerima-lisp/cl-codec-kit/v0.6.0";
       flake = false;
     };
     cl-host-kit = {
@@ -46,11 +46,11 @@
       flake = false;
     };
     cl-regex-kit = {
-      url = "github:nerima-lisp/cl-regex-kit/v2.0.0";
+      url = "github:nerima-lisp/cl-regex-kit/v2.1.1";
       flake = false;
     };
     cl-date-kit = {
-      url = "github:nerima-lisp/cl-date-kit/v1.0.0";
+      url = "github:nerima-lisp/cl-date-kit/v1.1.1";
       flake = false;
     };
     cl-concurrent-kit = {
@@ -75,7 +75,7 @@
       flake = false;
     };
     cl-process-kit = {
-      url = "github:nerima-lisp/cl-process-kit/v3.2.0";
+      url = "github:nerima-lisp/cl-process-kit/v3.4.0";
       flake = false;
     };
     cl-vcs-kit = {
