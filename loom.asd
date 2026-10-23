@@ -844,6 +844,7 @@ root source tree responsible for every feature."
    (:file "t/unit/completion-popup-test")
   (:file "t/unit/cli-test")
    (:file "t/unit/dependency-contract-test")
+   (:file "t/unit/boundary-architecture-test")
    (:file "t/integration/commands-sexp-test")
    (:file "t/integration/commands-structural-editing-test")
    (:file "t/integration/commands-test")
