@@ -11,6 +11,8 @@ def scenario(name, commands=None):
     the scenario exercises through the real key/M-x path.
     """
     def decorator(fn):
+        if any(existing_name == name for existing_name, _commands, _fn in _scenarios):
+            raise ValueError(f"duplicate scenario name: {name!r}")
         _scenarios.append((name, list(commands or []), fn))
         return fn
     return decorator
@@ -18,10 +20,3 @@ def scenario(name, commands=None):
 
 def all_scenarios():
     return list(_scenarios)
-
-
-def covered_commands():
-    covered = set()
-    for _, commands, _ in _scenarios:
-        covered.update(commands)
-    return covered

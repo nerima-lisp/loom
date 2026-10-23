@@ -104,12 +104,18 @@ def _artifact_directory(explicit):
     return directory
 
 
-def _run_with_artifacts(name, function, binary, artifacts_dir):
-    result = ScenarioResult(name)
+def _run_with_artifacts(
+    name, function, binary, artifacts_dir, declared_commands=()
+):
+    result = ScenarioResult(
+        name,
+        binary_realpath=os.path.realpath(binary),
+        declared_commands=declared_commands,
+    )
     try:
         with capture_scenario(result):
             value = run_scenario(function, binary)
-    except BaseException as error:
+    except Exception as error:
         result.status = "failed"
         result.error = {"type": type(error).__name__, "message": str(error)}
         result.save(artifacts_dir)
@@ -144,10 +150,10 @@ def main(argv):
                     measurements[name] = _run_with_artifacts(
                         f"benchmarks/{name}", function, binary, artifacts_dir
                     )
-                except (AssertionError, OSError, TimeoutError) as error:
+                except Exception as error:
                     print(f"FAIL benchmarks/{name}: {error}", file=sys.stderr)
                     return 1
-        except (AssertionError, OSError, TimeoutError) as error:
+        except Exception as error:
             print(f"FAIL benchmarks: {error}", file=sys.stderr)
             return 1
         report = build_benchmark_report(measurements)
@@ -178,10 +184,12 @@ def main(argv):
     _run_harness_preflight()
     passed = 0
     failed = 0
-    for name, _scenario_commands, fn in selected:
+    for name, scenario_commands, fn in selected:
         try:
-            _run_with_artifacts(name, fn, binary, artifacts_dir)
-        except (AssertionError, OSError, TimeoutError) as error:
+            _run_with_artifacts(
+                name, fn, binary, artifacts_dir, scenario_commands
+            )
+        except Exception as error:
             failed += 1
             print(f"FAIL {name}: {error}", file=sys.stderr)
         else:

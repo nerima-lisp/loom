@@ -23,15 +23,9 @@ def _wait_for_body_text(session, substring, timeout=10.0):
 
 
 def _assert_body_text(session, index, expected):
-    actual = session.region_text("body", index).rstrip()
-    session.observe_screen_text(
-        actual, expected=expected, passed=actual == expected,
-        region="body", row=index,
+    session.assert_screen_text(
+        expected, match="exact", region="body", index=index, strip_right=True
     )
-    if actual != expected:
-        raise AssertionError(
-            f"body row {index} expected {expected!r}, got {actual!r}"
-        )
 
 
 def _wait_for_body_row(session, index, expected, timeout=10.0):
@@ -74,14 +68,14 @@ def file_and_buffer_commands(binary):
             session.send(keys.ctrl("x") + keys.ctrl("f"))
             session.wait_for_region_text("minibuffer", "Find file: ")
             session.type(beta_path)
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_body_text(session, "beta")
             _assert_body_text(session, 0, "beta")
 
             session.send(keys.ctrl("x") + keys.ctrl("w"))
             session.wait_for_region_text("minibuffer", "Write file: ")
             session.type(copy_path)
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_file(copy_path, b"beta\n")
             _assert_body_text(session, 0, "beta")
 
@@ -93,14 +87,14 @@ def file_and_buffer_commands(binary):
             session.send(keys.ctrl("x") + b"rf")
             session.wait_for_region_text("minibuffer", "Recent file: ")
             session.type(beta_path)
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_body_row(session, 0, "beta")
             _assert_body_text(session, 0, "beta")
 
             session.send(keys.ctrl("x") + b"b")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("copy.txt")
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_body_row(session, 0, "!beta")
             _assert_body_text(session, 0, "!beta")
             session.wait_for_region_text("mode-line", "Ln 1, Col 2")
@@ -108,7 +102,7 @@ def file_and_buffer_commands(binary):
             session.send(keys.ctrl("x") + b"k")
             session.wait_for_region_text("minibuffer", "Kill buffer: ")
             session.type("copy.txt")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_region_text("minibuffer", "Killed copy.txt")
             _wait_for_body_row(session, 0, "beta")
             _assert_body_text(session, 0, "beta")
@@ -116,7 +110,7 @@ def file_and_buffer_commands(binary):
             session.send(keys.ctrl("x") + b"b")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("copy.txt")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_region_text("minibuffer", "No such buffer: copy.txt")
             _assert_body_text(session, 0, "beta")
 
@@ -189,7 +183,7 @@ def project_file_commands(binary):
             session.send(keys.ctrl("x") + b"pf")
             session.wait_for_region_text("minibuffer", "Project file: ")
             session.type("src/other.py")
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_body_text(session, "other")
             _assert_body_text(session, 0, "other")
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
@@ -197,14 +191,13 @@ def project_file_commands(binary):
             session.send(keys.ctrl("x") + b"ps")
             session.wait_for_region_text("minibuffer", "Project search: ")
             session.type("needle")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_region_text("minibuffer", "Matches:")
-            message = session.region_text("minibuffer")
             session.assert_screen_text(
-                message, "src/main.py:1", match="contains", region="minibuffer"
+                "src/main.py:1", match="contains", region="minibuffer"
             )
             session.assert_screen_text(
-                message, "generated.py", match="not_contains", region="minibuffer"
+                "generated.py", match="not_contains", region="minibuffer"
             )
             _assert_body_text(session, 0, "other")
             session.assert_file_bytes(other_path, b"other\n")

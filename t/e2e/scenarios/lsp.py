@@ -40,10 +40,10 @@ def _fixture(contents=b"# no definition here\nlet\n  value = 1;\nin\n  value\n")
 def _start(session):
     session.extended_command("lsp-start")
     session.wait_for_text("LSP command [RET for")
-    session.send(keys.RET)
+    session.key("RET")
     session.wait_for_text("Run discovered LSP command? Type yes: ")
     session.type("yes")
-    session.send(keys.RET)
+    session.key("RET")
     session.wait_for_text("LSP started.")
 
 
@@ -53,7 +53,7 @@ def _select_main_buffer(session, expected_text):
     session.extended_command("switch-to-buffer")
     session.wait_for_text("Switch to buffer: ")
     session.type("main.nix")
-    session.send(keys.RET)
+    session.key("RET")
     session.wait_for_text(expected_text)
 
 
@@ -63,9 +63,9 @@ def _assert_path_exists(session, label, path, expected):
 
 def _assert_minibuffer(session, expected):
     return session.assert_screen_text(
-        session.region_text("minibuffer").rstrip(),
         expected.rstrip(),
         region="minibuffer",
+        strip_right=True,
     )
 
 
@@ -82,18 +82,18 @@ def _wait_for_body_viewport(session, expected, description):
         )
     except TimeoutError:
         session.observe_screen_text(
-            "\n".join(read_viewport()),
             expected=expected_text,
             match="exact",
-            passed=False,
             region="body",
+            index=None,
+            purpose="precondition",
         )
         raise
     return session.observe_screen_text(
-        "\n".join(read_viewport()),
         expected=expected_text,
         match="exact",
         region="body",
+        index=None,
     )
 
 
@@ -158,7 +158,7 @@ def lsp_trust_reject(binary):
             for answer in ("", "no", "YES", " yes", "yes ", None):
                 session.extended_command("lsp-start")
                 session.wait_for_text("LSP command [RET for")
-                session.send(keys.RET)
+                session.key("RET")
                 session.wait_for_text("Run discovered LSP command? Type yes: ")
                 for line in review_lines:
                     session.wait_for_text(line)
@@ -167,7 +167,7 @@ def lsp_trust_reject(binary):
                     session.wait_for_text("Quit")
                 else:
                     session.type(answer)
-                    session.send(keys.RET)
+                    session.key("RET")
                     session.wait_for_text("LSP start cancelled.")
                 session.wait_for_text("(+ 1 2)")
                 _assert_path_exists(
@@ -203,7 +203,7 @@ def lsp_trust_review(binary):
             for answer in ("yes", ""):
                 session.extended_command("lsp-start")
                 session.wait_for_text("LSP command [RET for")
-                session.send(keys.RET)
+                session.key("RET")
                 session.wait_for_text(prompt)
                 session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
                 session.type(answer)
@@ -232,7 +232,7 @@ def lsp_trust_review(binary):
                     _assert_path_exists(
                         session, "reviewed LSP PID file exists", pid_file, False
                     )
-                session.send(keys.ctrl("g") if answer else keys.RET)
+                session.send(keys.ctrl("g") if answer else session.profile.key("RET"))
                 session.wait_for_text("Quit" if answer else "LSP start cancelled.")
                 _wait_for_body_viewport(
                     session, original, "original buffer viewport restored"
@@ -245,7 +245,7 @@ def lsp_trust_review(binary):
                 )
             session.extended_command("lsp-start")
             session.wait_for_text("LSP command [RET for")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_text(prompt)
             session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
             session.type("yes")
@@ -270,21 +270,15 @@ def lsp_trust_review(binary):
             _assert_path_exists(
                 session, "unconfirmed LSP PID file exists", pid_file, False
             )
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_file(marker, b"spawned")
             session.wait_for_text("LSP started.")
             session.wait_for_region_text("mode-line", "Diag:")
             pid_data = session.observe_file_bytes(pid_file)
             pid = int(pid_data.decode("ascii").strip())
-            valid_pid = pid > 1
-            session.observe_external_state(
-                "nixd PID is greater than 1",
-                pid,
-                expected={"greater_than": 1},
-                passed=valid_pid,
+            session.assert_external_state(
+                "nixd PID is greater than 1", pid > 1, True
             )
-            if not valid_pid:
-                raise AssertionError("invalid nixd PID")
             session.assert_external_state("nixd process is running", _process_running(pid), True)
             _wait_for_body_viewport(
                 session, original,
@@ -346,7 +340,7 @@ def lsp_completion_success(binary):
             session.wait_for_region_cursor("body", len(source))
             session.extended_command("lsp-completion-at-point")
             session.wait_for_region_text("body", "completionValue", index=1)
-            session.send(keys.RET)
+            session.key("RET")
             completed = "let completionValue = 1; in completionValue"
             session.wait_for_region_text("body", completed)
             session.wait_for_region_cursor("body", len(completed))

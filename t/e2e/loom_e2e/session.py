@@ -15,17 +15,21 @@ from .deadline import (
     ScenarioDeadlineExceeded,
     current_deadline,
 )
-from .layout import Layout
+from .layout import Layout, validate_dimensions
 from .process import LoomProcess
-from .results import current_result, record_observation
+from .results import (
+    UNSET,
+    count_trace_lines,
+    current_result,
+    record_observation,
+    reset_trace_line_counter,
+    set_trace_line_counter,
+)
 from .screen import Screen
 
 
 DEFAULT_TIMEOUT = 10.0
 _SESSION_ENVIRONMENT_ALLOWLIST = ("PATH",)
-_UNSET = object()
-
-
 def _session_environment(
     home_dir, locale_name, profile=keys.DEFAULT_PROFILE, trace_path=None
 ):
@@ -93,6 +97,7 @@ class Session:
         self._home_dir = None
         self._trace_path = None
         self._trace_bytes = b""
+        self._trace_line_counter_token = None
         self._artifacts_captured = False
         self.started_at = None
         self.first_screen_at = None
@@ -139,6 +144,9 @@ class Session:
             if budget is not None:
                 budget.register_process(self.process)
             self.screen = Screen(self.columns, self.rows)
+            self._trace_line_counter_token = set_trace_line_counter(
+                self._trace_line_count
+            )
             return self
         except BaseException as error:
             try:
@@ -181,6 +189,9 @@ class Session:
             finally:
                 if budget is not None and self.process is not None:
                     budget.unregister_process(self.process)
+                if self._trace_line_counter_token is not None:
+                    reset_trace_line_counter(self._trace_line_counter_token)
+                    self._trace_line_counter_token = None
         if close_error is not None:
             if force_error is not None:
                 raise close_error from force_error
@@ -209,177 +220,220 @@ class Session:
         self.screen.feed(data)
         return data
 
+    def _trace_line_count(self):
+        result = current_result()
+        previous_trace = b"" if result is None else result.trace_output
+        if self._trace_path is None:
+            return count_trace_lines(previous_trace)
+        try:
+            with open(self._trace_path, "rb") as handle:
+                data = handle.read()
+        except FileNotFoundError:
+            data = b""
+        return count_trace_lines(previous_trace) + count_trace_lines(data)
+
     def resize(self, columns, rows):
         """Resize the PTY and keep pyte and layout dimensions in sync."""
-        if isinstance(columns, bool) or not isinstance(columns, int) or columns <= 0:
-            raise ValueError("terminal columns must be a positive integer")
-        if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
-            raise ValueError("terminal rows must be a positive integer")
+        validate_dimensions(columns, rows)
         if self.process is None or self.screen is None:
             raise RuntimeError("cannot resize a session before it is entered")
+        while self.pump(poll_timeout=0.0):
+            pass
         self.process.resize(columns, rows)
         self.screen.resize(columns, rows)
         self.columns = columns
         self.rows = rows
         self.layout = Layout(rows, columns)
-        actual = self.process.window_size
-        record_observation(
-            "external_state",
-            actual,
+        self.observe_external_state(
+            "PTY window size",
+            self.process.window_size,
             (rows, columns),
-            actual == (rows, columns),
-            name="PTY window size",
+            purpose="precondition",
         )
+
+    @staticmethod
+    def _matches(actual, expected, match):
+        if expected is UNSET:
+            return None
+        if match == "contains":
+            return expected in actual
+        if match == "not_contains":
+            return expected not in actual
+        if match == "starts_with":
+            return actual.startswith(expected)
+        if match == "ends_with":
+            return actual.endswith(expected)
+        if match == "non_empty":
+            return bool(actual.strip())
+        if match == "changed":
+            return actual != expected
+        if match == "exact":
+            return actual == expected
+        raise ValueError(f"unknown observation match mode: {match!r}")
+
+    def _read_screen_text(
+        self, *, region=None, row=None, index=0, strip_right=False
+    ):
+        if (region is None) == (row is None):
+            raise ValueError("screen text observation requires one region or row")
+        if row is not None:
+            actual = self.screen.text(row)
+        elif region == "screen":
+            actual = "\n".join(self.screen.lines())
+        elif region == "body" and index is None:
+            actual = "\n".join(
+                self.screen.text(body_row)
+                for body_row in range(self.layout.body_height)
+            )
+        else:
+            row = self.layout.row(region, index)
+            actual = self.screen.text(row)
+        if strip_right:
+            actual = actual.rstrip()
+        return actual
 
     def observe_screen_text(
-        self, actual, expected=None, match="exact", passed=None, **details
+        self,
+        expected=UNSET,
+        match="exact",
+        *,
+        region=None,
+        row=None,
+        index=0,
+        strip_right=False,
+        purpose="scenario",
     ):
-        if passed is None and expected is not None:
-            if match == "contains":
-                passed = expected in actual
-            elif match == "not_contains":
-                passed = expected not in actual
-            elif match == "starts_with":
-                passed = actual.startswith(expected)
-            elif match == "ends_with":
-                passed = actual.endswith(expected)
-            elif match == "non_empty":
-                passed = bool(actual.strip())
-            elif match == "changed":
-                passed = actual != expected
-            elif match == "exact":
-                passed = actual == expected
-            else:
-                raise ValueError(f"unknown screen-text match mode: {match!r}")
-        record_observation(
-            "screen_text", actual, expected, passed, match=match, **details
+        actual = self._read_screen_text(
+            region=region, row=row, index=index, strip_right=strip_right
         )
-        return actual
+        passed = self._matches(actual, expected, match)
+        details = {"match": match, "purpose": purpose}
+        if region is not None:
+            details["region"] = region
+            if region != "screen" and index is not None:
+                details["row"] = self.layout.row(region, index)
+        else:
+            details["row"] = row
+        record_observation(
+            "screen_text", actual, expected, passed, **details
+        )
+        return passed
 
-    def assert_screen_text(self, actual, expected, match="exact", **details):
-        self.observe_screen_text(actual, expected, match=match, **details)
-        passed = {
-            "contains": lambda: expected in actual,
-            "not_contains": lambda: expected not in actual,
-            "starts_with": lambda: actual.startswith(expected),
-            "ends_with": lambda: actual.endswith(expected),
-            "changed": lambda: actual != expected,
-            "exact": lambda: actual == expected,
-            "non_empty": lambda: bool(actual.strip()),
-        }.get(match)
-        if passed is None:
-            raise ValueError(f"unknown screen-text match mode: {match!r}")
-        if not passed():
+    def assert_screen_text(self, expected, match="exact", **source):
+        passed = self.observe_screen_text(expected, match=match, **source)
+        if passed is not True:
             raise AssertionError(
-                f"screen text did not satisfy {match} for {expected!r}: {actual!r}"
+                f"screen text did not satisfy {match} for {expected!r}"
             )
-        return actual
+        return True
 
-    def observe_pty_output(self, actual, expected=None, match="exact", passed=None):
-        if passed is None and expected is not None:
-            if match == "contains":
-                passed = expected in actual
-            elif match == "not_contains":
-                passed = expected not in actual
-            elif match == "exact":
-                passed = actual == expected
-            else:
-                raise ValueError(f"unknown PTY-output match mode: {match!r}")
-        record_observation("pty_output", actual, expected, passed, match=match)
-        return actual
+    def observe_pty_output(
+        self, actual, expected=UNSET, match="exact", *, purpose="scenario"
+    ):
+        passed = self._matches(actual, expected, match)
+        record_observation(
+            "pty_output", actual, expected, passed,
+            match=match, purpose=purpose,
+        )
+        return passed
 
     def assert_pty_output(self, actual, expected, match="contains"):
-        self.observe_pty_output(actual, expected, match=match)
-        matched = {
-            "contains": lambda: expected in actual,
-            "not_contains": lambda: expected not in actual,
-            "exact": lambda: actual == expected,
-        }.get(match)
-        if matched is None:
-            raise ValueError(f"unknown PTY-output match mode: {match!r}")
-        if not matched():
+        if self.observe_pty_output(actual, expected, match=match) is not True:
             raise AssertionError(
                 f"PTY output did not satisfy {match} for {expected!r}"
             )
         return actual
 
-    def observe_cursor(self, expected=None, passed=None, **details):
+    def observe_cursor(
+        self, expected=UNSET, *, purpose="scenario", sample=UNSET
+    ):
         actual = self.screen.cursor
-        if passed is None and expected is not None:
-            passed = actual == expected
-        record_observation("cursor", actual, expected, passed, **details)
-        return actual
-
-    def observe_cell_attrs(self, row, column, expected=None):
-        actual = self.screen.cell_attrs(row, column)
-        passed = None
-        if expected is not None:
-            if not expected:
-                raise ValueError("cell attribute expectations must not be empty")
-            passed = all(actual.get(name) == value for name, value in expected.items())
+        passed = None if expected is UNSET else actual == expected
+        details = {} if sample is UNSET else {"sample": sample}
         record_observation(
-            "cell_attrs",
-            actual,
-            expected,
-            passed,
-            row=row,
-            column=column,
+            "cursor", actual, expected, passed,
+            purpose=purpose, **details,
         )
-        return actual
+        return passed
+
+    def observe_cell_attrs(
+        self, row, column, expected=UNSET, *, purpose="scenario"
+    ):
+        actual = self.screen.cell_attrs(row, column)
+        if expected is not UNSET and not expected:
+            raise ValueError("cell attribute expectations must not be empty")
+        passed = (
+            None
+            if expected is UNSET
+            else all(actual.get(name) == value for name, value in expected.items())
+        )
+        record_observation(
+            "cell_attrs", actual, expected, passed,
+            row=row, column=column, purpose=purpose,
+        )
+        return passed
 
     def assert_cell_attrs(self, row, column, expected):
-        actual = self.observe_cell_attrs(row, column, expected=expected)
-        if any(actual.get(name) != value for name, value in expected.items()):
+        if self.observe_cell_attrs(row, column, expected) is not True:
             raise AssertionError(
                 f"cell attributes at {(row, column)!r} did not match {expected!r}"
             )
-        return actual
+        return True
 
-    def observe_file_bytes(self, path, actual=_UNSET, expected=None):
-        if actual is _UNSET:
-            try:
-                with open(path, "rb") as handle:
-                    actual = handle.read()
-            except FileNotFoundError:
-                actual = None
-        passed = None if expected is None else actual == expected
+    def _observe_file_bytes(self, path, expected=UNSET, *, purpose="scenario"):
+        try:
+            with open(path, "rb") as handle:
+                actual = handle.read()
+        except FileNotFoundError:
+            actual = None
+        passed = None if expected is UNSET else actual == expected
         record_observation(
-            "file_bytes",
-            actual,
-            expected,
-            passed,
-            target=self._observation_target(path),
+            "file_bytes", actual, expected, passed,
+            target=self._observation_target(path), purpose=purpose,
+        )
+        return actual, passed
+
+    def observe_file_bytes(self, path, expected=UNSET, *, purpose="scenario"):
+        actual, _passed = self._observe_file_bytes(
+            path, expected, purpose=purpose
         )
         return actual
 
     def assert_file_bytes(self, path, expected):
-        actual = self.observe_file_bytes(path, expected=expected)
-        if actual != expected:
+        actual, passed = self._observe_file_bytes(path, expected)
+        if passed is not True:
             raise AssertionError(
                 f"file bytes at {self._observation_target(path)!r} did not match"
             )
         return actual
 
-    def observe_external_state(self, name, actual, expected=None, passed=None):
-        if passed is None and expected is not None:
-            passed = actual == expected
+    def observe_external_state(
+        self, name, actual, expected=UNSET, *, purpose="scenario"
+    ):
+        passed = None if expected is UNSET else actual == expected
         record_observation(
-            "external_state", actual, expected, passed, name=name
+            "external_state", actual, expected, passed,
+            name=name, purpose=purpose,
         )
-        return actual
+        return passed
 
-    def assert_external_state(self, name, actual, expected):
-        self.observe_external_state(name, actual, expected)
-        if actual != expected:
+    def assert_external_state(
+        self, name, actual, expected, *, purpose="scenario"
+    ):
+        if self.observe_external_state(
+            name, actual, expected, purpose=purpose
+        ) is not True:
             raise AssertionError(
                 f"external state {name!r} was {actual!r}, expected {expected!r}"
             )
         return actual
 
-    def observe_exit_code(self, actual, expected=None):
-        passed = None if expected is None else actual == expected
-        record_observation("exit_code", actual, expected, passed)
-        return actual
+    def observe_exit_code(self, actual, expected=UNSET, *, purpose="scenario"):
+        passed = None if expected is UNSET else actual == expected
+        record_observation(
+            "exit_code", actual, expected, passed, purpose=purpose
+        )
+        return passed
 
     def _observation_target(self, path):
         path = os.fspath(path)
@@ -393,7 +447,7 @@ class Session:
     def wait_for_external_state(
         self, name, read_state, expected, timeout=DEFAULT_TIMEOUT
     ):
-        last_observed = _UNSET
+        last_observed = UNSET
 
         def matches_expected(_screen):
             nonlocal last_observed
@@ -408,10 +462,14 @@ class Session:
             )
         except TimeoutError:
             actual = read_state()
-            self.observe_external_state(name, actual, expected, passed=False)
+            self.observe_external_state(
+                name, actual, expected, purpose="precondition"
+            )
             raise
         actual = last_observed
-        self.observe_external_state(name, actual, expected)
+        self.observe_external_state(
+            name, actual, expected, purpose="precondition"
+        )
         return actual
 
     def wait_until(self, predicate, timeout=DEFAULT_TIMEOUT, what="condition"):
@@ -434,12 +492,11 @@ class Session:
             lambda screen: screen.has_content(),
             timeout, "the initial frame to render",
         )
-        lines = [line for line in self.screen.lines() if line.strip()]
         self.first_screen_at = time.monotonic()
         self.observe_screen_text(
-            "\n".join(lines),
             expected={"non_empty": True},
             match="non_empty",
+            region="screen",
             purpose="precondition",
         )
 
@@ -451,15 +508,18 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                "\n".join(self.screen.lines()),
                 expected=substring,
                 match="contains",
-                passed=False,
+                region="screen",
+                purpose="precondition",
             )
             raise
         row, _column = self.screen.find(substring)
         self.observe_screen_text(
-            self.screen.text(row), expected=substring, match="contains"
+            expected=substring,
+            match="contains",
+            row=row,
+            purpose="precondition",
         )
 
     def wait_for_row_text(self, row, substring, timeout=DEFAULT_TIMEOUT):
@@ -470,12 +530,17 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                self.screen.text(row), expected=substring, match="contains",
-                passed=False, row=row,
+                expected=substring,
+                match="contains",
+                row=row,
+                purpose="precondition",
             )
             raise
         self.observe_screen_text(
-            self.screen.text(row), expected=substring, match="contains", row=row
+            expected=substring,
+            match="contains",
+            row=row,
+            purpose="precondition",
         )
 
     def region_text(self, region, index=0):
@@ -498,13 +563,19 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                self.screen.text(row), expected=substring, match="contains",
-                passed=False, region=region, row=row,
+                expected=substring,
+                match="contains",
+                region=region,
+                index=index,
+                purpose="precondition",
             )
             raise
         self.observe_screen_text(
-            self.screen.text(row), expected=substring, match="contains",
-            region=region, row=row,
+            expected=substring,
+            match="contains",
+            region=region,
+            index=index,
+            purpose="precondition",
         )
 
     def wait_for_region_exact_text(
@@ -524,12 +595,21 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                read_text(), expected=expected, match="exact", passed=False,
-                region=region, row=row,
+                expected=expected,
+                match="exact",
+                region=region,
+                index=index,
+                strip_right=strip_right,
+                purpose="precondition",
             )
             raise
         return self.observe_screen_text(
-            read_text(), expected=expected, match="exact", region=region, row=row
+            expected=expected,
+            match="exact",
+            region=region,
+            index=index,
+            strip_right=strip_right,
+            purpose="precondition",
         )
 
     def wait_for_region_text_prefix(
@@ -544,13 +624,19 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                self.screen.text(row), expected=expected, match="starts_with",
-                passed=False, region=region, row=row,
+                expected=expected,
+                match="starts_with",
+                region=region,
+                index=index,
+                purpose="precondition",
             )
             raise
         return self.observe_screen_text(
-            self.screen.text(row), expected=expected, match="starts_with",
-            region=region, row=row,
+            expected=expected,
+            match="starts_with",
+            region=region,
+            index=index,
+            purpose="precondition",
         )
 
     def wait_for_region_contents(
@@ -567,12 +653,19 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                read_text(), expected=substring, match="contains", passed=False,
+                expected=substring,
+                match="contains",
                 region=region,
+                index=None if region == "body" else 0,
+                purpose="precondition",
             )
             raise
         return self.observe_screen_text(
-            read_text(), expected=substring, match="contains", region=region
+            expected=substring,
+            match="contains",
+            region=region,
+            index=None if region == "body" else 0,
+            purpose="precondition",
         )
 
     def wait_for_row_and_cursor(
@@ -591,21 +684,24 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                self.screen.text(row).rstrip(" "),
                 expected=expected_line,
                 match="exact",
-                passed=False,
                 row=row,
+                strip_right=True,
+                purpose="precondition",
             )
-            self.observe_cursor(expected=expected_cursor, passed=False)
+            self.observe_cursor(
+                expected=expected_cursor, purpose="precondition"
+            )
             raise
         self.observe_screen_text(
-            self.screen.text(row).rstrip(" "),
             expected=expected_line,
             match="exact",
             row=row,
+            strip_right=True,
+            purpose="precondition",
         )
-        self.observe_cursor(expected=expected_cursor)
+        self.observe_cursor(expected=expected_cursor, purpose="precondition")
 
     def wait_for_region_absent_text(
         self, region, substring, index=0, timeout=DEFAULT_TIMEOUT
@@ -619,19 +715,22 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                self.screen.text(row), expected=substring, match="not_contains",
-                passed=False, region=region, row=row,
+                expected=substring,
+                match="not_contains",
+                region=region,
+                index=index,
+                purpose="precondition",
             )
             raise
         return self.observe_screen_text(
-            self.screen.text(row), expected=substring, match="not_contains",
-            region=region, row=row,
+            expected=substring,
+            match="not_contains",
+            region=region,
+            index=index,
+            purpose="precondition",
         )
 
     def wait_for_text_absent(self, substring, timeout=DEFAULT_TIMEOUT):
-        def read_text():
-            return "\n".join(self.screen.lines())
-
         try:
             self.wait_until(
                 lambda _screen: self.screen.find(substring) is None,
@@ -640,11 +739,17 @@ class Session:
             )
         except TimeoutError:
             self.observe_screen_text(
-                read_text(), expected=substring, match="not_contains", passed=False
+                expected=substring,
+                match="not_contains",
+                region="screen",
+                purpose="precondition",
             )
             raise
         return self.observe_screen_text(
-            read_text(), expected=substring, match="not_contains"
+            expected=substring,
+            match="not_contains",
+            region="screen",
+            purpose="precondition",
         )
 
     def wait_for_cursor(self, row, col, timeout=DEFAULT_TIMEOUT):
@@ -655,9 +760,9 @@ class Session:
                 timeout, f"cursor to reach (row={row}, col={col})",
             )
         except TimeoutError:
-            self.observe_cursor(expected=expected, passed=False)
+            self.observe_cursor(expected=expected, purpose="precondition")
             raise
-        self.observe_cursor(expected=expected)
+        self.observe_cursor(expected=expected, purpose="precondition")
 
     def wait_for_region_cursor(self, region, col, index=0, timeout=DEFAULT_TIMEOUT):
         self.wait_for_cursor(self.layout.row(region, index), col, timeout)
@@ -673,10 +778,14 @@ class Session:
             except FileNotFoundError:
                 last_seen = None
             if last_seen == expected_bytes:
-                self.observe_file_bytes(path, actual=last_seen, expected=expected_bytes)
+                self.observe_file_bytes(
+                    path, expected_bytes, purpose="precondition"
+                )
                 return
             if time.monotonic() >= deadline:
-                self.observe_file_bytes(path, actual=last_seen, expected=expected_bytes)
+                self.observe_file_bytes(
+                    path, expected_bytes, purpose="precondition"
+                )
                 raise TimeoutError(
                     f"timed out waiting for {path} to contain {expected_bytes!r}; "
                     f"last read {last_seen!r}\n--- screen ---\n{self.screen.dump()}"

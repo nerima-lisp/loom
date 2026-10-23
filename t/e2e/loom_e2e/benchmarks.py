@@ -6,7 +6,12 @@ import tempfile
 import time
 
 from . import keys
-from .deadline import current_deadline
+from .deadline import (
+    SCENARIO_CLEANUP_TIMEOUT_SECONDS,
+    SCENARIO_EXECUTION_TIMEOUT_SECONDS,
+    SCENARIO_TIMEOUT_SECONDS,
+    current_deadline,
+)
 from .results import record_observation
 from .session import Session
 
@@ -45,10 +50,12 @@ def _redraw_samples(session):
         while budget.remaining() > 0:
             session.pump(poll_timeout=0.001)
             if session.screen.cursor != before:
-                actual = session.observe_cursor(expected=expected, sample=sample)
-                if actual != expected:
+                if session.observe_cursor(
+                    expected=expected, sample=sample
+                ) is not True:
                     raise AssertionError(
-                        f"cursor moved to {actual!r}, expected {expected!r}"
+                        f"cursor moved to {session.screen.cursor!r}, "
+                        f"expected {expected!r}"
                     )
                 samples.append(time.monotonic() - started)
                 break
@@ -186,7 +193,8 @@ def build_benchmark_report(measurements):
                 "from filename entry after the Find file prompt to rendering "
                 "the unique last-line marker after end-of-buffer"
             ),
-            "scenario_deadline_seconds": 10.0,
-            "execution_budget_seconds": 5.0,
+            "scenario_deadline_seconds": SCENARIO_TIMEOUT_SECONDS,
+            "execution_budget_seconds": SCENARIO_EXECUTION_TIMEOUT_SECONDS,
+            "cleanup_budget_seconds": SCENARIO_CLEANUP_TIMEOUT_SECONDS,
         },
     }

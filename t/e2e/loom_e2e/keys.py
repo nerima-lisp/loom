@@ -85,27 +85,3 @@ def get_profile(profile=DEFAULT_PROFILE):
 def key(name, profile=DEFAULT_PROFILE):
     """Return one named key sequence for PROFILE."""
     return get_profile(profile).key(name)
-
-
-RET = DEFAULT_PROFILE.key("RET")
-LF = DEFAULT_PROFILE.key("LF")
-TAB = DEFAULT_PROFILE.key("TAB")
-ESC = DEFAULT_PROFILE.key("ESC")
-
-UP = DEFAULT_PROFILE.key("UP")
-DOWN = DEFAULT_PROFILE.key("DOWN")
-RIGHT = DEFAULT_PROFILE.key("RIGHT")
-LEFT = DEFAULT_PROFILE.key("LEFT")
-END = DEFAULT_PROFILE.key("END")
-
-NAMED = {
-    "RET": RET,
-    "LF": LF,
-    "TAB": TAB,
-    "ESC": ESC,
-    "UP": UP,
-    "DOWN": DOWN,
-    "RIGHT": RIGHT,
-    "LEFT": LEFT,
-    "END": END,
-}

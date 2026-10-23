@@ -7,14 +7,17 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
-from loom_e2e import keys
+from loom_e2e import keys, registry
 from loom_e2e.benchmarks import _redraw_samples, benchmark_scenarios
 from loom_e2e.deadline import run_scenario
+from loom_e2e.layout import validate_dimensions
 from loom_e2e.process import LoomProcess
 from loom_e2e.results import (
     ScenarioResult,
     capture_scenario,
     record_observation,
+    reset_trace_line_counter,
+    set_trace_line_counter,
 )
 from loom_e2e.screen import Screen
 from loom_e2e.session import Session, _session_environment
@@ -22,11 +25,16 @@ from loom_e2e.session import Session, _session_environment
 
 class TerminalProfileTests(unittest.TestCase):
     def test_return_and_profile_end_sequences(self):
-        self.assertEqual(keys.RET, b"\r")
-        self.assertEqual(keys.LF, b"\n")
+        self.assertEqual(keys.key("RET"), b"\r")
+        self.assertEqual(keys.key("LF"), b"\n")
         self.assertEqual(keys.key("END", keys.XTERM_256COLOR), b"\x1b[F")
         self.assertEqual(keys.key("END", keys.XTERM), b"\x1b[4~")
         self.assertEqual(keys.get_profile("xterm").term, "xterm")
+        self.assertFalse(hasattr(keys, "RET"))
+
+    def test_module_key_lookup_honors_custom_profile(self):
+        profile = keys.TerminalProfile("custom", "custom", {"RET": b"\n"})
+        self.assertEqual(keys.key("RET", profile), b"\n")
 
     def test_session_environment_selects_profile_and_trace_path(self):
         with patch.dict(os.environ, {"PATH": "/usr/bin", "UNLISTED_TEST_VALUE": "x"}):
@@ -44,6 +52,21 @@ class TerminalProfileTests(unittest.TestCase):
         session.process.write.assert_called_once_with(b"\x1b[4~\r")
 
 
+class ScenarioRegistryTests(unittest.TestCase):
+    def test_duplicate_names_fail_when_registered(self):
+        with patch.object(registry, "_scenarios", []):
+            @registry.scenario("same name")
+            def first(_binary):
+                pass
+
+            with self.assertRaisesRegex(ValueError, "duplicate scenario name"):
+                @registry.scenario("same name")
+                def second(_binary):
+                    pass
+
+            self.assertEqual(registry.all_scenarios()[0][2], first)
+
+
 class ScreenAttributeTests(unittest.TestCase):
     def test_cell_attributes_and_resize(self):
         screen = Screen(columns=12, rows=4)
@@ -54,6 +77,13 @@ class ScreenAttributeTests(unittest.TestCase):
         self.assertEqual((screen.columns, screen.rows), (8, 2))
         with self.assertRaises(IndexError):
             screen.cell_attrs(2, 0)
+
+    def test_terminal_dimensions_have_one_shared_validation_rule(self):
+        self.assertEqual(validate_dimensions(80, 24), (80, 24))
+        for dimensions in ((0, 24), (80, 0), (True, 24), (80, 24.0)):
+            with self.subTest(dimensions=dimensions):
+                with self.assertRaises(ValueError):
+                    validate_dimensions(*dimensions)
 
 
 class PtyResizeTests(unittest.TestCase):
@@ -110,19 +140,19 @@ class ScenarioResultTests(unittest.TestCase):
                 purpose="precondition",
             )
             record_observation("exit_code", 0, 0, True)
-        self.assertEqual(exit_result._classification(), ("exit-code-only", True))
+        self.assertEqual(exit_result._classification(), "exit-code-only")
         with tempfile.TemporaryDirectory() as directory:
             result_path = exit_result.save(directory)
             with open(result_path, encoding="utf-8") as handle:
                 payload = json.load(handle)
         self.assertEqual(payload["observation_class"], "exit-code-only")
-        self.assertIs(payload["exit_code_only"], True)
+        self.assertNotIn("exit_code_only", payload)
 
         runtime_result = ScenarioResult("runtime observation")
         with capture_scenario(runtime_result):
             record_observation("exit_code", 0, 0, True)
             record_observation("screen_text", "ready", "ready", True)
-        self.assertEqual(runtime_result._classification(), ("effect-verified", False))
+        self.assertEqual(runtime_result._classification(), "effect-verified")
 
     def test_failed_expected_effect_prevents_effect_verified_classification(self):
         for passed in (False, None):
@@ -132,14 +162,30 @@ class ScenarioResultTests(unittest.TestCase):
                     record_observation("screen_text", "ready", "ready", True)
                     record_observation("file_bytes", b"actual", b"expected", passed)
                 self.assertEqual(
-                    result._classification(), ("effect-unverified", False)
+                    result._classification(), "effect-unverified"
                 )
 
     def test_unchecked_observations_do_not_count_as_verified_effects(self):
         result = ScenarioResult("unchecked observation")
         with capture_scenario(result):
             record_observation("screen_text", "ready")
-        self.assertEqual(result._classification(), ("effect-unverified", False))
+        self.assertEqual(result._classification(), "effect-unverified")
+
+    def test_pty_output_counts_as_an_effect_observation(self):
+        result = ScenarioResult("pty output")
+        with capture_scenario(result):
+            record_observation("pty_output", b"Usage", b"Usage", True)
+        self.assertEqual(result._classification(), "effect-verified")
+
+    def test_exit_code_only_includes_precondition_observations(self):
+        result = ScenarioResult("precondition plus exit")
+        with capture_scenario(result):
+            record_observation(
+                "screen_text", "ready", {"non_empty": True}, True,
+                purpose="precondition",
+            )
+            record_observation("exit_code", 0, 0, True)
+        self.assertEqual(result._classification(), "exit-code-only")
 
     def test_save_writes_raw_bytes_and_empty_trace_as_literal_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -158,6 +204,8 @@ class ScenarioResultTests(unittest.TestCase):
             with open(result_path, encoding="utf-8") as handle:
                 payload = json.load(handle)
             self.assertEqual(payload["observation_class"], "effect-verified")
+            self.assertEqual(payload["binary_realpath"], None)
+            self.assertEqual(payload["declared_commands"], [])
             self.assertEqual(
                 payload["observations"][0]["actual"],
                 {"encoding": "base64", "data": "c2F2ZWQA", "length": 6},
@@ -192,7 +240,7 @@ class SessionObservationTests(unittest.TestCase):
             handle.flush()
             with capture_scenario(result):
                 session.assert_screen_text(
-                    session.screen.text(0).rstrip(), "ready", region="body"
+                    "ready", region="body", index=0, strip_right=True
                 )
                 session.observe_cursor(expected=(0, 5), sample=0)
                 session.assert_cell_attrs(0, 0, expected={"reverse": True})
@@ -214,6 +262,84 @@ class SessionObservationTests(unittest.TestCase):
         )
         self.assertTrue(all(item.get("passed") is True for item in result.observations))
         self.assertEqual(result.observations[1]["sample"], 0)
+
+    def test_screen_observation_reads_the_selected_screen_region(self):
+        session = Session("unused")
+        session.screen = Screen(columns=20, rows=4)
+        session.screen.feed(b"actual screen text")
+        result = ScenarioResult("screen source")
+        with capture_scenario(result):
+            passed = session.observe_screen_text(
+                "actual", match="contains", region="body", index=0
+            )
+        self.assertIs(passed, True)
+        self.assertEqual(result.observations[0]["actual"], "actual screen text  ")
+        self.assertIs(result.observations[0]["passed"], True)
+        with self.assertRaises(TypeError):
+            session.observe_screen_text(
+                expected="actual screen text", region="body", passed=True
+            )
+        with self.assertRaises(ValueError):
+            session.observe_screen_text("actual screen text")
+
+    def test_waited_screen_text_is_a_precondition(self):
+        session = Session("unused")
+        session.screen = Screen(columns=20, rows=4)
+        session.screen.feed(b"M-x ")
+        result = ScenarioResult("synchronization wait")
+        with capture_scenario(result):
+            session.wait_for_region_text("body", "M-x ")
+        self.assertEqual(result.observations[0]["purpose"], "precondition")
+        self.assertEqual(result._classification(), "none")
+
+    def test_observe_methods_cannot_accept_passed_override(self):
+        session = Session("unused")
+        session.screen = Screen(columns=4, rows=2)
+        with self.assertRaises(TypeError):
+            session.observe_cursor(expected=(0, 0), passed=True)
+        with self.assertRaises(TypeError):
+            session.observe_external_state("state", False, True, passed=True)
+
+    def test_file_observation_can_expect_absence(self):
+        session = Session("unused")
+        result = ScenarioResult("missing file")
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "missing")
+            with capture_scenario(result):
+                self.assertIsNone(session.assert_file_bytes(path, None))
+        observation = result.observations[0]
+        self.assertIsNone(observation["actual"])
+        self.assertIsNone(observation["expected"])
+        self.assertIs(observation["passed"], True)
+
+    def test_observation_records_live_trace_line_count(self):
+        result = ScenarioResult("trace timeline")
+        result.add_session(b"", b'{"seq":0}\n')
+        with tempfile.TemporaryDirectory() as directory:
+            trace_path = os.path.join(directory, "trace.jsonl")
+            with open(trace_path, "wb") as handle:
+                handle.write(b'{"seq":1}\n')
+            session = Session("unused")
+            session._trace_path = trace_path
+            token = set_trace_line_counter(session._trace_line_count)
+            try:
+                with capture_scenario(result):
+                    record_observation("external_state", "first")
+                    with open(trace_path, "ab") as handle:
+                        handle.write(b'{"seq":2}\n')
+                    record_observation("external_state", "second")
+            finally:
+                reset_trace_line_counter(token)
+        self.assertEqual(
+            [item["trace_lines"] for item in result.observations], [2, 3]
+        )
+
+    def test_observe_cell_attrs_returns_match_result_for_assertion(self):
+        session = Session("unused")
+        session.screen = Screen(columns=4, rows=2)
+        session.screen.feed(b"\x1b[7mX\x1b[0m")
+        self.assertIs(session.observe_cell_attrs(0, 0, {"reverse": True}), True)
+        self.assertIs(session.observe_cell_attrs(0, 0, {"reverse": False}), False)
 
     def test_cell_attribute_assertion_rejects_mismatch_and_empty_expectation(self):
         session = Session("unused")
@@ -262,7 +388,7 @@ class BenchmarkDeadlineTests(unittest.TestCase):
                 self.screen.cursor = (row, column + 1)
 
             def observe_cursor(self, expected, **_details):
-                return self.screen.cursor
+                return self.screen.cursor == expected
 
         session = CursorOnlySession()
         samples = run_scenario(

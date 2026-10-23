@@ -28,7 +28,7 @@ def _prompted_mx(session, name, prompt, value):
     _mx(session, name)
     session.wait_for_region_text("minibuffer", prompt)
     session.type(value)
-    session.send(keys.RET)
+    session.key("RET")
 
 
 def _save(session):
@@ -48,7 +48,6 @@ def forward_char(binary):
             _mx(session, "forward-char")
             session.wait_for_region_cursor("body", 1)
             session.assert_screen_text(
-                session.region_text("body"),
                 "abc",
                 match="starts_with",
                 region="body",
@@ -462,7 +461,7 @@ def isearch_backward(binary):
             _mx(session, "isearch-backward")
             session.wait_for_region_text("minibuffer", "I-search backward: ")
             session.type("needle")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_region_cursor("body", 19)
             output, code = session.quit()
     _assert_exit_zero("movement/isearch-backward", output, code)
@@ -477,7 +476,7 @@ def isearch_forward(binary):
             _mx(session, "isearch-forward")
             session.wait_for_region_text("minibuffer", "I-search: ")
             session.type("needle")
-            session.send(keys.RET)
+            session.key("RET")
             session.wait_for_region_cursor("body", 6)
             output, code = session.quit()
     _assert_exit_zero("movement/isearch-forward", output, code)
@@ -554,9 +553,12 @@ def horizontal_scroll_follow(binary):
             session.wait_ready()
             _mx(session, "move-end-of-line")
             session.wait_for_region_cursor("body", 11)
-            row = session.region_text("body")
-            session.assert_screen_text(row, "fgh", match="starts_with", region="body")
-            session.assert_screen_text(row.rstrip(), "p", match="ends_with", region="body")
+            session.assert_screen_text(
+                "fgh", match="starts_with", region="body"
+            )
+            session.assert_screen_text(
+                "p", match="ends_with", region="body", strip_right=True
+            )
             output, code = session.quit()
     _assert_exit_zero("movement/horizontal scroll follow", output, code)
 

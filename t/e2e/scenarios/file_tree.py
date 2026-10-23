@@ -31,8 +31,10 @@ def _wait_for_region_after_refresh(session, region, expected, index=0):
         actual = session.region_text(region, index)
         if expected in actual:
             session.observe_screen_text(
-                actual, expected=expected, match="contains", region=region,
-                row=session.layout.row(region, index),
+                expected=expected,
+                match="contains",
+                region=region,
+                index=index,
             )
             return
         session.send(keys.ctrl("x") + keys.ctrl("t"))
@@ -40,9 +42,10 @@ def _wait_for_region_after_refresh(session, region, expected, index=0):
         session.pump()
         if time.monotonic() >= deadline:
             session.observe_screen_text(
-                session.region_text(region, index), expected=expected,
-                match="contains", passed=False, region=region,
-                row=session.layout.row(region, index),
+                expected=expected,
+                match="contains",
+                region=region,
+                index=index,
             )
             raise TimeoutError(
                 f"timed out waiting for {expected!r} in {region} region"
@@ -132,7 +135,7 @@ def file_tree_create(binary):
             session.extended_command("file-tree-create-file")
             session.wait_for_region_text("minibuffer", "Create file: ")
             session.type(created_file)
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_path(
                 session, created_file, os.path.isfile, "created file",
             )
@@ -144,7 +147,7 @@ def file_tree_create(binary):
             session.extended_command("file-tree-create-directory")
             session.wait_for_region_text("minibuffer", "Create directory: ")
             session.type(created_directory)
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_path(
                 session, created_directory, os.path.isdir, "created directory",
             )
@@ -172,7 +175,7 @@ def file_tree_rename_delete(binary):
             session.extended_command("file-tree-rename")
             session.wait_for_region_text("minibuffer", "Rename ")
             session.type(new_path)
-            session.send(keys.RET)
+            session.key("RET")
             _wait_for_path(
                 session, old_path, lambda path: not os.path.exists(path),
                 "old path to disappear",

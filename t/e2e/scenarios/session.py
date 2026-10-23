@@ -23,7 +23,7 @@ def _run_prompted_command(session, command, prompt, value):
     session.extended_command(command)
     _wait_for_exact_line(session, "minibuffer", prompt)
     session.type(value)
-    session.send(keys.RET)
+    session.key("RET")
 
 
 def _read_saved_session(session, path):

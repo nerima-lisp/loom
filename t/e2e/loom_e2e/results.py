@@ -10,12 +10,17 @@ import re
 
 
 _ACTIVE_RESULT = ContextVar("loom_e2e_active_result", default=None)
+_ACTIVE_TRACE_LINE_COUNTER = ContextVar(
+    "loom_e2e_active_trace_line_counter", default=None
+)
+UNSET = object()
 _EFFECT_OBSERVATION_TYPES = {
     "screen_text",
     "cell_attrs",
     "cursor",
     "file_bytes",
     "external_state",
+    "pty_output",
 }
 
 
@@ -38,8 +43,10 @@ def _json_value(value):
 
 
 class ScenarioResult:
-    def __init__(self, name):
+    def __init__(self, name, binary_realpath=None, declared_commands=()):
         self.name = name
+        self.binary_realpath = binary_realpath
+        self.declared_commands = list(declared_commands)
         self.status = "running"
         self.error = None
         self.observations = []
@@ -47,13 +54,16 @@ class ScenarioResult:
         self.pty_output = bytearray()
         self.trace_output = bytearray()
 
-    def observe(self, kind, actual, expected=None, passed=None, **details):
+    def observe(
+        self, kind, actual, expected=UNSET, passed=None, trace_lines=0, **details
+    ):
         observation = {
             "sequence": len(self.observations),
             "type": kind,
             "actual": _json_value(actual),
+            "trace_lines": trace_lines,
         }
-        if expected is not None:
+        if expected is not UNSET:
             observation["expected"] = _json_value(expected)
         if passed is not None:
             observation["passed"] = bool(passed)
@@ -83,31 +93,32 @@ class ScenarioResult:
             if item.get("purpose") != "precondition"
         ]
         if not observations:
-            return "none", False
+            return "none"
         effects = [
             item
             for item in observations
             if item["type"] in _EFFECT_OBSERVATION_TYPES
         ]
-        expected_effects = [item for item in effects if "expected" in item]
-        if expected_effects and all(
-            item.get("passed") is True for item in expected_effects
+        if effects and all(
+            "expected" in item and item.get("passed") is True
+            for item in effects
         ):
-            return "effect-verified", False
+            return "effect-verified"
         if effects:
-            return "effect-unverified", False
+            return "effect-unverified"
         observed_types = {item["type"] for item in observations}
-        if observed_types == {"exit_code"}:
-            return "exit-code-only", True
-        return "observations-only", False
+        if observed_types and observed_types <= {"exit_code"}:
+            return "exit-code-only"
+        return "observations-only"
 
     def to_dict(self, artifacts):
-        classification, exit_code_only = self._classification()
+        classification = self._classification()
         result = {
             "scenario": self.name,
             "status": self.status,
             "observation_class": classification,
-            "exit_code_only": exit_code_only,
+            "binary_realpath": self.binary_realpath,
+            "declared_commands": self.declared_commands,
             "observed_types": sorted({item["type"] for item in self.observations}),
             "observations": self.observations,
             "sessions": self.sessions,
@@ -154,8 +165,28 @@ def current_result():
     return _ACTIVE_RESULT.get()
 
 
-def record_observation(kind, actual, expected=None, passed=None, **details):
+def set_trace_line_counter(counter):
+    return _ACTIVE_TRACE_LINE_COUNTER.set(counter)
+
+
+def reset_trace_line_counter(token):
+    _ACTIVE_TRACE_LINE_COUNTER.reset(token)
+
+
+def count_trace_lines(data):
+    return data.count(b"\n")
+
+
+def record_observation(kind, actual, expected=UNSET, passed=None, **details):
     result = current_result()
     if result is None:
         return None
-    return result.observe(kind, actual, expected, passed, **details)
+    counter = _ACTIVE_TRACE_LINE_COUNTER.get()
+    trace_lines = (
+        count_trace_lines(result.trace_output)
+        if counter is None
+        else counter()
+    )
+    return result.observe(
+        kind, actual, expected, passed, trace_lines=trace_lines, **details
+    )

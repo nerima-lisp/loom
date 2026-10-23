@@ -91,6 +91,15 @@ class CoverageCliTests(unittest.TestCase):
         self.assertIn("0 passed, 2 failed, 2 total", self.stdout.getvalue())
         self.assertIn("scenario failed", self.stderr.getvalue())
 
+    def test_unexpected_scenario_exceptions_are_counted_as_failures(self):
+        for error_type in (ValueError, KeyError, TypeError, RuntimeError):
+            with self.subTest(error_type=error_type.__name__):
+                self.run.reset_mock()
+                self.run.side_effect = error_type("scenario failed")
+                self.assertEqual(cli.main(["--only", "forward"]), 1)
+                self.assertIn("0 passed, 1 failed, 1 total", self.stdout.getvalue())
+                self.assertIn("scenario failed", self.stderr.getvalue())
+
     def test_artifacts_dir_saves_per_scenario_files(self):
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(cli.main([
@@ -110,6 +119,8 @@ class CoverageCliTests(unittest.TestCase):
                 result = json.load(handle)
             self.assertEqual(result["scenario"], "forward")
             self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["binary_realpath"], os.path.realpath("loom"))
+            self.assertEqual(result["declared_commands"], ["forward-char"])
 
     def test_default_artifact_directories_are_printed_and_retained(self):
         self.assertEqual(cli.main(["--only", "forward"]), 0)

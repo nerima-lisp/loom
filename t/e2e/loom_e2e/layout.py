@@ -1,6 +1,13 @@
 """Screen regions used by PTY scenarios."""
 
 
+def validate_dimensions(columns, rows):
+    for name, value in (("columns", columns), ("rows", rows)):
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError(f"terminal {name} must be a positive integer")
+    return columns, rows
+
+
 class Layout:
     def __init__(self, rows, columns=80):
         self.rows = rows

@@ -22,11 +22,6 @@ def _wait_for_body_text(session, substring, index=0):
 
 def _wait_for_vertical_buffers(session, left_name, right_name):
     body_row = session.layout.row("body")
-    expected = {
-        "left": left_name,
-        "right": right_name,
-        "left_precedes_right": True,
-    }
 
     def has_panes(screen):
         left = screen.find(left_name)
@@ -39,17 +34,9 @@ def _wait_for_vertical_buffers(session, left_name, right_name):
             and left[1] < right[1]
         )
 
-    try:
-        session.wait_until(has_panes, what="the two vertical buffer panes")
-    except TimeoutError:
-        session.observe_screen_text(
-            session.screen.text(body_row), expected=expected,
-            match="vertical_buffer_layout", passed=False, row=body_row,
-        )
-        raise
-    session.observe_screen_text(
-        session.screen.text(body_row), expected=expected,
-        match="vertical_buffer_layout", passed=True, row=body_row,
+    session.wait_until(has_panes, what="the two vertical buffer panes")
+    session.assert_external_state(
+        "vertical buffer layout", has_panes(session.screen), True
     )
 
 

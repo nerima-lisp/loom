@@ -815,3 +815,65 @@ an earlier docs build, Nix's `auditTmpdir` hook printed a broken pipe from
 scanning built files for `$TMPDIR` references. The latest docs build did not
 print that failure. The enclosing builds and full flake check exited 0, but
 completion of the affected scans is unverified; their cause was not established.
+
+### Independent review follow-up
+
+The static review of source `5fc06fc` is resolved below. The runner's `status`
+records whether a scenario completed without an exception. W0-4 must use
+`observation_class == "effect-verified"` as its sole acceptance gate;
+`exit_code_only` was removed as a second classification field.
+
+| Finding | Status | Resolution |
+| --- | --- | --- |
+| B1 | Done | `Session` wait helpers and the PTY-size self-check record `purpose=precondition`. All ten `probe_command` scenarios completed with `observation_class: exit-code-only`. |
+| S1 | Done | The self-test expands the PTY from 8 to 12 rows, drains already available PTY bytes before resizing, and checks the mode line at the new row after input triggers a redraw. With the redraw call in `src/application/event-loop.lisp` temporarily disabled, the same scenario failed on a blank mode-line row. The temporary source change was restored. |
+| S2 | Done | Public `observe_*` methods no longer accept `passed=`. Screen-text observations read the selected screen region or row from `Session.screen`; assertions use the observation result. |
+| S3 | Closed | `t/e2e/scenarios/trace.py` remains unchanged because W0-3 owns it. Its wrapper still leaves the harness-captured trace empty; W0-3 must resolve that issue. |
+| S4 | Done | Every runner-produced `result.json` contains `binary_realpath` and `declared_commands`. All 119 final-run paths resolved to an executable file. |
+| S5 | Done | The runner catches scenario `Exception` values at the scenario boundary, saves a failed result, and continues the suite. CLI tests cover `ValueError`, `KeyError`, `TypeError`, and `RuntimeError`. |
+| S6 | Done | The registry raises `ValueError` when a duplicate scenario name is decorated. |
+| S7 | Done | `pty_output` is an effect observation. The four CLI scenarios were `effect-verified`; `observation_class` is the single verification criterion. |
+| S8 | Done | Each observation records `trace_lines` from the live JSONL file plus completed sessions. The resize self-test recorded counts from 0 through 5 alongside a five-line trace. |
+
+The review nits are resolved. `expected=None` now means an absent file, with a
+sentinel distinguishing no expectation. Observation matching is shared with
+assertions. Unused `keys.NAMED` and `registry.covered_commands` were removed.
+`layout.validate_dimensions` is shared by the session, PTY, and screen. The
+benchmark report imports its deadline values from `deadline.py`. Module-level
+key byte constants were removed; `Session.key` resolves each name through its
+selected terminal profile.
+
+The normal resize self-test passed alone with the unchanged 5-second execution
+budget: `env HOME=$(mktemp -d) nix run .#e2e -- --only 'harness resize'`
+returned 0 for 1/1 scenario. Its artifacts were written under
+`/tmp/loom-e2e-results-rmlvzxrk`. The negative run disabled
+`%render-event-loop-frame` temporarily and ran the same scenario alone. It
+returned 1 after the row-10 mode-line observation remained blank; its result is
+in `/tmp/loom-e2e-results-cjn3hine`. The harness preflight passed 70/70 tests
+in both runs. No timeout was extended.
+
+The final full run used `env HOME=$(mktemp -d) nix run .#e2e` and returned 0:
+119/119 scenarios passed and 120/120 commands were covered. Its artifacts are
+under `/tmp/loom-e2e-results-yvdoxv51`. The previous full-run artifacts at
+`/tmp/loom-e2e-results-gm7cy0bw` classified 114 scenarios as
+`effect-verified`; the final run classified 17 that way. Of the 114 formerly
+verified scenarios, 101 now have a stricter classification. These scenarios
+still passed functionally; their lane owners must add explicit effect
+observations in W3.
+
+The 98 transitions to `exit-code-only` are:
+
+- Other: `ansi-wide-diff`, `ansi-wide-full`, `bookmarks set jump list delete`, `file-tree toggle`, `keyboard macro`, `major mode editing`, `numeric prefix`, `project find file`, `project search`, `register copy and insert`, `register point and jump`, `workspace switching`.
+- Editing: `editing/auto-save-current-buffer`, `editing/auto-save-mode`, `editing/backward-kill-word`, `editing/comment-line`, `editing/delete-backward-char`, `editing/delete-char`, `editing/indent-for-tab-command`, `editing/kill-line`, `editing/kill-region`, `editing/kill-ring-save`, `editing/kill-sexp`, `editing/kill-word`, `editing/mark-whole-buffer`, `editing/narrow-to-region`, `editing/newline`, `editing/open-line`, `editing/redo`, `editing/replace-string`, `editing/set-mark-command`, `editing/toggle-auto-save`, `editing/toggle-read-only`, `editing/undo`, `editing/widen`, `editing/write-file`, `editing/yank`, `editing/yank-pop`.
+- LSP: `lsp/completion`, `lsp/completion-success`, `lsp/diagnostics`, `lsp/find-definition`, `lsp/find-definition-success`, `lsp/find-definition-unicode`, `lsp/pop-definition`, `lsp/start`, `lsp/stop`.
+- Macros: `macros/eval-buffer`, `macros/eval-expression`, `macros/execute-extended-command`.
+- Movement: `movement/backward-barf-sexp`, `movement/backward-char`, `movement/backward-sexp`, `movement/backward-slurp-sexp`, `movement/backward-up-list`, `movement/backward-word`, `movement/beginning-of-buffer`, `movement/down-list`, `movement/end-of-buffer`, `movement/exchange-point-and-mark`, `movement/forward-barf-sexp`, `movement/forward-sexp`, `movement/forward-slurp-sexp`, `movement/forward-word`, `movement/fullwidth cursor column`, `movement/goto-line`, `movement/isearch-backward`, `movement/isearch-forward`, `movement/move-beginning-of-line`, `movement/move-end-of-line`, `movement/next-line`, `movement/previous-line`, `movement/raise-sexp`, `movement/scroll-down-command`, `movement/scroll-up-command`, `movement/search-backward`, `movement/search-forward`, `movement/set-mark-command`, `movement/splice-sexp`, `movement/wrap-round`, `movement/wrapped next-line`.
+- Runtime: `runtime/command-trace`.
+- Tooling: `tooling/format-current-buffer`, `tooling/format-on-save-mode`, `tooling/git-diff`, `tooling/git-diff-staged`, `tooling/git-stage-file`, `tooling/git-status`, `tooling/git-unstage-file`, `tooling/pipe-command`, `tooling/set-format-command`, `tooling/terminal`, `tooling/terminal-stop`.
+- UI: `ui/execute-extended-command`, `ui/help`, `ui/keyboard-quit`, `ui/save-buffers-kill-terminal`, `ui/toggle-truncate-lines`.
+
+The three `effect-unverified` transitions are `lsp/trust-review`,
+`session save and load`, and `startup without path`. Their observations include
+effect types without a passing expected value. The `startup directory` scenario
+was already `exit-code-only` in the baseline and is not part of the 101
+transitions.

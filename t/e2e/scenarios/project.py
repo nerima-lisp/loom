@@ -32,7 +32,7 @@ def project_find_file(binary):
             session.send(keys.ctrl("x") + b"pf")
             session.wait_for_text("Project file: ")
             session.type("src/other.txt")
-            session.send(keys.RET)
+            session.key("RET")
             session.type("a")
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(other_path, b"aother\n")
@@ -61,7 +61,7 @@ def project_search(binary):
             session.send(keys.ctrl("x") + b"ps")
             session.wait_for_text("Project search: ")
             session.type("needle")
-            session.send(keys.RET)
+            session.key("RET")
             # Rendering occurs in the same event-loop turn as RET.
             session.wait_for_text("Matches:")
             session.wait_for_text("src/main.py:1")

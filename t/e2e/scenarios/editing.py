@@ -28,13 +28,11 @@ def edit_save_exit(binary):
 
             # Screen coordinates start at column 0 because there is no gutter.
             session.wait_for_region_cursor("body", 1)
-            row0 = session.region_text("body")
             session.assert_screen_text(
-                row0,
                 "ax",
                 match="starts_with",
                 region="body",
-                row=0,
+                index=0,
             )
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))

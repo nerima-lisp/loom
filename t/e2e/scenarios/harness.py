@@ -10,7 +10,7 @@ from loom_e2e.session import Session
 
 @scenario(
     "harness resize and typed observations",
-    commands=["newline", "save-buffer"],
+    commands=["forward-char", "backward-char", "newline", "save-buffer"],
 )
 def harness_resize_and_observations(binary):
     initial = b"alpha\nbeta\n"
@@ -30,37 +30,35 @@ def harness_resize_and_observations(binary):
             )
             session.assert_cell_attrs(*mode_line, expected={"reverse": True})
 
-            session.resize(columns=80, rows=6)
-            session.assert_external_state(
-                "PTY window size", session.process.window_size, (6, 80)
-            )
-            session.wait_for_region_text("mode-line", "Ln 1, Col 1")
+            session.resize(columns=80, rows=12)
             session.assert_external_state(
                 "pyte dimensions",
                 (session.screen.columns, session.screen.rows),
-                (80, 6),
+                (80, 12),
+                purpose="precondition",
             )
             session.assert_external_state(
                 "layout dimensions",
                 (session.layout.columns, session.layout.rows),
-                (80, 6),
+                (80, 12),
+                purpose="precondition",
             )
-            resized_mode_line = session.screen.find("Ln 1, Col 1")
-            session.assert_external_state(
-                "mode line renders at resized row",
-                resized_mode_line is not None
-                and resized_mode_line[0] == session.layout.mode_line_row,
-                True,
+            session.send(keys.ctrl("f"))
+            session.wait_for_region_text("mode-line", "Ln 1, Col 2")
+            resized_mode_line = session.screen.find("Ln 1, Col 2")
+            session.assert_screen_text(
+                "Ln 1, Col 2", match="contains", region="mode-line"
             )
+            if (
+                resized_mode_line is None
+                or resized_mode_line[0] != session.layout.mode_line_row
+            ):
+                raise AssertionError("mode line did not render at the resized row")
             session.assert_cell_attrs(
                 *resized_mode_line, expected={"reverse": True}
             )
-            session.observe_external_state(
-                "terminal dimensions",
-                (session.screen.columns, session.screen.rows),
-                expected=(80, 6),
-            )
-
+            session.send(keys.ctrl("b"))
+            session.wait_for_region_text("mode-line", "Ln 1, Col 1")
             session.key("RET")
             session.wait_for_region_cursor("body", 0, index=1)
             session.send(keys.ctrl("x") + keys.ctrl("s"))

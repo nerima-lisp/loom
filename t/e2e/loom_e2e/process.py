@@ -11,6 +11,7 @@ import termios
 import time
 
 from .deadline import current_deadline
+from .layout import validate_dimensions
 
 
 TIMEOUT_SECONDS = 10.0
@@ -71,10 +72,7 @@ class LoomProcess:
 
     def resize(self, columns, rows):
         """Resize the controlling PTY and let the kernel deliver SIGWINCH."""
-        if isinstance(columns, bool) or not isinstance(columns, int) or columns <= 0:
-            raise ValueError("terminal columns must be a positive integer")
-        if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
-            raise ValueError("terminal rows must be a positive integer")
+        validate_dimensions(columns, rows)
         if self._fd is None:
             raise RuntimeError("cannot resize a closed PTY")
         self._set_terminal_size(columns, rows)

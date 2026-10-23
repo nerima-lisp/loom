@@ -2,6 +2,8 @@
 
 import pyte
 
+from .layout import validate_dimensions
+
 
 class Screen:
     def __init__(self, columns=80, rows=24):
@@ -18,10 +20,7 @@ class Screen:
             self._stream.feed(data)
 
     def resize(self, columns, rows):
-        if isinstance(columns, bool) or not isinstance(columns, int) or columns <= 0:
-            raise ValueError("screen columns must be a positive integer")
-        if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
-            raise ValueError("screen rows must be a positive integer")
+        validate_dimensions(columns, rows)
         self._screen.resize(lines=rows, columns=columns)
         self.columns = columns
         self.rows = rows
