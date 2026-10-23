@@ -150,12 +150,27 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         path = report["paths"][0]
         self.assertEqual(path["status"], "no-trace")
-        self.assertEqual(path["missing_commands"], ["save-buffer"])
+        self.assertEqual(path["missing_commands"], [])
+        self.assertEqual(
+            path["missing_entry"], self.required["entry"].split(";prompt:", 1)[0]
+        )
 
     def test_trace_must_precede_the_effect_observation(self):
         self._write_scenario([self._matching_observation(trace_lines=0)])
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-trace")
+
+    def test_every_target_command_must_precede_the_same_effect_observation(self):
+        self.required["commands"] = ["save-buffer", "undo"]
+        self.ledger["commands"] = ["save-buffer", "undo"]
+        self._write_scenario(
+            [self._matching_observation(trace_lines=1)],
+            trace_commands=("save-buffer", "undo"),
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-trace")
+        self.assertEqual(path["missing_commands"], ["undo"])
 
     def test_declared_commands_must_include_the_path_target(self):
         self._write_scenario([self._matching_observation()])

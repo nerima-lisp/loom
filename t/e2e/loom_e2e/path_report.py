@@ -559,24 +559,43 @@ def _classify_path(
         )
 
     if not any(_before_observation(observation) for observation in effect_observations):
-        item["status"] = "no-trace"
-        item["reason"] = (
-            "target command trace rows do not precede a matching effect observation"
-        )
-        item["missing_commands"] = sorted(
-            command
-            for command in set(targets)
-            if not any(
-                traced_command == command
-                and (expected_route is None or route == expected_route)
-                and (expected_entry is None or entry == expected_entry)
-                and any(
-                    line_number <= observation["trace_lines"]
-                    for observation in effect_observations
+        commands_before_observation = any(
+            all(
+                any(
+                    traced_command == command
+                    and (expected_route is None or route == expected_route)
+                    and line_number <= observation["trace_lines"]
+                    for traced_command, route, line_number, _entry in trace_commands
                 )
-                for traced_command, route, line_number, entry in trace_commands
+                for command in set(targets)
             )
+            for observation in effect_observations
         )
+        item["status"] = "no-trace"
+        if expected_entry is not None and commands_before_observation:
+            item["reason"] = (
+                "target command trace rows precede the effect observation but "
+                "do not identify the generated key sequence"
+            )
+            item["missing_entry"] = expected_entry
+            item["missing_commands"] = []
+        else:
+            item["reason"] = (
+                "target command trace rows do not precede a matching effect observation"
+            )
+            item["missing_commands"] = sorted(
+                command
+                for command in set(targets)
+                if not any(
+                    traced_command == command
+                    and (expected_route is None or route == expected_route)
+                    and any(
+                        line_number <= observation["trace_lines"]
+                        for observation in effect_observations
+                    )
+                    for traced_command, route, line_number, _entry in trace_commands
+                )
+            )
         return item
 
     item["status"] = "pass"
