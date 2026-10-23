@@ -502,12 +502,22 @@
             let
               pkgs = nixpkgs.legacyPackages.${ctx.system};
               python = pkgs.python3.withPackages (ps: [ ps.pyte ]);
+              e2eTools = [
+                pkgs.git
+                pkgs.nixfmt
+                pkgs.prettier
+                pkgs.nixd
+                pkgs.typescript-language-server
+              ];
             in
             {
               type = "app";
               program = toString (
                 pkgs.writeShellScript "loom-e2e" ''
-                  export PATH="${pkgs.nixd}/bin:$PATH"
+                  export PATH="${pkgs.lib.makeBinPath e2eTools}:$PATH"
+                  for tool in git nixfmt prettier nixd typescript-language-server; do
+                    command -v "$tool" || exit 127
+                  done
                   export LOOM_BINARY="${ctx.executable}/bin/loom"
                   exec "${python}/bin/python3" "${self}/t/e2e/loom-test.py" "$@"
                 ''
