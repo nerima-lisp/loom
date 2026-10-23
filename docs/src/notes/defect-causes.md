@@ -1,6 +1,6 @@
 # 欠陥原因の調査
 
-この文書は`docs/src/notes/requirements-modern-editor.md:35-47`のD1、D2、D3、D13と、`docs/src/notes/verification-ledger.md:715`で新たに確認した端末リサイズ後の再描画失敗を扱う。各節の「原因」はコード経路と観測から判断し、推定が残る箇所は観測範囲を併記する。PTY観測には毎回一時HOMEを使い、ビルド済みのdefault実行ファイルを起動した。D13の関数計測も一時HOMEで行った。
+この文書は`docs/src/notes/requirements-modern-editor.md:35-47`のD1、D2、D3、D13と、`docs/src/notes/verification-ledger.md:715`で新たに確認した端末リサイズ後の再描画失敗を扱う。各節の「原因」はコード経路と観測から判断し、推定が残る箇所は観測範囲を併記する。PTY観測には毎回一時HOMEを使い、ビルド済みのdefault実行ファイルを起動した。
 
 ## D1: 矢印、Home、End、Delete、PgDn
 
@@ -14,17 +14,17 @@
 
 ### 修正候補と影響
 
-既定キーマップに矢印を`next-line`、`forward-char`へ、HomeとEndの両形式を行頭・行末移動へ、Deleteを`delete-char`へ割り当て、PgDnをページスクロールへ割り当てる。入力デコーダを変更せず、実際のイベントコードを確認してから割り当てる。ミニバッファ、補完ポップアップ、端末バッファには個別の入力処理があるため、その優先順を保つ。`t/integration/command-registration-test.lisp:19-51`は宣言済みコマンドの登録とキー割り当てを確認するが、対象キーの別名は検証していない。`t/integration/input-routing-test.lisp:20-23`は`:up`の通過を確認する。実PTY相当のイベント経路で各キーの移動後に文字を入力する検証を追加する。
+既定キーマップに矢印を`next-line`、`forward-char`へ、HomeとEndの両形式を行頭・行末移動へ、Deleteを`delete-char`へ割り当て、PgDnをページスクロールへ割り当てる。入力デコーダを変更せず、実際のイベントコードを確認してから割り当てる。ミニバッファ、補完ポップアップ、端末入力はキーマップより先に個別処理へ進むため、その優先順を保つ（`src/application/input-routing-dispatch.lisp:27-43`、`src/application/minibuffer-input.lisp:15-23`、`src/application/completion-popup-input.lisp:73-96`）。`t/integration/command-registration-test.lisp:19-51`は宣言済みコマンドの登録とキー割り当てを確認するが、対象キーの別名は検証していない。`t/integration/input-routing-test.lisp:20-23`は`:up`の通過を確認する。実PTY相当のイベント経路で各キーの移動後に文字を入力する検証を追加する。
 
 ## D2: C-x C-uとM-x undo
 
 ### 原因
 
-**コード経路は確定。undo履歴の先頭要素は直接観測していない。** 自己挿入からキー割り当てコマンドへ切り替わると、ルーターはコマンド実行前にundo境界を記録する（`src/application/input-routing-effects.lisp:19-35`）。境界を記録する条件は前回のコマンド種別との変化である（`src/application/input-routing-command-state.lisp:3-12`）。`buffer-undo`は履歴先頭から境界までを取り出し、最初の要素が境界なら空のグループとなって変更を戻さない（`packages/core/editor/src/domain-buffer-history.lisp:32-46`）。2回目は境界の次にある編集記録を処理する。M-xは入力した名前のコマンドを直接呼ぶため、M-xの起動時にできた境界がundoの前に残る（`src/application/commands-misc.lisp:8-20`、`packages/core/editor/src/application-commands-region.lisp:27-29`）。PTYの結果はこの経路と一致するが、実行中のundo履歴リストは採取していない。
+**コード経路は確定。undo履歴の先頭要素は推定。** 自己挿入からキー割り当てコマンドへ切り替わると、ルーターはコマンド実行前にundo境界を記録する（`src/application/input-routing-effects.lisp:19-35`）。境界を記録する条件は前回のコマンド種別との変化である（`src/application/input-routing-command-state.lisp:3-12`）。`buffer-undo`は履歴先頭から境界までを取り出し、最初の要素が境界なら空のグループとなって変更を戻さない（`packages/core/editor/src/domain-buffer-history.lisp:32-46`）。2回目は境界の次にある編集記録を処理する。M-xは入力した名前のコマンドを直接呼ぶため、M-xの起動時にできた境界がundoの前に残る（`src/application/commands-misc.lisp:8-20`、`packages/core/editor/src/application-commands-region.lisp:27-29`）。PTYの結果はこの経路と一致するが、初回undo直前の履歴リストは採取していない。境界が実行時に先頭にあるかは推定であり、初回undo直前の履歴を記録すれば確認できる。
 
 ### 観測
 
-`.#default`を新しいHOMEごとに起動し、空ファイルへ`XY`を入力した。実PTYでC-x C-uを1回送って保存すると内容は`XY`のままで、同じundoをもう1回送ると空になった。別の実行でM-x undoを選んでも同じ結果となり、両プロセスは終了コード0だった。
+`.#default`を新しいHOMEごとに起動し、空ファイルへ`XY`を入力した。実PTYでC-x C-uを1回送って保存すると内容は`XY`のままで、同じundoをもう1回送ると空になった。別の実行でM-x undoを選んでも同じ結果となった。
 
 ### 修正候補と影響
 
@@ -44,7 +44,7 @@
 
 スクロール量に合わせて点も移動させる方法は、現在の「スクロールは点を動かさない」意味を変え、同じバッファを表示する複数ウィンドウの点や折り返し行へ波及する。別案として、手動スクロール中は点追従を止める状態を導入する方法がある。こちらはフレーム合成の共通不変条件を変え、別コマンド後にいつ点追従を再開するかも決める必要がある。既存の`t/integration/frame-layout-cursor-test.lisp:58-65`は合成時に点へ戻ることを期待し、`t/integration/commands-movement-scroll-edit-test.lisp:14-24`は描画を伴わずスクロール行だけを確認する。E2Eの`t/e2e/scenarios/movement.py:214-222`は先に15行目へ移動してからスクロールする。先頭位置からC-vとM-xを実行し、描画後の表示を確認する結合テストが必要である。
 
-## D13: 行数に比例するキー処理時間
+## D13: 描画経路の行数比例コスト
 
 ### 原因
 
@@ -52,7 +52,7 @@
 
 ### 観測
 
-一時HOMEで起動したin-process測定で、5,000行と20,000行のバッファに対し、各23回`buffer-visible-line`を呼んだ。行数を4倍にすると、1呼び出し当たりの中央値はwall時間で3.62倍、CPU時間で3.55倍だった。各計測バッチの直前と直後に記録した`uptime`は、4バッチすべて`2:54  up 2 days, 17:11, 1 user, load averages: 18.12 19.82 26.43`だった。これは関数単体の測定で、キー入力からフレーム表示までの新しい有効なPTYサンプルは得られていない。既存の実機測定は`docs/src/notes/verification-ledger.md:689-704`にあるが、別の高負荷条件である。
+一時HOMEで起動したin-process測定で、5,000行と20,000行のバッファに対し、各23回`buffer-visible-line`を呼んだ。行数を4倍にすると、1呼び出し当たりの中央値はwall時間で3.62倍、CPU時間で3.55倍だった。各計測バッチの直前と直後に記録した`uptime`は、4バッチすべて`2:54  up 2 days, 17:11, 1 user, load averages: 18.12 19.82 26.43`だった。これは関数単体の測定で、キー入力からフレーム表示までの新しい有効なPTYサンプルは得られていない。キー応答への寄与を確定するには、点移動とフレーム描画を分けた計測が必要である。既存の実機測定は`docs/src/notes/verification-ledger.md:689-704`にあるが、別の高負荷条件である。
 
 ### 修正候補と影響
 
@@ -62,7 +62,7 @@
 
 ### 原因
 
-**アプリケーション内の再描画経路は確定。OSのシグナル処理は未確認。** 背景処理がないと`%wait-for-editor-input`は入力待ちを使わず、イベントループは`read-byte`によるブロック読み込みへ進む（`src/application/event-loop-control.lisp:31-55`、`src/application/input-dispatch.lisp:17-26`）。入力かタイムアウトが返った場合だけサイズを確認して描画する（`src/application/event-loop.lisp:15-30`）。タイムアウトは端末セッション、LSP、auto-saveなど背景作業がある場合だけ設定される。リサイズ通知に応じてアプリケーションコードがサイズ確認へ戻る経路はなく、キー入力後の次の周回まで再描画しない。`src`と`t`に`SIGWINCH`または`winch`の参照はなかった。依存ライブラリとSBCLのシグナル処理は調べていない。
+**アプリケーション内の再描画経路は確定。OSのシグナル処理は未確認。** 背景処理がないと`%wait-for-editor-input`は入力待ちを使わず、イベントループは`read-byte`によるブロック読み込みへ進む（`src/application/event-loop-control.lisp:31-55`、`src/application/input-dispatch.lisp:17-26`）。入力かタイムアウトが返った場合だけサイズを確認して描画する（`src/application/event-loop.lisp:15-30`）。タイムアウトは端末セッション、LSP、auto-saveなど背景作業がある場合だけ設定される。このアイドル経路では、リサイズ通知に応じてアプリケーションコードがサイズ確認へ戻る処理がなく、次のキー入力まで再描画しない。`src`と`t`に`SIGWINCH`または`winch`の参照はなかった。依存ライブラリとSBCLのシグナル処理は調べていない。
 
 ### 観測
 
