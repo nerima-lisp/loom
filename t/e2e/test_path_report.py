@@ -45,6 +45,7 @@ class PathReportTests(unittest.TestCase):
         trace_route="mx",
         trace_name="trace.jsonl",
         observation_class="effect-verified",
+        trace_entry=None,
     ):
         scenario_dir = self.artifacts_dir / "files-save-buffer"
         scenario_dir.mkdir(exist_ok=True)
@@ -69,6 +70,8 @@ class PathReportTests(unittest.TestCase):
                     "seq": sequence,
                     "pid": 1234,
                 }
+                if trace_entry is not None:
+                    trace["entry"] = trace_entry
                 handle.write(
                     json.dumps(trace) + "\n"
                 )
@@ -268,10 +271,39 @@ class PathReportTests(unittest.TestCase):
         self._write_scenario([self._matching_observation()])
         trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
-        self.assertEqual(set(trace), {"command", "route", "seq", "pid"})
+        self.assertTrue({"command", "route", "seq", "pid"} <= set(trace))
+        self.assertLessEqual(
+            set(trace) - {"command", "route", "seq", "pid"}, {"entry"}
+        )
         self.assertEqual(
             trace,
             {"command": "save-buffer", "route": "mx", "seq": 1, "pid": 1234},
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_trace_accepts_optional_entry_field(self):
+        self._write_scenario(
+            [self._matching_observation()], trace_entry="mx"
+        )
+        trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(trace["entry"], "mx")
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_key_trace_entry_identity_verifies_generated_key_sequence(self):
+        key_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"x","modifiers":["control"]},'
+            '{"key":"s","modifiers":["control"]}]}'
+        )
+        self.required["entry"] = key_entry
+        self.ledger["entry"] = key_entry
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_route="key",
+            trace_entry=key_entry,
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
