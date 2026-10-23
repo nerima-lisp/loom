@@ -1,26 +1,23 @@
-"""Parse the registered command-spec names out of the Lisp source, so the
-runner can report scenario coverage against the full catalogue without
-duplicating it by hand."""
+"""Read the runtime command catalogue through the E2E session API."""
 
-import re
-from pathlib import Path
+import json
 
-_NAMED_SPEC = re.compile(r'\(command-spec\s+"([a-zA-Z0-9-]+)"')
-_NIL_SPEC = re.compile(r'\(command-spec\s+nil\b')
+from .session import Session
 
 
-def parse_command_names(repo_root):
-    """Return the sorted, deduplicated command names declared across
-    src/application/command-definitions*.lisp, with the single nil-named
-    entry (M-x itself) counted as "execute-extended-command"."""
-    names = set()
-    saw_nil_entry = False
-    directory = Path(repo_root) / "src" / "application"
-    for path in sorted(directory.glob("command-definitions*.lisp")):
-        text = path.read_text()
-        names.update(_NAMED_SPEC.findall(text))
-        if _NIL_SPEC.search(text):
-            saw_nil_entry = True
-    if saw_nil_entry:
-        names.add("execute-extended-command")
-    return sorted(names)
+def load_command_catalog(binary):
+    """Return command metadata emitted by the executable under test."""
+    with Session(binary, ["--dump-catalog"]) as session:
+        output, code = session.process.wait()
+    if code != 0:
+        raise RuntimeError(f"--dump-catalog exited with {code}: {output!r}")
+    try:
+        catalog = json.loads(output.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError("--dump-catalog did not return valid UTF-8 JSON") from error
+    if not isinstance(catalog, list) or not catalog:
+        raise RuntimeError("--dump-catalog returned an empty or invalid catalogue")
+    if any(not isinstance(item, dict) or not isinstance(item.get("name"), str)
+           for item in catalog):
+        raise RuntimeError("--dump-catalog returned an invalid command entry")
+    return catalog

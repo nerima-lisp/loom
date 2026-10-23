@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import call, patch
 
-from loom_e2e import registry
+from loom_e2e import commands, registry
 
 
 _SPEC = importlib.util.spec_from_file_location(
@@ -15,6 +15,19 @@ _SPEC = importlib.util.spec_from_file_location(
 )
 cli = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(cli)
+
+
+class CommandCatalogTests(unittest.TestCase):
+    def test_catalog_is_read_from_the_runtime_session(self):
+        payload = [{"name": "forward-char", "keys": [], "group": "movement"}]
+        with patch.object(commands, "Session") as session_type:
+            session = session_type.return_value.__enter__.return_value
+            session.process.wait.return_value = (
+                json.dumps(payload).encode("utf-8"),
+                0,
+            )
+            self.assertEqual(commands.load_command_catalog("loom"), payload)
+        session_type.assert_called_once_with("loom", ["--dump-catalog"])
 
 
 class CoverageCliTests(unittest.TestCase):
@@ -28,14 +41,17 @@ class CoverageCliTests(unittest.TestCase):
             ("backward", ["backward-char"], self.backward),
         ]
         self.catalogue = self.contexts.enter_context(patch.object(
-            cli.commands, "parse_command_names",
-            return_value=["forward-char", "backward-char"],
+            cli.commands, "load_command_catalog",
+            return_value=[{"name": "forward-char"}, {"name": "backward-char"}],
         ))
         self.contexts.enter_context(patch.object(registry, "_scenarios", self.registered))
         self.binary = self.contexts.enter_context(patch.object(
             cli, "_binary_from_arguments", return_value="loom",
         ))
         self.preflight = self.contexts.enter_context(patch.object(cli, "_run_harness_preflight"))
+        self.path_report = self.contexts.enter_context(patch.object(
+            cli, "_path_coverage_report", return_value={"has_failures": False},
+        ))
         self.run = self.contexts.enter_context(patch.object(cli, "run_scenario"))
         self.stdout = self.contexts.enter_context(contextlib.redirect_stdout(io.StringIO()))
         self.stderr = self.contexts.enter_context(contextlib.redirect_stderr(io.StringIO()))
@@ -67,7 +83,7 @@ class CoverageCliTests(unittest.TestCase):
         self.assertIn("commands covered: 2 / 2", self.stdout.getvalue())
         self.run.assert_not_called()
         self.preflight.assert_not_called()
-        self.binary.assert_not_called()
+        self.catalogue.assert_called_once_with("loom")
 
     def test_unknown_selected_command_fails(self):
         self.registered[0][1].append("unknown-command")
@@ -78,6 +94,32 @@ class CoverageCliTests(unittest.TestCase):
         self.catalogue.return_value = []
         with self.assertRaisesRegex(SystemExit, "command-spec catalogue is empty"):
             cli.main(["--list"])
+
+    def test_path_coverage_flag_fails_on_report_gaps(self):
+        with patch.object(
+            cli,
+            "_path_coverage_report",
+            return_value={"has_failures": True},
+        ):
+            self.assertEqual(cli.main(["--only", "forward", "--require-path-coverage"]), 1)
+
+    def test_report_mode_does_not_fail_on_path_gaps(self):
+        with patch.object(
+            cli,
+            "_path_coverage_report",
+            return_value={"has_failures": True},
+        ):
+            self.assertEqual(cli.main(["--only", "forward"]), 0)
+
+    def test_partial_run_limits_path_report_to_selected_scenarios(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(cli.main([
+                "--only", "forward", "--artifacts-dir", directory,
+            ]), 0)
+        self.assertEqual(
+            self.path_report.call_args.kwargs["selected_scenarios"],
+            {"forward"},
+        )
 
     def test_unmatched_filter_runs_nothing(self):
         with self.assertRaisesRegex(SystemExit, "matched no scenario"):

@@ -25,6 +25,13 @@ from loom_e2e.benchmarks import (  # noqa: E402
 from loom_e2e.deadline import run_scenario  # noqa: E402
 from loom_e2e.registry import all_scenarios  # noqa: E402
 from loom_e2e.results import ScenarioResult, capture_scenario  # noqa: E402
+from loom_e2e.path_generation import generate_required_paths  # noqa: E402
+from loom_e2e.path_ledger import read_path_ledgers  # noqa: E402
+from loom_e2e.path_report import (  # noqa: E402
+    build_report as build_path_report,
+    render_summary as render_path_summary,
+    write_report as write_path_report,
+)
 import scenarios  # noqa: E402,F401
 
 
@@ -60,11 +67,15 @@ def _parse_args(argv):
         "--require-full-coverage", action="store_true",
         help="exit 1 when a registered command-spec is not exercised by selected scenarios",
     )
+    parser.add_argument(
+        "--require-path-coverage", action="store_true",
+        help="exit 1 when generated paths are missing or fail their trace/observation checks",
+    )
     return parser.parse_args(argv)
 
 
-def _coverage_report(selected):
-    all_command_names = set(commands.parse_command_names(_REPO_ROOT))
+def _coverage_report(selected, catalog):
+    all_command_names = {item["name"] for item in catalog}
     if not all_command_names:
         raise SystemExit("command-spec catalogue is empty")
     covered = {
@@ -81,6 +92,24 @@ def _coverage_report(selected):
     if unknown:
         print(f"unknown scenario command names: {', '.join(unknown)}")
     return uncovered, unknown
+
+
+def _path_coverage_report(catalog, artifacts_dir, selected_scenarios=None):
+    ledger_paths, exclusions = read_path_ledgers(_REPO_ROOT)
+    required_paths = generate_required_paths(catalog)
+    report = build_path_report(
+        required_paths,
+        ledger_paths,
+        exclusions,
+        artifacts_dir,
+        _REPO_ROOT,
+        selected_scenarios=selected_scenarios,
+    )
+    report_path = os.path.join(artifacts_dir, "path-coverage.json")
+    write_path_report(report, report_path)
+    print(render_path_summary(report))
+    print(f"path coverage JSON: {report_path}")
+    return report
 
 
 def _run_harness_preflight():
@@ -134,7 +163,10 @@ def main(argv):
     if args.list:
         for name, scenario_commands, _fn in registered:
             print(f"{name}\tcommands={','.join(scenario_commands) or '(none)'}")
-        uncovered, unknown = _coverage_report(registered)
+        binary = _binary_from_arguments(args.binary)
+        uncovered, unknown = _coverage_report(
+            registered, commands.load_command_catalog(binary)
+        )
         return 1 if uncovered or unknown else 0
 
     binary = _binary_from_arguments(args.binary)
@@ -182,6 +214,7 @@ def main(argv):
         raise SystemExit(f"--only {args.only!r} matched no scenario")
 
     _run_harness_preflight()
+    catalog = commands.load_command_catalog(binary)
     passed = 0
     failed = 0
     for name, scenario_commands, fn in selected:
@@ -199,16 +232,24 @@ def main(argv):
     total = len(selected)
     print(f"{passed} passed, {failed} failed, {total} total")
 
-    uncovered, unknown = _coverage_report(selected)
+    uncovered, unknown = _coverage_report(selected, catalog)
+    path_report = _path_coverage_report(
+        catalog,
+        artifacts_dir,
+        selected_scenarios={name for name, _scenario_commands, _fn in selected},
+    )
 
+    exit_code = 0
     if failed:
-        return 1
-    if args.require_full_coverage or args.only is None:
+        exit_code = 1
+    elif args.require_full_coverage or args.only is None:
         if uncovered or unknown:
-            return 1
-    if unknown:
-        return 1
-    return 0
+            exit_code = 1
+    elif unknown:
+        exit_code = 1
+    if args.require_path_coverage and path_report["has_failures"]:
+        exit_code = 1
+    return exit_code
 
 
 if __name__ == "__main__":
