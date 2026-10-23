@@ -723,9 +723,10 @@ pre-rebase source commit `e41d392` passed 118/118, including the new
 `runtime/command-trace` scenario from `origin/main`. The final run on source
 commit `8f0958e` passed 119/119 scenarios and covered 120/120 commands with the
 same command (exit 0). All 117 baseline scenarios remained passing.
+
 After a later fetch/rebase of `origin/main`, the same command again passed
 119/119 scenarios and covered 120/120 commands (exit 0); its printed artifact
-directory was `/tmp/loom-e2e-results-v95ju_iu`.
+directory was `/tmp/loom-e2e-results-gm7cy0bw`.
 
 The harness self-test checked the actual PTY window size `(6, 80)`, terminal
 cell attributes, file bytes, and raw CSI output in `output.pty`. Its result JSON
