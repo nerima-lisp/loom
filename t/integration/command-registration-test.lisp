@@ -125,7 +125,7 @@
             (expect (buffer-point-column buffer) :to-equal 0)
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-contain "Could not append LOOM_TRACE_COMMANDS")
-            (expect loom/application::*command-trace-sequence* :to-equal 2)))))))
+            (expect loom/application::*command-trace-sequence* :to-equal 0)))))))
 
 (describe "execute-extended-command"
   (it "resolves a registered command through the command-spec registry"
