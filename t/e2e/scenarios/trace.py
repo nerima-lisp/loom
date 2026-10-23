@@ -2,7 +2,6 @@
 
 import json
 import os
-import shlex
 import tempfile
 
 from loom_e2e import keys
@@ -30,21 +29,10 @@ from loom_e2e.session import Session
 def command_trace(binary):
     with tempfile.TemporaryDirectory(prefix="loom-trace-") as directory:
         path = os.path.join(directory, "notes.txt")
-        trace_path = os.path.join(directory, "commands.jsonl")
-        wrapper_path = os.path.join(directory, "loom-with-trace")
         with open(path, "wb") as handle:
             handle.write(b"abc\ndef\n")
-        with open(wrapper_path, "w", encoding="utf-8") as handle:
-            handle.write("#!/bin/sh\n")
-            handle.write(
-                f"export LOOM_TRACE_COMMANDS={shlex.quote(trace_path)}\n"
-            )
-            handle.write(
-                f"exec {shlex.quote(os.path.abspath(binary))} \"$@\"\n"
-            )
-        os.chmod(wrapper_path, 0o700)
 
-        with Session(wrapper_path, [path]) as session:
+        with Session(binary, [path]) as session:
             session.wait_ready()
             session.send(keys.ctrl("f"))
             session.wait_for_region_cursor("body", 1)
@@ -65,8 +53,10 @@ def command_trace(binary):
                 f"command trace session exited with {code}: {output!r}"
             )
 
-        with open(trace_path, encoding="utf-8") as handle:
-            events = [json.loads(line) for line in handle]
+        trace_rows = [
+            json.loads(line)
+            for line in session.trace_bytes.decode("utf-8").splitlines()
+        ]
         expected = [
             ("forward-char", "key"),
             ("execute-extended-command", "key"),
@@ -82,10 +72,11 @@ def command_trace(binary):
             ("save-buffer", "key"),
             ("save-buffers-kill-terminal", "key"),
         ]
-        actual = [(event["command"], event["route"]) for event in events]
-        pids = {event["pid"] for event in events}
-        sequences = [event["seq"] for event in events]
-        if actual != expected or len(pids) != 1 or sequences != list(
+        events = [(event["command"], event["route"]) for event in trace_rows]
+        session.observe_external_state("command trace", events, expected)
+        pids = {event["pid"] for event in trace_rows}
+        sequences = [event["seq"] for event in trace_rows]
+        if events != expected or len(pids) != 1 or sequences != list(
             range(1, len(expected) + 1)
         ):
-            raise AssertionError(f"unexpected command trace: {events!r}")
+            raise AssertionError(f"unexpected command trace: {trace_rows!r}")
