@@ -9,6 +9,7 @@ They do not establish that the current working tree passes those checks.
 ## 1. 基線（P0）
 
 対象コミット: `f3a5d87`（main と同一）。実行環境: aarch64-darwin。
+§3の進捗表にある`1420df3`はP0基線作業のコミットで、ここに記録した測定対象は`f3a5d87`である。
 
 ### 1.1 in-process スイート（sandbox 外）
 
@@ -107,11 +108,13 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | 診断可視化実機 | 完了 | `514c5a3`, `ed0b49c` | 実 `nixd` を使った一時 PTY スクリプトが exit 0。診断付き画面は mode-line に `Diag: E1 W1`、診断範囲は赤背景、リージョン重畳は緑背景と診断範囲の赤背景を同一画面で確認。LSP セッション無しと診断ゼロでは `Diag:` が無く、40 列の長い日本語名でも mode-line は `cells=40` で折り返さなかった。 |
 | 要件書と slop | 完了 | `ccb2c34` | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |
 
-## 4. Uncommitted work: verification and open criteria
+## 4. Development verification and open criteria
 
-The table records intermediate working-source checks on aarch64-darwin, not a
-released revision or the latest edits. Subsequent findings and checks follow the
-table; earlier passes do not clear gates affected by later changes.
+The table records intermediate working-source checks on aarch64-darwin across
+evolving source revisions. Per-row source SHAs were not recorded, and the check
+sets changed as gates were added; the rows do not describe one revision or the
+latest edits. Subsequent findings and checks follow the table; earlier passes do
+not clear gates affected by later changes.
 
 | Gate | Observation | Remaining criterion |
 | --- | --- | --- |
@@ -127,8 +130,6 @@ table; earlier passes do not clear gates affected by later changes.
 | Host structural parse | `paredit inspect workspace --output json .`, using Paredit 1.6.3: exit 0; 442 parsed files, 0 parse errors. The generated report's paths and byte counts matched every current Lisp and ASDF file | Structural parsing does not establish runtime behavior. This host result supplements the pinned Paredit 1.6.2 flake check |
 | FR-V07 | Cold-read findings were corrected in 14 Lisp files. Their non-string source was unchanged, and all 14 passed `paredit inspect check --file <path>`; exit 0. Later word-motion and file-save docstring corrections passed Paredit checks. Both selected first-save tests passed; exit 0. Documentation review corrected package paths, command-registry responsibilities, auto-save overrides, file-tree generations, ANSI terminal behavior, syntax matching, and common API signatures and return values. A static comparison found all 382 exported names in the corresponding sections for 18 feature packages; exit 0. The cold-read scope includes all repository Markdown pages and all comments and docstrings in the Lisp source, tests, and scripts; path manifests were compared with the actual files | Export-name presence and prose review do not establish runtime behavior. The Lisp reader required manual inspection of reader-evaluation forms, as described below |
 | FR-V08 | The [author checklist](daily-driver-checklist.md) exists; no author results have been supplied | All manual results remain `Not run` |
-| Release | No commit, push, or release was performed | Current authorization covers implementation and verification only; release also requires the outstanding acceptance evidence |
-
 During the Paredit dependency's Nix fixup, the `audit-tmpdir.sh` file-classifier
 subprocess exited with `Segmentation fault: 11`, although the full flake check
 exited 0. The script waits for its audit handlers but not for the classifier;
@@ -650,3 +651,66 @@ are from the separate CI run, not from this Darwin invocation.
 The author's eleven real-terminal acceptance rows remain `Not run`. Automated
 checks do not establish Japanese IME usability or author acceptance. No draft
 or published release has been created.
+
+## 5. W0-1 仕様書コミット後の基線
+
+`docs/src/notes/requirements-modern-editor.md`をバイト単位で複製し、コミット`5f24574071e69b053b65f2f15cfe770ee2b37b3f`を`origin/main`へ反映した。このコミットを実機基線として、macOS arm64で`.#default`のバイナリを実PTYから観測した。アプリ、テスト、ハーネスの変更はない。
+
+仕様2.2にある端末縮小後の自動再描画は再現しなかった。確認条件と結果は「仕様2.2の維持項目」に記録した。
+
+### ビルドと自動テスト
+
+| コマンド | 結果 |
+|---|---|
+| `nix build .#docs --print-build-logs` | exit 0。生成HTMLを確認した。 |
+| `nix build .#default --no-link --print-out-paths` | exit 0。 |
+| `nix flake check --print-build-logs` | exit 1。通常のLoomテストは1,506件成功、3件skip。同じCLIテストは39.643秒で成功した。Coverage側は1,505件成功、3件skip、1件error。Coverageでは`MAIN CLI integration > passes process arguments to cl-cli and exits successfully`が60.232秒でタイムアウトした。`t/package.lisp`はテスト期限を40秒、`t/integration/main-cli-test.lisp`は子プロセス期限を60秒に設定している。Coverageがテスト期限を越えて実行した理由は未特定で、どちらの上限も変更していない。実行時は16コア環境でload averageが108だったと操作者から連絡があった。高負荷下のタイムアウトとして記録する。失敗時点の`uptime`値は採取していない。節4の40.315秒の結果は別実行である。 |
+| `nix run .#e2e` | exit 0。事前テスト30件、PTYシナリオ117件が成功し、コマンド網羅は120/120。実行時間は約108.8秒。シナリオのタイムアウトはなかった。 |
+| `nix develop --command sbcl --script run-tests.lisp` | 未完了。31分待ってもNixクライアントはdaemonからの応答を待ち、SBCLは起動しなかった。自分が起動したジョブへSIGTERMを送り、ラッパーはexit 1（`interrupted by the user`）で終了した。テストは未実行。 |
+
+E2Eと起動計測は16コアのマシンに別プロジェクトのビルドが並行する高負荷下で行った。E2E開始時の`uptime`は`1:51 up 2 days, 16:08, 1 user, load averages: 98.76 88.10 66.57`、終了時は`1:53 up 2 days, 16:10, 1 user, load averages: 74.13 83.94 67.66`だった。E2Eシナリオにタイムアウトはなく、単独再実行はしていない。
+
+### D1〜D17の実機観測
+
+| ID | 基線で観測した結果 |
+|---|---|
+| D1 | ↓、→、End、Home、Delete、PgDnで移動せず、カーソルは行頭に残った。続けて入力した`X`は行頭に入った。再現。 |
+| D2 | `XY`の後のC-x C-uは初回に変化せず、2回目で戻った。`X`、RET、`Y`の後に2回押すと`X`と改行が残った。M-x undoも同様。再現。 |
+| D3 | 200行ファイルの先頭でC-vを3回押しても、M-x `scroll-up-command`を実行しても先頭行に残った。再現。 |
+| D4 | SGRマウス入力1件で`TYPE-ERROR`となり、exit 1。再現。 |
+| D5 | 同一ファイルを開き直すとディスク内容の別バッファが開き、未保存の旧バッファは残った。C-x bの候補名はどちらも`f.txt`。再現。 |
+| D6 | マウスとブラケットペーストの端末モードは有効にならず、貼り付けたTABは空白1つになった。再現。 |
+| D7 | TABは1セルで表示された。結合文字の後のカーソル列が描画とずれ、ZWJ絵文字は`👩`だけ表示した。再現。 |
+| D8 | RETでLisp、Nixのどちらも自動インデントしなかった。再現。 |
+| D9 | Markdownの`# hello`でM-;を押して保存してもファイルは`# hello\n`のままで、コメントにならなかった。再現。 |
+| D10 | find-fileのTABは曖昧なパス候補を絞らなかった。M-xでは`save-bu`が`save-buffer`に補完された。再現。 |
+| D11 | 保存後の`Wrote`表示とM-w後のOSC 52はなかった。内部kill ringのコピーと貼り付けは動作した。再現。 |
+| D12 | C-zは何も起こさなかった。SIGTSTPで停止したとき端末はcookedになったが、SIGCONT後にrawへ戻らなかった。再現。 |
+| D13 | 5,000行での1キー応答中央値は2バッチで0.0797秒、0.0369秒。20,000行では0.2849秒、0.1627秒。両バッチで行数の多い側が遅く、再現。 |
+| D14 | 存在しないファイル、`+2`、`+2:3`、複数パスはいずれもexit 64。再現。 |
+| D15 | M-x `kill-loom-abort`は利用できず、SIGTERMではexit 0。再現。 |
+| D16 | 不正UTF-8はexit 70。CRLFファイルの編集後は`ab\rZ\ncd\r\n`になった。再現。 |
+| D17 | initエラー、非TTY stdinはいずれもexit 1。SIGHUP後に端末のICANON/ECHOは無効のまま。再現。 |
+
+D13と起動の時間値は高負荷下の参考値である。起動は5回ずつ2バッチ測定し、中央値は0.1361秒と0.4308秒、10サンプル全体の中央値は0.1819秒だった。NFR-02の上限0.3秒をバッチごとの中央値がまたいだため、安定した合否は判定しない。仕様2.2の記録値0.11秒とも単純比較しない。起動計測前後の`uptime`は`1:51 up 2 days, 16:08, 1 user, load averages: 100.87 88.88 67.10`から`1:51 up 2 days, 16:08, 1 user, load averages: 106.49 90.24 67.71`だった。
+
+D13の測定中に採った`uptime`は次のとおり。すべて高負荷下の測定である。
+
+| データ量とバッチ | 測定前後の`uptime` |
+|---|---|
+| 5,000行、第1 | 前後とも`1:51 up 2 days, 16:08, 1 user, load averages: 106.49 90.24 67.71` |
+| 20,000行、第1 | `1:51 up 2 days, 16:08, 1 user, load averages: 106.49 90.24 67.71`から`1:52 up 2 days, 16:08, 1 user, load averages: 106.77 90.57 67.96` |
+| 5,000行、第2 | 前後とも`1:52 up 2 days, 16:08, 1 user, load averages: 106.77 90.57 67.96` |
+| 20,000行、第2 | 前後とも`1:52 up 2 days, 16:08, 1 user, load averages: 106.77 90.57 67.96` |
+
+### `docs/src/notes/requirements-modern-editor.md` の2.2にある維持項目
+
+| 項目 | 結果 |
+|---|---|
+| 保存してGit commit、保存せず終了、確認で`d`を選ぶフロー | 成功。破棄後も既存コミットメッセージとclean状態を保った。 |
+| 一時Gitリポジトリで`git rebase -i`のコミットdrop | 成功。対象コミットとファイルだけが履歴から外れた。 |
+| crontab型の待機と読み戻し | 成功。親プロセスはLoom終了を待ち、編集後の内容を読み戻した。 |
+| 既存ファイルへの保存 | inode、600/755のmode、symlink、hardlinkを維持し、追加ファイルを作らなかった。成功。 |
+| BOMと末尾改行なしの保存 | 元のバイト列を維持した。成功。 |
+| 80x24から60x12への端末縮小 | TIOCGWINSZで12x60を確認したが、キー入力前のPTY出力は0バイトで再描画しなかった。仕様2.2を再現せず。 |
+| 起動時間 | 上記の高負荷計測を記録。 |
