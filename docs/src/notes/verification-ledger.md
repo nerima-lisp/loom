@@ -537,9 +537,10 @@ paredit --dry-run inspect check --file scripts/check-cl-tty-kit.lisp
 ```
 
 An independent source review found no additional concrete implementation defect
-in the release corrections. The workflow fixtures execute extracted shell bodies,
-not GitHub's checkout expressions, output wiring, permissions, or job scheduling.
-Those connections were inspected in source. The CI workflow subsequently ran on
+in the release corrections. The fixtures for `.github/workflows/release.yml` and
+`.github/workflows/ci.yml` execute extracted shell bodies, not GitHub's checkout
+expressions, output wiring, permissions, or job scheduling. Those connections
+were inspected in the workflow files. The CI workflow subsequently ran on
 GitHub; the release workflow itself has not been invoked for these corrections.
 
 ### Darwin lower-level verification
@@ -665,7 +666,7 @@ or published release has been created.
 | `nix build .#default --no-link --print-out-paths` | exit 0。 |
 | `nix flake check --print-build-logs` | exit 1。通常のLoomテストは1,506件成功、3件skip。同じCLIテストは39.643秒で成功した。Coverage側は1,505件成功、3件skip、1件error。Coverageでは`MAIN CLI integration > passes process arguments to cl-cli and exits successfully`が60.232秒でタイムアウトした。`t/package.lisp`はテスト期限を40秒、`t/integration/main-cli-test.lisp`は子プロセス期限を60秒に設定している。Coverageがテスト期限を越えて実行した理由は未特定で、どちらの上限も変更していない。実行時は16コア環境でload averageが108だったと操作者から連絡があった。高負荷下のタイムアウトとして記録する。失敗時点の`uptime`値は採取していない。節4の40.315秒の結果は別実行である。 |
 | `nix run .#e2e` | exit 0。事前テスト30件、PTYシナリオ117件が成功し、コマンド網羅は120/120。実行時間は約108.8秒。シナリオのタイムアウトはなかった。 |
-| `nix develop --command sbcl --script run-tests.lisp` | 未完了。31分待ってもNixクライアントはdaemonからの応答を待ち、SBCLは起動しなかった。自分が起動したジョブへSIGTERMを送り、ラッパーはexit 1（`interrupted by the user`）で終了した。テストは未実行。 |
+| `nix develop --command sbcl --script run-tests.lisp` | 未完了。31分待ってもNixクライアントはdaemonからの応答を待ち、SBCLは起動しなかった。起動したジョブにSIGTERMを送り、ラッパーはexit 1（`interrupted by the user`）で終了した。テストは未実行。 |
 
 E2Eと起動計測は16コアのマシンに別プロジェクトのビルドが並行する高負荷下で行った。E2E開始時の`uptime`は`1:51 up 2 days, 16:08, 1 user, load averages: 98.76 88.10 66.57`、終了時は`1:53 up 2 days, 16:10, 1 user, load averages: 74.13 83.94 67.66`だった。E2Eシナリオにタイムアウトはなく、単独再実行はしていない。
 
@@ -725,8 +726,7 @@ commit `8f0958e` passed 119/119 scenarios and covered 120/120 commands with the
 same command (exit 0). All 117 baseline scenarios remained passing.
 
 After a later fetch/rebase of `origin/main`, the same command again passed
-119/119 scenarios and covered 120/120 commands (exit 0); its printed artifact
-directory was `/tmp/loom-e2e-results-gm7cy0bw`.
+119/119 scenarios and covered 120/120 commands (exit 0).
 
 The harness self-test checked the actual PTY window size `(6, 80)`, terminal
 cell attributes, file bytes, and raw CSI output in `output.pty`. Its result JSON
@@ -755,14 +755,7 @@ input-to-redraw p95 within 50 ms; NFR-02 targets the first screen within 0.3
 second. Redraw p95 uses 25 cursor-move samples. Each scenario kept the existing
 10-second total and 5-second execution deadlines. Numerical results below are
 **高負荷下の参考値** and do not characterize Loom performance. The operator
-reported load average 108 on 16 cores earlier in the run. The `uptime` load
-averages around the measurement runs were:
-
-| Run | `uptime` before | `uptime` after |
-| --- | --- | --- |
-| 1 | 2026-10-24 02:33:41 JST, load averages 30.77, 33.57, 37.25 | 2026-10-24 02:34:15 JST, load averages 34.28, 34.05, 37.27 |
-| 2 | 2026-10-24 02:34:29 JST, load averages 36.50, 34.57, 37.42 | 2026-10-24 02:34:58 JST, load averages 32.61, 33.82, 37.05 |
-| Isolated retry | 2026-10-24 02:33:11 JST, load averages 34.92, 34.56, 37.72 | 2026-10-24 02:33:33 JST, load averages 31.73, 33.85, 37.39 |
+reported load average 108 on 16 cores earlier in the run.
 
 | Run | Measurement | Value |
 | --- | --- | --- |
@@ -822,21 +815,23 @@ established.
 The static review of source `5fc06fc` is resolved below. The runner's `status`
 records whether a scenario completed without an exception. W0-4 must use
 `observation_class == "effect-verified"` as its sole acceptance gate;
-`exit_code_only` was removed as a second classification field.
+`exit-code-only` is one of the observation classes and does not pass that gate.
 
 | Finding | Status | Resolution |
 | --- | --- | --- |
-| B1 | Done | `Session` wait helpers and the PTY-size self-check record `purpose=precondition`. All ten `probe_command` scenarios in the final run completed with `observation_class: exit-code-only`. |
-| S1 | Done | The self-test expands the PTY from 8 to 12 rows, drains already available PTY bytes before resizing, and checks the mode line at the new row after input triggers a redraw. With the redraw call in `src/application/event-loop.lisp` temporarily disabled, the same scenario failed on a blank mode-line row. The temporary source change was restored. |
-| S2 | Done | Public `observe_*` methods no longer accept `passed=`. Screen-text observations read the selected screen region or row from `Session.screen`; assertions use the observation result. |
-| S3 | Closed by W0-3 | W0-3 removed the wrapper from `t/e2e/scenarios/trace.py` and records `session.trace_bytes`. The final `runtime/command-trace` result is `effect-verified` and records the expected 13 trace events. |
-| S4 | Done | Every runner-produced `result.json` contains `binary_realpath` and `declared_commands`. All 120 `binary_realpath` values pointed to executable files, and all 120 declared command lists were present. |
-| S5 | Done | The runner catches scenario `Exception` values at the scenario boundary, saves a failed result, and continues the suite. CLI tests cover `ValueError`, `KeyError`, `TypeError`, and `RuntimeError`. |
-| S6 | Done | The registry raises `ValueError` when a duplicate scenario name is decorated. |
-| S7 | Done | `pty_output` is an effect observation. The four CLI scenarios were `effect-verified`; `observation_class` is the single verification criterion. |
-| S8 | Done | Each observation records `trace_lines` from the live JSONL file plus completed sessions. The resize self-test recorded counts from 0 through 5 alongside a five-line trace. |
+| Precondition observations | Done | `Session` wait helpers and the PTY-size self-check record `purpose=precondition`. All ten `probe_command` scenarios in the final run completed with `observation_class: exit-code-only`. |
+| PTY resize redraw | Done | The self-test expands the PTY from 8 to 12 rows, drains already available PTY bytes before resizing, and checks the mode line at the new row after input triggers a redraw. With the redraw call in `src/application/event-loop.lisp` temporarily disabled, the same scenario failed on a blank mode-line row. The temporary source change was restored. |
+| Observation API | Done | Public `observe_*` methods no longer accept `passed=`. Screen-text observations read the selected screen region or row from `Session.screen`; assertions use the observation result. |
+| Trace collection | Closed by W0-3 | W0-3 removed the wrapper from `t/e2e/scenarios/trace.py` and records `session.trace_bytes`. The final `runtime/command-trace` result is `effect-verified` and records the expected 13 trace events. |
+| Result identity | Done | Every runner-produced `result.json` contains `binary_realpath` and `declared_commands`. All 120 `binary_realpath` values pointed to executable files, and all 120 declared command lists were present. |
+| Scenario failure handling | Done | The runner catches scenario `Exception` values at the scenario boundary, saves a failed result, and continues the suite. CLI tests cover `ValueError`, `KeyError`, `TypeError`, and `RuntimeError`. |
+| Duplicate scenario names | Done | The registry raises `ValueError` when a duplicate scenario name is decorated. |
+| PTY output classification | Done | `pty_output` is an effect observation. The four CLI scenarios were `effect-verified`; `observation_class` is the single verification criterion. |
+| Trace line counts | Done | Each observation records `trace_lines` from the live JSONL file plus completed sessions. The resize self-test recorded counts from 0 through 5 alongside a five-line trace. |
 
-The review nits are resolved. `expected=None` now means an absent file, with a
+### Other review cleanup
+
+`expected=None` now means an absent file, with a
 sentinel distinguishing no expectation. Observation matching is shared with
 assertions. Unused `keys.NAMED` and `registry.covered_commands` were removed.
 `layout.validate_dimensions` is shared by the session, PTY, and screen. The
@@ -846,18 +841,14 @@ selected terminal profile.
 
 The normal resize self-test passed alone with the unchanged 5-second execution
 budget: `env HOME=$(mktemp -d) nix run .#e2e -- --only 'harness resize'`
-returned 0 for 1/1 scenario. Its artifacts were written under
-`/tmp/loom-e2e-results-rmlvzxrk`. The negative run disabled
+returned 0 for 1/1 scenario. The negative run disabled
 `%render-event-loop-frame` temporarily and ran the same scenario alone. It
-returned 1 after the row-10 mode-line observation remained blank; its result is
-in `/tmp/loom-e2e-results-cjn3hine`. The harness preflight passed 70/70 tests
+returned 1 after the row-10 mode-line observation remained blank. The harness preflight passed 70/70 tests
 in both runs. No timeout was extended.
 
 The final full run after rebasing on `origin/main` used
 `env HOME=$(mktemp -d) nix run .#e2e` and returned 0: 120/120 scenarios passed
-and 120/120 commands were covered. Its artifacts are under
-`/tmp/loom-e2e-results-7d8h0ncu`. The baseline artifacts at
-`/tmp/loom-e2e-results-gm7cy0bw` classified 114 scenarios as
+and 120/120 commands were covered. The baseline classified 114 scenarios as
 `effect-verified`; the final run classified 18 that way. Of the 114 baseline
 scenarios, 100 now have a stricter classification: 97 are `exit-code-only` and
 3 are `effect-unverified`. They still passed functionally; their lane owners
@@ -884,3 +875,76 @@ scenario was already `exit-code-only` in the baseline and is not part of the
 After the final rebase, `nix flake check --print-build-logs` exited 0 with all
 eight checks passing on aarch64-darwin; Nix omitted x86_64-linux. The coverage
 derivation reported 1507 passed, 3 skipped, and 0 failed or errored.
+
+### W0-4 path generation and coverage report
+
+The branch was rebased onto W0-2 revision `7ce2539`. The E2E report evaluated
+source commit `e17e709`. On aarch64-darwin,
+`env HOME="$(mktemp -d)" nix run .#e2e` exited 0. The preflight ran 126 Python
+tests; all passed.
+
+The eleven real-terminal acceptance rows in the
+[author checklist](daily-driver-checklist.md) remain `Not run`.
+
+All 120 E2E scenarios completed without an exception (`status=passed`), and
+command coverage was 120/120. These counts do not mean that path coverage
+passed. The W0-2 observation contract excludes preconditions from classification;
+only scenarios classified as `effect-verified` qualify for path acceptance.
+
+| Scenario observation class | Scenarios |
+| --- | ---: |
+| `none` | 1 |
+| `effect-verified` | 18 |
+| `effect-unverified` | 3 |
+| `exit-code-only` | 98 |
+| `observations-only` | 0 |
+
+The generator applies rules R1–R8 from
+`docs/src/notes/requirements-modern-editor.md` section 7.2 to the JSON from
+`bin/loom --dump-catalog`, then compares required paths with every `t/paths.sexp`
+under the repository. At the time of this run, the root `t/paths.sexp` was the
+only ledger file.
+
+The generated catalog contains 750 required paths. The report marked 0 as
+passing and 0 as excluded. It lists 749 paths as `not-in-ledger` and one as
+`no-trace`; the JSON report includes all 750 failed path IDs in `missing_paths`.
+The `no-trace` row is the generated R1 key path for `save-buffer` in
+`file and buffer commands`. Its result is `effect-verified`, and the trace has
+the `save-buffer` command before effect observations. The trace records route
+`key` but omits the encoded key sequence, so it cannot establish that this
+particular key path ran.
+
+| Rule | Required | `not-in-ledger` | `no-trace` |
+| --- | ---: | ---: | ---: |
+| R1 | 218 | 217 | 1 |
+| R2 | 211 | 211 | 0 |
+| R3 | 210 | 210 | 0 |
+| R4 | 8 | 8 | 0 |
+| R5 | 60 | 60 | 0 |
+| R6 | 32 | 32 | 0 |
+| R7 | 7 | 7 | 0 |
+| R8 | 4 | 4 | 0 |
+
+Lane IDs refer to the W3 ownership table in section 11.6 of
+[`requirements-modern-editor.md`](requirements-modern-editor.md#116-w3).
+
+| Lane | Required | `not-in-ledger` | `no-trace` |
+| --- | ---: | ---: | ---: |
+| W3-1 | 9 | 9 | 0 |
+| W3-2 | 20 | 20 | 0 |
+| W3-3 | 42 | 41 | 1 |
+| W3-4 | 125 | 125 | 0 |
+| W3-5 | 3 | 3 | 0 |
+| W3-6 | 62 | 62 | 0 |
+| W3-7a | 25 | 25 | 0 |
+| W3-7b | 103 | 103 | 0 |
+| W3-8 | 62 | 62 | 0 |
+| W3-9 | 40 | 40 | 0 |
+| W3-10 | 175 | 175 | 0 |
+| W3-11 | 84 | 84 | 0 |
+
+`nix flake check --print-build-logs` exited 0 on aarch64-darwin. Its
+`cl-tty-kit-script-check` reported 1696 passed, 0 skipped, 0 failed, and 0
+errored. Nix omitted `x86_64-linux`, and warned that the E2E app lacks `meta`.
+The flake check used the same application and test source revision, `e17e709`,
+and included the ledger changes recorded in this section.
