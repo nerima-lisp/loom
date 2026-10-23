@@ -55,17 +55,26 @@ class ScenarioResult:
         self.trace_output = bytearray()
 
     def observe(
-        self, kind, actual, expected=UNSET, passed=None, trace_lines=0, **details
+        self,
+        kind,
+        actual,
+        expected=UNSET,
+        passed=None,
+        trace_lines=0,
+        purpose="scenario",
+        **details,
     ):
         observation = {
             "sequence": len(self.observations),
             "type": kind,
             "actual": _json_value(actual),
             "trace_lines": trace_lines,
+            "purpose": purpose,
         }
         if expected is not UNSET:
             observation["expected"] = _json_value(expected)
-        if passed is not None:
+            observation["passed"] = None if passed is None else bool(passed)
+        elif passed is not None:
             observation["passed"] = bool(passed)
         for key, value in details.items():
             observation[key] = _json_value(value)
@@ -177,16 +186,19 @@ def count_trace_lines(data):
     return data.count(b"\n")
 
 
-def record_observation(kind, actual, expected=UNSET, passed=None, **details):
+def record_observation(
+    kind, actual, expected=UNSET, passed=None, *, trace_lines=UNSET, **details
+):
     result = current_result()
     if result is None:
         return None
-    counter = _ACTIVE_TRACE_LINE_COUNTER.get()
-    trace_lines = (
-        count_trace_lines(result.trace_output)
-        if counter is None
-        else counter()
-    )
+    if trace_lines is UNSET:
+        counter = _ACTIVE_TRACE_LINE_COUNTER.get()
+        trace_lines = (
+            count_trace_lines(result.trace_output)
+            if counter is None
+            else counter()
+        )
     return result.observe(
         kind, actual, expected, passed, trace_lines=trace_lines, **details
     )

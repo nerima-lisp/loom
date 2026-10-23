@@ -22,7 +22,7 @@ class PathReportTests(unittest.TestCase):
             "commands": ["save-buffer"],
             "rule": "r1",
             "lane": "W3-3",
-            "entry": 'key:{"keymap":"global","sequence":["C-x","C-s"]}',
+            "entry": "mx",
             "observe": ["file_bytes"],
         }
         self.ledger = {
@@ -42,10 +42,9 @@ class PathReportTests(unittest.TestCase):
         observations,
         trace_commands=("save-buffer",),
         status="passed",
-        trace_route="key",
+        trace_route="mx",
         trace_name="trace.jsonl",
         observation_class="effect-verified",
-        trace_entry=None,
     ):
         scenario_dir = self.artifacts_dir / "files-save-buffer"
         scenario_dir.mkdir(exist_ok=True)
@@ -62,15 +61,16 @@ class PathReportTests(unittest.TestCase):
         (scenario_dir / "result.json").write_text(
             json.dumps(result), encoding="utf-8"
         )
-        if trace_entry is None:
-            trace_entry = self.required["entry"].split(";prompt:", 1)[0]
         with (scenario_dir / "trace.jsonl").open("w", encoding="utf-8") as handle:
-            for command in trace_commands:
+            for sequence, command in enumerate(trace_commands, start=1):
+                trace = {
+                    "command": command,
+                    "route": trace_route,
+                    "seq": sequence,
+                    "pid": 1234,
+                }
                 handle.write(
-                    json.dumps(
-                        {"command": command, "route": trace_route, "entry": trace_entry}
-                    )
-                    + "\n"
+                    json.dumps(trace) + "\n"
                 )
 
     def _report(
@@ -137,15 +137,19 @@ class PathReportTests(unittest.TestCase):
 
     def test_trace_from_the_wrong_entry_route_does_not_satisfy_path(self):
         self._write_scenario(
-            [self._matching_observation()], trace_route="mx"
+            [self._matching_observation()], trace_route="key"
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-trace")
         self.assertEqual(report["paths"][0]["missing_commands"], ["save-buffer"])
 
     def test_key_route_without_the_encoded_sequence_is_not_pass(self):
+        self.required["entry"] = (
+            'key:{"keymap":"global","sequence":["C-x","C-s"]}'
+        )
+        self.ledger["entry"] = self.required["entry"]
         self._write_scenario(
-            [self._matching_observation()], trace_entry="key"
+            [self._matching_observation()], trace_route="key"
         )
         report = self._report(ledger=self.ledger)
         path = report["paths"][0]
@@ -171,6 +175,31 @@ class PathReportTests(unittest.TestCase):
         path = report["paths"][0]
         self.assertEqual(path["status"], "no-trace")
         self.assertEqual(path["missing_commands"], ["undo"])
+
+    def test_each_target_command_needs_an_effect_in_its_own_window(self):
+        self.required["commands"] = ["save-buffer", "undo"]
+        self.ledger["commands"] = ["save-buffer", "undo"]
+        self._write_scenario(
+            [self._matching_observation(trace_lines=2)],
+            trace_commands=("save-buffer", "undo"),
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-observation")
+        self.assertEqual(path["missing_effect_commands"], ["save-buffer"])
+
+    def test_each_target_command_can_be_covered_by_its_own_effect_window(self):
+        self.required["commands"] = ["save-buffer", "undo"]
+        self.ledger["commands"] = ["save-buffer", "undo"]
+        self._write_scenario(
+            [
+                self._matching_observation(trace_lines=1),
+                self._matching_observation(trace_lines=2),
+            ],
+            trace_commands=("save-buffer", "undo"),
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
 
     def test_declared_commands_must_include_the_path_target(self):
         self._write_scenario([self._matching_observation()])
@@ -235,7 +264,22 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
+    def test_trace_uses_current_command_route_sequence_pid_shape(self):
+        self._write_scenario([self._matching_observation()])
+        trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(set(trace), {"command", "route", "seq", "pid"})
+        self.assertEqual(
+            trace,
+            {"command": "save-buffer", "route": "mx", "seq": 1, "pid": 1234},
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
     def test_ledger_key_sequence_must_match_generated_path(self):
+        self.required["entry"] = (
+            'key:{"keymap":"global","sequence":["C-x","C-s"]}'
+        )
         self._write_scenario([self._matching_observation()])
         self.ledger["entry"] = (
             'key:{"keymap":"global","sequence":["C-x","C-a"]}'
@@ -293,6 +337,8 @@ class PathReportTests(unittest.TestCase):
         self.assertEqual(report["paths"][0]["status"], "mismatch")
 
     def test_observation_type_must_match_generated_and_ledger_requirements(self):
+        self.required["observe"] = ["screen_text"]
+        self.ledger["observe"] = ["file_bytes"]
         self._write_scenario(
             [
                 {
@@ -308,6 +354,75 @@ class PathReportTests(unittest.TestCase):
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_save_screen_text_alone_does_not_verify_declared_file_bytes_effect(self):
+        self.required["entry"] = (
+            'key:{"keymap":"global","sequence":["C-x","C-s"]}'
+        )
+        self.ledger["entry"] = self.required["entry"]
+        self.required["observe"] = ["screen_text"]
+        self.ledger["observe"] = ["file_bytes"]
+        self._write_scenario(
+            [
+                {
+                    "type": "file_bytes",
+                    "actual": {"encoding": "base64", "data": "YmV0YQ==", "length": 4},
+                    "expected": {"encoding": "base64", "data": "YmV0YQ==", "length": 4},
+                    "passed": True,
+                    "sequence": 0,
+                    "trace_lines": 1,
+                    "purpose": "precondition",
+                    "target": "file.txt",
+                },
+                {
+                    "type": "screen_text",
+                    "actual": "!beta",
+                    "expected": "!beta",
+                    "passed": True,
+                    "sequence": 1,
+                    "trace_lines": 1,
+                    "purpose": "scenario",
+                    "match": "contains",
+                    "region": "body",
+                },
+            ],
+            trace_route="key",
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-observation")
+        self.assertIn("non-precondition", path["reason"])
+
+    def test_ledger_effect_type_can_override_generic_generated_observation(self):
+        self.required["observe"] = ["screen_text"]
+        self.ledger["observe"] = ["file_bytes"]
+        self._write_scenario([self._matching_observation()])
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_effect_after_the_next_command_is_outside_target_attribution_window(self):
+        self.required["observe"] = ["screen_text"]
+        self.ledger["observe"] = ["screen_text"]
+        self._write_scenario(
+            [
+                {
+                    "type": "screen_text",
+                    "actual": "saved",
+                    "expected": "saved",
+                    "passed": True,
+                    "sequence": 0,
+                    "trace_lines": 2,
+                    "purpose": "scenario",
+                    "match": "contains",
+                    "region": "body",
+                }
+            ],
+            trace_commands=("save-buffer", "other-command"),
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-observation")
+        self.assertIn("attribution window", path["reason"])
 
     def test_empty_ledger_observation_requirement_cannot_pass(self):
         self.ledger["observe"] = []
@@ -422,14 +537,24 @@ class PathReportTests(unittest.TestCase):
             [
                 {
                     "type": "screen_text",
-                    "actual": "file saved",
+                    "actual": "saved",
                     "expected": "saved",
                     "passed": True,
                     "sequence": 0,
+                    "trace_lines": 1,
+                    "purpose": "scenario",
+                    "match": "contains",
+                },
+                {
+                    "type": "screen_text",
+                    "actual": "file saved",
+                    "expected": "saved",
+                    "passed": True,
+                    "sequence": 1,
                     "trace_lines": 2,
                     "purpose": "scenario",
                     "match": "contains",
-                }
+                },
             ],
             trace_commands=("save-buffer", "undo"),
         )

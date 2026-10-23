@@ -131,6 +131,28 @@ class PtyResizeTests(unittest.TestCase):
 
 
 class ScenarioResultTests(unittest.TestCase):
+    def test_observations_include_common_fields_and_nullable_passed(self):
+        result = ScenarioResult("common observation fields")
+        with capture_scenario(result):
+            record_observation("external_state", "ready", expected="ready")
+
+        observation = result.observations[0]
+        self.assertEqual(
+            set(observation),
+            {
+                "sequence",
+                "type",
+                "actual",
+                "trace_lines",
+                "purpose",
+                "expected",
+                "passed",
+            },
+        )
+        self.assertEqual(observation["purpose"], "scenario")
+        self.assertIsNone(observation["passed"])
+        self.assertEqual(result._classification(), "effect-unverified")
+
     def test_preconditions_do_not_count_as_effect_observations(self):
         exit_result = ScenarioResult("exit only")
         exit_result.status = "passed"
@@ -215,7 +237,7 @@ class ScenarioResultTests(unittest.TestCase):
 
 class SessionObservationTests(unittest.TestCase):
     def test_session_captures_nonempty_command_trace_bytes(self):
-        trace = b'{"command":"save-buffer","route":"key","seq":1}\n'
+        trace = b'{"command":"save-buffer","route":"key","seq":1,"pid":1234}\n'
         result = ScenarioResult("trace capture")
         with tempfile.TemporaryDirectory() as directory:
             trace_path = os.path.join(directory, "trace.jsonl")
@@ -229,6 +251,33 @@ class SessionObservationTests(unittest.TestCase):
         self.assertEqual(session.trace_bytes, trace)
         self.assertEqual(result.trace_output, trace)
         self.assertEqual(result.sessions[0]["trace_length"], len(trace))
+
+    def test_screen_observation_snapshots_trace_before_matching_and_recording(self):
+        result = ScenarioResult("observation trace boundary")
+        session = Session("unused")
+        session.screen = Screen(columns=20, rows=2)
+        session.screen.feed(b"ready")
+        with tempfile.TemporaryDirectory() as directory:
+            trace_path = os.path.join(directory, "trace.jsonl")
+            with open(trace_path, "wb") as handle:
+                handle.write(b'{"command":"save-buffer","route":"mx","seq":1,"pid":1234}\n')
+            session._trace_path = trace_path
+            matches = session._matches
+
+            def append_command_after_sample(actual, expected, match):
+                with open(trace_path, "ab") as handle:
+                    handle.write(
+                        b'{"command":"next-command","route":"mx","seq":2,"pid":1234}\n'
+                    )
+                return matches(actual, expected, match)
+
+            with capture_scenario(result):
+                with patch.object(
+                    session, "_matches", side_effect=append_command_after_sample
+                ):
+                    session.observe_screen_text("ready", match="contains", region="screen")
+
+        self.assertEqual(result.observations[0]["trace_lines"], 1)
 
     def test_named_helpers_record_runtime_values_and_expectations(self):
         session = Session("unused")

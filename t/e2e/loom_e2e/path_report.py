@@ -480,16 +480,13 @@ def _classify_path(
         )
         return item
 
-    generated_observe = _observe_types(required)
-    ledger_observe = _observe_types(ledger)
-    allowed_observations = generated_observe & ledger_observe
+    ledger_observe = _observe_types(ledger) & _EFFECT_TYPES
     effect_observations = [
         observation
         for observation in observations
         if isinstance(observation, Mapping)
         and observation.get("purpose") != "precondition"
-        and observation.get("type") in _EFFECT_TYPES
-        and observation.get("type") in allowed_observations
+        and observation.get("type") in ledger_observe
     ]
     expected_effects = [
         observation for observation in effect_observations if "expected" in observation
@@ -500,22 +497,6 @@ def _classify_path(
             "scenario has no non-precondition effect observation "
             "with an expected value"
         )
-        return item
-
-    mismatches = [
-        {
-            "type": observation.get("type"),
-            "match": observation.get("match", "exact"),
-            "expected": observation.get("expected"),
-            "actual": observation.get("actual"),
-        }
-        for observation in expected_effects
-        if not _matches(observation)
-    ]
-    if mismatches:
-        item["status"] = "mismatch"
-        item["reason"] = "one or more expected effect observations do not match"
-        item["mismatches"] = mismatches
         return item
 
     if not targets:
@@ -532,70 +513,109 @@ def _classify_path(
 
     expected_route = _entry_route(generated_entry)
     expected_entry = _entry_trace_identity(generated_entry)
-    effect_observations = [
+    observed_expected_effects = [
         observation
         for observation in expected_effects
         if isinstance(observation.get("trace_lines"), int)
         and not isinstance(observation.get("trace_lines"), bool)
         and observation.get("trace_lines") >= 0
     ]
-    if len(effect_observations) != len(expected_effects):
+    if len(observed_expected_effects) != len(expected_effects):
         item["status"] = "no-trace"
         item["reason"] = "effect observation has an invalid trace_lines count"
         item["missing_commands"] = targets
         return item
+    expected_effects = observed_expected_effects
 
-    def _before_observation(observation):
-        trace_lines = observation["trace_lines"]
-        return all(
-            any(
-                traced_command == command
-                and (expected_route is None or route == expected_route)
-                and (expected_entry is None or entry == expected_entry)
-                and line_number <= trace_lines
-                for traced_command, route, line_number, entry in trace_commands
-            )
-            for command in set(targets)
-        )
-
-    if not any(_before_observation(observation) for observation in effect_observations):
-        commands_before_observation = any(
-            all(
-                any(
-                    traced_command == command
-                    and (expected_route is None or route == expected_route)
-                    and line_number <= observation["trace_lines"]
-                    for traced_command, route, line_number, _entry in trace_commands
-                )
-                for command in set(targets)
-            )
-            for observation in effect_observations
-        )
-        item["status"] = "no-trace"
-        if expected_entry is not None and commands_before_observation:
+    target_commands = set(targets)
+    route_commands = {
+        command
+        for command, route, _line_number, _entry in trace_commands
+        if command in target_commands
+        and (expected_route is None or route == expected_route)
+    }
+    exact_commands = {
+        command
+        for command, route, _line_number, entry in trace_commands
+        if command in target_commands
+        and (expected_route is None or route == expected_route)
+        and (expected_entry is None or entry == expected_entry)
+    }
+    if expected_entry is not None and target_commands <= route_commands:
+        if not target_commands <= exact_commands:
+            item["status"] = "no-trace"
             item["reason"] = (
-                "target command trace rows precede the effect observation but "
-                "do not identify the generated key sequence"
+                "target command trace rows do not identify the generated key sequence"
             )
             item["missing_entry"] = expected_entry
             item["missing_commands"] = []
-        else:
-            item["reason"] = (
-                "target command trace rows do not precede a matching effect observation"
-            )
-            item["missing_commands"] = sorted(
-                command
-                for command in set(targets)
-                if not any(
-                    traced_command == command
-                    and (expected_route is None or route == expected_route)
-                    and any(
-                        line_number <= observation["trace_lines"]
-                        for observation in effect_observations
-                    )
-                    for traced_command, route, line_number, _entry in trace_commands
-                )
-            )
+            return item
+    if not target_commands <= exact_commands:
+        item["status"] = "no-trace"
+        item["reason"] = "generated path commands are missing from the matching trace"
+        item["missing_commands"] = sorted(target_commands - exact_commands)
+        return item
+
+    prior_commands = {
+        command
+        for observation in expected_effects
+        for command, route, line_number, entry in trace_commands
+        if command in target_commands
+        and line_number <= observation["trace_lines"]
+        and (expected_route is None or route == expected_route)
+        and (expected_entry is None or entry == expected_entry)
+    }
+    if not target_commands <= prior_commands:
+        item["status"] = "no-trace"
+        item["reason"] = (
+            "target command trace rows do not precede a matching effect observation"
+        )
+        item["missing_commands"] = sorted(target_commands - prior_commands)
+        return item
+
+    attributed_effects = []
+    effects_by_command = defaultdict(list)
+    for observation in expected_effects:
+        visible_commands = [
+            command
+            for command in trace_commands
+            if command[2] <= observation["trace_lines"]
+        ]
+        if not visible_commands:
+            continue
+        command, route, _line_number, entry = visible_commands[-1]
+        if (
+            command in target_commands
+            and (expected_route is None or route == expected_route)
+            and (expected_entry is None or entry == expected_entry)
+        ):
+            attributed_effects.append(observation)
+            effects_by_command[command].append(observation)
+
+    missing_effect_commands = target_commands - effects_by_command.keys()
+    if missing_effect_commands:
+        item["status"] = "no-observation"
+        item["reason"] = (
+            "no declared effect observation falls within each target command "
+            "attribution window"
+        )
+        item["missing_effect_commands"] = sorted(missing_effect_commands)
+        return item
+
+    mismatches = [
+        {
+            "type": observation.get("type"),
+            "match": observation.get("match", "exact"),
+            "expected": observation.get("expected"),
+            "actual": observation.get("actual"),
+        }
+        for observation in attributed_effects
+        if not _matches(observation)
+    ]
+    if mismatches:
+        item["status"] = "mismatch"
+        item["reason"] = "one or more expected effect observations do not match"
+        item["mismatches"] = mismatches
         return item
 
     item["status"] = "pass"

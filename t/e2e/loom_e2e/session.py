@@ -303,6 +303,7 @@ class Session:
         strip_right=False,
         purpose="scenario",
     ):
+        trace_lines = self._trace_line_count()
         actual = self._read_screen_text(
             region=region, row=row, index=index, strip_right=strip_right
         )
@@ -315,7 +316,8 @@ class Session:
         else:
             details["row"] = row
         record_observation(
-            "screen_text", actual, expected, passed, **details
+            "screen_text", actual, expected, passed,
+            trace_lines=trace_lines, **details,
         )
         return passed
 
@@ -330,10 +332,11 @@ class Session:
     def observe_pty_output(
         self, actual, expected=UNSET, match="exact", *, purpose="scenario"
     ):
+        trace_lines = self._trace_line_count()
         passed = self._matches(actual, expected, match)
         record_observation(
             "pty_output", actual, expected, passed,
-            match=match, purpose=purpose,
+            trace_lines=trace_lines, match=match, purpose=purpose,
         )
         return passed
 
@@ -347,18 +350,20 @@ class Session:
     def observe_cursor(
         self, expected=UNSET, *, purpose="scenario", sample=UNSET
     ):
+        trace_lines = self._trace_line_count()
         actual = self.screen.cursor
         passed = None if expected is UNSET else actual == expected
         details = {} if sample is UNSET else {"sample": sample}
         record_observation(
             "cursor", actual, expected, passed,
-            purpose=purpose, **details,
+            trace_lines=trace_lines, purpose=purpose, **details,
         )
         return passed
 
     def observe_cell_attrs(
         self, row, column, expected=UNSET, *, purpose="scenario"
     ):
+        trace_lines = self._trace_line_count()
         actual = self.screen.cell_attrs(row, column)
         if expected is not UNSET and not expected:
             raise ValueError("cell attribute expectations must not be empty")
@@ -369,7 +374,7 @@ class Session:
         )
         record_observation(
             "cell_attrs", actual, expected, passed,
-            row=row, column=column, purpose=purpose,
+            trace_lines=trace_lines, row=row, column=column, purpose=purpose,
         )
         return passed
 
@@ -381,6 +386,7 @@ class Session:
         return True
 
     def _observe_file_bytes(self, path, expected=UNSET, *, purpose="scenario"):
+        trace_lines = self._trace_line_count()
         try:
             with open(path, "rb") as handle:
                 actual = handle.read()
@@ -389,7 +395,9 @@ class Session:
         passed = None if expected is UNSET else actual == expected
         record_observation(
             "file_bytes", actual, expected, passed,
-            target=self._observation_target(path), purpose=purpose,
+            trace_lines=trace_lines,
+            target=self._observation_target(path),
+            purpose=purpose,
         )
         return actual, passed
 
@@ -410,10 +418,11 @@ class Session:
     def observe_external_state(
         self, name, actual, expected=UNSET, *, purpose="scenario"
     ):
+        trace_lines = self._trace_line_count()
         passed = None if expected is UNSET else actual == expected
         record_observation(
             "external_state", actual, expected, passed,
-            name=name, purpose=purpose,
+            trace_lines=trace_lines, name=name, purpose=purpose,
         )
         return passed
 
@@ -429,9 +438,11 @@ class Session:
         return actual
 
     def observe_exit_code(self, actual, expected=UNSET, *, purpose="scenario"):
+        trace_lines = self._trace_line_count()
         passed = None if expected is UNSET else actual == expected
         record_observation(
-            "exit_code", actual, expected, passed, purpose=purpose
+            "exit_code", actual, expected, passed,
+            trace_lines=trace_lines, purpose=purpose,
         )
         return passed
 

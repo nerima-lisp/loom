@@ -4,6 +4,6 @@
   :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}"
   :state "default"
   :outcome "command runs from its key sequence"
-  :observe (:screen_text)
+  :observe (:file_bytes)
   :scenario "file and buffer commands"
   :lane "W3-3"))
