@@ -73,7 +73,7 @@
                                        :height 4))
            (window (%layout-window state)))
       (buffer-set-point (window-buffer window) 2 0)
-      (setf (loom/feature/window::window-leaf-height window) 0)
+      (setf (loom/core/window-tree::window-leaf-height window) 0)
       (setf (window-scroll-line window) 0)
       (loom::%layout-keep-point-visible (editor-state-renderer state) window)
       (expect (window-scroll-line window) :to-equal 0)))
@@ -84,7 +84,7 @@
                                        :width 20
                                        :height 4))
            (window (%layout-window state)))
-      (setf (loom/feature/window::window-leaf-width window) 0
+      (setf (loom/core/window-tree::window-leaf-width window) 0
             (window-scroll-column window) 3)
       (buffer-set-point (window-buffer window) 0 10)
       (loom::%layout-keep-point-visible (editor-state-renderer state) window)
@@ -97,7 +97,7 @@
                                        :height 4))
            (window (%layout-window state)))
       (buffer-set-truncate-lines (window-buffer window) nil)
-      (setf (loom/feature/window::window-leaf-width window) 0
+      (setf (loom/core/window-tree::window-leaf-width window) 0
             (window-scroll-line window) 2
             (window-scroll-sub-row window) 1)
       (buffer-set-point (window-buffer window) 0 10)

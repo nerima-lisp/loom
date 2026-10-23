@@ -1,5 +1,21 @@
 (defpackage #:loom/feature/window
-            (:use #:cl #:loom)
+            (:use #:cl)
+            (:import-from #:loom/core/buffer
+                          #:buffer-modified-p
+                          #:buffer-name
+                          #:buffer-path
+                          #:buffer-save
+                          #:buffer-visible-line-count
+                          #:make-buffer)
+            (:import-from #:loom/core/command #:repeat-command)
+            (:import-from #:loom/core/editor-session
+                          #:*editor-state*
+                          #:editor-state-buffers
+                          #:editor-state-minibuffer
+                          #:editor-state-window-tree)
+            (:import-from #:loom/core/minibuffer
+                          #:minibuffer-activate
+                          #:minibuffer-message)
             (:import-from #:loom/core/window-tree
                           #:make-window-tree
                           #:window-tree-windows
@@ -53,17 +69,6 @@
                      #:delete-window
                      #:delete-other-windows
                      #:switch-to-buffer
-                     #:kill-buffer #:scroll-up-command #:scroll-down-command))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (let ((source (find-package "LOOM/CORE/WINDOW-TREE"))
-        (target (find-package "LOOM/FEATURE/WINDOW")))
-    (dolist
-        (name
-         (quote
-          ("MAKE-WINDOW-LEAF" "WINDOW-LEAF-WIDTH"
-                              "WINDOW-LEAF-HEIGHT"
-                              "MAKE-WINDOW-SPLIT-NODE"
-                              "WINDOW-SPLIT-NODE-CHILDREN"
-                              "%WINDOW-DELETE-NODE")))
-      (import (intern name source) target))))
+                     #:kill-buffer
+                     #:scroll-up-command
+                     #:scroll-down-command))

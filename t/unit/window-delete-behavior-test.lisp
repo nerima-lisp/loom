@@ -45,7 +45,7 @@
     (let* ((tree (make-window-tree :scratch 10 10))
            (original (window-tree-selected-window tree))
            (selected (window-split tree original :vertical))
-           (missing (loom/feature/window::make-window-leaf :buffer :missing)))
+           (missing (loom/core/window-tree::make-window-leaf :buffer :missing)))
       (expect (window-delete tree missing) :to-be selected)
       (expect (window-tree-windows tree) :to-have-length 2)
       (expect (window-tree-selected-window tree) :to-be selected))))
