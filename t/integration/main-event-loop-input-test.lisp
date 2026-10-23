@@ -168,14 +168,18 @@
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "input.bin" dir)))
         (with-open-file (out path :direction :output :element-type '(unsigned-byte 8))
+          ;; C-x C-c signals LOOM-QUIT; the following x must not be dispatched.
           (write-byte 24 out)
-          (write-byte 3 out))
+          (write-byte 3 out)
+          (write-byte (char-code #\x) out))
         (let ((*editor-state* (%fresh-full-editor-state "")))
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*))))))))
+                                     *standard-input*)))
+          (expect (buffer-line (%selected-test-buffer) 0)
+                  :to-equal ""))))))
 
   (it
     "continues after a timeout status and stops at end-of-input"
