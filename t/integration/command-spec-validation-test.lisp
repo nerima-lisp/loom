@@ -104,6 +104,7 @@
               (quote
                 (list
                   (list :name "forward-char"
+                        :group "movement"
                         :command (quote forward-char)
                         :keys (quote nil)
                         :help nil
@@ -114,6 +115,7 @@
                         :external (quote nil)
                         :modes (quote (:all)))
                   (list :name "kill-line"
+                        :group "movement"
                         :command (quote kill-line)
                         :keys (quote nil)
                         :help nil
