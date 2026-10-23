@@ -723,6 +723,9 @@ pre-rebase source commit `e41d392` passed 118/118, including the new
 `runtime/command-trace` scenario from `origin/main`. The final run on source
 commit `8f0958e` passed 119/119 scenarios and covered 120/120 commands with the
 same command (exit 0). All 117 baseline scenarios remained passing.
+After a later fetch/rebase of `origin/main`, the same command again passed
+119/119 scenarios and covered 120/120 commands (exit 0); its printed artifact
+directory was `/tmp/loom-e2e-results-v95ju_iu`.
 
 The harness self-test checked the actual PTY window size `(6, 80)`, terminal
 cell attributes, file bytes, and raw CSI output in `output.pty`. Its result JSON
@@ -777,36 +780,37 @@ stops at that failure, neither produced a combined benchmark summary; the
 completed startup and redraw values remain in their per-scenario result files.
 These timeouts do not establish whether the NFR-01 open target passes or fails.
 
-On the final source tree, the following checks exited 0:
+For the post-rebase source code, the following checks exited 0; the docs build
+was repeated after the final ledger edit:
 
 ```sh
 PYTHONPATH=t/e2e python3 -m unittest -v test_cli test_deadline test_harness
 python3 -m py_compile t/e2e/loom-test.py t/e2e/loom_e2e/*.py t/e2e/scenarios/*.py t/e2e/test_cli.py t/e2e/test_harness.py
 env HOME=$(mktemp -d) nix run .#e2e
-nix build .#checks.aarch64-darwin.default --no-link --print-build-logs
 nix flake check --print-build-logs
 nix build .#docs --no-link --print-build-logs
 ```
 
 The Python unit suite passed all 58 tests. The final PTY run passed 119/119
-scenarios and covered 120/120 commands. The Nix flake check reported all checks
-passed. The standalone default check passed 1504 tests, skipped 3, and reported
-0 failures and 0 errors. The coverage check also passed 1504 tests, skipped 3,
-and reported 0 failures and 0 errors; it measured 20340/21278 expressions
-(95.59%) and 1946/2082 branches (93.47%).
+scenarios and covered 120/120 commands. After the later rebase, the Nix flake
+check also exited 0 with all checks passing. Its default and coverage checks
+each passed 1504 tests, skipped 3, and reported 0 failures and 0 errors; coverage
+measured 20340/21278 expressions (95.59%) and 1946/2082 branches (93.47%).
 
 An earlier `nix flake check --print-build-logs` exited 1 after two tests exceeded
 their existing 40-second test timeout: `%run-loom` / `enables and restores raw
 mode against a real terminal descriptor, then returns 0` and `MAIN CLI
 integration` / `passes process arguments to cl-cli and exits successfully`.
-The standalone default-check command above then passed; those tests completed
-in 0.148 and 13.945 seconds, respectively. A subsequent full flake check exited
-0 with all seven checks passing. This sequence does not establish why the first
-run timed out; no timeout was changed.
+The isolated retry `nix build .#checks.aarch64-darwin.default --no-link
+--print-build-logs` then passed; those tests completed in 0.148 and 13.945
+seconds, respectively. A subsequent full flake check exited 0 with all seven
+checks passing. The later post-rebase flake check also exited 0. This sequence
+does not establish why the first run timed out; no timeout was changed.
 
 The full check warned that `x86_64-linux` was omitted on this Darwin host and
-that the E2E app has no `meta` attribute. During the `loom` package install,
-Nix's `auditTmpdir` hook printed a broken pipe from `find` and a segmentation
-fault in the ELF/script classifier pipeline while scanning built files for
-`$TMPDIR` references. The enclosing build and full flake check exited 0, but
-completion of that scan is unverified; its cause was not established.
+that the E2E app has no `meta` attribute. During one `loom` package install and
+an earlier docs build, Nix's `auditTmpdir` hook printed a broken pipe from
+`find` and a segmentation fault in the ELF/script classifier pipeline while
+scanning built files for `$TMPDIR` references. The latest docs build did not
+print that failure. The enclosing builds and full flake check exited 0, but
+completion of the affected scans is unverified; their cause was not established.
