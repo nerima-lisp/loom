@@ -1,5 +1,21 @@
 # W1/W2 core分割とslice-state設計
 
+## 仕様11.2、11.6からの担当変更
+
+仕様第3章は変更しません。
+次の担当範囲と依存だけを設計で具体化します。
+
+| 仕様箇所 | 設計で加える担当 |
+|---|---|
+| 11.2 W2a | rootにCLI/startup、tty/signal、suspend/resume、shutdown/status、background-work wake/pollのextension pointを用意する。W3-2とW3-6はそのAPIを使い、root CLI/event loopを変更しない。commandのE2E coverage readerも中央Lisp fileのregex scanから`--dump-catalog`のcanonical IDへ切り替える |
+| 11.2 W2b | slice内のE2E scenario発見と`Session.restart()`をroot E2E harnessへ追加する。W2cではsource/testをsliceへ移すたびroot system inventoryも同期する |
+| 11.6 W3-1、W3-8 | W3-1はcore/commandの`:paste`、`:mouse` routeと未知のescape sequenceを担当し、W3-8は正規化mouse eventの動作を担当する。D4をunknown escapeとmouse eventに分ける |
+| 11.6 W3-2、W3-3、W3-5 | W3-2は`*Messages*`のhistoryとlifecycleを所有し、W3-3のbuffer registryとW3-5のmessage-sink APIを使う。W3-3はbuffer close通知を発火し、file-save commandを`feature/files`へ置く |
+| 11.6 W3-4 | W3-4はW2で定めたimmutable frameの合成とhit-test providerを実装する |
+| 11.6 W3-5、W3-6、W3-9 | W3-5はW3-3のresult-buffer APIとW3-7aのmode問い合わせAPIを使う。W3-6とW3-9もW3-3のbuffer APIを使い、W3-9はW3-3に依存する |
+| 11.6 W3-7a〜e | W3-7aは言語定義の初回移設まで各言語sliceの`src/`、`t/`、`t/paths.sexp`、`t/e2e/`を一時所有し、移設commitがmainに入った後で各担当へ引き渡す |
+| 11.6 W3-10、W3-11 | 各担当sliceの`t/e2e/`にシナリオを追加できる。root harnessと共通実行経路はW2bが用意する |
+
 ## 1. core packageの境界
 
 仕様第3章の確定事項は変更せず、この設計はW1とW2の実装境界だけを定めます（`docs/src/notes/requirements-modern-editor.md:90-108`）。
@@ -12,9 +28,9 @@ featureは必要なcore packageを`:import-from`し、root packageはfeatureの�
 |---|---|
 | `loom/core/buffer` | 付録1に列挙したbuffer APIすべて。追加で`buffer`、`buffer-position`、`buffer-position-p`、`buffer-span`、`buffer-span-p`、`buffer-read-only-error-buffer`をexportする |
 | `loom/core/window-tree` | `window-tree`、`window-tree-p`、`make-window-tree`、`window-tree-windows`、`window-tree-selected-window`、`window-tree-layout`、`make-window-tree-from-layout`、`window-tree-selected-index`、`window-tree-select-index`、`window-tree-width`、`window-tree-height`、`window-split`、`window-select-next`、`window-delete`、`window-delete-other-windows`、`window-buffer`、`window-set-buffer`、`window-scroll-line`、`window-scroll-column`、`window-scroll-sub-row`、`window-x`、`window-y`、`window-width`、`window-height`、`window-tree-resize` |
-| `loom/core/command` | 付録1のkeymapとprefix argument APIに加え、`install-default-keybindings`、`command-completion-candidates`、`find-extended-command`、`help-summary-message`、`defkeys-single-chord-p`、`defkeys-chord`、`defkeys-key-sequence`をexportする。追加で`keymap`、`keymap-p`、`keymap-state`、`keymap-state-p`、`key-event->descriptor`、`register-command-spec`、`command-specs`、`find-command-spec`、`invoke-command`をexportする |
-| `loom/core/minibuffer` | 付録1に列挙したminibuffer APIすべて。追加で`minibuffer`、`minibuffer-p`、`with-prompts`をexportする |
-| `loom/core/editor-session` | `*editor-session*`、`editor-session`、`editor-session-p`、`make-editor-session`、`call-with-editor-session`、`editor-session-slice`、`editor-session-slice-names`、`register-slice-state`、`register-session-hook`、`run-session-hooks`、`register-visual-row-layout`、`next-visual-line-once`、`previous-visual-line-once` |
+| `loom/core/command` | 付録1のkeymapとprefix argument APIに加え、`install-default-keybindings`、`command-completion-candidates`、`find-extended-command`、`help-summary-message`、`defkeys-single-chord-p`、`defkeys-chord`、`defkeys-key-sequence`をexportする。追加で`keymap`、`keymap-p`、`keymap-state`、`keymap-state-p`、`key-event->descriptor`、`register-command-spec`、`register-key-command`、`command-specs`、`find-command-spec`、`register-buffer-keymap-provider`、`keymap-for-buffer`、`invoke-command`をexportする |
+| `loom/core/minibuffer` | 付録1に列挙したminibuffer APIすべて。追加で`minibuffer`、`minibuffer-p`、`with-prompts`、`register-message-sink`をexportする |
+| `loom/core/editor-session` | `*editor-session*`、`editor-session`、`editor-session-p`、`make-editor-session`、`call-with-editor-session`、`editor-session-slice`、`editor-session-slice-names`、`register-slice-state`、`register-session-hook`、`run-session-hooks`、`register-cli-option`、`startup-context`、`startup-context-argv`、`startup-context-options`、`startup-context-file-requests`、`register-visual-row-layout`、`register-buffer-truncate-policy`、`buffer-truncate-lines-p`、`register-hit-test-provider`、`hit-test-buffer-position`、`request-terminal-clipboard-write`、`register-background-work`、`notify-background-work-ready`、`poll-ready-background-work`、`cancel-background-work`、`frame-snapshot`、`frame-snapshot-width`、`frame-snapshot-height`、`frame-snapshot-cell`、`frame-snapshot-cursor`、`render-operation`、`render-operation-p`、`make-render-operation`、`next-visual-line-once`、`previous-visual-line-once` |
 
 `loom/core/buffer`はpiece table、position、undo、narrowing、read-onlyの操作を所有します。
 `buffer`、`buffer-position`、`buffer-span`はopaque typeとして公開し、piece tableのstorage readerとraw constructorは内部に残します。
@@ -27,9 +43,11 @@ slot readerとpiece table nodeを公開する案は、表現変更をfeatureへ�
 feature/windowの現行packageはdomain APIとcommand wrapperを一緒にexportしています（`packages/feature/window/src/package.lisp:4-33`）。
 domain APIだけをcoreへ移し、`split-window-below`、`split-window-right`、`other-window`、`delete-window`、`delete-other-windows`はfeature/windowに残します。
 `switch-to-buffer`と`kill-buffer`はbuffer lifecycleを担うためfeature/buffersへ移します（`packages/feature/window/src/application-commands-window.lisp:3-54`）。
+`window-scroll-line`と`window-scroll-sub-row`は読み書きできるcore/window-tree APIにします。
+scroll commandはfeature/windowに置き、window stateの表現は参照しません。
 
 `loom/core/command`はkeymap、dispatch state、prefix argument、command catalogの境界を所有します。
-`keymap`と`keymap-state`のtable、parent、accumulated sequence以外の内部構造は公開しません。
+`keymap`と`keymap-state`はopaque typeです。binding tableとparent mapは公開せず、利用側は`keymap-define-key`、`keymap-lookup`、`keymap-state-sequence`、`keymap-state-dispatch`で登録・照会・dispatchします。accumulated sequenceも`keymap-state-sequence`が返す値だけを参照し、stateを直接変更しません。
 現在のAPI一覧はroot `loom`から移し、command登録APIは節3に定めます（`src/package-exports.lisp:42-43,73-81`）。
 `%key-event->descriptor`を`key-event->descriptor`としてexportし、searchとlspの参照を置き換えます。
 descriptor変換を各featureに複製する案は、terminal eventの正規化を一貫させられないため却下します（`src/application/input-routing-descriptor.lisp:19-43`）。
@@ -59,14 +77,18 @@ coreがrendererを呼ぶ案は仕様の層方向と逆になるため却下し�
 | `src/application/editor-state-recent-files.lisp` | `packages/feature/files/src/` | files slice、仕様4.2の151行目 |
 | `src/application/editor-state-operations.lisp`の`%clear-last-yank` | `packages/feature/kill-ring/src/` | yank状態を一括clearする操作、`src/application/editor-state-operations.lisp:3-14` |
 | `packages/feature/window/src/application-commands-window.lisp`のbuffer commandと`application-window-buffer-support.lisp` | `packages/feature/buffers/src/` | buffer registrationとkill lifecycle、仕様4.2の152行目 |
+| `packages/core/editor/src/application-commands-movement-view-support.lisp` | scroll commandを`packages/feature/window/src/application-commands-window-scroll.lisp`へ、`goto-line`とprompt helperを`packages/feature/buffers/src/application-commands-goto-line.lisp`へ分割する | scrollはwindow操作、goto-lineはbuffer command。scroll実装はcore/window-tree APIを使う。`packages/core/editor/src/application-commands-movement-view-support.lisp:3-66` |
+| `packages/core/editor/src/application-commands-sexp.lisp` | `packages/feature/lisp-structure/src/application-commands-sexp.lisp` | S式移動と構造編集の実装。移動keyは全modeのglobal mapへ登録し、`kill-sexp`はlang-lispのmode mapだけへ登録する。仕様4.2の164行目、11.6の495行目 |
 | `src/application/commands-internal.lisp`のselected-window helperとbuffer registry helper | core API呼び出しへ分割し、buffer registryは`feature/buffers`へ移す | `src/application/commands-internal.lisp:3-43` |
 | `src/application/commands-prompts.lisp`の`with-prompts` | `packages/core/minibuffer/src/` | prompt continuation helper、`src/application/commands-prompts.lisp:3-35` |
 | `packages/core/editor/src/application-commands-movement-visual-lines.lisp` | `packages/core/editor-session/src/`のvisual row operation | renderer呼出しを注入callbackに置き換える。位置は推定 |
 
 循環の切断はC4、C2、C3、C1の順に行います。
 C4ではwindow domainを先に`core/window-tree`へ移し、coreからfeature/windowへの参照をなくします。
-visual row関数は`core/editor-session`へ移し、renderer関数をrootから注入します。
-window implementationをfeature/windowに残す案はcore movementからfeatureへの参照を残すため却下します（`packages/core/editor/src/application-commands-movement-visual-lines.lisp:11-16`、`packages/feature/window/src/package.lisp:1-3`）。
+scroll commandはfeature/windowへ移し、`core/window-tree`のscroll stateとgeometry APIを呼びます。
+visual-line operationは`core/editor-session`へ移し、rendererのlayout関数をrootから注入します。
+`core/editor-session`はselected windowを`core/window-tree:window-tree-selected-window`で取得し、buffer、width、height、scroll positionを`window-buffer`、`window-width`、`window-height`、`window-scroll-line`、`window-scroll-sub-row`で読み書きします。
+scroll commandをcoreに残してfeature/windowを呼ぶ案はC4を残すため採りません（`packages/core/editor/src/application-commands-movement-view-support.lisp:51-66`）。
 
 C2では`editor-state`、keymap、minibufferをそれぞれcore packageへ移し、`loom/application`にあったselected-state参照を廃止します。
 root `loom`が`loom/application`を`:use`する構成も解きます。
@@ -77,6 +99,16 @@ feature/windowから`loom/application`のhelperを呼ぶ案を却下し、featur
 
 C1では最後にfeature packageの`:use loom`を取り除き、依存するcore packageだけを`:import-from`します。
 rootのstartup、render、command catalogからfeature symbolを呼ぶ箇所も登録APIとhook dispatchへ移します。
+rootのkey routingは`core/command:keymap-for-buffer(session, buffer, fallback)`だけを呼びます。
+`feature/mode`はload時に`register-buffer-keymap-provider(owner, function)`でproviderを登録し、providerは`(session buffer fallback-keymap)`を受けてmode keymapまたはnilを返します。coreはmode keymapをfallbackの上へ重ね、mode bindingを優先します。
+providerが未登録ならcoreはfallbackをそのまま返します。
+これにより`src/application/input-routing-command-state.lisp:37-54`からfeature/modeへの直接参照をなくします。
+
+visual-line operationとroot presentationは`core/editor-session:buffer-truncate-lines-p(session, buffer)`を呼びます。
+`feature/mode`は`register-buffer-truncate-policy(owner, function)`で判定関数を登録します。functionは`(session buffer)`を受け、`:default`ならmajor modeの設定を、明示値ならbufferの設定をbooleanで返します。
+providerが未登録のときはwrapを選びます。
+window geometryとscroll stateは`core/window-tree`のselected-window、buffer、geometry、scroll APIから取得します。
+rootの`src/presentation/`にあるtruncate判定も同じeditor-session APIへ置き換え、mode packageを直接参照しません（`src/presentation/frame-layout-cursor.lisp:58-76`、`src/presentation/frame-layout-viewport.lisp:87`、`src/presentation/layout-isearch.lisp:103`、`src/presentation/layout-windows.lisp:48,132`）。
 `loom`を全featureの共通namespaceとして残す案はrootとfeatureの循環を残すため却下します（`packages/feature/window/src/package.lisp:1-2`、`src/application/startup-state.lisp:31-63`、`src/presentation/layout-windows.lisp:190-191`）。
 
 この順序なら各移設のあとに一時的な互換aliasを残さず、C4からC1の原因ごとに参照を切れます。
@@ -107,51 +139,122 @@ slice constructorが依存するstateは先行sliceが生成します。
 keyboard-macro constructorは同じAPIに登録し、`make-keyboard-macro`を呼びます。
 rootがこれらのfeature constructorを直接呼ぶ現行方式は、load時登録へ置き換えます（`src/application/editor-state.lisp:10-15`、`src/application/startup-state.lisp:51-63`）。
 
-34 slotの所属は付録2に示した候補に固定します。
+34 slotすべての実装時ownerを付録2に示します。付録2で`確定`と記した行は依頼者が確認した割当てで、その他は設計提案です。
 `window-tree`、`keymap`、`minibuffer`はそれぞれ`core/window-tree`、`core/command`、`core/minibuffer`のstateです。
 `buffers`、`file-tree`、`workspaces`、`recent-files`、`bookmarks`、kill/yank state、LSP state、registers、keyboard macro、search、completion、auto-save、format、terminal stateは対応するfeature sliceへ移します。
+`concurrent-runtime`は`feature/file-tree`のstateで、rootは起動、終了、pollのadapterを持ちます。
 `renderer`はslice stateにせずroot compositionのserviceとして保持します。
-before/after-save hook listはslotから外し、`core/editor-session`のhook registryへ移します。
-`concurrent-runtime`、`buffers`、`recent-files`、`last-command-self-insert-p`、`jump-origins`のownerと、save hookの所有範囲は現行の型宣言だけでは確定できないため推定です。
-実装担当は各state accessorの全参照を検索し、付録2の推定をW1着手前に確認します。
+kill/yank stateとkillの連続性は`feature/kill-ring`、`last-command-self-insert-p`はundo境界用に`core/command`、`jump-origins`はLSP navigation stateとして`feature/lsp`が持ちます。
+before/after-save hook listはslotから外し、registryを`core/editor-session`へ移します。
+formatとauto-saveは各featureのcallbackをregisterします。
+`buffers`は`feature/buffers`のregistry stateです。
+他の候補ownerと根拠は付録2に記録します。
 
 hookは`register-session-hook`でkind、owner、functionの順に登録し、rootが同じslice順でdispatchします。
+`:startup`、`:signal`、`:suspend`、`:resume`、`:shutdown`、`:exit-status`も同じregistryへ登録するroot lifecycle event kindです。登録できるownerとevent固有の返り値は表に定め、`:exit-status`は`feature/lifecycle`だけが登録できます。
 一つのslice内では登録順を保ちます。
 dispatch開始時にhook listをcopyし、callbackが登録を更新しても現在のdispatchへ反映しません。
 これは現行save hookがreverseしたcopyを実行する動作を引き継ぎます（`src/application/editor-state-save-hooks.lisp:15-18`）。
 同じowner、kind、functionの登録は重複を作らず、異なるownerの同一function登録は別hookとして扱います。
-仕様の6分類のうちsave hookはbefore/afterを別kindに分け、registryには7 kindを置きます。
+仕様4.3の6分類は維持します。
+save hookだけはbefore/afterを別kindに分け、さらにlifecycleとbuffer closeのroot eventを登録します。
 before-save errorはwriteを止めますが、after-save errorでは完了済みwriteを戻せないため、同じcallbackにまとめません（`docs/src/notes/requirements-modern-editor.md:174-180`）。
 
 | hook kind | signatureと戻り値 | 呼び出し順とerror |
 |---|---|---|
-| `:tick` | `(session monotonic-time)`。戻り値を使わない | input dispatchまたはtimeoutの後、resize確認とframe描画の前にslice順で呼ぶ。hook errorは現行periodic workと同様にevent loop外へ伝え、sessionを終了する |
+| `:tick` | `(session monotonic-time)`。戻り値を使わない | input、timeout、background-readyの後、resize確認とframe描画の前にslice順で呼ぶ。hook errorはevent loop外へ伝え、sessionを終了する |
 | `:key-input` | `(session key-event route)`。`:pass`または`:handled` | default key dispatchの前に呼ぶ。routeは実キー入力なら`:key`、macro再生なら`:macro`を渡す。`:handled`で後続hookとdefault dispatchを止める。commandを起動するhookは受け取ったrouteで共通gatewayを呼ぶ。errorはcommand dispatchの既存handlerがminibufferへ表示する |
-| `:input-event` | `(session event-kind payload)`。`:pass`または`:handled` | mouse、pasteを含む非key eventの種類ごとに呼ぶ。`:handled`で後続hookとdefault handlerを止める。paste handlerは入力dataをfeature APIで処理する。mouse handlerがcommandを起動するときは共通gatewayを呼び、route `:mouse`をW3-8で追加する。errorはkey dispatchと同じhandlerへ渡す |
-| `:render` | `(session frame)`。変換後のframeを返す | rootがframeをcomposeした後、rendererへ渡す前にslice順で適用する。errorはrendererの失敗と同じくsession外へ伝える |
+| `:input-event` | `(session event-kind payload)`。`:pass`または`:handled` | decoderが生成した正規化済みの非key eventをkey dispatchの前に渡す。`:handled`で後続hookとdefault handlerを止める。pasteとmouseのcommand起動は共通gatewayを使い、`:paste`と`:mouse` routeはW3-1が追加する。errorはkey dispatchと同じhandlerへ渡す |
+| `:render` | `(session frame-snapshot)`。immutableな`render-operation` listを返す | rootがbase frameをfreezeした後、rendererへ渡す前にslice順で呼ぶ。hookはframeを変更せず、rootがoperationを適用した新しいsnapshotをrendererへ渡す。errorはrendererの失敗と同じくsession外へ伝える |
 | `:terminal-modes` | `(session)`。terminal mode keywordのlistを返す | terminal session開始前に全sliceを呼び、slice順で重複を除いたmode unionを適用する。setup errorは握りつぶさず起動を失敗させる |
 | `:before-save` | `(session buffer)`。戻り値を使わない | file write前に呼ぶ。errorならwriteしない。format hookはここへ登録する |
 | `:after-save` | `(session buffer)`。戻り値を使わない | writeと`buffer-mark-saved`の後に呼ぶ。errorを返しても完了済みのwriteはrollbackしない。auto-save file cleanupはここへ登録する |
+| `:buffer-close` | `(session buffer reason)`。戻り値を使わない | W3-3がbuffer registryから外す前に呼ぶ。LSP callbackはこの時点でdidCloseを送る。通知errorは記録するがlocal buffer closeは続ける |
 
-`:tick`は初回frameの前には呼ばず、event loopの各input/timeout turnで一度呼びます。
+`:tick`は初回frameの前には呼ばず、event loopのinput、timeout、background-ready turnで一度呼びます。
 現行event loopはinputまたはtimeoutの後にauto-save、resize、renderを行い、初回frameはloop前に描画します（`src/application/event-loop.lisp:15-30,32-44`）。
 `:key-input`は既存key routing handlerの内側、`:input-event`はcore/commandのevent kind routing内に置きます（`src/application/input-routing-dispatch.lisp:56-73`）。
-どちらのhookもcommandを直接`funcall`せず、節3の`invoke-command(command, route)`を使います。
-key hookには入力元のrouteを渡し、macro replayが`:key`として記録されないようにします。
-W2aではkey dispatch、C-uのprefix argument経路、M-x、macro replayをこの入口へ集約します。
-非key hookがcommandを起動する場合も入口を迂回せず、対応routeが導入されるまではmouse commandを実装しません。
-`:render`は`compose-frame`後、`loom-renderer-present`前に置きます（`src/application/event-loop-rendering.lisp:3-20`）。
+`:key-input`と`:input-event`のcallbackはcommandを直接`funcall`せず、節3の`invoke-command`を使います。
+decoderはkey eventを`:key-input`へ、mouse、paste、unknown escapeを正規化した非key eventとして`:input-event`へ送ります。
+mouse payloadはaction `:press`、`:release`、`:motion`、`:wheel`のいずれか、buttonまたはnil、modifier keyword list、zero-based screen x/y、符号付きwheel deltaを持ちます。
+paste payloadは挿入するtextを持ち、raw terminal byte列をfeatureへ渡しません。unknown escapeは`:unknown-escape` kindとdecoderが生成した識別子だけを渡します。
+hookがcommandを起動するrouteは、keyが`:key`、macro再生が`:macro`、M-xが`:mx`、pasteが`:paste`、mouseが`:mouse`です。
+`:paste`と`:mouse` routeの登録とexportはcore/command ownerのW3-1が行い、W3-8は確定したAPIを使います。
+`:render`は`compose-frame`が返すimmutableな`frame-snapshot`を受け取ります。
+snapshotはopaque typeで、幅、高さ、座標を指定したcell lookup、cursor位置のread-only accessorだけを公開します。`frame-snapshot-cell(snapshot, x, y)`は範囲内ならcharacterとstyleを返し、範囲外ならnilを返します。cell列とcell valueは変更できず、mutable vectorも公開しません。
+現行の`compose-frame`はrendererの画面を直接変更して`editor-state`を返すため、W3-4でbase frameを`frame-snapshot`として返す実装に変えます（`src/presentation/frame-layout.lisp:32-46`）。
+各hookは描画内容を`make-render-operation`で作ったimmutable operation listとして返します。APIは`(make-render-operation :text x y text)`と`(make-render-operation :cursor x y visible-p)`です。座標は0-based terminal cellで、`:text`の文字列は指定位置から右方向へ配置します。operation listは順に適用し、後のoperationは同じcellへの先行書込みを上書きします。
+rootはbase snapshotをcopy-on-writeで更新した新しいsnapshotをrendererへ渡します。範囲外の座標や不正operationはhook errorとして扱います。
+hookはframe cellとrenderer objectを変更できず、frameの作成と最終的な描画はrootが行います（`src/application/event-loop-rendering.lisp:17-20`）。
 `:terminal-modes`はraw modeとalternate screenを開始する前に照会します（`src/application/startup-services.lisp:32-43`）。
 `:before-save`と`:after-save`は`buffer-save`の現在の順序を維持します（`packages/feature/file-tree/src/infrastructure-buffer-filesystem.lisp:21-34`）。
 
-端末mode要求はclipboardのbracketed pasteとmouseのmouse reportingを有効にするために使います。
-rootは要求をdedupeし、既存のterminal session APIへmodeを渡します。
-mode keywordとterminal API optionの対応は、そのAPIの現行signatureをW2a実装前に確認する項目です。
+`:terminal-modes`のkeywordとroot terminal adapterの対応は次のとおりです。
+
+| keyword | terminal mode | 用途 |
+|---|---|---|
+| `:mouse-sgr` | DECSET/DECRST 1006 | SGR形式でmouse coordinateを送る |
+| `:mouse-button-event` | DECSET/DECRST 1002 | press/releaseに加えてbutton押下中のmotionを送り、drag selectionを可能にする |
+| `:bracketed-paste` | DECSET/DECRST 2004 | pasteを入力文字と区別する |
+
+1002はbutton tracking、1006はmouse protocol encodingを選びます。
+rootは要求をdedupeし、開始時に有効化したmodeをterminal session終了時に無効化します（[XTerm Control Sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse_Tracking)、仕様`docs/src/notes/requirements-modern-editor.md:291-292`）。
 modeを各featureが直接設定する案は、terminal lifecycleをsliceごとに分散させるため却下します（`docs/src/notes/requirements-modern-editor.md:178-180`）。
+
+W2aは`core/editor-session`にhit-testと端末出力の安全なrequest APIを置きます。
+`hit-test-buffer-position(session, screen-x, screen-y)`は0-based terminal cellを受け、`(values window buffer position)`またはnilを返します。
+`register-hit-test-provider(owner, function)`でrootのpresentation providerを登録します。providerのsignatureは`(session screen-x screen-y)`で、該当cellがbuffer text上なら`(values window buffer position)`、該当しなければnilを返します。W3-4が現在frameのgeometryを使って実装します。
+W3-8はcore/editor-sessionのhit-test APIだけを呼び、`src/presentation/`をimportしません（現在の変換はbuffer positionからscreen cellへの一方向です。`src/presentation/frame-layout-cursor.lisp:58-76`）。
+
+`request-terminal-clipboard-write(session, text)`はstringだけを受け取ります。
+rootはtextをUTF-8とbase64へ変換し、固定のOSC 52 framingへ入れてterminalへ書きます。
+APIはescape sequenceやterminal targetを引数に取らず、clipboard featureが任意のterminal control sequenceを出力できない形にします（`src/application/event-loop-rendering.lisp:17-20`、仕様`docs/src/notes/requirements-modern-editor.md:290`）。
+
+W2aはroot lifecycle adapterも実装します。
+`register-cli-option(owner, long-name, value-kind)`はfeature/lifecycleがCLI optionを登録します。`value-kind`は値を取らない`:switch`か、次のargvを値として取る`:value`です。同名optionの再登録と未登録optionはerrorにします。
+rootは登録済みoptionと`loom [+LINE[:COL]] FILE...`をparseし、元argv、option map、各fileのpathと開始line/columnを持つfile-request listをopaqueな`startup-context`へ格納します。
+rootはttyを取得し、opaqueな`terminal-session`と`startup-context`を`:startup(session, startup-context, terminal-session)`へ渡します。
+`:startup`はterminal session取得後、user-initのloadと初回frameの前に呼びます。
+
+| root event | signature | 登録owner | 順序 |
+|---|---|---|---|
+| `:startup` | `(session startup-context terminal-session)` | `feature/lifecycle` | tty取得後、user-initと初回frameの前に呼ぶ。lifecycleはsession復旧とinit方針を適用する |
+| `:signal` | `(session signal-name)`。`:continue`または`:terminate` | `feature/lifecycle` | rootがOS signalを受けた直後に呼ぶ。lifecycleがrecoveryや終了方針を決める。TERM/HUPはrecovery後にterminateし、TSTP/CONTはsuspend/resume eventへ対応させる |
+| `:suspend` | `(session)` | `feature/lifecycle` | rootがterminal modeを復元してプロセスを停止する前に呼ぶ |
+| `:resume` | `(session terminal-session)` | `feature/lifecycle` | rootがttyを再取得してmodeを有効にした後、再描画前に呼ぶ |
+| `:shutdown` | `(session reason)` | `feature/lifecycle` | event loop終了後、terminal sessionを閉じる前に呼ぶ |
+| `:exit-status` | `(session reason)`。0〜255のinteger | `feature/lifecycle`のみ | rootはcleanup後にこの値をprocess statusとして返し、未処理errorは1にする |
+
+rootはsignal handler、tty取得、terminal復元を所有します。
+feature/lifecycleはargv optionを登録し、startup、signal、suspend、resume、shutdown callbackで復旧と保存を行います。
+これによりW3-2は`src/application/startup-cli.lisp`やevent loopを編集せずFR-Eを実装できます（仕様`docs/src/notes/requirements-modern-editor.md:218-222`、現行CLI `src/application/startup-cli.lisp:3-13`）。
+
+`*Messages*`のhistoryとnamed bufferのlifecycleは`feature/lifecycle`が所有し、W3-5は表示commandだけを実装します。
+W2aは`core/minibuffer:register-message-sink(owner, function)`を追加し、`minibuffer-message`が各messageをsinkへ通知します。
+W3-2はsink callbackから現在sessionを取り、W3-3の`feature/buffers:ensure-result-buffer(session, "*Messages*")`でbufferを得てmessageを追記します。
+W3-5の`*Help*`とW3-6のsearch resultも同じresult-buffer APIを使います。
+W3-2はbuffer registryのW3-3とmessage sink APIのW3-5に依存します。
+
+W3-3は`feature/buffers`から`register-buffer`、`unregister-buffer`、`find-buffer-by-name`、`find-buffer-by-path`、`ensure-result-buffer`を公開します。
+`ensure-result-buffer`は同名の既存bufferを返し、なければsession registryへ登録したbufferを作ります。
+W3-3はbufferをregistryから外す直前に`:buffer-close` hookを呼びます。
+W3-9はこのhookへLSP callbackを登録してdidCloseを送り、closeを呼ぶW3-3にも依存します。
+
+`feature/mode:mode-description-for-buffer(buffer)`はmode nameとdescriptionを返します。
+`describe-mode`を実装するW3-5はこのAPIを使い、mode registryの内部を直接読みません。
+この問い合わせAPIとmode keymap providerはW3-7aが所有します（`packages/feature/mode/src/application-major-mode.lisp:3-15`）。
+
+非同期作業は`core/editor-session`のbackground-work registryへ登録します。
+`register-background-work(session, owner, poller, cancel-function)`はtokenを返し、workerは完了または出力可能時にthread-safeな`notify-background-work-ready(session, token)`を呼びます。
+rootはterminal input fdとwake pipeを同時に待ち、wake後にready tokenのpollerをevent-loop threadで呼びます。
+pollerはnonblockingで`(values state-changed-p done-p)`を返し、state変更時にrootがframeを再描画します。
+`done-p`がtrueならrootはregistryから外します。`cancel-background-work`はtokenをcancelledにし、cancel callbackを一度だけ呼びます。workerは終了時にもreadyを通知し、pollerが`done-p`を返すまで登録を維持します。cancelled tokenのpoll結果は描画に反映しません。登録解除後に届いたready通知は無視します。
+入力がない間もready通知で検索結果を反映し、既存の50ms poll timeoutに検索featureを追加する案は採りません（`src/application/event-loop-control.lisp:24-54`、仕様`docs/src/notes/requirements-modern-editor.md:265`）。
 
 hook errorは実行位置の既存error境界へ流します。
 key/input hookのerrorはminibufferへ報告してevent loopを継続し、tick/render/terminal setupのerrorはstartup境界へ伝えてsessionを終了します。
 save前hookのerrorはbufferを保存せず、save後hookのerrorは保存済みfileを残したまま呼出元へ伝えます。
+buffer-close通知のerrorは診断へ残してcloseを続け、LSP serverの失敗でlocal buffer registryを残しません（仕様`docs/src/notes/requirements-modern-editor.md:298`）。
 hook errorを全種類catchして継続する案は、失敗した保存やframeを成功に見せるため却下します。
 現行key dispatchはcommand errorをminibufferへ報告し、起動境界は未処理errorをstatus 1へ変換します（`src/application/input-routing-dispatch.lisp:56-71`、`src/application/startup-services.lisp:32-51`）。
 
@@ -176,31 +279,43 @@ hook errorを全種類catchして継続する案は、失敗した保存やframe
 ```
 
 canonical specは`:owner`、`:id`、`:name`、`:group`、`:command`、`:keys`、`:keymap`、`:help`、`:help-order`と5種のmetadataを保持します。
-`:id`は全commandで一意な文字列です。
+`:id`は全commandで一意なstable stringです。
 `:name`はM-x名なので`nil`を許し、`nil`のspecも`:id`を必ず持ちます。
-catalogとtraceは同じ`:id`を使い、無名の`execute-extended-command`もcatalogに含めますが、M-x候補には含めません。
-M-xキーで起動した`execute-extended-command`は`:key`、promptから選んだcommandは`:mx`でtraceします。
-この対応なら、M-xで使う名前の有無に関係なくtraceとcatalogを同じIDで照合できます。
+W0-3の`%command-spec-identifier`は`:name`がある場合はその値、ない場合はcommand symbolのlowercase nameを返し、catalogとtraceの両方が同じ関数を使います。
+W2aはその値をcanonical `:id`としてspecに保持し、catalog JSONの`id`とtrace JSONの`command`へ出力します。
+無名の`execute-extended-command`はID `execute-extended-command`でcatalogに含めますが、`:name nil`なのでM-x候補には含めません。
+そのcommandを起動するM-x keyは`:key`、promptから選んだcommandは`:mx`でtraceします。
 
 5種のmetadataは`:mutates`、`:prompts`、`:needs-region`、`:external`、`:modes`です。
 parserは5キーの省略をerrorにし、`nil`や空listを値にする場合もキーを明示させます。
 登録関数も同じ検査を行い、移行でparserを通らないspecが入っても登録時errorになります。
 `:mutates`と`:needs-region`はboolean、`:prompts`は入力種別のlist、`:modes`はkeyword listです。
 `:prompts`の入力種別は`:free-string`、`:completion`、`:yes-no`、`:numeric`です。
-`:external`には固定語彙から機械可読な外部tool IDをlistで指定します。
-parserは未登録IDをerrorにし、catalog比較の対象を固定します。
-許可する語彙とLisp/JSONでの表現はW0-3修正後のmainで確定した値に合わせます。
+`:external`は空でないASCII lowercase identifier stringのlistです。各文字は`a-z`、`0-9`、`-`、`_`、`.`のいずれかに限ります。
+parseと登録の両方でこの語彙を検証し、他の表記はerrorにします（`src/application/command-registry-forms.lisp:34-47`）。
 
-この設計では、catalogに登録するcommandの唯一の起動口を`invoke-command(command-id, route)`と呼びます。
-`command-id`は登録済みspecのcanonicalな`:id`文字列です。
-keymap dispatchとM-xは選択したspecのIDを渡し、gatewayは同じIDでspecをlookupしてcommand functionを実行します。
-C-uのprefix argument経路、keyboard macro再生、hookからの起動もこの入口に集約します。
-gatewayはtrace有効時にinvocationごとに1件を記録してからcommand functionを呼びます。
-既存の二か所のtrace記録はmacro再生とC-uのkey経路を記録できないため、traceと起動を分けません。
-callerによるtraceの直接記録と、`funcall`によるcommand functionの直接呼出しを禁止します。
-routeは`:key`、`:mx`、`:macro`を使い、W3-8がmouse commandを実装するときに`:mouse`を追加します。
-`:input-event` hookはcommandを直接実行せず、commandを起動するときは同じ入口を呼びます。
-mouse commandの実装前にrouteを仮装したり、hook専用の実行経路を足したりしません。
+W0-3がmainへ入れた起動関数は`invoke-command(command, route)`です（`src/application/commands-misc.lisp:27-34`）。
+現状はcallableとrouteを受け取り、`record-command-trace`を呼んでからcommandを引数なしで実行します。
+W2aではこれを`invoke-command(command-id, route, &rest args)`へ拡張します。
+gatewayはcanonical IDから登録specをlookupし、引数を順序どおりcommand functionへ渡します。
+key dispatch、M-x、C-uのuniversal-argument action、macro playback、mouse hook、その他のcommand hookはすべてこのgatewayを通り、callerからの直接`funcall`とtrace書き込みを禁止します。
+routeは`:key`、`:mx`、`:macro`、`:paste`、`:mouse`を使います。W3-1が`:paste`と`:mouse`をcore/commandへ追加してexportし、W3-8はそのrouteを使用します。
+
+`bind-key`に渡す任意callableも、keymapへ保存する前に登録します。
+user-initは`register-key-command(owner, id, function, keymap, keys, metadata)`を使い、M-x名のないkey-only specとして登録します。
+closureを含むfunctionを許しますが、owner内で安定した明示IDと5 metadataを必須にします。
+keymapにはcallableではなくcanonical IDを保存し、dispatchは必ずgatewayへIDを渡します。
+登録されていないcallableを受けた場合はbinding時にerrorにします。
+
+self-insertとpaste insertionはinternal specとして登録し、通常keyは`invoke-command("core/self-insert", :key, character)`、macro再生は同じIDと`:macro`、pasteは`invoke-command("core/insert-pasted-text", :paste, text)`を呼びます。
+この2つのinternal specはpublic catalogとtraceの両方から除外します。traceはcommand選択を記録するためのもので入力本文を保存せず、入力ごとのIDをpublic catalogへ加えると既存120件のuser-facing catalogとの比較も変わるためです。
+両specにも5 metadataを必須にし、非公開扱いはcatalog/traceの出力だけに適用します。
+他のkey-only callable specはcanonical IDを持ち、public catalogとtraceの双方に含めます。
+
+既存120件の`universal-argument` specは`:key`または`:macro` routeでgatewayを通りtrace対象になります。繰返しC-uも同じcommand invocationとして記録します。
+prefix digitとnegative signはcore/command内の状態遷移であり、独立したcommand invocationではないためcatalogとtraceの対象外です。
+trace eventはcommand ID、route、sequence、pidに加え、command起動直前のnormalized prefix valueとexplicit flagを記録します。universal-argument eventには更新前の値が入り、蓄積後の値は次にprefixを消費するcommand eventに記録します。
+command argsとraw prefix keystrokeはtraceへserializeしません。traceは入力内容やcallable引数を保存する再生ログではありません。
 
 `:owner`は`:core/command`または`:feature/<slice>`のようなkeywordです。
 `:keymap`はbindingを登録するmapのIDで、既定値を`:global`にします。
@@ -230,9 +345,9 @@ key sequenceの検査前に`defkeys-key-sequence`でdescriptorへ変換し、`no
 異なるmetadataを持つ再登録を最後の値で上書きする案は、ASDF load順によってcatalogが変わるため却下します。
 query APIは`command-specs`と`find-command-spec`を公開し、callerに`*command-specs*`の破壊的変更を許しません。
 `--dump-catalog`はこのquery APIからJSONを出し、ownerとIDでstable sortします。
-catalogの`id` fieldとtraceの`command` fieldは同じ識別子文字列を使います。
-現在のdumpにはcommand symbol、help、help-order、owner、ID、keymap IDがありません。
-W2aではこれらをschemaに加え、canonical specを比較できるbaselineを取ります（`src/application/command-registry.lisp:89-108`、`src/main.lisp:12-16`）。
+catalogの`id` fieldとtraceの`command` fieldは同じcanonical IDを使います。
+W0-3現在、catalog JSONの`name` valueとtrace JSONの`command` valueは`%command-spec-identifier`により一致し、catalogには`mx-eligible`も出力します。
+現行dumpにないcanonical ID、owner、keymap IDをW2aのcatalog schemaへ加え、canonical specを比較できるbaselineを取ります（`src/application/command-registry.lisp:86-108`、`src/main.lisp:12-16`）。
 登録後のcatalogを直接編集する現在のuser-init方式は、同じ登録APIに置き換えます（`packages/feature/user-init/src/application-user-configuration.lisp:36-65`）。
 
 W2aでは現行120件のownerをimplementation functionの所属で確定します。
@@ -251,11 +366,6 @@ catalog比較の前に、中央定義の全120件へowner、ID、5種metadataを
 順序が固定されていない場合は、dump自体をowner/name/idでstable sortしてから比較します。
 名前、command identity、key、help group、help order、metadata、ownerの差分はすべてerrorです。
 120件の数だけ比べる案は、同数のspecを入れ替えても検出できないため却下します。
-
-現行command specはmovement 26件、editing 26件、files/projects 12件、windows/workspaces 12件、session/registers 10件、macros/evaluation 5件、tooling 17件、file-tree 8件、UI/lifecycle 4件です。
-合計は120件です（`src/application/command-definitions.lisp:3-12`と各group file）。
-`nil` nameの`execute-extended-command`には、他のcommandと同じ形式の`:id`を明示します。
-このspecはcatalogへ登録しますが、M-x候補の一覧からは除外します（`src/application/command-definitions-ui.lisp:11-14`）。
 
 ## 4. slice別ASDF system
 
@@ -281,8 +391,12 @@ cl-nix-forgeは追加pathを`$PWD/${path}`の形でsource registryへ渡しま�
 W2bでは各slice directoryにASDF定義を一つずつ置きます。
 system名は`loom-core-buffer`、`loom-feature-files`のようにuniqueにし、ASDF file名もsystem名に合わせます。
 package名は既定の`loom/core/buffer`、`loom/feature/files`を使います。
-rootの`loom.asd`は各production systemへの`:depends-on`だけを持つcomposition systemにし、source file componentとserial listを置きません。
-test用root system `loom/test`は各sliceのtest systemを依存に持ち、従来どおり一回の`asdf:test-system "loom"`で全suiteを動かします。
+W2bではslice別のproduction/test `.asd` skeletonと再帰discoveryを追加しますが、root `loom.asd`と`loom/test`は現在の全source/test component listを維持します。
+この段階ではslice skeletonをroot aggregateの依存先にせず、各sourceとtestの唯一の所有先はrootのままです。
+W2cでは一つのsliceのsource、test、`t/paths.sexp`を同じcommitでslice systemへ移し、同じcommitで旧root componentを外してaggregateの`:depends-on`へ切り替えます。
+この移設をsliceごとに繰り返し、最後のlegacy source/testが移ったcommitで初めてroot `loom.asd`をcomposition system、root `loom/test`をtest aggregateにします。
+各中間commitでは移設済みcomponentはslice systemだけ、未移設componentはroot systemだけに属し、二重loadも未登録testも発生させません。
+全段階で一回の`asdf:test-system "loom"`から全unit suiteを実行します。
 system名のslash表記をASDF名に流用する案はpackage名とsystem discoveryを結び付けるため避け、filenameとsystem名はhyphen区切りにします（`loom.asd:1-`、`flake.nix:317-349`）。
 
 Nixの`mkPackageFlake`に次を加えます。
@@ -297,7 +411,7 @@ packageArgs = _: {
 `flake.nix`のsource filterには`.asd`と`.lisp`が含まれるため、slice system fileもflake sourceへ含めます（`flake.nix:100-137`）。
 
 `run-tests.lisp`、`scripts/coverage.lisp`、dependency contract testはrootだけをloadする前提を外します。
-runnerは`packages/`をASDFのtree registryへ加え、root `loom/test`を一度だけloadして全slice testを実行します。
+runnerは`packages/`をASDFのtree registryへ加え、root `loom/test`からlegacy test componentと移設済みslice test systemを一度ずつloadして全suiteを実行します。
 `t/unit/dependency-contract-test.lisp`は全sliceの`.asd`を再帰列挙してsystem formを読み、repository内systemとexternal systemを分けます。
 全production sliceのexternal `:depends-on`の和集合を`flake.nix`の`lispDependencies`と比較します。
 全test systemのexternal dependencyからproduction dependency集合を除いた和集合を`lispCheckDependencies`と比較します。
@@ -313,10 +427,18 @@ W2は直列に進め、各commitでunit testとE2E全件を実行します。
 
 | phase | commit列 | commitごとの検査 |
 |---|---|---|
-| W2a | 1. owner-aware registry、5 metadataのparse時必須化とregistration時検査、dump query APIとcommand invocation gatewayを追加する。2. 既存120 specにownerとIDを付け、5キーの存在を登録時errorで検査してcanonical dumpを保存する。3. specを一度にslice別fileへ移し、中央定義を削除する | 5キー各々の省略でparse時と登録時の両方がerrorになるtest、未登録`:external` ID、duplicate ID/name、same-owner idempotency、key collision、catalog/trace ID一致とnil-name spec、key/M-x/C-u/macro routeのgateway test。key/input-event hookも同じgatewayを通す。各段階で全unitとE2E。最後にbefore/after dumpの`diff -u`が空、catalog件数が120 |
-| W2b | 1. `lispAsdPath`最小実験とflake `packageArgs`を追加する。2. 全sliceのproduction/test `.asd`とroot aggregate systemを作る。3. runner、coverage、dependency union testを移行する | positive/negative ASDF discovery fixture、Nix eval、`nix flake check`、dev shellでのtest、dumped binary起動、E2E全件 |
-| W2c | 4.2の移設を依存順に行う。1 commitで一つのsliceか同じ所有laneのslice群を移し、sourceとtestを同じcommitに含める | 各commitで移設対象のunit、全unit、E2E全件を実行する。直前baselineとtest件数および結果を比較する |
+| W2a | 1. owner-aware registry、5 metadataのparse時必須化とregistration時検査、dump query APIとcommand invocation gatewayを追加する。2. E2E coverage readerを`--dump-catalog`へ切り替え、既存120 specにownerとIDを付け、5キーの存在を登録時errorで検査してcanonical dumpを保存する。3. specを一度にslice別fileへ移し、中央定義を削除する | 5キー各々の省略でparse時と登録時の両方がerrorになるtest、invalid `:external` identifier、duplicate ID/name、same-owner idempotency、key collision、catalog/trace ID一致とnil-name spec、任意callable登録と引数転送、prefix snapshot、self-insertのcatalog/trace除外、key/M-x/C-u/macro routeのgateway test。key/input-event hookも同じgatewayを通す。各段階で全unitとE2E。最後にbefore/after dumpの`diff -u`が空、catalog件数が120 |
+| W2b | 1. `lispAsdPath`最小実験とflake `packageArgs`を追加する。2. 全sliceのproduction/test `.asd` skeletonと再帰system discoveryを用意する。3. root `loom.asd`と`loom/test`の現行source/test inventoryを維持したままrunner、coverage、dependency union test、E2E scenario discoveryと`Session.restart()`を追加する | positive/negative ASDF discovery fixture、Nix eval、`nix flake check`、dev shellでのtest、dumped binary起動、E2E全件 |
+| W2c | 4.2の移設を依存順に行う。一commitで一sliceのsource、test、`t/paths.sexp`を移し、root component listをslice dependencyへ同時に切り替える。最後の移設commitでrootをaggregate-onlyにする | 各commitで移設対象のunit、aggregateからの全unit、E2E全件を実行する。直前baselineとtest件数および結果を比較し、source/testの二重loadと未登録がないことを確認する |
 | W2d | boundary testをwarningからfailureへ切り替え、残存違反をowner別allowlistへ記録する | allowlist内の違反だけが通り、未知の依存辺、private `::`、domain上位層参照を追加したcontrolでtestが失敗する |
+
+W2bはE2E harnessも更新します。
+`t/e2e/loom-test.py`のscenario discoveryは既存の`t/e2e/scenarios/`に加え、`packages/<slice>/t/e2e/scenarios/*.py`を再帰的に読み込みます。
+各slice scenarioは既存`@scenario`登録規約を使い、`--list`のscenario一覧と`--only <scenario-fragment>`の検索対象へ追加します。command coverageはW2aで切り替えた`--dump-catalog` readerが引き続き検査します。
+実行経路は既存の`nix run .#e2e -- --only <scenario-fragment>`とし、引数なしではrootとsliceの全scenarioを実行します。
+`t/e2e/loom_e2e/session.py`の`Session.restart()`は現在のchildを閉じてreapし、同じscratch HOME、argv、locale、profile、session file path、trace pathで新processを起動します。
+scratch directoryは保持し、screenとchild handleは新process用に初期化します。
+R8再起動scenarioは`packages/feature/session/t/e2e/scenarios/`へ置き、root harnessはW2b以降W3 laneが変更しません。
 
 W2cの移設順はcore/buffer、core/window-tree、core/minibuffer、core/command、core/editor-sessionから始めます。
 その後、files、buffers、file-tree、minibuffer-ui、completion、help、kill-ring、clipboard、mouse、search、project、mode、syntax-highlightingを移します。
@@ -326,44 +448,63 @@ W2cの移設順はcore/buffer、core/window-tree、core/minibuffer、core/comman
 各sliceの移設commitは、実装fileとtestを一緒に移し、旧pathと新pathの重複loadを残しません。
 既存test結果を保つためにtemporary shimを根として残す案は、境界testで違反を見逃すため却下します。
 W2cでは既存E2E scenarioと`t/paths.sexp`のownerを揃えます。
-E2E shared harnessとroot package inventoryはW2cの専有担当だけが変更します（`docs/src/notes/requirements-modern-editor.md:425-443`）。
+E2E shared harnessとroot package inventoryはW2bが専有し、各slice ownerは自sliceの`src/`、`t/`、`t/paths.sexp`、`t/e2e/`だけを変更します（`docs/src/notes/requirements-modern-editor.md:425-443`）。
 
-W2aのowner付与は中央catalog上で済ませてからbaselineを取ります。
-各command specをimplementation functionの定義先と4.2の責務へ対応させ、既存group名だけからownerを決めないでください。
-W2aのkey dispatch、M-x、C-uのprefix argument、macro replayと、4.3のkey/input-event hookは`invoke-command(command, route)`を使います。
-command functionを直接`funcall`する経路と、callerごとにtraceを書き分ける経路を加えません。
-W2cの移設後はcatalog diffに加え、`t/e2e/`のscenario全件を動かします。
 W2bでは`.asd`をNix sourceへ含めるため、新規`.asd`をgit indexへ追加してから`nix build`を実行します。
 
 ## 6. W3のpathとexport境界
 
 W2bで各sliceの`.asd`、`src/package.lisp`、`t/paths.sexp`を作り、W2cで既存実装とtestをslice directoryへ移します。
-W3のlaneは所有sliceの`src/`、`t/`、`t/paths.sexp`だけを編集します。
+W3のlaneは所有sliceの`src/**`、`t/**`、`t/paths.sexp`、`t/e2e/**`を編集できます。`t/`にはunit testとE2E scenarioを含めます。
 共有root、`flake.nix`、root `loom.asd`、全体test runner、E2E harnessはW3で編集しません（`docs/src/notes/requirements-modern-editor.md:416-423,425-443`）。
 
 | lane | 所有path | exportと他laneへの境界 | 仕様根拠 |
 |---|---|---|---|
-| W3-1 | `packages/core/command/src/`、`packages/core/command/t/`、`packages/core/command/t/paths.sexp` | `packages/core/command/src/package.lisp`のexportを専有する。global key referenceと登録衝突検査を持つ。各featureが移すkeyは各feature ownerが登録する | `docs/src/notes/requirements-modern-editor.md:488` |
-| W3-2 | `packages/feature/lifecycle/src/`、`packages/feature/lifecycle/t/`、`packages/feature/lifecycle/t/paths.sexp`、`packages/feature/user-init/src/`、`packages/feature/user-init/t/`、`packages/feature/user-init/t/paths.sexp` | terminal modeは`:terminal-modes` hookから要求する。root CLIとevent loopは編集しない | `docs/src/notes/requirements-modern-editor.md:489` |
-| W3-3 | `packages/feature/files/src/`、`packages/feature/files/t/`、`packages/feature/files/t/paths.sexp`、`packages/feature/buffers/src/`、`packages/feature/buffers/t/`、`packages/feature/buffers/t/paths.sexp` | file I/O、buffer registry、switch/kill commandを所有する。`core/buffer` exportは変更しない | `docs/src/notes/requirements-modern-editor.md:490` |
-| W3-4 | `packages/core/buffer/src/`、`packages/core/buffer/t/`、`packages/core/buffer/t/paths.sexp`、`src/infrastructure/terminal-renderer.lisp`、`src/infrastructure/terminal-renderer-cursor.lisp`、`src/infrastructure/terminal-renderer-text.lisp`、`src/infrastructure/terminal-renderer-text-wrapping.lisp`、`src/presentation/` | `packages/core/buffer/src/package.lisp`のexportとrenderer/presentationを専有する。他laneの描画拡張は`:render` hookを使う | `docs/src/notes/requirements-modern-editor.md:491` |
-| W3-5 | `packages/core/minibuffer/src/`、`packages/core/minibuffer/t/`、`packages/core/minibuffer/t/paths.sexp`、`packages/feature/minibuffer-ui/src/`、`packages/feature/minibuffer-ui/t/`、`packages/feature/minibuffer-ui/t/paths.sexp`、`packages/feature/completion/src/`、`packages/feature/completion/t/`、`packages/feature/completion/t/paths.sexp`、`packages/feature/help/src/`、`packages/feature/help/t/`、`packages/feature/help/t/paths.sexp` | `packages/core/minibuffer/src/package.lisp`のexportを専有する。他laneはminibuffer-ui APIを使う | `docs/src/notes/requirements-modern-editor.md:492` |
-| W3-6 | `packages/feature/search/src/`、`packages/feature/search/t/`、`packages/feature/search/t/paths.sexp`、`packages/feature/project/src/`、`packages/feature/project/t/`、`packages/feature/project/t/paths.sexp` | result list bufferと`next-error`のAPIをownerとして公開し、W3-9へ渡す | `docs/src/notes/requirements-modern-editor.md:493` |
-| W3-7a | `packages/feature/mode/src/`、`packages/feature/mode/t/`、`packages/feature/mode/t/paths.sexp`、`packages/feature/syntax-highlighting/src/`、`packages/feature/syntax-highlighting/t/`、`packages/feature/syntax-highlighting/t/paths.sexp` | 各languageの既存定義をW3-7b〜eのdirectoryへ移す。移設後、そのlanguage directoryは編集しない | `docs/src/notes/requirements-modern-editor.md:494` |
-| W3-7b | `packages/feature/lang-lisp/src/`、`packages/feature/lang-lisp/t/`、`packages/feature/lang-lisp/t/paths.sexp`、`packages/feature/lisp-structure/src/`、`packages/feature/lisp-structure/t/`、`packages/feature/lisp-structure/t/paths.sexp`、`packages/feature/evaluation/src/`、`packages/feature/evaluation/t/`、`packages/feature/evaluation/t/paths.sexp` | Lisp mode、S式操作、evaluationを所有する | `docs/src/notes/requirements-modern-editor.md:495` |
-| W3-7c | `packages/feature/lang-nix/src/`、`packages/feature/lang-nix/t/`、`packages/feature/lang-nix/t/paths.sexp` | Nix modeとlanguage definitionを所有する | `docs/src/notes/requirements-modern-editor.md:496` |
-| W3-7d | `packages/feature/lang-web/src/`、`packages/feature/lang-web/t/`、`packages/feature/lang-web/t/paths.sexp` | TS、JS、JSX、JSON、HTML、CSS、YAMLのlanguage definitionを所有する | `docs/src/notes/requirements-modern-editor.md:497` |
-| W3-7e | `packages/feature/lang-markup/src/`、`packages/feature/lang-markup/t/`、`packages/feature/lang-markup/t/paths.sexp` | MarkdownとOrgのparser integrationを所有する | `docs/src/notes/requirements-modern-editor.md:498` |
-| W3-8 | `packages/feature/kill-ring/src/`、`packages/feature/kill-ring/t/`、`packages/feature/kill-ring/t/paths.sexp`、`packages/feature/clipboard/src/`、`packages/feature/clipboard/t/`、`packages/feature/clipboard/t/paths.sexp`、`packages/feature/mouse/src/`、`packages/feature/mouse/t/`、`packages/feature/mouse/t/paths.sexp` | non-key inputは`:input-event` hook、terminal modeは`:terminal-modes` hookを使う。windowとfile-treeは公開API経由で操作する | `docs/src/notes/requirements-modern-editor.md:499` |
-| W3-9 | `packages/feature/lsp/src/`、`packages/feature/lsp/t/`、`packages/feature/lsp/t/paths.sexp` | W3-6のresult listとnavigation APIを利用する。W3-6のpathやexportは編集しない | `docs/src/notes/requirements-modern-editor.md:500` |
-| W3-10 | `packages/feature/file-tree/src/`、`packages/feature/file-tree/t/paths.sexp`、`packages/feature/window/src/`、`packages/feature/window/t/paths.sexp`、`packages/feature/workspace/src/`、`packages/feature/workspace/t/paths.sexp`、`packages/feature/session/src/`、`packages/feature/session/t/paths.sexp`、`packages/feature/bookmark/src/`、`packages/feature/bookmark/t/paths.sexp`、`packages/feature/register/src/`、`packages/feature/register/t/paths.sexp`、`packages/feature/keyboard-macro/src/`、`packages/feature/keyboard-macro/t/paths.sexp` | file-tree local keymapはW3-1のregistration APIを使う。core/window-treeとcore/editor-sessionのexportは追加しない | `docs/src/notes/requirements-modern-editor.md:501` |
-| W3-11 | `packages/feature/shell/src/`、`packages/feature/shell/t/paths.sexp`、`packages/feature/format/src/`、`packages/feature/format/t/paths.sexp`、`packages/feature/git/src/`、`packages/feature/git/t/paths.sexp`、`packages/feature/terminal/src/`、`packages/feature/terminal/t/paths.sexp`、`packages/feature/auto-save/src/`、`packages/feature/auto-save/t/paths.sexp` | command導線と外部toolの成功・失敗を検証する。root terminal lifecycleとflakeは編集しない | `docs/src/notes/requirements-modern-editor.md:502` |
+| W3-1 | `packages/core/command/src/`、`packages/core/command/t/`、`packages/core/command/t/paths.sexp`、`packages/core/command/t/e2e/` | `packages/core/command/src/package.lisp`のexportを専有し、`:paste`と`:mouse` routeを追加する。global key reference、登録衝突検査、未知escape sequenceのD4処理を持つ。各featureが移すkeyは各feature ownerが登録し、W3-8は追加routeを使う | `docs/src/notes/requirements-modern-editor.md:488` |
+| W3-2 | `packages/feature/lifecycle/src/`、`packages/feature/lifecycle/t/`、`packages/feature/lifecycle/t/paths.sexp`、`packages/feature/lifecycle/t/e2e/`、`packages/feature/user-init/src/`、`packages/feature/user-init/t/`、`packages/feature/user-init/t/paths.sexp`、`packages/feature/user-init/t/e2e/` | `*Messages*`のhistoryとbuffer lifecycleを所有する。W2 root adapterを通じてargv、signal、suspend/resumeを扱い、W3-3のbuffer APIとW3-5のmessage-sink APIに依存する。root CLIとevent loopは編集しない | `docs/src/notes/requirements-modern-editor.md:489` |
+| W3-3 | `packages/feature/files/src/`、`packages/feature/files/t/`、`packages/feature/files/t/paths.sexp`、`packages/feature/files/t/e2e/`、`packages/feature/buffers/src/`、`packages/feature/buffers/t/`、`packages/feature/buffers/t/paths.sexp`、`packages/feature/buffers/t/e2e/` | file I/O、buffer registry、switch/kill commandを所有する。`register-buffer`、`unregister-buffer`、`find-buffer-by-name`、`find-buffer-by-path`、`ensure-result-buffer`を公開し、close前に`:buffer-close` hookを発火する。`packages/feature/file-tree/src/application-commands-file-save.lisp`のsave commandは`packages/feature/files/src/application-commands-file-save.lisp`へ移す | `docs/src/notes/requirements-modern-editor.md:490` |
+| W3-4 | `packages/core/buffer/src/`、`packages/core/buffer/t/`、`packages/core/buffer/t/paths.sexp`、`packages/core/buffer/t/e2e/`、`src/infrastructure/terminal-renderer.lisp`、`src/infrastructure/terminal-renderer-cursor.lisp`、`src/infrastructure/terminal-renderer-text.lisp`、`src/infrastructure/terminal-renderer-text-wrapping.lisp`、`src/presentation/` | `packages/core/buffer/src/package.lisp`のexportとrenderer/presentationを専有する。root `compose-frame`をimmutable `frame-snapshot`生成へ変更し、W2のhit-test providerを登録する。他laneの描画拡張は`:render` hookを使う | `docs/src/notes/requirements-modern-editor.md:491` |
+| W3-5 | `packages/core/minibuffer/src/`、`packages/core/minibuffer/t/`、`packages/core/minibuffer/t/paths.sexp`、`packages/core/minibuffer/t/e2e/`、`packages/feature/minibuffer-ui/src/`、`packages/feature/minibuffer-ui/t/`、`packages/feature/minibuffer-ui/t/paths.sexp`、`packages/feature/minibuffer-ui/t/e2e/`、`packages/feature/completion/src/`、`packages/feature/completion/t/`、`packages/feature/completion/t/paths.sexp`、`packages/feature/completion/t/e2e/`、`packages/feature/help/src/`、`packages/feature/help/t/`、`packages/feature/help/t/paths.sexp`、`packages/feature/help/t/e2e/` | `packages/core/minibuffer/src/package.lisp`のexportを専有し、`register-message-sink`を公開する。`describe-mode`はW3-7aのmode query APIを使い、`*Help*`はW3-3の`ensure-result-buffer`を使う。W3-2が所有する`*Messages*` storageには触れない | `docs/src/notes/requirements-modern-editor.md:492` |
+| W3-6 | `packages/feature/search/src/`、`packages/feature/search/t/`、`packages/feature/search/t/paths.sexp`、`packages/feature/search/t/e2e/`、`packages/feature/project/src/`、`packages/feature/project/t/`、`packages/feature/project/t/paths.sexp`、`packages/feature/project/t/e2e/` | result listと`next-error` APIを所有する。search resultはW3-3の`ensure-result-buffer`を使い、background-work APIへworkerを登録してwake/pollを行う | `docs/src/notes/requirements-modern-editor.md:493` |
+| W3-7a | `packages/feature/mode/src/`、`packages/feature/mode/t/`、`packages/feature/mode/t/paths.sexp`、`packages/feature/mode/t/e2e/`、`packages/feature/syntax-highlighting/src/`、`packages/feature/syntax-highlighting/t/`、`packages/feature/syntax-highlighting/t/paths.sexp`、`packages/feature/syntax-highlighting/t/e2e/`、`packages/feature/lang-lisp/src/`、`packages/feature/lang-lisp/t/`、`packages/feature/lang-lisp/t/paths.sexp`、`packages/feature/lang-lisp/t/e2e/`、`packages/feature/lang-nix/src/`、`packages/feature/lang-nix/t/`、`packages/feature/lang-nix/t/paths.sexp`、`packages/feature/lang-nix/t/e2e/`、`packages/feature/lang-web/src/`、`packages/feature/lang-web/t/`、`packages/feature/lang-web/t/paths.sexp`、`packages/feature/lang-web/t/e2e/`、`packages/feature/lang-markup/src/`、`packages/feature/lang-markup/t/`、`packages/feature/lang-markup/t/paths.sexp`、`packages/feature/lang-markup/t/e2e/` | mode provider、truncate policy、mode問い合わせAPIを所有する。language sliceのpathは最初のlanguage-definition移設commitがmainに入るまで一時所有し、そのcommitのmain反映後にW3-7b〜eへ移譲する | `docs/src/notes/requirements-modern-editor.md:494` |
+| W3-7b | `packages/feature/lang-lisp/src/`、`packages/feature/lang-lisp/t/`、`packages/feature/lang-lisp/t/paths.sexp`、`packages/feature/lang-lisp/t/e2e/`、`packages/feature/lisp-structure/src/`、`packages/feature/lisp-structure/t/`、`packages/feature/lisp-structure/t/paths.sexp`、`packages/feature/lisp-structure/t/e2e/`、`packages/feature/evaluation/src/`、`packages/feature/evaluation/t/`、`packages/feature/evaluation/t/paths.sexp`、`packages/feature/evaluation/t/e2e/` | Lisp mode、S式操作、evaluationを所有する。S式移動keyはglobal、`kill-sexp`はlang-lisp mode mapへ登録する | `docs/src/notes/requirements-modern-editor.md:495` |
+| W3-7c | `packages/feature/lang-nix/src/`、`packages/feature/lang-nix/t/`、`packages/feature/lang-nix/t/paths.sexp`、`packages/feature/lang-nix/t/e2e/` | Nix modeとlanguage definitionを所有する | `docs/src/notes/requirements-modern-editor.md:496` |
+| W3-7d | `packages/feature/lang-web/src/`、`packages/feature/lang-web/t/`、`packages/feature/lang-web/t/paths.sexp`、`packages/feature/lang-web/t/e2e/` | TS、JS、JSX、JSON、HTML、CSS、YAMLのlanguage definitionを所有する | `docs/src/notes/requirements-modern-editor.md:497` |
+| W3-7e | `packages/feature/lang-markup/src/`、`packages/feature/lang-markup/t/`、`packages/feature/lang-markup/t/paths.sexp`、`packages/feature/lang-markup/t/e2e/` | MarkdownとOrgのparser integrationを所有する | `docs/src/notes/requirements-modern-editor.md:498` |
+| W3-8 | `packages/feature/kill-ring/src/`、`packages/feature/kill-ring/t/`、`packages/feature/kill-ring/t/paths.sexp`、`packages/feature/kill-ring/t/e2e/`、`packages/feature/clipboard/src/`、`packages/feature/clipboard/t/`、`packages/feature/clipboard/t/paths.sexp`、`packages/feature/clipboard/t/e2e/`、`packages/feature/mouse/src/`、`packages/feature/mouse/t/`、`packages/feature/mouse/t/paths.sexp`、`packages/feature/mouse/t/e2e/` | mouse eventのD4処理は`:input-event` hook、terminal modeは`:terminal-modes` hookを使う。W3-1の`:paste`、`:mouse` route、W3-4のhit-test API、OSC 52 clipboard APIを利用する。core/command exportは変更しない | `docs/src/notes/requirements-modern-editor.md:499` |
+| W3-9 | `packages/feature/lsp/src/`、`packages/feature/lsp/t/`、`packages/feature/lsp/t/paths.sexp`、`packages/feature/lsp/t/e2e/` | W3-6のresult list/navigation APIとW3-3のbuffer registryへ依存する。`:buffer-close` hookからdidCloseを送り、他laneのpath/exportは編集しない | `docs/src/notes/requirements-modern-editor.md:500` |
+| W3-10 | `packages/feature/file-tree/src/`、`packages/feature/file-tree/t/`、`packages/feature/file-tree/t/paths.sexp`、`packages/feature/file-tree/t/e2e/`、`packages/feature/window/src/`、`packages/feature/window/t/`、`packages/feature/window/t/paths.sexp`、`packages/feature/window/t/e2e/`、`packages/feature/workspace/src/`、`packages/feature/workspace/t/`、`packages/feature/workspace/t/paths.sexp`、`packages/feature/workspace/t/e2e/`、`packages/feature/session/src/`、`packages/feature/session/t/`、`packages/feature/session/t/paths.sexp`、`packages/feature/session/t/e2e/`、`packages/feature/bookmark/src/`、`packages/feature/bookmark/t/`、`packages/feature/bookmark/t/paths.sexp`、`packages/feature/bookmark/t/e2e/`、`packages/feature/register/src/`、`packages/feature/register/t/`、`packages/feature/register/t/paths.sexp`、`packages/feature/register/t/e2e/`、`packages/feature/keyboard-macro/src/`、`packages/feature/keyboard-macro/t/`、`packages/feature/keyboard-macro/t/paths.sexp`、`packages/feature/keyboard-macro/t/e2e/` | file-tree local keymapはW3-1のregistration APIを使う。core/window-treeとcore/editor-sessionのexportは追加しない。R8 restart scenarioは`packages/feature/session/t/e2e/scenarios/`に置く | `docs/src/notes/requirements-modern-editor.md:501` |
+| W3-11 | `packages/feature/shell/src/`、`packages/feature/shell/t/`、`packages/feature/shell/t/paths.sexp`、`packages/feature/shell/t/e2e/`、`packages/feature/format/src/`、`packages/feature/format/t/`、`packages/feature/format/t/paths.sexp`、`packages/feature/format/t/e2e/`、`packages/feature/git/src/`、`packages/feature/git/t/`、`packages/feature/git/t/paths.sexp`、`packages/feature/git/t/e2e/`、`packages/feature/terminal/src/`、`packages/feature/terminal/t/`、`packages/feature/terminal/t/paths.sexp`、`packages/feature/terminal/t/e2e/`、`packages/feature/auto-save/src/`、`packages/feature/auto-save/t/`、`packages/feature/auto-save/t/paths.sexp`、`packages/feature/auto-save/t/e2e/` | command導線と外部toolの成功・失敗を検証する。root terminal lifecycleとflakeは編集しない | `docs/src/notes/requirements-modern-editor.md:502` |
 
 W3-1、W3-4、W3-5だけが各自のcore package exportを変更できます。
 core/window-treeとcore/editor-sessionのexportはW2で確定し、W3 laneは不足APIを追加せず、必要なsymbolと利用理由を報告します（`docs/src/notes/requirements-modern-editor.md:432-436,423`）。
-W3-4の描画拡張はframeを返す`:render` hook、W3-8のpaste/mouse処理は`:input-event` hookを通します。
+W3-4の描画拡張はimmutable `frame-snapshot`と`:render` operation hook、W3-8のpaste/mouse処理は`:input-event` hookを通します。
 W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します。
 この境界を越える変更が必要になった場合、laneはその依存作業を止め、owner担当へAPI追加を依頼します。
+
+## 指摘事項の解決状況
+
+`Done`は、該当事項を設計で解決し、実装担当が使う契約またはpathを本文へ記載したことを示します。
+
+| ID | 指摘 | 状態 | 設計上の対応 |
+|---|---|---|---|
+| B1 | C4のscroll command移設漏れ | Done | scroll commandをfeature/windowへ移し、core/window-treeのscroll stateとgeometry APIを使う。section 1 |
+| B2 | rootのmode参照とvisual-line truncate判定 | Done | mode keymap providerとtruncate policyをcore APIへ注入し、visual-line operationはcore/window-tree APIでwindow stateを読む。section 1 |
+| B3 | W3-2向けroot CLI/lifecycle拡張点不足 | Done | W2 root adapterにCLI option、startup context、tty、signal、suspend/resume、shutdown、exit statusを定義する。section 2 |
+| B4 | mouse decoder、hit-test、OSC 52契約不足 | Done | normalized event payloadとdecoder hookを定義し、W3-4 hit-test providerとtext-only OSC 52 APIを追加する。sections 2、6 |
+| B5 | didCloseを届けるbuffer-close経路不足 | Done | W3-3がclose前に`:buffer-close` hookを発火し、W3-9がdidCloseを送り、依存先へW3-3を追加する。sections 2、6 |
+| B6 | process restart用E2E配置と実行経路不足 | Done | W2bがslice E2E discoveryと`Session.restart()`を用意し、共通runnerとsession slice内のR8 scenarioを定義する。sections 5、6 |
+| B7 | 非同期検索のwake-upとpoll契約不足 | Done | background-work registry、thread-safe wake notification、event-loop polling、再描画契約を定義する。section 2 |
+| B8 | callable、引数、prefixを含む入力経路不足 | Done | callable登録、引数付きgateway、`:paste`/`:mouse` route、prefix trace scopeとinternal insertionの除外を定義する。section 3 |
+| B9 | W2bからW2cのsource/test構成不足 | Done | W2bはroot source/test listを維持し、W2cでsource、test、pathsを一sliceずつatomicに移す。section 4 |
+| S1 | S式実装の移設先とkey登録先不足 | Done | S式実装をlisp-structureへ移し、移動keyはglobal、`kill-sexp`はlang-lisp mode mapへ登録する。sections 1、6 |
+| S2 | W3-8のterminal mode API対応未確定 | Done | SGR 1006、button tracking 1002、bracketed paste 2004をterminal mode APIへ割り当てる。section 2 |
+| S3 | `:render`と現行compose-frameの契約不一致 | Done | `frame-snapshot`をimmutable opaque valueとし、hookはrender operationを返し、rootがcopy-on-writeで描画する。sections 2、6 |
+| S4 | W3-7aの言語slice移設path不足 | Done | W3-7aに4言語sliceの全移設pathを一時付与し、migration commitのmain反映後にW3-7b〜eへ移譲する。section 6 |
+| S5 | D4の完了責任重複 | Done | D4をW3-1のunknown escapeとW3-8のmouse eventに分割する。sections 1、6 |
+| S6 | W3-10/11が編集できるslice test path不足 | Done | W3-10、W3-11を含む各sliceに`src/`、`t/`、`t/paths.sexp`、`t/e2e/`の編集範囲を明記する。section 6 |
+| S7 | `:mouse` route exportのowner不一致 | Done | W3-1がcore/commandの`:paste`、`:mouse` routeを追加し、W3-8は消費だけを行う。sections 1、6 |
+| S8 | buffer/mode/message/save APIのowner不足 | Done | buffer registry/result-buffer、mode問い合わせ、`*Messages*` owner、file-save移設先を定める。sections 2、6 |
 
 ## 付録 調査根拠表
 
@@ -374,10 +515,10 @@ W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します
 | 調査項目 | 観測した事実 | 根拠 |
 |---|---|---|
 | 分割対象 | 仕様はcoreを`buffer`、`window-tree`、`command`、`minibuffer`、`editor-session`に分け、層の依存を内側へ向ける | `docs/src/notes/requirements-modern-editor.md:112-172` |
-| C1 ルートとfeature | feature packageが`loom`を`:use`し、root側もfeature名を修飾して呼ぶ。startup stateとpresentationにも直接参照がある | `packages/feature/window/src/package.lisp:1-2`、`src/application/startup-state.lisp:31,35-36,53,61,63`、`src/presentation/layout-windows.lisp:190-191`、仕様`docs/src/notes/requirements-modern-editor.md:680` |
+| C1 ルートとfeature | feature packageが`loom`を`:use`し、root側もfeature名を修飾して呼ぶ。startup state、key routing、visual-line operation、presentationにもmode/windowへの直接参照がある | `packages/feature/window/src/package.lisp:1-2`、`src/application/startup-state.lisp:31,35-36,53,61,63`、`src/application/input-routing-command-state.lisp:37-54`、`packages/core/editor/src/application-commands-movement-visual-lines.lisp:11-17`、`src/presentation/frame-layout-cursor.lisp:58-76`、`src/presentation/frame-layout-viewport.lisp:87`、`src/presentation/layout-isearch.lisp:103`、`src/presentation/layout-windows.lisp:48,132,190-191`、仕様`docs/src/notes/requirements-modern-editor.md:680` |
 | C2 rootとapplication | `loom` packageが`loom/application`を`:use`し、application側からroot関数も参照する | `src/package.lisp:1-3`、`src/application/commands-internal.lisp:5-14`、`src/application/commands-keybindings.lisp:7`、仕様`docs/src/notes/requirements-modern-editor.md:681` |
 | C3 applicationとwindow | `%selected-window`と`%selected-buffer`がwindow APIを利用し、window packageは`loom/application`を`:use`する | `src/application/commands-internal.lisp:3-14`、`packages/feature/window/src/package.lisp:1-2`、仕様`docs/src/notes/requirements-modern-editor.md:682` |
-| C4 coreとwindow | coreのvisual-line移動がfeature/windowとrendererを参照する。window packageはrootを`:use`し、window treeを定義する | `packages/core/editor/src/application-commands-movement-visual-lines.lisp:11-16`、`packages/feature/window/src/package.lisp:1-2`、`packages/feature/window/src/domain-window.lisp:18-22`、仕様`docs/src/notes/requirements-modern-editor.md:683-694` |
+| C4 coreとwindow | coreのvisual-line移動がfeature/windowとrendererを参照し、view-supportのscroll commandもfeature/windowを呼ぶ。window packageはrootを`:use`し、window treeを定義する | `packages/core/editor/src/application-commands-movement-visual-lines.lisp:11-17`、`packages/core/editor/src/application-commands-movement-view-support.lisp:51-66`、`packages/feature/window/src/package.lisp:1-2`、`packages/feature/window/src/domain-window.lisp:18-22`、仕様`docs/src/notes/requirements-modern-editor.md:683-694` |
 | `::`参照 | private symbolは3種類、参照式は4か所。`%key-event->descriptor`はsearchとlspで各1か所、visual-line関数はlspで前後各1か所 | `packages/feature/search/src/application-commands-isearch.lisp:53`、`packages/feature/lsp/src/application-commands-lsp-support.lisp:45,50,53`、仕様`docs/src/notes/requirements-modern-editor.md:685` |
 | workspaceの既定値 | `make-editor-state`がworkspace featureのmanagerを直接生成する。startupもmanagerを直接生成して渡す | `src/application/editor-state.lisp:3-15`、`src/application/startup-state.lisp:51-55` |
 | keyboard-macroの既定値 | `editor-state` slotのデフォルトとstartupの両方でfeature constructorを直接呼ぶ | `src/application/editor-state-types.lisp:14-15`、`src/application/startup-state.lisp:61-63` |
@@ -397,42 +538,43 @@ W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します
 仕様はslice constructorを登録し、`editor-session`がslice名をキーにopaque stateを保持する形を定める。rootは順序を一度決め、6種類のhookを呼び出す（`docs/src/notes/requirements-modern-editor.md:174-180`）。
 
 `editor-state`は次の34 slotを持ちます（`src/application/editor-state-types.lisp:27-60`）。
-仕様4.2はsliceの責務を定めますが、slot単位の割当ては記載していないため、候補ownerはすべて推定です。
+仕様4.2はsliceの責務を定めますが、slot単位の割当ては記載していません。
+表のowner案は、`確定`と付けた行がユーザー確認済みの割当てで、それ以外はこの設計で提案する割当てです。
 
-| slot | 現行初期値 | 候補owner（推定） | 根拠 |
+| slot | 現行初期値 | 候補owner（確定表記のない行は設計案） | 根拠 |
 |---|---|---|---|
 | `window-tree` | `nil` | `core/window-tree` | 仕様4.2の146行目、定義27行目 |
 | `workspaces` | `nil` | `feature/workspace` | 既定managerをfeature constructorで生成、`src/application/editor-state.lisp:10-15`。仕様4.2の170行目、推定 |
 | `minibuffer` | `nil` | `core/minibuffer` | 仕様4.2の148行目、定義29行目 |
 | `keymap` | `nil` | `core/command` | 仕様4.2の147行目、定義30行目 |
 | `file-tree` | `nil` | `feature/file-tree` | 仕様4.2の153行目、定義31行目 |
-| `concurrent-runtime` | `nil` | `feature/file-tree` | startup serviceが起動・停止を担う、`src/application/startup-services.lisp:3-20`。推定 |
-| `renderer` | `nil` | root composition | rendererをstartupが生成して保持、`src/application/startup-state.lisp:38-45`。推定 |
-| `buffers` | `nil` | `feature/buffers` | 仕様4.2の152行目、buffer登録箇所`src/application/commands-internal.lisp:28-42`。slice分担は仕様、個別slot対応は推定 |
+| `concurrent-runtime` | `nil` | `feature/file-tree`（確定。rootが起動、終了、poll adapterを提供） | startup serviceが起動・停止を担う、`src/application/startup-services.lisp:3-20` |
+| `renderer` | `nil` | root composition service（確定） | rendererをstartupが生成して保持、`src/application/startup-state.lisp:38-45` |
+| `buffers` | `nil` | `feature/buffers`（registry APIのownerとして確定） | 仕様4.2の152行目、buffer登録箇所`src/application/commands-internal.lisp:28-42` |
 | `recent-files` | `nil` | `feature/files` | 仕様4.2の151行目、recent-file API`src/application/editor-state-recent-files.lisp:11-30`。推定 |
 | `bookmarks` | `nil` | `feature/bookmark` | 仕様4.2の169行目、定義36行目 |
-| `kill-ring` | `nil` | `feature/kill-ring` | 仕様4.2の157行目、定義37行目 |
-| `last-yank-buffer` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義38行目。推定 |
-| `last-yank-start-offset` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義39行目。推定 |
-| `last-yank-end-offset` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義40行目。推定 |
-| `last-yank-ranges` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義41行目。推定 |
-| `last-yank-ring-index` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義42行目。推定 |
-| `last-yank-repeat-count` | `nil` | `feature/kill-ring` | kill-ringのyank状態、定義43行目。推定 |
-| `last-command-kill-p` | `nil` | `feature/kill-ring` | kill command状態、定義44行目。推定 |
-| `last-command-self-insert-p` | `nil` | `core/command` | undo境界とcommand dispatchの状態、定義45行目。推定 |
+| `kill-ring` | `nil` | `feature/kill-ring`（確定） | 仕様4.2の157行目、定義37行目 |
+| `last-yank-buffer` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義38行目 |
+| `last-yank-start-offset` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義39行目 |
+| `last-yank-end-offset` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義40行目 |
+| `last-yank-ranges` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義41行目 |
+| `last-yank-ring-index` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義42行目 |
+| `last-yank-repeat-count` | `nil` | `feature/kill-ring`（確定） | kill-ringのyank状態、定義43行目 |
+| `last-command-kill-p` | `nil` | `feature/kill-ring`（確定） | kill command状態、定義44行目 |
+| `last-command-self-insert-p` | `nil` | `core/command`（undo境界stateとして確定） | undo境界とcommand dispatchの状態、定義45行目 |
 | `lsp-session` | `nil` | `feature/lsp` | 仕様4.2の171行目、定義46行目。slice分担は仕様、個別slot対応は推定 |
 | `registers` | `nil` | `feature/register` | 仕様4.2の170行目、定義47行目。slice分担は仕様、個別slot対応は推定 |
 | `keyboard-macro` | feature constructor | `feature/keyboard-macro` | slot defaultがconstructorを直接呼ぶ、定義48行目と14-15行目。仕様4.2の170行目 |
 | `isearch` | `nil` | `feature/search` | 仕様4.2の160行目、定義49行目 |
 | `completion` | `nil` | `feature/completion` | 仕様4.2の155行目、定義50行目 |
-| `jump-origins` | `nil` | `feature/lsp` | 定義51行目。LSP移動履歴とする推定 |
+| `jump-origins` | `nil` | `feature/lsp`（navigation stateとして確定） | 定義51行目。LSP navigation履歴 |
 | `auto-save-mode-p` | `nil` | `feature/auto-save` | 仕様4.2の171行目、定義52行目。slice分担は仕様、個別slot対応は推定 |
 | `auto-save-buffers` | `nil` | `feature/auto-save` | 仕様4.2の171行目、定義53行目。推定 |
 | `auto-save-last-run-at` | `nil` | `feature/auto-save` | 仕様4.2の171行目、定義54行目。推定 |
 | `format-on-save-p` | `nil` | `feature/format` | 仕様4.2の171行目、定義55行目。slice分担は仕様、個別slot対応は推定 |
 | `format-command` | `nil` | `feature/format` | 仕様4.2の171行目、定義56行目。推定 |
-| `before-save-hooks` | `nil` | `core/editor-session` hook registry | generic save hook候補、定義57行目と`src/application/editor-state-save-hooks.lisp:15-55`。推定 |
-| `after-save-hooks` | `nil` | `core/editor-session` hook registry | generic save hook候補、定義58行目と`src/application/editor-state-save-hooks.lisp:15-55`。推定 |
+| `before-save-hooks` | `nil` | `core/editor-session` hook registry（確定） | generic save hook registry、定義57行目と`src/application/editor-state-save-hooks.lisp:15-55` |
+| `after-save-hooks` | `nil` | `core/editor-session` hook registry（確定） | generic save hook registry、定義58行目と`src/application/editor-state-save-hooks.lisp:15-55` |
 | `terminal-sessions` | `nil` | `feature/terminal` | 仕様4.2の171行目、定義59行目。slice分担は仕様、個別slot対応は推定 |
 | `prefix-argument` | `nil` | `core/command` | 仕様4.2の147行目、定義60行目 |
 
@@ -442,18 +584,17 @@ W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します
 |---|---|---|
 | spec数と分類 | 現行カタログは120件。movement 26、editing 26、files/projects 12、windows/workspaces 12、session/registers 10、macros/evaluation 5、tooling 17、file-tree 8、UI/lifecycle 4 | `src/application/command-definitions.lisp:3-12`と`src/application/command-definitions-*.lisp`各群。調査時の集計 |
 | 固定カタログ | 9個のグループ変数を中央ファイルが集約して`*command-specs*`を生成する | `src/application/command-definitions.lisp:3-12`、仕様`docs/src/notes/requirements-modern-editor.md:714-717` |
-| 現行spec fields | W0-3は`:name`、`:group`、`:command`、`:keys`、`:help`、`:help-order`と5種metadataを保持する | `src/application/command-registry-forms.lisp:29-44`、`src/application/command-registry-build.lisp:3-15,50-68` |
-| 重複検査 | 同名specはカタログ構築時に検査する。owner情報と登録時検査はない | `src/application/command-registry-build.lisp:27-41,71-87` |
+| 現行spec fields | W0-3は`:name`、`:group`、`:command`、`:keys`、`:help`、`:help-order`と5種metadataを保持する | `src/application/command-registry-forms.lisp:29-50`、`src/application/command-registry-build.lisp:3-15,50-68` |
+| 重複検査 | 同名specはカタログ構築時に検査する。owner-awareなslice登録APIはW2aの設計範囲 | `src/application/command-registry-build.lisp:27-41,71-87` |
 | key衝突 | keymap登録は既存bindingを置き換え、衝突検査をしない | `src/domain/keymap.lisp:18-28`、`src/application/commands-keybindings.lisp:4-9` |
 | 無名spec | `nil`名の`execute-extended-command`がある | `src/application/command-definitions-ui.lisp:26-34` |
 | user-init登録 | user-initは`*command-specs*`を直接appendし、同名があるとerrorにする | `packages/feature/user-init/src/application-user-configuration.lisp:36-65` |
-| W0-3修正前の実装 | fetchした`origin/main`にmetadata validation、`--dump-catalog`、`LOOM_TRACE_COMMANDS`が入っている。今回指示された修正は未反映 | `src/application/command-registry-forms.lisp:14-31`、`src/application/command-registry.lisp:89-142`、`src/main.lisp:12-16` |
-| W0-3修正前のmetadata | `:mutates`と`:needs-region`はboolean、`:prompts`は4種のkeyword list、`:external`はstring list、`:modes`はkeyword list。`:modes`だけ`:all`がdefaultで、5キーの有無を検査しない | `src/application/command-registry-forms.lisp:14-31` |
-| W0-3修正前のdump | JSONはname、group、keys、mutates、prompts、needs-region、external、modesを出す。command ID、help、help-order、owner、keymap IDは出さない | `src/application/command-registry.lisp:89-108` |
-| W0-3修正前のtrace入口 | key経路は`record-command-trace`へ`:key`を渡し、M-x経路は`:mx`を渡してからcommandを直接`funcall`する。二経路はmacro replayとC-u経路を共通化していない | `src/application/input-routing-effects.lisp:20-26`、`src/application/commands-misc.lisp:15-22`。macroとC-uの欠落はW0-3レビュー報告 |
-| W0-3修正前の識別子差 | catalogにはcommand IDがなく、traceは`:name`を優先し、無名specだけsymbol nameへfallbackする。`execute-extended-command`は`:name nil` | `src/application/command-registry.lisp:89-108,120-128`、`src/application/command-definitions-ui.lisp:26-34` |
-| W0-3修正後の設計前提 | `invoke-command(command, route)`を唯一の実行とtrace入口にする。`:key`、`:mx`、`:macro`を使い、W3-8で`:mouse`を追加する。5 metadataをparseとregistrationで必須にし、`:external`は機械可読な識別子にする | 今回のW0-3修正指示。修正後のmainへ反映された時点で実装名と識別子語彙を照合する |
-| カタログ集計の依存 | E2E coverageは中央の`src/application/command-definitions*.lisp`を正規表現で読む | 仕様`docs/src/notes/requirements-modern-editor.md:717` |
+| W0-3のmetadata validation | main上で5 metadata keyすべての省略を拒否し、`:mutates`と`:needs-region`はboolean、`:prompts`と`:modes`はkeyword list、`:external`はnonempty lowercase ASCII identifier listとして検証する | mainの`src/application/command-registry-forms.lisp:15-49` |
+| W0-3のcatalog | JSONは現状`name`値にcanonical identifierを出し、`mx-eligible`、group、keys、5 metadataを出す。`execute-extended-command`のnil nameはcommand symbolから`execute-extended-command`へfallbackし、`mx-eligible`はfalse | mainの`src/application/command-registry.lisp:21-24,86-107`、`src/application/command-definitions-ui.lisp:26-34` |
+| W0-3のtrace起動口 | mainの実関数名は`invoke-command(command, route)`。ここから`record-command-trace`を呼び、その後callableを実行する。trace eventのcommand valueもcatalog helperが返すidentifier | mainの`src/application/commands-misc.lisp:27-34`、`src/application/command-registry.lisp:108-144` |
+| W0-3の残る入力形 | `invoke-command`は引数を受けない。self-insertとmacro内self-insertは文字引数を渡して直接実行され、C-u prefix transitionはkey dispatch前の経路にある。W2aはgatewayへ統合し、prefix-state policyを設計する | mainの`src/application/input-routing-effects.lisp:10-17`、`src/application/commands-keyboard-macro.lisp:62-70`、`src/application/input-routing-dispatch.lisp:35-43` |
+| W0-3の`:external`語彙 | 非空文字列で、各文字はlowercase ASCII `a-z`、数字、`-`、`_`、`.`に限られる | mainの`src/application/command-registry-forms.lisp:34-47` |
+| カタログ集計の依存 | E2E coverage readerは中央の`src/application/command-definitions*.lisp`を正規表現で読み、nil名specを`execute-extended-command`へ置き換える | `t/e2e/loom_e2e/commands.py:1-26`、runnerからの呼出し`t/e2e/loom-test.py:49-55`、仕様`docs/src/notes/requirements-modern-editor.md:717` |
 
 ### 4. スライスごとのASDFと依存検査
 
@@ -498,4 +639,3 @@ W3-10のlocal keymapは`:keymap` IDを指定してcore/commandへ登録します
 | W3-10 | file-tree、window、workspace、session、bookmark、register、keyboard-macro | file-tree local keymapはW3-1の仕組みを使う。`docs/src/notes/requirements-modern-editor.md:501` |
 | W3-11 | shell、format、git、terminal、auto-save | 既存commandのE2Eと不具合修正。`docs/src/notes/requirements-modern-editor.md:502` |
 | 共通の書込範囲 | 各laneは担当sliceのcode、test、`t/paths.sexp`だけを変更する | `docs/src/notes/requirements-modern-editor.md:478-484` |
-
