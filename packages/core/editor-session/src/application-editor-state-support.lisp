@@ -29,3 +29,12 @@
 
 (defvar *visual-row-layout-owner*
   nil)
+
+(defun editor-state-clear-last-yank (editor-state)
+  "Clear the transient state used by yank-pop."
+  (setf (editor-state-last-yank-buffer editor-state) nil
+        (editor-state-last-yank-start-offset editor-state) nil
+        (editor-state-last-yank-end-offset editor-state) nil
+        (editor-state-last-yank-ranges editor-state) nil
+        (editor-state-last-yank-ring-index editor-state) nil
+        (editor-state-last-yank-repeat-count editor-state) nil))

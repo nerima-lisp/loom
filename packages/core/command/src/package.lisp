@@ -1,8 +1,16 @@
 (defpackage #:loom/core/command
   (:use #:cl)
+  (:import-from #:loom/core/buffer
+                #:buffer-insert-string
+                #:buffer-record-undo-boundary)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
-                #:editor-state-minibuffer)
+                #:editor-state-clear-last-yank
+                #:editor-state-last-command-kill-p
+                #:editor-state-last-command-self-insert-p
+                #:editor-state-minibuffer
+                #:editor-state-prefix-argument
+                #:editor-state-window-tree)
   (:import-from #:loom/core/minibuffer
                 #:minibuffer-message)
   (:export
@@ -28,8 +36,15 @@
    #:prefix-argument-negative
    #:prefix-argument-consume
    #:prefix-argument-reset
+   #:prefix-argument-action
+   #:prefix-argument-for-editor
+   #:prefix-argument-value-for-editor
+   #:apply-prefix-argument-action
+   #:consume-prefix-argument-for-editor
    #:*current-prefix-argument*
    #:repeat-command
+   #:record-undo-boundary-for-command
+   #:self-insert-command
    #:invoke-command
    #:command-spec
    #:command-spec-group

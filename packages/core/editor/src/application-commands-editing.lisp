@@ -1,9 +1,5 @@
 (in-package #:loom)
 
-(defun self-insert-command (character)
-  "Insert CHARACTER repeatedly according to the active numeric prefix."
-  (%self-insert-character character))
-
 (define-repeating-command delete-char
   "Delete characters at point, repeating for the active numeric prefix."
   %delete-char-forward-once %delete-char-backward-once)

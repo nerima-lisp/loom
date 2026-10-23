@@ -86,7 +86,7 @@
             (loom::editor-state-last-yank-ring-index state) 2
             (loom::editor-state-last-yank-repeat-count state) 4)
       (let ((*editor-state* state))
-        (loom::%clear-last-yank))
+        (loom/core/editor-session:editor-state-clear-last-yank state))
       (expect (loom::editor-state-last-yank-buffer state) :to-be nil)
       (expect (loom::editor-state-last-yank-start-offset state) :to-be nil)
       (expect (loom::editor-state-last-yank-end-offset state) :to-be nil)

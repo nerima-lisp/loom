@@ -1,5 +1,27 @@
 (defpackage #:loom/feature/keyboard-macro
-  (:use #:cl #:loom #:loom/application)
+  (:use #:cl)
+  (:import-from #:loom/core/command
+                #:*current-prefix-argument*
+                #:apply-prefix-argument-action
+                #:consume-prefix-argument-for-editor
+                #:find-extended-command-spec
+                #:invoke-command
+                #:keymap-state-dispatch
+                #:keymap-state-sequence
+                #:make-keymap-state
+                #:prefix-argument-action
+                #:prefix-argument-for-editor
+                #:prefix-argument-reset
+                #:prefix-argument-value-for-editor
+                #:record-undo-boundary-for-command
+                #:self-insert-command)
+  (:import-from #:loom/core/editor-session
+                #:*editor-state*
+                #:editor-state-keyboard-macro
+                #:editor-state-keymap
+                #:editor-state-minibuffer)
+  (:import-from #:loom/core/minibuffer
+                #:minibuffer-message)
   (:export
    #:keyboard-macro-event
    #:keyboard-macro-event-p

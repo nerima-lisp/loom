@@ -68,4 +68,4 @@
    #:register-buffer-truncate-policy
    #:buffer-truncate-lines-p
    #:next-visual-line-once
-   #:previous-visual-line-once))
+   #:previous-visual-line-once #:editor-state-clear-last-yank))

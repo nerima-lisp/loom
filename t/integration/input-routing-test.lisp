@@ -30,7 +30,7 @@
       (setf (loom::editor-state-last-command-self-insert-p *editor-state*) nil)
       (let ((buffer (%selected-test-buffer)))
         (buffer-insert-string buffer "x")
-        (loom:record-undo-boundary-for-command t)
+        (loom/core/command:record-undo-boundary-for-command t)
         (buffer-insert-string buffer "y")
         (loom::undo-command)
         (expect (buffer-line buffer 0) :to-equal "xab"))))
@@ -41,7 +41,7 @@
       (setf (loom::editor-state-last-command-self-insert-p *editor-state*) t)
       (let ((buffer (%selected-test-buffer)))
         (buffer-insert-string buffer "x")
-        (loom:record-undo-boundary-for-command t)
+        (loom/core/command:record-undo-boundary-for-command t)
         (buffer-insert-string buffer "y")
         (loom::undo-command)
         (expect (buffer-line buffer 0) :to-equal ""))))
@@ -49,7 +49,7 @@
   (it
     "updates last-command-self-insert-p for the next call"
     (let ((*editor-state* (%fresh-editor-state "")))
-      (loom:record-undo-boundary-for-command t)
+      (loom/core/command:record-undo-boundary-for-command t)
       (expect (loom::editor-state-last-command-self-insert-p *editor-state*) :to-be t))))
 
 (describe

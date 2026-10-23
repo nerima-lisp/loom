@@ -16,7 +16,7 @@
     (%with-selected-buffer-state (buffer initial-content)
       (buffer-set-point buffer 0 column)
       (ecase operation-kind
-        (:self-insert (loom:self-insert-command #\e))
+        (:self-insert (loom/core/command:self-insert-command #\e))
         (:delete-char (loom::delete-char))
         (:delete-backward-char (loom::delete-backward-char)))
       (expect (buffer-line buffer 0) :to-equal expected-line)))
@@ -26,7 +26,7 @@
           (loom:*current-prefix-argument* 0))
       (let ((buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 2)
-        (loom:self-insert-command #\x)
+        (loom/core/command:self-insert-command #\x)
         (loom::newline-command)
         (loom::open-line)
         (expect (buffer-text buffer) :to-equal "hello")

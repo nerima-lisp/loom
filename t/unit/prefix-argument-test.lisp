@@ -90,5 +90,5 @@
     (let ((argument (make-prefix-argument)))
       (when active
         (prefix-argument-universal argument))
-      (expect (prefix-argument-action descriptor argument)
+      (expect (loom/core/command:prefix-argument-action descriptor argument)
               :to-equal expected))))

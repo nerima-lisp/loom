@@ -77,27 +77,27 @@
     (let ((inactive (make-prefix-argument))
           (active (prefix-argument-universal (make-prefix-argument))))
       (multiple-value-bind (kind value)
-          (loom::%prefix-argument-descriptor-action
+          (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:alt) #\3) inactive)
         (expect kind :to-equal :digit)
         (expect value :to-equal 3))
       (multiple-value-bind (kind value)
-          (loom::%prefix-argument-descriptor-action
+          (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:alt) #\-) inactive)
         (expect kind :to-equal :negative)
         (expect value :to-be nil))
       (multiple-value-bind (kind value)
-          (loom::%prefix-argument-descriptor-action
+          (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:control) #\3) active)
         (expect kind :to-be nil)
         (expect value :to-be nil))
       (multiple-value-bind (kind value)
-          (loom::%prefix-argument-descriptor-action
+          (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:alt :control) #\3) inactive)
         (expect kind :to-be nil)
         (expect value :to-be nil))
       (multiple-value-bind (kind value)
-          (loom::%prefix-argument-descriptor-action
+          (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:control) #\u) inactive)
         (expect kind :to-equal :universal)
         (expect value :to-be nil)))))

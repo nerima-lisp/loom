@@ -1,16 +1,5 @@
 (in-package #:loom)
 
-(defun record-undo-boundary-for-command (self-insert-p)
-  "Record a buffer undo boundary when the command kind changes.
-
-SELF-INSERT-P is true for SELF-INSERT-COMMAND and false for keymap-dispatched
-commands. Consecutive self inserts therefore collapse into one undo group,
-while switching to any other command starts a new group."
-  (unless (eq self-insert-p
-              (editor-state-last-command-self-insert-p *editor-state*))
-    (buffer-record-undo-boundary (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
-  (setf (editor-state-last-command-self-insert-p *editor-state*) self-insert-p))
-
 (defmacro define-command-name-set (name names documentation)
   "Declare a command-name set consumed by routing-state decisions."
   `(defparameter ,name ',names ,documentation))
