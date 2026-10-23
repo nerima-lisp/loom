@@ -276,6 +276,23 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
+    def test_current_trace_shape_without_entry_cannot_verify_key_sequence(self):
+        key_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"x","modifiers":["control"]},'
+            '{"key":"s","modifiers":["control"]}]}'
+        )
+        self.required["entry"] = key_entry
+        self.ledger["entry"] = key_entry
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_route="key",
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-trace")
+        self.assertIn("identify the generated key sequence", path["reason"])
+
     def test_ledger_key_sequence_must_match_generated_path(self):
         self.required["entry"] = (
             'key:{"keymap":"global","sequence":["C-x","C-s"]}'
