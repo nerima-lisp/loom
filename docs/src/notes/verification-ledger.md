@@ -809,12 +809,12 @@ checks passing. The later post-rebase flake check also exited 0. This sequence
 does not establish why the first run timed out; no timeout was changed.
 
 The full check warned that `x86_64-linux` was omitted on this Darwin host and
-that the E2E app has no `meta` attribute. During one `loom` package install and
-an earlier docs build, Nix's `auditTmpdir` hook printed a broken pipe from
-`find` and a segmentation fault in the ELF/script classifier pipeline while
-scanning built files for `$TMPDIR` references. The latest docs build did not
-print that failure. The enclosing builds and full flake check exited 0, but
-completion of the affected scans is unverified; their cause was not established.
+that the E2E app has no `meta` attribute. Nix's `auditTmpdir` hook has printed a
+broken pipe from `find` and a segmentation fault in its file-classifier
+pipeline during a `loom` package install and docs installs. In the final check,
+the docs install printed this fault; the coverage log did not. The builds and
+full check exited 0, but completion of the affected scans is unverified. The
+cause was not established.
 
 ### Independent review follow-up
 
@@ -882,6 +882,4 @@ scenario was already `exit-code-only` in the baseline and is not part of the
 
 After the final rebase, `nix flake check --print-build-logs` exited 0 with all
 eight checks passing on aarch64-darwin; Nix omitted x86_64-linux. The coverage
-derivation reported 1507 passed, 3 skipped, and 0 failed or errored. Its build
-log contained no broken-pipe or segmentation-fault report from the temporary-
-directory audit helper.
+derivation reported 1507 passed, 3 skipped, and 0 failed or errored.
