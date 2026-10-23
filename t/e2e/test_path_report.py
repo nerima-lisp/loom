@@ -25,7 +25,7 @@ class PathReportTests(unittest.TestCase):
         self.ledger = {
             **self.required,
             "scenario": "files/save-buffer",
-            "entry": "key",
+            "entry": self.required["entry"],
             "state": "edited buffer",
             "outcome": "saved buffer",
             "observe": ["file_bytes"],
@@ -40,13 +40,14 @@ class PathReportTests(unittest.TestCase):
         trace_commands=("save-buffer",),
         status="passed",
         trace_route="key",
+        trace_name="trace.jsonl",
     ):
         scenario_dir = self.artifacts_dir / "files-save-buffer"
         scenario_dir.mkdir(exist_ok=True)
         result = {
             "scenario": self.ledger["scenario"],
             "observations": observations,
-            "artifacts": {"trace": "trace.jsonl"},
+            "artifacts": {"trace": trace_name},
         }
         if status is not None:
             result["status"] = status
@@ -123,6 +124,32 @@ class PathReportTests(unittest.TestCase):
         self.assertEqual(report["paths"][0]["status"], "no-trace")
         self.assertEqual(report["paths"][0]["missing_commands"], ["save-buffer"])
 
+    def test_trace_from_another_scenario_is_not_used(self):
+        other_scenario = self.artifacts_dir / "other-scenario"
+        other_scenario.mkdir()
+        (other_scenario / "trace.jsonl").write_text(
+            json.dumps({"command": "save-buffer", "route": "key"}) + "\n",
+            encoding="utf-8",
+        )
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_name="../other-scenario/trace.jsonl",
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "no-trace")
+        self.assertIn("escapes the result scenario directory", path["reason"])
+
+    def test_duplicate_trace_members_are_not_accepted(self):
+        self._write_scenario([self._matching_observation()])
+        trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
+        trace_path.write_text(
+            '{"command":"save-buffer","route":"mx","route":"key"}\n',
+            encoding="utf-8",
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+
     def test_mx_entry_uses_mx_trace_route(self):
         self.required["entry"] = "mx"
         self.ledger["entry"] = "mx"
@@ -132,10 +159,38 @@ class PathReportTests(unittest.TestCase):
 
     def test_mx_prompt_entry_suffix_requires_mx_route(self):
         self.required["entry"] = "mx;prompt:2:completion"
-        self.ledger["entry"] = "mx"
+        self.ledger["entry"] = "mx;prompt:2:completion"
         self._write_scenario([self._matching_observation()], trace_route="mx")
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_ledger_key_sequence_must_match_generated_path(self):
+        self._write_scenario([self._matching_observation()])
+        self.ledger["entry"] = (
+            'key:{"keymap":"global","sequence":["C-x","C-a"]}'
+        )
+        report = self._report(ledger=self.ledger)
+        path = report["paths"][0]
+        self.assertEqual(path["status"], "mismatch")
+        self.assertEqual(
+            path["reason"], "generated path and ledger entry do not match"
+        )
+
+    def test_duplicate_result_members_are_not_accepted(self):
+        self._write_scenario([self._matching_observation()])
+        result_path = next(self.artifacts_dir.rglob("result.json"))
+        result = {
+            "scenario": self.ledger["scenario"],
+            "observations": [self._matching_observation()],
+            "artifacts": {"trace": "trace.jsonl"},
+        }
+        serialized = json.dumps(result)
+        result_path.write_text(
+            serialized[:-1] + ',"status":"failed","status":"passed"}\n',
+            encoding="utf-8",
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "no-result")
 
     def test_mismatching_observation_is_not_pass_even_if_passed_flag_says_true(self):
         self._write_scenario(

@@ -20,6 +20,19 @@ _EFFECT_TYPES = frozenset(
 )
 
 
+class _DuplicateJsonMember(ValueError):
+    pass
+
+
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateJsonMember(f"duplicate JSON object member {key!r}")
+        result[key] = value
+    return result
+
+
 def _as_list(value):
     if value is None:
         return []
@@ -70,8 +83,13 @@ def _load_results(artifacts_dir):
     for result_path in sorted(root.rglob("result.json")):
         try:
             with result_path.open(encoding="utf-8") as handle:
-                result = json.load(handle)
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                result = json.load(handle, object_pairs_hook=_unique_object)
+        except (
+            OSError,
+            UnicodeError,
+            json.JSONDecodeError,
+            _DuplicateJsonMember,
+        ) as error:
             by_scenario[None].append((result_path, None, str(error)))
             continue
         if isinstance(result, Mapping) and isinstance(result.get("scenario"), str):
@@ -86,11 +104,11 @@ def _read_trace(result_path, result, artifacts_dir):
         trace_name = "trace.jsonl"
 
     trace_path = (result_path.parent / trace_name).resolve()
-    artifact_root = Path(artifacts_dir).resolve()
+    scenario_root = result_path.parent.resolve()
     try:
-        trace_path.relative_to(artifact_root)
+        trace_path.relative_to(scenario_root)
     except ValueError:
-        return None, "trace artifact path escapes the artifacts directory"
+        return None, "trace artifact path escapes the result scenario directory"
     if not trace_path.is_file():
         return None, "trace.jsonl artifact does not exist"
 
@@ -100,7 +118,7 @@ def _read_trace(result_path, result, artifacts_dir):
             for line_number, line in enumerate(handle, 1):
                 if not line.strip():
                     continue
-                record = json.loads(line)
+                record = json.loads(line, object_pairs_hook=_unique_object)
                 if not isinstance(record, Mapping):
                     return None, f"trace line {line_number} is not a JSON object"
                 command = record.get("command")
@@ -109,7 +127,12 @@ def _read_trace(result_path, result, artifacts_dir):
                     if route is not None and not isinstance(route, str):
                         return None, f"trace line {line_number} has an invalid route"
                     commands.add((command, route))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        _DuplicateJsonMember,
+    ) as error:
         return None, f"trace.jsonl cannot be read: {error}"
     return commands, None
 
@@ -287,26 +310,20 @@ def _classify_path(
         item["reason"] = f"result.json cannot be read: {load_error}"
         return item
 
+    generated_entry = required.get("entry")
+    ledger_entry = ledger.get("entry")
+    if generated_entry != ledger_entry:
+        item["status"] = "mismatch"
+        item["reason"] = "generated path and ledger entry do not match"
+        return item
+
     trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)
     targets = [
         command.strip()
         for command in item["commands"]
         if isinstance(command, str) and command.strip()
     ]
-    entry_routes = {
-        route
-        for route in (
-            _entry_route(required.get("entry")),
-            _entry_route(ledger.get("entry")),
-        )
-        if route is not None
-    }
-    if len(entry_routes) > 1:
-        item["status"] = "mismatch"
-        item["reason"] = "generated path and ledger entry require different trace routes"
-        item["required_routes"] = sorted(entry_routes)
-        return item
-    expected_route = next(iter(entry_routes), None)
+    expected_route = _entry_route(generated_entry)
     missing_commands = (
         sorted(
             command
