@@ -1,4 +1,4 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/core/window-tree)
 
 (defun %window-replace (node target replacement)
   "Return NODE with the subtree EQ to TARGET replaced by REPLACEMENT,

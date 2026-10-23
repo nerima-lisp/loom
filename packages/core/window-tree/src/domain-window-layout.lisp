@@ -1,4 +1,4 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/core/window-tree)
 
 (defun window-tree-layout (tree)
   "Return TREE's nested layout description.

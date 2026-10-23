@@ -17,6 +17,8 @@
      "src/package.lisp")
     ("LOOM/CORE/BUFFER" ("core/buffer") (:domain)
      "packages/core/buffer/src/package.lisp")
+    ("LOOM/CORE/WINDOW-TREE" ("core/window-tree") (:domain)
+     "packages/core/window-tree/src/package.lisp")
     ("LOOM/FEATURE/MODE" ("feature/mode") (:domain :application)
      "packages/feature/mode/src/package.lisp")
     ("LOOM/FEATURE/SYNTAX-HIGHLIGHTING" ("feature/syntax-highlighting")

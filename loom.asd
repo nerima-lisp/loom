@@ -33,6 +33,7 @@ root source tree responsible for every feature."
      (:file "src/package-exports")
      (:file "src/package-application")
      (:file "packages/core/buffer/src/package")
+     (:file "packages/core/window-tree/src/package")
      (:file "src/package")
     ))
    (:module "feature-mode-package"
@@ -230,6 +231,17 @@ root source tree responsible for every feature."
       (
        (:file "packages/core/editor/src/domain-prefix-argument")
       ))
+     (:module "core-window-tree-domain"
+      :pathname "."
+      :serial t
+      :components
+      (
+       (:file "packages/core/window-tree/src/domain-window")
+       (:file "packages/core/window-tree/src/domain-window-support")
+       (:file "packages/core/window-tree/src/domain-window-layout")
+       (:file "packages/core/window-tree/src/domain-window-operations")
+       (:file "packages/core/window-tree/src/domain-window-accessors")
+       (:file "packages/core/window-tree/src/domain-window-deletion")))
     ))
    (:module "feature-search-domain"
     :pathname "."
@@ -238,18 +250,6 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/search/src/domain-buffer-search")
      (:file "packages/feature/search/src/domain-isearch")
-    ))
-   (:module "feature-window-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/window/src/domain-window")
-     (:file "packages/feature/window/src/domain-window-support")
-     (:file "packages/feature/window/src/domain-window-layout")
-     (:file "packages/feature/window/src/domain-window-operations")
-     (:file "packages/feature/window/src/domain-window-accessors")
-     (:file "packages/feature/window/src/domain-window-deletion")
     ))
    (:module "feature-workspace-domain"
     :pathname "."

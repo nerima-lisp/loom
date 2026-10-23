@@ -1,4 +1,4 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/core/window-tree)
 
 (defun %window-first-leaf (node)
   "Return the first leaf below NODE in depth-first order."

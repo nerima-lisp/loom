@@ -1,4 +1,4 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/core/window-tree)
 
 (defun window-x (window)
   "Return WINDOW's left edge, in terminal columns, relative to its window

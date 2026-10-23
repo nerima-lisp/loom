@@ -1,4 +1,4 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/core/window-tree)
 
 (defgeneric %window-collect-leaves (node)
   (:documentation
