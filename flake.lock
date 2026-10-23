@@ -153,6 +153,23 @@
         "type": "github"
       }
     },
+    "cl-markdown-kit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792527800,
+        "narHash": "sha256-ENp3swjX9e37YjyUjKn5aZjELRqj7kZy06mQuJiLSU4=",
+        "owner": "nerima-lisp",
+        "repo": "cl-markdown-kit",
+        "rev": "fdb19cf8cda2064e7471654fc9b979c2d7a0fc52",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v0.2.0",
+        "repo": "cl-markdown-kit",
+        "type": "github"
+      }
+    },
     "cl-nix-forge": {
       "inputs": {
         "nixpkgs": [
@@ -195,6 +212,60 @@
         "owner": "nerima-lisp",
         "ref": "v0.5.0",
         "repo": "cl-nix-forge",
+        "type": "github"
+      }
+    },
+    "cl-org-kit": {
+      "inputs": {
+        "cl-boundary-kit": [
+          "cl-boundary-kit"
+        ],
+        "cl-codec-kit": [
+          "cl-codec-kit"
+        ],
+        "cl-concurrent-kit": [
+          "cl-concurrent-kit"
+        ],
+        "cl-date-kit": [
+          "cl-date-kit"
+        ],
+        "cl-host-kit": [
+          "cl-host-kit"
+        ],
+        "cl-nix-forge": [
+          "cl-nix-forge"
+        ],
+        "cl-parser-kit": [
+          "cl-parser-kit"
+        ],
+        "cl-regex-kit": [
+          "cl-regex-kit"
+        ],
+        "cl-weave": [
+          "cl-weave"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "paredit-cli": [
+          "paredit-cli"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792611158,
+        "narHash": "sha256-YthSVPpzHRYFLHrpYNjyFufdAHvIlGNwPPxaqyixw8Y=",
+        "owner": "nerima-lisp",
+        "repo": "cl-org-kit",
+        "rev": "6b33b6f5e18264cc194b4888df83bceebafbcfa5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nerima-lisp",
+        "ref": "v0.2.0",
+        "repo": "cl-org-kit",
         "type": "github"
       }
     },
@@ -409,7 +480,9 @@
         "cl-host-kit": "cl-host-kit",
         "cl-json-kit": "cl-json-kit",
         "cl-log-kit": "cl-log-kit",
+        "cl-markdown-kit": "cl-markdown-kit",
         "cl-nix-forge": "cl-nix-forge",
+        "cl-org-kit": "cl-org-kit",
         "cl-parser-kit": "cl-parser-kit",
         "cl-process-kit": "cl-process-kit",
         "cl-prolog-kit": "cl-prolog-kit",

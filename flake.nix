@@ -86,6 +86,25 @@
       url = "github:nerima-lisp/cl-resilience-kit/v1.0.0";
       flake = false;
     };
+    cl-markdown-kit = {
+      url = "github:nerima-lisp/cl-markdown-kit/v0.2.0";
+      flake = false;
+    };
+    cl-org-kit = {
+      url = "github:nerima-lisp/cl-org-kit/v0.2.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.cl-boundary-kit.follows = "cl-boundary-kit";
+      inputs.cl-codec-kit.follows = "cl-codec-kit";
+      inputs.cl-concurrent-kit.follows = "cl-concurrent-kit";
+      inputs.cl-date-kit.follows = "cl-date-kit";
+      inputs.cl-host-kit.follows = "cl-host-kit";
+      inputs.cl-nix-forge.follows = "cl-nix-forge";
+      inputs.cl-parser-kit.follows = "cl-parser-kit";
+      inputs.cl-regex-kit.follows = "cl-regex-kit";
+      inputs.cl-weave.follows = "cl-weave";
+      inputs.paredit-cli.follows = "paredit-cli";
+      inputs.treefmt-nix.follows = "treefmt-nix";
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -116,6 +135,8 @@
       cl-process-kit,
       cl-vcs-kit,
       cl-resilience-kit,
+      cl-markdown-kit,
+      cl-org-kit,
       treefmt-nix,
       ...
     }:
@@ -258,6 +279,27 @@
             name = "cl-json-kit";
             source = cl-json-kit;
           };
+          clMarkdownKit = sibling {
+            name = "cl-markdown-kit";
+            source = cl-markdown-kit;
+            dependencies = [
+              clParserKit
+              clCodecKit
+            ];
+          };
+          clOrgKit = sibling {
+            name = "cl-org-kit";
+            source = cl-org-kit.outPath;
+            dependencies = [
+              clParserKit
+              clRegexKit
+              clCodecKit
+              clDateKit
+              clConcurrentKit
+              clBoundaryKit
+              clHostKit
+            ];
+          };
           clDateKit = sibling {
             name = "cl-date-kit";
             source = cl-date-kit;
@@ -346,7 +388,12 @@
           clResilienceKit
         ];
 
-      lispCheckDependencies = ctx: [ (siblingsFor ctx).clWeave ];
+      lispCheckDependencies =
+        ctx: with siblingsFor ctx; [
+          clWeave
+          clMarkdownKit
+          clOrgKit
+        ];
 
       # Share one bounded timeout between tests and CI.
       timeoutSeconds = 1800;
