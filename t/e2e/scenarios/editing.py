@@ -29,10 +29,13 @@ def edit_save_exit(binary):
             # Screen coordinates start at column 0 because there is no gutter.
             session.wait_for_region_cursor("body", 1)
             row0 = session.region_text("body")
-            if not row0.startswith("ax"):
-                raise AssertionError(
-                    f"row 0 after typing 'a' should start with 'ax', got {row0[:10]!r}"
-                )
+            session.assert_screen_text(
+                row0,
+                "ax",
+                match="starts_with",
+                region="body",
+                row=0,
+            )
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, b"ax\n")
@@ -49,10 +52,8 @@ def ansi_wide_full(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             for index, expected in enumerate(lines):
-                row = session.layout.row("body", index)
-                session.wait_until(
-                    lambda screen: screen.text(row).rstrip(" ") == expected,
-                    what=f"row {index} to equal {expected!r}",
+                session.wait_for_region_exact_text(
+                    "body", expected, index=index, strip_right=True
                 )
             output, code = session.quit()
         _assert_exit_zero("ansi-wide-full", output, code)
@@ -67,13 +68,7 @@ def ansi_wide_diff(binary):
             row = session.layout.row("body")
 
             def expect_line(expected, column):
-                session.wait_until(
-                    lambda screen: (
-                        screen.text(row).rstrip(" ") == expected
-                        and screen.cursor == (row, column)
-                    ),
-                    what=f"{expected!r} with cursor at column {column}",
-                )
+                session.wait_for_row_and_cursor(row, expected, column)
 
             expect_line("AX", 0)
             for glyph in ("あ", "😀"):

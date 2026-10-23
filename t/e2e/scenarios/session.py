@@ -14,9 +14,8 @@ def _assert_exit_zero(name, output, code):
 
 
 def _wait_for_exact_line(session, region, expected, index=0):
-    session.wait_until(
-        lambda _screen: session.region_text(region, index).rstrip() == expected.rstrip(),
-        what=f"{region} line {index} to equal {expected!r}",
+    session.wait_for_region_exact_text(
+        region, expected.rstrip(), index=index, strip_right=True
     )
 
 
@@ -28,14 +27,11 @@ def _run_prompted_command(session, command, prompt, value):
 
 
 def _read_saved_session(session, path):
-    session.wait_until(
-        lambda _screen: os.path.isfile(path),
-        what=f"session file {path!r} to be created",
+    session.wait_for_external_state(
+        "saved session file exists", lambda: os.path.isfile(path), True
     )
-    with open(path, "rb") as handle:
-        data = handle.read()
-    if not data:
-        raise AssertionError(f"session file {path!r} is empty")
+    data = session.observe_file_bytes(path)
+    session.assert_external_state("saved session file is non-empty", bool(data), True)
     return data
 
 

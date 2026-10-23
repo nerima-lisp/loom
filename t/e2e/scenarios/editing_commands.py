@@ -29,17 +29,13 @@ def _close(session, name):
 
 
 def _wait_for_body(session, expected):
-    session.wait_until(
-        lambda screen: screen.text(session.layout.row("body")).rstrip() == expected,
-        what=f"body region to equal {expected!r}",
+    session.wait_for_region_exact_text(
+        "body", expected, strip_right=True
     )
 
 
 def _wait_for_body_prefix(session, expected):
-    session.wait_until(
-        lambda screen: screen.text(session.layout.row("body")).startswith(expected),
-        what=f"body region to start with {expected!r}",
-    )
+    session.wait_for_region_text_prefix("body", expected)
 
 
 @scenario(

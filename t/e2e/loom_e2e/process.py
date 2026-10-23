@@ -39,6 +39,7 @@ class LoomProcess:
         self._status = None
         self._eof = False
         self._force_reap_poll = False
+        self._output = bytearray()
         try:
             # At-fork callbacks can swallow exceptions raised by signal handlers.
             previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
@@ -68,6 +69,29 @@ class LoomProcess:
         size = struct.pack("HHHH", rows, columns, 0, 0)
         fcntl.ioctl(self._fd, termios.TIOCSWINSZ, size)
 
+    def resize(self, columns, rows):
+        """Resize the controlling PTY and let the kernel deliver SIGWINCH."""
+        if isinstance(columns, bool) or not isinstance(columns, int) or columns <= 0:
+            raise ValueError("terminal columns must be a positive integer")
+        if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
+            raise ValueError("terminal rows must be a positive integer")
+        if self._fd is None:
+            raise RuntimeError("cannot resize a closed PTY")
+        self._set_terminal_size(columns, rows)
+
+    @property
+    def window_size(self):
+        """Return the controlling PTY size as (rows, columns)."""
+        if self._fd is None:
+            raise RuntimeError("cannot inspect a closed PTY")
+        size = fcntl.ioctl(self._fd, termios.TIOCGWINSZ, b"\0" * 8)
+        return struct.unpack("HHHH", size)[:2]
+
+    @property
+    def output_bytes(self):
+        """Return every PTY byte read so far, including bytes drained during cleanup."""
+        return bytes(self._output)
+
     def _poll_exit(self):
         if self._status is not None:
             return self._status
@@ -84,6 +108,7 @@ class LoomProcess:
     def _wait_for_exit(self, timeout):
         deadline = time.monotonic() + timeout
         while self._status is None:
+            self.read_available()
             try:
                 status = self._poll_exit()
             except InterruptedError:
@@ -135,6 +160,8 @@ class LoomProcess:
             raise
         if not data:
             self._eof = True
+        else:
+            self._output.extend(data)
         return data
 
     def poll(self, poll_timeout=0.05):
@@ -312,6 +339,11 @@ class LoomProcess:
             pending_error = pending_error or error
         finally:
             if self._fd is not None:
+                try:
+                    while self.read_available():
+                        pass
+                except BaseException as error:
+                    pending_error = pending_error or error
                 # Keep a deadline exception from leaving a closed descriptor recorded.
                 previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
                 try:

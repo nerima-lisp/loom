@@ -19,18 +19,15 @@ def _write(path, content):
 
 
 def _wait_for_body_text(session, substring, timeout=10.0):
-    session.wait_until(
-        lambda _screen: any(
-            substring in session.region_text("body", index)
-            for index in range(session.layout.body_height)
-        ),
-        timeout,
-        f"body to contain {substring!r}",
-    )
+    session.wait_for_region_contents("body", substring, timeout=timeout)
 
 
 def _assert_body_text(session, index, expected):
     actual = session.region_text("body", index).rstrip()
+    session.observe_screen_text(
+        actual, expected=expected, passed=actual == expected,
+        region="body", row=index,
+    )
     if actual != expected:
         raise AssertionError(
             f"body row {index} expected {expected!r}, got {actual!r}"
@@ -38,10 +35,8 @@ def _assert_body_text(session, index, expected):
 
 
 def _wait_for_body_row(session, index, expected, timeout=10.0):
-    session.wait_until(
-        lambda _screen: session.region_text("body", index).rstrip() == expected,
-        timeout,
-        f"body row {index} to equal {expected!r}",
+    session.wait_for_region_exact_text(
+        "body", expected, index=index, strip_right=True, timeout=timeout
     )
 
 
@@ -68,8 +63,11 @@ def file_and_buffer_commands(binary):
 
         with Session(binary, [alpha_path]) as session:
             session.wait_ready()
-            if session.home_dir == os.path.expanduser("~"):
-                raise AssertionError("Session did not isolate HOME")
+            session.assert_external_state(
+                "scratch HOME differs from real HOME",
+                session.home_dir != os.path.expanduser("~"),
+                True,
+            )
             _assert_body_text(session, 0, "alpha")
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
 
@@ -173,19 +171,20 @@ def project_file_commands(binary):
         with Session(binary, [source_path]) as session:
             session.wait_ready()
             session.send(keys.ctrl("x") + b"pr")
-            session.wait_for_region_text("minibuffer", "Project root: ")
+            session.wait_for_region_text("minibuffer", f"Project root: {root}/")
             message = session.region_text("minibuffer").rstrip()
             visible_root = message.removeprefix("Project root: ").rstrip("/\\")
             parent_length = len(os.path.dirname(root)) + 1
-            if not (
+            root_visible = bool(
                 visible_root
                 and root.startswith(visible_root)
                 and len(visible_root) > parent_length
-            ):
-                raise AssertionError(
-                    f"project root message omitted project directory {root!r}: "
-                    f"{message!r}"
-                )
+            )
+            session.assert_external_state(
+                "project root message identifies the project directory",
+                root_visible,
+                True,
+            )
 
             session.send(keys.ctrl("x") + b"pf")
             session.wait_for_region_text("minibuffer", "Project file: ")
@@ -201,15 +200,14 @@ def project_file_commands(binary):
             session.send(keys.RET)
             session.wait_for_region_text("minibuffer", "Matches:")
             message = session.region_text("minibuffer")
-            if "src/main.py:1" not in message:
-                raise AssertionError(f"project search omitted source match: {message!r}")
-            if "generated.py" in message:
-                raise AssertionError(f"project search included ignored file: {message!r}")
+            session.assert_screen_text(
+                message, "src/main.py:1", match="contains", region="minibuffer"
+            )
+            session.assert_screen_text(
+                message, "generated.py", match="not_contains", region="minibuffer"
+            )
             _assert_body_text(session, 0, "other")
-            with open(other_path, "rb") as handle:
-                unchanged = handle.read()
-            if unchanged != b"other\n":
-                raise AssertionError("project-find-file changed the visited file")
+            session.assert_file_bytes(other_path, b"other\n")
 
             output, code = session.quit()
         _assert_exit_zero("project file commands", output, code)

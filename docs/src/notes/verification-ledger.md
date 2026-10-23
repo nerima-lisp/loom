@@ -651,7 +651,6 @@ are from the separate CI run, not from this Darwin invocation.
 The author's eleven real-terminal acceptance rows remain `Not run`. Automated
 checks do not establish Japanese IME usability or author acceptance. No draft
 or published release has been created.
-
 ## 5. W0-1 仕様書コミット後の基線
 
 `docs/src/notes/requirements-modern-editor.md`をバイト単位で複製し、コミット`5f24574071e69b053b65f2f15cfe770ee2b37b3f`を`origin/main`へ反映した。このコミットを実機基線として、macOS arm64で`.#default`のバイナリを実PTYから観測した。アプリ、テスト、ハーネスの変更はない。
@@ -714,3 +713,60 @@ D13の測定中に採った`uptime`は次のとおり。すべて高負荷下の
 | BOMと末尾改行なしの保存 | 元のバイト列を維持した。成功。 |
 | 80x24から60x12への端末縮小 | TIOCGWINSZで12x60を確認したが、キー入力前のPTY出力は0バイトで再描画しなかった。仕様2.2を再現せず。 |
 | 起動時間 | 上記の高負荷計測を記録。 |
+## W0-2: PTY E2E harness
+
+The baseline at `071c407` passed all 117 existing PTY scenarios and reported
+120/120 commands covered. Final checks below ran against the W0-2 working tree
+based on that revision. The full run passed all 118 scenarios, including the new
+`harness resize and typed observations` self-test, and still reported 120/120
+commands covered. No existing scenario changed from PASS to FAIL in the final
+run. The self-test checked the actual
+PTY window size `(6, 80)`, terminal cell attributes, file bytes, typed effect
+observations, and raw CSI output in `output.pty`. Its trace file was empty,
+which is expected before W0-3 adds command tracing.
+
+One intermediate run failed `project file commands` because it read a partially
+rendered project-root prompt. The same scenario failed in isolation, confirming
+the prompt race. The scenario now waits for the full expected root before
+reading the screen; its isolated rerun and the final full run passed. No timeout
+was extended. CR remained the default RET byte throughout these runs, and no
+CR-related product failure was observed.
+
+The report-only benchmark runs used the existing 10-second total and 5-second
+execution deadlines. Numerical measurements below are **高負荷下の参考値**;
+they do not characterize Loom performance. The operator reported load average
+108 on 16 cores earlier in the run. The `uptime` load averages captured around
+these measurements were lower but still elevated:
+
+| Run | Measurement | Value | `uptime` load averages before / after |
+| --- | --- | --- | --- |
+| 1 | Startup to first screen (NFR-02) | 0.0736 s (**高負荷下の参考値**) | 2026-10-24 02:33:41 JST: 30.77, 33.57, 37.25 / 02:34:15 JST: 34.28, 34.05, 37.27 |
+| 1 | Redraw p95 (NFR-01) | 1.0042 ms (**高負荷下の参考値**) | 2026-10-24 02:33:41 JST: 30.77, 33.57, 37.25 / 02:34:15 JST: 34.28, 34.05, 37.27 |
+| 2 | Startup to first screen (NFR-02) | 0.0793 s (**高負荷下の参考値**) | 2026-10-24 02:34:29 JST: 36.50, 34.57, 37.42 / 02:34:58 JST: 32.61, 33.82, 37.05 |
+| 2 | Redraw p95 (NFR-01) | 0.8956 ms (**高負荷下の参考値**) | 2026-10-24 02:34:29 JST: 36.50, 34.57, 37.42 / 02:34:58 JST: 32.61, 33.82, 37.05 |
+| 1 and 2, plus isolated retry | Open 100,000-line / 5 MB file (NFR-01) | No valid measurement; the existing 5-second execution deadline expired | Isolated retry: 2026-10-24 02:33:11 JST: 34.92, 34.56, 37.72 / 02:33:33 JST: 31.73, 33.85, 37.39 |
+
+Two runs of `env HOME=$(mktemp -d) nix run .#e2e -- --benchmarks` exited 1 when
+the large-file benchmark timed out; a separate run of that scenario alone also
+exited 1 at the unchanged 5-second execution deadline. Because each report run
+stops at that failure, neither produced a combined benchmark summary; the
+completed startup and redraw values remain in their per-scenario result files.
+These timeouts do not establish whether the NFR-01 open target passes or fails.
+
+On the final source tree, the following checks exited 0:
+
+```sh
+PYTHONPATH=t/e2e python3 -m unittest -v test_cli test_deadline test_harness
+python3 -m py_compile t/e2e/loom-test.py t/e2e/loom_e2e/*.py t/e2e/scenarios/*.py t/e2e/test_cli.py t/e2e/test_harness.py
+env HOME=$(mktemp -d) nix run .#e2e
+nix flake check --print-build-logs
+```
+
+The Python unit suite passed all 58 tests. The final PTY run passed 118/118
+scenarios and covered 120/120 commands. The Nix flake check reported all checks
+passed; it warned that `x86_64-linux` was omitted on this Darwin host and that
+the E2E app has no `meta` attribute. During package installation, Nix's
+temporary-directory audit also printed a broken pipe from `find` and a
+segmentation fault in its file-classifier pipeline. The enclosing build and
+flake check still exited 0, but completion of that audit is unverified; its
+cause was not established.

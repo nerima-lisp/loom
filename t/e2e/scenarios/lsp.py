@@ -57,6 +57,54 @@ def _select_main_buffer(session, expected_text):
     session.wait_for_text(expected_text)
 
 
+def _assert_path_exists(session, label, path, expected):
+    return session.assert_external_state(label, os.path.exists(path), expected)
+
+
+def _assert_minibuffer(session, expected):
+    return session.assert_screen_text(
+        session.region_text("minibuffer").rstrip(),
+        expected.rstrip(),
+        region="minibuffer",
+    )
+
+
+def _wait_for_body_viewport(session, expected, description):
+    expected_text = "\n".join(expected)
+
+    def read_viewport():
+        return session.screen.lines()[:session.layout.body_height]
+
+    try:
+        session.wait_until(
+            lambda _screen: read_viewport() == expected,
+            what=description,
+        )
+    except TimeoutError:
+        session.observe_screen_text(
+            "\n".join(read_viewport()),
+            expected=expected_text,
+            match="exact",
+            passed=False,
+            region="body",
+        )
+        raise
+    return session.observe_screen_text(
+        "\n".join(read_viewport()),
+        expected=expected_text,
+        match="exact",
+        region="body",
+    )
+
+
+def _process_running(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
 def _run_lsp_command(binary, command, expected):
     directory, path = _fixture()
     try:
@@ -122,7 +170,9 @@ def lsp_trust_reject(binary):
                     session.send(keys.RET)
                     session.wait_for_text("LSP start cancelled.")
                 session.wait_for_text("(+ 1 2)")
-                assert not os.path.exists(marker), "rejected LSP command was spawned"
+                _assert_path_exists(
+                    session, "rejected LSP marker exists", marker, False
+                )
             output, code = session.quit()
         assert_exit_zero("lsp-trust-reject", output, code)
 
@@ -157,89 +207,100 @@ def lsp_trust_review(binary):
                 session.wait_for_text(prompt)
                 session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
                 session.type(answer)
-                session.wait_until(
-                    lambda screen: session.region_text("minibuffer").rstrip()
-                    == (prompt + answer).rstrip(),
-                    what="unchanged trust input",
+                session.wait_for_region_exact_text(
+                    "minibuffer", (prompt + answer).rstrip()
                 )
                 for forward, backward in (
                     (b"\x1b[6~", b"\x1b[5~"),
                     (keys.ctrl("v"), keys.meta("v")),
                 ):
                     session.send(forward * 12)
-                    session.wait_until(
-                        lambda screen: tail in "".join(
-                            screen.lines()[:session.layout.body_height]
-                        ),
-                        what="wrapped command tail after paging forward",
+                    session.wait_for_region_contents("body", tail)
+                    _assert_minibuffer(session, prompt + answer)
+                    _assert_path_exists(
+                        session, "reviewed LSP marker exists", marker, False
                     )
-                    assert session.region_text("minibuffer").rstrip() == (prompt + answer).rstrip()
-                    assert not os.path.exists(marker), "reviewed LSP command was spawned"
-                    assert not os.path.exists(pid_file), "reviewed LSP command recorded a PID"
+                    _assert_path_exists(
+                        session, "reviewed LSP PID file exists", pid_file, False
+                    )
                     session.send(backward * 12)
                     session.wait_for_text("Discovered LSP command")
-                    assert session.region_text("minibuffer").rstrip() == (prompt + answer).rstrip()
-                    assert not os.path.exists(marker), "reviewed LSP command was spawned"
-                    assert not os.path.exists(pid_file), "reviewed LSP command recorded a PID"
+                    _assert_minibuffer(session, prompt + answer)
+                    _assert_path_exists(
+                        session, "reviewed LSP marker exists", marker, False
+                    )
+                    _assert_path_exists(
+                        session, "reviewed LSP PID file exists", pid_file, False
+                    )
                 session.send(keys.ctrl("g") if answer else keys.RET)
                 session.wait_for_text("Quit" if answer else "LSP start cancelled.")
-                session.wait_until(
-                    lambda screen: screen.lines()[:session.layout.body_height] == original,
-                    what="original buffer viewport restored",
+                _wait_for_body_viewport(
+                    session, original, "original buffer viewport restored"
                 )
-                assert not os.path.exists(marker), "rejected LSP command was spawned"
-                assert not os.path.exists(pid_file), "rejected LSP command recorded a PID"
+                _assert_path_exists(
+                    session, "rejected LSP marker exists", marker, False
+                )
+                _assert_path_exists(
+                    session, "rejected LSP PID file exists", pid_file, False
+                )
             session.extended_command("lsp-start")
             session.wait_for_text("LSP command [RET for")
             session.send(keys.RET)
             session.wait_for_text(prompt)
             session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
             session.type("yes")
-            session.wait_until(
-                lambda screen: session.region_text("minibuffer").rstrip() == prompt + "yes",
-                what="unchanged affirmative trust input",
+            session.wait_for_region_exact_text(
+                "minibuffer", prompt + "yes"
             )
             session.send(b"\x1b[6~" * 12)
-            session.wait_until(
-                lambda screen: tail in "".join(
-                    screen.lines()[:session.layout.body_height]
-                ),
-                what="wrapped command tail before confirmation",
+            session.wait_for_region_contents("body", tail)
+            _assert_minibuffer(session, prompt + "yes")
+            _assert_path_exists(
+                session, "unconfirmed LSP marker exists", marker, False
             )
-            assert session.region_text("minibuffer").rstrip() == prompt + "yes"
-            assert not os.path.exists(marker), "unconfirmed LSP command was spawned"
-            assert not os.path.exists(pid_file), "unconfirmed LSP command recorded a PID"
+            _assert_path_exists(
+                session, "unconfirmed LSP PID file exists", pid_file, False
+            )
             session.send(b"\x1b[5~" * 12)
             session.wait_for_text("Discovered LSP command")
-            assert session.region_text("minibuffer").rstrip() == prompt + "yes"
-            assert not os.path.exists(marker), "unconfirmed LSP command was spawned"
-            assert not os.path.exists(pid_file), "unconfirmed LSP command recorded a PID"
+            _assert_minibuffer(session, prompt + "yes")
+            _assert_path_exists(
+                session, "unconfirmed LSP marker exists", marker, False
+            )
+            _assert_path_exists(
+                session, "unconfirmed LSP PID file exists", pid_file, False
+            )
             session.send(keys.RET)
             session.wait_for_file(marker, b"spawned")
             session.wait_for_text("LSP started.")
             session.wait_for_region_text("mode-line", "Diag:")
-            with open(pid_file, encoding="utf-8") as handle:
-                pid = int(handle.read().strip())
-            assert pid > 1, "invalid nixd PID"
-            os.kill(pid, 0)
-            session.wait_until(
-                lambda screen: screen.lines()[:session.layout.body_height] == original,
-                what="original buffer viewport restored after confirmation",
+            pid_data = session.observe_file_bytes(pid_file)
+            pid = int(pid_data.decode("ascii").strip())
+            valid_pid = pid > 1
+            session.observe_external_state(
+                "nixd PID is greater than 1",
+                pid,
+                expected={"greater_than": 1},
+                passed=valid_pid,
+            )
+            if not valid_pid:
+                raise AssertionError("invalid nixd PID")
+            session.assert_external_state("nixd process is running", _process_running(pid), True)
+            _wait_for_body_viewport(
+                session, original,
+                "original buffer viewport restored after confirmation",
             )
             session.extended_command("lsp-stop")
             session.wait_for_text("LSP stopped.")
 
-            def nixd_exited(screen):
-                try:
-                    os.kill(pid, 0)
-                except ProcessLookupError:
-                    return True
-                return False
-
-            session.wait_until(nixd_exited, what="nixd process to exit after lsp-stop")
-            session.wait_until(
-                lambda screen: screen.lines()[:session.layout.body_height] == original,
-                what="original buffer viewport preserved after LSP cleanup",
+            session.wait_for_external_state(
+                "nixd process exited after lsp-stop",
+                lambda: not _process_running(pid),
+                True,
+            )
+            _wait_for_body_viewport(
+                session, original,
+                "original buffer viewport preserved after LSP cleanup",
             )
             output, code = session.quit()
         assert_exit_zero("lsp-trust-review", output, code)

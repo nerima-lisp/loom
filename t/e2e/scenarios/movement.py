@@ -47,8 +47,12 @@ def forward_char(binary):
             session.wait_ready()
             _mx(session, "forward-char")
             session.wait_for_region_cursor("body", 1)
-            if not session.region_text("body").startswith("abc"):
-                raise AssertionError("forward-char changed the visible line")
+            session.assert_screen_text(
+                session.region_text("body"),
+                "abc",
+                match="starts_with",
+                region="body",
+            )
             output, code = session.quit()
     _assert_exit_zero("movement/forward-char", output, code)
 
@@ -551,8 +555,8 @@ def horizontal_scroll_follow(binary):
             _mx(session, "move-end-of-line")
             session.wait_for_region_cursor("body", 11)
             row = session.region_text("body")
-            if not row.startswith("fgh") or not row.rstrip().endswith("p"):
-                raise AssertionError(f"horizontal viewport did not follow point: {row!r}")
+            session.assert_screen_text(row, "fgh", match="starts_with", region="body")
+            session.assert_screen_text(row.rstrip(), "p", match="ends_with", region="body")
             output, code = session.quit()
     _assert_exit_zero("movement/horizontal scroll follow", output, code)
 

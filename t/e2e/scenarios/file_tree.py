@@ -15,9 +15,8 @@ def _assert_exit_zero(name, output, code):
 
 
 def _wait_for_path(session, path, predicate, description):
-    session.wait_until(
-        lambda _screen: predicate(path),
-        what=f"{description} {path}",
+    session.wait_for_external_state(
+        description, lambda: bool(predicate(path)), True
     )
 
 
@@ -29,12 +28,22 @@ def _run_command(session, name):
 def _wait_for_region_after_refresh(session, region, expected, index=0):
     deadline = time.monotonic() + 10.0
     while True:
-        if expected in session.region_text(region, index):
+        actual = session.region_text(region, index)
+        if expected in actual:
+            session.observe_screen_text(
+                actual, expected=expected, match="contains", region=region,
+                row=session.layout.row(region, index),
+            )
             return
         session.send(keys.ctrl("x") + keys.ctrl("t"))
         session.send(keys.ctrl("x") + keys.ctrl("t"))
         session.pump()
         if time.monotonic() >= deadline:
+            session.observe_screen_text(
+                session.region_text(region, index), expected=expected,
+                match="contains", passed=False, region=region,
+                row=session.layout.row(region, index),
+            )
             raise TimeoutError(
                 f"timed out waiting for {expected!r} in {region} region"
             )
@@ -99,10 +108,7 @@ def file_tree_navigation(binary):
 
             _run_command(session, "file-tree-select-previous")
             _run_command(session, "file-tree-open-selected")
-            session.wait_until(
-                lambda _screen: "child.txt" not in session.region_text("body", 1),
-                what="the nested directory to collapse",
-            )
+            session.wait_for_region_absent_text("body", "child.txt", index=1)
 
             output, code = session.quit()
         _assert_exit_zero("file-tree navigation", output, code)

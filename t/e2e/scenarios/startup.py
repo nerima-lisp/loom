@@ -19,16 +19,22 @@ def startup_without_path(binary):
     existed_before = os.path.isdir(real_loom_dir)
 
     with Session(binary, []) as session:
-        if session.home_dir == real_home:
-            raise AssertionError("scratch HOME was not isolated from the real HOME")
+        session.assert_external_state(
+            "scratch HOME differs from real HOME",
+            session.home_dir != real_home,
+            True,
+        )
+        session.observe_external_state(
+            "real .loom directory existed before scenario", existed_before
+        )
         session.wait_ready()
         output, code = session.quit()
-    _assert_exit_zero("startup without path", output, code)
-
-    if os.path.isdir(real_loom_dir) != existed_before:
-        raise AssertionError(
-            f"the real {real_loom_dir} changed existence during a scratch-HOME run"
+        session.assert_external_state(
+            "real .loom directory existence after scenario",
+            os.path.isdir(real_loom_dir),
+            existed_before,
         )
+    _assert_exit_zero("startup without path", output, code)
 
 
 @scenario("startup directory", commands=["save-buffers-kill-terminal"])

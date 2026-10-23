@@ -2,6 +2,8 @@ import contextlib
 import importlib.util
 import io
 import os
+import json
+import tempfile
 import unittest
 from unittest.mock import call, patch
 
@@ -33,7 +35,7 @@ class CoverageCliTests(unittest.TestCase):
         self.binary = self.contexts.enter_context(patch.object(
             cli, "_binary_from_arguments", return_value="loom",
         ))
-        self.preflight = self.contexts.enter_context(patch.object(cli, "_run_deadline_preflight"))
+        self.preflight = self.contexts.enter_context(patch.object(cli, "_run_harness_preflight"))
         self.run = self.contexts.enter_context(patch.object(cli, "run_scenario"))
         self.stdout = self.contexts.enter_context(contextlib.redirect_stdout(io.StringIO()))
         self.stderr = self.contexts.enter_context(contextlib.redirect_stderr(io.StringIO()))
@@ -88,6 +90,92 @@ class CoverageCliTests(unittest.TestCase):
         self.assertEqual(cli.main([]), 1)
         self.assertIn("0 passed, 2 failed, 2 total", self.stdout.getvalue())
         self.assertIn("scenario failed", self.stderr.getvalue())
+
+    def test_artifacts_dir_saves_per_scenario_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(cli.main([
+                "--only", "forward", "--artifacts-dir", directory,
+            ]), 0)
+            scenario_dirs = [
+                os.path.join(directory, name)
+                for name in os.listdir(directory)
+                if os.path.isdir(os.path.join(directory, name))
+            ]
+            self.assertEqual(len(scenario_dirs), 1)
+            with open(os.path.join(scenario_dirs[0], "trace.jsonl"), "rb") as handle:
+                self.assertEqual(handle.read(), b"")
+            with open(os.path.join(scenario_dirs[0], "output.pty"), "rb") as handle:
+                self.assertEqual(handle.read(), b"")
+            with open(os.path.join(scenario_dirs[0], "result.json"), encoding="utf-8") as handle:
+                result = json.load(handle)
+            self.assertEqual(result["scenario"], "forward")
+            self.assertEqual(result["status"], "passed")
+
+    def test_default_artifact_directories_are_printed_and_retained(self):
+        self.assertEqual(cli.main(["--only", "forward"]), 0)
+        self.assertEqual(cli.main(["--only", "forward"]), 0)
+        paths = [
+            line.removeprefix("scenario artifacts: ")
+            for line in self.stdout.getvalue().splitlines()
+            if line.startswith("scenario artifacts: ")
+        ]
+        self.assertEqual(len(paths), 2)
+        self.assertNotEqual(paths[0], paths[1])
+        for path in paths:
+            self.assertTrue(os.path.isdir(path))
+            result_files = [
+                os.path.join(root, filename)
+                for root, _dirs, files in os.walk(path)
+                for filename in files
+                if filename == "result.json"
+            ]
+            self.assertEqual(len(result_files), 1)
+
+    def test_benchmark_mode_reports_over_target_without_failing(self):
+        def startup(binary):
+            return {"startup_to_first_screen_seconds": 0.4}
+
+        def redraw(binary):
+            return {"input_to_redraw_p95_milliseconds": 60.0}
+
+        def large_file_open(binary):
+            return {
+                "open_100000_lines_5mb_seconds": 1.2,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            }
+
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(
+                cli,
+                "benchmark_scenarios",
+                return_value={
+                    "startup": startup,
+                    "redraw": redraw,
+                    "large-file-open": large_file_open,
+                },
+            ):
+                self.assertEqual(cli.main([
+                    "--benchmarks", "--artifacts-dir", directory,
+                ]), 0)
+            self.assertIn("over target", self.stdout.getvalue())
+            self.assertEqual(
+                self.run.call_args_list,
+                [
+                    call(startup, "loom"),
+                    call(redraw, "loom"),
+                    call(large_file_open, "loom"),
+                ],
+            )
+            with open(os.path.join(directory, "benchmarks.json"), encoding="utf-8") as handle:
+                report = json.load(handle)
+            self.assertEqual(report["measurements"], {
+                "startup_to_first_screen_seconds": 0.4,
+                "open_100000_lines_5mb_seconds": 1.2,
+                "input_to_redraw_p95_milliseconds": 60.0,
+            })
+            self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
+            self.assertFalse(any(report["within_targets"].values()))
 
 
 if __name__ == "__main__":

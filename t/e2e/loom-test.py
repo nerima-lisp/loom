@@ -7,8 +7,10 @@ instead of raw-byte substrings and fixed sleeps.
 """
 
 import argparse
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,8 +18,13 @@ if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 
 from loom_e2e import commands  # noqa: E402
+from loom_e2e.benchmarks import (  # noqa: E402
+    benchmark_scenarios,
+    build_benchmark_report,
+)
 from loom_e2e.deadline import run_scenario  # noqa: E402
 from loom_e2e.registry import all_scenarios  # noqa: E402
+from loom_e2e.results import ScenarioResult, capture_scenario  # noqa: E402
 import scenarios  # noqa: E402,F401
 
 
@@ -38,6 +45,16 @@ def _parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", default=None, help="path to the loom executable")
     parser.add_argument("--only", default=None, help="run only scenarios whose name contains SUBSTR")
+    parser.add_argument(
+        "--artifacts-dir",
+        default=None,
+        help="write per-scenario results here (default: a unique retained temp directory)",
+    )
+    parser.add_argument(
+        "--benchmarks",
+        action="store_true",
+        help="report PTY startup, large-file open, and input-to-redraw measurements",
+    )
     parser.add_argument("--list", action="store_true", help="list scenario names and exit")
     parser.add_argument(
         "--require-full-coverage", action="store_true",
@@ -66,21 +83,46 @@ def _coverage_report(selected):
     return uncovered, unknown
 
 
-def _run_deadline_preflight():
+def _run_harness_preflight():
     suite = unittest.defaultTestLoader.discover(
         start_dir=_THIS_DIR,
-        pattern="test_deadline.py",
+        pattern="test_*.py",
         top_level_dir=_THIS_DIR,
     )
     if suite.countTestCases() == 0:
-        raise SystemExit("deadline preflight discovered no tests")
+        raise SystemExit("harness preflight discovered no tests")
     result = unittest.TextTestRunner(stream=sys.stderr, verbosity=1).run(suite)
     if not result.wasSuccessful():
-        raise SystemExit("deadline preflight failed")
+        raise SystemExit("harness preflight failed")
+
+
+def _artifact_directory(explicit):
+    if explicit is None:
+        return tempfile.mkdtemp(prefix="loom-e2e-results-")
+    directory = os.path.abspath(explicit)
+    os.makedirs(directory, exist_ok=True)
+    return directory
+
+
+def _run_with_artifacts(name, function, binary, artifacts_dir):
+    result = ScenarioResult(name)
+    try:
+        with capture_scenario(result):
+            value = run_scenario(function, binary)
+    except BaseException as error:
+        result.status = "failed"
+        result.error = {"type": type(error).__name__, "message": str(error)}
+        result.save(artifacts_dir)
+        raise
+    result.status = "passed"
+    result.save(artifacts_dir)
+    return value
 
 
 def main(argv):
     args = _parse_args(argv)
+    if args.benchmarks and args.only is not None:
+        raise SystemExit("--benchmarks cannot be combined with --only")
     registered = all_scenarios()
 
     if args.list:
@@ -90,6 +132,42 @@ def main(argv):
         return 1 if uncovered or unknown else 0
 
     binary = _binary_from_arguments(args.binary)
+    artifacts_dir = _artifact_directory(args.artifacts_dir)
+    print(f"scenario artifacts: {artifacts_dir}")
+
+    if args.benchmarks:
+        _run_harness_preflight()
+        measurements = {}
+        try:
+            for name, function in benchmark_scenarios().items():
+                try:
+                    measurements[name] = _run_with_artifacts(
+                        f"benchmarks/{name}", function, binary, artifacts_dir
+                    )
+                except (AssertionError, OSError, TimeoutError) as error:
+                    print(f"FAIL benchmarks/{name}: {error}", file=sys.stderr)
+                    return 1
+        except (AssertionError, OSError, TimeoutError) as error:
+            print(f"FAIL benchmarks: {error}", file=sys.stderr)
+            return 1
+        report = build_benchmark_report(measurements)
+        report_path = os.path.join(artifacts_dir, "benchmarks.json")
+        with open(report_path, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, ensure_ascii=False, sort_keys=True, indent=2)
+            handle.write("\n")
+        print(f"PTY benchmark report: {report_path}")
+        for metric, value in report["measurements"].items():
+            target = report["targets"][metric]
+            status = "within target" if report["within_targets"][
+                {
+                    "startup_to_first_screen_seconds": "startup_to_first_screen",
+                    "open_100000_lines_5mb_seconds": "open_100000_lines_5mb",
+                    "input_to_redraw_p95_milliseconds": "input_to_redraw_p95",
+                }[metric]
+            ] else "over target"
+            print(f"{metric}: {value:.3f} (target {target:g}; {status})")
+        return 0
+
     selected = [
         entry for entry in registered
         if args.only is None or args.only in entry[0]
@@ -97,12 +175,12 @@ def main(argv):
     if not selected:
         raise SystemExit(f"--only {args.only!r} matched no scenario")
 
-    _run_deadline_preflight()
+    _run_harness_preflight()
     passed = 0
     failed = 0
     for name, _scenario_commands, fn in selected:
         try:
-            run_scenario(fn, binary)
+            _run_with_artifacts(name, fn, binary, artifacts_dir)
         except (AssertionError, OSError, TimeoutError) as error:
             failed += 1
             print(f"FAIL {name}: {error}", file=sys.stderr)

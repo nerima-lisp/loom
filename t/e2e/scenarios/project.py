@@ -64,10 +64,7 @@ def project_search(binary):
             session.send(keys.RET)
             # Rendering occurs in the same event-loop turn as RET.
             session.wait_for_text("Matches:")
-            if session.screen.find("src/main.py:1") is None:
-                raise AssertionError(
-                    f"project search output missing the source match:\n{session.screen.dump()}"
-                )
+            session.wait_for_text("src/main.py:1")
 
             output, code = session.quit()
         _assert_exit_zero("project search", output, code)

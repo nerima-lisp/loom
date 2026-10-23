@@ -2,8 +2,9 @@
 
 
 class Layout:
-    def __init__(self, rows):
+    def __init__(self, rows, columns=80):
         self.rows = rows
+        self.columns = columns
 
     @property
     def minibuffer_row(self):

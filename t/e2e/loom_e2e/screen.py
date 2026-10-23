@@ -17,8 +17,40 @@ class Screen:
         if data:
             self._stream.feed(data)
 
+    def resize(self, columns, rows):
+        if isinstance(columns, bool) or not isinstance(columns, int) or columns <= 0:
+            raise ValueError("screen columns must be a positive integer")
+        if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
+            raise ValueError("screen rows must be a positive integer")
+        self._screen.resize(lines=rows, columns=columns)
+        self.columns = columns
+        self.rows = rows
+
     def text(self, row):
         return self._screen.display[row]
+
+    def cell_attrs(self, row, column):
+        """Return the character and rendition attributes stored by pyte."""
+        if not 0 <= row < self.rows:
+            raise IndexError(f"screen row out of range: {row}")
+        if not 0 <= column < self.columns:
+            raise IndexError(f"screen column out of range: {column}")
+        cell = self._screen.buffer[row][column]
+        return {
+            name: getattr(cell, name, None)
+            for name in (
+                "data",
+                "fg",
+                "bg",
+                "bold",
+                "italics",
+                "underscore",
+                "blink",
+                "reverse",
+                "strikethrough",
+                "conceal",
+            )
+        }
 
     def lines(self):
         return list(self._screen.display)
