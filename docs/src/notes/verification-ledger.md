@@ -878,8 +878,9 @@ derivation reported 1507 passed, 3 skipped, and 0 failed or errored.
 
 ### W0-4 path generation and coverage report
 
-The branch was rebased onto W0-2 revision `7ce2539`. The E2E report evaluated
-source commit `e17e709`. On aarch64-darwin,
+The branch was rebased onto W0-2 revision `7ce2539` and later onto
+`origin/main` at `eadae85`. The E2E report evaluated W0-4 source commit
+`de7181a`. On aarch64-darwin,
 `env HOME="$(mktemp -d)" nix run .#e2e` exited 0. The preflight ran 126 Python
 tests; all passed.
 
@@ -946,5 +947,5 @@ Lane IDs refer to the W3 ownership table in section 11.6 of
 `nix flake check --print-build-logs` exited 0 on aarch64-darwin. Its
 `cl-tty-kit-script-check` reported 1696 passed, 0 skipped, 0 failed, and 0
 errored. Nix omitted `x86_64-linux`, and warned that the E2E app lacks `meta`.
-The flake check used the same application and test source revision, `e17e709`,
+The flake check used the same application and test source revision, `de7181a`,
 and included the ledger changes recorded in this section.
