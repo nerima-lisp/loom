@@ -812,9 +812,10 @@ The full check warned that `x86_64-linux` was omitted on this Darwin host and
 that the E2E app has no `meta` attribute. Nix's `auditTmpdir` hook has printed a
 broken pipe from `find` and a segmentation fault in its file-classifier
 pipeline during a `loom` package install and docs installs. In the final check,
-the docs install printed this fault; the coverage log did not. The builds and
-full check exited 0, but completion of the affected scans is unverified. The
-cause was not established.
+one docs install printed this fault; a later docs install emitted no such
+diagnostic, and the coverage logs did not. The builds and full checks exited 0,
+but completion of the affected scans is unverified. The cause was not
+established.
 
 ### Independent review follow-up
 
