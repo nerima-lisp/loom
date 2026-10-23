@@ -1,5 +1,5 @@
 
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun buffer-insert-string (buffer string)
   "Insert nonempty STRING into BUFFER at point, moving point just after

@@ -1,5 +1,5 @@
 
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun %clamp-offset-to-narrowing (buffer offset)
   (max (%buffer-narrow-start-offset buffer)

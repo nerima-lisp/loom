@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 
 (defun %position-matches-p (current-line current-column line column)

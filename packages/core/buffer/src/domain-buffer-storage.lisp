@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 
 (defstruct (piece (:constructor %make-piece) (:conc-name %piece-))

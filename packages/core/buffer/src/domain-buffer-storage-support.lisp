@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun %piece-source-text (buffer piece)
   (ecase (%piece-source piece)

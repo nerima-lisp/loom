@@ -32,6 +32,7 @@ root source tree responsible for every feature."
     (
      (:file "src/package-exports")
      (:file "src/package-application")
+     (:file "packages/core/buffer/src/package")
      (:file "src/package")
     ))
    (:module "feature-mode-package"
@@ -195,28 +196,40 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/project/src/domain-project")
     ))
-   (:module "core-editor-domain"
+   (:module "core-domain-packages"
     :pathname "."
     :serial t
     :components
     (
-     (:file "packages/core/editor/src/domain-buffer-storage")
-     (:file "packages/core/editor/src/domain-buffer-storage-support")
-     (:file "packages/core/editor/src/domain-buffer-piece-table-position")
-     (:file "packages/core/editor/src/domain-buffer-piece-table-coalescing")
-     (:file "packages/core/editor/src/domain-buffer-piece-table-splicing")
-     (:file "packages/core/editor/src/domain-buffer-piece-table-support")
-     (:file "packages/core/editor/src/domain-buffer-piece-table")
-     (:file "packages/core/editor/src/domain-buffer-piece-table-undo")
-     (:file "packages/core/editor/src/domain-buffer")
-     (:file "packages/core/editor/src/domain-buffer-accessors")
-     (:file "packages/core/editor/src/domain-buffer-editing")
-     (:file "packages/core/editor/src/domain-buffer-deletion")
-     (:file "packages/core/editor/src/domain-buffer-history")
-     (:file "packages/core/editor/src/domain-buffer-narrowing-support")
-     (:file "packages/core/editor/src/domain-buffer-narrowing")
-     (:file "packages/core/editor/src/domain-buffer-positions")
-     (:file "packages/core/editor/src/domain-prefix-argument")
+     (:module "core-buffer-domain"
+      :pathname "."
+      :serial t
+      :components
+      (
+       (:file "packages/core/buffer/src/domain-buffer-storage")
+       (:file "packages/core/buffer/src/domain-buffer-storage-support")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table-position")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table-coalescing")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table-splicing")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table-support")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table")
+       (:file "packages/core/buffer/src/domain-buffer-piece-table-undo")
+       (:file "packages/core/buffer/src/domain-buffer")
+       (:file "packages/core/buffer/src/domain-buffer-accessors")
+       (:file "packages/core/buffer/src/domain-buffer-editing")
+       (:file "packages/core/buffer/src/domain-buffer-deletion")
+       (:file "packages/core/buffer/src/domain-buffer-history")
+       (:file "packages/core/buffer/src/domain-buffer-narrowing-support")
+       (:file "packages/core/buffer/src/domain-buffer-narrowing")
+       (:file "packages/core/buffer/src/domain-buffer-positions")
+      ))
+     (:module "core-editor-domain"
+      :pathname "."
+      :serial t
+      :components
+      (
+       (:file "packages/core/editor/src/domain-prefix-argument")
+      ))
     ))
    (:module "feature-search-domain"
     :pathname "."

@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun buffer-narrow-start-offset (buffer)
   "Return the absolute, inclusive start offset of BUFFER's visible region."

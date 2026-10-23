@@ -1,5 +1,5 @@
 
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun %backward-delete-line (line column)
   (cond

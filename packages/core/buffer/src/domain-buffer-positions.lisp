@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (deftype buffer-offset ()
   "A non-negative character offset in BUFFER-TEXT."

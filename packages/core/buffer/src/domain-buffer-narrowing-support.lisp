@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun %text-offset-to-position-values (text offset)
   "Return LINE and COLUMN for OFFSET in TEXT, clamped to TEXT's bounds."

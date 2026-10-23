@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 
 (defun %update-after-insert (buffer was-narrowed-p old-length text-length)

@@ -1,5 +1,5 @@
 
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 (defun buffer-modified-p (buffer)
   "Return true if BUFFER has unsaved changes since it was created, loaded,

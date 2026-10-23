@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 
 (defun %adjacent-piece-p (previous piece)

@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/buffer)
 
 
 (defun %insert-piece-fragment-list (piece cursor offset new-piece)
