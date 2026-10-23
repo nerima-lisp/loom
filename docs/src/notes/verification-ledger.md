@@ -715,36 +715,60 @@ D13の測定中に採った`uptime`は次のとおり。すべて高負荷下の
 | 起動時間 | 上記の高負荷計測を記録。 |
 ## W0-2: PTY E2E harness
 
-The baseline at `071c407` passed all 117 existing PTY scenarios and reported
-120/120 commands covered. Final checks below ran against the W0-2 working tree
-based on that revision. The full run passed all 118 scenarios, including the new
-`harness resize and typed observations` self-test, and still reported 120/120
-commands covered. No existing scenario changed from PASS to FAIL in the final
-run. The self-test checked the actual
-PTY window size `(6, 80)`, terminal cell attributes, file bytes, typed effect
-observations, and raw CSI output in `output.pty`. Its trace file was empty,
-which is expected before W0-3 adds command tracing.
+The pre-change source at `071c407` passed 117/117 PTY scenarios and reported
+120/120 commands covered with `HOME=$(mktemp -d) nix run .#e2e` (exit 0). The
+pre-rebase source commit `e41d392` passed 118/118, including the new
+`harness resize and typed observations` self-test, with
+`env HOME=$(mktemp -d) nix run .#e2e` (exit 0). The rebase added the
+`runtime/command-trace` scenario from `origin/main`. The final run on source
+commit `8f0958e` passed 119/119 scenarios and covered 120/120 commands with the
+same command (exit 0). All 117 baseline scenarios remained passing.
 
-One intermediate run failed `project file commands` because it read a partially
-rendered project-root prompt. The same scenario failed in isolation, confirming
-the prompt race. The scenario now waits for the full expected root before
-reading the screen; its isolated rerun and the final full run passed. No timeout
-was extended. CR remained the default RET byte throughout these runs, and no
-CR-related product failure was observed.
+The harness self-test checked the actual PTY window size `(6, 80)`, terminal
+cell attributes, file bytes, and raw CSI output in `output.pty`. Its result JSON
+records each observation's type, actual value, expected value, and pass state;
+examples include screen text, cell attributes, file bytes, external state, and
+PTY output. In the final run, the artifact directory printed by the command
+contained `harness-resize-and-typed-observations-2ddeaf1104/result.json`,
+`output.pty`, and `trace.jsonl`; the trace file held three records for
+`newline`, `save-buffer`, and `save-buffers-kill-terminal`. The
+`runtime/command-trace` scenario separately checked these records in order:
+`forward-char/key/1`, `execute-extended-command/key/2`,
+`backward-char/mx/3`, and `save-buffers-kill-terminal/key/4`.
 
-The report-only benchmark runs used the existing 10-second total and 5-second
-execution deadlines. Numerical measurements below are **高負荷下の参考値**;
-they do not characterize Loom performance. The operator reported load average
-108 on 16 cores earlier in the run. The `uptime` load averages captured around
-these measurements were lower but still elevated:
+`keys.RET` changed the default Enter byte from LF (`\n`) to CR (`\r`). The
+pre-rebase 118-scenario and final 119-scenario full runs passed with CR.
 
-| Run | Measurement | Value | `uptime` load averages before / after |
-| --- | --- | --- | --- |
-| 1 | Startup to first screen (NFR-02) | 0.0736 s (**高負荷下の参考値**) | 2026-10-24 02:33:41 JST: 30.77, 33.57, 37.25 / 02:34:15 JST: 34.28, 34.05, 37.27 |
-| 1 | Redraw p95 (NFR-01) | 1.0042 ms (**高負荷下の参考値**) | 2026-10-24 02:33:41 JST: 30.77, 33.57, 37.25 / 02:34:15 JST: 34.28, 34.05, 37.27 |
-| 2 | Startup to first screen (NFR-02) | 0.0793 s (**高負荷下の参考値**) | 2026-10-24 02:34:29 JST: 36.50, 34.57, 37.42 / 02:34:58 JST: 32.61, 33.82, 37.05 |
-| 2 | Redraw p95 (NFR-01) | 0.8956 ms (**高負荷下の参考値**) | 2026-10-24 02:34:29 JST: 36.50, 34.57, 37.42 / 02:34:58 JST: 32.61, 33.82, 37.05 |
-| 1 and 2, plus isolated retry | Open 100,000-line / 5 MB file (NFR-01) | No valid measurement; the existing 5-second execution deadline expired | Isolated retry: 2026-10-24 02:33:11 JST: 34.92, 34.56, 37.72 / 02:33:33 JST: 31.73, 33.85, 37.39 |
+One intermediate run failed `project file commands`. The screen then showed
+only a prefix of the project-root prompt, and the same scenario failed when run
+alone. The scenario previously waited for that prefix; it now waits for the
+full expected root. Its isolated rerun and the final full run passed. This
+supports a prompt-render timing race diagnosis. No timeout was extended.
+
+The `--benchmarks` mode reports measurements without failing against the NFR
+targets. NFR-01 targets opening a 100,000-line, 5 MB file within 1.0 second and
+input-to-redraw p95 within 50 ms; NFR-02 targets the first screen within 0.3
+second. Redraw p95 uses 25 cursor-move samples. Each scenario kept the existing
+10-second total and 5-second execution deadlines. Numerical results below are
+**高負荷下の参考値** and do not characterize Loom performance. The operator
+reported load average 108 on 16 cores earlier in the run. The `uptime` load
+averages around the measurement runs were:
+
+| Run | `uptime` before | `uptime` after |
+| --- | --- | --- |
+| 1 | 2026-10-24 02:33:41 JST, load averages 30.77, 33.57, 37.25 | 2026-10-24 02:34:15 JST, load averages 34.28, 34.05, 37.27 |
+| 2 | 2026-10-24 02:34:29 JST, load averages 36.50, 34.57, 37.42 | 2026-10-24 02:34:58 JST, load averages 32.61, 33.82, 37.05 |
+| Isolated retry | 2026-10-24 02:33:11 JST, load averages 34.92, 34.56, 37.72 | 2026-10-24 02:33:33 JST, load averages 31.73, 33.85, 37.39 |
+
+| Run | Measurement | Value |
+| --- | --- | --- |
+| 1 | Startup to first screen (NFR-02) | 0.0736 s (**高負荷下の参考値**) |
+| 1 | Redraw p95 (NFR-01, 25 samples) | 1.0042 ms (**高負荷下の参考値**) |
+| 1 | Open 100,000-line / 5 MB file (NFR-01) | No valid measurement; 5-second execution deadline expired |
+| 2 | Startup to first screen (NFR-02) | 0.0793 s (**高負荷下の参考値**) |
+| 2 | Redraw p95 (NFR-01, 25 samples) | 0.8956 ms (**高負荷下の参考値**) |
+| 2 | Open 100,000-line / 5 MB file (NFR-01) | No valid measurement; 5-second execution deadline expired |
+| Isolated retry | Open 100,000-line / 5 MB file (NFR-01) | No valid measurement; 5-second execution deadline expired |
 
 Two runs of `env HOME=$(mktemp -d) nix run .#e2e -- --benchmarks` exited 1 when
 the large-file benchmark timed out; a separate run of that scenario alone also
@@ -759,14 +783,30 @@ On the final source tree, the following checks exited 0:
 PYTHONPATH=t/e2e python3 -m unittest -v test_cli test_deadline test_harness
 python3 -m py_compile t/e2e/loom-test.py t/e2e/loom_e2e/*.py t/e2e/scenarios/*.py t/e2e/test_cli.py t/e2e/test_harness.py
 env HOME=$(mktemp -d) nix run .#e2e
+nix build .#checks.aarch64-darwin.default --no-link --print-build-logs
 nix flake check --print-build-logs
+nix build .#docs --no-link --print-build-logs
 ```
 
-The Python unit suite passed all 58 tests. The final PTY run passed 118/118
+The Python unit suite passed all 58 tests. The final PTY run passed 119/119
 scenarios and covered 120/120 commands. The Nix flake check reported all checks
-passed; it warned that `x86_64-linux` was omitted on this Darwin host and that
-the E2E app has no `meta` attribute. During package installation, Nix's
-temporary-directory audit also printed a broken pipe from `find` and a
-segmentation fault in its file-classifier pipeline. The enclosing build and
-flake check still exited 0, but completion of that audit is unverified; its
-cause was not established.
+passed. The standalone default check passed 1504 tests, skipped 3, and reported
+0 failures and 0 errors. The coverage check also passed 1504 tests, skipped 3,
+and reported 0 failures and 0 errors; it measured 20340/21278 expressions
+(95.59%) and 1946/2082 branches (93.47%).
+
+An earlier `nix flake check --print-build-logs` exited 1 after two tests exceeded
+their existing 40-second test timeout: `%run-loom` / `enables and restores raw
+mode against a real terminal descriptor, then returns 0` and `MAIN CLI
+integration` / `passes process arguments to cl-cli and exits successfully`.
+The standalone default-check command above then passed; those tests completed
+in 0.148 and 13.945 seconds, respectively. A subsequent full flake check exited
+0 with all seven checks passing. This sequence does not establish why the first
+run timed out; no timeout was changed.
+
+The full check warned that `x86_64-linux` was omitted on this Darwin host and
+that the E2E app has no `meta` attribute. During the `loom` package install,
+Nix's `auditTmpdir` hook printed a broken pipe from `find` and a segmentation
+fault in the ELF/script classifier pipeline while scanning built files for
+`$TMPDIR` references. The enclosing build and full flake check exited 0, but
+completion of that scan is unverified; its cause was not established.
