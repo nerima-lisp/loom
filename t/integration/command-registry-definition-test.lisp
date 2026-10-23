@@ -37,28 +37,37 @@
   (it "emits only the explicit command registry"
     (let ((expansion
             (macroexpand-1
-             (quote
-               (loom/application:define-command-specs
-                 (loom/application:command-spec "forward-char" forward-char)
-                 (loom/application:command-spec "kill-line" kill-line))))))
-      (expect (first expansion) :to-equal (quote defparameter))
+             '(loom/application:define-command-specs
+               (loom/application:command-spec "forward-char" forward-char)
+               (loom/application:command-spec "kill-line" kill-line)))))
+      (expect (first expansion) :to-equal 'defparameter)
       (expect (second expansion)
-              :to-equal
-              (quote loom/application:*command-specs*))
+              :to-equal 'loom/application:*command-specs*)
       (expect (third expansion)
               :to-equal
-              (quote
-                (list
-                  (list :name "forward-char"
-                        :command (quote forward-char)
-                        :keys (quote nil)
-                        :help nil
-                        :help-order nil)
-                  (list :name "kill-line"
-                        :command (quote kill-line)
-                        :keys (quote nil)
-                        :help nil
-                        :help-order nil))))
+              '(list
+                (list :name "forward-char"
+                      :group nil
+                      :command 'forward-char
+                      :keys 'nil
+                      :help nil
+                      :help-order nil
+                      :mutates nil
+                      :prompts 'nil
+                      :needs-region nil
+                      :external 'nil
+                      :modes '(:all))
+                (list :name "kill-line"
+                      :group nil
+                      :command 'kill-line
+                      :keys 'nil
+                      :help nil
+                      :help-order nil
+                      :mutates nil
+                      :prompts 'nil
+                      :needs-region nil
+                      :external 'nil
+                      :modes '(:all))))
       (expect (fourth expansion) :to-be nil))))
 
 (describe
@@ -72,51 +81,50 @@
 
 (describe
   "define-command-spec-catalog"
-  (it "builds the explicit command registry from grouped spec variables"
-    (let ((loom::*command-specs* nil)
+  (it "preserves groups and default metadata when composing spec variables"
+    (let ((loom/application:*command-specs* nil)
           (movement-specs
             '((loom/application:command-spec-group
-                  "movement"
+                "movement"
                 (loom/application:command-spec "forward-char" forward-char))))
           (editing-specs
             '((loom/application:command-spec-group
-                  "editing"
+                "editing"
                 (loom/application:command-spec "kill-line" kill-line)))))
       (eval
        `(let ((movement-specs ',movement-specs)
               (editing-specs ',editing-specs))
           (loom/application:define-command-spec-catalog
-            movement-specs
-            editing-specs)))
+            movement-specs editing-specs)))
       (expect loom/application:*command-specs*
               :to-equal
-              '((:name "forward-char"
-                 :command forward-char
-                 :keys nil
-                 :help nil
-                 :help-order nil)
-                (:name "kill-line"
-                 :command kill-line
-                 :keys nil
-                 :help nil
-                 :help-order nil)))))
-  (it "preserves command metadata while composing grouped spec variables"
-    (let ((loom/application:*command-specs* nil)
-          (movement-specs
-            '((loom/application:command-spec-group
-                  "movement"
-                (loom/application:command-spec
-                    "forward-char" forward-char
-                  :keys (((:control #\f)))
-                  :help "C-f Forward"
-                  :help-order 10)))))
-      (eval
-       `(let ((movement-specs ',movement-specs))
-          (loom/application:define-command-spec-catalog movement-specs)))
-      (expect loom/application:*command-specs*
+              '((:name "forward-char" :group "movement"
+                 :command forward-char :keys nil :help nil :help-order nil
+                 :mutates nil :prompts nil :needs-region nil :external nil
+                 :modes (:all))
+                (:name "kill-line" :group "editing"
+                 :command kill-line :keys nil :help nil :help-order nil
+                 :mutates nil :prompts nil :needs-region nil :external nil
+                 :modes (:all))))))
+  (it "preserves explicit metadata in grouped command specs"
+    (let ((specs
+            (loom/application:build-command-specs
+             '((loom/application:command-spec-group
+                 "movement"
+                 (loom/application:command-spec
+                   "forward-char" forward-char
+                   :keys ((:control #\f))
+                   :help "C-f Forward"
+                   :help-order 10
+                   :mutates t
+                   :prompts (:free-string)
+                   :needs-region t
+                   :external ("rg")
+                   :modes (:common-lisp)))))))
+      (expect specs
               :to-equal
-              '((:name "forward-char"
-                 :command forward-char
-                 :keys (((:control #\f)))
-                 :help "C-f Forward"
-                 :help-order 10))))))
+              '((:name "forward-char" :group "movement"
+                 :command forward-char :keys ((:control #\f))
+                 :help "C-f Forward" :help-order 10
+                 :mutates t :prompts (:free-string) :needs-region t
+                 :external ("rg") :modes (:common-lisp)))))))

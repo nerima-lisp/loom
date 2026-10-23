@@ -19,6 +19,11 @@
 (defun %dispatch-keymap-command
     (keymap-state descriptor prefix-argument command)
   "Dispatch DESCRIPTOR through KEYMAP-STATE and update transient command state."
+  (unless (or (null command) (eq command :prefix))
+    (let ((trace-error (loom/application:record-command-trace command :key))
+          (minibuffer (editor-state-minibuffer *editor-state*)))
+      (when (and trace-error minibuffer)
+        (minibuffer-message minibuffer trace-error))))
   (%prepare-dispatched-command-state command)
   (record-undo-boundary-for-command nil)
   (let ((dispatch-result nil))

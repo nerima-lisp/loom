@@ -12,9 +12,14 @@
       ((input "M-x "
               :completion-function
               #'loom/application:command-completion-candidates))
-    (let ((command (loom/application:find-extended-command input)))
-      (if command
-          (funcall command)
+    (let ((spec (loom/application:find-extended-command-spec input)))
+      (if spec
+          (let ((command (getf spec :command)))
+            (let ((trace-error
+                    (loom/application:record-command-trace command :mx)))
+              (when trace-error
+                (minibuffer-message minibuffer trace-error)))
+            (funcall command))
           (minibuffer-message
            minibuffer
            (format nil "Unknown command: ~A" input))))))

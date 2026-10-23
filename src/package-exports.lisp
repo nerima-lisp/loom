@@ -11,6 +11,7 @@
       build-command-specs define-command-specs
       define-command-spec-catalog *command-specs*
       command-completion-candidates find-extended-command
+      find-extended-command-spec record-command-trace command-catalog-json
       help-summary-message defkeys-single-chord-p defkeys-chord
       defkeys-key-sequence install-default-keybindings))
   (defparameter +loom-exports+

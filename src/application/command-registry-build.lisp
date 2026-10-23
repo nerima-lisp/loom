@@ -1,28 +1,35 @@
 (in-package #:loom/application)
 
-(defun %parse-command-spec-form (spec)
-  "Return SPEC normalized as (NAME COMMAND KEYS HELP HELP-ORDER)."
+(defun %parse-command-spec-form (spec &optional group)
+  "Return SPEC normalized as registry fields, including its GROUP."
   (unless (and (consp spec) (eq (first spec) 'command-spec))
     (error "Expected a COMMAND-SPEC form, got: ~S" spec))
-  (destructuring-bind (operator name command &key keys help help-order) spec
+  (destructuring-bind
+      (operator name command &key keys help help-order mutates prompts needs-region
+                              external (modes '(:all)))
+      spec
     (declare (ignore operator))
-    (%validate-command-metadata name command help help-order)
-    (list name command keys help help-order)))
+    (%validate-command-metadata name command help help-order mutates prompts
+                                needs-region external modes)
+    (list name command group keys help help-order mutates prompts needs-region
+          external modes)))
 
 (defun %command-spec-group-p (spec)
   (and (consp spec)
        (eq (first spec) 'command-spec-group)))
 
-(defun %collect-command-spec-entry (spec)
+(defun %collect-command-spec-entry (spec &optional group)
   (if (%command-spec-group-p spec)
       (destructuring-bind (operator group-name &body group-specs) spec
-        (declare (ignore operator group-name))
-        (%collect-command-spec-entries group-specs))
-      (list (%parse-command-spec-form spec))))
+        (declare (ignore operator))
+        (unless (stringp group-name)
+          (error "COMMAND-SPEC-GROUP name must be a string: ~S" group-name))
+        (%collect-command-spec-entries group-specs group-name))
+      (list (%parse-command-spec-form spec group))))
 
-(defun %collect-command-spec-entries (specs)
+(defun %collect-command-spec-entries (specs &optional group)
   "Flatten SPECS from DEFINE-COMMAND-SPECS into validated registry entries."
-  (mapcan #'%collect-command-spec-entry specs))
+  (mapcan (lambda (spec) (%collect-command-spec-entry spec group)) specs))
 
 (defun %duplicate-command-spec-name (entries)
   "Return the first duplicated non-NIL command name in ENTRIES."
@@ -44,22 +51,40 @@
   "Return runtime registry entries for ENTRIES."
   (mapcar
    (lambda (entry)
-     (destructuring-bind (name command keys help help-order) entry
+     (destructuring-bind
+         (name command group keys help help-order mutates prompts needs-region
+               external modes)
+         entry
        (list :name name
+             :group group
              :command command
              :keys keys
              :help help
-             :help-order help-order)))
+             :help-order help-order
+             :mutates mutates
+             :prompts prompts
+             :needs-region needs-region
+             :external external
+             :modes modes)))
    entries))
 
 (defun %command-spec-entry-form (entry)
   "Return the source form that constructs one runtime registry entry."
-  (destructuring-bind (name command keys help help-order) entry
+  (destructuring-bind
+      (name command group keys help help-order mutates prompts needs-region
+            external modes)
+      entry
     `(list :name ,name
+           :group ,group
            :command ',command
            :keys ',keys
            :help ,help
-           :help-order ,help-order)))
+           :help-order ,help-order
+           :mutates ,mutates
+           :prompts ',prompts
+           :needs-region ,needs-region
+           :external ',external
+           :modes ',modes)))
 
 (defun build-command-specs (&rest spec-blocks)
   "Return validated runtime registry entries from declarative SPEC-BLOCKS."

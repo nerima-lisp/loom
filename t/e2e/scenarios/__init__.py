@@ -17,3 +17,4 @@ from . import lsp  # noqa: F401
 from . import macros_extended  # noqa: F401
 from . import ui  # noqa: F401
 from . import remaining  # noqa: F401
+from . import trace  # noqa: F401
