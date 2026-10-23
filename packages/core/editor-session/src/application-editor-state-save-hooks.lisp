@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/editor-session)
 
 (defun %add-editor-state-save-hook (hook state reader writer)
   (check-type hook function)

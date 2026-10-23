@@ -13,19 +13,20 @@ from an ordinary key that is not a prefix action."
 (defun apply-prefix-argument-action (kind value)
   (let ((argument (prefix-argument-for-editor)))
     (case kind
-      (:universal (prefix-argument-universal argument))
-      (:digit (prefix-argument-digit argument value))
-      (:negative (prefix-argument-negative argument))
+      (:universal (loom/core/command:prefix-argument-universal argument))
+      (:digit (loom/core/command:prefix-argument-digit argument value))
+      (:negative (loom/core/command:prefix-argument-negative argument))
       (otherwise (error "Unknown prefix argument action: ~S" kind)))))
 
 (defun prefix-argument-value-for-editor ()
-  (prefix-argument-value (prefix-argument-for-editor)))
+  (loom/core/command:prefix-argument-value (prefix-argument-for-editor)))
 
 (defun consume-prefix-argument-for-editor ()
-  (prefix-argument-consume (prefix-argument-for-editor)))
+  (loom/core/command:prefix-argument-consume (prefix-argument-for-editor)))
 
 (defun universal-argument ()
   (apply-prefix-argument-action :universal nil)
-  (minibuffer-message (editor-state-minibuffer *editor-state*)
-                      (format nil "Prefix argument: ~D"
-                              (prefix-argument-value-for-editor))))
+  (loom/core/minibuffer:minibuffer-message
+   (loom/core/editor-session:editor-state-minibuffer
+    loom/core/editor-session:*editor-state*)
+   (format nil "Prefix argument: ~D" (prefix-argument-value-for-editor))))

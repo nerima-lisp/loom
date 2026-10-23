@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/minibuffer)
 
 (defstruct (minibuffer (:constructor %make-minibuffer) (:conc-name %minibuffer-))
   (active-p nil)

@@ -1,17 +1,25 @@
 (in-package #:loom/feature/search)
 
-(defparameter +isearch-prompt+ "I-search: ")
-(defparameter +isearch-backward-prompt+ "I-search backward: ")
-(defparameter +isearch-failing-prompt+ "Failing I-search: ")
-(defparameter +isearch-failing-backward-prompt+ "Failing I-search backward: ")
+(defparameter +isearch-prompt+
+  "I-search: ")
+
+(defparameter +isearch-backward-prompt+
+  "I-search backward: ")
+
+(defparameter +isearch-failing-prompt+
+  "Failing I-search: ")
+
+(defparameter +isearch-failing-backward-prompt+
+  "Failing I-search backward: ")
 
 (defun %isearch-prompt-for (session)
   (let ((backward (eq (isearch-session-direction session) :backward))
         (failed (isearch-session-failed-p session)))
-    (cond ((and failed backward) +isearch-failing-backward-prompt+)
-          (failed +isearch-failing-prompt+)
-          (backward +isearch-backward-prompt+)
-          (t +isearch-prompt+))))
+    (cond
+      ((and failed backward) +isearch-failing-backward-prompt+)
+      (failed +isearch-failing-prompt+)
+      (backward +isearch-backward-prompt+)
+      (t +isearch-prompt+))))
 
 (defun %isearch-move-to-match (session)
   "Move point onto SESSION's current match, if it has one.
@@ -22,8 +30,7 @@ last successful one put it."
   (let ((match (isearch-session-match session))
         (buffer (isearch-session-buffer session)))
     (when match
-      (let ((position (buffer-offset-position buffer
-                                              (buffer-span-start match))))
+      (let ((position (buffer-offset-position buffer (buffer-span-start match))))
         (buffer-set-point buffer
                           (buffer-position-line position)
                           (buffer-position-column position))))))
@@ -31,15 +38,18 @@ last successful one put it."
 (defun %isearch-refresh (session minibuffer)
   "Reflect SESSION's state in point and in the prompt."
   (%isearch-move-to-match session)
-  (loom:minibuffer-set-prompt minibuffer (%isearch-prompt-for session)))
+  (loom/core/minibuffer:minibuffer-set-prompt minibuffer
+                                              (%isearch-prompt-for session)))
 
 (defun %isearch-end ()
-  (setf (loom:editor-state-isearch loom:*editor-state*) nil))
+  (setf (loom/core/editor-session:editor-state-isearch
+         loom/core/editor-session:*editor-state*) nil))
 
 (defun %isearch-restore-origin (session)
   (let* ((buffer (isearch-session-buffer session))
-         (position (buffer-offset-position
-                    buffer (isearch-session-origin-offset session))))
+         (position
+          (buffer-offset-position buffer
+                                  (isearch-session-origin-offset session))))
     (buffer-set-point buffer
                       (buffer-position-line position)
                       (buffer-position-column position))))
@@ -50,7 +60,7 @@ last successful one put it."
 Both terminal encodings of Ctrl+letter are normalized by the same function the
 global keymap routes through, so the chord is recognized here exactly when it
 would have been recognized there."
-  (let ((descriptor (loom::%key-event->descriptor key-event)))
+  (let ((descriptor (loom/core/command:key-event->descriptor key-event)))
     (when (equal (car descriptor) '(:control))
       (case (cdr descriptor)
         (#\s :forward)
@@ -77,27 +87,43 @@ would have been recognized there."
   (%isearch-end))
 
 (defun %isearch-activate-minibuffer (session minibuffer)
-  (loom:minibuffer-activate
-   minibuffer
-   (%isearch-prompt-for session)
-   :on-change
-   (lambda (input) (%isearch-change session minibuffer input))
-   :on-key
-   (lambda (key-event) (%isearch-key session minibuffer key-event))
-   :on-confirm
-   (lambda (input) (%isearch-confirm session input))
-   :on-cancel
-   (lambda () (%isearch-cancel session))))
+  (loom/core/minibuffer:minibuffer-activate minibuffer
+                                            (%isearch-prompt-for session)
+                                            :on-change
+                                            (lambda (input)
+                                              (%isearch-change session
+                                                               minibuffer
+                                                               input))
+                                            :on-key
+                                            (lambda (key-event)
+                                              (%isearch-key session
+                                                            minibuffer
+                                                            key-event))
+                                            :on-confirm
+                                            (lambda (input)
+                                              (%isearch-confirm session input))
+                                            :on-cancel
+                                            (lambda ()
+                                              (%isearch-cancel session))))
 
 (defun %isearch-start (direction)
   "Open an incremental-search prompt in DIRECTION over the selected buffer."
-  (let* ((buffer (loom/application:%selected-buffer))
-         (minibuffer (loom:editor-state-minibuffer loom:*editor-state*)))
+  (let* ((buffer
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (loom/core/editor-session:editor-state-window-tree
+             loom/core/editor-session:*editor-state*))))
+         (minibuffer
+          (loom/core/editor-session:editor-state-minibuffer
+           loom/core/editor-session:*editor-state*)))
     (when (and buffer minibuffer)
-      (let ((session (make-isearch-session buffer
-                                           (buffer-point-offset buffer)
-                                           :direction direction)))
-        (setf (loom:editor-state-isearch loom:*editor-state*) session)
+      (let ((session
+             (make-isearch-session buffer
+                                   (buffer-point-offset buffer)
+                                   :direction
+                                   direction)))
+        (setf (loom/core/editor-session:editor-state-isearch
+               loom/core/editor-session:*editor-state*) session)
         (%isearch-activate-minibuffer session minibuffer))))
   nil)
 

@@ -90,7 +90,7 @@
         (format-current-buffer)
         (expect (minibuffer-prompt-string minibuffer)
                 :to-equal "Format command: ")
-        (funcall (loom::%minibuffer-on-confirm minibuffer)
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                  "tr 'a-z' 'A-Z'")
         (expect (buffer-text buffer) :to-equal "ABC")
         (expect (minibuffer-message-string minibuffer)
@@ -98,15 +98,15 @@
   (it "reports a formatter exit status"
     (%with-minibuffer-state (minibuffer "abc")
       (format-current-buffer)
-      (funcall (loom::%minibuffer-on-confirm minibuffer)
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                "cat >/dev/null; printf bad >&2; exit 4")
       (expect (minibuffer-message-string minibuffer)
               :to-equal "Formatter exited with code 4")))
   (it "does nothing when the formatter prompt is cancelled"
     (%with-minibuffer-state (minibuffer "abc")
       (format-current-buffer)
-      (expect (loom::%minibuffer-on-cancel minibuffer) :to-be-truthy)
-      (funcall (loom::%minibuffer-on-cancel minibuffer))
+      (expect (loom/core/minibuffer::%minibuffer-on-cancel minibuffer) :to-be-truthy)
+      (funcall (loom/core/minibuffer::%minibuffer-on-cancel minibuffer))
       (expect (buffer-text (%selected-test-buffer)) :to-equal "abc")))
   (it "reports formatter conditions from the interactive command"
     (%with-minibuffer-state (minibuffer "abc")
@@ -116,7 +116,7 @@
              (declare (ignore arguments))
              (error "formatter unavailable")))
         (format-current-buffer)
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "fmt")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "fmt")
         (expect (minibuffer-message-string minibuffer)
                 :to-contain "Format command error: formatter unavailable"))))
 
@@ -240,14 +240,14 @@
   (it "reports cancellation for an empty formatter prompt"
     (%with-minibuffer-state (minibuffer "text")
       (format-current-buffer)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "  ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "  ")
       (expect (minibuffer-message-string minibuffer)
               :to-equal "Format command cancelled")))
 
   (it "stores a formatter configured through its command"
     (%with-minibuffer-state (minibuffer "text")
       (set-format-command-command)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "  cat  ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "  cat  ")
       (expect (editor-state-format-command *editor-state*)
               :to-equal "cat")
       (expect (minibuffer-message-string minibuffer)
@@ -256,6 +256,6 @@
   (it "reports invalid formatter configuration from its command"
     (%with-minibuffer-state (minibuffer "text")
       (set-format-command-command)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "  ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "  ")
       (expect (minibuffer-message-string minibuffer)
               :to-contain "Format-on-save command error:"))))

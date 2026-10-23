@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/minibuffer)
 
 (defun %minibuffer-prefix-match-p (prefix candidate)
   "Return true when CANDIDATE begins with PREFIX, ignoring case."

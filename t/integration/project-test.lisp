@@ -69,7 +69,7 @@
         (minibuffer-handle-key
          minibuffer
          (cl-tty-kit:make-key-event :type :special :code :tab))
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "src/main.py")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "src/main.py")
         (expect (namestring (buffer-path (%selected-test-buffer)))
                 :to-equal
                 (namestring main-path))
@@ -77,7 +77,7 @@
 
         (loom/feature/project::project-search)
         (%expect-minibuffer-prompt minibuffer (%project-search-prompt-string))
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "needle")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "needle")
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "Matches: src/main.py:1")
@@ -95,13 +95,13 @@
         (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
 
         (loom/feature/project::project-find-file)
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "missing.py")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "missing.py")
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "File not found: missing.py")
 
         (loom/feature/project::project-search)
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "absent")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "absent")
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-equal
                 "No matches")

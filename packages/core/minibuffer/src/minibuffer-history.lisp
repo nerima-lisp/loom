@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/minibuffer)
 
 (defun minibuffer-history-entries (minibuffer)
   "Return MINIBUFFER's recalled input strings, newest first.

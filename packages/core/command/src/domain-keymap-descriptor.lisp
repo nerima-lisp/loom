@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/command)
 
 (defun normalize-key-descriptor (descriptor)
   "Normalize DESCRIPTOR -- either a (MODIFIERS . CODE) cons or a bare

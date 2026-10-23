@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/editor-session)
 
 (defun %visual-line-segments (session buffer line width)
   (and *visual-row-layout-function*
@@ -6,9 +6,11 @@
 
 (defun %visual-line-move-context ()
   (let* ((session *editor-state*)
-         (window (and session (%selected-window)))
-         (buffer (and window (loom/core/window-tree:window-buffer window)))
-         (width (and window (loom/core/window-tree:window-width window))))
+         (window-tree (and session (editor-state-window-tree session)))
+         (window (and window-tree
+                      (window-tree-selected-window window-tree)))
+         (buffer (and window (window-buffer window)))
+         (width (and window (window-width window))))
     (when
         (and session
              window
@@ -16,7 +18,23 @@
              width
              (plusp width)
              (not (buffer-truncate-lines-p session buffer)))
-      (values session buffer window width))))
+      (values session buffer width))))
+
+(defun %logical-line-move-once (direction)
+  (let* ((session *editor-state*)
+         (window-tree (and session (editor-state-window-tree session)))
+         (window (and window-tree
+                      (window-tree-selected-window window-tree)))
+         (buffer (and window (window-buffer window))))
+    (ecase direction
+      (:next
+       (buffer-set-point buffer
+                         (1+ (buffer-point-line buffer))
+                         (buffer-point-column buffer)))
+      (:previous
+       (buffer-set-point buffer
+                         (1- (buffer-point-line buffer))
+                         (buffer-point-column buffer))))))
 
 (defun %move-point-into-segment (buffer line segment goal)
   (let ((start (first segment))
@@ -99,8 +117,7 @@
 
 (defun %visual-line-move (direction)
   "Move one visual row and return NIL when its layout is unavailable."
-  (multiple-value-bind (session buffer window width) (%visual-line-move-context)
-    (declare (ignore window))
+  (multiple-value-bind (session buffer width) (%visual-line-move-context)
     (when session
       (multiple-value-bind (line text segments index goal)
           (%visual-line-move-state session buffer width)
@@ -119,10 +136,10 @@
              (%visual-line-move-previous session buffer width line segments index goal))))))))
 
 (defun next-visual-line-once ()
-  (or (%visual-line-move :next) (%next-line-once)))
+  (or (%visual-line-move :next) (%logical-line-move-once :next)))
 
 (defun previous-visual-line-once ()
-  (or (%visual-line-move :previous) (%previous-line-once)))
+  (or (%visual-line-move :previous) (%logical-line-move-once :previous)))
 
 (defun register-visual-row-layout (owner function)
   (unless (functionp function)

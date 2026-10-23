@@ -74,7 +74,7 @@
     "switch-to-buffer reports an unknown buffer name"
     (%with-minibuffer-state (minibuffer "selected")
       (loom/feature/window:switch-to-buffer)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "nope.txt")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "nope.txt")
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "No such buffer: nope.txt")))
 
   (it

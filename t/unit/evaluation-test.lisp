@@ -60,14 +60,14 @@
   (it "reports the singular form count after minibuffer evaluation"
     (%with-minibuffer-state (minibuffer "")
       (eval-expression)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "(+ 1 2)")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(+ 1 2)")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Evaluated 1 form")))
   (it "evaluates minibuffer input"
     (%with-minibuffer-state (minibuffer "")
       (loom/feature/evaluation:eval-expression)
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "(list :ok)")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(list :ok)")
       (let ((result (find "*Loom-Eval*"
                           (editor-state-buffers *editor-state*)
                           :key #'buffer-name
@@ -76,7 +76,7 @@
         (expect (buffer-text result)
                 :to-equal (format nil "loom-eval> (list :ok)~%=> (:OK)~%~%")))
       (loom/feature/evaluation:eval-expression)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "(list :again)")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(list :again)")
       (let ((result (find "*Loom-Eval*"
                           (editor-state-buffers *editor-state*)
                           :key #'buffer-name
@@ -89,14 +89,14 @@
     (%with-minibuffer-state (minibuffer "")
       (eval-expression)
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "   ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "   ")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Evaluation source cannot be empty")))
 
   (it "reports evaluation errors through the command result"
     (%with-minibuffer-state (minibuffer "")
       (eval-expression)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "(error \"command boom\")")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(error \"command boom\")")
       (let ((result (find "*Loom-Eval*"
                           (editor-state-buffers *editor-state*)
                           :key #'buffer-name

@@ -33,9 +33,7 @@
   nil)
 
 (defun %completion-popup-key-member-p (descriptor descriptors)
-  (let ((normalized (normalize-key-descriptor descriptor)))
-    (loop for candidate in descriptors
-          thereis (equal normalized (normalize-key-descriptor candidate)))))
+  (member descriptor descriptors :test #'equal))
 
 (defun %completion-popup-anchored-p (completion buffer)
   "Return true when BUFFER point still belongs to COMPLETION's anchor."
@@ -74,7 +72,7 @@ would corrupt unrelated text."
   "Offer EVENT to the active popup and return true when the popup consumed it."
   (let ((completion (%completion-popup)))
     (when completion
-      (let ((descriptor (%key-event->descriptor event)))
+      (let ((descriptor (key-event->descriptor event)))
         (cond
           ((%completion-popup-key-member-p descriptor
                                            +completion-popup-next-keys+)

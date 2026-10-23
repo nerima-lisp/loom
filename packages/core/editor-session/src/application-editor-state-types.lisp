@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/editor-session)
 
 (defstruct (editor-state
             (:constructor %make-editor-state

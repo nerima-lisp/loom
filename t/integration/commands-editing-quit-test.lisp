@@ -52,7 +52,7 @@
         (buffer-insert-string second "!")
         (loom::save-buffers-kill-terminal)
         (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string first))
-        (funcall (loom::%minibuffer-on-confirm minibuffer) "s")
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "s")
         (expect (buffer-modified-p first) :to-be nil)
         (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string second))
         (%capturing-loom-quit (quit)

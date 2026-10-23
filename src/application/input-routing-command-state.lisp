@@ -35,20 +35,16 @@ change.")
   "Commands whose adjacent invocations may coalesce in the kill ring.")
 
 (defun %refresh-active-keymap (keymap-state)
-  "Layer the selected buffer's major-mode map over the state root map.
-
-The root map remains the user/global map captured when KEYMAP-STATE was
-created. Switching buffers or major modes therefore changes only the active
-layer and clears a partially entered prefix sequence; global bindings remain
-available through the mode map's parent."
-  (let* ((root (or (keymap-state-root-keymap keymap-state)
-                   (keymap-state-keymap keymap-state)))
-         (buffer (and *editor-state* (%selected-buffer)))
-         (active (if buffer
-                     (loom/feature/mode:major-mode-keymap
-                      (buffer-major-mode buffer) root)
-                     root)))
-    (unless (eq active (keymap-state-keymap keymap-state))
-      (setf (keymap-state-sequence keymap-state) nil))
-    (setf (keymap-state-keymap keymap-state) active)
-    active))
+  "Layer the selected buffer's major-mode map over the session root map."
+  (when *editor-state*
+    (let* ((root (editor-state-keymap *editor-state*))
+           (window-tree (editor-state-window-tree *editor-state*))
+           (window (loom/core/window-tree:window-tree-selected-window
+                    window-tree))
+           (buffer (loom/core/window-tree:window-buffer window))
+           (active (if buffer
+                       (loom/feature/mode:major-mode-keymap
+                        (buffer-major-mode buffer) root)
+                       root)))
+      (keymap-state-use-keymap keymap-state active)
+      active)))

@@ -61,12 +61,12 @@
       (buffer-set-point buffer 0 6)
       (loom/feature/search::search-forward)
       (%expect-minibuffer-prompt minibuffer (%search-regex-prompt-string))
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "alpha")
       (expect (buffer-point-column buffer) :to-equal 12)
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
       (buffer-set-point buffer 0 17)
       (loom/feature/search::search-forward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "alpha")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "alpha")
       (expect (buffer-point-column buffer) :to-equal 0)))
 
   (it
@@ -74,7 +74,7 @@
     (%with-selected-minibuffer-buffer (minibuffer buffer "one two one")
       (buffer-set-point buffer 0 11)
       (loom/feature/search::search-backward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "one")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "one")
       (expect buffer :to-have-point (cons 0 8))
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")))
 
@@ -83,7 +83,7 @@
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha")
       (buffer-set-point buffer 0 2)
       (loom/feature/search::search-backward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "nonexistent")
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
       (expect buffer :to-have-point (cons 0 2))))
 
@@ -99,7 +99,7 @@
     "reports not found when the searched text does not occur anywhere"
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha")
       (loom/feature/search::search-forward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "nonexistent")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "nonexistent")
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
       (expect (buffer-text buffer) :to-equal "alpha")))
 
@@ -108,7 +108,7 @@
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha")
       (buffer-set-point buffer 0 2)
       (loom/feature/search::search-forward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
       (expect buffer :to-have-point (cons 0 2))))
 
@@ -141,5 +141,5 @@
     (%with-selected-minibuffer-buffer (minibuffer buffer (format nil "one~%two~%three~%four"))
       (buffer-set-point buffer 1 0)
       (loom/feature/search::search-forward)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "four")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "four")
       (expect buffer :to-have-point (cons 3 0)))))

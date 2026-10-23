@@ -3,10 +3,7 @@
 (defun %lsp-buffer-directory (buffer)
   "Return BUFFER's containing directory, or NIL for an unsaved buffer."
   (let ((path (buffer-path buffer)))
-    (and path
-         (make-pathname :name nil
-                        :type nil
-                        :defaults (pathname path)))))
+    (and path (make-pathname :name nil :type nil :defaults (pathname path)))))
 
 (defun %lsp-error-message (session)
   (or (lsp-session-last-error session) "unknown LSP error"))
@@ -17,13 +14,17 @@
       "LSP command: "))
 
 (defun %normalize-lsp-command (typed-command discovered-command)
-  (or (and typed-command
-           (let ((trimmed (string-trim '(#\Space #\Tab) typed-command)))
-             (unless (string= trimmed "") trimmed)))
-      discovered-command))
+  (or
+   (and typed-command
+        (let ((trimmed (string-trim '(#\Space #\Tab) typed-command)))
+          (unless (string= trimmed "")
+            trimmed)))
+   discovered-command))
 
 (defun %lsp-confirm-discovered-command (command root configuration buffer minibuffer)
-  (let* ((window (loom/application:%selected-window))
+  (let* ((window (loom/core/window-tree:window-tree-selected-window
+ (loom/core/editor-session:editor-state-window-tree
+  loom/core/editor-session:*editor-state*)))
          (scroll-line (loom/feature/window:window-scroll-line window))
          (scroll-column (loom/feature/window:window-scroll-column window))
          (scroll-sub-row (loom/feature/window:window-scroll-sub-row window))
@@ -42,7 +43,7 @@
                      (loom/feature/window:window-scroll-column window) scroll-column
                      (loom/feature/window:window-scroll-sub-row window) scroll-sub-row))
              (review-key (key-event)
-               (let* ((descriptor (loom::%key-event->descriptor key-event))
+               (let* ((descriptor (loom/core/command:key-event->descriptor key-event))
                       (movement
                         (cond
                           ((or (equal descriptor '(nil . :page-down))
@@ -55,36 +56,39 @@
                    (dotimes (row (max 1 (1- (loom/feature/window:window-height window))))
                      (funcall movement))
                    t))))
-      (loom:minibuffer-activate
-       minibuffer "Run discovered LSP command? Type yes: "
+      (loom/core/minibuffer:minibuffer-activate minibuffer "Run discovered LSP command? Type yes: "
        :on-key #'review-key
        :on-cancel (lambda ()
                     (restore-buffer)
-                    (minibuffer-message minibuffer "Quit"))
+                    (loom/core/minibuffer:minibuffer-message minibuffer "Quit"))
        :on-confirm (lambda (answer)
                      (restore-buffer)
                      (if (string= answer "yes")
                          (%lsp-start-with-command command root buffer minibuffer)
-                         (minibuffer-message minibuffer "LSP start cancelled.")))))))
+                         (loom/core/minibuffer:minibuffer-message minibuffer "LSP start cancelled.")))))))
 
 (defun %install-lsp-session (new-session)
-  (let ((old-session (editor-state-lsp-session *editor-state*)))
-    (setf (editor-state-lsp-session *editor-state*) new-session)
+  (let ((old-session
+         (loom/core/editor-session:editor-state-lsp-session
+          loom/core/editor-session:*editor-state*)))
+    (setf (loom/core/editor-session:editor-state-lsp-session
+           loom/core/editor-session:*editor-state*) new-session)
     (when old-session
       (lsp-session-stop old-session))))
 
 (defun %lsp-start-session (command directory)
   (let ((new-session nil)
         (root-uri (and directory (lsp-path-uri directory))))
-    (handler-case
-        (progn
-          (setf new-session
-                (make-lsp-session :command command
-                                  :directory directory
-                                  :root-uri root-uri))
-          (lsp-session-start new-session)
-          (%install-lsp-session new-session)
-          (values new-session nil))
+    (handler-case (progn
+                    (setf new-session (make-lsp-session :command
+                                                        command
+                                                        :directory
+                                                        directory
+                                                        :root-uri
+                                                        root-uri))
+                    (lsp-session-start new-session)
+                    (%install-lsp-session new-session)
+                    (values new-session nil))
       (error (condition)
         (when new-session
           (lsp-session-stop new-session))
@@ -93,6 +97,8 @@
 (defun %lsp-report-start-result (minibuffer session condition)
   (declare (ignore session))
   (if condition
-      (minibuffer-message minibuffer
-                          (format nil "LSP start failed: ~A" condition))
-      (minibuffer-message minibuffer "LSP started.")))
+      (loom/core/minibuffer:minibuffer-message minibuffer
+                                               (format nil
+                                                       "LSP start failed: ~A"
+                                                       condition))
+      (loom/core/minibuffer:minibuffer-message minibuffer "LSP started.")))

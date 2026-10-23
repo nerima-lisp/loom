@@ -15,4 +15,4 @@
       "classifies ~A" (label type code modifiers expected)
     (declare (ignore label))
     (let ((key-event (cl-tty-kit:make-key-event :type type :code code :modifiers modifiers)))
-      (expect (loom::%minibuffer-key-kind key-event type code) :to-equal expected))))
+      (expect (loom/core/minibuffer::%minibuffer-key-kind key-event type code) :to-equal expected))))

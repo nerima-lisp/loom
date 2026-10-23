@@ -9,10 +9,10 @@ src/application/event-loop.lisp to exit cleanly."))
   (defun %quit-buffer-list ()
     "Return displayed and registered buffers with duplicates removed."
     (let ((displayed
-            (mapcar (function loom/feature/window:window-buffer)
-                    (loom/feature/window:window-tree-windows
+            (mapcar (function loom/core/window-tree:window-buffer)
+                    (loom/core/window-tree:window-tree-windows
                      (editor-state-window-tree *editor-state*))))
-          (registered (copy-list (%editor-buffers))))
+          (registered (copy-list (editor-state-buffers *editor-state*))))
       (remove-duplicates
        (append displayed registered)
        :test (function eq))))

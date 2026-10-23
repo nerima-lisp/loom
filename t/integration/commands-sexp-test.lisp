@@ -115,11 +115,9 @@
 
   (it
     "keeps an ESC-prefixed Ctrl-letter distinct from the bare chord"
-    (expect (loom::%key-event->descriptor
-             (cl-tty-kit:make-key-event :type :special :code :control-f))
+    (expect (loom/core/command:key-event->descriptor (cl-tty-kit:make-key-event :type :special :code :control-f))
             :to-equal '((:control) . #\f))
-    (expect (loom::%key-event->descriptor
-             (cl-tty-kit:make-key-event :type :special
+    (expect (loom/core/command:key-event->descriptor (cl-tty-kit:make-key-event :type :special
                                         :code :control-f
                                         :modifiers '(:alt)))
             :to-equal '((:control :alt) . #\f))))

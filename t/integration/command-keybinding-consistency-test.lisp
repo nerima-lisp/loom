@@ -11,7 +11,7 @@ oversight, which is what the spec below fails on.")
   (defun %keymap-bound-commands (keymap)
     "Return every command symbol bound anywhere in KEYMAP, once each,
 descending through prefix keys. Reads the keymap's own trie (see
-src/domain/keymap.lisp: a table maps one normalized descriptor to either a bound
+packages/core/command/src/domain-keymap.lisp: a table maps one normalized descriptor to either a bound
 command or a nested table for a prefix), since KEYMAP-LOOKUP can only answer
 about a key sequence already known to the caller and this spec's whole point
 is to not maintain a second hand-written list of them."
@@ -23,7 +23,7 @@ is to not maintain a second hand-written list of them."
                                 (walk value)
                                 (pushnew value commands)))
                           table)))
-        (walk (loom::keymap-table keymap)))
+        (walk (loom/core/command::keymap-table keymap)))
       commands))
 
   (defun %extended-command-names (command)

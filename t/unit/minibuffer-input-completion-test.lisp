@@ -73,8 +73,8 @@
       (when (eq completion-function :missing)
         (minibuffer-activate minibuffer "Prompt: "))
       (unless active-p
-        (setf (loom::%minibuffer-active-p minibuffer) nil))
-      (setf (loom::%minibuffer-input minibuffer) "Al")
+        (setf (loom/core/minibuffer::%minibuffer-active-p minibuffer) nil))
+      (setf (loom/core/minibuffer::%minibuffer-input minibuffer) "Al")
       (expect (minibuffer-complete minibuffer) :to-be minibuffer)
       (expect (minibuffer-input-string minibuffer) :to-equal expected)))
 

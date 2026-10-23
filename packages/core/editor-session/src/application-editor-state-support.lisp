@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/editor-session)
 
 (defparameter *editor-recent-file-limit* 50
   "Maximum number of file paths retained by the in-memory recent-file list.")

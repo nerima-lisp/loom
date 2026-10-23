@@ -1,4 +1,4 @@
-(in-package #:loom/application)
+(in-package #:loom/core/command)
 
 (defparameter *command-specs* nil
   "Registered command metadata used by completion and keymap installation.")

@@ -3,7 +3,7 @@
 (defun %run-bookmark-command (command minibuffer input)
   "Invoke COMMAND and confirm its minibuffer prompt with INPUT."
   (funcall command)
-  (funcall (loom::%minibuffer-on-confirm minibuffer) input))
+  (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) input))
 
 (describe
   "bookmark command macro expansion"
@@ -32,12 +32,12 @@
         (host-kit:write-file-string "recent" path)
         (%with-minibuffer-state (minibuffer "")
           (loom/feature/file-tree:find-file)
-          (funcall (loom::%minibuffer-on-confirm minibuffer) path)
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) path)
           (expect (editor-state-recent-files *editor-state*)
                   :to-equal (list (editor-path-string path)))
           (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")
           (loom/feature/file-tree:recent-file)
-          (funcall (loom::%minibuffer-on-confirm minibuffer)
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                    (editor-path-string path))
           (expect (buffer-text (%selected-test-buffer)) :to-equal "recent")))))
 
@@ -47,7 +47,7 @@
       (%with-minibuffer-state (minibuffer "existing")
         (let ((buffer (%selected-test-buffer)))
           (loom/feature/file-tree:find-file)
-          (funcall (loom::%minibuffer-on-confirm minibuffer) dir)
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) dir)
           (expect (minibuffer-message-string minibuffer)
                   :to-equal (format nil "Cannot open directory: ~A" dir))
           (expect (%selected-test-buffer) :to-be buffer)))))
@@ -60,7 +60,7 @@
           (setf (editor-state-recent-files *editor-state*)
                 (list (editor-path-string path)))
           (loom/feature/file-tree:recent-file)
-          (funcall (loom::%minibuffer-on-confirm minibuffer)
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                    (editor-path-string path))
           (expect (minibuffer-message-string minibuffer)
                   :to-equal (format nil "Recent file is unavailable: ~A" path)))))))

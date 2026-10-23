@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/minibuffer)
 
 (defun %minibuffer-deactivate (minibuffer)
   "Reset MINIBUFFER to the inactive state, discarding prompt/input/callbacks."

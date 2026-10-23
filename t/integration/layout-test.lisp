@@ -115,13 +115,13 @@
   (it "shows input without a prompt when active"
     (let ((minibuffer (make-minibuffer)))
       (minibuffer-activate minibuffer nil)
-      (setf (loom::%minibuffer-input minibuffer) "query")
+      (setf (loom/core/minibuffer::%minibuffer-input minibuffer) "query")
       (expect (loom::%layout-minibuffer-line minibuffer)
               :to-equal "query")))
   (it "concatenates the prompt and input when active"
     (let ((minibuffer (make-minibuffer)))
       (minibuffer-activate minibuffer "> ")
-      (setf (loom::%minibuffer-input minibuffer) "query")
+      (setf (loom/core/minibuffer::%minibuffer-input minibuffer) "query")
       (expect (loom::%layout-minibuffer-line minibuffer)
               :to-equal "> query"))))
 
@@ -133,7 +133,7 @@
            (screen (%layout-screen state))
            (minibuffer (editor-state-minibuffer state)))
       (minibuffer-activate minibuffer "Prompt: ")
-      (setf (loom::%minibuffer-input minibuffer) "query")
+      (setf (loom/core/minibuffer::%minibuffer-input minibuffer) "query")
       (loom::%layout-draw-minibuffer renderer minibuffer 8 0)
       (expect (cl-tty-kit:screen-row-string screen 0)
               :to-equal "Prompt: ")))

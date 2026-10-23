@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/editor-session)
 
 (defun make-editor-state (&rest initargs)
   "Construct an EDITOR-STATE with a workspace manager for WINDOW-TREE.

@@ -68,7 +68,7 @@ File-tree command tests can then operate on a real temporary directory."
 
 (defun %confirm-minibuffer (minibuffer input)
   "Submit INPUT to MINIBUFFER's current confirmation callback."
-  (funcall (loom::%minibuffer-on-confirm minibuffer) input))
+  (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) input))
 
 (defmacro %capturing-loom-quit ((quit-var) &body body)
   "Run BODY and set QUIT-VAR when it signals LOOM-QUIT."

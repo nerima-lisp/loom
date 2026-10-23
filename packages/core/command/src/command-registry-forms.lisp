@@ -1,4 +1,4 @@
-(in-package #:loom/application)
+(in-package #:loom/core/command)
 
 (defun %validate-command-metadata
     (name command help help-order mutates mutates-p prompts prompts-p

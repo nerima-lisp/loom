@@ -1,4 +1,4 @@
-(in-package #:loom/application)
+(in-package #:loom/core/command)
 
 (defun %parse-command-spec-form (spec &optional group)
   "Return SPEC normalized as registry fields, including its GROUP."

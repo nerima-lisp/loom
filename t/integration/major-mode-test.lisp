@@ -26,7 +26,7 @@
         (minibuffer "value" (buffer (%selected-test-buffer)))
       (loom/feature/mode::set-major-mode)
       (%expect-minibuffer-prompt minibuffer (%major-mode-prompt-string))
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "Python")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "Python")
       (expect (buffer-major-mode buffer) :to-be :python)
 
       (buffer-set-point buffer 0 0)
@@ -49,7 +49,7 @@
               :to-contain
               "Python")
       (loom/feature/mode:set-major-mode)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-mode")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "not-a-mode")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Unknown major mode: not-a-mode")))
@@ -60,7 +60,7 @@
         (minibuffer "value"
                     (buffer (%selected-test-buffer)))
       (loom/feature/mode:set-major-mode)
-      (funcall (loom::%minibuffer-on-cancel minibuffer))
+      (funcall (loom/core/minibuffer::%minibuffer-on-cancel minibuffer))
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Quit")))

@@ -33,7 +33,7 @@
         minibuffer
         (format nil "Bookmark target is unavailable: ~A" bookmark-name)))
       (t
-       (loom/feature/window:window-set-buffer (%selected-window) buffer)
+       (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
        (buffer-set-point buffer
                          (editor-bookmark-line bookmark)
                          (editor-bookmark-column bookmark))))))

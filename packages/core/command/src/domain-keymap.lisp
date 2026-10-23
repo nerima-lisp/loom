@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/command)
 
 
 (defstruct (keymap (:constructor %make-keymap))

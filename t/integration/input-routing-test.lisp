@@ -5,22 +5,22 @@
   (it
     "rewrites a :special :control-<letter> event into ((:control) . <letter>)"
     (let ((event (cl-tty-kit:make-key-event :type :special :code :control-x)))
-      (expect (loom::%key-event->descriptor event) :to-equal (cons '(:control) #\x))))
+      (expect (loom/core/command:key-event->descriptor event) :to-equal (cons '(:control) #\x))))
 
   (it
     "passes a plain character event through unchanged, wrapped as (modifiers . code)"
     (let ((event (cl-tty-kit:make-key-event :type :character :code #\a)))
-      (expect (loom::%key-event->descriptor event) :to-equal (cons nil #\a))))
+      (expect (loom/core/command:key-event->descriptor event) :to-equal (cons nil #\a))))
 
   (it
     "passes a character event with an explicit :control modifier through unchanged"
     (let ((event (cl-tty-kit:make-key-event :type :character :code #\f :modifiers '(:control))))
-      (expect (loom::%key-event->descriptor event) :to-equal (cons '(:control) #\f))))
+      (expect (loom/core/command:key-event->descriptor event) :to-equal (cons '(:control) #\f))))
 
   (it
     "passes a non-control :special event (e.g. an arrow key) through unchanged"
     (let ((event (cl-tty-kit:make-key-event :type :special :code :up)))
-      (expect (loom::%key-event->descriptor event) :to-equal (cons nil :up)))))
+      (expect (loom/core/command:key-event->descriptor event) :to-equal (cons nil :up)))))
 
 (describe
   "%record-undo-boundary-for-command"
@@ -71,13 +71,16 @@
 (describe
   "%refresh-active-keymap"
   (it
-    "uses the current keymap when no root keymap has been captured"
-    (let* ((keymap (make-keymap))
-           (keymap-state (make-keymap-state keymap)))
-      (setf (loom::keymap-state-root-keymap keymap-state) nil)
-      (let ((*editor-state* nil))
-        (expect (loom::%refresh-active-keymap keymap-state)
-                :to-be keymap)))))
+    "uses the session root keymap when refreshing active keymap"
+    (let* ((*editor-state* (%fresh-editor-state ""))
+           (keymap (editor-state-keymap *editor-state*))
+           (keymap-state (make-keymap-state keymap))
+           (binding (lambda () :ok)))
+      (keymap-define-key keymap (list (cons nil #\q)) binding)
+      (let ((active (loom::%refresh-active-keymap keymap-state)))
+        (expect (keymap-lookup active (list (cons nil #\q)))
+                :to-be binding)
+        (expect (keymap-state-sequence keymap-state) :to-equal nil)))))
 
 (describe
   "%classify-key-event terminal routing"
@@ -99,17 +102,28 @@
   (it
     "does not route terminal input while a key sequence is pending"
     (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
-           (keymap-state (make-keymap-state (make-keymap)))
+           (keymap (editor-state-keymap *editor-state*))
+           (keymap-state (make-keymap-state keymap))
+           (prefix (cons '(:control) #\x))
            (event (cl-tty-kit:make-key-event :type :character :code #\a)))
-      (setf (loom::keymap-state-sequence keymap-state) '((:control . #\x)))
+      (keymap-define-key keymap (list prefix (cons nil #\q)) #'identity)
+      (expect (keymap-state-dispatch
+               keymap-state prefix
+               (lambda (command sequence keymap-name)
+                 (declare (ignore command sequence keymap-name))
+                 :invoked))
+              :to-be :pending)
       (with-replaced-function
-          (loom/feature/terminal:terminal-input-event-p (lambda (candidate)
-                                                           (declare (ignore candidate))
-                                                           t))
-        (let ((decision (loom::%classify-key-event event keymap-state)))
+          (loom/feature/terminal:terminal-input-event-p
+            (lambda (candidate)
+              (declare (ignore candidate))
+              t))
+        (let ((decision (loom::%classify-key-event
+                         event keymap-state keymap)))
           (expect (loom::input-routing-decision-terminal-event-p decision)
                   :to-be nil)
-          (expect (loom::input-routing-decision-command decision) :to-be nil))))))
+          (expect (loom::input-routing-decision-command decision)
+                  :to-be nil))))))
 
   (it
     "routes terminal special keys despite ordinary editor bindings"
@@ -124,7 +138,8 @@
             (lambda (candidate)
               (declare (ignore candidate))
               t))
-        (let ((decision (loom::%classify-key-event event keymap-state)))
+        (let ((decision (loom::%classify-key-event
+                         event keymap-state keymap)))
           (expect (loom::input-routing-decision-terminal-event-p decision)
                   :to-be t)
           (expect (loom::input-routing-decision-command decision)

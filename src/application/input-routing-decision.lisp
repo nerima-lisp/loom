@@ -37,12 +37,12 @@
        (null sequence)
        (not terminal-event-p)))
 
-(defun %routing-command (keymap-state sequence descriptor minibuffer-was-active
-                         self-insert-event-p)
+(defun %routing-command (active-keymap sequence descriptor
+                         minibuffer-was-active self-insert-event-p)
   (and (not minibuffer-was-active)
        (not self-insert-event-p)
        (keymap-lookup
-        (keymap-state-keymap keymap-state)
+        active-keymap
         (append sequence (list descriptor)))))
 
 (defun %terminal-special-event-overrides-command-p (event command)
@@ -55,11 +55,11 @@
      :minibuffer minibuffer
      :minibuffer-was-active (minibuffer-active-p minibuffer)
      :macro (editor-state-keyboard-macro *editor-state*)
-     :descriptor (%key-event->descriptor event)
+     :descriptor (key-event->descriptor event)
      :prefix-argument (prefix-argument-for-editor)
      :sequence (keymap-state-sequence keymap-state))))
 
-(defun %input-routing-flags (event keymap-state context)
+(defun %input-routing-flags (event keymap-state context active-keymap)
   (let* ((minibuffer-was-active
            (input-routing-context-minibuffer-was-active context))
          (descriptor (input-routing-context-descriptor context))
@@ -77,7 +77,7 @@
             event minibuffer-was-active prefix-action sequence
             terminal-input-event-p))
          (command
-           (%routing-command keymap-state sequence descriptor
+           (%routing-command active-keymap sequence descriptor
                              minibuffer-was-active self-insert-event-p)))
     (values prefix-action
             (and terminal-input-event-p
@@ -87,15 +87,17 @@
             self-insert-event-p
             command)))
 
-(defun %classify-key-event (event keymap-state)
-  "Classify EVENT before the mutating dispatch step."
-  (let* ((context (%input-routing-context event keymap-state))
+(defun %classify-key-event (event keymap-state &optional active-keymap)
+  "Classify EVENT before the mutating dispatch step runs."
+  (let* ((active-keymap (or active-keymap
+                            (%refresh-active-keymap keymap-state)))
+         (context (%input-routing-context event keymap-state))
          (minibuffer-was-active
            (input-routing-context-minibuffer-was-active context))
          (macro (input-routing-context-macro context)))
     (multiple-value-bind (prefix-action terminal-event-p self-insert-event-p
                           command)
-        (%input-routing-flags event keymap-state context)
+        (%input-routing-flags event keymap-state context active-keymap)
       (%make-input-routing-decision
        :minibuffer (input-routing-context-minibuffer context)
        :minibuffer-was-active minibuffer-was-active

@@ -25,17 +25,7 @@ root source tree responsible for every feature."
   :serial t
   :components
   (
-   (:module "bootstrap"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "src/package-exports")
-     (:file "src/package-application")
-     (:file "packages/core/buffer/src/package")
-     (:file "packages/core/window-tree/src/package")
-     (:file "src/package")
-    ))
+   (:module "bootstrap" :pathname "." :serial t :components ((:file "packages/core/buffer/src/package") (:file "packages/core/window-tree/src/package") (:file "packages/core/minibuffer/src/package") (:file "packages/core/editor-session/src/package") (:file "packages/core/command/src/package") (:file "src/package-exports") (:file "src/package-application") (:file "src/package")))
    (:module "feature-mode-package"
     :pathname "."
     :serial t
@@ -229,7 +219,7 @@ root source tree responsible for every feature."
       :serial t
       :components
       (
-       (:file "packages/core/editor/src/domain-prefix-argument")
+       (:file "packages/core/command/src/domain-prefix-argument")
       ))
      (:module "core-window-tree-domain"
       :pathname "."
@@ -335,9 +325,9 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "src/domain/keymap-descriptor")
-     (:file "src/domain/keymap")
-     (:file "src/domain/keymap-state")
+     (:file "packages/core/command/src/domain-keymap-descriptor")
+     (:file "packages/core/command/src/domain-keymap")
+     (:file "packages/core/command/src/domain-keymap-state")
     ))
    (:module "feature-file-tree-domain"
     :pathname "."
@@ -463,32 +453,7 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/keyboard-macro/src/domain-keyboard-macro")
     ))
-   (:module "root-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "src/application/editor-state-bookmarks")
-     (:file "src/application/editor-state-support")
-     (:file "src/application/editor-state-types")
-     (:file "src/application/editor-state")
-     (:file "src/application/editor-state-save-hooks")
-     (:file "src/application/editor-state-recent-files")
-     (:file "src/application/editor-state-operations")
-     (:file "src/application/input-routing-descriptor")
-     (:file "src/application/minibuffer")
-     (:file "src/application/minibuffer-activation")
-     (:file "src/application/minibuffer-history")
-     (:file "src/application/minibuffer-completion")
-     (:file "src/application/completion-popup")
-     (:file "src/application/completion-popup-input")
-     (:file "src/application/minibuffer-input")
-     (:file "src/application/commands-prompts")
-     (:file "src/application/commands-internal")
-     (:file "src/application/command-registry-forms")
-     (:file "src/application/command-registry-build")
-     (:file "src/application/command-registry")
-    ))
+   (:module "root-application" :pathname "." :serial t :components ((:file "src/application/editor-state-bookmarks") (:file "packages/core/editor-session/src/domain-editor-session-slices") (:file "packages/core/editor-session/src/application-editor-state-support") (:file "packages/core/editor-session/src/application-editor-state-types") (:file "packages/core/editor-session/src/application-editor-state") (:file "packages/core/editor-session/src/application-editor-state-save-hooks") (:file "src/application/editor-state-recent-files") (:file "src/application/editor-state-operations") (:file "packages/core/command/src/domain-key-event-descriptor") (:file "packages/core/minibuffer/src/minibuffer") (:file "packages/core/minibuffer/src/minibuffer-activation") (:file "packages/core/minibuffer/src/minibuffer-history") (:file "packages/core/minibuffer/src/minibuffer-completion") (:file "src/application/completion-popup") (:file "src/application/completion-popup-input") (:file "packages/core/minibuffer/src/minibuffer-input") (:file "packages/core/minibuffer/src/commands-prompts") (:file "src/application/commands-internal") (:file "packages/core/command/src/command-registry-forms") (:file "packages/core/command/src/command-registry-build") (:file "packages/core/command/src/command-registry") (:file "packages/core/command/src/command-repeat") (:file "packages/core/command/src/command-invocation")))
    (:module "feature-mode-application"
     :pathname "."
     :serial t
@@ -523,7 +488,7 @@ root source tree responsible for every feature."
      (:file "packages/core/editor/src/application-structural-editing-application")
      (:file "packages/core/editor/src/application-commands-movement-support")
      (:file "packages/core/editor/src/application-commands-movement-view-support")
-     (:file "packages/core/editor/src/application-commands-movement-visual-lines")
+     (:file "packages/core/editor-session/src/application-commands-movement-visual-lines")
      (:file "packages/core/editor/src/application-commands-movement")
      (:file "packages/core/editor/src/application-commands-editing-support")
      (:file "packages/core/editor/src/application-commands-editing")
@@ -692,8 +657,8 @@ root source tree responsible for every feature."
      (:file "src/application/command-definitions-file-tree")
      (:file "src/application/command-definitions-ui")
      (:file "src/application/command-definitions")
-     (:file "src/application/commands-keybinding-spec")
-     (:file "src/application/commands-keybindings")
+     (:file "packages/core/command/src/commands-keybinding-spec")
+     (:file "packages/core/command/src/commands-keybindings")
     ))
    (:module "feature-user-init-application"
     :pathname "."

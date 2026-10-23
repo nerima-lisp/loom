@@ -2,9 +2,9 @@
 
 (defun %main-exit-code (&optional (argv (uiop:raw-command-line-arguments)))
   "Return the CLI exit code for ARGV without terminating the current process."
-  (if (equal (rest argv) '("--dump-catalog"))
+  (if (equal (rest argv) (list "--dump-catalog"))
       (progn
-        (write-line (loom/application:command-catalog-json))
+        (write-line (loom/core/command:command-catalog-json))
         0)
       (cl-cli:run-app *loom-app* :argv argv)))
 

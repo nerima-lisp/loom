@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/minibuffer)
 
 (defun %control-g-key-p (key-event)
   "True when KEY-EVENT is a Ctrl-G combination. CL-TTY-KIT reports a plain C0

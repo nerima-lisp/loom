@@ -5,7 +5,7 @@
   (it "starts LSP sessions through the command prompt"
     (%with-minibuffer-state (minibuffer "")
       (lsp-start)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) " ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) " ")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "LSP command cannot be empty"))
@@ -19,7 +19,7 @@
                (declare (ignore arguments))
                session))
           (lsp-start)
-          (funcall (loom::%minibuffer-on-confirm minibuffer) "closed-server"))
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "closed-server"))
         (expect (loom:minibuffer-message-string minibuffer)
                 :to-contain
                 "LSP start failed:")
@@ -52,7 +52,7 @@
                                    arguments))
                       new-session))
                  (lsp-start)
-                 (funcall (loom::%minibuffer-on-confirm minibuffer)
+                 (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                           "fake-server"))
                (expect (editor-state-lsp-session *editor-state*)
                        :to-be
@@ -91,7 +91,7 @@
                (declare (ignore arguments))
                (error "constructor failed")))
           (lsp-start)
-          (funcall (loom::%minibuffer-on-confirm minibuffer) "fake-server"))
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "fake-server"))
         (expect (editor-state-lsp-session *editor-state*) :to-be old-session)
         (expect (loom/feature/lsp::lsp-session-closed-p old-session) :to-be nil)
         (expect (%fake-closed-p old-transport) :to-be nil)
@@ -111,7 +111,7 @@
                  (declare (ignore arguments))
                  new-session))
             (lsp-start)
-            (funcall (loom::%minibuffer-on-confirm minibuffer) "fake-server"))
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "fake-server"))
           (expect (editor-state-lsp-session *editor-state*) :to-be old-session)
           (expect (loom/feature/lsp::lsp-session-closed-p old-session) :to-be nil)
           (expect (%fake-closed-p old-transport) :to-be nil)
@@ -141,7 +141,7 @@
                            (funcall original-boundary transport)))
                      (start-command ()
                        (lsp-start)
-                       (funcall (loom::%minibuffer-on-confirm minibuffer) "fake-server")))
+                       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "fake-server")))
                 (with-replaced-function
                     (loom/feature/lsp::make-lsp-session
                      (lambda (&rest arguments)

@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/core/command)
 
 (defun %control-special-key-p (type code)
   (and (eq type :special)
@@ -16,7 +16,7 @@
             #\Space
             character))))
 
-(defun %key-event->descriptor (event)
+(defun key-event->descriptor (event)
   "Convert a CL-TTY-KIT:KEY-EVENT into the (MODIFIERS . CODE) descriptor
 shape domain/keymap.lisp's protocol expects.
 

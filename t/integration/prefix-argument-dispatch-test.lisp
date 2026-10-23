@@ -75,7 +75,7 @@
   (it
     "recognizes alternate prefix descriptors and rejects unrelated modifiers"
     (let ((inactive (make-prefix-argument))
-          (active (loom::%make-prefix-argument :active-p t)))
+          (active (prefix-argument-universal (make-prefix-argument))))
       (multiple-value-bind (kind value)
           (loom::%prefix-argument-descriptor-action
            (cons '(:alt) #\3) inactive)

@@ -36,7 +36,7 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
       (prefix-action
        (if (eq (car prefix-action) :universal)
            (invoke-command
-            (loom/application:find-extended-command "universal-argument")
+            (getf (find-extended-command-spec "universal-argument") :command)
             :key
             (list descriptor)
             "global")
@@ -64,10 +64,10 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
   "Route one decoded KEY-EVENT to the minibuffer, prefix logic, self-insert,
 terminal input, or keymap dispatch. Expected command errors are reported in
 the minibuffer instead of unwinding the event loop; LOOM-QUIT still escapes
-  because it is signalled, not raised as an ERROR."
-  (%refresh-active-keymap keymap-state)
-  (let* ((macro (editor-state-keyboard-macro *editor-state*))
-         (decision (%classify-key-event event keymap-state))
+because it is signalled, not raised as an ERROR."
+  (let* ((active-keymap (%refresh-active-keymap keymap-state))
+         (macro (editor-state-keyboard-macro *editor-state*))
+         (decision (%classify-key-event event keymap-state active-keymap))
          (dispatched-p nil))
     (handler-case
         (setf dispatched-p

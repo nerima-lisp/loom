@@ -2,7 +2,7 @@
 
 (describe "command registration"
   (it "keeps the command catalogue unique and symbol-based"
-    (let ((specs loom/application::*command-specs*))
+    (let ((specs loom/core/command:*command-specs*))
       (expect specs :to-be-truthy)
       (expect (loop for spec in specs
                     for command = (getf spec :command)
@@ -36,7 +36,7 @@
   (it "serializes a fixed command spec with the declared JSON shape"
     (let* ((json
              (json-kit:stringify
-              (loom/application::%command-spec-json
+              (loom/core/command::%command-spec-json
                '(:name nil
                  :group "movement"
                  :command forward-char
@@ -68,16 +68,16 @@
   (host-kit:with-temporary-directory (directory)
     (let ((trace-path
             (namestring (merge-pathnames "commands.jsonl" directory)))
-          (loom/application::*command-trace-sequence* 0))
+          (loom/core/command::*command-trace-sequence* 0))
       (with-replaced-function
           (uiop:getenv
            (lambda (name)
              (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
-        (loom/application:record-command-trace
+        (loom/core/command:record-command-trace
          (loom/application:find-extended-command "forward-char") :key)
-        (loom/application:record-command-trace
+        (loom/core/command:record-command-trace
          (loom/application:find-extended-command "backward-char") :mx)
-        (loom/application:record-command-trace
+        (loom/core/command:record-command-trace
          (loom/application:find-extended-command "next-line") :mouse))
       (with-open-file (stream trace-path)
         (let ((key-event (json-kit:parse (read-line stream)))
@@ -101,7 +101,7 @@
     (host-kit:with-temporary-directory (directory)
       (let ((trace-path
               (namestring (merge-pathnames "missing/commands.jsonl" directory)))
-            (loom/application::*command-trace-sequence* 0))
+            (loom/core/command::*command-trace-sequence* 0))
         (with-replaced-function
             (uiop:getenv
              (lambda (name)
@@ -121,18 +121,18 @@
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-contain "Could not append LOOM_TRACE_COMMANDS")
             (loom::execute-extended-command)
-            (funcall (loom::%minibuffer-on-confirm minibuffer) "backward-char")
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "backward-char")
             (expect (buffer-point-column buffer) :to-equal 0)
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-contain "Could not append LOOM_TRACE_COMMANDS")
-            (expect loom/application::*command-trace-sequence* :to-equal 0)))))))
+            (expect loom/core/command::*command-trace-sequence* :to-equal 0)))))))
 
 (describe "execute-extended-command"
   (it "resolves a registered command through the command-spec registry"
     (%with-minibuffer-state (minibuffer "hi")
       (loom::execute-extended-command)
       (%expect-minibuffer-prompt minibuffer (%m-x-prompt-string))
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "  FORWARD-CHAR  ")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "  FORWARD-CHAR  ")
       (expect (buffer-point-column (%selected-test-buffer)) :to-equal 1)))
   (it "completes a registered command with Tab"
     (%with-minibuffer-state (minibuffer "hi")
@@ -145,7 +145,7 @@
   (it "reports an unregistered command without evaluating it"
     (%with-minibuffer-state (minibuffer "hi")
       (loom::execute-extended-command)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) "not-a-command")
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "not-a-command")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal "Unknown command: not-a-command")))
   (it "binds M-x to execute-extended-command"

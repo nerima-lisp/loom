@@ -39,7 +39,7 @@
     (%with-file-tree-prompt (dir path)
         command
         (merge-pathnames relative-path dir)
-      (funcall (loom::%minibuffer-on-confirm minibuffer) path)
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) path)
       (expect (host-kit:path-exists-p path) :to-be-truthy)))
 
   (it-each
@@ -54,7 +54,7 @@
     (%with-file-tree-prompt (dir path)
         command
         (merge-pathnames relative-path dir)
-      (funcall (loom::%minibuffer-on-cancel minibuffer))
+      (funcall (loom/core/minibuffer::%minibuffer-on-cancel minibuffer))
       (expect (host-kit:path-exists-p path) :to-be-falsy)
       (expect (minibuffer-message-string minibuffer) :to-equal "Quit")))
 
@@ -63,7 +63,7 @@
     (%with-selected-file-tree-entry-prompt (dir old-path "old.txt")
       (let ((new-path (merge-pathnames "new.txt" dir)))
         (loom/feature/file-tree:file-tree-rename-command)
-        (funcall (loom::%minibuffer-on-confirm minibuffer) new-path)
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) new-path)
         (expect (host-kit:path-exists-p old-path) :to-be-falsy)
         (expect (host-kit:path-exists-p new-path) :to-be-truthy))))
 

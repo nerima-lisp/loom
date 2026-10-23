@@ -1,4 +1,4 @@
-(in-package #:loom/application)
+(in-package #:loom/core/minibuffer)
 
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
   "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION) pair in
@@ -22,7 +22,7 @@ hand-nested pyramid of lambdas."
              (if bindings
                  (destructuring-bind (var prompt &key completion-function)
                      (first bindings)
-                   `(loom:minibuffer-activate ,minibuffer-var ,prompt
+                   `(minibuffer-activate ,minibuffer-var ,prompt
                                               :on-confirm (lambda (,var)
                                                             ,(expand-bindings (rest bindings)))
                                               ,@(when completion-function

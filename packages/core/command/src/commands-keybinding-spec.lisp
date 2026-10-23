@@ -1,4 +1,4 @@
-(in-package #:loom/application)
+(in-package #:loom/core/command)
 
 (defparameter +defkeys-modifiers+ '(:control :alt)
   "The modifier keywords a DEFKEYS chord may carry.")

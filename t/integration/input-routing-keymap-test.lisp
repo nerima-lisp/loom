@@ -93,7 +93,8 @@
            (*editor-state* state)
            (keymap (make-keymap))
            (keymap-state (make-keymap-state keymap)))
-      (setf (editor-state-minibuffer state) minibuffer)
+      (setf (editor-state-minibuffer state) minibuffer
+            (editor-state-keymap state) keymap)
       (keymap-define-key keymap (list (cons '(:control) #\z))
                          (lambda () (error "boom")))
       (loom::%dispatch-key-event
