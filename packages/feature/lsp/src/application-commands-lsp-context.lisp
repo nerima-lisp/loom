@@ -1,15 +1,15 @@
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-navigation-session ()
-  (loom:editor-state-lsp-session loom:*editor-state*))
+  (editor-state-lsp-session *editor-state*))
 
 (defun %lsp-navigation-minibuffer ()
-  (loom:editor-state-minibuffer loom:*editor-state*))
+  (editor-state-minibuffer *editor-state*))
 
 (defun %lsp-navigation-message (text)
   (let ((minibuffer (%lsp-navigation-minibuffer)))
     (when minibuffer
-      (loom:minibuffer-message minibuffer text)))
+      (minibuffer-message minibuffer text)))
   nil)
 
 (defun %lsp-navigation-context ()
@@ -19,7 +19,7 @@ A request needs an initialized session and a file-backed buffer: a server
 addresses documents by URI, and a buffer with no associated path has none."
   (let* ((session (%lsp-navigation-session))
          (buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
-         (path (and buffer (loom:buffer-path buffer))))
+         (path (and buffer (buffer-path buffer))))
     (when (and session
                (not (lsp-session-initialized-p session))
                (not (lsp-session-closed-p session)))
@@ -29,5 +29,5 @@ addresses documents by URI, and a buffer with no associated path has none."
                (not (lsp-session-closed-p session))
                path)
       (values session buffer (lsp-path-uri path)
-              (loom:buffer-point-line buffer)
-              (loom:buffer-point-column buffer)))))
+              (buffer-point-line buffer)
+              (buffer-point-column buffer)))))

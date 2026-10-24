@@ -38,6 +38,8 @@
      "packages/feature/buffers/src/package.lisp")
     ("LOOM/FEATURE/WINDOW" ("feature/window") (:domain :application)
      "packages/feature/window/src/package.lisp")
+    ("LOOM/FEATURE/BOOKMARK" ("feature/bookmark") (:domain)
+     "packages/feature/bookmark/src/package.lisp")
     ("LOOM/FEATURE/WORKSPACE" ("feature/workspace") (:domain :application)
      "packages/feature/workspace/src/package.lisp")
     ("LOOM/FEATURE/FILE-TREE" ("feature/file-tree")

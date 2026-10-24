@@ -8,6 +8,8 @@ from it."
   (let ((system (asdf:find-system "loom" nil)))
     (or (and system (asdf:component-version system)) "unknown")))
 
+(eval-when (:load-toplevel :execute) (loom/feature/lsp:register-client-version-provider :root (function loom-version)))
+
 (defun %call-with-started-editor-state (path thunk)
   "Initialize *EDITOR-STATE*, start startup services, call THUNK, then stop services."
   (%initialize-editor-state path)

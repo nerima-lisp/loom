@@ -1,8 +1,11 @@
 (in-package #:loom/test)
 
-(defun %make-test-editor-session (&optional buffers)
+(defun %make-test-editor-session (&optional buffers &key window-tree)
   (let ((session
-         (loom/core/editor-session:make-editor-session '(:feature/buffers))))
+          (loom/core/editor-session:make-editor-session
+           (quote (:core/window-tree :feature/buffers
+                    :feature/workspace :feature/keyboard-macro))
+           :initial-slices (list (cons :core/window-tree window-tree)))))
     (dolist (buffer (reverse buffers))
       (loom/feature/buffers:register-buffer session buffer))
     session))
@@ -32,10 +35,9 @@ WITH-MINIBUFFER installs a live MAKE-MINIBUFFER for the prompting commands,
 which do; see %WITH-MINIBUFFER-STATE."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (tree (make-window-tree buffer 80 24))
-         (session (%make-test-editor-session (list buffer))))
+         (session (%make-test-editor-session (list buffer) :window-tree tree)))
     (make-editor-state :session session
                        :window-tree tree
-                       :workspaces (make-workspace-manager tree :name "main")
                        :minibuffer (and with-minibuffer (make-minibuffer))
                        :keymap (make-keymap)
                        :file-tree nil

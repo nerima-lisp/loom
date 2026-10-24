@@ -11,8 +11,7 @@
                       (last-command-kill-p nil)
                       (last-command-self-insert-p nil) (lsp-session nil)
                       (registers nil)
-                      (keyboard-macro
-                       (loom/feature/keyboard-macro:make-keyboard-macro))
+                      (keyboard-macro nil)
                       (isearch nil)
                       (jump-origins nil)
                       (completion nil) (auto-save-mode-p nil)

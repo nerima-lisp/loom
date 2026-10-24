@@ -2,7 +2,7 @@
 
 (defun %lsp-buffer-uri (buffer-or-path)
   (cond
-    ((loom:buffer-p buffer-or-path)
+    ((buffer-p buffer-or-path)
      (and (buffer-path buffer-or-path)
           (lsp-path-uri (buffer-path buffer-or-path))))
     ((or (pathnamep buffer-or-path) (stringp buffer-or-path))
@@ -53,7 +53,7 @@
 (defun lsp-session-sync-buffer (session buffer)
   "For an initialized SESSION and file-backed BUFFER, send didOpen for a new
 document or full-text didChange when its text differs."
-  (unless (loom:buffer-p buffer)
+  (unless (buffer-p buffer)
     (error "LSP buffer synchronization needs a BUFFER: ~S" buffer))
   (let ((uri (%lsp-buffer-uri buffer)))
     (when (and uri (lsp-session-initialized-p session))

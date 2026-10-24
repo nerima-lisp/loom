@@ -23,7 +23,7 @@
     (unless path
       (error "buffer-save: buffer ~A has no associated path" (buffer-name buffer)))
     (when (buffer-read-only-p buffer)
-      (error 'loom:buffer-read-only-error :buffer buffer))
+      (error 'buffer-read-only-error :buffer buffer))
     (run-before-save-hooks buffer)
     (if (%native-path-operation-p path)
         (%native-write-file path (buffer-text buffer))

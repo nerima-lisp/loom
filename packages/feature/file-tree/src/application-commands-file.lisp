@@ -12,6 +12,30 @@
     (buffer-set-major-mode buffer (loom/feature/mode:major-mode-for-path path))
     buffer))
 
+(defvar *recent-file-recorder*
+  nil)
+
+(defun register-recent-file-recorder (owner function)
+  "Register OWNER's callback for recording paths visited or written by this
+feature.
+
+FUNCTION receives a path. Registering again as OWNER replaces its callback; a
+different owner is rejected."
+  (unless (functionp function)
+    (error "Recent-file recorder must be a function"))
+  (when
+      (and *recent-file-recorder*
+           (not (equal (car *recent-file-recorder*) owner)))
+    (error "Recent-file recorder is already registered by ~S"
+           (car *recent-file-recorder*)))
+  (setf *recent-file-recorder* (cons owner function))
+  function)
+
+(defun %record-recent-file (path)
+  (unless *recent-file-recorder*
+    (error "Recent-file recorder is not registered"))
+  (funcall (cdr *recent-file-recorder*) path))
+
 (defun %recent-file-candidates (input)
   "Return recent file paths suitable for minibuffer completion."
   (declare (ignore input))
@@ -28,7 +52,7 @@
 (defun %visit-existing-file (path)
   "Load PATH, display it in the selected window, and refresh recency."
   (%show-buffer-in-selected-window (buffer-load path))
-  (remember-recent-file path))
+  (%record-recent-file path))
 
 (defun visit-file (path)
   "Show the buffer for an existing PATH in the selected window.

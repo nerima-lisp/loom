@@ -1,6 +1,38 @@
 
 (in-package #:loom/feature/syntax-highlighting)
 
+(defvar *renderer-operation-provider* nil)
+
+(defun register-renderer-operation-provider (owner function)
+  "Register FUNCTION as the renderer operation provider owned by OWNER.
+
+FUNCTION is called with RENDERER, OPERATION, and the operation arguments.
+:CLIP-INDEX takes a line and start column; :TRUNCATE-STRING takes text
+and a cell width; :STRING-WIDTH takes text; :WRITE-STRING takes x, y, text,
+and :STYLE with its value. The first OWNER registration installs FUNCTION;
+later registrations by OWNER leave it in place. A different owner is
+rejected."
+  (unless (functionp function)
+    (error "Renderer operation provider must be a function"))
+  (when *renderer-operation-provider*
+    (unless (equal (car *renderer-operation-provider*) owner)
+      (error "Renderer operation provider is already registered by ~S"
+             (car *renderer-operation-provider*))))
+  (unless *renderer-operation-provider*
+    (setf *renderer-operation-provider* (cons owner function)))
+  function)
+
+(defun call-renderer-operation (renderer operation &rest arguments)
+  "Return every value from the provider unchanged."
+  (unless *renderer-operation-provider*
+    (error "Renderer operation provider is not registered"))
+  (unless
+      (member operation
+              (list :clip-index :truncate-string :string-width :write-string)
+              :test (function eq))
+    (error "Unsupported syntax renderer operation: ~S" operation))
+  (apply (cdr *renderer-operation-provider*) renderer operation arguments))
+
 (defparameter +layout-syntax-styles+
   '((:comment . (:fg 8))
     (:string . (:fg 2))
@@ -10,29 +42,35 @@
   "Terminal styles associated with syntax token kinds.")
 
 (defun %layout-syntax-style (kind)
+  "Return the syntax style for KIND, or NIL for no styling."
   (cdr (assoc kind +layout-syntax-styles+)))
 
 (defun %syntax-token-visible-text (renderer token character-index start-index
-                                   remaining)
+                                            remaining)
   (let* ((text (syntax-token-text token))
          (end (+ character-index (length text)))
          (slice (if (> start-index character-index)
                     (subseq text (- start-index character-index))
-                    text)))
-    (values (loom-renderer-truncate-string renderer slice remaining)
+                  text)))
+    (values (call-renderer-operation renderer :truncate-string slice remaining)
             end)))
 
 (defun %syntax-draw-visible-token (renderer token visible column y remaining end)
-  (let ((visible-width (loom-renderer-string-width renderer visible)))
+  (let ((visible-width (call-renderer-operation renderer :string-width visible)))
     (if (zerop visible-width)
         (values column remaining end)
-        (progn
-          (loom-renderer-write-string
-           renderer column y visible
-           :style (%layout-syntax-style (syntax-token-kind token)))
-          (values (+ column visible-width)
-                  (- remaining visible-width)
-                  end)))))
+      (progn
+        (call-renderer-operation
+         renderer
+         :write-string
+         column
+         y
+         visible
+         :style
+         (%layout-syntax-style (syntax-token-kind token)))
+        (values (+ column visible-width)
+                (- remaining visible-width)
+                end)))))
 
 (defun %syntax-draw-token (renderer token character-index start-index
                            column y remaining)
@@ -46,17 +84,18 @@
         (values column remaining end))))
 
 (defun syntax-draw-highlighted-line (renderer line x y width
-                                      &optional (mode :common-lisp)
-                                                (start-column 0))
-  "Draw LINE at (X, Y), preserving token text and fitting WIDTH cells.
+                                              &optional (mode :common-lisp)
+                                              (start-column 0))
+  "Draw LINE at (X, Y) within WIDTH screen cells.
 
-START-COLUMN scrolls the viewport right by that many screen cells. The line is
-still tokenized whole -- clipping the text first would change what the
-tokenizer sees, turning a cut string literal into something else -- and each
-token is then sliced at the character index LOOM-RENDERER-CLIP-INDEX reports,
-so no token is measured twice and no full-width character is drawn in half."
+START-COLUMN is a horizontal scroll offset in screen cells. The :CLIP-INDEX
+operation calculates the first visible character without changing LINE and
+reports a leading blank cell if a wide character crosses the viewport edge.
+The full line is tokenized, then token text before that index is skipped.
+Truncating LINE before tokenization can change token recognition at the
+viewport edge."
   (multiple-value-bind (start-index leading-blank)
-      (loom-renderer-clip-index renderer line start-column)
+      (call-renderer-operation renderer :clip-index line start-column)
     (let ((column (+ x leading-blank))
           (remaining (max 0 (- width leading-blank)))
           (character-index 0))
@@ -71,7 +110,10 @@ so no token is measured twice and no full-width character is drawn in half."
 
 (defun syntax-draw-buffer (renderer buffer x y width height
                            &key (start-line 0) (start-column 0))
-  "Draw BUFFER's visible lines with line-local syntax styles."
+  "Draw up to HEIGHT rows from BUFFER starting at START-LINE.
+
+START-LINE is a zero-based index into the visible lines of BUFFER. START-COLUMN
+is a horizontal offset in screen cells."
   (let ((line-count (buffer-visible-line-count buffer)))
     (dotimes (row height)
       (let ((line-number (+ start-line row)))

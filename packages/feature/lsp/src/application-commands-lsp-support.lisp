@@ -23,9 +23,9 @@
 
 (defun %lsp-confirm-discovered-command (command root configuration buffer minibuffer)
   (let* ((window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
-         (scroll-line (loom/feature/window:window-scroll-line window))
-         (scroll-column (loom/feature/window:window-scroll-column window))
-         (scroll-sub-row (loom/feature/window:window-scroll-sub-row window))
+         (scroll-line (loom/core/window-tree:window-scroll-line window))
+         (scroll-column (loom/core/window-tree:window-scroll-column window))
+         (scroll-sub-row (loom/core/window-tree:window-scroll-sub-row window))
          (review (make-buffer
                   :name "*LSP command review*"
                   :initial-content
@@ -34,24 +34,24 @@
     ;; The single-line minibuffer truncates long paths; review them in a wrapped buffer.
     (buffer-set-truncate-lines review nil)
     (buffer-set-read-only review t)
-    (loom/feature/window:window-set-buffer window review)
+    (loom/core/window-tree:window-set-buffer window review)
     (labels ((restore-buffer ()
-               (loom/feature/window:window-set-buffer window buffer)
-               (setf (loom/feature/window:window-scroll-line window) scroll-line
-                     (loom/feature/window:window-scroll-column window) scroll-column
-                     (loom/feature/window:window-scroll-sub-row window) scroll-sub-row))
+               (loom/core/window-tree:window-set-buffer window buffer)
+               (setf (loom/core/window-tree:window-scroll-line window) scroll-line
+                     (loom/core/window-tree:window-scroll-column window) scroll-column
+                     (loom/core/window-tree:window-scroll-sub-row window) scroll-sub-row))
              (review-key (key-event)
                (let* ((descriptor (loom/core/command:key-event->descriptor key-event))
                       (movement
                         (cond
                           ((or (equal descriptor '(nil . :page-down))
                                (equal descriptor '((:control) . #\v)))
-                           #'loom:next-visual-line-once)
+                           #'next-visual-line-once)
                           ((or (equal descriptor '(nil . :page-up))
                                (equal descriptor '((:alt) . #\v)))
-                           #'loom:previous-visual-line-once))))
+                           #'previous-visual-line-once))))
                  (when movement
-                   (dotimes (row (max 1 (1- (loom/feature/window:window-height window))))
+                   (dotimes (row (max 1 (1- (loom/core/window-tree:window-height window))))
                      (funcall movement))
                    t))))
       (loom/core/minibuffer:minibuffer-activate minibuffer "Run discovered LSP command? Type yes: "

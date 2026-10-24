@@ -32,4 +32,5 @@
            #:evaluation-result-text
            #:evaluate-lisp-source
            #:eval-expression
-           #:eval-buffer))
+           #:eval-buffer
+           #:register-evaluation-package-provider))

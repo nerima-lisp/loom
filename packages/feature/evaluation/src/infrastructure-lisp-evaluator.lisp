@@ -1,8 +1,27 @@
 (in-package #:loom/feature/evaluation)
 
+(defvar *evaluation-package-provider* nil)
+(defun register-evaluation-package-provider (owner function)
+  "Register OWNER's provider for the Lisp package used during evaluation.
+
+FUNCTION is called without arguments and must return a package. Registering
+again as OWNER replaces its provider; a different owner is rejected."
+  (unless (functionp function)
+    (error "Evaluation package provider must be a function"))
+  (when (and *evaluation-package-provider*
+             (not (equal (car *evaluation-package-provider*) owner)))
+    (error "Evaluation package provider is already registered by ~S"
+           (car *evaluation-package-provider*)))
+  (setf *evaluation-package-provider* (cons owner function))
+  function)
 (defun %loom-evaluation-package ()
-  (or (find-package "LOOM-USER")
-      (error "The LOOM-USER package is not available.")))
+  (unless *evaluation-package-provider*
+    (error "Evaluation package provider is not registered"))
+  (let ((package (funcall (cdr *evaluation-package-provider*))))
+    (unless (packagep package)
+      (error "Evaluation package provider returned ~S, not a package"
+             package))
+    package))
 
 (defun %evaluation-values-line (values)
   (if values (with-output-to-string (stream)

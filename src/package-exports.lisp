@@ -1,7 +1,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmacro define-package-with-exports (name use exports)
+  (defmacro define-package-with-exports (name use exports &rest package-options)
     `(defpackage ,name
        (:use ,@use)
+       ,@package-options
        (:export ,@(mapcar #'string exports))))
   (defparameter +loom/application-exports+
     '(%order-region with-prompts

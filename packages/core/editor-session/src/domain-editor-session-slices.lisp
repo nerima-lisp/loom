@@ -23,22 +23,44 @@
       (setf (gethash name *slice-state-constructors*) constructor)))
   constructor)
 
-(defun make-editor-session (slice-names)
+(defun make-editor-session (slice-names &key (initial-slices nil))
+  "Create a session with registered state for SLICE-NAMES.
+
+INITIAL-SLICES is a list of (NAME . STATE) entries for requested slices.
+Those values are installed before any constructors run. Requested names
+without an entry use registered constructors in SLICE-NAMES order, so each
+constructor dependency must be supplied initially or named earlier."
   (check-type slice-names list)
+  (check-type initial-slices list)
   (let ((names (copy-list slice-names))
         (seen (make-hash-table :test #'equal))
+        (initial-state-names (make-hash-table :test #'equal))
         (constructors nil))
+    (dolist (entry initial-slices)
+      (unless (consp entry)
+        (error "Initial slice state must be a cons: ~S" entry))
+      (let ((name (car entry)))
+        (check-type name symbol)
+        (unless (member name names :test #'equal)
+          (error "Initial slice state ~S is not requested" name))
+        (when (gethash name initial-state-names)
+          (error "Initial slice state ~S appears more than once" name))
+        (setf (gethash name initial-state-names) t)))
     (dolist (name names)
       (check-type name symbol)
       (when (gethash name seen)
         (error "Slice state ~S appears more than once" name))
       (setf (gethash name seen) t)
-      (multiple-value-bind (constructor registered-p)
-          (gethash name *slice-state-constructors*)
-        (unless registered-p
-          (error "Slice state ~S is not registered" name))
-        (push (cons name constructor) constructors)))
+      (unless (gethash name initial-state-names)
+        (multiple-value-bind (constructor registered-p)
+            (gethash name *slice-state-constructors*)
+          (unless registered-p
+            (error "Slice state ~S is not registered" name))
+          (push (cons name constructor) constructors))))
     (let ((session (%make-editor-session names)))
+      (dolist (entry initial-slices)
+        (setf (gethash (car entry) (%editor-session-slice-states session))
+              (cdr entry)))
       (dolist (entry (nreverse constructors))
         (setf (gethash (car entry) (%editor-session-slice-states session))
               (funcall (symbol-function (cdr entry)) session)))

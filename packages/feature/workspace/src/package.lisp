@@ -1,5 +1,20 @@
 (defpackage #:loom/feature/workspace
-  (:use #:cl #:loom #:loom/application #:loom/feature/window)
+  (:use #:cl)
+  (:import-from #:loom/core/editor-session
+                #:*editor-state*
+                #:editor-state-workspaces
+                #:editor-state-window-tree
+                #:editor-state-minibuffer
+                #:register-slice-state)
+  (:import-from #:loom/core/minibuffer
+                #:minibuffer-message
+                #:with-prompts)
+  (:import-from #:loom/core/window-tree
+                #:make-window-tree
+                #:window-tree-selected-window
+                #:window-buffer
+                #:window-tree-width
+                #:window-tree-height)
   (:export
    #:workspace
    #:workspace-p

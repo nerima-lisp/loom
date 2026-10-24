@@ -43,7 +43,13 @@ the scratch buffer and is itself the root."
          (minibuffer (make-minibuffer :history (history-kit:make-history)))
          (file-tree (loom/feature/file-tree:make-file-tree file-tree-root))
          (renderer (make-loom-renderer width height))
-         (session (make-editor-session '(:feature/buffers))))
+         (session
+           (make-editor-session
+            (quote (:core/window-tree
+                    :feature/buffers
+                    :feature/workspace
+                    :feature/keyboard-macro))
+            :initial-slices (list (cons :core/window-tree window-tree)))))
     (loom/feature/buffers:register-buffer session initial-buffer)
     (multiple-value-bind (before-save-hooks after-save-hooks)
         (%make-startup-hooks)
@@ -52,17 +58,12 @@ the scratch buffer and is itself the root."
        (function loom/feature/file-tree:loom-fs-list-directory))
       (make-editor-state :session session
                          :window-tree window-tree
-                         :workspaces
-                         (loom/feature/workspace:make-workspace-manager
-                          window-tree :name "main")
                          :minibuffer minibuffer
                          :keymap keymap
                          :file-tree file-tree
                          :renderer renderer
                          :kill-ring nil
                          :registers (loom/feature/register:make-register-bank)
-                         :keyboard-macro
-                         (loom/feature/keyboard-macro:make-keyboard-macro)
                          :auto-save-mode-p nil
                          :auto-save-buffers nil
                          :auto-save-last-run-at nil
@@ -71,6 +72,33 @@ the scratch buffer and is itself the root."
                          :before-save-hooks before-save-hooks
                          :after-save-hooks after-save-hooks
                          :terminal-sessions nil))))
+
+(eval-when (:load-toplevel :execute) (loom/feature/file-tree:register-recent-file-recorder :loom (function remember-recent-file)))
+(eval-when (:load-toplevel :execute)
+  (loom/feature/evaluation:register-evaluation-package-provider
+   :loom
+   (lambda () (find-package '#:loom-user)))
+  (loom/feature/user-init:register-user-init-package-provider
+   :loom
+   (lambda () (find-package '#:loom-user)))
+  (loom/feature/syntax-highlighting:register-renderer-operation-provider
+   :loom
+   (lambda (renderer operation &rest arguments)
+     (ecase operation
+       (:clip-index
+        (apply #'loom-renderer-clip-index renderer arguments))
+       (:truncate-string
+        (apply #'loom-renderer-truncate-string renderer arguments))
+       (:string-width
+        (apply #'loom-renderer-string-width renderer arguments))
+       (:write-string
+        (apply #'loom-renderer-write-string renderer arguments)))))
+)
+
+(eval-when (:load-toplevel :execute)
+  (loom/feature/lsp:register-completion-popup-provider
+   :loom
+   (function make-editor-completion)))
 
 (defun %initialize-editor-state (path-argument)
   "Build a fresh *EDITOR-STATE* around the startup buffer and supporting

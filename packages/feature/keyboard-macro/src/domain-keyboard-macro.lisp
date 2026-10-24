@@ -84,3 +84,7 @@ descriptor.  VALUE is the character or canonical descriptor respectively."
   (check-type macro keyboard-macro)
   (setf (keyboard-macro-replaying-p macro) nil)
   macro)
+(defun %make-keyboard-macro-state (session)
+  (declare (ignore session))
+  (make-keyboard-macro))
+(register-slice-state :feature/keyboard-macro '%make-keyboard-macro-state)

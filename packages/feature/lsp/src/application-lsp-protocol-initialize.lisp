@@ -19,7 +19,7 @@
 (defun %lsp-client-info ()
   (json-kit:make-json-object
    (list (cons "name" "Loom")
-         (cons "version" (loom-version)))))
+         (cons "version" (%client-version)))))
 
 (defun %lsp-workspace-folders (root-uri)
   (when root-uri

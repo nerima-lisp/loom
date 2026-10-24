@@ -11,6 +11,10 @@
   "Build a manager with one workspace named NAME over INITIAL-WINDOW-TREE."
   (make-workspace-manager-from-workspaces
    (list (make-workspace :name name :window-tree initial-window-tree))))
+(defun %make-workspace-state (session)
+  (make-workspace-manager
+   (loom/core/editor-session:editor-session-slice session :core/window-tree)))
+(register-slice-state :feature/workspace '%make-workspace-state)
 
 (defun %ensure-workspace-name-available (manager workspace-name)
   "Signal when WORKSPACE-NAME is blank or already present in MANAGER."

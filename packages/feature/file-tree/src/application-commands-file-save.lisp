@@ -29,7 +29,7 @@ so a second C-x C-s takes SAVE-BUFFER's existing-path branch and overwrites it."
                                   path))
       (progn
         (buffer-save buffer)
-        (remember-recent-file path))))
+        (%record-recent-file path))))
 
 (defun %install-file-buffer (window source path &key (name nil name-supplied-p))
   (let ((buffer
@@ -66,7 +66,7 @@ The replacement retains text, point, and mark, but not undo history."
     (if (buffer-path buffer)
         (progn
           (buffer-save buffer)
-          (remember-recent-file (buffer-path buffer)))
+          (%record-recent-file (buffer-path buffer)))
         (%prompt-and-save-new-buffer window buffer))))
 
 (defun write-file ()

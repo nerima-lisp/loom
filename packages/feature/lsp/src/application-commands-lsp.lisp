@@ -22,7 +22,7 @@ continues to override the discovered value explicitly."
   (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (discovered-command discovered-root configuration)
         (%lsp-start-discovery buffer)
-      (loom/application:with-prompts
+      (with-prompts
           (minibuffer (editor-state-minibuffer *editor-state*)
                       :on-cancel (minibuffer-message minibuffer "Quit"))
         ((typed-command (%lsp-command-prompt-string discovered-command)))
@@ -51,7 +51,7 @@ continues to override the discovered value explicitly."
      (%lsp-diagnostics-text
       buffer
       (lsp-session-diagnostics session buffer)))
-    (loom/feature/window:window-set-buffer
+    (loom/core/window-tree:window-set-buffer
      (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))
      diagnostics-buffer)))
 

@@ -2,13 +2,13 @@
 
 (defun %lsp-push-jump-origin (buffer line column)
   (push (list buffer line column)
-        (loom:editor-state-jump-origins loom:*editor-state*)))
+        (editor-state-jump-origins *editor-state*)))
 
 (defun %lsp-selected-buffer-for-path (path)
   (let ((selected (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when (and selected
-               (loom:buffer-path selected)
-               (equal (namestring (pathname (loom:buffer-path selected)))
+               (buffer-path selected)
+               (equal (namestring (pathname (buffer-path selected)))
                       (namestring (pathname path))))
       selected)))
 
@@ -31,10 +31,10 @@
        (%lsp-navigation-message (format nil "Cannot open ~A" path)))
       (t
        (let ((line (max 0 (min (lsp-position-line position)
-                              (1- (loom:buffer-line-count buffer))))))
-         (loom:buffer-set-point
+                              (1- (buffer-line-count buffer))))))
+         (buffer-set-point
           buffer line
-          (lsp-character-to-column (loom:buffer-line buffer line)
+          (lsp-character-to-column (buffer-line buffer line)
                                    (lsp-position-character position))))
        buffer))))
 
@@ -64,7 +64,7 @@ back even when the jump crossed into another file."
        (lsp-session-sync-buffer session buffer)
        (lsp-request-definition
         session uri line
-        (lsp-column-to-character (loom:buffer-line buffer line) character)
+        (lsp-column-to-character (buffer-line buffer line) character)
         (lambda (locations error-message)
           (%lsp-definition-response
            buffer line character locations error-message)))
@@ -72,11 +72,11 @@ back even when the jump crossed into another file."
 
 (defun lsp-pop-definition ()
   "Return point to where the last definition jump started (M-,)."
-  (let ((origin (pop (loom:editor-state-jump-origins loom:*editor-state*))))
+  (let ((origin (pop (editor-state-jump-origins *editor-state*))))
     (if origin
         (destructuring-bind (buffer line column) origin
-          (loom/feature/window:window-set-buffer
+          (loom/core/window-tree:window-set-buffer
            (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
-          (loom:buffer-set-point buffer line column))
+          (buffer-set-point buffer line column))
         (%lsp-navigation-message "No jump to return from")))
   nil)

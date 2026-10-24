@@ -11,4 +11,5 @@
   (:export
    #:define-command
    #:bind-key
-   #:load-user-init))
+   #:load-user-init
+   #:register-user-init-package-provider))

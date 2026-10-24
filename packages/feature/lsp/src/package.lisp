@@ -1,5 +1,5 @@
 (defpackage #:loom/feature/lsp
-            (:use #:cl #:loom #:loom/application)
+            (:use #:cl)
             (:export #:lsp-column-to-character
                      #:lsp-character-to-column
                      #:lsp-position
@@ -44,6 +44,7 @@
                      #:lsp-discover-command
                      #:lsp-start
                      #:lsp-stop
+                     #:register-client-version-provider
                      #:lsp-diagnostics
                      #:lsp-completion-at-point
                      #:lsp-find-definition
@@ -64,8 +65,40 @@
                      #:make-lsp-location
                      #:lsp-location-p
                      #:lsp-location-uri
-                     #:lsp-location-range)
+                     #:lsp-location-range #:register-completion-popup-provider)
             (:import-from #:loom/feature/buffers
                           #:registered-buffers
                           #:register-buffer)
-            (:import-from #:loom/core/editor-session #:*editor-session*))
+            (:import-from #:loom/core/buffer
+                          #:buffer-name
+                          #:make-buffer
+                          #:buffer-path
+                          #:buffer-offset-position
+                          #:buffer-text
+                          #:buffer-position-line
+                          #:buffer-position-column
+                          #:buffer-delete-region
+                          #:buffer-insert-string
+                          #:buffer-mark-saved
+                          #:buffer-set-truncate-lines
+                          #:buffer-set-read-only
+                          #:buffer-p
+                          #:buffer-line
+                          #:buffer-point-line
+                          #:buffer-point-column
+                          #:buffer-line-count
+                          #:buffer-set-point)
+            (:import-from #:loom/core/editor-session
+                          #:*editor-session*
+                          #:*editor-state*
+                          #:editor-state-window-tree
+                          #:editor-state-lsp-session
+                          #:editor-state-minibuffer
+                          #:editor-state-completion
+                          #:editor-state-jump-origins
+                          #:next-visual-line-once
+                          #:previous-visual-line-once)
+            (:import-from #:loom/core/minibuffer
+                          #:minibuffer-message
+                          #:minibuffer-activate
+                          #:with-prompts))

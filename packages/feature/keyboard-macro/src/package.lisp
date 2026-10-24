@@ -19,7 +19,8 @@
                 #:*editor-state*
                 #:editor-state-keyboard-macro
                 #:editor-state-keymap
-                #:editor-state-minibuffer)
+                #:editor-state-minibuffer
+                #:register-slice-state)
   (:import-from #:loom/core/minibuffer
                 #:minibuffer-message)
   (:export

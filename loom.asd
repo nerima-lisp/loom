@@ -35,6 +35,7 @@ root source tree responsible for every feature."
    (:file "packages/core/editor-session/src/package")
    (:file "packages/core/command/src/package")
    (:file "packages/feature/buffers/src/package")
+   (:file "packages/feature/bookmark/src/package")
    (:file "src/package-exports")
    (:file "src/package-application")
    (:file "src/package")))
@@ -244,6 +245,7 @@ root source tree responsible for every feature."
        (:file "packages/core/window-tree/src/domain-window-operations")
        (:file "packages/core/window-tree/src/domain-window-accessors")
        (:file "packages/core/window-tree/src/domain-window-deletion")))
+     (:file "packages/core/editor-session/src/domain-editor-session-slices")
     ))
    (:module "feature-search-domain"
     :pathname "."
@@ -469,8 +471,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "src/application/editor-state-bookmarks")
-   (:file "packages/core/editor-session/src/domain-editor-session-slices")
+  ((:file "packages/feature/bookmark/src/domain-editor-bookmark")
    (:file "packages/feature/buffers/src/domain-buffer-registry")
    (:file "packages/core/editor-session/src/application-editor-state-support")
    (:file "packages/core/editor-session/src/application-editor-state-types")
