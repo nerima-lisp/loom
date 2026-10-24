@@ -11,22 +11,46 @@
   (%make-keymap :name name :parent parent))
 
 (defun keymap-define-key (keymap key-sequence command)
-  "Bind KEY-SEQUENCE, a list of (MODIFIERS . CODE) descriptors or bare
-character/keyword codes, to COMMAND, a function designator of zero arguments
-that operates on *EDITOR-STATE* when invoked. A KEY-SEQUENCE that is a strict
-prefix of another bound sequence implicitly becomes a prefix key (see
-KEYMAP-LOOKUP). Returns KEYMAP."
-  (let ((normalized (mapcar #'normalize-key-descriptor key-sequence))
-        (table (keymap-table keymap)))
-    (loop for (key . rest) on normalized
-          do (if rest
-                 (let ((next (gethash key table)))
-                   (unless (hash-table-p next)
-                     (setf next (make-hash-table :test #'equal))
-                     (setf (gethash key table) next))
-                   (setf table next))
-                 (setf (gethash key table) command)))
-    keymap))
+  "Bind a normalized key sequence to a registered command ID."
+  (check-type keymap keymap)
+  (let* ((normalized (mapcar #'normalize-key-descriptor key-sequence))
+         (command-id
+           (if (stringp command)
+               (progn
+                 (unless (%find-command-spec-by-id command)
+                   (error "Command ID is not registered: ~S" command))
+                 (copy-seq command))
+               (command-id-for-function command))))
+    (unless normalized
+      (error "A key binding must contain at least one key."))
+    (let ((table (keymap-table keymap)))
+      (loop for (key . rest) on normalized
+            do (multiple-value-bind (existing present-p)
+                   (gethash key table)
+                 (if rest
+                     (cond
+                       ((not present-p) (return))
+                       ((hash-table-p existing) (setf table existing))
+                       (t (error "Key sequence ~S in ~S extends command ~A."
+                                 normalized (keymap-name keymap) existing)))
+                     (cond
+                       ((not present-p) nil)
+                       ((hash-table-p existing)
+                        (error "Key sequence ~S in ~S is a prefix of another binding."
+                               normalized (keymap-name keymap)))
+                       ((not (equal existing command-id))
+                        (error "Key sequence ~S in ~S is already bound to ~A."
+                               normalized (keymap-name keymap) existing)))))))
+    (let ((table (keymap-table keymap)))
+      (loop for (key . rest) on normalized
+            do (if rest
+                   (let ((next (gethash key table)))
+                     (unless next
+                       (setf next (make-hash-table :test #'equal))
+                       (setf (gethash key table) next))
+                     (setf table next))
+                   (setf (gethash key table) command-id)))
+      keymap)))
 
 (defun %keymap-lookup-step (table key rest)
   (multiple-value-bind (value present-p) (gethash key table)

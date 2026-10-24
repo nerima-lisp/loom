@@ -125,12 +125,7 @@
              (keymap (make-keymap))
              (macro (make-keyboard-macro))
              (descriptor (cons nil #\q)))
-        (keymap-define-key
-         keymap
-         (list descriptor)
-         (lambda ()
-           (setf invoked t)
-           :done))
+        (let ((command (lambda () (setf invoked t) :done))) (%register-test-command command) (keymap-define-key keymap (list descriptor) command))
         (setf (editor-state-keymap *editor-state*) keymap
               (editor-state-keyboard-macro *editor-state*) macro)
         (keyboard-macro-start-recording macro)
@@ -152,12 +147,7 @@
              (macro (make-keyboard-macro))
              (first-descriptor (cons '(:control) #\x))
              (second-descriptor (cons nil #\q)))
-        (keymap-define-key
-         keymap
-         (list first-descriptor second-descriptor)
-         (lambda ()
-           (setf invoked t)
-           :done))
+        (let ((command (lambda () (setf invoked t) :done))) (%register-test-command command) (keymap-define-key keymap (list first-descriptor second-descriptor) command))
         (setf (editor-state-keymap *editor-state*) keymap
               (editor-state-keyboard-macro *editor-state*) macro)
         (keyboard-macro-start-recording macro)

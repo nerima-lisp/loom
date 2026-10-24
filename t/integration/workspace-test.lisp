@@ -122,6 +122,7 @@
         loom/feature/workspace:previous-workspace))
       "registers ~A in the default keymap" (name key-sequence command)
     (let ((keymap (install-default-keybindings (make-keymap))))
-      (expect (keymap-lookup keymap key-sequence)
-              :to-be
-              command)))))
+      (expect
+ (keymap-lookup keymap key-sequence)
+ :to-equal
+ (loom/core/command:command-id-for-function command))))))

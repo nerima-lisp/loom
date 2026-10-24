@@ -78,14 +78,6 @@
 (defparameter *boundary-allowlist*
   '(
     ("root"
-     (:d1-cycle "src/application/command-definitions-editing.lisp" 18 "C1 root <-> feature/mode")
-     (:d1-cycle "src/application/command-definitions-editing.lisp" 158 "C1 root <-> feature/search")
-     (:d1-cycle "src/application/command-definitions-files.lisp" 27 "C1 root <-> feature/project")
-     (:d1-cycle "src/application/command-definitions-files.lisp" 5 "C1 root <-> feature/file-tree")
-     (:d1-cycle "src/application/command-definitions-macros.lisp" 33 "C1 root <-> feature/evaluation")
-     (:d1-cycle "src/application/command-definitions-tooling.lisp" 68 "C1 root <-> feature/format")
-     (:d1-cycle "src/application/command-definitions-tooling.lisp" 35 "C1 root <-> feature/lsp")
-     (:d1-cycle "src/application/command-definitions-tooling.lisp" 14 "C1 root <-> feature/terminal")
      (:d1-cycle "src/application/commands-misc.lisp" 14 "C2 loom <-> loom/application")
      (:d1-cycle "src/application/editor-state-types.lisp" 15 "C1 root <-> feature/keyboard-macro")
      (:d1-cycle "src/application/startup-services.lisp" 37 "C1 root <-> feature/user-init")
@@ -265,11 +257,6 @@
      (:layer-direction "src/presentation/layout.lisp" 34 "PRESENTATION call to BUFFER-VISIBLE-POINT-COLUMN (DOMAIN)")
      (:layer-direction "src/presentation/layout.lisp" 38 "PRESENTATION call to WINDOW-HEIGHT (DOMAIN)")
      (:layer-direction "src/presentation/layout.lisp" 5 "PRESENTATION call to LOOM-RENDERER-TRUNCATE-STRING (INFRASTRUCTURE)")
-     (:d1-cycle "src/application/command-definitions-files.lisp" 57 "C1 root <-> feature/auto-save")
-     (:d1-cycle "src/application/command-definitions-session.lisp" 56 "C1 root <-> feature/register")
-     (:d1-cycle "src/application/command-definitions-session.lisp" 5 "C1 root <-> feature/session")
-     (:d1-cycle "src/application/command-definitions-tooling.lisp" 26 "C1 root <-> feature/git")
-     (:d1-cycle "src/application/command-definitions-tooling.lisp" 5 "C1 root <-> feature/shell")
      (:d1-cycle "src/application/commands-internal.lisp" 5 "C1 root <-> feature/window")
      (:d1-cycle "src/application/commands-internal.lisp" 5 "C3 loom/application <-> window")
      (:d1-cycle "src/application/editor-state.lisp" 13 "C1 root <-> feature/workspace")
@@ -558,6 +545,8 @@
            :declaration
            (let ((file (subseq path (+ start 5))))
              (cond ((string= file "package.lisp") :declaration)
+                   ((uiop:string-prefix-p "command-specs-" file)
+                    :declaration)
                    ((uiop:string-prefix-p "domain-" file) :domain)
                    ((uiop:string-prefix-p "application-" file) :application)
                    ((uiop:string-prefix-p "infrastructure-" file) :infrastructure)
@@ -1478,4 +1467,24 @@
              (find-package "CL-USER"))
             :to-equal
             (list (list (find-symbol "ERROR" "COMMON-LISP")
-                        "reader evaluation ran")))))
+                        "reader evaluation ran"))))
+  (it "scans all migrated command specs as root boundary sources"
+    (let* ((records (boundary-source-records))
+           (spec-records
+             (remove-if-not
+              (lambda (record)
+                (search "/command-specs-" (boundary-record-path record)))
+              records)))
+      (expect (length spec-records) :to-equal 37)
+      (expect (every
+               (lambda (record)
+                 (uiop:string-prefix-p "packages/"
+                                       (boundary-record-path record)))
+               spec-records)
+              :to-equal t)
+      (expect (notany
+               (lambda (record)
+                 (search "src/application/command-definitions"
+                         (boundary-record-path record)))
+               records)
+              :to-equal t))))

@@ -54,11 +54,7 @@
            (keymap-state (make-keymap-state keymap))
            (seen-prefix nil))
       (setf (editor-state-keymap *editor-state*) keymap)
-      (keymap-define-key
-       keymap
-       (list (cons '(:control) #\x) (cons nil #\q))
-       (lambda ()
-         (setf seen-prefix loom:*current-prefix-argument*)))
+      (let ((command (lambda () (setf seen-prefix loom:*current-prefix-argument*)))) (%register-test-command command) (keymap-define-key keymap (list (cons '(:control) #\x) (cons nil #\q)) command))
       (flet ((dispatch (code &optional modifiers)
                (loom::%dispatch-key-event
                 (%prefix-event code modifiers)

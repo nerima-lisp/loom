@@ -1,7 +1,5 @@
 (in-package #:loom/core/command)
 
-(defparameter *command-specs* nil
-  "Registered command metadata used by completion and keymap installation.")
 (defparameter *command-trace-sequence* 0 "Current per-process sequence number for LOOM_TRACE_COMMANDS events.")
 
 (defun %normalized-command-name (input)
@@ -18,130 +16,129 @@
 (defun %catalog-symbol-name (symbol)
   "Return SYMBOL's name in lower case for the JSON catalog."
   (string-downcase (symbol-name symbol)))
-(defun %command-spec-identifier (spec)
-  "Return SPEC's stable command identifier for catalogs and traces."
-  (or (getf spec :name)
-      (%catalog-symbol-name (getf spec :command))))
-
-(defun command-completion-candidates (input)
-  "Return registered command names matching the normalized INPUT prefix."
-  (let ((prefix (%normalized-command-name input)))
-    (loop for spec in *command-specs*
-          for name = (getf spec :name)
-          when (%command-name-matches-prefix-p name prefix)
-            collect name)))
-
-(defun %command-spec-named-p (spec name)
-  (and (getf spec :name)
-       (string-equal name (getf spec :name))))
 (defun %catalog-key-name (code)
   "Return CODE as a readable catalog key string."
   (typecase code
     (character (string code))
     (keyword (%catalog-symbol-name code))
     (t (error "Unsupported catalog key code: ~S" code))))
-(defun find-extended-command-spec (input)
-  "Return the registered command spec named by INPUT, or NIL."
-  (let ((name (%normalized-command-name input)))
-    (find-if (lambda (spec)
-               (%command-spec-named-p spec name))
-             *command-specs*)))
-
-(defun find-extended-command (input)
-  "Return the registered command named by INPUT, or NIL."
-  (getf (find-extended-command-spec input) :command))
-
 (defun %help-spec< (left right)
-  "Return true when LEFT should appear before RIGHT in the help summary."
-  (< (getf left :help-order) (getf right :help-order)))
+  (< (%command-spec-help-order left) (%command-spec-help-order right)))
 
 (defun %help-specs ()
-  "Return registered command specs that contribute to the help summary."
-  (loop for spec in *command-specs*
-        when (getf spec :help)
-          collect spec))
-(defun %command-keybinding-json (key-form)
-  "Return KEY-FORM as one global key binding JSON object."
-  (json-kit:make-json-object (list (cons "keymap" "global")
-         (cons "sequence"
-               (mapcar
-                (lambda (descriptor)
-                  (json-kit:make-json-object (list (cons "modifiers"
-                               (mapcar #'%catalog-symbol-name (car descriptor)))
-                         (cons "key" (%catalog-key-name (cdr descriptor))))))
-                (defkeys-key-sequence key-form))))))
+  (remove-if-not #'%command-spec-help (command-specs)))
+(defun %command-keybinding-json (key-sequence keymap)
+  (json-kit:make-json-object
+   (list
+    (cons "keymap" (%catalog-symbol-name keymap))
+    (cons "sequence"
+          (mapcar
+           (lambda (descriptor)
+             (let* ((normalized (normalize-key-descriptor descriptor))
+                    (code (cdr normalized)))
+               (json-kit:make-json-object
+                (list
+                 (cons "modifiers"
+                       (mapcar #'%catalog-symbol-name (car normalized)))
+                 (cons "key" (%catalog-key-name code))))))
+           key-sequence)))))
 
 (defun %help-messages (specs)
-  "Extract help messages from sorted SPECS."
-  (mapcar (lambda (spec) (getf spec :help)) specs))
+  (mapcar #'%command-spec-help specs))
 
 (defun help-summary-message ()
-  "Return the compact help message derived from registered command metadata."
   (let ((entries
-          (stable-sort
-           (copy-list
-            (%help-specs))
-           #'%help-spec<)))
+          (stable-sort (copy-list (%help-specs)) #'%help-spec<)))
     (format nil "Help: ~{~A~^  ~}" (%help-messages entries))))
 (defun %command-spec-json (spec)
-  "Return SPEC as an ordered JSON object with its catalog metadata."
   (json-kit:make-json-object
-   (list (cons "name" (%command-spec-identifier spec))
-         (cons "mx-eligible"
-               (if (getf spec :name) t json-kit:+json-false+))
-         (cons "group" (or (getf spec :group) json-kit:+json-null+))
-         (cons "keys" (mapcar #'%command-keybinding-json (getf spec :keys)))
-         (cons "mutates" (if (getf spec :mutates)
-                              t
-                              json-kit:+json-false+))
-         (cons "prompts"
-               (mapcar #'%catalog-symbol-name (getf spec :prompts)))
-         (cons "needs-region" (if (getf spec :needs-region)
-                                   t
-                                   json-kit:+json-false+))
-         (cons "external" (getf spec :external))
-         (cons "modes"
-               (mapcar #'%catalog-symbol-name (getf spec :modes))))))
+   (list
+    (cons "id" (%command-spec-id spec))
+    (cons "owner" (%catalog-symbol-name (%command-spec-owner spec)))
+    (cons "name" (or (%command-spec-name spec) (%command-spec-legacy-name spec) json-kit:+json-null+))
+    (cons "mx-eligible"
+          (if (%command-spec-name spec) t json-kit:+json-false+))
+    (cons "group" (or (%command-spec-group spec) json-kit:+json-null+))
+    (cons "keymap" (%catalog-symbol-name (%command-spec-keymap spec)))
+    (cons "keys"
+          (mapcar
+           (lambda (key-sequence)
+             (%command-keybinding-json
+              key-sequence
+              (%command-spec-keymap spec)))
+           (%command-spec-keys spec)))
+    (cons "mutates"
+          (if (%command-spec-mutates spec) t json-kit:+json-false+))
+    (cons "prompts"
+          (mapcar #'%catalog-symbol-name (%command-spec-prompts spec)))
+    (cons "needs-region"
+          (if (%command-spec-needs-region spec) t json-kit:+json-false+))
+    (cons "external" (%command-spec-external spec))
+    (cons "modes"
+          (mapcar #'%catalog-symbol-name (%command-spec-modes spec))))))
 (defun command-catalog-json ()
-  "Return the registered command catalogue as a JSON array string."
-  (json-kit:stringify (mapcar #'%command-spec-json *command-specs*)))
-(defun record-command-trace (command route &optional entry)
-  "Append one JSONL event for COMMAND when tracing is enabled.
-ENTRY is an optional canonical key trace identity."
+  (let ((visible
+          (remove-if-not #'%command-spec-catalog-visible-p
+                         (command-specs))))
+    (json-kit:stringify
+     (mapcar #'%command-spec-json
+             (stable-sort
+              visible
+              (lambda (left right)
+                (let ((left-owner
+                        (%catalog-symbol-name (%command-spec-owner left)))
+                      (right-owner
+                        (%catalog-symbol-name (%command-spec-owner right))))
+                  (if (string-equal left-owner right-owner)
+                      (string-lessp (%command-spec-id left)
+                                    (%command-spec-id right))
+                      (string-lessp left-owner right-owner)))))))))
+(defun record-command-trace (id route &optional entry)
   (unless (keywordp route)
     (error "Command trace route must be a keyword: ~S" route))
   (let* ((trace-file (uiop:getenv "LOOM_TRACE_COMMANDS"))
-         (spec (find-if (lambda (registered)
-                          (eq command (getf registered :command)))
-                        *command-specs*)))
-    (when (and trace-file spec)
+         (spec (%find-command-spec-by-id id)))
+    (when (and trace-file spec (%command-spec-trace-visible-p spec))
       (handler-case
           (progn
             (when (zerop (length trace-file))
               (error "LOOM_TRACE_COMMANDS path must not be empty"))
-            (let ((trace-path (uiop:parse-native-namestring trace-file)))
+            (let* ((trace-path (uiop:parse-native-namestring trace-file))
+                   (prefix-state
+                     (and *editor-state*
+                          (prefix-argument-for-editor)))
+                   (trace-sequence (1+ *command-trace-sequence*))
+                   (fields
+                     (list
+                      (cons "command" (%command-spec-id spec))
+                      (cons "route" (%catalog-symbol-name route))
+                      (cons "seq" trace-sequence)
+                      (cons "pid" (sb-posix:getpid))
+                      (cons "prefix"
+                            (if prefix-state
+                                (prefix-argument-value prefix-state)
+                                json-kit:+json-null+))
+                      (cons "prefix-explicit"
+                            (if (and prefix-state
+                                     (prefix-argument-explicit-p prefix-state))
+                                t
+                                json-kit:+json-false+))))
+                   (line
+                     (json-kit:stringify
+                      (json-kit:make-json-object
+                       (if entry
+                           (append fields (list (cons "entry" entry)))
+                           fields)))))
               (when (wild-pathname-p trace-path)
                 (error "LOOM_TRACE_COMMANDS path must not contain wildcards"))
-              (let* ((trace-sequence (1+ *command-trace-sequence*))
-                     (fields
-                       (list (cons "command" (%command-spec-identifier spec))
-                             (cons "route" (%catalog-symbol-name route))
-                             (cons "seq" trace-sequence)
-                             (cons "pid" (sb-posix:getpid))))
-                     (line
-                       (json-kit:stringify
-                        (json-kit:make-json-object
-                         (if entry
-                             (append fields (list (cons "entry" entry)))
-                             fields)))))
-                (with-open-file (stream trace-path
-                                        :direction :output
-                                        :if-exists :append
-                                        :if-does-not-exist :create)
-                  (write-line line stream)
-                  (finish-output stream))
-                (setf *command-trace-sequence* trace-sequence)
-                nil)))
+              (with-open-file (stream trace-path
+                                      :direction :output
+                                      :if-exists :append
+                                      :if-does-not-exist :create)
+                (write-line line stream)
+                (finish-output stream))
+              (setf *command-trace-sequence* trace-sequence)
+              nil))
         (error (condition)
           (format nil "Could not append LOOM_TRACE_COMMANDS to ~A: ~A"
                   trace-file condition))))))

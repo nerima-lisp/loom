@@ -100,19 +100,12 @@
      (loop for spec-block in spec-blocks append spec-block)))))
 
 (defmacro define-command-specs (&body specs)
-  "Define the command registry from COMMAND-SPEC forms.
-
-Each spec provides an extended-command name and default key sequence data.
-NIL names describe keymap-only commands such as M-x itself. The explicit
-registry is used for lookup."
+  "Build a list of validated command metadata from COMMAND-SPEC forms."
   (let ((entries (%validate-command-spec-entries
                   (%collect-command-spec-entries specs))))
-    `(defparameter *command-specs*
-       (list
-        ,@(mapcar #'%command-spec-entry-form
-           entries)))))
+    (cons (find-symbol "LIST" "COMMON-LISP")
+          (mapcar (function %command-spec-entry-form) entries))))
 
 (defmacro define-command-spec-catalog (&rest spec-blocks)
-  "Define the command registry from declarative SPEC-BLOCK variables."
-  `(defparameter *command-specs*
-       (build-command-specs ,@spec-blocks)))
+  "Build validated command metadata from declarative spec blocks."
+  `(build-command-specs ,@spec-blocks))

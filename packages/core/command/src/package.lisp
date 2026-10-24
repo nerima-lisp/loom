@@ -46,13 +46,21 @@
    #:record-undo-boundary-for-command
    #:self-insert-command
    #:invoke-command
+   #:invoke-key-command
+   #:command-id-for-function
+   #:command-completion-names
+   #:register-key-command
+   #:register-command-spec
+   #:find-command-spec
+   #:command-specs
+   #:command-spec-name
+   #:command-spec-id
    #:command-spec
    #:command-spec-group
    #:define-command-spec-groups
    #:build-command-specs
    #:define-command-specs
    #:define-command-spec-catalog
-   #:*command-specs*
    #:command-completion-candidates
    #:find-extended-command-spec
    #:record-command-trace

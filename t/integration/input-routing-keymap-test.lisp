@@ -95,8 +95,7 @@
            (keymap-state (make-keymap-state keymap)))
       (setf (editor-state-minibuffer state) minibuffer
             (editor-state-keymap state) keymap)
-      (keymap-define-key keymap (list (cons '(:control) #\z))
-                         (lambda () (error "boom")))
+      (let ((command (lambda () (error "boom")))) (%register-test-command command) (keymap-define-key keymap (list (cons '(:control) #\z)) command))
       (loom::%dispatch-key-event
        (cl-tty-kit:make-key-event :type :character :code #\z :modifiers '(:control))
        keymap-state)

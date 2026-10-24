@@ -6,6 +6,7 @@
                 #:consume-prefix-argument-for-editor
                 #:find-extended-command-spec
                 #:invoke-command
+                #:invoke-key-command
                 #:keymap-state-dispatch
                 #:keymap-state-sequence
                 #:make-keymap-state

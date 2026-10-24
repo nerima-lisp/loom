@@ -3,8 +3,8 @@
 (defun %prepare-dispatched-command-state (command)
   "Clear transient editor state before dispatching COMMAND when needed."
   (unless (or (eq command :prefix)
-              (member command +yank-command-names+ :test #'eq)
-              (member command +yank-preserving-command-names+ :test #'eq))
+              (member command +yank-command-names+ :test #'equal)
+              (member command +yank-preserving-command-names+ :test #'equal))
     (%clear-last-yank)))
 
 (defun %dispatch-self-insert-event (event)
@@ -14,7 +14,11 @@
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (let ((*current-prefix-argument*
           (consume-prefix-argument-for-editor)))
-    (self-insert-command (cl-tty-kit:key-event-code event))))
+    (invoke-key-command "core/self-insert"
+                        :key
+                        (list (key-event->descriptor event))
+                        "global"
+                        (cl-tty-kit:key-event-code event))))
 
 (defun %dispatch-keymap-command
     (keymap-state descriptor prefix-argument command)
@@ -29,13 +33,16 @@
                  (keymap-state-dispatch
                   keymap-state
                   descriptor
-                  (lambda (command sequence keymap-name)
-                    (invoke-command command :key sequence keymap-name)))))
+                  (lambda (command-id sequence keymap-name)
+                    (invoke-key-command command-id
+                                        :key
+                                        sequence
+                                        keymap-name)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset prefix-argument)))
     (unless (eq dispatch-result :pending)
       (setf (editor-state-last-command-kill-p *editor-state*)
-            (and (member command +kill-command-names+ :test #'eq) t)))
+            (and (member command +kill-command-names+ :test #'equal) t)))
     dispatch-result))
 
 (defun %record-keyboard-macro-event

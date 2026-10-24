@@ -75,22 +75,22 @@ def _parse_args(argv):
 
 
 def _coverage_report(selected, catalog):
-    all_command_names = {item["name"] for item in catalog}
-    if not all_command_names:
+    all_command_ids = commands.catalog_command_ids(catalog)
+    if not all_command_ids:
         raise SystemExit("command-spec catalogue is empty")
     covered = {
         command for _, scenario_commands, _ in selected
         for command in scenario_commands
     }
-    covered_known = covered & all_command_names
-    uncovered = sorted(all_command_names - covered)
-    unknown = sorted(covered - all_command_names)
-    print(f"commands covered: {len(covered_known)} / {len(all_command_names)}")
+    covered_known = covered & all_command_ids
+    uncovered = sorted(all_command_ids - covered)
+    unknown = sorted(covered - all_command_ids)
+    print(f"commands covered: {len(covered_known)} / {len(all_command_ids)}")
     print(f"uncovered commands: {', '.join(uncovered) if uncovered else '(none)'}")
     print(f"uncovered: {len(uncovered)}")
     print(f"未カバー {len(uncovered)}")
     if unknown:
-        print(f"unknown scenario command names: {', '.join(unknown)}")
+        print(f"unknown scenario command IDs: {', '.join(unknown)}")
     return uncovered, unknown
 
 

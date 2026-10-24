@@ -111,7 +111,10 @@
     (declare (ignore label))
     (let ((keymap (make-keymap)))
       (loom/application:install-default-keybindings keymap)
-      (expect (keymap-lookup keymap key-sequence) :to-be command)))
+      (expect
+ (keymap-lookup keymap key-sequence)
+ :to-equal
+ (loom/core/command:command-id-for-function command))))
 
   (it
     "keeps an ESC-prefixed Ctrl-letter distinct from the bare chord"

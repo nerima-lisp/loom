@@ -1,10 +1,13 @@
 (defpackage #:loom/feature/user-init
   (:use #:cl)
   (:import-from #:loom/core/command
-                #:find-extended-command-spec
+                #:command-spec-id
                 #:defkeys-key-sequence
-                #:*command-specs*
-                #:keymap-define-key)
+                #:find-extended-command-spec
+                #:invoke-command
+                #:keymap-define-key
+                #:register-command-spec
+                #:register-key-command)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
                 #:editor-state-keymap)

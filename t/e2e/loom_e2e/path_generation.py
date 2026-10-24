@@ -1,7 +1,6 @@
 """Generate the required E2E paths from the command catalog."""
 
 import json
-import re
 from urllib.parse import quote
 
 
@@ -10,7 +9,10 @@ class CatalogError(ValueError):
 
 
 _REQUIRED_FIELDS = {
+    "id",
     "name",
+    "owner",
+    "keymap",
     "keys",
     "group",
     "mutates",
@@ -170,7 +172,7 @@ def _normalize_catalog(catalog):
         raise CatalogError("catalog must be a non-empty JSON array")
 
     rows = []
-    names = set()
+    command_ids = set()
     for row_index, row in enumerate(catalog):
         if not isinstance(row, dict):
             raise CatalogError(f"catalog[{row_index}] must be an object")
@@ -179,43 +181,49 @@ def _normalize_catalog(catalog):
             raise CatalogError(
                 f"catalog[{row_index}] is missing fields: {', '.join(sorted(missing))}"
             )
-        name = _nonempty_string(row["name"], f"catalog[{row_index}].name")
-        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
-            raise CatalogError(f"catalog[{row_index}].name is not a command identifier: {name!r}")
-        if name in names:
-            raise CatalogError(f"duplicate command name: {name}")
-        names.add(name)
+        command_id = _nonempty_string(row["id"], f"catalog[{row_index}].id")
+        if command_id in command_ids:
+            raise CatalogError(f"duplicate command ID: {command_id}")
+        command_ids.add(command_id)
+        name = row["name"]
+        if name is not None:
+            _nonempty_string(name, f"catalog[{command_id}].name")
+        _nonempty_string(row["owner"], f"catalog[{command_id}].owner")
+        _nonempty_string(row["keymap"], f"catalog[{command_id}].keymap")
 
         if row["group"] is not None:
-            _nonempty_string(row["group"], f"catalog[{name}].group")
+            _nonempty_string(row["group"], f"catalog[{command_id}].group")
         for flag in ("mutates", "needs-region", "mx-eligible"):
             if type(row[flag]) is not bool:
-                raise CatalogError(f"catalog[{name}].{flag} must be a boolean")
+                raise CatalogError(f"catalog[{command_id}].{flag} must be a boolean")
 
         prompts = _string_list(
-            row["prompts"], f"catalog[{name}].prompts", allow_duplicates=True
+            row["prompts"], f"catalog[{command_id}].prompts", allow_duplicates=True
         )
         unknown_prompts = set(prompts) - _PROMPT_KINDS
         if unknown_prompts:
             raise CatalogError(
-                f"catalog[{name}] has unknown prompt kinds: {', '.join(sorted(unknown_prompts))}"
+                f"catalog[{command_id}] has unknown prompt kinds: {', '.join(sorted(unknown_prompts))}"
             )
-        external = _string_list(row["external"], f"catalog[{name}].external")
-        modes = _string_list(row["modes"], f"catalog[{name}].modes")
+        external = _string_list(row["external"], f"catalog[{command_id}].external")
+        modes = _string_list(row["modes"], f"catalog[{command_id}].modes")
         keys = row["keys"]
         if not isinstance(keys, list):
-            raise CatalogError(f"catalog[{name}].keys must be a list")
-        normalized_keys = [_normalize_key(key, name, index) for index, key in enumerate(keys)]
+            raise CatalogError(f"catalog[{command_id}].keys must be a list")
+        normalized_keys = [
+            _normalize_key(key, command_id, index)
+            for index, key in enumerate(keys)
+        ]
         normalized_keys.sort(
             key=lambda key: json.dumps(key, sort_keys=True, separators=(",", ":"))
         )
         signatures = [json.dumps(key, sort_keys=True, separators=(",", ":")) for key in normalized_keys]
         if len(set(signatures)) != len(signatures):
-            raise CatalogError(f"catalog[{name}].keys contains duplicate sequences")
+            raise CatalogError(f"catalog[{command_id}].keys contains duplicate sequences")
 
         rows.append(
             {
-                "name": name,
+                "id": command_id,
                 "keys": normalized_keys,
                 "mutates": row["mutates"],
                 "prompts": prompts,
@@ -225,14 +233,14 @@ def _normalize_catalog(catalog):
             }
         )
 
-    rows.sort(key=lambda row: row["name"])
+    rows.sort(key=lambda row: row["id"])
     for row in rows:
-        row["lane"] = _command_lane(row["name"])
+        row["lane"] = _command_lane(row["id"])
         if not row["keys"] and not row["mx-eligible"]:
             raise CatalogError(
-                f"catalog[{row['name']}] has no key or M-x entry"
+                f"catalog[{row['id']}] has no key or M-x entry"
             )
-    missing_fixed_commands = _FIXED_COMMANDS - names
+    missing_fixed_commands = _FIXED_COMMANDS - command_ids
     if missing_fixed_commands:
         raise CatalogError(
             "catalog is missing commands required by fixed paths: "
@@ -241,40 +249,40 @@ def _normalize_catalog(catalog):
     return rows
 
 
-def _command_lane(name):
-    if name in _W3_1:
+def _command_lane(command_id):
+    if command_id in _W3_1:
         return "W3-1"
-    if name in _W3_2 or name.startswith("lifecycle-"):
+    if command_id in _W3_2 or command_id.startswith("lifecycle-"):
         return "W3-2"
-    if name in _W3_3:
+    if command_id in _W3_3:
         return "W3-3"
-    if name == "help":
+    if command_id == "help":
         return "W3-5"
-    if name.startswith(("isearch-", "search-", "project-")) or name == "replace-string":
+    if command_id.startswith(("isearch-", "search-", "project-")) or command_id == "replace-string":
         return "W3-6"
-    if name in _W3_7A:
+    if command_id in _W3_7A:
         return "W3-7a"
     if (
-        name.startswith("eval-")
-        or name.endswith(("-sexp", "-list"))
-        or name in {"wrap-round", "splice-sexp", "raise-sexp"}
+        command_id.startswith("eval-")
+        or command_id.endswith(("-sexp", "-list"))
+        or command_id in {"wrap-round", "splice-sexp", "raise-sexp"}
     ):
         return "W3-7b"
-    if name in _W3_8:
+    if command_id in _W3_8:
         return "W3-8"
-    if name.startswith("lsp-"):
+    if command_id.startswith("lsp-"):
         return "W3-9"
-    if name in _W3_10 or name.startswith("file-tree-") or name.startswith("split-window-"):
+    if command_id in _W3_10 or command_id.startswith("file-tree-") or command_id.startswith("split-window-"):
         return "W3-10"
     if (
-        name in _W3_11
-        or name.startswith(("git-", "terminal-", "format-", "auto-save-"))
-        or name == "terminal"
+        command_id in _W3_11
+        or command_id.startswith(("git-", "terminal-", "format-", "auto-save-"))
+        or command_id == "terminal"
     ):
         return "W3-11"
-    if name in _W3_4:
+    if command_id in _W3_4:
         return "W3-4"
-    raise CatalogError(f"no lane mapping for catalog command: {name}")
+    raise CatalogError(f"no lane mapping for catalog command ID: {command_id}")
 
 
 def _path(path_id, commands, rule, lane, entry, state, outcome, observe):
@@ -390,14 +398,14 @@ def generate_required_paths(catalog):
     paths = []
 
     for row in rows:
-        name = row["name"]
+        command_id = row["id"]
         lane = row["lane"]
         for key in row["keys"]:
             signature = json.dumps(key, sort_keys=True, separators=(",", ":"))
             paths.append(
                 _path(
-                    f"r1:{name}:key:{quote(signature, safe='')}",
-                    [name],
+                    f"r1:{command_id}:key:{quote(signature, safe='')}",
+                    [command_id],
                     "r1",
                     lane,
                     f"key:{signature}",
@@ -409,8 +417,8 @@ def generate_required_paths(catalog):
         if row["mx-eligible"]:
             paths.append(
                 _path(
-                    f"r1:{name}:mx",
-                    [name],
+                    f"r1:{command_id}:mx",
+                    [command_id],
                     "r1",
                     lane,
                     "mx",
@@ -427,8 +435,8 @@ def generate_required_paths(catalog):
             for case in cases:
                 paths.append(
                     _path(
-                        f"r2:{name}:prompt-{prompt_index}:{prompt}:{case}",
-                        [name],
+                        f"r2:{command_id}:prompt-{prompt_index}:{prompt}:{case}",
+                        [command_id],
                         "r2",
                         lane,
                         f"{_primary_entry(row)};prompt:{prompt_index}:{prompt}",
@@ -442,8 +450,8 @@ def generate_required_paths(catalog):
             for case, state, outcome, observe in _MUTATION_CASES:
                 paths.append(
                     _path(
-                        f"r3:{name}:{case}",
-                        [name],
+                        f"r3:{command_id}:{case}",
+                        [command_id],
                         "r3",
                         lane,
                         "macro" if case == "macro-replay" else _primary_entry(row),
@@ -460,8 +468,8 @@ def generate_required_paths(catalog):
             ):
                 paths.append(
                     _path(
-                        f"r4:{name}:{state}",
-                        [name],
+                        f"r4:{command_id}:{state}",
+                        [command_id],
                         "r4",
                         lane,
                         _primary_entry(row),
@@ -475,8 +483,8 @@ def generate_required_paths(catalog):
             for outcome in ("success", "missing", "nonzero", "interrupted"):
                 paths.append(
                     _path(
-                        f"r5:{name}:{quote(tool, safe='')}:{outcome}",
-                        [name],
+                        f"r5:{command_id}:{quote(tool, safe='')}:{outcome}",
+                        [command_id],
                         "r5",
                         lane,
                         _primary_entry(row),

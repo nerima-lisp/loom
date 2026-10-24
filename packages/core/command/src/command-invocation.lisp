@@ -26,15 +26,29 @@
                (cons "sequence"
                      (mapcar #'%command-trace-key-descriptor key-sequence))))))))
 
-(defun invoke-command (command route &optional key-sequence keymap-name)
-  "Trace COMMAND through ROUTE with optional key-entry data, then execute it."
-  (let ((trace-error
-          (record-command-trace
-           command route (%command-trace-key-entry key-sequence keymap-name)))
-        (minibuffer (editor-state-minibuffer *editor-state*)))
-    (when (and trace-error minibuffer)
-      (minibuffer-message minibuffer trace-error)))
-  (funcall command))
+(defun invoke-command (id route &rest arguments)
+  "Resolve ID, record ROUTE, then call the registered command with ARGUMENTS."
+  (let ((spec (%find-command-spec-by-id id)))
+    (unless spec
+      (error "No command is registered with ID ~S." id))
+    (let ((trace-error
+            (record-command-trace
+             id
+             route
+             (%command-trace-key-entry
+              *command-trace-key-sequence*
+              *command-trace-keymap-name*)))
+          (minibuffer (and *editor-state*
+                           (editor-state-minibuffer *editor-state*))))
+      (when (and trace-error minibuffer)
+        (minibuffer-message minibuffer trace-error)))
+    (apply (%command-spec-command spec) arguments)))
+(defun invoke-key-command (id route sequence keymap-name &rest arguments)
+  (unless (member route (list :key :macro))
+    (error "Key command route must be :KEY or :MACRO: ~S" route))
+  (let ((*command-trace-key-sequence* sequence)
+        (*command-trace-keymap-name* keymap-name))
+    (apply #'invoke-command id route arguments)))
 
 (defun prefix-argument-action (descriptor argument)
   "Return the pending prefix action for DESCRIPTOR, or NIL.
@@ -121,6 +135,25 @@ from an ordinary key that is not a prefix action."
 (defun self-insert-command (character)
   "Insert CHARACTER repeatedly according to the active numeric prefix."
   (%self-insert-character character))
+(defun %insert-pasted-text-command (text)
+  (unless (stringp text)
+    (error "Pasted text must be a string: ~S" text))
+  (record-undo-boundary-for-command nil)
+  (editor-state-clear-last-yank *editor-state*)
+  (setf (editor-state-last-command-kill-p *editor-state*) nil)
+  (buffer-insert-string
+   (loom/core/window-tree:window-buffer
+    (loom/core/window-tree:window-tree-selected-window
+     (editor-state-window-tree *editor-state*)))
+   text))
+(progn
+  (register-internal-command
+   :core/command "core/self-insert" (function self-insert-command)
+   :mutates t :prompts nil :needs-region nil :external nil :modes (list :all))
+  (register-internal-command
+   :core/command "core/insert-pasted-text"
+   (function %insert-pasted-text-command)
+   :mutates t :prompts nil :needs-region nil :external nil :modes (list :all)))
 
 (defun record-undo-boundary-for-command (self-insert-p)
   "Record a buffer undo boundary when the command kind changes.

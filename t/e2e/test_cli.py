@@ -17,9 +17,19 @@ cli = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(cli)
 
 
+def _catalog_entry(command_id, name):
+    return {
+        "id": command_id,
+        "name": name,
+        "owner": "feature/test",
+        "keymap": "global",
+        "mx-eligible": name is not None,
+    }
+
+
 class CommandCatalogTests(unittest.TestCase):
     def test_catalog_is_read_from_the_runtime_session(self):
-        payload = [{"name": "forward-char", "keys": [], "group": "movement"}]
+        payload = [_catalog_entry("forward-char", "forward-char")]
         with patch.object(commands, "Session") as session_type:
             session = session_type.return_value.__enter__.return_value
             session.process.wait.return_value = (
@@ -28,6 +38,38 @@ class CommandCatalogTests(unittest.TestCase):
             )
             self.assertEqual(commands.load_command_catalog("loom"), payload)
         session_type.assert_called_once_with("loom", ["--dump-catalog"])
+
+    def _load_payload(self, payload):
+        with patch.object(commands, "Session") as session_type:
+            session = session_type.return_value.__enter__.return_value
+            session.process.wait.return_value = (
+                json.dumps(payload).encode("utf-8"),
+                0,
+            )
+            return commands.load_command_catalog("loom")
+
+    def test_catalog_accepts_null_name_with_canonical_id(self):
+        payload = [_catalog_entry("execute-extended-command", None)]
+        self.assertEqual(self._load_payload(payload), payload)
+
+    def test_catalog_accepts_id_different_from_name(self):
+        payload = [_catalog_entry("forward-char", "legacy-forward")]
+        self.assertEqual(self._load_payload(payload), payload)
+        self.assertEqual(commands.catalog_command_ids(payload), {"forward-char"})
+
+    def test_catalog_rejects_missing_id(self):
+        payload = [_catalog_entry("forward-char", "forward-char")]
+        del payload[0]["id"]
+        with self.assertRaisesRegex(RuntimeError, "invalid command ID"):
+            self._load_payload(payload)
+
+    def test_catalog_rejects_duplicate_ids(self):
+        payload = [
+            _catalog_entry("forward-char", "forward-char"),
+            _catalog_entry("forward-char", "next-command"),
+        ]
+        with self.assertRaisesRegex(RuntimeError, "duplicate command ID"):
+            self._load_payload(payload)
 
 
 class CoverageCliTests(unittest.TestCase):
@@ -42,7 +84,10 @@ class CoverageCliTests(unittest.TestCase):
         ]
         self.catalogue = self.contexts.enter_context(patch.object(
             cli.commands, "load_command_catalog",
-            return_value=[{"name": "forward-char"}, {"name": "backward-char"}],
+            return_value=[
+                _catalog_entry("forward-char", "forward-char"),
+                _catalog_entry("backward-char", "backward-char"),
+            ],
         ))
         self.contexts.enter_context(patch.object(registry, "_scenarios", self.registered))
         self.binary = self.contexts.enter_context(patch.object(
@@ -89,6 +134,41 @@ class CoverageCliTests(unittest.TestCase):
         self.registered[0][1].append("unknown-command")
         self.assertEqual(cli.main(["--only", "forward"]), 1)
         self.assertIn("unknown-command", self.stdout.getvalue())
+
+    def test_coverage_matches_null_name_by_canonical_id(self):
+        selected = [
+            ("execute", ["execute-extended-command"], self.forward),
+        ]
+        result = cli._coverage_report(
+            selected,
+            [_catalog_entry("execute-extended-command", None)],
+        )
+        self.assertEqual(result, ([], []))
+        self.assertIn("commands covered: 1 / 1", self.stdout.getvalue())
+
+    def test_coverage_matches_id_when_name_differs(self):
+        selected = [("forward", ["forward-char"], self.forward)]
+        result = cli._coverage_report(
+            selected,
+            [_catalog_entry("forward-char", "legacy-forward")],
+        )
+        self.assertEqual(result, ([], []))
+        self.assertIn("commands covered: 1 / 1", self.stdout.getvalue())
+
+    def test_coverage_rejects_missing_and_duplicate_ids(self):
+        missing_id = _catalog_entry("forward-char", "forward-char")
+        del missing_id["id"]
+        duplicate_ids = [
+            _catalog_entry("forward-char", "forward-char"),
+            _catalog_entry("forward-char", "next-command"),
+        ]
+        for catalog, message in (
+            ([missing_id], "invalid command ID"),
+            (duplicate_ids, "duplicate command ID"),
+        ):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    cli._coverage_report([], catalog)
 
     def test_empty_catalogue_fails(self):
         self.catalogue.return_value = []

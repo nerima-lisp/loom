@@ -6,8 +6,8 @@
   "Validate command metadata and require every catalog classification field."
   (unless (or (null name) (stringp name))
     (error "COMMAND-SPEC name must be a string or NIL: ~S" name))
-  (unless (symbolp command)
-    (error "COMMAND-SPEC command must be a symbol: ~S" command))
+  (unless (or (symbolp command) (functionp command))
+    (error "COMMAND-SPEC command must be a function designator: ~S" command))
   (unless (or (null help) (stringp help))
     (error "COMMAND-SPEC help must be a string or NIL: ~S" help))
   (unless (or (null help-order) (integerp help-order))

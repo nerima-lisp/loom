@@ -9,31 +9,33 @@
            (buffer (%selected-test-buffer))
            (root (editor-state-keymap state))
            (keymap-state (make-keymap-state root))
-           (hit (gensym "HIT-")))
+           (hit (gensym "HIT-"))
+           (parent-command
+             (lambda () (%loom-test-parent-dispatch-command hit)))
+           (child-command
+             (lambda () (%loom-test-child-dispatch-command hit)))
+           (global-command
+             (lambda () (%loom-test-global-dispatch-command hit))))
       (unwind-protect
            (progn
+             (%register-test-command parent-command)
+             (%register-test-command child-command)
+             (%register-test-command global-command)
              (register-major-mode
               :loom-test-parent-dispatch-mode
               :name "Loom Test Parent Dispatch"
               :keybindings
-              (list
-               (cons '(:control #\p)
-                     (lambda ()
-                       (%loom-test-parent-dispatch-command hit)))))
+              (list (cons (quote (:control #\p)) parent-command)))
              (register-major-mode
               :loom-test-child-dispatch-mode
               :name "Loom Test Child Dispatch"
               :parent :loom-test-parent-dispatch-mode
               :keybindings
-              (list
-               (cons '(:control #\x)
-                     (lambda ()
-                       (%loom-test-child-dispatch-command hit)))))
+              (list (cons (quote (:control #\x)) child-command)))
              (keymap-define-key
               root
-              (list (cons '(:control) #\x))
-              (lambda ()
-                (%loom-test-global-dispatch-command hit)))
+              (list (cons (quote (:control)) #\x))
+              global-command)
              (buffer-set-major-mode buffer :loom-test-child-dispatch-mode)
              (flet ((dispatch (character)
                       (setf (symbol-value hit) nil)
@@ -41,7 +43,7 @@
                        (cl-tty-kit:make-key-event
                         :type :character
                         :code character
-                        :modifiers '(:control))
+                        :modifiers (quote (:control)))
                        keymap-state)))
                (dispatch #\x)
                (expect (symbol-value hit) :to-be :child)

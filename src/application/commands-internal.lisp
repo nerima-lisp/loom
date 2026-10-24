@@ -10,6 +10,3 @@ reuse it without depending on the editor command implementation."
           (and (= point-line mark-line) (<= point-column mark-column)))
       (values point-line point-column mark-line mark-column)
       (values mark-line mark-column point-line point-column)))
-(defun find-extended-command (input)
-  "Return the registered command function named by INPUT, or NIL."
-  (getf (find-extended-command-spec input) :command))

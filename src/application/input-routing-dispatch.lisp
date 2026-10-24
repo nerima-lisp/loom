@@ -35,11 +35,10 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
        :handled)
       (prefix-action
        (if (eq (car prefix-action) :universal)
-           (invoke-command
-            (getf (find-extended-command-spec "universal-argument") :command)
-            :key
-            (list descriptor)
-            "global")
+           (invoke-key-command "universal-argument"
+                               :key
+                               (list descriptor)
+                               "global")
            (apply-prefix-argument-action (car prefix-action)
                                          (cdr prefix-action)))
        :handled)

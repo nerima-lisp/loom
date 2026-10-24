@@ -133,3 +133,13 @@ File-tree command tests can then operate on a real temporary directory."
    :exit-code status
    :stdout stdout
    :stderr stderr))
+(progn
+  (defvar *test-command-sequence* 0)
+  (defun %register-test-command (command)
+    (let ((id (format nil "test/command/~D"
+                      (incf *test-command-sequence*))))
+      (loom/core/command::register-internal-command
+       :test id command :keys nil :keymap :global
+       :mutates nil :prompts nil :needs-region nil :external nil
+       :modes (quote (:all)))
+      id)))

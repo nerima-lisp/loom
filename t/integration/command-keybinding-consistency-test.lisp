@@ -1,66 +1,50 @@
 (in-package #:loom/test)
 
 (progn
-  (defparameter +m-x-exempt-commands+ (list (quote loom::execute-extended-command))
-    "The keybound command EXECUTE-EXTENDED-COMMAND deliberately does not
-register in the COMMAND-SPEC table for M-x. It *is* the M-x prompt, so an
-\"M-x execute-extended-command\" would do nothing but reopen the prompt the
-user is already answering. Anything else missing from the registry is an
-oversight, which is what the spec below fails on.")
-
-  (defun %keymap-bound-commands (keymap)
-    "Return every command symbol bound anywhere in KEYMAP, once each,
-descending through prefix keys. Reads the keymap's own trie (see
-packages/core/command/src/domain-keymap.lisp: a table maps one normalized descriptor to either a bound
-command or a nested table for a prefix), since KEYMAP-LOOKUP can only answer
-about a key sequence already known to the caller and this spec's whole point
-is to not maintain a second hand-written list of them."
-    (let ((commands (list)))
+  (defun %keymap-bound-command-ids (keymap)
+    (let ((ids '()))
       (labels ((walk (table)
                  (maphash (lambda (descriptor value)
                             (declare (ignore descriptor))
                             (if (hash-table-p value)
                                 (walk value)
-                                (pushnew value commands)))
+                                (pushnew value ids :test #'equal)))
                           table)))
         (walk (loom/core/command::keymap-table keymap)))
-      commands))
-
-  (defun %extended-command-names (command)
-    "Return the M-x names COMMAND may be registered under. Two spellings are
-in real use in the COMMAND-SPEC table: a command whose Lisp name is free to
-be the user-facing one registers under it verbatim
-\(\"forward-char\"\), while a command that had to take a -COMMAND suffix in
-Lisp to avoid clashing with a same-named generic registers under the bare
-name \(NEWLINE-COMMAND as \"newline\", FILE-TREE-RENAME-COMMAND as
-\"file-tree-rename\"\). Accepting both keeps this spec a check on
-reachability rather than on which of the two spellings was chosen."
-    (let* ((full (string-downcase (symbol-name command)))
-           (suffix "-command")
-           (cut (- (length full) (length suffix))))
-      (if (and (plusp cut) (string= suffix full :start2 cut))
-          (list full (subseq full 0 cut))
-          (list full)))))
+      ids)))
 
 (describe
   "keybinding / M-x registry consistency"
-  (it
-    "resolves every keybound command through %find-extended-command"
-    (let ((keymap (make-keymap)))
-      (loom/application:install-default-keybindings keymap)
+  (it "resolves every keybound ID to a registered command and M-x name"
+    (let* ((keymap (make-keymap))
+           (ids (progn
+                  (loom/core/command:install-default-keybindings keymap)
+                  (%keymap-bound-command-ids keymap)))
+           (names (loom/core/command:command-completion-names "")))
+      (expect (remove-if #'loom/core/command:find-command-spec ids)
+              :to-equal nil)
       (expect (remove-if
-               (lambda (command)
-                 (or (member command +m-x-exempt-commands+)
-                     (some (lambda (name)
-                             (eq (loom/application:find-extended-command name) command))
-                           (%extended-command-names command))))
-               (%keymap-bound-commands keymap))
-              :to-equal (list))))
-  (it
-    "exempts execute-extended-command, which is itself the M-x prompt"
-    (let ((keymap (make-keymap)))
-      (loom/application:install-default-keybindings keymap)
-      (expect (%keymap-bound-commands keymap)
-              :to-contain (quote loom::execute-extended-command)))
-    (expect (loom/application:find-extended-command "execute-extended-command") :to-be nil)
-    (expect (loom/application:find-extended-command "execute-extended") :to-be nil)))
+               (lambda (id)
+                 (let ((spec (loom/core/command:find-command-spec id)))
+                   (or (null (loom/core/command:command-spec-name spec))
+                       (member (loom/core/command:command-spec-name spec)
+                               names
+                               :test #'string-equal))))
+               ids)
+              :to-equal nil)))
+  (it "keeps execute-extended-command registered by ID but out of M-x names"
+    (let* ((keymap (make-keymap))
+           (spec (loom/core/command:find-command-spec
+                  "execute-extended-command")))
+      (loom/core/command:install-default-keybindings keymap)
+      (expect (loom/core/command:command-spec-id spec)
+              :to-equal "execute-extended-command")
+      (expect (loom/core/command:command-spec-name spec) :to-be nil)
+      (expect (loom/core/command:find-extended-command-spec
+               "execute-extended-command")
+              :to-be nil)
+      (expect (member "execute-extended-command"
+                      (loom/core/command:command-completion-names ""))
+              :to-be nil)
+      (expect (%keymap-bound-command-ids keymap)
+              :to-contain "execute-extended-command"))))

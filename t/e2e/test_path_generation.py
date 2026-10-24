@@ -24,9 +24,12 @@ def _key(key_name, modifiers=(), keymap="global"):
     }
 
 
-def _row(name, **overrides):
+def _row(command_id, **overrides):
     row = {
-        "name": name,
+        "id": command_id,
+        "name": command_id,
+        "owner": "feature/test",
+        "keymap": "global",
         "keys": [],
         "group": "test",
         "mutates": False,
@@ -48,6 +51,7 @@ def _catalog():
         ),
         _row(
             "execute-extended-command",
+            name=None,
             keys=[_key("x", ("alt",))],
             prompts=["completion"],
             **{"mx-eligible": False},
@@ -73,7 +77,7 @@ def _catalog():
         "new-workspace",
         "switch-workspace",
     }
-    rows.extend(_row(name) for name in sorted(fixed_names))
+    rows.extend(_row(command_id) for command_id in sorted(fixed_names))
     return rows
 
 
@@ -104,6 +108,10 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             + sum(row["mx-eligible"] for row in self.catalog),
             rule_counts["r1"],
         )
+        execute_command = next(
+            row for row in self.catalog if row["id"] == "execute-extended-command"
+        )
+        self.assertIsNone(execute_command["name"])
         execute_paths = [
             path for path in self.paths if path["id"].startswith("r1:execute-extended-command:key:")
         ]
@@ -127,11 +135,23 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
     def test_space_is_a_valid_catalog_key(self):
         catalog = _catalog()
-        row = next(row for row in catalog if row["name"] == "forward-char")
+        row = next(row for row in catalog if row["id"] == "forward-char")
         row["keys"] = [_key(" ")]
         paths = generate_required_paths(catalog)
         path = next(path for path in paths if path["id"].startswith("r1:forward-char:key:"))
         self.assertIn('"key":" "', path["entry"])
+
+    def test_paths_use_canonical_id_when_name_differs(self):
+        catalog = _catalog()
+        row = next(row for row in catalog if row["id"] == "forward-char")
+        row["name"] = "legacy-forward"
+
+        paths = _by_id(generate_required_paths(catalog))
+
+        self.assertIn("r1:forward-char:mx", paths)
+        self.assertEqual(paths["r1:forward-char:mx"]["commands"], ["forward-char"])
+        self.assertEqual(paths["r1:forward-char:mx"]["lane"], "W3-4")
+        self.assertNotIn("r1:legacy-forward:mx", paths)
 
     def test_r2_generates_all_prompt_cases_once_per_kind(self):
         ids = set(self.paths_by_id)
@@ -215,7 +235,9 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
     def test_generation_is_independent_of_catalog_and_key_order(self):
         reversed_catalog = copy.deepcopy(self.catalog[::-1])
-        forward_char = next(row for row in reversed_catalog if row["name"] == "forward-char")
+        forward_char = next(
+            row for row in reversed_catalog if row["id"] == "forward-char"
+        )
         forward_char["keys"] = forward_char["keys"][::-1]
         self.assertEqual(generate_required_paths(reversed_catalog), self.paths)
 
@@ -225,16 +247,22 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         with self.assertRaisesRegex(CatalogError, "missing fields: keys"):
             generate_required_paths(catalog)
 
+    def test_missing_command_id_is_rejected(self):
+        catalog = _catalog()
+        del catalog[0]["id"]
+        with self.assertRaisesRegex(CatalogError, "missing fields: id"):
+            generate_required_paths(catalog)
+
     def test_command_without_any_entry_is_rejected(self):
         catalog = _catalog()
-        row = next(row for row in catalog if row["name"] == "forward-char")
+        row = next(row for row in catalog if row["id"] == "forward-char")
         row["keys"] = []
         row["mx-eligible"] = False
         with self.assertRaisesRegex(CatalogError, "no key or M-x entry"):
             generate_required_paths(catalog)
 
     def test_missing_fixed_path_command_is_rejected(self):
-        catalog = [row for row in _catalog() if row["name"] != "save-buffer"]
+        catalog = [row for row in _catalog() if row["id"] != "save-buffer"]
         with self.assertRaisesRegex(CatalogError, "missing commands required by fixed paths"):
             generate_required_paths(catalog)
 
@@ -249,10 +277,10 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         with self.assertRaisesRegex(CatalogError, "no lane mapping"):
             generate_required_paths(catalog)
 
-    def test_duplicate_names_and_malformed_key_sequences_are_rejected(self):
+    def test_duplicate_ids_and_malformed_key_sequences_are_rejected(self):
         catalog = _catalog()
         catalog.append(copy.deepcopy(catalog[0]))
-        with self.assertRaisesRegex(CatalogError, "duplicate command name"):
+        with self.assertRaisesRegex(CatalogError, "duplicate command ID"):
             generate_required_paths(catalog)
 
         catalog = _catalog()

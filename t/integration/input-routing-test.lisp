@@ -75,11 +75,13 @@
     (let* ((*editor-state* (%fresh-editor-state ""))
            (keymap (editor-state-keymap *editor-state*))
            (keymap-state (make-keymap-state keymap))
-           (binding (lambda () :ok)))
+           (binding "forward-char"))
       (keymap-define-key keymap (list (cons nil #\q)) binding)
       (let ((active (loom::%refresh-active-keymap keymap-state)))
-        (expect (keymap-lookup active (list (cons nil #\q)))
-                :to-be binding)
+        (expect
+ (keymap-lookup active (list (cons nil #\q)))
+ :to-equal
+ binding)
         (expect (keymap-state-sequence keymap-state) :to-equal nil)))))
 
 (describe
@@ -106,7 +108,7 @@
            (keymap-state (make-keymap-state keymap))
            (prefix (cons '(:control) #\x))
            (event (cl-tty-kit:make-key-event :type :character :code #\a)))
-      (keymap-define-key keymap (list prefix (cons nil #\q)) #'identity)
+      (keymap-define-key keymap (list prefix (cons nil #\q)) "forward-char")
       (expect (keymap-state-dispatch
                keymap-state prefix
                (lambda (command sequence keymap-name)
@@ -122,8 +124,7 @@
                          event keymap-state keymap)))
           (expect (loom::input-routing-decision-terminal-event-p decision)
                   :to-be nil)
-          (expect (loom::input-routing-decision-command decision)
-                  :to-be nil))))))
+          (expect (loom::input-routing-decision-command decision) :to-equal nil))))))
 
   (it
     "routes terminal special keys despite ordinary editor bindings"
@@ -132,7 +133,7 @@
            (keymap-state (make-keymap-state keymap))
            (event (cl-tty-kit:make-key-event :type :special :code :enter)))
       (keymap-define-key keymap (list (cons nil :enter))
-                         #'loom::newline-command)
+                         (loom/core/command:command-id-for-function #'loom::newline-command))
       (with-replaced-function
           (loom/feature/terminal:terminal-input-event-p
             (lambda (candidate)
@@ -142,8 +143,7 @@
                          event keymap-state keymap)))
           (expect (loom::input-routing-decision-terminal-event-p decision)
                   :to-be t)
-          (expect (loom::input-routing-decision-command decision)
-                  :to-be #'loom::newline-command)
+          (expect (loom::input-routing-decision-command decision) :to-equal (loom/core/command:command-id-for-function #'loom::newline-command))
           (expect (loom::input-routing-decision-self-insert-event-p decision)
                   :to-be nil)))))
 

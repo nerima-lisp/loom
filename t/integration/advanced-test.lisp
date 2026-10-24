@@ -60,7 +60,7 @@
            (prefix (subseq command 0 length))
            (input (format nil "  ~A  " (string-upcase prefix))))
       (expect (member command
-                      (loom/application:command-completion-candidates input)
+                      (loom/core/command:command-completion-names input)
                       :test #'string=)
               :to-be-truthy)))
 

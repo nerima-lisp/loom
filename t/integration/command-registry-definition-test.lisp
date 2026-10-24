@@ -5,41 +5,49 @@
   (it "wraps declarative command groups in one defparameter"
     (let ((expansion
             (macroexpand-1
-             (quote
-               (loom/application:define-command-spec-groups
-                   *sample-command-spec-groups*
-                 (loom/application:command-spec-group
-                     "movement"
-                   (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))))
+             '(loom/core/command:define-command-spec-groups
+                  *sample-command-spec-groups*
+                (loom/core/command:command-spec-group
+                    "movement"
+                  (loom/core/command:command-spec
+                    "forward-char" forward-char
+                    :mutates nil :prompts nil :needs-region nil
+                    :external nil :modes (:all)))))))
       (expect expansion
               :to-equal
               '(defparameter *sample-command-spec-groups*
-                 '((loom/application:command-spec-group
+                 '((loom/core/command:command-spec-group
                        "movement"
-                     (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))))
+                     (loom/core/command:command-spec
+                       "forward-char" forward-char
+                       :mutates nil :prompts nil :needs-region nil
+                       :external nil :modes (:all)))))))))
 (describe
   "define-command-spec-groups validation"
   (it "rejects malformed groups during macroexpansion"
     (signals error
       (macroexpand-1
-       '(loom/application:define-command-spec-groups
+       '(loom/core/command:define-command-spec-groups
          *sample-command-spec-groups*
-         (loom/application:command-spec-group
+         (loom/core/command:command-spec-group
              "movement"
            (not-a-command-spec)))))))
 
 (describe
   "define-command-specs macroexpansion"
-  (it "emits only the explicit command registry"
+  (it "emits runtime data for explicit command specs"
     (let ((expansion
             (macroexpand-1
-             '(loom/application:define-command-specs
-               (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
-               (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
-      (expect (first expansion) :to-equal 'defparameter)
-      (expect (second expansion)
-              :to-equal 'loom/application:*command-specs*)
-      (expect (third expansion)
+             '(loom/core/command:define-command-specs
+               (loom/core/command:command-spec
+                 "forward-char" forward-char
+                 :mutates nil :prompts nil :needs-region nil
+                 :external nil :modes (:all))
+               (loom/core/command:command-spec
+                 "kill-line" kill-line
+                 :mutates nil :prompts nil :needs-region nil
+                 :external nil :modes (:all))))))
+      (expect expansion
               :to-equal
               '(list
                 (list :name "forward-char"
@@ -63,64 +71,57 @@
                       :prompts 'nil
                       :needs-region nil
                       :external 'nil
-                      :modes '(:all))))
-      (expect (fourth expansion) :to-be nil))))
+                      :modes '(:all)))))))
 
 (describe
   "define-command-specs duplicate validation"
   (it "rejects command names that differ only by case"
     (signals error
       (macroexpand-1
-       '(loom/application:define-command-specs
-         (loom/application:command-spec "Forward-Char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
-         (loom/application:command-spec "forward-char" backward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
+       '(loom/core/command:define-command-specs
+         (loom/core/command:command-spec
+           "Forward-Char" forward-char
+           :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))
+         (loom/core/command:command-spec
+           "forward-char" backward-char
+           :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))))
 
 (describe
   "define-command-spec-catalog"
-  (it "preserves groups and metadata when composing spec variables"
-    (let ((loom/application:*command-specs* nil)
-          (movement-specs
-            '((loom/application:command-spec-group
-                "movement"
-                (loom/application:command-spec "forward-char" forward-char :mutates nil :prompts nil :needs-region nil :external nil :modes (:all)))))
-          (editing-specs
-            '((loom/application:command-spec-group
-                "editing"
-                (loom/application:command-spec "kill-line" kill-line :mutates nil :prompts nil :needs-region nil :external nil :modes (:all))))))
-      (eval
-       `(let ((movement-specs ',movement-specs)
-              (editing-specs ',editing-specs))
-          (loom/application:define-command-spec-catalog
-            movement-specs editing-specs)))
-      (expect loom/application:*command-specs*
-              :to-equal
-              '((:name "forward-char" :group "movement"
-                 :command forward-char :keys nil :help nil :help-order nil
-                 :mutates nil :prompts nil :needs-region nil :external nil
-                 :modes (:all))
-                (:name "kill-line" :group "editing"
-                 :command kill-line :keys nil :help nil :help-order nil
-                 :mutates nil :prompts nil :needs-region nil :external nil
-                 :modes (:all))))))
-  (it "preserves explicit metadata in grouped command specs"
-    (let ((specs
-            (loom/application:build-command-specs
-             '((loom/application:command-spec-group
-                 "movement"
-                 (loom/application:command-spec
-                   "forward-char" forward-char
-                   :keys ((:control #\f))
-                   :help "C-f Forward"
-                   :help-order 10
-                   :mutates t
-                   :prompts (:free-string)
-                   :needs-region t
-                   :external ("rg")
-                   :modes (:common-lisp)))))))
-      (expect specs
-              :to-equal
-              '((:name "forward-char" :group "movement"
-                 :command forward-char :keys ((:control #\f))
-                 :help "C-f Forward" :help-order 10
-                 :mutates t :prompts (:free-string) :needs-region t
-                 :external ("rg") :modes (:common-lisp)))))))
+  (it "composes spec blocks through the command builder"
+    (expect
+     (macroexpand-1
+      '(loom/core/command:define-command-spec-catalog
+        movement-specs editing-specs))
+     :to-equal
+     '(loom/core/command:build-command-specs movement-specs editing-specs)))
+  (it "preserves groups and metadata when building specs"
+    (expect
+     (loom/core/command:build-command-specs
+      '((loom/core/command:command-spec-group
+          "movement"
+        (loom/core/command:command-spec
+          "forward-char" forward-char
+          :keys ((:control #\f))
+          :help "C-f Forward"
+          :help-order 10
+          :mutates t :prompts (:free-string) :needs-region t
+          :external ("rg") :modes (:common-lisp)))
+        (loom/core/command:command-spec-group
+          "editing"
+        (loom/core/command:command-spec
+          "kill-line" kill-line
+          :keys nil
+          :help nil :help-order nil
+          :mutates nil :prompts nil :needs-region nil
+          :external nil :modes (:all)))))
+     :to-equal
+     '((:name "forward-char" :group "movement"
+        :command forward-char :keys ((:control #\f))
+        :help "C-f Forward" :help-order 10
+        :mutates t :prompts (:free-string) :needs-region t
+        :external ("rg") :modes (:common-lisp))
+       (:name "kill-line" :group "editing"
+        :command kill-line :keys nil :help nil :help-order nil
+        :mutates nil :prompts nil :needs-region nil
+        :external nil :modes (:all))))))

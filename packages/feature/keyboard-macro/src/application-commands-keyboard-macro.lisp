@@ -51,14 +51,15 @@
     (unwind-protect
         (let ((*current-prefix-argument*
                (prefix-argument-value-for-editor)))
-          (setf dispatch-result (keymap-state-dispatch
-                                 keymap-state
-                                 descriptor
-                                 (lambda (command sequence keymap-name)
-                                   (invoke-command command
-                                                                     :macro
-                                                                     sequence
-                                                                     keymap-name)))))
+          (setf dispatch-result
+                (keymap-state-dispatch
+                 keymap-state
+                 descriptor
+                 (lambda (command-id sequence keymap-name)
+                   (invoke-key-command command-id
+                                       :macro
+                                       sequence
+                                       keymap-name)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset argument)))))
 
@@ -71,25 +72,23 @@
                                                 argument)))
     (if prefix-action
         (if (eq (car prefix-action) :universal)
-            (invoke-command
-             (getf
-              (find-extended-command-spec
-               "universal-argument")
-              :command)
-             :macro
-             (list descriptor)
-             "global")
+            (invoke-key-command "universal-argument"
+                                :macro
+                                (list descriptor)
+                                "global")
             (apply-prefix-argument-action (car prefix-action)
-                                               (cdr prefix-action)))
+                                          (cdr prefix-action)))
         (%replay-keyboard-macro-dispatch-key descriptor keymap-state argument))))
 
 (defun %replay-keyboard-macro-event (event keymap-state)
   (ecase (keyboard-macro-event-kind event)
     (:self-insert
-      (record-undo-boundary-for-command t)
-      (let ((*current-prefix-argument*
-             (consume-prefix-argument-for-editor)))
-        (self-insert-command (keyboard-macro-event-value event))))
+     (record-undo-boundary-for-command t)
+     (let ((*current-prefix-argument*
+            (consume-prefix-argument-for-editor)))
+       (invoke-command "core/self-insert"
+                       :macro
+                       (keyboard-macro-event-value event))))
     (:key (%replay-keyboard-macro-key-event event keymap-state))))
 
 (defun call-last-kbd-macro ()
