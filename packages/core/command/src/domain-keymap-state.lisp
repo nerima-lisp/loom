@@ -45,3 +45,30 @@ keymap name. Prefixes return :PENDING and unbound keys return NIL."
               (mapcar #'normalize-key-descriptor (%keymap-state-sequence state))))
          (setf (%keymap-state-sequence state) nil)
          (funcall command-invoker result sequence (keymap-name owner)))))))
+
+(defvar *buffer-keymap-provider* nil)
+
+(defun register-buffer-keymap-provider (owner function)
+  (unless (functionp function)
+    (error "Buffer keymap provider must be a function"))
+  (when (and *buffer-keymap-provider*
+             (not (equal (car *buffer-keymap-provider*) owner)))
+    (error "Buffer keymap provider is already registered by ~S"
+           (car *buffer-keymap-provider*)))
+  (setf *buffer-keymap-provider* (cons owner function))
+  function)
+
+(defun keymap-for-buffer (session buffer fallback)
+  (check-type fallback keymap)
+  (let ((provider (and buffer
+                       *buffer-keymap-provider*
+                       (cdr *buffer-keymap-provider*))))
+    (if provider
+        (let ((keymap (funcall provider session buffer fallback)))
+          (cond
+            ((null keymap) fallback)
+            ((keymap-p keymap) keymap)
+            (t
+             (error "Buffer keymap provider returned a non-keymap value: ~S"
+                    keymap))))
+        fallback)))

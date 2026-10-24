@@ -45,7 +45,7 @@
                         (1+ (buffer-visible-point-line buffer))
                         (1+ (%layout-buffer-point-screen-column renderer buffer)))
                 (format nil "  ~A"
-                        (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+                        (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
                             "Truncate"
                             "Wrap")))))
     (let ((diagnostics-part
@@ -129,7 +129,7 @@ the mode line or another footer in the remaining window rows."
          (y (loom/feature/window:window-y window))
          (width (loom/feature/window:window-width window))
          (height (or height (loom/feature/window:window-height window))))
-    (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+    (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
         (loom/feature/syntax-highlighting:syntax-draw-buffer
          renderer buffer x y width height
          :start-line (loom/feature/window:window-scroll-line window)

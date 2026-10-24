@@ -59,7 +59,7 @@ the walk is therefore bounded by the window height."
   "Return LINE/COLUMN's (COLUMN ROW) within WINDOW, in whichever display mode
 BUFFER selects. The completion popup and the cursor both place themselves with
 this, so a popup cannot drift away from the point it belongs to."
-  (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+  (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
       (%truncated-cell renderer window buffer line column)
       (%wrapped-cell renderer window buffer
                      (loom/feature/window:window-width window)

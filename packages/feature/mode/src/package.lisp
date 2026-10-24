@@ -14,7 +14,8 @@
   (:import-from #:loom/core/command
                 #:defkeys-key-sequence
                 #:keymap-define-key
-                #:make-keymap)
+                #:make-keymap
+                #:register-buffer-keymap-provider)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
                 #:editor-state-minibuffer

@@ -84,7 +84,6 @@ jump to a distant line costs the window's height rather than the jump."
 
 (defun %layout-keep-point-visible (renderer window)
   "Adjust WINDOW's viewport so its buffer point remains in its rectangle."
-  (if (loom/feature/mode:buffer-truncate-lines-p
-       (loom/feature/window:window-buffer window))
+  (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* (loom/feature/window:window-buffer window))
       (%layout-keep-truncated-point-visible renderer window)
       (%layout-keep-wrapped-point-visible renderer window)))

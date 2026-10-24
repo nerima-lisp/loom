@@ -14,6 +14,15 @@ bindings added after mode activation are still visible through the parent.
                        *major-mode-keymap-cache*)
               (%build-major-mode-keymap key fallback nil)))))
 
+(defun %major-mode-keymap-provider (session buffer fallback-keymap)
+  (declare (ignore session))
+  (major-mode-keymap (buffer-major-mode buffer) fallback-keymap))
+
+(eval-when (:load-toplevel :execute)
+  (register-buffer-keymap-provider
+   :feature/mode
+   (function %major-mode-keymap-provider)))
+
 (defun current-major-mode ()
   "Return the selected buffer's major mode, defaulting to FUNDAMENTAL."
   (if (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))

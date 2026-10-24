@@ -61,4 +61,4 @@
    #:defkeys-single-chord-p
    #:defkeys-chord
    #:defkeys-key-sequence
-   #:install-default-keybindings))
+   #:install-default-keybindings #:register-buffer-keymap-provider #:keymap-for-buffer))

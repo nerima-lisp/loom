@@ -100,7 +100,7 @@ draws nothing rather than clipping to the wrong row."
   (multiple-value-bind (buffer text width height x y start end)
       (%layout-line-run-geometry window x-offset line start end)
     (when buffer
-      (if (loom/feature/mode:buffer-truncate-lines-p buffer)
+      (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
           (%layout-draw-truncated-line-run
            renderer window x y text line start end style)
           (%layout-draw-wrapped-line-run
