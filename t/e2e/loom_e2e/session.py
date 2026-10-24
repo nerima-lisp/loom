@@ -95,8 +95,10 @@ class Session:
         self.layout = Layout(rows, columns)
         self._scratch_dir = None
         self._home_dir = None
+        self._locale_name = None
         self._trace_path = None
         self._trace_bytes = b""
+        self._trace_offset = 0
         self._trace_line_counter_token = None
         self._artifacts_captured = False
         self.started_at = None
@@ -120,6 +122,7 @@ class Session:
 
     def __enter__(self):
         locale = _pick_utf8_locale()
+        self._locale_name = locale
         try:
             # Retain ownership before a pending deadline can interrupt allocation.
             previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
@@ -201,17 +204,78 @@ class Session:
         if artifact_error is not None:
             raise artifact_error
 
+    def restart(self):
+        """Replace the child while keeping this session's files and settings."""
+        if self.process is None or self._locale_name is None:
+            raise RuntimeError("cannot restart a session before it is entered")
+
+        previous_process = self.process
+        budget = current_deadline()
+        force_error = None
+        if budget is not None and budget.expired:
+            try:
+                budget.force_cleanup()
+            except BaseException as error:
+                force_error = error
+
+        close_error = None
+        try:
+            previous_process.close()
+        except BaseException as error:
+            close_error = error
+        finally:
+            if budget is not None:
+                budget.unregister_process(previous_process)
+
+        if close_error is not None:
+            if force_error is not None:
+                raise close_error from force_error
+            raise close_error
+        if force_error is not None:
+            raise force_error
+
+        self._capture_artifacts()
+        self.process = None
+        self.screen = None
+        self._artifacts_captured = False
+        self.started_at = time.monotonic()
+        self.first_screen_at = None
+
+        env = _session_environment(
+            self._home_dir, self._locale_name, self.profile, self._trace_path
+        )
+        self.process = LoomProcess(
+            self.binary, self.arguments, env=env,
+            columns=self.columns, rows=self.rows,
+        )
+        budget = current_deadline()
+        if budget is not None:
+            budget.register_process(self.process)
+        self.screen = Screen(self.columns, self.rows)
+        return self
+
+    def _read_trace_data(self):
+        if self._trace_path is None:
+            return b""
+        try:
+            with open(self._trace_path, "rb") as handle:
+                return handle.read()
+        except FileNotFoundError:
+            return b""
+
     def _capture_artifacts(self):
         if self.process is None or self._artifacts_captured:
             return
-        try:
-            with open(self._trace_path, "rb") as handle:
-                self._trace_bytes = handle.read()
-        except FileNotFoundError:
-            self._trace_bytes = b""
+        trace_data = self._read_trace_data()
+        trace_offset = self._trace_offset
+        if len(trace_data) < trace_offset:
+            trace_offset = 0
+        trace_bytes = trace_data[trace_offset:]
         result = current_result()
         if result is not None:
-            result.add_session(self.process.output_bytes, self._trace_bytes)
+            result.add_session(self.process.output_bytes, trace_bytes)
+        self._trace_bytes += trace_bytes
+        self._trace_offset = len(trace_data)
         self._artifacts_captured = True
 
     def pump(self, poll_timeout=0.05):
@@ -222,15 +286,16 @@ class Session:
 
     def _trace_line_count(self):
         result = current_result()
-        previous_trace = b"" if result is None else result.trace_output
+        previous_trace = self._trace_bytes if result is None else result.trace_output
         if self._trace_path is None:
             return count_trace_lines(previous_trace)
-        try:
-            with open(self._trace_path, "rb") as handle:
-                data = handle.read()
-        except FileNotFoundError:
-            data = b""
-        return count_trace_lines(previous_trace) + count_trace_lines(data)
+        trace_data = self._read_trace_data()
+        trace_offset = self._trace_offset
+        if len(trace_data) < trace_offset:
+            trace_offset = 0
+        return count_trace_lines(previous_trace) + count_trace_lines(
+            trace_data[trace_offset:]
+        )
 
     def resize(self, columns, rows):
         """Resize the PTY and keep pyte and layout dimensions in sync."""

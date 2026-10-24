@@ -94,38 +94,103 @@
       (error "Missing sibling-names list in ~A." relative-path))
     (quoted-strings-in (subseq source start end))))
 
-(defun all-asdf-dependencies ()
-  (remove-duplicates
-   (append (system-dependencies "loom")
-           (remove "loom" (system-dependencies "loom/test")
+(defun all-asdf-dependencies (&optional (selection :all))
+  (let ((defsystem (find-symbol "DEFSYSTEM" "ASDF"))
+        (root-directory (asdf:system-source-directory "loom")))
+    (labels ((read-defsystem-forms (pathname)
+               (with-open-file (stream pathname)
+                 (loop for form = (read stream nil :eof)
+                       until (eq form :eof)
+                       when (and (consp form)
+                                 (eq (first form) defsystem))
+                         collect form)))
+             (asdf-files-under (directory)
+               (append (uiop:directory-files directory)
+                       (loop for subdirectory in (uiop:subdirectories directory)
+                             append (asdf-files-under subdirectory))))
+             (test-system-p (form)
+               (let* ((name (second form))
+                      (suffix "/test")
+                      (suffix-start (- (length name) (length suffix))))
+                 (and (>= suffix-start 0)
+                      (string= suffix name :start2 suffix-start))))
+             (external-dependencies (forms local-system-names)
+               (remove-duplicates
+                (loop for form in forms
+                      append (remove-if
+                              (lambda (dependency)
+                                (member dependency local-system-names
+                                        :test #'string=))
+                              (getf (cddr form) :depends-on)))
+                :test #'string=)))
+      (let* ((package-directory (merge-pathnames "packages/" root-directory))
+             (package-forms
+               (loop for pathname in (asdf-files-under package-directory)
+                     when (string-equal (pathname-type pathname) "asd")
+                       append (read-defsystem-forms pathname)))
+             (all-forms
+               (append (read-defsystem-forms
+                        (merge-pathnames "loom.asd" root-directory))
+                       package-forms)))
+        (unless package-forms
+          (error "No slice ASDF systems found under packages/."))
+        (let* ((local-system-names (mapcar #'second all-forms))
+               (production-forms (remove-if #'test-system-p all-forms))
+               (test-forms (remove-if-not #'test-system-p all-forms))
+               (production-dependencies
+                 (external-dependencies production-forms local-system-names))
+               (test-dependencies
+                 (external-dependencies test-forms local-system-names)))
+          (ecase selection
+            (:all (remove-duplicates
+                   (append production-dependencies test-dependencies)
                    :test #'string=))
-   :test #'string=))
+            (:production production-dependencies)
+            (:test test-dependencies)))))))
 
 (describe
   "dependency declaration contracts"
   (it
-    "keeps loom.asd runtime dependencies equal to flake.nix lispDependencies"
-    (expect (sort (system-dependencies "loom") #'string<)
-            :to-equal
-            (sort (flake-dependency-block-names "lispDependencies ="
-                                                "lispCheckDependencies ="
-                                                :from-end t)
-                  #'string<)))
+    "keeps the production dependency union equal to flake.nix lispDependencies"
+    (let* ((production-dependencies (all-asdf-dependencies :production))
+           (flake-dependencies
+             (flake-dependency-block-names "lispDependencies ="
+                                           "lispCheckDependencies ="
+                                           :from-end t)))
+      (expect production-dependencies :to-be-truthy)
+      (expect flake-dependencies :to-be-truthy)
+      (expect (sort production-dependencies #'string<)
+              :to-equal
+              (sort flake-dependencies #'string<))))
 
   (it
-    "pins every loom/test dependency in flake.nix"
+    "pins every root and slice test dependency in flake inputs"
     (let* ((input-repositories (flake-input-repositories))
-           (test-dependencies (remove "loom"
-                                      (system-dependencies "loom/test")
-                                      :test #'string=)))
+           (root-test-dependencies (remove "loom"
+                                          (system-dependencies "loom/test")
+                                          :test #'string=))
+           (test-dependencies
+             (remove-duplicates
+              (append root-test-dependencies
+                      (all-asdf-dependencies :test))
+              :test #'string=)))
       (dolist (dependency test-dependencies)
         (expect input-repositories :to-contain dependency))))
 
   (it
-    "keeps cl-weave explicit in flake.nix test-only dependencies"
-    (expect (flake-dependency-block-names "lispCheckDependencies ="
-                                          "timeoutSeconds =")
-            :to-contain "cl-weave"))
+    "matches flake test-only dependencies to the slice test dependency difference"
+    (let* ((production-dependencies (all-asdf-dependencies :production))
+           (test-dependencies (all-asdf-dependencies :test))
+           (flake-check-dependencies
+             (flake-dependency-block-names "lispCheckDependencies ="
+                                           "timeoutSeconds =")))
+      (expect flake-check-dependencies :to-be-truthy)
+      (expect (sort flake-check-dependencies #'string<)
+              :to-equal
+              (sort (set-difference test-dependencies production-dependencies
+                                    :test #'string=)
+                    #'string<))
+      (expect flake-check-dependencies :to-contain "cl-weave")))
 
   (it
     "keeps run-tests and coverage on the same local dependency set"

@@ -12,6 +12,38 @@
              package-name symbol-name))
     (symbol-function symbol)))
 
+(defvar *coverage-slice-system-names* nil)
+
+(defun %coverage-discover-slice-systems (packages-directory)
+  (labels ((collect-asd-files (directory)
+             (append (directory (merge-pathnames #P"loom-*.asd" directory))
+                     (mapcan #'collect-asd-files
+                             (uiop:subdirectories directory))))
+           (asd-directory (asd-file)
+             (make-pathname :name nil
+                            :type nil
+                            :version nil
+                            :defaults asd-file)))
+    (let* ((asd-files (sort (collect-asd-files packages-directory)
+                            #'string< :key #'namestring))
+           (system-names (mapcar #'pathname-name asd-files))
+           (slice-directories
+             (mapcar #'pathname
+                     (remove-duplicates
+                      (mapcar (lambda (asd-file)
+                                (namestring (asd-directory asd-file)))
+                              asd-files)
+                      :test #'string=
+                      :from-end t)))
+           (unique-system-names
+             (remove-duplicates system-names :test #'string=)))
+      (unless asd-files
+        (error "No slice ASDF systems found under ~A." packages-directory))
+      (unless (= (length system-names) (length unique-system-names))
+        (error "Duplicate slice ASDF system names found under ~A."
+               packages-directory))
+      (values system-names slice-directories))))
+
 (let* ((script (or *load-truename*
                    (error "*LOAD-TRUENAME* is NIL; run this file as a script")))
        (script-path (truename script))
@@ -35,6 +67,8 @@
                 :type nil
                 :version nil
                 :defaults root))
+       (packages-directory (merge-pathnames #P"packages/" root))
+       (slice-directories nil)
        (sibling-names '("cl-tty-kit"
                         "cl-host-kit"
                         "cl-history-kit"
@@ -51,7 +85,9 @@
                         "cl-weave"
                         "cl-date-kit"
                         "cl-codec-kit"
-                        "cl-parser-kit"))
+                        "cl-parser-kit"
+                        "cl-markdown-kit"
+                        "cl-org-kit"))
        (sibling-directories
          (mapcar (lambda (name)
                    (merge-pathnames
@@ -59,9 +95,14 @@
                     parent))
                  sibling-names))
        (source-registry (sb-ext:posix-getenv "CL_SOURCE_REGISTRY")))
+  (multiple-value-setq (*coverage-slice-system-names* slice-directories)
+    (%coverage-discover-slice-systems packages-directory))
   (asdf:initialize-source-registry
    `(:source-registry
      (:directory ,root)
+     ,@(mapcar (lambda (directory)
+                 `(:directory ,directory))
+               slice-directories)
      ,@(unless (and source-registry (plusp (length source-registry)))
          (mapcar (lambda (directory)
                    `(:directory ,directory))
@@ -129,9 +170,17 @@
                (handler-case
                    (sb-ext:with-timeout +coverage-timeout-seconds+
                      (progress "loading loom")
-                     (asdf:load-system :loom :force t)
+                     (progn
+                       (asdf:load-system :loom :force t)
+                       (progress "loading slice production systems")
+                       (dolist (system-name *coverage-slice-system-names*)
+                         (asdf:load-system system-name)))
                      (progress "loading loom/test")
-                     (asdf:load-system :loom/test)
+                     (progn
+                       (asdf:load-system :loom/test)
+                       (progress "loading slice test systems")
+                       (dolist (system-name *coverage-slice-system-names*)
+                         (asdf:load-system (format nil "~A/test" system-name))))
                      (progress "running tests")
                      (let* ((source-pathnames
                            (%coverage-source-pathnames root))

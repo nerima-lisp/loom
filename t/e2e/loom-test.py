@@ -24,6 +24,11 @@ from loom_e2e.benchmarks import (  # noqa: E402
 )
 from loom_e2e.deadline import run_scenario  # noqa: E402
 from loom_e2e.registry import all_scenarios  # noqa: E402
+from loom_e2e.scenario_discovery import (  # noqa: E402
+    format_scenario_listing,
+    load_slice_scenarios,
+    select_scenarios,
+)
 from loom_e2e.results import ScenarioResult, capture_scenario  # noqa: E402
 from loom_e2e.path_generation import generate_required_paths  # noqa: E402
 from loom_e2e.path_ledger import read_path_ledgers  # noqa: E402
@@ -36,6 +41,7 @@ import scenarios  # noqa: E402,F401
 
 
 _REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+load_slice_scenarios(_REPO_ROOT)
 
 
 def _binary_from_arguments(explicit):
@@ -164,8 +170,8 @@ def main(argv):
     registered = all_scenarios()
 
     if args.list:
-        for name, scenario_commands, _fn in registered:
-            print(f"{name}\tcommands={','.join(scenario_commands) or '(none)'}")
+        for line in format_scenario_listing(registered):
+            print(line)
         binary = _binary_from_arguments(args.binary)
         uncovered, unknown = _coverage_report(
             registered, commands.load_command_catalog(binary)
@@ -209,10 +215,7 @@ def main(argv):
             print(f"{metric}: {value:.3f} (target {target:g}; {status})")
         return 0
 
-    selected = [
-        entry for entry in registered
-        if args.only is None or args.only in entry[0]
-    ]
+    selected = select_scenarios(registered, args.only)
     if not selected:
         raise SystemExit(f"--only {args.only!r} matched no scenario")
 

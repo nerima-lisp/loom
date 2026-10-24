@@ -389,13 +389,15 @@
           clProcessKit
           clVcsKit
           clResilienceKit
+          clMarkdownKit
+          clOrgKit
         ];
 
       lispCheckDependencies =
         ctx: with siblingsFor ctx; [
+          clCodecKit
           clWeave
-          clMarkdownKit
-          clOrgKit
+          clParserKit
         ];
 
       # Share one bounded timeout between tests and CI.
