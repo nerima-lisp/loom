@@ -29,7 +29,13 @@
         0)
       ((%cli-control-request-p arguments)
        (cl-cli:run-app *loom-app* :argv argv))
-      (t (%run-loom (%parse-startup-context arguments))))))
+      (t (handler-case
+             (%run-loom (%parse-startup-context arguments))
+           (cl-cli:cli-usage-error (condition)
+             (format *error-output* "~&~A~%~%"
+                     (cl-cli:cli-error-message condition))
+             (cl-cli:print-app-help *loom-app* *error-output*)
+             64))))))
 
 (defun main ()
   "Dispatch UIOP's raw command-line arguments through the startup CLI boundary."

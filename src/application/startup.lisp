@@ -57,6 +57,8 @@ from it."
                                                           fd))
                                                        request
                                                        (rest requests))
+          (cl-cli:cli-usage-error (condition)
+            (error condition))
           (error (condition)
             (let ((logger
                    (log-kit:make-logger :name

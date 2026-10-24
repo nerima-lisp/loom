@@ -71,7 +71,9 @@ its arguments, option values, and file paths."
                        (loom/core/editor-session:cli-option-value-kind name))
                       (inline-value-p (not (null separator))))
                  (unless value-kind
-                   (error "Unknown startup option: ~S" name))
+                   (error 'cl-cli:cli-unknown-option
+                          :option name
+                          :message (format nil "Unknown option: ~A" name)))
                  (when (nth-value 1 (gethash name options))
                    (error "Startup option is repeated: ~A" name))
                  (case value-kind
@@ -105,7 +107,9 @@ its arguments, option values, and file paths."
                    ((and (not options-ended-p)
                          (plusp (length argument))
                          (char= (char argument 0) #\-))
-                    (error "Unknown startup option: ~S" argument))
+                    (error 'cl-cli:cli-unknown-option
+                           :option argument
+                           :message (format nil "Unknown option: ~A" argument)))
                    ((null file-requests)
                     (multiple-value-bind (line column position-p)
                         (startup-position argument)
