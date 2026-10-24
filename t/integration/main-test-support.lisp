@@ -6,7 +6,7 @@ event-loop tests can exercise input routing and frame composition together."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (window-tree (make-window-tree buffer 80 24)))
     (make-editor-state :window-tree window-tree
-                       :session (%make-test-editor-session (list buffer))
+                       :session (%make-test-editor-session (list buffer) :window-tree window-tree)
                        :minibuffer (make-minibuffer)
                        :keymap (loom/application:install-default-keybindings (make-keymap))
                        :file-tree (make-file-tree "/root/")

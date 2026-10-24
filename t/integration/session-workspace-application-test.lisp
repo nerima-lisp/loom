@@ -24,7 +24,7 @@
               :minibuffer (make-minibuffer)
               :keymap (make-keymap)
               :file-tree (make-file-tree "/root/")
-              :session (%make-test-editor-session (list main-buffer notes-buffer))
+              :session (%make-test-editor-session (list main-buffer notes-buffer) :window-tree notes-tree)
               :kill-ring nil
               :recent-files nil
               :bookmarks nil)))

@@ -28,9 +28,9 @@
 (describe "editor-state default data"
   (it "creates the default workspace and keyboard macro state"
     (let* ((buffer (make-buffer :name "*scratch*"))
-           (state (make-editor-state
-                   :window-tree (make-window-tree buffer 80 24)
-                   :session (%make-test-editor-session (list buffer)))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                   :window-tree tree
+                   :session (%make-test-editor-session (list buffer) :window-tree tree)))))
       (expect (editor-state-workspaces state) :to-be-truthy)
       (expect (editor-state-keyboard-macro state) :to-be-truthy)))
 
@@ -41,8 +41,19 @@
                         tree :name "writing"))
            (state (make-editor-state :window-tree tree
                                      :workspaces workspaces
-                                     :session (%make-test-editor-session (list buffer)))))
+                                     :session (%make-test-editor-session (list buffer) :window-tree tree))))
       (expect (editor-state-workspaces state) :to-be workspaces)))
+  (it "rejects a window tree that differs from the session slice"
+    (let* ((buffer (make-buffer :name "*scratch*"))
+           (state-tree (make-window-tree buffer 80 24))
+           (session-tree (make-window-tree buffer 80 24)))
+      (expect state-tree :not :to-be session-tree)
+      (signals error
+        (make-editor-state
+         :window-tree state-tree
+         :session (%make-test-editor-session
+                   (list buffer)
+                   :window-tree session-tree)))))
 
   (it "starts with independent empty hook collections"
     (let ((first-state (make-editor-state :session (%make-test-editor-session)))
@@ -72,9 +83,9 @@
 
   (it "runs before-save hooks in registration order without duplicates"
     (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
-           (state (make-editor-state
-                   :window-tree (make-window-tree buffer 80 24)
-                   :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                   :window-tree tree
+                   :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (events nil)
            (first-hook (lambda (saved-buffer)
                          (push (list :first saved-buffer) events)))
@@ -91,9 +102,9 @@
 
   (it "copies the before-save hook list before dispatch"
     (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
-           (state (make-editor-state
-                   :window-tree (make-window-tree buffer 80 24)
-                   :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                   :window-tree tree
+                   :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (events nil)
            (second-hook nil)
            (first-hook (lambda (saved-buffer)
@@ -114,9 +125,9 @@
 
   (it "runs after-save hooks in registration order and honors later removals"
     (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
-           (state (make-editor-state
-                   :window-tree (make-window-tree buffer 80 24)
-                   :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                   :window-tree tree
+                   :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (events nil)
            (second-hook nil)
            (first-hook (lambda (saved-buffer)
@@ -151,9 +162,9 @@
 
   (it "tolerates an absent state when running after-save hooks"
     (let* ((buffer (make-buffer :name "notes.txt" :initial-content "draft"))
-           (state (make-editor-state
-                   :window-tree (make-window-tree buffer 80 24)
-                   :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                   :window-tree tree
+                   :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (calls 0))
       (add-after-save-hook (lambda (saved-buffer)
                              (declare (ignore saved-buffer))

@@ -6,7 +6,7 @@
   (let* ((buffer (make-buffer :name name :initial-content content))
          (window-tree (make-window-tree buffer width height)))
     (make-editor-state :window-tree window-tree
-                       :session (%make-test-editor-session (list buffer))
+                       :session (%make-test-editor-session (list buffer) :window-tree window-tree)
                        :minibuffer (make-minibuffer)
                        :keymap (make-keymap)
                        :file-tree (make-file-tree "/root/")

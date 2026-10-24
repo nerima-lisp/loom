@@ -16,7 +16,7 @@
                        :keymap (make-keymap)
                        :file-tree nil
                        :renderer nil
-                       :session (%make-test-editor-session (list buffer))
+                       :session (%make-test-editor-session (list buffer) :window-tree tree)
                        :kill-ring nil)))
 
 (defmacro %with-lsp-navigation

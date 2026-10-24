@@ -5,10 +5,10 @@
   (it "uses the project directory when no project root is found"
     (let ((selected-buffer (make-buffer :name "notes" :path #P"/repo/src/notes.lisp")))
       (let* ((loom/core/editor-session:*editor-state*
-        (loom/core/editor-session:make-editor-state
+        (let ((tree (loom/core/window-tree:make-window-tree selected-buffer 80 24))) (loom/core/editor-session:make-editor-state
          :window-tree
-         (loom/core/window-tree:make-window-tree selected-buffer 80 24)
-         :session (%make-test-editor-session (list selected-buffer))))
+         tree
+         :session (%make-test-editor-session (list selected-buffer) :window-tree tree))))
        (loom/core/editor-session:*editor-session*
          (loom/core/editor-session:editor-state-session
           loom/core/editor-session:*editor-state*)))

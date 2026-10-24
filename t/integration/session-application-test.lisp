@@ -27,7 +27,7 @@
                                 :history (history-kit:make-history))
                    :keymap (make-keymap)
                    :file-tree (make-file-tree "/root/")
-                   :session (%make-test-editor-session (list one two))
+                   :session (%make-test-editor-session (list one two) :window-tree tree)
                    :kill-ring nil
                    :recent-files (list "two.txt")
                    :bookmarks bookmarks)))

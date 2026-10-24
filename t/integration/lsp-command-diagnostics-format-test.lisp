@@ -9,14 +9,14 @@
                                 :path "/tmp/main.lisp"
                                 :initial-content "(+ 1 2)"))
            (state
-             (make-editor-state
-              :window-tree (make-window-tree buffer 80 24)
+             (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+              :window-tree tree
               :minibuffer (make-minibuffer)
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :session (%make-test-editor-session (list buffer))
-              :kill-ring nil)))
+              :session (%make-test-editor-session (list buffer) :window-tree tree)
+              :kill-ring nil))))
       (unwind-protect
            (let ((*editor-state* state)
                  (loom/core/editor-session:*editor-session*

@@ -58,7 +58,7 @@
                                   :keymap (make-keymap)
                                   :file-tree nil
                                   :renderer nil
-                                  :session (%make-test-editor-session (list current))
+                                  :session (%make-test-editor-session (list current) :window-tree tree)
                                   :kill-ring nil))
              (loom/core/editor-session:*editor-session*
               (loom/core/editor-session:editor-state-session *editor-state*)))

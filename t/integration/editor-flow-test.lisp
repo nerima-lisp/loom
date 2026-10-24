@@ -9,14 +9,14 @@
         (host-kit:write-file-string "before" path)
         (let* ((buffer (buffer-load path))
                (keymap (loom/application:install-default-keybindings (make-keymap)))
-               (state (make-editor-state
-                       :window-tree (make-window-tree buffer 80 24)
+               (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+                       :window-tree tree
                        :minibuffer (make-minibuffer)
                        :keymap keymap
                        :file-tree nil
                        :renderer nil
-                       :session (%make-test-editor-session (list buffer))
-                       :kill-ring nil))
+                       :session (%make-test-editor-session (list buffer) :window-tree tree)
+                       :kill-ring nil)))
                (*editor-state* state)
                (loom/core/editor-session:*editor-session* (loom/core/editor-session:editor-state-session state))
                (keymap-state (make-keymap-state keymap)))

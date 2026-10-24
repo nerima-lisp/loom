@@ -108,7 +108,7 @@
                   :keymap (make-keymap)
                   :file-tree nil
                   :renderer nil
-                  :session (%make-test-editor-session (list buffer))
+                  :session (%make-test-editor-session (list buffer) :window-tree tree)
                   :kill-ring nil)))))
       (let ((*editor-state* state)
             (loom/core/editor-session:*editor-session*
@@ -154,7 +154,7 @@
                    :keymap (make-keymap)
                    :file-tree nil
                    :renderer nil
-                   :session (%make-test-editor-session (list buffer))
+                   :session (%make-test-editor-session (list buffer) :window-tree tree)
                    :kill-ring nil)))
       (let ((*editor-state* state)
             (loom/core/editor-session:*editor-session*
@@ -175,7 +175,7 @@
                    :keymap (make-keymap)
                    :file-tree nil
                    :renderer nil
-                   :session (%make-test-editor-session (list buffer))
+                   :session (%make-test-editor-session (list buffer) :window-tree tree)
                    :kill-ring nil)))
       (let ((*editor-state* state)
             (loom/core/editor-session:*editor-session*

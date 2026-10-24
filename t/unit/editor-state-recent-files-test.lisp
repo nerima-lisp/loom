@@ -19,7 +19,7 @@
 (describe "editor-state recent files"
   (it "returns a copy of recent files for completion"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
-           (state (make-editor-state :window-tree (make-window-tree buffer 80 24) :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (files (list "one.lisp" "two.lisp")))
       (setf (editor-state-recent-files state) files)
       (let ((*editor-state* state))
@@ -44,14 +44,14 @@
 
   (it "returns nil for a missing path without mutating recent files"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
-           (state (make-editor-state :window-tree (make-window-tree buffer 80 24) :session (%make-test-editor-session (list buffer)))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree)))))
       (let ((*editor-state* state))
         (expect (remember-recent-file nil) :to-be nil)
         (expect (editor-state-recent-files state) :to-equal nil))))
 
   (it "prepends normalized paths and deduplicates existing entries"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
-           (state (make-editor-state :window-tree (make-window-tree buffer 80 24) :session (%make-test-editor-session (list buffer))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree))))
            (path #P"/tmp/loom-recent.txt")
            (path-string (editor-path-string path)))
       (setf (editor-state-recent-files state) (list "older" path-string "oldest"))
@@ -63,7 +63,7 @@
 
   (it "enforces the configured recent-file limit"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
-           (state (make-editor-state :window-tree (make-window-tree buffer 80 24) :session (%make-test-editor-session (list buffer)))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree)))))
       (setf (editor-state-recent-files state) '("third" "fourth"))
       (let ((*editor-state* state)
             (*editor-recent-file-limit* 3))
@@ -78,7 +78,7 @@
 (describe "editor-state yank reset"
   (it "clears the transient yank tracking slots"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "draft"))
-           (state (make-editor-state :window-tree (make-window-tree buffer 80 24) :session (%make-test-editor-session (list buffer)))))
+           (state (let ((tree (make-window-tree buffer 80 24))) (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree)))))
       (setf (loom::editor-state-last-yank-buffer state) buffer
             (loom::editor-state-last-yank-start-offset state) 1
             (loom::editor-state-last-yank-end-offset state) 3
