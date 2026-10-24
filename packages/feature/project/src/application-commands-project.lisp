@@ -19,7 +19,7 @@
     (if (probe-file path)
         (let ((buffer (buffer-load path)))
           (register-buffer *editor-session* buffer)
-          (loom/feature/window:window-set-buffer
+          (window-set-buffer
            (loom/core/window-tree:window-tree-selected-window
             (editor-state-window-tree *editor-state*))
            buffer))
@@ -34,8 +34,7 @@
 
 (defun %project-find-file-at-root (root)
   (let ((candidates (%project-file-candidates root)))
-    (loom/application:with-prompts
-     (minibuffer (editor-state-minibuffer *editor-state*)
+    (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel
                  (minibuffer-message minibuffer "Quit"))
      ((relative-path "Project file: "
@@ -80,8 +79,7 @@
   "Search every readable project file for a case-sensitive query."
   (let ((root (project-find-root (%project-start-path))))
     (if root
-        (loom/application:with-prompts
-         (minibuffer (editor-state-minibuffer *editor-state*)
+        (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
                      :on-cancel
                      (minibuffer-message minibuffer "Quit"))
          ((query "Project search: "))

@@ -1,6 +1,6 @@
 (in-package #:loom/feature/terminal)
 
-(declaim (special loom:*editor-state*))
+(declaim (special *editor-state*))
 
 (defun %terminal-selected-buffer (state)
   (let ((window-tree (and state (editor-state-window-tree state))))

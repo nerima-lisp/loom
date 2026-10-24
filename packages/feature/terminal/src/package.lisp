@@ -1,7 +1,7 @@
 (defpackage #:loom/feature/terminal
             (:documentation
              "Terminal session management and terminal screen state.")
-            (:use #:cl #:loom #:loom/application #:loom/feature/window)
+            (:use #:cl)
             (:export #:terminal-screen
                      #:terminal-screen-p
                      #:terminal-screen-width
@@ -41,6 +41,26 @@
             (:import-from #:loom/feature/buffers
                           #:registered-buffers
                           #:register-buffer)
-            (:import-from #:loom/core/editor-session
-                          #:*editor-session*
-                          #:editor-state-session))
+            (:import-from #:loom/core/editor-session #:*editor-session*
+                          #:editor-state-session
+                          #:*editor-state*
+                          #:editor-state-window-tree
+                          #:editor-state-terminal-sessions #:editor-state-minibuffer)
+            (:import-from #:loom/core/buffer
+                          #:buffer-delete-region
+                          #:buffer-insert-string
+                          #:buffer-mark-saved
+                          #:buffer-name
+                          #:buffer-offset-position
+                          #:buffer-path
+                          #:buffer-position-column
+                          #:buffer-position-line
+                          #:buffer-set-point
+                          #:buffer-set-read-only
+                          #:buffer-text
+                          #:make-buffer)
+            (:import-from #:loom/core/minibuffer #:minibuffer-message)
+            (:import-from #:loom/core/window-tree
+                          #:window-buffer
+                          #:window-set-buffer
+                          #:window-tree-selected-window))
