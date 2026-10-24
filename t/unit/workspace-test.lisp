@@ -145,7 +145,7 @@
     (let* ((window-tree (make-window-tree :window 80 24))
            (workspace-tree (make-window-tree :workspace 80 24))
            (manager (make-workspace-manager workspace-tree :name "restored"))
-           (state (make-editor-state :window-tree window-tree :workspaces manager :session (%make-test-editor-session :window-tree window-tree))))
+           (state (make-editor-state :window-tree window-tree :workspaces manager :session (%make-test-editor-session nil :window-tree window-tree))))
       (expect (editor-state-window-tree state) :to-be window-tree)
       (expect (editor-state-workspaces state) :to-be manager)
       (expect (workspace-manager-current-name manager) :to-equal "restored")
