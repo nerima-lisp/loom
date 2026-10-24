@@ -5,26 +5,37 @@
   (check-type text string)
   (let ((pathname (pathname path)))
     (ensure-directories-exist pathname)
-    (with-open-file (stream pathname
-                            :direction :output
-                            :if-exists :supersede
-                            :if-does-not-exist :create
-                            :external-format :utf-8)
+    (with-open-file
+        (stream pathname
+                :direction
+                :output
+                :if-exists
+                :supersede
+                :if-does-not-exist
+                :create
+                :external-format
+                :utf-8)
       (write-string text stream))
     pathname))
 
-(defun delete-auto-save-file (buffer)
-  "Delete BUFFER's auto-save sidecar when it exists and return its pathname.
+(progn
+  (defun delete-auto-save-file (buffer)
+    "Delete the auto-save sidecar for BUFFER when it exists and return its pathname.
 
-This is intended for the ordinary after-save hook.  A missing sidecar is
-harmless, so saving a buffer that has not previously been auto-saved still
-completes normally."
-  (when (and (buffer-p buffer)
-             (buffer-path buffer))
-    (let ((pathname (auto-save-path (buffer-path buffer))))
-      (when (probe-file pathname)
-        (delete-file pathname))
-      pathname)))
+A missing sidecar is harmless, so saving a buffer that has not previously been
+auto-saved still completes normally."
+    (when (and (buffer-p buffer) (buffer-path buffer))
+      (let ((pathname (auto-save-path (buffer-path buffer))))
+        (when (probe-file pathname)
+          (delete-file pathname))
+        pathname)))
+  (defun %delete-auto-save-file-after-save (session buffer)
+    (declare (ignore session))
+    (delete-auto-save-file buffer))
+  (eval-when (:load-toplevel :execute)
+    (register-session-hook :after-save
+                           :feature/auto-save
+                           (function %delete-auto-save-file-after-save))))
 
 (defun auto-save-buffer-to-file (buffer)
   "Write BUFFER's current text to its auto-save sidecar.

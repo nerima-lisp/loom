@@ -65,8 +65,7 @@
                           #:editor-state-minibuffer
                           #:editor-state-recent-files
                           #:editor-state-window-tree
-                          #:run-before-save-hooks
-                          #:run-after-save-hooks)
+                          #:run-session-hooks)
             (:import-from #:loom/core/minibuffer
                           #:minibuffer-message
                           #:with-prompts))

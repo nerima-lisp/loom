@@ -375,13 +375,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/file-tree/src/infrastructure-file-tree-filesystem")
      (:file "packages/feature/file-tree/src/infrastructure-buffer-filesystem")
     ))
-   (:module "feature-auto-save-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/auto-save/src/infrastructure-auto-save")
-    ))
    (:module "feature-terminal-infrastructure"
     :pathname "."
     :serial t
@@ -476,7 +469,8 @@ root source tree responsible for every feature."
    (:file "packages/core/editor-session/src/application-editor-state-support")
    (:file "packages/core/editor-session/src/application-editor-state-types")
    (:file "packages/core/editor-session/src/application-editor-state")
-   (:file "packages/core/editor-session/src/application-editor-state-save-hooks")
+   (:file "packages/core/editor-session/src/application-session-hooks")
+   (:file "packages/core/editor-session/src/application-session-extension-points")
    (:file "src/application/editor-state-recent-files")
    (:file "src/application/editor-state-operations")
    (:file "packages/core/command/src/domain-key-event-descriptor")
@@ -497,6 +491,13 @@ root source tree responsible for every feature."
    (:file "packages/core/command/src/command-invocation")
    (:file "packages/feature/buffers/src/application-window-buffer-support")
    (:file "packages/feature/buffers/src/application-commands-buffer")))
+   (:module "feature-auto-save-infrastructure"
+    :pathname "."
+    :serial t
+    :components
+    (
+     (:file "packages/feature/auto-save/src/infrastructure-auto-save")
+    ))
    (:module "feature-mode-application"
     :pathname "."
     :serial t

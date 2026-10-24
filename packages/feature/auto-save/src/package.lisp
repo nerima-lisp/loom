@@ -16,7 +16,8 @@
                           #:editor-state-auto-save-mode-p
                           #:editor-state-session
                           #:editor-state-minibuffer
-                          #:editor-state-window-tree)
+                          #:editor-state-window-tree
+                          #:register-session-hook)
             (:import-from #:loom/core/minibuffer #:minibuffer-message)
             (:import-from #:loom/core/window-tree
                           #:window-buffer
