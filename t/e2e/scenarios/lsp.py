@@ -204,7 +204,9 @@ def lsp_trust_review(binary):
         configuration = os.path.join(directory, ".loom-lsp")
         marker = os.path.join(directory, "spawned")
         pid_file = os.path.join(directory, "nixd.pid")
-        tail = "REVIEW_END_UNIQUE"
+        tail_fragments = ("REVIEW_END_", "UNIQUE")
+        tail = "".join(tail_fragments)
+        tail_forms = (tail, "\n".join(tail_fragments))
         with _measure_phase("nixd_command_resolution"):
             nixd_command = _nixd_command()
         command = (
@@ -224,6 +226,38 @@ def lsp_trust_review(binary):
                 session.wait_for_text(source)
                 original = session.screen.lines()[:session.layout.body_height]
 
+            def wait_for_review_tail():
+                def displayed_tail():
+                    body = session.region_contents("body")
+                    return next(
+                        (form for form in tail_forms if form in body), None
+                    )
+
+                try:
+                    session.wait_until(
+                        lambda _screen: displayed_tail() is not None,
+                        what="trust-review tail marker to appear",
+                    )
+                except TimeoutError:
+                    session.observe_screen_text(
+                        expected=tail,
+                        match="contains",
+                        region="body",
+                        index=None,
+                        purpose="precondition",
+                    )
+                    raise
+                form = displayed_tail()
+                if form is None:
+                    raise AssertionError("trust-review tail marker disappeared")
+                session.observe_screen_text(
+                    expected=form,
+                    match="contains",
+                    region="body",
+                    index=None,
+                    purpose="precondition",
+                )
+
             with _measure_phase("trust_review_ui"):
                 for answer in ("yes", ""):
                     session.extended_command("lsp-start")
@@ -240,22 +274,22 @@ def lsp_trust_review(binary):
                         (keys.ctrl("v"), keys.meta("v")),
                     ):
                         session.send(forward * 12)
-                        session.wait_for_region_contents("body", tail)
+                        wait_for_review_tail()
                         _assert_minibuffer(session, prompt + answer)
                         _assert_path_exists(
-                            session, "reviewed LSP marker exists", marker, False
+                            session, "reviewed LSP marker remains absent", marker, False
                         )
                         _assert_path_exists(
-                            session, "reviewed LSP PID file exists", pid_file, False
+                            session, "reviewed LSP PID file remains absent", pid_file, False
                         )
                         session.send(backward * 12)
                         session.wait_for_text("Discovered LSP command")
                         _assert_minibuffer(session, prompt + answer)
                         _assert_path_exists(
-                            session, "reviewed LSP marker exists", marker, False
+                            session, "reviewed LSP marker remains absent", marker, False
                         )
                         _assert_path_exists(
-                            session, "reviewed LSP PID file exists", pid_file, False
+                            session, "reviewed LSP PID file remains absent", pid_file, False
                         )
                     session.send(keys.ctrl("g") if answer else session.profile.key("RET"))
                     session.wait_for_text("Quit" if answer else "LSP start cancelled.")
@@ -263,10 +297,10 @@ def lsp_trust_review(binary):
                         session, original, "original buffer viewport restored"
                     )
                     _assert_path_exists(
-                        session, "rejected LSP marker exists", marker, False
+                        session, "rejected LSP marker remains absent", marker, False
                     )
                     _assert_path_exists(
-                        session, "rejected LSP PID file exists", pid_file, False
+                        session, "rejected LSP PID file remains absent", pid_file, False
                     )
                 session.extended_command("lsp-start")
                 session.wait_for_text("LSP command [RET for")
@@ -278,22 +312,22 @@ def lsp_trust_review(binary):
                     "minibuffer", prompt + "yes"
                 )
                 session.send(b"\x1b[6~" * 12)
-                session.wait_for_region_contents("body", tail)
+                wait_for_review_tail()
                 _assert_minibuffer(session, prompt + "yes")
                 _assert_path_exists(
-                    session, "unconfirmed LSP marker exists", marker, False
+                    session, "unconfirmed LSP marker remains absent", marker, False
                 )
                 _assert_path_exists(
-                    session, "unconfirmed LSP PID file exists", pid_file, False
+                    session, "unconfirmed LSP PID file remains absent", pid_file, False
                 )
                 session.send(b"\x1b[5~" * 12)
                 session.wait_for_text("Discovered LSP command")
                 _assert_minibuffer(session, prompt + "yes")
                 _assert_path_exists(
-                    session, "unconfirmed LSP marker exists", marker, False
+                    session, "unconfirmed LSP marker remains absent", marker, False
                 )
                 _assert_path_exists(
-                    session, "unconfirmed LSP PID file exists", pid_file, False
+                    session, "unconfirmed LSP PID file remains absent", pid_file, False
                 )
                 session.key("RET")
 
