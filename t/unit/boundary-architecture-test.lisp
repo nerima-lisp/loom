@@ -1317,7 +1317,7 @@
          (qualified-record (make-boundary-record
                             :path "synthetic/core.lisp" :slice "core" :layer :core
                             :package (find-package "LOOM")
-                            :text "(loom/feature/window:window-tree-layout)"))
+                            :text "(loom/feature/window:split-window-below)"))
          (qualified-token (find-if #'boundary-token-qualified-p
                                    (boundary-scan-source
                                     (boundary-record-text qualified-record)

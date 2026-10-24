@@ -19,9 +19,9 @@ calls against them."
                                     &optional workspace-name)
   (when file-tree-visible
     (%layout-draw-file-tree renderer file-tree file-tree-width content-height))
-  (loom/feature/window:window-tree-resize
+  (loom/core/window-tree:window-tree-resize
    window-tree window-area-width content-height)
-  (dolist (window (loom/feature/window:window-tree-windows window-tree))
+  (dolist (window (loom/core/window-tree:window-tree-windows window-tree))
     (%layout-keep-point-visible renderer window))
   (%layout-draw-windows renderer window-tree file-tree-width workspace-name))
 

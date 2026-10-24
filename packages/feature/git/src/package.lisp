@@ -30,7 +30,7 @@
             (:import-from #:loom/feature/project
                           #:project-directory-path
                           #:project-find-root)
-            (:import-from #:loom/feature/window #:window-set-buffer)
+            (:import-from #:loom/core/window-tree #:window-set-buffer)
             (:import-from #:loom/core/minibuffer
                           #:minibuffer-message
                           #:with-prompts)

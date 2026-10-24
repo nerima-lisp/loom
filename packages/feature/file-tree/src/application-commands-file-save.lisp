@@ -42,7 +42,7 @@ so a second C-x C-s takes SAVE-BUFFER's existing-path branch and overwrites it."
              (%make-file-buffer path :initial-content (buffer-text source)))))
     (%transfer-point-and-mark source buffer)
     (register-buffer *editor-session* buffer)
-    (loom/feature/window:window-set-buffer window buffer)
+    (loom/core/window-tree:window-set-buffer window buffer)
     buffer))
 
 (defun %prompt-and-save-new-buffer (window buffer)
@@ -62,7 +62,7 @@ The replacement retains text, point, and mark, but not undo history."
   (let* ((window
           (loom/core/window-tree:window-tree-selected-window
            (editor-state-window-tree *editor-state*)))
-         (buffer (loom/feature/window:window-buffer window)))
+         (buffer (loom/core/window-tree:window-buffer window)))
     (if (buffer-path buffer)
         (progn
           (buffer-save buffer)
@@ -78,7 +78,7 @@ buffer. Undo history is not transferred."
   (let* ((window
           (loom/core/window-tree:window-tree-selected-window
            (editor-state-window-tree *editor-state*)))
-         (buffer (loom/feature/window:window-buffer window)))
+         (buffer (loom/core/window-tree:window-buffer window)))
     (with-prompts
      (minibuffer (editor-state-minibuffer *editor-state*)
                  :on-cancel

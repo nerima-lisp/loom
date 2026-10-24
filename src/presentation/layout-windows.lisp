@@ -124,20 +124,20 @@ into the remaining width."
 
 When HEIGHT is supplied, draw only that many rows, leaving the caller to draw
 the mode line or another footer in the remaining window rows."
-  (let* ((buffer (loom/feature/window:window-buffer window))
-         (x (+ x-offset (loom/feature/window:window-x window)))
-         (y (loom/feature/window:window-y window))
-         (width (loom/feature/window:window-width window))
-         (height (or height (loom/feature/window:window-height window))))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
+         (x (+ x-offset (loom/core/window-tree:window-x window)))
+         (y (loom/core/window-tree:window-y window))
+         (width (loom/core/window-tree:window-width window))
+         (height (or height (loom/core/window-tree:window-height window))))
     (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
         (loom/feature/syntax-highlighting:syntax-draw-buffer
          renderer buffer x y width height
-         :start-line (loom/feature/window:window-scroll-line window)
-         :start-column (loom/feature/window:window-scroll-column window))
+         :start-line (loom/core/window-tree:window-scroll-line window)
+         :start-column (loom/core/window-tree:window-scroll-column window))
         (%layout-draw-wrapped-buffer
          renderer buffer x y width height
-         (loom/feature/window:window-scroll-line window)
-         (loom/feature/window:window-scroll-sub-row window)))))
+         (loom/core/window-tree:window-scroll-line window)
+         (loom/core/window-tree:window-scroll-sub-row window)))))
 
 (defun %layout-draw-window-overlays (renderer leaf x-offset)
   (%layout-draw-window-buffer
@@ -151,44 +151,44 @@ the mode line or another footer in the remaining window rows."
 (defun %layout-draw-window-mode-line (renderer window x-offset selected-p
                                       &optional workspace-name)
   "Draw WINDOW's mode line across its last row when the leaf has an area."
-  (let ((width (loom/feature/window:window-width window))
-        (height (loom/feature/window:window-height window)))
+  (let ((width (loom/core/window-tree:window-width window))
+        (height (loom/core/window-tree:window-height window)))
     (when (and (plusp width) (plusp height))
       (let* ((text (%layout-mode-line
-                    renderer (loom/feature/window:window-buffer window) width
+                    renderer (loom/core/window-tree:window-buffer window) width
                     (and selected-p workspace-name)))
              (padding (make-string
                        (- width (loom-renderer-string-width renderer text))
                        :initial-element #\Space)))
         (loom-renderer-write-string
          renderer
-         (+ x-offset (loom/feature/window:window-x window))
-         (+ (loom/feature/window:window-y window) (1- height))
+         (+ x-offset (loom/core/window-tree:window-x window))
+         (+ (loom/core/window-tree:window-y window) (1- height))
          (concatenate 'string text padding)
          :style (if selected-p
                     +layout-mode-line-selected-style+
                     +layout-mode-line-unselected-style+))))))
 
 (defun %layout-draw-window-separator (renderer leaf x-offset)
-  (when (and (plusp (loom/feature/window:window-x leaf))
-             (plusp (loom/feature/window:window-height leaf)))
+  (when (and (plusp (loom/core/window-tree:window-x leaf))
+             (plusp (loom/core/window-tree:window-height leaf)))
     (loom-renderer-draw-vertical-line
-     renderer (1- (+ x-offset (loom/feature/window:window-x leaf)))
-     (loom/feature/window:window-y leaf)
-     (loom/feature/window:window-height leaf)))
-  (when (and (plusp (loom/feature/window:window-y leaf))
-             (plusp (loom/feature/window:window-width leaf)))
+     renderer (1- (+ x-offset (loom/core/window-tree:window-x leaf)))
+     (loom/core/window-tree:window-y leaf)
+     (loom/core/window-tree:window-height leaf)))
+  (when (and (plusp (loom/core/window-tree:window-y leaf))
+             (plusp (loom/core/window-tree:window-width leaf)))
     (loom-renderer-draw-horizontal-line
-     renderer (+ x-offset (loom/feature/window:window-x leaf))
-     (1- (loom/feature/window:window-y leaf))
-     (loom/feature/window:window-width leaf)))
+     renderer (+ x-offset (loom/core/window-tree:window-x leaf))
+     (1- (loom/core/window-tree:window-y leaf))
+     (loom/core/window-tree:window-width leaf)))
   renderer)
 
 (defun %layout-draw-windows (renderer window-tree x-offset
                              &optional workspace-name)
   "Draw every leaf window and the separators in WINDOW-TREE."
-  (let ((leaves (loom/feature/window:window-tree-windows window-tree))
-        (selected (loom/feature/window:window-tree-selected-window window-tree)))
+  (let ((leaves (loom/core/window-tree:window-tree-windows window-tree))
+        (selected (loom/core/window-tree:window-tree-selected-window window-tree)))
     (dolist (leaf leaves)
       (%layout-draw-window-overlays renderer leaf x-offset))
     (dolist (leaf leaves)
@@ -235,7 +235,7 @@ the mode line or another footer in the remaining window rows."
       (error () nil))))
 
 (defun %layout-draw-diagnostics (renderer window x-offset)
-  (let* ((buffer (loom/feature/window:window-buffer window))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
          (diagnostics (%layout-buffer-diagnostics buffer)))
     (dolist (diagnostic diagnostics)
       (let ((span (%layout-lsp-diagnostic-span buffer diagnostic)))
@@ -245,7 +245,7 @@ the mode line or another footer in the remaining window rows."
 
 (defun %layout-draw-region (renderer window x-offset)
   (let ((span (buffer-active-region-span
-               (loom/feature/window:window-buffer window))))
+               (loom/core/window-tree:window-buffer window))))
     (when span
       (%layout-draw-span renderer window x-offset span +layout-region-style+))))
 
@@ -261,7 +261,7 @@ the mode line or another footer in the remaining window rows."
 
 (defun %layout-draw-matching-paren (renderer window x-offset)
   "Mark the parenthesis point is adjacent to, together with its partner."
-  (let* ((buffer (loom/feature/window:window-buffer window))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
          (start (buffer-narrow-start-offset buffer))
          (text (buffer-visible-text buffer))
          (offset (max 0 (min (length text)

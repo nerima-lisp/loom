@@ -3,29 +3,29 @@
 (defun %layout-follow-truncated-line (window buffer height)
   (when (plusp height)
     (let ((point-line (buffer-visible-point-line buffer))
-          (scroll-line (loom/feature/window:window-scroll-line window)))
+          (scroll-line (loom/core/window-tree:window-scroll-line window)))
       (cond
         ((< point-line scroll-line)
-         (setf (loom/feature/window:window-scroll-line window) point-line))
+         (setf (loom/core/window-tree:window-scroll-line window) point-line))
         ((>= point-line (+ scroll-line height))
-         (setf (loom/feature/window:window-scroll-line window)
+         (setf (loom/core/window-tree:window-scroll-line window)
                (- point-line (1- height))))))))
 
 (defun %layout-follow-truncated-column (renderer window buffer width)
   (when (plusp width)
     (let ((point-column (%layout-buffer-point-screen-column renderer buffer))
-          (scroll-column (loom/feature/window:window-scroll-column window)))
+          (scroll-column (loom/core/window-tree:window-scroll-column window)))
       (cond
         ((< point-column scroll-column)
-         (setf (loom/feature/window:window-scroll-column window) point-column))
+         (setf (loom/core/window-tree:window-scroll-column window) point-column))
         ((>= point-column (+ scroll-column width))
-         (setf (loom/feature/window:window-scroll-column window)
+         (setf (loom/core/window-tree:window-scroll-column window)
                (- point-column (1- width))))))))
 
 (defun %layout-keep-truncated-point-visible (renderer window)
   (let ((height (%layout-window-content-height window))
-        (width (loom/feature/window:window-width window))
-        (buffer (loom/feature/window:window-buffer window)))
+        (width (loom/core/window-tree:window-width window))
+        (buffer (loom/core/window-tree:window-buffer window)))
     (%layout-follow-truncated-line window buffer height)
     (%layout-follow-truncated-column renderer window buffer width)))
 
@@ -37,10 +37,10 @@ it the pair simply becomes point's own; when point is below, the pair is walked
 back HEIGHT-1 rows from point instead of forward from the old position, so a
 jump to a distant line costs the window's height rather than the jump."
   (let* ((height (%layout-window-content-height window))
-         (width (loom/feature/window:window-width window))
-         (buffer (loom/feature/window:window-buffer window)))
+         (width (loom/core/window-tree:window-width window))
+         (buffer (loom/core/window-tree:window-buffer window)))
     (when (and (plusp height) (plusp width))
-      (setf (loom/feature/window:window-scroll-column window) 0)
+      (setf (loom/core/window-tree:window-scroll-column window) 0)
       (multiple-value-bind (point-line point-row)
           (%layout-wrapped-point-location renderer buffer width)
         (%layout-follow-wrapped-point
@@ -66,24 +66,24 @@ jump to a distant line costs the window's height rather than the jump."
 
 (defun %layout-follow-wrapped-point
     (renderer window buffer width height point-line point-row)
-  (let ((scroll-line (loom/feature/window:window-scroll-line window))
-        (scroll-row (loom/feature/window:window-scroll-sub-row window)))
+  (let ((scroll-line (loom/core/window-tree:window-scroll-line window))
+        (scroll-row (loom/core/window-tree:window-scroll-sub-row window)))
     (cond
       ((%layout-point-before-viewport-p
         point-line point-row scroll-line scroll-row)
-       (setf (loom/feature/window:window-scroll-line window) point-line
-             (loom/feature/window:window-scroll-sub-row window) point-row))
+       (setf (loom/core/window-tree:window-scroll-line window) point-line
+             (loom/core/window-tree:window-scroll-sub-row window) point-row))
       ((not (%layout-point-fits-viewport-p
              renderer buffer width scroll-line scroll-row
              point-line point-row height))
        (multiple-value-bind (new-line new-row)
            (%layout-row-back renderer buffer width point-line point-row
                              (1- height))
-         (setf (loom/feature/window:window-scroll-line window) new-line
-               (loom/feature/window:window-scroll-sub-row window) new-row))))))
+         (setf (loom/core/window-tree:window-scroll-line window) new-line
+               (loom/core/window-tree:window-scroll-sub-row window) new-row))))))
 
 (defun %layout-keep-point-visible (renderer window)
   "Adjust WINDOW's viewport so its buffer point remains in its rectangle."
-  (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* (loom/feature/window:window-buffer window))
+  (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* (loom/core/window-tree:window-buffer window))
       (%layout-keep-truncated-point-visible renderer window)
       (%layout-keep-wrapped-point-visible renderer window)))

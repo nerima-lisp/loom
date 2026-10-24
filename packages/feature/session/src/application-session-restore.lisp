@@ -33,8 +33,8 @@
   (let* ((old-tree (editor-state-window-tree *editor-state*))
          (buffers
           (mapcar #'%restore-session-buffer (session-snapshot-buffers snapshot)))
-         (width (loom/feature/window:window-tree-width old-tree))
-         (height (loom/feature/window:window-tree-height old-tree))
+         (width (loom/core/window-tree:window-tree-width old-tree))
+         (height (loom/core/window-tree:window-tree-height old-tree))
          (workspaces
           (%session-restorable-workspaces snapshot buffers width height))
          (manager

@@ -33,8 +33,8 @@ that %LAYOUT-DRAW-MINIBUFFER draws."
   (values (- (%layout-screen-column renderer
                                     (%layout-visible-line buffer line)
                                     column)
-             (loom/feature/window:window-scroll-column window))
-          (- line (loom/feature/window:window-scroll-line window))))
+             (loom/core/window-tree:window-scroll-column window))
+          (- line (loom/core/window-tree:window-scroll-line window))))
 
 (defun %wrapped-cell (renderer window buffer width line column)
   "Return LINE/COLUMN's (COLUMN ROW) inside a window that wraps long lines.
@@ -49,8 +49,8 @@ the walk is therefore bounded by the window height."
     (values (loom-renderer-segment-cells renderer text segment column)
             (or (%layout-rows-between
                  renderer buffer width
-                 (loom/feature/window:window-scroll-line window)
-                 (loom/feature/window:window-scroll-sub-row window)
+                 (loom/core/window-tree:window-scroll-line window)
+                 (loom/core/window-tree:window-scroll-sub-row window)
                  line index
                  (%layout-window-content-height window))
                 0))))
@@ -62,22 +62,22 @@ this, so a popup cannot drift away from the point it belongs to."
   (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
       (%truncated-cell renderer window buffer line column)
       (%wrapped-cell renderer window buffer
-                     (loom/feature/window:window-width window)
+                     (loom/core/window-tree:window-width window)
                      line column)))
 
 (defun %window-cursor-position (renderer window x-offset)
-  (let* ((buffer (loom/feature/window:window-buffer window))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
          (line (buffer-visible-point-line buffer))
          (column (buffer-visible-point-column buffer)))
     (multiple-value-bind (screen-column screen-row)
         (%layout-buffer-cell renderer window buffer line column)
-      (values (+ x-offset (loom/feature/window:window-x window)
+      (values (+ x-offset (loom/core/window-tree:window-x window)
                  screen-column)
-              (+ (loom/feature/window:window-y window) screen-row)))))
+              (+ (loom/core/window-tree:window-y window) screen-row)))))
 
 (defun %selected-window-cursor-geometry (renderer window x-offset)
   "Return the selected window cursor position, or NIL when it has no area."
-  (let ((width (loom/feature/window:window-width window))
+  (let ((width (loom/core/window-tree:window-width window))
         (height (%layout-window-content-height window)))
     (unless (or (zerop width) (zerop height))
       (%window-cursor-position renderer window x-offset))))
@@ -100,7 +100,7 @@ position when a prompt is up, otherwise point in the selected window."
                     (and file-tree
                          (loom/feature/file-tree:file-tree-visible-p file-tree))
                     (loom-renderer-width renderer)))
-         (window (loom/feature/window:window-tree-selected-window
+         (window (loom/core/window-tree:window-tree-selected-window
                   (editor-state-window-tree editor-state))))
     (or (and minibuffer (%minibuffer-cursor renderer minibuffer))
         (%selected-window-cursor renderer window x-offset))))

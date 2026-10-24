@@ -5,6 +5,7 @@
         #:loom/feature/project
         #:loom/feature/search
         #:loom/feature/file-tree
+        #:loom/core/window-tree
         #:loom/feature/window
         #:loom/feature/workspace
         #:loom/feature/evaluation

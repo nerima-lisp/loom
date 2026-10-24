@@ -1,5 +1,5 @@
 (defpackage #:loom/feature/session
-  (:use #:cl #:loom/feature/window)
+  (:use #:cl #:loom/core/window-tree)
   (:import-from #:loom/core/buffer
                 #:make-buffer
                 #:buffer-name

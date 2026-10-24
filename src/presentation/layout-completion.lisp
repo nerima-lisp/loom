@@ -41,7 +41,7 @@
 nonnegative, and vertical placement fits; otherwise return NIL."
   (multiple-value-bind (column row)
       (%layout-buffer-cell renderer window
-                           (loom/feature/window:window-buffer window)
+                           (loom/core/window-tree:window-buffer window)
                            (editor-completion-line completion)
                            (editor-completion-column completion))
     (when (and (<= 0 row) (< row height) (<= 0 column))
@@ -57,7 +57,7 @@ nonnegative, and vertical placement fits; otherwise return NIL."
                          (editor-state-completion *editor-state*))))
     (when (and completion
                (eq (editor-completion-buffer completion)
-                   (loom/feature/window:window-buffer window))
+                   (loom/core/window-tree:window-buffer window))
                (editor-completion-items completion))
       completion)))
 
@@ -78,10 +78,10 @@ nonnegative, and vertical placement fits; otherwise return NIL."
 
 (defun %layout-draw-completion-popup (renderer window x-offset rows selected
                                        column row)
-  (let* ((width (loom/feature/window:window-width window))
-         (x (+ x-offset (loom/feature/window:window-x window)
+  (let* ((width (loom/core/window-tree:window-width window))
+         (x (+ x-offset (loom/core/window-tree:window-x window)
                (min column (1- width))))
-         (y (+ row (loom/feature/window:window-y window)))
+         (y (+ row (loom/core/window-tree:window-y window)))
          (cells (%layout-completion-cells renderer rows width column)))
     (loop for text in rows
           for offset from 0
@@ -89,7 +89,7 @@ nonnegative, and vertical placement fits; otherwise return NIL."
               renderer x y offset text selected cells))))
 
 (defun %layout-draw-completion-content (renderer window x-offset completion)
-  (let ((width (loom/feature/window:window-width window))
+  (let ((width (loom/core/window-tree:window-width window))
         (height (%layout-window-content-height window)))
     (when (and (plusp width) (plusp height))
       (multiple-value-bind (rows selected)

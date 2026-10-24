@@ -35,4 +35,4 @@ a measurable string rather than a bounds check of their own."
 
 (defun %layout-window-content-height (window)
   "Return the rows available for WINDOW's buffer above its mode line."
-  (max 0 (1- (loom/feature/window:window-height window))))
+  (max 0 (1- (loom/core/window-tree:window-height window))))

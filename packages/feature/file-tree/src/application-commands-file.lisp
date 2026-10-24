@@ -44,7 +44,7 @@ different owner is rejected."
 (defun %show-buffer-in-selected-window (buffer)
   "Register BUFFER and display it in the selected window."
   (register-buffer *editor-session* buffer)
-  (loom/feature/window:window-set-buffer
+  (loom/core/window-tree:window-set-buffer
    (loom/core/window-tree:window-tree-selected-window
     (editor-state-window-tree *editor-state*))
    buffer))

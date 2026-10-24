@@ -38,8 +38,8 @@
 (defun %session-workspace-live-buffers (manager)
   "Return buffers displayed by every workspace in MANAGER."
   (mapcan (lambda (workspace)
-            (mapcar #'loom/feature/window:window-buffer
-                    (loom/feature/window:window-tree-windows
+            (mapcar loom/core/window-tree:window-buffer
+                    (loom/core/window-tree:window-tree-windows
                      (loom/feature/workspace:workspace-window-tree workspace))))
           (loom/feature/workspace:workspace-manager-workspaces manager)))
 
@@ -51,9 +51,9 @@
        (make-session-workspace-snapshot
         :name (loom/feature/workspace:workspace-name workspace)
         :layout (%session-indexed-layout
-                 (loom/feature/window:window-tree-layout tree) buffers)
+                 (loom/core/window-tree:window-tree-layout tree) buffers)
         :selected-window-index
-        (loom/feature/window:window-tree-selected-index tree))))
+        (loom/core/window-tree:window-tree-selected-index tree))))
    (loom/feature/workspace:workspace-manager-workspaces manager)))
 
 (defun %session-restorable-workspaces (snapshot buffers width height)

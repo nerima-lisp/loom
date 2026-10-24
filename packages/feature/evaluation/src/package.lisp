@@ -1,5 +1,5 @@
 (defpackage #:loom/feature/evaluation
-  (:use #:cl #:loom/feature/window)
+  (:use #:cl #:loom/core/window-tree)
   (:import-from #:loom/core/buffer
                 #:buffer-insert-string
                 #:buffer-line

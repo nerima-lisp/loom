@@ -875,42 +875,9 @@ Move point to the position stored in a named register.
 
 Public symbols from `loom/feature/window`.
 
-Manage split-window layouts, selection, geometry, and buffer views. See the
-[Window API](../api.md#window) for signatures and detailed contracts.
-
-### Window trees
-
-`make-window-tree`, `make-window-tree-from-layout`, `window-tree-windows`,
-`window-tree-layout`
-
-Construct a window tree and inspect its leaves or layout.
-
-### Window selection
-
-`window-tree-selected-window`, `window-tree-selected-index`,
-`window-tree-select-index`, `window-select-next`
-
-Inspect or change the selected window.
-
-### Geometry
-
-`window-tree-width`, `window-tree-height`, `window-tree-resize`,
-`window-x`, `window-y`, `window-width`, `window-height`
-
-Inspect or update tree and window geometry.
-
-### Buffer views
-
-`window-buffer`, `window-set-buffer`, `window-scroll-line`,
-`window-scroll-column`, `window-scroll-sub-row`
-
-Inspect or update a window's buffer and scroll position.
-
-### Layout operations
-
-`window-split`, `window-delete`, `window-delete-other-windows`
-
-Change the split layout.
+Window-tree and window-view domain operations belong to
+`loom/core/window-tree`. See the [Window API](../api.md#window) for those
+signatures and contracts.
 
 ### Window commands
 

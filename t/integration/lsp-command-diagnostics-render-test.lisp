@@ -9,14 +9,14 @@
                                 :path "/tmp/main.lisp"
                                 :initial-content "(+ 1 2)"))
            (state
-             (make-editor-state
-              :window-tree (make-window-tree buffer 80 24)
+             (let ((tree (make-window-tree buffer 80 24))) (make-editor-state
+              :window-tree tree
               :minibuffer (make-minibuffer)
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :session (%make-test-editor-session (list buffer))
-              :kill-ring nil)))
+              :session (%make-test-editor-session (list buffer) :window-tree tree)
+              :kill-ring nil))))
       (unwind-protect
            (progn
              (lsp-session-start session)
@@ -38,8 +38,8 @@
                  (expect (loom:minibuffer-message-string
                           (editor-state-minibuffer state))
                          :to-equal "LSP diagnostics refreshed.")))
-             (loom/feature/window:window-set-buffer
-              (loom/feature/window:window-tree-selected-window
+             (loom/core/window-tree:window-set-buffer
+              (loom/core/window-tree:window-tree-selected-window
                (editor-state-window-tree state))
               buffer)
              (%fake-push-publish-diagnostics

@@ -773,7 +773,7 @@ strings.
 ### `make-window-tree`
 
 ```lisp
-(loom/feature/window:make-window-tree initial-buffer width height)
+(loom/core/window-tree:make-window-tree initial-buffer width height)
 ```
 
 Create and return a new window tree with a single, initially selected
@@ -782,7 +782,7 @@ window displaying `initial-buffer` over the full `width` by `height` area.
 ### `window-tree-windows`
 
 ```lisp
-(loom/feature/window:window-tree-windows tree)
+(loom/core/window-tree:window-tree-windows tree)
 ```
 
 Return a list of every leaf window in `tree`, in stable order.
@@ -790,7 +790,7 @@ Return a list of every leaf window in `tree`, in stable order.
 ### `window-tree-selected-window`
 
 ```lisp
-(loom/feature/window:window-tree-selected-window tree)
+(loom/core/window-tree:window-tree-selected-window tree)
 ```
 
 Return `tree`'s currently selected (focused) window.
@@ -798,7 +798,7 @@ Return `tree`'s currently selected (focused) window.
 ### `window-tree-layout`
 
 ```lisp
-(loom/feature/window:window-tree-layout tree)
+(loom/core/window-tree:window-tree-layout tree)
 ```
 
 Return the serializable layout description of `tree`.
@@ -806,7 +806,7 @@ Return the serializable layout description of `tree`.
 ### `make-window-tree-from-layout`
 
 ```lisp
-(loom/feature/window:make-window-tree-from-layout layout width height &key selected-index)
+(loom/core/window-tree:make-window-tree-from-layout layout width height &key selected-index)
 ```
 
 Reconstruct a window tree from `layout`, whose leaf nodes contain the buffers
@@ -815,7 +815,7 @@ to display.
 ### `window-tree-selected-index`
 
 ```lisp
-(loom/feature/window:window-tree-selected-index tree)
+(loom/core/window-tree:window-tree-selected-index tree)
 ```
 
 Return the index of the selected leaf window in `tree`.
@@ -823,7 +823,7 @@ Return the index of the selected leaf window in `tree`.
 ### `window-tree-select-index`
 
 ```lisp
-(loom/feature/window:window-tree-select-index tree index)
+(loom/core/window-tree:window-tree-select-index tree index)
 ```
 
 Select the leaf window at `index` and return it.
@@ -831,7 +831,7 @@ Select the leaf window at `index` and return it.
 ### `window-tree-width`
 
 ```lisp
-(loom/feature/window:window-tree-width tree)
+(loom/core/window-tree:window-tree-width tree)
 ```
 
 Return `tree`'s width in terminal columns.
@@ -839,7 +839,7 @@ Return `tree`'s width in terminal columns.
 ### `window-tree-height`
 
 ```lisp
-(loom/feature/window:window-tree-height tree)
+(loom/core/window-tree:window-tree-height tree)
 ```
 
 Return `tree`'s height in terminal rows.
@@ -847,7 +847,7 @@ Return `tree`'s height in terminal rows.
 ### `window-split`
 
 ```lisp
-(loom/feature/window:window-split tree window direction)
+(loom/core/window-tree:window-split tree window direction)
 ```
 
 Split `window` into two along `direction` (`:horizontal`, i.e. `C-x 2`, or
@@ -857,7 +857,7 @@ moves to the new window, which is returned.
 ### `window-select-next`
 
 ```lisp
-(loom/feature/window:window-select-next tree)
+(loom/core/window-tree:window-select-next tree)
 ```
 
 Select the next window in `tree`, cycling back to the first after the last
@@ -866,7 +866,7 @@ Select the next window in `tree`, cycling back to the first after the last
 ### `window-delete`
 
 ```lisp
-(loom/feature/window:window-delete tree window)
+(loom/core/window-tree:window-delete tree window)
 ```
 
 Delete `window` from `tree` when another leaf can remain selected, then
@@ -876,7 +876,7 @@ and return that window.
 ### `window-delete-other-windows`
 
 ```lisp
-(loom/feature/window:window-delete-other-windows tree window)
+(loom/core/window-tree:window-delete-other-windows tree window)
 ```
 
 Remove every leaf except `window`, select it, and return that window.
@@ -884,7 +884,7 @@ Remove every leaf except `window`, select it, and return that window.
 ### `window-buffer`
 
 ```lisp
-(loom/feature/window:window-buffer window)
+(loom/core/window-tree:window-buffer window)
 ```
 
 Return the buffer currently displayed in `window`.
@@ -892,7 +892,7 @@ Return the buffer currently displayed in `window`.
 ### `window-set-buffer`
 
 ```lisp
-(loom/feature/window:window-set-buffer window buffer)
+(loom/core/window-tree:window-set-buffer window buffer)
 ```
 
 Display `buffer` in `window` (`C-x b`), replacing what it previously showed.
@@ -901,7 +901,7 @@ Returns `window`.
 ### `window-x`
 
 ```lisp
-(loom/feature/window:window-x window)
+(loom/core/window-tree:window-x window)
 ```
 
 Return `window`'s left edge, in terminal columns, relative to its tree's
@@ -910,7 +910,7 @@ origin.
 ### `window-y`
 
 ```lisp
-(loom/feature/window:window-y window)
+(loom/core/window-tree:window-y window)
 ```
 
 Return `window`'s top edge, in terminal rows, relative to its tree's origin.
@@ -918,7 +918,7 @@ Return `window`'s top edge, in terminal rows, relative to its tree's origin.
 ### `window-width`
 
 ```lisp
-(loom/feature/window:window-width window)
+(loom/core/window-tree:window-width window)
 ```
 
 Return `window`'s width in terminal columns.
@@ -926,7 +926,7 @@ Return `window`'s width in terminal columns.
 ### `window-height`
 
 ```lisp
-(loom/feature/window:window-height window)
+(loom/core/window-tree:window-height window)
 ```
 
 Return `window`'s height in terminal rows.
@@ -934,8 +934,8 @@ Return `window`'s height in terminal rows.
 ### `window-scroll-line`
 
 ```lisp
-(loom/feature/window:window-scroll-line window)
-(setf (loom/feature/window:window-scroll-line window) line)
+(loom/core/window-tree:window-scroll-line window)
+(setf (loom/core/window-tree:window-scroll-line window) line)
 ```
 
 Return or set `window`'s zero-based first visible buffer line.
@@ -943,8 +943,8 @@ Return or set `window`'s zero-based first visible buffer line.
 ### `window-scroll-column`
 
 ```lisp
-(loom/feature/window:window-scroll-column window)
-(setf (loom/feature/window:window-scroll-column window) column)
+(loom/core/window-tree:window-scroll-column window)
+(setf (loom/core/window-tree:window-scroll-column window) column)
 ```
 
 Return or set `window`'s leftmost visible screen column. This counts terminal
@@ -956,8 +956,8 @@ a full-width character occupies. Unlike `window-scroll-line` it is not part of
 ### `window-scroll-sub-row`
 
 ```lisp
-(loom/feature/window:window-scroll-sub-row window)
-(setf (loom/feature/window:window-scroll-sub-row window) row)
+(loom/core/window-tree:window-scroll-sub-row window)
+(setf (loom/core/window-tree:window-scroll-sub-row window) row)
 ```
 
 Return or set which wrapped segment of `window-scroll-line` occupies the
@@ -968,7 +968,7 @@ like `window-scroll-column` it is transient rather than part of
 ### `window-tree-resize`
 
 ```lisp
-(loom/feature/window:window-tree-resize tree width height)
+(loom/core/window-tree:window-tree-resize tree width height)
 ```
 
 Resize `tree` to `width`/`height`, re-laying-out every window

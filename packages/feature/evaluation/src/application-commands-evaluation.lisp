@@ -42,7 +42,7 @@
 
 (defun %display-evaluation-result (buffer result)
   (buffer-mark-saved buffer)
-  (loom/feature/window:window-set-buffer
+  (loom/core/window-tree:window-set-buffer
    (loom/core/window-tree:window-tree-selected-window
     (editor-state-window-tree *editor-state*))
    buffer)

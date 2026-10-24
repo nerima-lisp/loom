@@ -9,7 +9,7 @@
   "Style for the match point currently sits on, so it reads apart from the rest.")
 
 (defun %layout-truncated-line-position (renderer window text line start)
-  (let* ((scroll-column (loom/feature/window:window-scroll-column window)))
+  (let* ((scroll-column (loom/core/window-tree:window-scroll-column window)))
     (multiple-value-bind (visible-start leading-blank)
         (loom-renderer-clip-index renderer text scroll-column)
       (let* ((draw-start (max start visible-start))
@@ -18,7 +18,7 @@
                          (max 0 (- (%layout-screen-column renderer text draw-start)
                                    scroll-column)))))
         (values draw-start column
-                (- line (loom/feature/window:window-scroll-line window)))))))
+                (- line (loom/core/window-tree:window-scroll-line window)))))))
 
 (defun %layout-truncated-line-visible-p (row height draw-start end column width)
   (and (<= 0 row)
@@ -27,7 +27,7 @@
        (< column width)))
 
 (defun %layout-draw-truncated-line-run (renderer window x y text line start end style)
-  (let ((width (loom/feature/window:window-width window))
+  (let ((width (loom/core/window-tree:window-width window))
         (height (%layout-window-content-height window)))
     (multiple-value-bind (draw-start column row)
         (%layout-truncated-line-position renderer window text line start)
@@ -45,10 +45,10 @@
     (when (> to from)
       (let ((row (%layout-rows-between
                   renderer
-                  (loom/feature/window:window-buffer window)
+                  (loom/core/window-tree:window-buffer window)
                   width
-                  (loom/feature/window:window-scroll-line window)
-                  (loom/feature/window:window-scroll-sub-row window)
+                  (loom/core/window-tree:window-scroll-line window)
+                  (loom/core/window-tree:window-scroll-sub-row window)
                   line
                   (%loom-segment-index segments from)
                   (1- height)))
@@ -80,12 +80,12 @@
     (values start (max start (min end (length text))))))
 
 (defun %layout-line-run-geometry (window x-offset line start end)
-  (let* ((buffer (loom/feature/window:window-buffer window))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
          (text (%layout-visible-line buffer line))
-         (width (loom/feature/window:window-width window))
+         (width (loom/core/window-tree:window-width window))
          (height (%layout-window-content-height window))
-         (y (loom/feature/window:window-y window))
-         (x (+ x-offset (loom/feature/window:window-x window))))
+         (y (loom/core/window-tree:window-y window))
+         (x (+ x-offset (loom/core/window-tree:window-x window))))
     (multiple-value-bind (start end) (%layout-line-run-bounds text start end)
       (when (and (plusp width) (plusp height) (> end start))
         (values buffer text width height x y start end)))))
@@ -125,7 +125,7 @@ draws nothing rather than clipping to the wrong row."
 
 (defun %layout-draw-span (renderer window x-offset span style)
   "Redraw the buffer text SPAN covers in STYLE, one logical line at a time."
-  (let ((buffer (loom/feature/window:window-buffer window)))
+  (let ((buffer (loom/core/window-tree:window-buffer window)))
     (multiple-value-bind (first-line first-column last-line last-column)
         (%layout-span-line-bounds buffer span)
       (when first-line
@@ -140,7 +140,7 @@ draws nothing rather than clipping to the wrong row."
   (let ((session (and *editor-state* (editor-state-isearch *editor-state*))))
     (when (and session
                (eq (loom/feature/search:isearch-session-buffer session)
-                   (loom/feature/window:window-buffer window)))
+                   (loom/core/window-tree:window-buffer window)))
       session)))
 
 (defun %layout-isearch-span-style (span current)
