@@ -1,10 +1,11 @@
 # API reference
 
-This page documents selected major APIs from the root `loom` package and the feature
-packages used in the examples. It is not an exhaustive export listing.
-Feature-package APIs are documented in `reference/api/features.md`; the
-authoritative export declarations are in
-[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp).
+This page documents selected APIs from the root `loom` package and the core
+and feature packages used in the examples. It is not an exhaustive export
+listing. Feature-package APIs are documented in `reference/api/features.md`.
+Root package exports are declared in
+[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp);
+core and feature package exports are declared beside their package sources.
 Line and column numbers throughout are zero-based; a
 `(line . column)` pair denotes a position *between* characters, exactly like
 Emacs point, so end positions in a region are exclusive.
@@ -1335,10 +1336,9 @@ reads and mutates. Bound by loom's entry point before any command runs, and
 
 ### `editor-state`
 
-The struct type of `*editor-state*`: the window layout, minibuffer, top-level
-keymap, file-tree sidebar, active renderer, shared kill ring, named workspace
-manager, auto-save state, after-save hooks, and terminal sessions for one
-running loom session.
+The root state struct for one running Loom session. It holds application
+services and references; slice-owned state is grouped in the `editor-session`
+returned by `editor-state-session`.
 
 ### `make-editor-state`
 
@@ -1346,13 +1346,21 @@ running loom session.
 (loom:make-editor-state &rest initargs)
 ```
 
-Construct an `editor-state`. If `workspaces` is omitted, the supplied
-`window-tree` becomes the named `main` workspace. Supplying `workspaces` is
-useful when restoring a session or constructing multiple named views.
-`initargs` are the editor-state constructor's keyword arguments, including
-`:buffers`, `:recent-files`, `:bookmarks`, `:concurrent-runtime`, `:lsp-session`,
-`:registers`, `:keyboard-macro`, `:isearch`, `:completion`, `:prefix-argument`,
-`:format-on-save-p`, `:format-command`, and the before/after-save hook lists.
+Construct an `editor-state` from keyword arguments. `:session` is required and
+must contain the slices needed by omitted state values. `:window-tree` must be
+the same object as the session's `:core/window-tree` slice. If `:workspaces` is
+`nil`, it defaults to the session's `:feature/workspace` slice; if
+`:keyboard-macro` is omitted, that value defaults to the session's
+`:feature/keyboard-macro` slice.
+
+### `editor-state-session`
+
+```lisp
+(loom:editor-state-session state)
+```
+
+Return the `editor-session` envelope referenced by `state`. Session hooks
+receive this value so slices can access their own state.
 
 ### `editor-state-window-tree`
 
@@ -1412,14 +1420,21 @@ Return the file-tree concurrent runtime attached to `state`, or `nil`.
 
 Return `state`'s `loom-renderer-*` protocol object used to draw each frame.
 
-### `editor-state-after-save-hooks`
+### `register-session-hook`, `run-session-hooks`
 
-Return the hooks run after a normal buffer save.
+```lisp
+(loom/core/editor-session:register-session-hook kind owner function)
+(loom/core/editor-session:run-session-hooks kind session &rest arguments)
+```
 
-### `add-after-save-hook`, `remove-after-save-hook`, `run-after-save-hooks`
-
-Register, unregister, or dispatch after-save hooks for an editor state. Hooks
-receive the saved buffer.
+Register and dispatch session hooks. The supported kinds include `:tick`,
+`:key-input`, `:input-event`, `:render`, `:terminal-modes`, `:before-save`,
+`:after-save`, and `:buffer-close`, along with the root lifecycle events
+`:startup`, `:signal`, `:suspend`, `:resume`, `:shutdown`, and `:exit-status`.
+Hooks run in slice-owner order and preserve registration order within an owner.
+Lifecycle hooks must use the `:feature/lifecycle` owner. Save hooks receive the
+`editor-session` value from `editor-state-session` and the saved buffer; key and
+input-event hooks return `:pass` or `:handled`.
 
 ### `editor-state-terminal-sessions`
 
@@ -1790,10 +1805,11 @@ Feature-specific public interfaces are documented in the [Feature APIs reference
 
 ## CLI and commands
 
-`loom:main` delegates argument parsing to `cl-cli` using application name
-`loom` and the package version declared in `loom.asd`. The CLI accepts `--help`/`-h`,
-`--version`/`-V`, and one optional positional `path`; a file opens in the
-first window, a directory becomes the file-tree root, and no path defaults to
+`loom:main` uses application name `loom` and the package version declared in
+`loom.asd`. `--help`/`-h` and `--version`/`-V` are handled by `cl-cli`; registered
+lifecycle options and file requests are parsed into an opaque startup context.
+The CLI accepts `loom [+LINE[:COL]] FILE...`; the position applies to the first
+file and later files open at line 1, column 1. With no file, the editor opens
 `.`. There are no subcommands.
 
 `install-default-keybindings` installs the command registry's bindings into

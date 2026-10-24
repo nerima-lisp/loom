@@ -16,12 +16,14 @@ unchanged when the terminal size could not be read or has not changed."
     (if (and width height (or (/= width last-width) (/= height last-height)))
         (progn
           (loom-renderer-resize renderer width height)
-          (loom/feature/terminal:resize-terminal-sessions
-           width height *editor-state*)
+          (loom/feature/terminal:resize-terminal-sessions width
+                                                          height
+                                                          *editor-state*)
           (values width height))
         (values last-width last-height))))
 
-(defparameter *event-loop-poll-interval* 0.05
+(defparameter *event-loop-poll-interval*
+  0.05
   "Input-wait timeout in seconds while terminal, LSP, or auto-save work is active.
 
 The interval is only used while there is background work that needs a
@@ -30,26 +32,96 @@ or auto-save buffers, the loop keeps its original blocking read behavior.")
 
 (defun %event-loop-background-work-p ()
   "Whether the event loop must wake up without a keyboard byte."
-  (not (null
-        (or (some #'loom/feature/terminal:terminal-session-alive-p
-                  (editor-state-terminal-sessions *editor-state*))
-            (editor-state-lsp-session *editor-state*)
-            (editor-state-auto-save-mode-p *editor-state*)
-            (editor-state-auto-save-buffers *editor-state*)))))
+  (not
+   (null
+    (or
+     (some #'loom/feature/terminal:terminal-session-alive-p
+           (editor-state-terminal-sessions *editor-state*))
+     (editor-state-lsp-session *editor-state*)
+     (editor-state-auto-save-mode-p *editor-state*)
+     (editor-state-auto-save-buffers *editor-state*)))))
 
-(defun %wait-for-editor-input (input-stream)
-  "Wait for input, or return NIL after the background poll interval.
+(defun %wait-for-editor-input (input-stream &optional terminal-session)
+  "Wait for terminal input and session wake notifications together when possible."
+  (if terminal-session
+      (let ((timeout-ms
+             (when (%event-loop-background-work-p)
+               (max 1 (round (* 1000 *event-loop-poll-interval*))))))
+        (handler-case (multiple-value-bind (input-ready-p wake-ready-p)
+                          (%poll-loom-terminal-session terminal-session
+                                                       (cl-tty-kit:stream-fd
+                                                        input-stream)
+                                                       timeout-ms)
+                        (values input-ready-p
+                                wake-ready-p
+                                (and timeout-ms
+                                     (not input-ready-p)
+                                     (not wake-ready-p))))
+          (type-error ()
+            (values t nil nil))))
+      (if (%event-loop-background-work-p)
+          (handler-case (if (cl-tty-kit:fd-wait
+                             (cl-tty-kit:stream-fd input-stream)
+                             :input
+                             *event-loop-poll-interval*)
+                            (values t nil nil)
+                            (values nil nil t))
+            (type-error ()
+              (values t nil nil)))
+          (values t nil nil))))
 
-CL-TTY-KIT's descriptor wait lets PTY output and auto-save timers make
-progress even when the user is idle.  Non-file streams used by tests and
-embedding callers do not have a descriptor; those retain the old blocking
-read semantics instead of making the event loop depend on a particular
-stream implementation."
-  (if (%event-loop-background-work-p)
-      (handler-case
-          (cl-tty-kit:fd-wait
-           (cl-tty-kit:stream-fd input-stream)
-           :input
-           *event-loop-poll-interval*)
-        (type-error () t))
-      t))
+(defun %process-loom-wake-events (terminal-session session bytes poll-work-p)
+  (let ((suspend-request-p
+         (loom/core/editor-session:consume-terminal-suspend-request session))
+        (suspended-p nil)
+        (frame-dirty-p nil)
+        (more-ready-p nil))
+    (dolist (byte bytes)
+      (let ((signal-name
+             (case byte
+               (1 :term)
+               (2 :hup)
+               (3 :tstp)
+               (4 :cont))))
+        (when signal-name
+          (let ((results
+                 (loom/core/editor-session:run-session-hooks :signal
+                                                             session
+                                                             signal-name)))
+            (when
+                (or (member :terminate results :test (function eq))
+                    (member signal-name (list :term :hup) :test (function eq)))
+              (return-from %process-loom-wake-events
+                (values :terminate
+                        (case signal-name
+                          (:term :sigterm)
+                          (:hup :sighup)
+                          (otherwise :normal))
+                        (case signal-name
+                          (:term 143)
+                          (:hup 129)
+                          (otherwise 0))
+                        nil
+                        nil)))
+            (when (eq signal-name :tstp)
+              (setf suspend-request-p nil
+                    suspended-p t)
+              (when
+                  (eq (%suspend-loom-terminal-session session terminal-session)
+                      :terminate)
+                (return-from %process-loom-wake-events
+                  (values :terminate :normal 0 nil nil)))
+              (setf frame-dirty-p t))))))
+    (when (and suspend-request-p (not suspended-p))
+      (when
+          (eq (%suspend-loom-terminal-session session terminal-session)
+              :terminate)
+        (return-from %process-loom-wake-events
+          (values :terminate :normal 0 nil nil)))
+      (setf frame-dirty-p t))
+    (when poll-work-p
+      (multiple-value-bind (poll-dirty-p poll-more-ready-p)
+          (loom/core/editor-session:poll-ready-background-work session)
+        (setf frame-dirty-p (or frame-dirty-p poll-dirty-p)
+              more-ready-p poll-more-ready-p)))
+    (values nil nil nil frame-dirty-p more-ready-p)))

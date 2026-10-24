@@ -1,52 +1,107 @@
 (in-package #:loom)
 
-(defun %read-and-dispatch-event-loop-input (input-stream buffer decoder keymap-state)
-  "Read and dispatch one event-loop turn.
+(defun %read-and-dispatch-event-loop-input (input-stream buffer
+                                                         decoder
+                                                         keymap-state
+                                                         terminal-session
+                                                         force-ready-p)
+  "Process wake and polling work before dispatching ready terminal input.
 
-Return T when input was dispatched, :TIMEOUT when background work should be
-polled, and NIL when INPUT-STREAM reached EOF."
-  (if (%wait-for-editor-input input-stream)
-      (let ((count (%read-input-octets buffer input-stream)))
-        (when count
-          (%dispatch-input-chunk decoder buffer count keymap-state)
-          t))
-      :timeout))
+Return status, reason, exit status, frame-dirty-p, and more-ready-p."
+  (multiple-value-bind (input-ready-p wake-ready-p poll-ready-p)
+      (if force-ready-p
+          (values nil nil nil)
+          (%wait-for-editor-input input-stream terminal-session))
+    (let ((wake-bytes
+           (when (and terminal-session (or wake-ready-p force-ready-p))
+             (%drain-loom-terminal-wake terminal-session))))
+      (multiple-value-bind (status reason
+                                   exit-status
+                                   frame-dirty-p
+                                   more-ready-p)
+          (if (or wake-ready-p poll-ready-p force-ready-p)
+              (%process-loom-wake-events terminal-session
+                                         (editor-state-session *editor-state*)
+                                         wake-bytes
+                                         (or wake-ready-p
+                                             poll-ready-p
+                                             force-ready-p))
+              (values nil nil nil nil nil))
+        (cond
+          ((eq status :terminate)
+           (values status reason exit-status frame-dirty-p more-ready-p))
+          (input-ready-p
+           (let ((count (%read-input-octets buffer input-stream)))
+             (if count
+                 (progn
+                   (%dispatch-input-chunk decoder buffer count keymap-state)
+                   (values :input nil nil frame-dirty-p more-ready-p))
+                 (values nil nil nil frame-dirty-p more-ready-p))))
+          (t (values :timeout nil nil frame-dirty-p more-ready-p)))))))
 
-(defun %run-event-loop-turn (output-stream input-stream buffer decoder
-                             keymap-state last-width last-height)
-  "Process one event-loop turn and return its status and terminal dimensions.
+(defun %run-event-loop-turn (output-stream input-stream
+                                           buffer
+                                           decoder
+                                           keymap-state
+                                           last-width
+                                           last-height
+                                           terminal-session
+                                           force-ready-p)
+  (multiple-value-bind (status reason exit-status frame-dirty-p more-ready-p)
+      (%read-and-dispatch-event-loop-input input-stream
+                                           buffer
+                                           decoder
+                                           keymap-state
+                                           terminal-session
+                                           force-ready-p)
+    (cond
+      ((eq status :terminate)
+       (values :terminate reason exit-status last-width last-height nil))
+      (status
+        (loom/feature/auto-save:maybe-auto-save)
+        (loom/core/editor-session:run-session-hooks :tick
+                                                    (editor-state-session
+                                                     *editor-state*)
+                                                    (/ (get-internal-real-time)
+                                                       internal-time-units-per-second))
+        (multiple-value-bind (width height)
+            (%poll-terminal-resize (editor-state-renderer *editor-state*)
+                                   last-width
+                                   last-height)
+          (when (or (not (null status)) frame-dirty-p)
+            (%render-event-loop-frame output-stream))
+          (values status nil nil width height more-ready-p)))
+      (t nil))))
 
-EOF returns NIL without running background work or rendering.  A dispatched
-input chunk or timeout runs the periodic work, checks the terminal size, and
-renders the next frame."
-  (let ((status (%read-and-dispatch-event-loop-input
-                 input-stream buffer decoder keymap-state)))
-    (when status
-      (loom/feature/auto-save:maybe-auto-save)
-      (multiple-value-bind (width height)
-          (%poll-terminal-resize (editor-state-renderer *editor-state*)
-                                 last-width last-height)
-        (%render-event-loop-frame output-stream)
-        (values status width height)))))
-
-(defun %run-event-loop (output-stream input-stream)
-  "Run the main input and render loop, writing frames to OUTPUT-STREAM and
-reading octets from INPUT-STREAM.
-
-The initial frame is rendered before waiting for input. Each subsequent
-iteration reads raw octets, dispatches decoded key events, reacts to terminal
-resizes, then redraws the frame."
+(defun %run-event-loop (output-stream input-stream &optional terminal-session)
+  "Run input, background wake, lifecycle and render turns until shutdown."
   (let ((decoder (cl-tty-kit:make-input-decoder))
-        (buf (make-array 4096 :element-type '(unsigned-byte 8)))
-        (keymap-state (make-keymap-state (editor-state-keymap *editor-state*))))
+        (buffer (make-array 4096 :element-type '(unsigned-byte 8)))
+        (keymap-state (make-keymap-state (editor-state-keymap *editor-state*)))
+        (poll-ready-p nil))
     (multiple-value-bind (last-width last-height) (%initial-terminal-size)
       (%render-event-loop-frame output-stream)
-      (handler-case
-          (loop
-            (multiple-value-bind (status width height)
-                (%run-event-loop-turn output-stream input-stream buf decoder
-                                      keymap-state last-width last-height)
-              (unless status (return))
-              (setf last-width width
-                    last-height height)))
-        (loom-quit () nil)))))
+      (handler-case (loop (multiple-value-bind (status reason
+                                                       exit-status
+                                                       width
+                                                       height
+                                                       more-ready-p)
+                              (%run-event-loop-turn output-stream
+                                                    input-stream
+                                                    buffer
+                                                    decoder
+                                                    keymap-state
+                                                    last-width
+                                                    last-height
+                                                    terminal-session
+                                                    poll-ready-p)
+                            (cond
+                              ((eq status :terminate)
+                               (return (values reason exit-status)))
+                              ((null status) (return (values :normal 0)))
+                              (t
+                               (setf last-width width
+                                     last-height height
+                                     poll-ready-p more-ready-p)))))
+        (loom-quit ()
+          (values :normal 0))))))

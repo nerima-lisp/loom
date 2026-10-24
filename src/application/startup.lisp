@@ -8,34 +8,89 @@ from it."
   (let ((system (asdf:find-system "loom" nil)))
     (or (and system (asdf:component-version system)) "unknown")))
 
-(eval-when (:load-toplevel :execute) (loom/feature/lsp:register-client-version-provider :root (function loom-version)))
+(eval-when (:load-toplevel :execute)
+  (loom/feature/lsp:register-client-version-provider :root
+                                                     (function loom-version)))
 
-(defun %call-with-started-editor-state (path thunk)
+(defun %call-with-started-editor-state (path thunk
+                                             &optional
+                                             startup-request
+                                             additional-file-requests)
   "Initialize *EDITOR-STATE*, start startup services, call THUNK, then stop services."
-  (%initialize-editor-state path)
-  (call-with-editor-session
-   (editor-state-session *editor-state*)
-   (lambda ()
-     (%enable-concurrent-file-tree *editor-state*)
-     (unwind-protect
-          (funcall thunk *editor-state*)
-       (%shutdown-editor-services *editor-state*)))))
+  (%initialize-editor-state path
+                            (mapcar
+                             #'loom/core/editor-session:startup-file-request-path
+                             additional-file-requests))
+  (when startup-request
+    (let* ((window
+            (loom/core/window-tree:window-tree-selected-window
+             (editor-state-window-tree *editor-state*)))
+           (buffer (loom/core/window-tree:window-buffer window)))
+      (when (buffer-path buffer)
+        (buffer-set-point buffer
+                          (1-
+                           (loom/core/editor-session:startup-file-request-line
+                            startup-request))
+                          (1-
+                           (loom/core/editor-session:startup-file-request-column
+                            startup-request))))))
+  (call-with-editor-session (editor-state-session *editor-state*)
+                            (lambda ()
+                              (%enable-concurrent-file-tree *editor-state*)
+                              (unwind-protect (funcall thunk *editor-state*)
+                                (%shutdown-editor-services *editor-state*)))))
 
-(defun %run-loom (invocation &key (fd 0))
-  "CL-CLI handler for *LOOM-APP*: initialize *EDITOR-STATE* around the :PATH
-positional, then run the terminal session event loop (see %RUN-EVENT-LOOP)
-until the user quits or stdin hits EOF. FD names the controlling terminal's
-file descriptor (0, i.e. stdin, in production; overridable so a test can
-pass a real CL-TTY-KIT:MAKE-PTY descriptor instead).
-
-CL-TTY-KIT:WITH-TERMINAL-SESSION already wraps its body in an UNWIND-PROTECT
-(nested inside WITH-RAW-MODE's own UNWIND-PROTECT) that restores raw mode and
-exits the alternate screen on any non-local exit, so an unhandled error inside
-the loop still leaves the terminal in a clean state before this function's
-own HANDLER-CASE gets a chance to report it -- the terminal is never left in
-raw/alternate-screen mode, whether the error is caught here or not."
-  (%call-with-started-editor-state
-   (cl-cli:positional-value invocation :path)
-   (lambda (state)
-     (declare (ignore state))
-     (%run-loom-session fd))))
+(defun %run-loom (startup-context &key (fd 0))
+  (let* ((requests
+          (loom/core/editor-session:startup-context-file-requests
+           startup-context))
+         (request (first requests))
+         (path
+          (and request
+               (loom/core/editor-session:startup-file-request-path request))))
+    (multiple-value-bind (reason status)
+        (handler-case (%call-with-started-editor-state path
+                                                       (lambda (state)
+                                                         (declare (ignore state))
+                                                         (%run-loom-session
+                                                          startup-context
+                                                          fd))
+                                                       request
+                                                       (rest requests))
+          (error (condition)
+            (let ((logger
+                   (log-kit:make-logger :name
+                                        "loom"
+                                        :handler
+                                        (log-kit:make-text-handler :stream
+                                                                   *error-output*)
+                                        :level
+                                        log-kit:+level-error+)))
+              (log-kit:log-error logger
+                                 (princ-to-string condition)
+                                 :condition-type
+                                 (type-of condition)))
+            (values :runtime-error 1)))
+      (if (eq reason :runtime-error)
+          1
+          (handler-case (or
+                         (first
+                          (loom/core/editor-session:run-session-hooks
+                           :exit-status
+                           (editor-state-session *editor-state*)
+                           reason))
+                         status)
+            (error (condition)
+              (let ((logger
+                     (log-kit:make-logger :name
+                                          "loom"
+                                          :handler
+                                          (log-kit:make-text-handler :stream
+                                                                     *error-output*)
+                                          :level
+                                          log-kit:+level-error+)))
+                (log-kit:log-error logger
+                                   (princ-to-string condition)
+                                   :condition-type
+                                   (type-of condition)))
+              1))))))

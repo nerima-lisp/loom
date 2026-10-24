@@ -1,15 +1,16 @@
 (in-package #:loom)
 
-
 (defun %drain-buffered-octets (buffer start-count input-stream)
   "Read the octets already waiting on INPUT-STREAM into BUFFER, filling it
 from index START-COUNT onwards and stopping at (LENGTH BUFFER) octets or as
 soon as LISTEN reports nothing more is buffered -- so this never blocks.
 Returns the resulting octet count."
-  (loop with count = start-count
+  (loop with
+        count = start-count
         while (and (< count (length buffer)) (listen input-stream))
         do (let ((byte (read-byte input-stream nil nil)))
-             (unless byte (loop-finish))
+             (unless byte
+               (loop-finish))
              (setf (aref buffer count) byte)
              (incf count))
         finally (return count)))
@@ -26,10 +27,27 @@ end-of-file (no octet was read at all)."
       (%drain-buffered-octets buffer 1 input-stream))))
 
 (defun %dispatch-input-chunk (decoder buffer count keymap-state)
-  "Decode the first COUNT octets of BUFFER through DECODER and route every key
-event they yield to %DISPATCH-KEY-EVENT with KEYMAP-STATE. A completely full
-BUFFER is handed to CL-TTY-KIT:DECODE-INPUT-CHUNK as-is, so the common case of
-a full read does not copy."
-  (let ((chunk (if (= count (length buffer)) buffer (subseq buffer 0 count))))
+  "Decode octets and route key and non-key events through their hooks."
+  (let* ((chunk
+          (if (= count (length buffer))
+              buffer
+              (subseq buffer 0 count)))
+         (session (editor-state-session *editor-state*)))
     (dolist (event (cl-tty-kit:decode-input-chunk decoder chunk))
-      (%dispatch-key-event event keymap-state))))
+      (let ((event-type (cl-tty-kit:key-event-type event)))
+        (if (member event-type '(:character :special) :test #'eq)
+            (%dispatch-key-event event keymap-state)
+            (handler-case (let ((result
+                                 (loom/core/editor-session:run-session-hooks
+                                  :input-event
+                                  session
+                                  event-type
+                                  (if (eq event-type :paste)
+                                      (or (cl-tty-kit:key-event-text event)
+                                          (cl-tty-kit:key-event-code event))
+                                      (cl-tty-kit:key-event-code event)))))
+                            (when (eq result :pass)
+                              (%dispatch-key-event event keymap-state nil)))
+              (error (condition)
+                (minibuffer-message (editor-state-minibuffer *editor-state*)
+                                    (princ-to-string condition)))))))))

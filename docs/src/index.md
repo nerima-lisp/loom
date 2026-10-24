@@ -36,9 +36,5 @@ nix run github:nerima-lisp/loom
 - [Development](project/development.md) -- source builds, tests, coverage, and
   process-level checks.
 
-The CLI accepts `--help`, `--version`, and one optional path. The default
-keybindings are installed by
-[`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp);
-the command catalogue and M-x registry live in
-[`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp)
-and [`src/application/command-registry.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-registry.lisp).
+The CLI accepts `--help`, `--version`, registered lifecycle options, and
+`loom [+LINE[:COL]] FILE...`.
