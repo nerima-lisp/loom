@@ -4,9 +4,9 @@
   "Return true when BUFFER's long lines should be truncated rather than wrapped.
 
 The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
-  (let ((value (loom:buffer-truncate-lines buffer)))
+  (let ((value (buffer-truncate-lines buffer)))
     (if (eq value :default)
-        (major-mode-truncate-lines-p (loom:buffer-major-mode buffer))
+        (major-mode-truncate-lines-p (buffer-major-mode buffer))
         value)))
 
 (defun toggle-truncate-lines ()
@@ -14,9 +14,9 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
   (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when buffer
       (let ((truncate (not (buffer-truncate-lines-p buffer))))
-        (loom:buffer-set-truncate-lines buffer truncate)
-        (loom:minibuffer-message
-         (loom:editor-state-minibuffer loom:*editor-state*)
+        (buffer-set-truncate-lines buffer truncate)
+        (minibuffer-message
+         (editor-state-minibuffer *editor-state*)
          (if truncate "Truncate long lines" "Wrap long lines")))))
   nil)
 
@@ -25,10 +25,10 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
   (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when buffer
       (let* ((width (max 1 (major-mode-indentation-width
-                            (loom:buffer-major-mode buffer))))
-             (column (loom:buffer-point-column buffer))
+                            (buffer-major-mode buffer))))
+             (column (buffer-point-column buffer))
              (spaces (- width (mod column width))))
-        (loom:buffer-insert-string buffer
+        (buffer-insert-string buffer
                                    (make-string spaces :initial-element #\Space)))))
   nil)
 
@@ -47,21 +47,21 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
   (let* ((prefix-end (+ indentation (length prefix)))
          (remove-end (%comment-line-removal-end line indentation prefix-end))
          (new-column (%comment-line-point-after-removal
-                      (loom:buffer-point-column buffer) indentation remove-end)))
-    (loom:buffer-delete-region buffer line-number indentation line-number remove-end)
-    (loom:buffer-set-point buffer line-number new-column)))
+                      (buffer-point-column buffer) indentation remove-end)))
+    (buffer-delete-region buffer line-number indentation line-number remove-end)
+    (buffer-set-point buffer line-number new-column)))
 
 (defun %comment-line-add (buffer line-number indentation prefix)
   (let* ((insertion (format nil "~A " prefix))
-         (point (loom:buffer-point-column buffer))
+         (point (buffer-point-column buffer))
          (new-column (if (>= point indentation) (+ point (length insertion)) point)))
-    (loom:buffer-set-point buffer line-number indentation)
-    (loom:buffer-insert-string buffer insertion)
-    (loom:buffer-set-point buffer line-number new-column)))
+    (buffer-set-point buffer line-number indentation)
+    (buffer-insert-string buffer insertion)
+    (buffer-set-point buffer line-number new-column)))
 
 (defun %comment-line-context (buffer prefix)
-  (let* ((line-number (loom:buffer-point-line buffer))
-         (line (loom:buffer-line buffer line-number))
+  (let* ((line-number (buffer-point-line buffer))
+         (line (buffer-line buffer line-number))
          (indentation (%major-mode-line-indentation line)))
     (values line-number line indentation
             (%major-mode-comment-prefix-at line indentation prefix))))
@@ -74,14 +74,14 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
         (%comment-line-add buffer line-number indentation prefix))))
 
 (defun %comment-line-no-prefix-message (mode)
-  (loom:minibuffer-message
-   (loom:editor-state-minibuffer loom:*editor-state*)
+  (minibuffer-message
+   (editor-state-minibuffer *editor-state*)
    (format nil "Mode ~A has no line comment syntax" (major-mode-name mode))))
 
 (defun comment-line ()
   "Toggle the current line's comment marker according to its major mode."
   (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
-         (mode (and buffer (loom:buffer-major-mode buffer)))
+         (mode (and buffer (buffer-major-mode buffer)))
          (prefix (and mode (major-mode-comment-prefix mode))))
     (cond
       ((null buffer) nil)
@@ -94,6 +94,6 @@ The buffer stores T, NIL, or :DEFAULT; only :DEFAULT consults the major mode."
   (buffer-truncate-lines-p buffer))
 
 (eval-when (:load-toplevel :execute)
-  (loom:register-buffer-truncate-policy
+  (register-buffer-truncate-policy
    :feature/mode
    (function %registered-buffer-truncate-policy)))

@@ -17,24 +17,24 @@ bindings added after mode activation are still visible through the parent.
 (defun current-major-mode ()
   "Return the selected buffer's major mode, defaulting to FUNDAMENTAL."
   (if (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
-      (loom:buffer-major-mode (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
+      (buffer-major-mode (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
       :fundamental))
 
 (defun set-major-mode ()
   "Prompt for and apply a major mode to the selected buffer."
-  (loom/application:with-prompts
-      (minibuffer (loom:editor-state-minibuffer
-                                    loom:*editor-state*)
-                 :on-cancel (loom:minibuffer-message minibuffer "Quit"))
+  (with-prompts
+      (minibuffer (editor-state-minibuffer
+                                    *editor-state*)
+                 :on-cancel (minibuffer-message minibuffer "Quit"))
       ((input "Major mode: "
                :completion-function #'%major-mode-completion-candidates))
     (let ((mode (major-mode-from-name input)))
       (if (and mode (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
           (progn
-            (loom:buffer-set-major-mode
+            (buffer-set-major-mode
              (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
              mode)
-            (loom:minibuffer-message minibuffer
+            (minibuffer-message minibuffer
                                 (format nil "Mode: ~A" (major-mode-name mode))))
-          (loom:minibuffer-message minibuffer
+          (minibuffer-message minibuffer
                               (format nil "Unknown major mode: ~A" input))))))

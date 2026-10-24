@@ -52,10 +52,10 @@ their absolute text offsets.  Read-only and narrowed buffers are rejected
 before the external command is started.  The shell-command-result is
 returned in all non-signalling process cases."
   (check-type command string)
-  (unless (loom:buffer-p buffer)
+  (unless (buffer-p buffer)
     (error 'type-error
            :datum buffer
-           :expected-type '(satisfies loom:buffer-p)))
+           :expected-type '(satisfies buffer-p)))
   (when (buffer-read-only-p buffer)
     (error 'buffer-read-only-error :buffer buffer))
   (when (buffer-narrowed-p buffer)

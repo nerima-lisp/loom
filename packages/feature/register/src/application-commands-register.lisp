@@ -17,6 +17,14 @@
   (minibuffer-message minibuffer (princ-to-string condition))
   nil)
 
+(defun %register-order-region (point-line point-column mark-line mark-column)
+  "Return region bounds in buffer order."
+  (if (or (< point-line mark-line)
+          (and (= point-line mark-line)
+               (<= point-column mark-column)))
+      (values point-line point-column mark-line mark-column)
+      (values mark-line mark-column point-line point-column)))
+
 (defmacro %define-register-command (name docstring prompt &body body)
   (let ((register-name-var (gensym "REGISTER-NAME-")))
     `(defun ,name ()
@@ -38,7 +46,7 @@
     (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
       (if mark-line
           (multiple-value-bind (start-line start-column end-line end-column)
-              (%order-region (buffer-point-line buffer)
+              (%register-order-region (buffer-point-line buffer)
                              (buffer-point-column buffer)
                              mark-line mark-column)
             (register-bank-put-text

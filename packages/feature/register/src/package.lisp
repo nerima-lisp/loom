@@ -1,5 +1,23 @@
 (defpackage #:loom/feature/register
-  (:use #:cl #:loom #:loom/application)
+  (:use #:cl)
+  (:import-from #:loom/core/buffer
+                #:buffer-insert-string
+                #:buffer-mark
+                #:buffer-point-column
+                #:buffer-point-line
+                #:buffer-region-string
+                #:buffer-set-point)
+  (:import-from #:loom/core/editor-session
+                #:*editor-state*
+                #:editor-state-minibuffer
+                #:editor-state-registers
+                #:editor-state-window-tree)
+  (:import-from #:loom/core/minibuffer
+                #:minibuffer-message
+                #:with-prompts)
+  (:import-from #:loom/core/window-tree
+                #:window-buffer
+                #:window-tree-selected-window)
   (:export
    #:register-value
    #:register-value-p
