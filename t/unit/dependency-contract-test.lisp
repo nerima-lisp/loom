@@ -94,7 +94,7 @@
       (error "Missing sibling-names list in ~A." relative-path))
     (quoted-strings-in (subseq source start end))))
 
-(defun all-asdf-dependencies (&optional (selection :all))
+(defun all-asdf-dependencies (&optional (selection :all) package-directory)
   (let ((defsystem (find-symbol "DEFSYSTEM" "ASDF"))
         (root-directory (asdf:system-source-directory "loom")))
     (labels ((read-defsystem-forms (pathname)
@@ -105,9 +105,16 @@
                                  (eq (first form) defsystem))
                          collect form)))
              (asdf-files-under (directory)
-               (append (uiop:directory-files directory)
+               (append (remove-if-not
+                        (lambda (pathname)
+                          (string-equal (pathname-type pathname) "asd"))
+                        (uiop:directory-files directory))
                        (loop for subdirectory in (uiop:subdirectories directory)
                              append (asdf-files-under subdirectory))))
+             (slice-asd-file-p (pathname)
+               (let ((name (pathname-name pathname)))
+                 (and (>= (length name) 5)
+                      (string= "loom-" name :end2 5))))
              (test-system-p (form)
                (let* ((name (second form))
                       (suffix "/test")
@@ -123,11 +130,20 @@
                                         :test #'string=))
                               (getf (cddr form) :depends-on)))
                 :test #'string=)))
-      (let* ((package-directory (merge-pathnames "packages/" root-directory))
+      (let* ((package-directory
+               (or package-directory
+                   (merge-pathnames "packages/" root-directory)))
+             (package-asd-files
+               (sort (asdf-files-under package-directory)
+                     #'string< :key #'namestring))
              (package-forms
-               (loop for pathname in (asdf-files-under package-directory)
-                     when (string-equal (pathname-type pathname) "asd")
-                       append (read-defsystem-forms pathname)))
+               (progn
+                 (dolist (pathname package-asd-files)
+                   (unless (slice-asd-file-p pathname)
+                     (error "Invalid slice ASDF file ~A; expected a loom-*.asd filename."
+                            (file-namestring pathname))))
+                 (loop for pathname in package-asd-files
+                       append (read-defsystem-forms pathname))))
              (all-forms
                (append (read-defsystem-forms
                         (merge-pathnames "loom.asd" root-directory))
@@ -199,13 +215,16 @@
             (sort (script-sibling-names "scripts/coverage.lisp") #'string<)))
 
   (it
-    "keeps every ASDF dependency available to both standalone runners"
-    (let ((runner-dependencies
-            (script-sibling-names "run-tests.lisp")))
+    "discovers all slice ASDF files and rejects noncanonical names"
+    (let ((runner-dependencies (script-sibling-names "run-tests.lisp")))
       (expect (sort (all-asdf-dependencies) #'string<)
               :to-equal
               (sort (remove "loom" runner-dependencies :test #'string=)
-                    #'string<))))
+                    #'string<)))
+    (host-kit:with-temporary-directory (directory)
+      (host-kit:write-file-string ""
+                                 (merge-pathnames "invalid.asd" directory))
+      (signals error (all-asdf-dependencies :all directory))))
 
   (it
     "keeps runner dependencies declared by an ASDF system"

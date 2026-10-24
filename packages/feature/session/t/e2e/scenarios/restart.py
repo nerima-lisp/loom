@@ -24,17 +24,22 @@ def _run_prompted_command(session, command, prompt, value):
 @scenario(
     "session restart restores saved state",
     commands=[
+        "find-file",
         "set-bookmark",
         "save-session",
         "load-session",
         "jump-to-bookmark",
+        "switch-to-buffer",
     ],
 )
 def session_restart_restores_saved_state(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         buffer_path = os.path.join(directory, "restart.txt")
+        session_only_path = os.path.join(directory, "session-only.txt")
         with open(buffer_path, "wb") as handle:
             handle.write(b"before\nrestored\n")
+        with open(session_only_path, "wb") as handle:
+            handle.write(b"session-only-buffer\n")
 
         with Session(binary, [buffer_path]) as session:
             session.wait_ready()
@@ -47,6 +52,14 @@ def session_restart_restores_saved_state(binary):
                 "restart-spot",
             )
             session.wait_for_text("Bookmark set: restart-spot")
+
+            _run_prompted_command(
+                session,
+                "find-file",
+                "Find file: ",
+                session_only_path,
+            )
+            _wait_for_exact_line(session, "body", "session-only-buffer")
 
             session_path = os.path.join(session.home_dir, "session.sexp")
             _run_prompted_command(
@@ -94,9 +107,41 @@ def session_restart_restores_saved_state(binary):
                 session_path,
             )
             session.wait_for_text("Session loaded:")
+
+            _run_prompted_command(
+                session,
+                "switch-to-buffer",
+                "Switch to buffer: ",
+                "session-only.txt",
+            )
+            session.wait_until(
+                lambda screen: (
+                    "session-only-buffer"
+                    in screen.text(session.layout.row("body"))
+                    or "No such buffer: session-only.txt"
+                    in screen.text(session.layout.row("minibuffer"))
+                ),
+                what="saved-only buffer switch result",
+            )
+            if session.region_text("body").rstrip() != "session-only-buffer":
+                raise AssertionError(
+                    "saved-only buffer was not restored: "
+                    f"{session.region_text('minibuffer')!r}"
+                )
+
+            _run_prompted_command(
+                session,
+                "switch-to-buffer",
+                "Switch to buffer: ",
+                "restart.txt",
+            )
             _wait_for_exact_line(session, "body", "before", index=0)
             _wait_for_exact_line(session, "body", "restored", index=1)
             session.wait_for_region_cursor("body", 2, index=1)
+
+            session.send(keys.ctrl("p"))
+            _wait_for_exact_line(session, "body", "before", index=0)
+            session.wait_for_region_cursor("body", 2, index=0)
 
             _run_prompted_command(
                 session,

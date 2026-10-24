@@ -7,14 +7,21 @@
 
 (defun %run-tests-discover-slice-systems (packages-directory)
   (labels ((collect-asd-files (directory)
-             (append (directory (merge-pathnames #P"loom-*.asd" directory))
+             (append (remove-if-not
+                      (lambda (pathname)
+                        (string-equal (pathname-type pathname) "asd"))
+                      (uiop:directory-files directory))
                      (mapcan #'collect-asd-files
                              (uiop:subdirectories directory))))
            (asd-directory (asd-file)
              (make-pathname :name nil
                             :type nil
                             :version nil
-                            :defaults asd-file)))
+                            :defaults asd-file))
+           (slice-asd-file-p (asd-file)
+             (let ((name (pathname-name asd-file)))
+               (and (>= (length name) 5)
+                    (string= "loom-" name :end2 5)))))
     (let* ((asd-files (sort (collect-asd-files packages-directory)
                             #'string< :key #'namestring))
            (system-names (mapcar #'pathname-name asd-files))
@@ -27,9 +34,13 @@
                       :test #'string=
                       :from-end t)))
            (unique-system-names
-             (remove-duplicates system-names :test #'string=)))
+             (remove-duplicates system-names :test #'string=))
+           (invalid-asd-file (find-if-not #'slice-asd-file-p asd-files)))
       (unless asd-files
         (error "No slice ASDF systems found under ~A." packages-directory))
+      (when invalid-asd-file
+        (error "Invalid slice ASDF file ~A; expected a loom-*.asd filename."
+               (file-namestring invalid-asd-file)))
       (unless (= (length system-names) (length unique-system-names))
         (error "Duplicate slice ASDF system names found under ~A."
                packages-directory))
