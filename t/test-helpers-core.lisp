@@ -1,5 +1,29 @@
 (in-package #:loom/test)
 
+(defun %make-test-editor-session (&optional buffers)
+  (let ((session
+         (loom/core/editor-session:make-editor-session '(:feature/buffers))))
+    (dolist (buffer (reverse buffers))
+      (loom/feature/buffers:register-buffer session buffer))
+    session))
+
+(defun %test-registered-buffers (state)
+  (loom/feature/buffers:registered-buffers
+   (loom/core/editor-session:editor-state-session state)))
+
+(defun %register-test-buffer (state buffer)
+  (loom/feature/buffers:register-buffer
+   (loom/core/editor-session:editor-state-session state)
+   buffer))
+
+(defun %replace-test-registered-buffers (state buffers)
+  (let ((session (loom/core/editor-session:editor-state-session state)))
+    (dolist (buffer (loom/feature/buffers:registered-buffers session))
+      (loom/feature/buffers:unregister-buffer session buffer))
+    (dolist (buffer (reverse buffers))
+      (loom/feature/buffers:register-buffer session buffer))
+    (loom/feature/buffers:registered-buffers session)))
+
 (defun %fresh-editor-state (initial-content &key with-minibuffer)
   "Build a minimal *EDITOR-STATE* around a single window over a buffer
 containing INITIAL-CONTENT -- enough for movement, editing, and undo
@@ -7,15 +31,16 @@ commands, which never touch the minibuffer/file-tree/renderer slots.
 WITH-MINIBUFFER installs a live MAKE-MINIBUFFER for the prompting commands,
 which do; see %WITH-MINIBUFFER-STATE."
   (let* ((buffer (make-buffer :initial-content initial-content))
-         (tree (make-window-tree buffer 80 24)))
-    (make-editor-state :window-tree tree
-                        :workspaces (make-workspace-manager tree :name "main")
-                        :minibuffer (and with-minibuffer (make-minibuffer))
-                        :keymap (make-keymap)
-                        :file-tree nil
-                        :renderer nil
-                        :buffers (list buffer)
-                        :kill-ring nil)))
+         (tree (make-window-tree buffer 80 24))
+         (session (%make-test-editor-session (list buffer))))
+    (make-editor-state :session session
+                       :window-tree tree
+                       :workspaces (make-workspace-manager tree :name "main")
+                       :minibuffer (and with-minibuffer (make-minibuffer))
+                       :keymap (make-keymap)
+                       :file-tree nil
+                       :renderer nil
+                       :kill-ring nil)))
 
 (defmacro %with-minibuffer-state ((minibuffer initial-content &rest extra-bindings)
                                   &body body)
@@ -24,6 +49,8 @@ INITIAL-CONTENT carrying a live minibuffer, and MINIBUFFER bound to that
 minibuffer. EXTRA-BINDINGS are appended to the same LET*, so they may refer
 to *EDITOR-STATE* and to MINIBUFFER."
   `(let* ((*editor-state* (%fresh-editor-state ,initial-content :with-minibuffer t))
+          (loom/core/editor-session:*editor-session*
+            (loom/core/editor-session:editor-state-session *editor-state*))
           (,minibuffer (editor-state-minibuffer *editor-state*))
           ,@extra-bindings)
      ,@body))
@@ -34,6 +61,8 @@ to *EDITOR-STATE* and to MINIBUFFER."
 and BUFFER bound to that state's selected buffer. EXTRA-BINDINGS are appended
 to the same LET*, so they may refer to *EDITOR-STATE* and BUFFER."
   `(let* ((*editor-state* (%fresh-editor-state ,initial-content))
+          (loom/core/editor-session:*editor-session*
+            (loom/core/editor-session:editor-state-session *editor-state*))
           (,buffer (%selected-test-buffer))
           ,@extra-bindings)
      ,@body))

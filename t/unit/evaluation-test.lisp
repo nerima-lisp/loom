@@ -39,10 +39,12 @@
            (source-buffer (window-buffer
                            (window-tree-selected-window
                             (editor-state-window-tree state)))))
-      (let ((*editor-state* state))
+      (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state)))
         (loom/feature/evaluation:eval-buffer)
         (let ((result (find "*Loom-Eval*"
-                            (editor-state-buffers state)
+                            (%test-registered-buffers state)
                             :key #'buffer-name
                             :test #'string=)))
           (expect result :to-be-truthy)
@@ -69,7 +71,7 @@
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(list :ok)")
       (let ((result (find "*Loom-Eval*"
-                          (editor-state-buffers *editor-state*)
+                          (%test-registered-buffers *editor-state*)
                           :key #'buffer-name
                           :test #'string=)))
         (expect result :to-be-truthy)
@@ -78,7 +80,7 @@
       (loom/feature/evaluation:eval-expression)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(list :again)")
       (let ((result (find "*Loom-Eval*"
-                          (editor-state-buffers *editor-state*)
+                          (%test-registered-buffers *editor-state*)
                           :key #'buffer-name
                           :test #'string=)))
         (expect (buffer-text result)
@@ -98,7 +100,7 @@
       (eval-expression)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "(error \"command boom\")")
       (let ((result (find "*Loom-Eval*"
-                          (editor-state-buffers *editor-state*)
+                          (%test-registered-buffers *editor-state*)
                           :key #'buffer-name
                           :test #'string=)))
         (expect result :to-be-truthy)

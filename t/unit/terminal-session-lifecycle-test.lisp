@@ -11,7 +11,7 @@
                 "*Loom-Terminal*" "/bin/sh" nil (uiop:getcwd) buffer nil)))
         (setf (terminal-session-alive-p session) t
               (editor-state-terminal-sessions *editor-state*) (list session))
-        (%register-buffer buffer)
+        (%register-test-buffer *editor-state* buffer)
         (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
         (with-replaced-function
             (stop-terminal-session

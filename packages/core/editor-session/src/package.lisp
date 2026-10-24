@@ -30,7 +30,7 @@
    #:editor-state-file-tree
    #:editor-state-concurrent-runtime
    #:editor-state-renderer
-   #:editor-state-buffers
+   editor-state-session
    #:editor-state-recent-files
    #:editor-state-bookmarks
    #:editor-state-kill-ring

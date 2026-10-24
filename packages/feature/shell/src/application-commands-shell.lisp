@@ -1,16 +1,25 @@
 (in-package #:loom/feature/shell)
 
-(defparameter *shell-command-result-buffer-name* "*Loom-Pipe-Command*")
+(defparameter *shell-command-result-buffer-name*
+  "*Loom-Pipe-Command*")
 
 (defun %shell-command-result-buffer ()
-  (or (find *shell-command-result-buffer-name*
-            (%editor-buffers)
-            :key #'buffer-name
-            :test #'string=)
-      (%register-buffer (make-buffer :name *shell-command-result-buffer-name*))))
+  (or
+   (find *shell-command-result-buffer-name*
+         (registered-buffers *editor-session*)
+         :key
+         #'buffer-name
+         :test
+         #'string=)
+   (register-buffer *editor-session*
+                    (make-buffer :name *shell-command-result-buffer-name*))))
 
 (defun %shell-command-directory ()
-  (let ((path (buffer-path (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
+  (let ((path
+         (buffer-path
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree *editor-state*))))))
     (if path
         (namestring
          (make-pathname :name nil :type nil :defaults (pathname path)))
@@ -22,36 +31,39 @@
 
 (defun %show-shell-command-result (result)
   (let* ((buffer (%shell-command-result-buffer))
-         (prefix (if (string= (buffer-text buffer) "")
-                     ""
-                     (format nil "~%"))))
+         (prefix
+          (if (string= (buffer-text buffer) "")
+              ""
+              (format nil "~%"))))
     (%move-shell-result-point-to-end buffer)
-    (buffer-insert-string
-     buffer
-     (format nil "~A~A" prefix (shell-command-result-text result)))
+    (buffer-insert-string buffer
+                          (format nil
+                                  "~A~A"
+                                  prefix
+                                  (shell-command-result-text result)))
     (buffer-mark-saved buffer)
-    (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
-    (minibuffer-message
-     (editor-state-minibuffer *editor-state*)
-     (if (shell-command-result-success-p result)
-         "Pipe command finished successfully"
-         (format nil "Pipe command exited with code ~D"
-                 (shell-command-result-exit-code result))))
+    (loom/feature/window:window-set-buffer
+     (loom/core/window-tree:window-tree-selected-window
+      (editor-state-window-tree *editor-state*))
+     buffer)
+    (minibuffer-message (editor-state-minibuffer *editor-state*)
+                        (if (shell-command-result-success-p result)
+                            "Pipe command finished successfully"
+                            (format nil
+                                    "Pipe command exited with code ~D"
+                                    (shell-command-result-exit-code result))))
     result))
 
 (defun %pipe-command-message (message)
-  (minibuffer-message
-   (editor-state-minibuffer *editor-state*)
-   message))
+  (minibuffer-message (editor-state-minibuffer *editor-state*) message))
 
 (defun %run-pipe-command (command)
-  (handler-case
-      (%show-shell-command-result
-       (run-shell-command command
-                          :directory (%shell-command-directory)))
+  (handler-case (%show-shell-command-result
+                 (run-shell-command command
+                                    :directory
+                                    (%shell-command-directory)))
     (error (condition)
-      (%pipe-command-message
-       (format nil "Pipe command error: ~A" condition)))))
+      (%pipe-command-message (format nil "Pipe command error: ~A" condition)))))
 
 (defun %execute-pipe-command (command)
   (if (string= command "")
@@ -63,8 +75,11 @@
 
 The command's standard output, standard error, and exit code are displayed
 in *Loom-Pipe-Command*."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                :on-cancel (lambda () nil))
-      ((command "Pipe command: "))
-      (%execute-pipe-command
-       (string-trim '(#\Space #\Tab #\Newline #\Return) command))))
+  (with-prompts
+   (minibuffer (editor-state-minibuffer *editor-state*)
+               :on-cancel
+               (lambda ()
+                 nil))
+   ((command "Pipe command: "))
+   (%execute-pipe-command
+    (string-trim '(#\Space #\Tab #\Newline #\Return) command))))

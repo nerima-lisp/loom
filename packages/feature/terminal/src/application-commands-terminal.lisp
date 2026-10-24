@@ -3,8 +3,7 @@
 (defun terminal-handle-key-event (event)
   "Send EVENT to the selected terminal session."
   (let ((session (%terminal-session-for-selected-buffer)))
-    (when (and session
-               (terminal-input-event-p event))
+    (when (and session (terminal-input-event-p event))
       (let ((payload (%terminal-event-payload event)))
         (when payload
           (terminal-session-send session payload)
@@ -12,24 +11,25 @@
 
 (defun terminal ()
   "Create and select a PTY-backed terminal buffer."
-  (handler-case
-      (let ((session (start-terminal-session)))
-        (push session (editor-state-terminal-sessions *editor-state*))
-        (%register-buffer (terminal-session-buffer session))
-        (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) (terminal-session-buffer session))
-        (multiple-value-bind (columns rows) (cl-tty-kit:terminal-size)
-          (terminal-session-resize session columns rows))
-        (terminal-session-poll session)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         (if (terminal-session-alive-p session)
-             "Terminal started"
-             "Terminal exited immediately"))
-        session)
+  (handler-case (let ((session (start-terminal-session)))
+                  (push session (editor-state-terminal-sessions *editor-state*))
+                  (register-buffer *editor-session*
+                                   (terminal-session-buffer session))
+                  (window-set-buffer
+                   (loom/core/window-tree:window-tree-selected-window
+                    (editor-state-window-tree *editor-state*))
+                   (terminal-session-buffer session))
+                  (multiple-value-bind (columns rows) (cl-tty-kit:terminal-size)
+                    (terminal-session-resize session columns rows))
+                  (terminal-session-poll session)
+                  (minibuffer-message (editor-state-minibuffer *editor-state*)
+                                      (if (terminal-session-alive-p session)
+                                          "Terminal started"
+                                          "Terminal exited immediately"))
+                  session)
     (error (condition)
-      (minibuffer-message
-       (editor-state-minibuffer *editor-state*)
-       (format nil "Terminal failed: ~A" condition))
+      (minibuffer-message (editor-state-minibuffer *editor-state*)
+                          (format nil "Terminal failed: ~A" condition))
       nil)))
 
 (defun terminal-stop ()
@@ -38,10 +38,8 @@
     (if session
         (progn
           (stop-terminal-session session)
-          (minibuffer-message
-           (editor-state-minibuffer *editor-state*)
-           "Terminal stopped")
+          (minibuffer-message (editor-state-minibuffer *editor-state*)
+                              "Terminal stopped")
           session)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         "The selected buffer is not a terminal"))))
+        (minibuffer-message (editor-state-minibuffer *editor-state*)
+                            "The selected buffer is not a terminal"))))

@@ -1,31 +1,27 @@
-(in-package #:loom/feature/window)
+(in-package #:loom/feature/buffers)
 
 (defun %buffer-name-completion-candidates (input)
   "Return all registered buffer names as candidates for INPUT."
   (declare (ignore input))
-  (mapcar #'buffer-name (editor-state-buffers *editor-state*)))
+  (mapcar #'buffer-name (registered-buffers *editor-session*)))
 
 (defun %replace-buffer-in-windows (buffer replacement)
   "Replace BUFFER with REPLACEMENT in every window that displays it."
   (dolist
-      (window (window-tree-windows (editor-state-window-tree *editor-state*))
+      (BUFFERS (window-tree-windows (editor-state-window-tree *editor-state*))
               replacement)
-    (when (eq (window-buffer window) buffer)
-      (window-set-buffer window replacement))))
+    (when (eq (window-buffer BUFFERS) buffer)
+      (window-set-buffer BUFFERS replacement))))
 
 (defun %kill-buffer-now (buffer)
   "Remove BUFFER and preserve the window and registry invariants."
   (let* ((survivors
-          (remove buffer (editor-state-buffers *editor-state*) :test #'eq))
+          (remove buffer (registered-buffers *editor-session*) :test #'eq))
          (replacement (or (first survivors) (make-buffer :name "*scratch*"))))
     (unless survivors
-      (pushnew replacement (editor-state-buffers *editor-state*) :test #'eq))
+      (register-buffer *editor-session* replacement))
     (%replace-buffer-in-windows buffer replacement)
-    (setf (editor-state-buffers *editor-state*) (remove buffer
-                                                        (editor-state-buffers
-                                                         *editor-state*)
-                                                        :test
-                                                        #'eq))
+    (unregister-buffer *editor-session* buffer :reason :kill-buffer)
     (minibuffer-message (editor-state-minibuffer *editor-state*)
                         (format nil "Killed ~A" (buffer-name buffer)))))
 

@@ -4,8 +4,7 @@
        (:use ,@use)
        (:export ,@(mapcar #'string exports))))
   (defparameter +loom/application-exports+
-    '(%editor-buffers %register-buffer
-      %unregister-buffer %order-region with-prompts
+    '(%order-region with-prompts
       command-spec command-spec-group define-command-spec-groups
       build-command-specs define-command-specs
       define-command-spec-catalog *command-specs*
@@ -49,7 +48,7 @@
       *editor-state* editor-state make-editor-state editor-state-window-tree
       editor-state-workspaces editor-state-minibuffer editor-state-keymap
       editor-state-file-tree editor-state-concurrent-runtime
-      editor-state-renderer editor-state-buffers editor-state-recent-files
+      editor-state-renderer editor-state-session editor-state-recent-files
       editor-state-bookmarks editor-state-kill-ring
       editor-state-last-yank-ranges editor-state-lsp-session
       editor-state-registers editor-state-keyboard-macro

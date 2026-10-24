@@ -3,7 +3,7 @@
 (defstruct (editor-state
             (:constructor %make-editor-state
                 (&key window-tree workspaces minibuffer keymap file-tree
-                      concurrent-runtime renderer buffers
+                      concurrent-runtime renderer session
                       (recent-files nil) (bookmarks nil) kill-ring
                       (last-yank-buffer nil) (last-yank-start-offset nil)
                       (last-yank-end-offset nil) (last-yank-ranges nil)
@@ -31,7 +31,7 @@ reach any of them through *EDITOR-STATE* alone."
   file-tree
   concurrent-runtime
   renderer
-  buffers
+  session
   (recent-files nil)
   (bookmarks nil)
   kill-ring

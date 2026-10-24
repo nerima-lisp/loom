@@ -27,7 +27,7 @@
                                 :history (history-kit:make-history))
                    :keymap (make-keymap)
                    :file-tree (make-file-tree "/root/")
-                   :buffers (list one two)
+                   :session (%make-test-editor-session (list one two))
                    :kill-ring nil
                    :recent-files (list "two.txt")
                    :bookmarks bookmarks)))
@@ -47,7 +47,9 @@
       (minibuffer-set-history-entries
        (editor-state-minibuffer state)
        '("find-file" "M-x"))
-      (let ((*editor-state* state))
+      (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state)))
         (setf (editor-state-minibuffer *editor-state*) nil)
         (let ((snapshot (loom/feature/session::%session-snapshot-from-state)))
           (expect (session-snapshot-command-history snapshot) :to-be nil))
@@ -58,7 +60,7 @@
          '("find-file" "M-x"))
         (let ((snapshot (loom/feature/session::%session-snapshot-from-state)))
           (loom/feature/session::%restore-session-snapshot snapshot)
-          (let* ((restored-buffers (editor-state-buffers *editor-state*))
+          (let* ((restored-buffers (%test-registered-buffers *editor-state*))
                  (restored-one (find "*one*" restored-buffers
                                      :key #'buffer-name :test #'string=))
                  (restored-two (find "*two*" restored-buffers

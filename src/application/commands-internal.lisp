@@ -1,22 +1,5 @@
 (in-package #:loom/application)
 
-(defun %editor-buffers ()
-  "Return the buffers known to the current editor session."
-  (loom:editor-state-buffers loom:*editor-state*))
-
-(defun %register-buffer (buffer)
-  "Add BUFFER to the current session's registry unless it is already present."
-  (pushnew buffer (loom:editor-state-buffers loom:*editor-state*) :test #'eq)
-  buffer)
-
-(defun %unregister-buffer (buffer)
-  "Remove BUFFER from the current session's registry."
-  (setf (loom:editor-state-buffers loom:*editor-state*)
-        (remove buffer
-                (loom:editor-state-buffers loom:*editor-state*)
-                :test #'eq))
-  buffer)
-
 (defun %order-region (point-line point-column mark-line mark-column)
   "Return the region bounds in buffer order.
 

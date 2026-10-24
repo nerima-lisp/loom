@@ -11,22 +11,26 @@
   (let ((path (and buffer (buffer-path buffer))))
     (if path
         (namestring
-         (make-pathname :name nil
-                        :type nil
-                        :version nil
-                        :defaults (pathname path)))
+         (make-pathname :name
+                        nil
+                        :type
+                        nil
+                        :version
+                        nil
+                        :defaults
+                        (pathname path)))
         (uiop:getcwd))))
 
 (defun %terminal-buffer-name (state)
   (let ((buffer-names (make-hash-table :test #'equal)))
-    (dolist (buffer (editor-state-buffers state))
+    (dolist (buffer (registered-buffers (editor-state-session state)))
       (setf (gethash (buffer-name buffer) buffer-names) t))
     (loop for index from 1
           for name = (if (= index 1)
                          "*Loom-Terminal*"
                          (format nil "*Loom-Terminal<~D>*" index))
-            unless (gethash name buffer-names)
-              return name)))
+          unless (gethash name buffer-names)
+            return name)))
 
 (defun %terminal-session-buffer (name)
   (let ((buffer (make-buffer :name name)))
@@ -34,28 +38,30 @@
     buffer))
 
 (defun start-terminal-session (&key
-                                  (program (or (uiop:getenv "SHELL") "/bin/sh"))
-                                  (args nil)
-                                  directory
-                                  (state *editor-state*))
+                               (program (or (uiop:getenv "SHELL") "/bin/sh"))
+                               (args nil)
+                               directory
+                               (state *editor-state*))
   "Start PROGRAM in a PTY and return its terminal session."
   (unless state
     (error "An editor state is required to start a terminal session."))
   (let* ((selected-buffer (%terminal-selected-buffer state))
          (working-directory
-           (or directory
-               (%terminal-directory-for-buffer selected-buffer)))
+          (or directory (%terminal-directory-for-buffer selected-buffer)))
          (name (%terminal-buffer-name state))
-         (pty (cl-tty-kit:make-pty :program program
-                                   :args args
-                                   :directory working-directory)))
-    (handler-case
-        (%make-terminal-session name
-                                program
-                                args
-                                working-directory
-                                (%terminal-session-buffer name)
-                                pty)
+         (pty
+          (cl-tty-kit:make-pty :program
+                               program
+                               :args
+                               args
+                               :directory
+                               working-directory)))
+    (handler-case (%make-terminal-session name
+                                          program
+                                          args
+                                          working-directory
+                                          (%terminal-session-buffer name)
+                                          pty)
       (error (condition)
         (cl-tty-kit:close-pty pty)
         (error condition)))))
@@ -63,12 +69,15 @@
 (defun terminal-session-for-buffer (buffer &optional (state *editor-state*))
   (find buffer
         (and state (editor-state-terminal-sessions state))
-        :key #'terminal-session-buffer
-        :test #'eq))
+        :key
+        #'terminal-session-buffer
+        :test
+        #'eq))
 
 (defun poll-terminal-sessions (&optional (state *editor-state*))
   "Poll every live terminal owned by STATE."
-  (dolist (session (and state (copy-list (editor-state-terminal-sessions state))))
+  (dolist
+      (session (and state (copy-list (editor-state-terminal-sessions state))))
     (terminal-session-poll session))
   state)
 

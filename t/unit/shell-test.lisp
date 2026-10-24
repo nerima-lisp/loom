@@ -108,9 +108,11 @@
                   :keymap (make-keymap)
                   :file-tree nil
                   :renderer nil
-                  :buffers (list buffer)
+                  :session (%make-test-editor-session (list buffer))
                   :kill-ring nil)))))
       (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state))
             (minibuffer (editor-state-minibuffer state)))
         (pipe-command)
         (expect (minibuffer-prompt-string minibuffer)
@@ -118,7 +120,7 @@
         (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                  "printf 'stdout'; printf 'stderr' >&2; exit 3")
         (let ((result (find "*Loom-Pipe-Command*"
-                            (editor-state-buffers state)
+                            (%test-registered-buffers state)
                             :key #'buffer-name
                             :test #'string=)))
           (expect result :to-be-truthy)
@@ -152,9 +154,11 @@
                    :keymap (make-keymap)
                    :file-tree nil
                    :renderer nil
-                   :buffers (list buffer)
+                   :session (%make-test-editor-session (list buffer))
                    :kill-ring nil)))
       (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state))
             (minibuffer (editor-state-minibuffer state)))
         (pipe-command)
         (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "  ")
@@ -171,9 +175,11 @@
                    :keymap (make-keymap)
                    :file-tree nil
                    :renderer nil
-                   :buffers (list buffer)
+                   :session (%make-test-editor-session (list buffer))
                    :kill-ring nil)))
       (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state))
             (minibuffer (editor-state-minibuffer state)))
         (with-replaced-function
             (loom/feature/shell:run-shell-command
@@ -184,6 +190,6 @@
           (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "false"))
         (expect (minibuffer-message-string minibuffer)
                 :to-contain "Pipe command error: synthetic shell failure")
-                (expect (find "*Loom-Pipe-Command*" (editor-state-buffers state)
+                (expect (find "*Loom-Pipe-Command*" (%test-registered-buffers state)
                       :key #'buffer-name :test #'string=)
                 :to-be nil))))

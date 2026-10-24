@@ -40,7 +40,7 @@
        ("replace-string" loom/feature/search::replace-string)
        ("goto-line" loom::goto-line)
        ("switch-workspace" loom/feature/workspace:switch-workspace)
-       ("switch-to-buffer" loom/feature/window:switch-to-buffer)
+       ("switch-to-buffer" loom/feature/buffers:switch-to-buffer)
        ("execute-extended-command" loom::execute-extended-command))
       "~A reports Quit on C-g" (label command)
     (declare (ignore label))

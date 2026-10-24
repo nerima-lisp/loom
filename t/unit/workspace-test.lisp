@@ -127,7 +127,7 @@
   (it "creates a main workspace manager when one is not provided"
     (let* ((buffer (make-buffer :name "*scratch*" :initial-content "hello"))
            (tree (make-window-tree buffer 80 24))
-           (state (make-editor-state :window-tree tree)))
+           (state (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer)))))
       (expect (editor-state-window-tree state) :to-be tree)
       (expect (workspace-manager-current-name
                (editor-state-workspaces state))
@@ -145,8 +145,7 @@
     (let* ((window-tree (make-window-tree :window 80 24))
            (workspace-tree (make-window-tree :workspace 80 24))
            (manager (make-workspace-manager workspace-tree :name "restored"))
-           (state (make-editor-state :window-tree window-tree
-                                     :workspaces manager)))
+           (state (make-editor-state :window-tree window-tree :workspaces manager :session (%make-test-editor-session))))
       (expect (editor-state-window-tree state) :to-be window-tree)
       (expect (editor-state-workspaces state) :to-be manager)
       (expect (workspace-manager-current-name manager) :to-equal "restored")

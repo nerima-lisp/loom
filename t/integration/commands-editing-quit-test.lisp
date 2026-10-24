@@ -90,8 +90,7 @@
             (minibuffer "selected"
                         (hidden (buffer-load path))
                         (quit nil))
-          (setf (editor-state-buffers *editor-state*)
-                (cons hidden (editor-state-buffers *editor-state*)))
+          (%register-test-buffer *editor-state* hidden)
           (buffer-insert-string hidden "!")
           (loom::save-buffers-kill-terminal)
           (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string hidden))

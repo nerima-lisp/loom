@@ -33,6 +33,9 @@
      "packages/feature/project/src/package.lisp")
     ("LOOM/FEATURE/SEARCH" ("feature/search") (:domain :application)
      "packages/feature/search/src/package.lisp")
+    ("LOOM/FEATURE/BUFFERS" ("feature/buffers")
+     (:domain :application)
+     "packages/feature/buffers/src/package.lisp")
     ("LOOM/FEATURE/WINDOW" ("feature/window") (:domain :application)
      "packages/feature/window/src/package.lisp")
     ("LOOM/FEATURE/WORKSPACE" ("feature/workspace") (:domain :application)
@@ -1320,14 +1323,15 @@
          (qualified-edge (first (boundary-token-edges (list qualified-record))))
          (edge-finding (first (boundary-edge-findings (list qualified-edge))))
          (layer-record (make-boundary-record
-                        :path "synthetic/feature/window/domain-test.lisp"
-                        :slice "feature/window" :layer :domain :package window-package
-                        :text "(loom/feature/window:switch-to-buffer)"))
+                        :path "synthetic/feature/buffers/domain-test.lisp"
+                        :slice "feature/buffers" :layer :domain
+                        :package (find-package "LOOM/FEATURE/BUFFERS")
+                        :text "(loom/feature/buffers:switch-to-buffer)"))
          (layer-finding
            (first (boundary-layer-call-findings
                    (list layer-record)
-                   (list '("LOOM/FEATURE/WINDOW" "SWITCH-TO-BUFFER"
-                           "feature/window" :application)))))
+                   (list '("LOOM/FEATURE/BUFFERS" "SWITCH-TO-BUFFER"
+                           "feature/buffers" :application)))))
          (dynamic-record (make-boundary-record
                           :path "synthetic/feature/evaluation/infrastructure-test.lisp"
                           :slice "feature/evaluation" :layer :infrastructure

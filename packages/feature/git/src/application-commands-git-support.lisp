@@ -1,67 +1,78 @@
 (in-package #:loom/feature/git)
 
-(defparameter *git-status-buffer-name* "*Loom-Git-Status*")
-(defparameter *git-diff-buffer-name* "*Loom-Git-Diff*")
+(defparameter *git-status-buffer-name*
+  "*Loom-Git-Status*")
+
+(defparameter *git-diff-buffer-name*
+  "*Loom-Git-Diff*")
 
 (defun %git-status-directory ()
-  (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
+  (let* ((buffer
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree *editor-state*))))
          (path (and buffer (buffer-path buffer)))
          (start (or path (truename "."))))
-    (or (project-find-root start)
-        (project-directory-path start))))
+    (or (project-find-root start) (project-directory-path start))))
 
 (defun %git-result-buffer (name)
-  (or (find name (%editor-buffers)
-            :key #'buffer-name :test #'string=)
-      (%register-buffer
-       (make-buffer :name name))))
+  (or
+   (find name
+         (registered-buffers *editor-session*)
+         :key
+         #'buffer-name
+         :test
+         #'string=)
+   (register-buffer *editor-session* (make-buffer :name name))))
 
 (defun %clear-git-result-buffer (buffer)
   (unless (string= (buffer-text buffer) "")
-    (let* ((end (buffer-offset-position
-                 buffer
-                 (length (buffer-text buffer))))
+    (let* ((end (buffer-offset-position buffer (length (buffer-text buffer))))
            (end-line (buffer-position-line end))
            (end-column (buffer-position-column end)))
       (buffer-delete-region buffer 0 0 end-line end-column))))
 
 (defun %replace-git-result-buffer (buffer text)
   (unwind-protect
-       (progn
-         (buffer-set-read-only buffer nil)
-         (%clear-git-result-buffer buffer)
-         (buffer-insert-string buffer text)
-         (buffer-mark-saved buffer)
-         buffer)
+      (progn
+        (buffer-set-read-only buffer nil)
+        (%clear-git-result-buffer buffer)
+        (buffer-insert-string buffer text)
+        (buffer-mark-saved buffer)
+        buffer)
     (buffer-set-read-only buffer t)))
 
 (defun %display-git-result (buffer-name run success-message failure-label)
   "Run RUN, display its result, and report the outcome to the minibuffer."
-  (handler-case
-      (let* ((result (funcall run))
-             (buffer (%replace-git-result-buffer
-                      (%git-result-buffer buffer-name)
-                      (git-result-text result))))
-        (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
-        (minibuffer-message
-         (editor-state-minibuffer *editor-state*)
-         (if (vcs-kit:process-success-p result)
-             success-message
-             (format nil "Git ~A exited with status ~D"
-                     failure-label
-                     (vcs-kit:process-result-exit-code result))))
-        result)
+  (handler-case (let* ((result (funcall run))
+                       (buffer
+                        (%replace-git-result-buffer
+                         (%git-result-buffer buffer-name)
+                         (git-result-text result))))
+                  (window-set-buffer
+                   (loom/core/window-tree:window-tree-selected-window
+                    (editor-state-window-tree *editor-state*))
+                   buffer)
+                  (minibuffer-message (editor-state-minibuffer *editor-state*)
+                                      (if (vcs-kit:process-success-p result)
+                                          success-message
+                                          (format nil
+                                                  "Git ~A exited with status ~D"
+                                                  failure-label
+                                                  (vcs-kit:process-result-exit-code
+                                                   result))))
+                  result)
     (error (condition)
-      (minibuffer-message
-       (editor-state-minibuffer *editor-state*)
-       (format nil "Git ~A error: ~A" failure-label condition))
+      (minibuffer-message (editor-state-minibuffer *editor-state*)
+                          (format nil
+                                  "Git ~A error: ~A"
+                                  failure-label
+                                  condition))
       nil)))
 
 (defun %git-path-present-p (path)
   (and (stringp path)
-       (not (string= (string-trim '(#\Space #\Tab #\Newline #\Return)
-                                  path)
-                    ""))))
+       (not (string= (string-trim '(#\Space #\Tab #\Newline #\Return) path) ""))))
 
 (defun %git-operation-labels (operation)
   (ecase operation
@@ -74,42 +85,43 @@
     (:unstage (run-git-unstage path :directory directory))))
 
 (defun %git-operation-result-message (operation path result)
-  (multiple-value-bind (verb past-tense)
-      (%git-operation-labels operation)
+  (multiple-value-bind (verb past-tense) (%git-operation-labels operation)
     (if (vcs-kit:process-success-p result)
         (format nil "Git ~A ~A" past-tense path)
-        (format nil "Git ~A exited with status ~D"
+        (format nil
+                "Git ~A exited with status ~D"
                 verb
                 (vcs-kit:process-result-exit-code result)))))
 
 (defun %git-operation-error-message (operation condition)
-  (format nil "Git ~A error: ~A"
+  (format nil
+          "Git ~A error: ~A"
           (nth-value 0 (%git-operation-labels operation))
           condition))
 
 (defun %git-operation-cancelled-message (operation)
-  (format nil "Git ~A cancelled"
+  (format nil
+          "Git ~A cancelled"
           (nth-value 0 (%git-operation-labels operation))))
 
 (defun %git-file-operation-success (operation path minibuffer)
-  (let ((result (%run-git-file-operation operation path (%git-status-directory))))
+  (let ((result
+         (%run-git-file-operation operation path (%git-status-directory))))
     (minibuffer-message minibuffer
-                         (%git-operation-result-message operation path result))
+                        (%git-operation-result-message operation path result))
     result))
 
 (defun %git-file-operation-error (operation minibuffer condition)
   (minibuffer-message minibuffer
-                       (%git-operation-error-message operation condition))
+                      (%git-operation-error-message operation condition))
   nil)
 
 (defun %git-file-operation (operation path minibuffer)
   "Run OPERATION for PATH and report its result in MINIBUFFER."
   (let ((path (string-trim '(#\Space #\Tab #\Newline #\Return) path)))
     (if (%git-path-present-p path)
-        (handler-case
-            (%git-file-operation-success operation path minibuffer)
+        (handler-case (%git-file-operation-success operation path minibuffer)
           (error (condition)
             (%git-file-operation-error operation minibuffer condition)))
-        (minibuffer-message
-         minibuffer
-         (%git-operation-cancelled-message operation)))))
+        (minibuffer-message minibuffer
+                            (%git-operation-cancelled-message operation)))))

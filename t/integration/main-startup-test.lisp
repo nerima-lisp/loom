@@ -99,7 +99,7 @@
           (loom::%initialize-editor-state
            (lambda (path)
              (push (list :initialize path) events)
-             (setf loom::*editor-state* (make-editor-state))))
+             (setf loom::*editor-state* (make-editor-state :session (%make-test-editor-session)))))
         (with-replaced-function
             (loom::%enable-concurrent-file-tree
              (lambda (state)
@@ -126,7 +126,7 @@
           (loom::%initialize-editor-state
            (lambda (path)
              (declare (ignore path))
-             (setf loom::*editor-state* (make-editor-state))))
+             (setf loom::*editor-state* (make-editor-state :session (%make-test-editor-session)))))
         (with-replaced-function
             (loom::%enable-concurrent-file-tree
              (lambda (state)

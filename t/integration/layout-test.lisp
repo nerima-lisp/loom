@@ -184,7 +184,9 @@
            (buffer (make-buffer :name "main.nix"
                                 :path "/tmp/main.nix"
                                 :initial-content "abc"))
-           (state (make-editor-state :lsp-session nil))
+           (state (make-editor-state
+                   :session (%make-test-editor-session)
+                   :lsp-session nil))
            (session
              (%layout-install-diagnostics
               state buffer
@@ -212,7 +214,9 @@
     "omits diagnostics when there is no session or no diagnostics"
     (let* ((renderer (make-loom-renderer 80 1))
            (buffer (make-buffer :name "main.nix" :path "/tmp/main.nix"))
-           (state (make-editor-state :lsp-session nil)))
+           (state (make-editor-state
+                   :session (%make-test-editor-session)
+                   :lsp-session nil)))
       (let ((*editor-state* state))
         (expect (loom::%layout-mode-line-text renderer buffer)
                 :to-equal
@@ -230,7 +234,9 @@
     (let* ((renderer (make-loom-renderer 40 1))
            (buffer (make-buffer :name "これは診断件数確認用の非常に長い日本語バッファ名です.nix"
                                 :path "/tmp/main.nix"))
-           (state (make-editor-state :lsp-session nil))
+           (state (make-editor-state
+                   :session (%make-test-editor-session)
+                   :lsp-session nil))
            (diagnostic
              (make-lsp-diagnostic
               (make-lsp-range (make-lsp-position 0 0)

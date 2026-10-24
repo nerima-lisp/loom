@@ -1,56 +1,63 @@
 (in-package #:loom/feature/auto-save)
 
-(defparameter *auto-save-interval* 5
+(defparameter *auto-save-interval*
+  5
   "Interval in seconds between automatic save passes, unless FORCE bypasses it.")
 
 (defun %auto-save-message (control &rest arguments)
-  (let ((minibuffer (and *editor-state*
-                         (editor-state-minibuffer *editor-state*))))
+  (let ((minibuffer
+         (and *editor-state* (editor-state-minibuffer *editor-state*))))
     (when minibuffer
-      (minibuffer-message minibuffer
-                          (apply #'format nil control arguments)))))
+      (minibuffer-message minibuffer (apply #'format nil control arguments)))))
 
 (defun auto-save-enabled-p (&optional buffer)
   "Return true when automatic saving is enabled for BUFFER."
   (let* ((state *editor-state*)
-         (buffer (or buffer (and state (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))))
+         (buffer
+          (or buffer
+              (and state
+                   (loom/core/window-tree:window-buffer
+                    (loom/core/window-tree:window-tree-selected-window
+                     (editor-state-window-tree *editor-state*)))))))
     (and state
          buffer
          (or (editor-state-auto-save-mode-p state)
-             (member buffer
-                     (editor-state-auto-save-buffers state)
-                     :test #'eq)))))
+             (member buffer (editor-state-auto-save-buffers state) :test #'eq)))))
 
 (defun auto-save-buffer (&optional buffer)
   "Auto-save BUFFER when its mode and contents allow it."
-  (let ((buffer (or buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
-    (when (and (auto-save-enabled-p buffer)
-               (auto-save-eligible-p buffer))
+  (let ((buffer
+         (or buffer
+             (loom/core/window-tree:window-buffer
+              (loom/core/window-tree:window-tree-selected-window
+               (editor-state-window-tree *editor-state*))))))
+    (when (and (auto-save-enabled-p buffer) (auto-save-eligible-p buffer))
       (auto-save-buffer-to-file buffer))))
 
 (defun %auto-save-targets (state)
-  (let* ((selected (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
-         (buffers (remove-duplicates
-                   (append (copy-list (editor-state-buffers state))
-                           (list selected))
-                   :test #'eq)))
+  (let* ((selected
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree *editor-state*))))
+         (buffers
+          (remove-duplicates
+           (append (copy-list (registered-buffers (editor-state-session state)))
+                   (list selected))
+           :test
+           #'eq)))
     (remove-if-not #'auto-save-enabled-p buffers)))
 
 (defun %auto-save-due-p (last-run current-time force)
   "Return true when an automatic save pass should run now."
-  (or force
-      (null last-run)
-      (>= (- current-time last-run) *auto-save-interval*)))
+  (or force (null last-run) (>= (- current-time last-run) *auto-save-interval*)))
 
 (defun %auto-save-attempt (buffer)
   "Save BUFFER, reporting its failure without aborting the save pass."
-  (handler-case
-      (auto-save-buffer buffer)
+  (handler-case (auto-save-buffer buffer)
     (error (condition)
-      (%auto-save-message
-       "Auto-save error for ~A: ~A"
-       (buffer-name buffer)
-       condition)
+      (%auto-save-message "Auto-save error for ~A: ~A"
+                          (buffer-name buffer)
+                          condition)
       nil)))
 
 (defun maybe-auto-save (&key force now)
@@ -66,4 +73,5 @@ introducing a second thread into the editor's input path."
           (setf (editor-state-auto-save-last-run-at state) current-time)
           (loop for buffer in (%auto-save-targets state)
                 for path = (%auto-save-attempt buffer)
-                when path collect path))))))
+                when path
+                  collect path))))))

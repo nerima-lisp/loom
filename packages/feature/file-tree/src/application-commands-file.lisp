@@ -2,11 +2,14 @@
 
 (defun %make-file-buffer (path &key name initial-content)
   "Create a buffer for PATH and infer its major mode from the path."
-  (let ((buffer (make-buffer :name (or name (file-namestring path))
-                             :path path
-                             :initial-content initial-content)))
-    (buffer-set-major-mode buffer
-                           (loom/feature/mode:major-mode-for-path path))
+  (let ((buffer
+         (make-buffer :name
+                      (or name (file-namestring path))
+                      :path
+                      path
+                      :initial-content
+                      initial-content)))
+    (buffer-set-major-mode buffer (loom/feature/mode:major-mode-for-path path))
     buffer))
 
 (defun %recent-file-candidates (input)
@@ -16,8 +19,11 @@
 
 (defun %show-buffer-in-selected-window (buffer)
   "Register BUFFER and display it in the selected window."
-  (%register-buffer buffer)
-  (loom/feature/window:window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer))
+  (register-buffer *editor-session* buffer)
+  (loom/feature/window:window-set-buffer
+   (loom/core/window-tree:window-tree-selected-window
+    (editor-state-window-tree *editor-state*))
+   buffer))
 
 (defun %visit-existing-file (path)
   "Load PATH, display it in the selected window, and refresh recency."
@@ -33,37 +39,37 @@ prompt to run. Returns the buffer, or NIL when PATH does not exist."
   (let ((existing (probe-file path)))
     (when existing
       (%visit-existing-file existing)
-      (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))))
+      (loom/core/window-tree:window-buffer
+       (loom/core/window-tree:window-tree-selected-window
+        (editor-state-window-tree *editor-state*))))))
 
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.
 
 Existing files are loaded from disk. A path that does not yet exist opens as
 an empty buffer associated with that path, so a later save creates the file."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((path "Find file: "))
-    (let ((existing-path (probe-file path)))
-      (cond
-        ((and existing-path
-              (host-kit:directory-pathname-p existing-path))
-         (minibuffer-message
-          (editor-state-minibuffer *editor-state*)
-          (format nil "Cannot open directory: ~A" path)))
-        (existing-path
-         (%visit-existing-file existing-path))
-        (t
-         (%show-buffer-in-selected-window (%make-file-buffer path)))))))
+  (with-prompts
+   (minibuffer (editor-state-minibuffer *editor-state*)
+               :on-cancel
+               (minibuffer-message minibuffer "Quit"))
+   ((path "Find file: "))
+   (let ((existing-path (probe-file path)))
+     (cond
+       ((and existing-path (host-kit:directory-pathname-p existing-path))
+        (minibuffer-message (editor-state-minibuffer *editor-state*)
+                            (format nil "Cannot open directory: ~A" path)))
+       (existing-path (%visit-existing-file existing-path))
+       (t (%show-buffer-in-selected-window (%make-file-buffer path)))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((path "Recent file: " :completion-function #'%recent-file-candidates))
-    (let ((existing-path (probe-file path)))
-      (if (and existing-path
-               (not (host-kit:directory-pathname-p existing-path)))
-          (%visit-existing-file existing-path)
-          (minibuffer-message
-           (editor-state-minibuffer *editor-state*)
-           (format nil "Recent file is unavailable: ~A" path))))))
+  (with-prompts
+   (minibuffer (editor-state-minibuffer *editor-state*)
+               :on-cancel
+               (minibuffer-message minibuffer "Quit"))
+   ((path "Recent file: " :completion-function #'%recent-file-candidates))
+   (let ((existing-path (probe-file path)))
+     (if (and existing-path (not (host-kit:directory-pathname-p existing-path)))
+         (%visit-existing-file existing-path)
+         (minibuffer-message (editor-state-minibuffer *editor-state*)
+                             (format nil "Recent file is unavailable: ~A" path))))))

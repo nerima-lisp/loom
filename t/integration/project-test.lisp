@@ -58,8 +58,10 @@
                                   :keymap (make-keymap)
                                   :file-tree nil
                                   :renderer nil
-                                  :buffers (list current)
-                                  :kill-ring nil)))
+                                  :session (%make-test-editor-session (list current))
+                                  :kill-ring nil))
+             (loom/core/editor-session:*editor-session*
+              (loom/core/editor-session:editor-state-session *editor-state*)))
         (ensure-directories-exist main-path)
         (host-kit:write-file-string "" (merge-pathnames "flake.nix" root))
         (host-kit:write-file-string "print('needle')" main-path)

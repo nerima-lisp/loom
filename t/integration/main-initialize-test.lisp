@@ -37,7 +37,7 @@
   "editor-state save hooks"
   (it
     "dispatches registered hooks in registration order and removes them"
-    (let* ((state (make-editor-state))
+    (let* ((state (make-editor-state :session (%make-test-editor-session)))
            (events nil)
            (first-hook (lambda (buffer)
                          (declare (ignore buffer))
@@ -54,7 +54,7 @@
 
   (it
     "isolates a dispatch pass when a hook changes registration"
-    (let* ((state (make-editor-state))
+    (let* ((state (make-editor-state :session (%make-test-editor-session)))
            (events nil)
            (late-hook (lambda (buffer)
                         (declare (ignore buffer))

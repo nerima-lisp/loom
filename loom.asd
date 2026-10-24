@@ -25,7 +25,19 @@ root source tree responsible for every feature."
   :serial t
   :components
   (
-   (:module "bootstrap" :pathname "." :serial t :components ((:file "packages/core/buffer/src/package") (:file "packages/core/window-tree/src/package") (:file "packages/core/minibuffer/src/package") (:file "packages/core/editor-session/src/package") (:file "packages/core/command/src/package") (:file "src/package-exports") (:file "src/package-application") (:file "src/package")))
+   (:module "bootstrap"
+  :pathname "."
+  :serial t
+  :components
+  ((:file "packages/core/buffer/src/package")
+   (:file "packages/core/window-tree/src/package")
+   (:file "packages/core/minibuffer/src/package")
+   (:file "packages/core/editor-session/src/package")
+   (:file "packages/core/command/src/package")
+   (:file "packages/feature/buffers/src/package")
+   (:file "src/package-exports")
+   (:file "src/package-application")
+   (:file "src/package")))
    (:module "feature-mode-package"
     :pathname "."
     :serial t
@@ -453,7 +465,36 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/keyboard-macro/src/domain-keyboard-macro")
     ))
-   (:module "root-application" :pathname "." :serial t :components ((:file "src/application/editor-state-bookmarks") (:file "packages/core/editor-session/src/domain-editor-session-slices") (:file "packages/core/editor-session/src/application-editor-state-support") (:file "packages/core/editor-session/src/application-editor-state-types") (:file "packages/core/editor-session/src/application-editor-state") (:file "packages/core/editor-session/src/application-editor-state-save-hooks") (:file "src/application/editor-state-recent-files") (:file "src/application/editor-state-operations") (:file "packages/core/command/src/domain-key-event-descriptor") (:file "packages/core/minibuffer/src/minibuffer") (:file "packages/core/minibuffer/src/minibuffer-activation") (:file "packages/core/minibuffer/src/minibuffer-history") (:file "packages/core/minibuffer/src/minibuffer-completion") (:file "src/application/completion-popup") (:file "src/application/completion-popup-input") (:file "packages/core/minibuffer/src/minibuffer-input") (:file "packages/core/minibuffer/src/commands-prompts") (:file "src/application/commands-internal") (:file "packages/core/command/src/command-registry-forms") (:file "packages/core/command/src/command-registry-build") (:file "packages/core/command/src/command-registry") (:file "packages/core/command/src/command-repeat") (:file "packages/core/command/src/command-invocation")))
+   (:module "root-application"
+  :pathname "."
+  :serial t
+  :components
+  ((:file "src/application/editor-state-bookmarks")
+   (:file "packages/core/editor-session/src/domain-editor-session-slices")
+   (:file "packages/feature/buffers/src/domain-buffer-registry")
+   (:file "packages/core/editor-session/src/application-editor-state-support")
+   (:file "packages/core/editor-session/src/application-editor-state-types")
+   (:file "packages/core/editor-session/src/application-editor-state")
+   (:file "packages/core/editor-session/src/application-editor-state-save-hooks")
+   (:file "src/application/editor-state-recent-files")
+   (:file "src/application/editor-state-operations")
+   (:file "packages/core/command/src/domain-key-event-descriptor")
+   (:file "packages/core/minibuffer/src/minibuffer")
+   (:file "packages/core/minibuffer/src/minibuffer-activation")
+   (:file "packages/core/minibuffer/src/minibuffer-history")
+   (:file "packages/core/minibuffer/src/minibuffer-completion")
+   (:file "src/application/completion-popup")
+   (:file "src/application/completion-popup-input")
+   (:file "packages/core/minibuffer/src/minibuffer-input")
+   (:file "packages/core/minibuffer/src/commands-prompts")
+   (:file "src/application/commands-internal")
+   (:file "packages/core/command/src/command-registry-forms")
+   (:file "packages/core/command/src/command-registry-build")
+   (:file "packages/core/command/src/command-registry")
+   (:file "packages/core/command/src/command-repeat")
+   (:file "packages/core/command/src/command-invocation")
+   (:file "packages/feature/buffers/src/application-window-buffer-support")
+   (:file "packages/feature/buffers/src/application-commands-buffer")))
    (:module "feature-mode-application"
     :pathname "."
     :serial t
@@ -535,10 +576,11 @@ root source tree responsible for every feature."
      (:file "packages/feature/file-tree/src/application-commands-file-save")
     ))
    (:module "feature-window-application"
-    :pathname "."
-    :serial t
-    :components
-    ((:file "packages/feature/window/src/application-window-buffer-support") (:file "packages/feature/window/src/application-commands-window") (:file "packages/feature/window/src/application-commands-window-scroll")))
+  :pathname "."
+  :serial t
+  :components
+  ((:file "packages/feature/window/src/application-commands-window")
+   (:file "packages/feature/window/src/application-commands-window-scroll")))
    (:module "feature-workspace-application"
     :pathname "."
     :serial t
@@ -783,6 +825,7 @@ root source tree responsible for every feature."
    (:file "t/unit/workspace-navigation-test")
    (:file "t/unit/editor-state-test")
    (:file "t/unit/editor-state-recent-files-test")
+   (:file "t/unit/buffer-registry-test")
    (:file "t/unit/keymap-test-support")
    (:file "t/unit/isearch-test")
    (:file "t/unit/keymap-lookup-test")

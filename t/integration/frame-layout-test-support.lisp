@@ -1,18 +1,17 @@
 
 (in-package #:loom/test)
 
-(defun %fresh-layout-state (&key name (content "") (width 40) (height 6)
-                                 (renderer-width width) (renderer-height height))
+(defun %fresh-layout-state (&key name (content "") (width 40) (height 6) (renderer-width width) (renderer-height height))
   "Build the editor state shared by layout and frame integration tests."
-  (make-editor-state :window-tree (make-window-tree
-                                   (make-buffer :name name :initial-content content)
-                                   width
-                                   height)
-                     :minibuffer (make-minibuffer)
-                     :keymap (make-keymap)
-                     :file-tree (make-file-tree "/root/")
-                     :renderer (make-loom-renderer renderer-width renderer-height)
-                     :kill-ring nil))
+  (let* ((buffer (make-buffer :name name :initial-content content))
+         (window-tree (make-window-tree buffer width height)))
+    (make-editor-state :window-tree window-tree
+                       :session (%make-test-editor-session (list buffer))
+                       :minibuffer (make-minibuffer)
+                       :keymap (make-keymap)
+                       :file-tree (make-file-tree "/root/")
+                       :renderer (make-loom-renderer renderer-width renderer-height)
+                       :kill-ring nil)))
 
 (defun %layout-screen (state)
   "Return the terminal screen rendered by STATE."

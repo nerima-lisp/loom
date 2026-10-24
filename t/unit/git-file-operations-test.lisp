@@ -4,20 +4,22 @@
     "git file operations"
   (it "uses the project directory when no project root is found"
     (let ((selected-buffer (make-buffer :name "notes" :path #P"/repo/src/notes.lisp")))
-      (let ((loom/core/editor-session:*editor-state*
-             (loom/core/editor-session:make-editor-state
-              :window-tree
-              (loom/core/window-tree:make-window-tree selected-buffer 80 24)
-              :buffers
-              (list selected-buffer))))
-        (with-replaced-function
-            (project-find-root
-             (lambda (path)
-               (declare (ignore path))
-               nil))
-          (expect (namestring (loom/feature/git::%git-status-directory))
-                  :to-equal
-                  "/repo/src/")))))
+      (let* ((loom/core/editor-session:*editor-state*
+        (loom/core/editor-session:make-editor-state
+         :window-tree
+         (loom/core/window-tree:make-window-tree selected-buffer 80 24)
+         :session (%make-test-editor-session (list selected-buffer))))
+       (loom/core/editor-session:*editor-session*
+         (loom/core/editor-session:editor-state-session
+          loom/core/editor-session:*editor-state*)))
+  (with-replaced-function
+      (project-find-root
+       (lambda (path)
+         (declare (ignore path))
+         nil))
+    (expect (namestring (loom/feature/git::%git-status-directory))
+            :to-equal
+            "/repo/src/")))))
 
   (it "runs stage and unstage with the requested directory"
     (let ((result

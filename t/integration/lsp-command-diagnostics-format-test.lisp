@@ -15,10 +15,12 @@
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :buffers (list buffer)
+              :session (%make-test-editor-session (list buffer))
               :kill-ring nil)))
       (unwind-protect
-           (let ((*editor-state* state))
+           (let ((*editor-state* state)
+                 (loom/core/editor-session:*editor-session*
+                  (loom/core/editor-session:editor-state-session state)))
              (setf (editor-state-lsp-session state) session
                    (lsp-session-last-error session) "broken transport")
              (lsp-diagnostics)

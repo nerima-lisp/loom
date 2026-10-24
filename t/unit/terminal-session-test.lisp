@@ -9,8 +9,7 @@
       "selects the first available terminal name from ~S"
       (buffer-names expected)
     (let ((state (%fresh-editor-state "")))
-      (setf (editor-state-buffers state)
-            (mapcar (lambda (name) (make-buffer :name name)) buffer-names))
+      (%replace-test-registered-buffers state (mapcar (lambda (name) (make-buffer :name name)) buffer-names))
       (expect (loom/feature/terminal::%terminal-buffer-name state)
               :to-equal
               expected)))
@@ -146,7 +145,7 @@
             (with-replaced-function
                 (terminal-session-poll (lambda (candidate) candidate))
               (expect (terminal) :to-be session)))
-          (expect (find buffer (editor-state-buffers *editor-state*) :test #'eq)
+          (expect (find buffer (%test-registered-buffers *editor-state*) :test #'eq)
                   :to-be-truthy)
           (expect (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))) :to-be buffer)
           (expect (minibuffer-message-string minibuffer)

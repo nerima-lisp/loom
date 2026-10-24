@@ -15,9 +15,10 @@
                        :keymap keymap
                        :file-tree nil
                        :renderer nil
-                       :buffers (list buffer)
+                       :session (%make-test-editor-session (list buffer))
                        :kill-ring nil))
                (*editor-state* state)
+               (loom/core/editor-session:*editor-session* (loom/core/editor-session:editor-state-session state))
                (keymap-state (make-keymap-state keymap)))
           (buffer-set-point buffer 0 0)
           (loom::%dispatch-key-event

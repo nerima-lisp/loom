@@ -83,7 +83,7 @@
                    :keymap (make-keymap)
                    :file-tree nil
                    :renderer nil
-                   :buffers (list buffer)
+                   :session (%make-test-editor-session (list buffer))
                    :kill-ring nil)))
       (let ((*editor-state* state)
             (minibuffer (editor-state-minibuffer state)))
@@ -183,7 +183,7 @@
                      :keymap (make-keymap)
                      :file-tree nil
                      :renderer nil
-                     :buffers (list buffer)
+                     :session (%make-test-editor-session (list buffer))
                      :kill-ring nil)))
         (buffer-mark-modified buffer)
         (let ((*editor-state* state))

@@ -39,7 +39,7 @@
         (unwind-protect
              (progn
                (window-set-buffer window buffer)
-               (%register-buffer buffer)
+               (%register-test-buffer *editor-state* buffer)
                (setf (editor-state-lsp-session *editor-state*) old-session)
                (with-replaced-function
                    (loom/feature/lsp::make-lsp-session

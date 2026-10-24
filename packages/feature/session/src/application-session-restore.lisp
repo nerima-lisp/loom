@@ -15,10 +15,13 @@
 
 (defun %restore-session-buffer (snapshot)
   "Build a fresh buffer from one validated session buffer SNAPSHOT."
-  (let ((buffer (make-buffer
-                 :name (session-buffer-snapshot-name snapshot)
-                 :path (%session-buffer-path snapshot)
-                 :initial-content (session-buffer-snapshot-text snapshot))))
+  (let ((buffer
+         (make-buffer :name
+                      (session-buffer-snapshot-name snapshot)
+                      :path
+                      (%session-buffer-path snapshot)
+                      :initial-content
+                      (session-buffer-snapshot-text snapshot))))
     (%restore-session-buffer-position buffer snapshot)
     (when (session-buffer-snapshot-modified-p snapshot)
       (buffer-mark-modified buffer))
@@ -28,33 +31,38 @@
   "Install SNAPSHOT after rebuilding every buffer and window in advance."
   (validate-session-snapshot snapshot)
   (let* ((old-tree (editor-state-window-tree *editor-state*))
-         (buffers (mapcar #'%restore-session-buffer
-                          (session-snapshot-buffers snapshot)))
+         (buffers
+          (mapcar #'%restore-session-buffer (session-snapshot-buffers snapshot)))
          (width (loom/feature/window:window-tree-width old-tree))
          (height (loom/feature/window:window-tree-height old-tree))
-         (workspaces (%session-restorable-workspaces
-                      snapshot buffers width height))
+         (workspaces
+          (%session-restorable-workspaces snapshot buffers width height))
          (manager
-           (loom/feature/workspace:make-workspace-manager-from-workspaces
-            workspaces
-            :current-index
-            (session-snapshot-current-workspace-index snapshot)))
-         (tree (loom/feature/workspace:workspace-window-tree
-                (loom/feature/workspace:workspace-manager-current manager)))
-         (bookmarks (%restore-session-bookmarks
-                     (session-snapshot-bookmarks snapshot)
-                     buffers)))
+          (loom/feature/workspace:make-workspace-manager-from-workspaces
+           workspaces
+           :current-index
+           (session-snapshot-current-workspace-index snapshot)))
+         (tree
+          (loom/feature/workspace:workspace-window-tree
+           (loom/feature/workspace:workspace-manager-current manager)))
+         (bookmarks
+          (%restore-session-bookmarks (session-snapshot-bookmarks snapshot)
+                                      buffers)))
     (%install-restored-session-state snapshot buffers bookmarks manager tree)
     tree))
 
 (defun %install-restored-session-state (snapshot buffers bookmarks manager tree)
-  (setf (editor-state-buffers *editor-state*) buffers
-        (editor-state-recent-files *editor-state*)
-        (copy-list (session-snapshot-recent-files snapshot))
-        (editor-state-bookmarks *editor-state*) bookmarks
-        (editor-state-workspaces *editor-state*) manager
-        (editor-state-window-tree *editor-state*) tree)
+  (progn
+    (dolist (buffer (registered-buffers (editor-state-session *editor-state*)))
+      (unregister-buffer (editor-state-session *editor-state*) buffer))
+    (dolist (buffer (reverse (copy-list buffers)))
+      (register-buffer (editor-state-session *editor-state*) buffer))
+    (setf (editor-state-recent-files *editor-state*) (copy-list
+                                                      (session-snapshot-recent-files
+                                                       snapshot))
+          (editor-state-bookmarks *editor-state*) bookmarks
+          (editor-state-workspaces *editor-state*) manager
+          (editor-state-window-tree *editor-state*) tree))
   (when (editor-state-minibuffer *editor-state*)
-    (minibuffer-set-history-entries
-     (editor-state-minibuffer *editor-state*)
-     (session-snapshot-command-history snapshot))))
+    (minibuffer-set-history-entries (editor-state-minibuffer *editor-state*)
+                                    (session-snapshot-command-history snapshot))))

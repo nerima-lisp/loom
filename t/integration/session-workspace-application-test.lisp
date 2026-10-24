@@ -24,7 +24,7 @@
               :minibuffer (make-minibuffer)
               :keymap (make-keymap)
               :file-tree (make-file-tree "/root/")
-              :buffers (list main-buffer notes-buffer)
+              :session (%make-test-editor-session (list main-buffer notes-buffer))
               :kill-ring nil
               :recent-files nil
               :bookmarks nil)))
@@ -32,7 +32,9 @@
             (window-scroll-line (first (window-tree-windows notes-tree))) 3
             (window-scroll-line notes-second) 4)
       (window-tree-select-index notes-tree 1)
-      (let ((*editor-state* state))
+      (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state)))
         (let ((snapshot (loom/feature/session::%session-snapshot-from-state)))
           (expect (session-snapshot-current-workspace-index snapshot) :to-equal 1)
           (expect (mapcar #'session-workspace-snapshot-name

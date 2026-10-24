@@ -59,7 +59,7 @@
                      :keymap (make-keymap)
                      :file-tree nil
                      :renderer nil
-                     :buffers (list buffer)
+                     :session (%make-test-editor-session (list buffer))
                      :kill-ring nil))
              (hook-buffer nil))
         (buffer-mark-modified buffer)
@@ -101,7 +101,7 @@
                      :keymap (make-keymap)
                      :file-tree nil
                      :renderer nil
-                     :buffers (list buffer)
+                     :session (%make-test-editor-session (list buffer))
                      :kill-ring nil)))
         (buffer-mark-modified buffer)
         (let ((*editor-state* state))
@@ -141,7 +141,7 @@
                                   :initial-content "draft")))
         (%with-minibuffer-state (minibuffer "text")
           (let ((state *editor-state*))
-            (setf (editor-state-buffers state) (list buffer))
+            (%replace-test-registered-buffers state (list buffer))
             (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
             (expect (auto-save-current-buffer) :to-be nil)
             (expect (minibuffer-message-string minibuffer)
@@ -180,7 +180,7 @@
       (let* ((state *editor-state*)
              (selected (%selected-test-buffer))
              (other (make-buffer :name "other" :initial-content "draft")))
-        (setf (editor-state-buffers state) (list selected other))
+        (%replace-test-registered-buffers state (list selected other))
         (auto-save-mode t)
         (with-replaced-function
             (loom/feature/auto-save::auto-save-buffer
@@ -201,7 +201,7 @@
         (%with-minibuffer-state (minibuffer "text")
           (declare (ignore minibuffer))
           (let ((state *editor-state*))
-            (setf (editor-state-buffers state) (list buffer buffer))
+            (%replace-test-registered-buffers state (list buffer buffer))
             (window-set-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)) buffer)
             (buffer-mark-modified buffer)
             (auto-save-mode t)

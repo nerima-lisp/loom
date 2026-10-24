@@ -1,21 +1,26 @@
 (in-package #:loom/feature/lsp)
 
-(defparameter *lsp-diagnostics-buffer-name* "*Loom-Diagnostics*")
+(defparameter *lsp-diagnostics-buffer-name*
+  "*Loom-Diagnostics*")
 
 (defun %lsp-diagnostics-buffer ()
   "Return the registered buffer used to display LSP diagnostics."
-  (or (find *lsp-diagnostics-buffer-name*
-            (loom/application:%editor-buffers)
-            :key #'buffer-name
-            :test #'string=)
-      (loom/application:%register-buffer
-       (make-buffer :name *lsp-diagnostics-buffer-name*))))
+  (or
+   (find *lsp-diagnostics-buffer-name*
+         (registered-buffers *editor-session*)
+         :key
+         #'buffer-name
+         :test
+         #'string=)
+   (register-buffer *editor-session*
+                    (make-buffer :name *lsp-diagnostics-buffer-name*))))
 
 (defun %replace-buffer-text (buffer text)
   "Replace BUFFER's complete contents with TEXT and mark it saved."
   (let ((end (buffer-offset-position buffer (length (buffer-text buffer)))))
-    (unless (and (zerop (buffer-position-line end))
-                 (zerop (buffer-position-column end)))
+    (unless
+        (and (zerop (buffer-position-line end))
+             (zerop (buffer-position-column end)))
       (buffer-delete-region buffer
                             0
                             0
@@ -35,8 +40,7 @@
             (1+ (lsp-position-line start))
             (1+ (lsp-position-character start))
             (lsp-diagnostic-message diagnostic)
-            (and severity
-                 (lsp-diagnostic-severity-name severity))
+            (and severity (lsp-diagnostic-severity-name severity))
             source)))
 
 (defun %lsp-diagnostics-text (buffer diagnostics)

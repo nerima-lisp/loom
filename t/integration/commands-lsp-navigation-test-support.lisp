@@ -16,10 +16,29 @@
                        :keymap (make-keymap)
                        :file-tree nil
                        :renderer nil
-                       :buffers (list buffer)
+                       :session (%make-test-editor-session (list buffer))
                        :kill-ring nil)))
 
-(defmacro %with-lsp-navigation ((transport session buffer &key (content "foo") (path "/tmp/main.lisp") (capabilities +lsp-navigation-capabilities+)) &body body) "Run BODY with an initialized fake session and a buffer at PATH." (let ((buffer-binding (gensym "BUFFER-"))) `(let* ((*editor-state* (%lsp-navigation-state :content ,content :path ,path)) (,buffer-binding (%selected-test-buffer))) (let ((,buffer ,buffer-binding)) (declare (ignorable ,buffer)) (%with-started-fake-lsp-session ((,transport ,session)) (%fake-push-initialize-response ,transport ,capabilities) (lsp-session-drain ,session) (setf (editor-state-lsp-session *editor-state*) ,session) ,@body)))))
+(defmacro %with-lsp-navigation
+    ((transport session buffer
+      &key (content "foo")
+           (path "/tmp/main.lisp")
+           (capabilities +lsp-navigation-capabilities+))
+     &body body)
+  "Run BODY with an initialized fake session and a buffer at PATH."
+  (let ((buffer-binding (gensym "BUFFER-")))
+    `(let* ((*editor-state* (%lsp-navigation-state :content ,content :path ,path))
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session *editor-state*))
+            (,buffer-binding (%selected-test-buffer)))
+       (let ((,buffer ,buffer-binding))
+         (declare (ignorable ,buffer))
+         (%with-started-fake-lsp-session
+             ((,transport ,session))
+           (%fake-push-initialize-response ,transport ,capabilities)
+           (lsp-session-drain ,session)
+           (setf (editor-state-lsp-session *editor-state*) ,session)
+           ,@body)))))
 
 (defun %lsp-last-request-method (transport)
   (let ((messages (%fake-sent-in-order transport)))

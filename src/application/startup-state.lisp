@@ -42,13 +42,16 @@ the scratch buffer and is itself the root."
          (keymap (install-default-keybindings (make-keymap)))
          (minibuffer (make-minibuffer :history (history-kit:make-history)))
          (file-tree (loom/feature/file-tree:make-file-tree file-tree-root))
-         (renderer (make-loom-renderer width height)))
+         (renderer (make-loom-renderer width height))
+         (session (make-editor-session '(:feature/buffers))))
+    (loom/feature/buffers:register-buffer session initial-buffer)
     (multiple-value-bind (before-save-hooks after-save-hooks)
         (%make-startup-hooks)
       (loom/feature/file-tree:file-tree-install-child-lister
        file-tree
        (function loom/feature/file-tree:loom-fs-list-directory))
-      (make-editor-state :window-tree window-tree
+      (make-editor-state :session session
+                         :window-tree window-tree
                          :workspaces
                          (loom/feature/workspace:make-workspace-manager
                           window-tree :name "main")
@@ -56,7 +59,6 @@ the scratch buffer and is itself the root."
                          :keymap keymap
                          :file-tree file-tree
                          :renderer renderer
-                         :buffers (list initial-buffer)
                          :kill-ring nil
                          :registers (loom/feature/register:make-register-bank)
                          :keyboard-macro

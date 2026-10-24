@@ -29,7 +29,7 @@
   "Return BOOKMARK's saved buffer when it is still registered."
   (let ((saved-buffer (editor-bookmark-buffer bookmark)))
     (and saved-buffer
-         (find saved-buffer (editor-state-buffers *editor-state*) :test #'eq))))
+         (find saved-buffer (loom/feature/buffers:registered-buffers *editor-session*) :test #'eq))))
 
 (defun %bookmark-regular-file (path)
   "Return PATH when it names an existing regular file."
@@ -41,7 +41,7 @@
 (defun %register-bookmark-buffer (path)
   "Load and register the bookmark buffer for PATH."
   (let ((buffer (buffer-load path)))
-    (pushnew buffer (editor-state-buffers *editor-state*) :test (function eq))
+    (loom/feature/buffers:register-buffer *editor-session* buffer)
     (remember-recent-file path)
     buffer))
 

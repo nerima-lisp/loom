@@ -3,7 +3,9 @@
 (defmacro %with-selected-file-tree-entry ((dir relative-path) &body body)
   `(host-kit:with-temporary-directory (,dir)
      (let ((path (merge-pathnames ,relative-path ,dir)))
-       (let ((*editor-state* (%fresh-editor-state "")))
+       (let* ((*editor-state* (%fresh-editor-state ""))
+              (loom/core/editor-session:*editor-session*
+                (loom/core/editor-session:editor-state-session *editor-state*)))
          (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree ,dir))
          (loom/feature/file-tree:file-tree-select-next)
          ,@body))))
@@ -70,7 +72,7 @@
       (loom/feature/file-tree:file-tree-open-selected)
       (expect (buffer-name (%selected-test-buffer)) :to-equal "note.txt")
       (expect (member (%selected-test-buffer)
-                      (editor-state-buffers *editor-state*))
+                      (%test-registered-buffers *editor-state*))
               :to-be-truthy)))
 
   (it

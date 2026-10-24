@@ -38,14 +38,14 @@
                     :needs-region NIL
                     :external NIL
                     :modes (:all))
-      (command-spec "switch-to-buffer" loom/feature/window:switch-to-buffer
+      (command-spec "switch-to-buffer" loom/feature/buffers:switch-to-buffer
                     :keys (((:control #\x) #\b))
                     :mutates NIL
                     :prompts (:completion)
                     :needs-region NIL
                     :external NIL
                     :modes (:all))
-      (command-spec "kill-buffer" loom/feature/window:kill-buffer
+      (command-spec "kill-buffer" loom/feature/buffers:kill-buffer
                     :keys (((:control #\x) #\k))
                     :mutates NIL
                     :prompts (:completion :free-string)

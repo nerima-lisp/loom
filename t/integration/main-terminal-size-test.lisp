@@ -42,24 +42,24 @@
   "%event-loop-background-work-p"
   (it
     "reports no background work for an idle editor state"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (expect (loom::%event-loop-background-work-p) :to-be nil)))
 
   (it
     "reports background work when auto-save mode is enabled"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
       (expect (loom::%event-loop-background-work-p) :to-be t)))
 
   (it
     "reports background work when auto-save buffers are present"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (setf (editor-state-auto-save-buffers loom::*editor-state*) (list :buffer))
       (expect (loom::%event-loop-background-work-p) :to-be t)))
 
   (it
     "reports background work when an LSP session is present"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (setf (editor-state-lsp-session loom::*editor-state*) :session)
       (expect (loom::%event-loop-background-work-p) :to-be t))))
 
@@ -67,12 +67,12 @@
   "%wait-for-editor-input"
   (it
     "returns immediately when no background work is pending"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (expect (loom::%wait-for-editor-input nil) :to-be t)))
 
   (it
     "waits for input while background work is pending"
-    (let ((loom::*editor-state* (make-editor-state))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session)))
           (wait-calls 0))
       (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
       (with-replaced-function
@@ -86,7 +86,7 @@
 
   (it
     "continues when waiting receives an unsupported stream"
-    (let ((loom::*editor-state* (make-editor-state)))
+    (let ((loom::*editor-state* (make-editor-state :session (%make-test-editor-session))))
       (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
       (with-replaced-function
           (cl-tty-kit:fd-wait

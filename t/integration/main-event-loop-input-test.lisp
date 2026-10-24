@@ -135,7 +135,9 @@
       (let ((path (merge-pathnames "input.bin" dir)))
         (with-open-file (out path :direction :output :element-type '(unsigned-byte 8))
           (write-byte (char-code #\a) out))
-        (let ((*editor-state* (%fresh-full-editor-state "")))
+        (let* ((*editor-state* (%fresh-full-editor-state ""))
+               (loom/core/editor-session:*editor-session*
+                 (loom/core/editor-session:editor-state-session *editor-state*)))
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
@@ -151,7 +153,9 @@
       (let ((path (merge-pathnames "input.bin" dir)))
         (with-open-file (out path :direction :output :element-type '(unsigned-byte 8))
           (dotimes (i 4096) (write-byte (char-code #\a) out)))
-        (let ((*editor-state* (%fresh-full-editor-state "")))
+        (let* ((*editor-state* (%fresh-full-editor-state ""))
+         (loom/core/editor-session:*editor-session*
+           (loom/core/editor-session:editor-state-session *editor-state*)))
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
@@ -170,7 +174,9 @@
           (write-byte 24 out)
           (write-byte 3 out)
           (write-byte (char-code #\x) out))
-        (let ((*editor-state* (%fresh-full-editor-state "")))
+        (let* ((*editor-state* (%fresh-full-editor-state ""))
+         (loom/core/editor-session:*editor-session*
+           (loom/core/editor-session:editor-state-session *editor-state*)))
           (%with-stubbed-terminal-size (80 24)
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))

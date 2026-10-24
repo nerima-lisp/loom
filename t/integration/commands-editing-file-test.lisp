@@ -8,7 +8,7 @@
        ("C-x C-y" (((:control) . #\x) ((:control) . #\y)) loom::redo-command)
        ("C-x C-q" (((:control) . #\x) ((:control) . #\q)) loom::toggle-read-only)
        ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom/feature/file-tree:write-file)
-       ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/window:kill-buffer)
+       ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/buffers:kill-buffer)
        ("C-x 0" (((:control) . #\x) (nil . #\0)) loom/feature/window:delete-window)
        ("C-x 1" (((:control) . #\x) (nil . #\1)) loom/feature/window:delete-other-windows)
        ("C-r" (((:control) . #\r)) loom/feature/search::isearch-backward)
@@ -71,9 +71,9 @@
           (expect mark-line :to-equal 0)
           (expect mark-column :to-equal 2))
         (expect (host-kit:read-file-string path) :to-equal "hello world")
-        (expect (member original (editor-state-buffers *editor-state*))
+        (expect (member original (%test-registered-buffers *editor-state*))
                 :to-be-truthy)
-        (expect (member new-buffer (editor-state-buffers *editor-state*))
+        (expect (member new-buffer (%test-registered-buffers *editor-state*))
                 :to-be-truthy)))))
 
 (describe

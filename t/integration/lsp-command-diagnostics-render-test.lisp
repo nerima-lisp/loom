@@ -15,7 +15,7 @@
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :buffers (list buffer)
+              :session (%make-test-editor-session (list buffer))
               :kill-ring nil)))
       (unwind-protect
            (progn
@@ -26,7 +26,9 @@
               "/tmp/main.lisp"
               "[{\"range\":{\"start\":{\"line\":0,\"character\":1},\"end\":{\"line\":0,\"character\":2}},\"message\":\"bad\",\"severity\":1,\"source\":\"fake\"}]")
              (setf (editor-state-lsp-session state) session)
-             (let ((*editor-state* state))
+             (let ((*editor-state* state)
+                   (loom/core/editor-session:*editor-session*
+                    (loom/core/editor-session:editor-state-session state)))
                (loom/feature/lsp:lsp-diagnostics)
                (let ((diagnostics-buffer (%selected-test-buffer)))
                  (expect (buffer-name diagnostics-buffer)
@@ -44,7 +46,9 @@
               transport
               "/tmp/main.lisp"
               "[]")
-             (let ((*editor-state* state))
+             (let ((*editor-state* state)
+                   (loom/core/editor-session:*editor-session*
+                    (loom/core/editor-session:editor-state-session state)))
                (loom/feature/lsp:lsp-diagnostics)
                (expect (buffer-text (%selected-test-buffer))
                        :to-contain

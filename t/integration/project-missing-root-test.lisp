@@ -16,8 +16,10 @@
                 :keymap (make-keymap)
                 :file-tree nil
                 :renderer nil
-                :buffers (list buffer)
+                :session (%make-test-editor-session (list buffer))
                 :kill-ring nil))
+             (loom/core/editor-session:*editor-session*
+              (loom/core/editor-session:editor-state-session *editor-state*))
              (loom/feature/project::+project-marker-names+
                '(".loom-missing-root-test-marker")))
         (host-kit:write-file-string "plain" path)

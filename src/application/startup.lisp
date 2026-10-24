@@ -11,10 +11,13 @@ from it."
 (defun %call-with-started-editor-state (path thunk)
   "Initialize *EDITOR-STATE*, start startup services, call THUNK, then stop services."
   (%initialize-editor-state path)
-  (%enable-concurrent-file-tree *editor-state*)
-  (unwind-protect
-       (funcall thunk *editor-state*)
-    (%shutdown-editor-services *editor-state*)))
+  (call-with-editor-session
+   (editor-state-session *editor-state*)
+   (lambda ()
+     (%enable-concurrent-file-tree *editor-state*)
+     (unwind-protect
+          (funcall thunk *editor-state*)
+       (%shutdown-editor-services *editor-state*)))))
 
 (defun %run-loom (invocation &key (fd 0))
   "CL-CLI handler for *LOOM-APP*: initialize *EDITOR-STATE* around the :PATH
