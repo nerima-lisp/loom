@@ -4,12 +4,32 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
+from contextlib import contextmanager
 
 from loom_e2e import keys
 from loom_e2e.registry import scenario
+from loom_e2e.results import record_observation
 from loom_e2e.session import Session
 
 from .scenario_helpers import assert_exit_zero, write_buffer
+
+
+@contextmanager
+def _measure_phase(name):
+    started = time.monotonic()
+    completed = False
+    try:
+        yield
+        completed = True
+    finally:
+        record_observation(
+            "scenario_phase_duration",
+            time.monotonic() - started,
+            phase=name,
+            unit="seconds",
+            completed=completed,
+        )
 
 
 def _nixd_command():
@@ -185,9 +205,11 @@ def lsp_trust_review(binary):
         marker = os.path.join(directory, "spawned")
         pid_file = os.path.join(directory, "nixd.pid")
         tail = "REVIEW_END_UNIQUE"
+        with _measure_phase("nixd_command_resolution"):
+            nixd_command = _nixd_command()
         command = (
             "printf spawned > " + marker
-            + "; printf '%s\\n' $$ > " + pid_file + "; exec " + _nixd_command()
+            + "; printf '%s\\n' $$ > " + pid_file + "; exec " + nixd_command
             + " # " + "review-content " * 120 + tail
         )
         with open(configuration, "w", encoding="utf-8") as handle:
@@ -197,105 +219,115 @@ def lsp_trust_review(binary):
         path = write_buffer(directory, "main.nix", (source + "\n").encode("utf-8"))
         prompt = "Run discovered LSP command? Type yes: "
         with Session(binary, [path], columns=80, rows=10) as session:
-            session.wait_ready()
-            session.wait_for_text(source)
-            original = session.screen.lines()[:session.layout.body_height]
-            for answer in ("yes", ""):
+            with _measure_phase("editor_startup"):
+                session.wait_ready()
+                session.wait_for_text(source)
+                original = session.screen.lines()[:session.layout.body_height]
+
+            with _measure_phase("trust_review_ui"):
+                for answer in ("yes", ""):
+                    session.extended_command("lsp-start")
+                    session.wait_for_text("LSP command [RET for")
+                    session.key("RET")
+                    session.wait_for_text(prompt)
+                    session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
+                    session.type(answer)
+                    session.wait_for_region_exact_text(
+                        "minibuffer", (prompt + answer).rstrip()
+                    )
+                    for forward, backward in (
+                        (b"\x1b[6~", b"\x1b[5~"),
+                        (keys.ctrl("v"), keys.meta("v")),
+                    ):
+                        session.send(forward * 12)
+                        session.wait_for_region_contents("body", tail)
+                        _assert_minibuffer(session, prompt + answer)
+                        _assert_path_exists(
+                            session, "reviewed LSP marker exists", marker, False
+                        )
+                        _assert_path_exists(
+                            session, "reviewed LSP PID file exists", pid_file, False
+                        )
+                        session.send(backward * 12)
+                        session.wait_for_text("Discovered LSP command")
+                        _assert_minibuffer(session, prompt + answer)
+                        _assert_path_exists(
+                            session, "reviewed LSP marker exists", marker, False
+                        )
+                        _assert_path_exists(
+                            session, "reviewed LSP PID file exists", pid_file, False
+                        )
+                    session.send(keys.ctrl("g") if answer else session.profile.key("RET"))
+                    session.wait_for_text("Quit" if answer else "LSP start cancelled.")
+                    _wait_for_body_viewport(
+                        session, original, "original buffer viewport restored"
+                    )
+                    _assert_path_exists(
+                        session, "rejected LSP marker exists", marker, False
+                    )
+                    _assert_path_exists(
+                        session, "rejected LSP PID file exists", pid_file, False
+                    )
                 session.extended_command("lsp-start")
                 session.wait_for_text("LSP command [RET for")
                 session.key("RET")
                 session.wait_for_text(prompt)
                 session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
-                session.type(answer)
+                session.type("yes")
                 session.wait_for_region_exact_text(
-                    "minibuffer", (prompt + answer).rstrip()
+                    "minibuffer", prompt + "yes"
                 )
-                for forward, backward in (
-                    (b"\x1b[6~", b"\x1b[5~"),
-                    (keys.ctrl("v"), keys.meta("v")),
-                ):
-                    session.send(forward * 12)
-                    session.wait_for_region_contents("body", tail)
-                    _assert_minibuffer(session, prompt + answer)
-                    _assert_path_exists(
-                        session, "reviewed LSP marker exists", marker, False
-                    )
-                    _assert_path_exists(
-                        session, "reviewed LSP PID file exists", pid_file, False
-                    )
-                    session.send(backward * 12)
-                    session.wait_for_text("Discovered LSP command")
-                    _assert_minibuffer(session, prompt + answer)
-                    _assert_path_exists(
-                        session, "reviewed LSP marker exists", marker, False
-                    )
-                    _assert_path_exists(
-                        session, "reviewed LSP PID file exists", pid_file, False
-                    )
-                session.send(keys.ctrl("g") if answer else session.profile.key("RET"))
-                session.wait_for_text("Quit" if answer else "LSP start cancelled.")
-                _wait_for_body_viewport(
-                    session, original, "original buffer viewport restored"
+                session.send(b"\x1b[6~" * 12)
+                session.wait_for_region_contents("body", tail)
+                _assert_minibuffer(session, prompt + "yes")
+                _assert_path_exists(
+                    session, "unconfirmed LSP marker exists", marker, False
                 )
                 _assert_path_exists(
-                    session, "rejected LSP marker exists", marker, False
+                    session, "unconfirmed LSP PID file exists", pid_file, False
+                )
+                session.send(b"\x1b[5~" * 12)
+                session.wait_for_text("Discovered LSP command")
+                _assert_minibuffer(session, prompt + "yes")
+                _assert_path_exists(
+                    session, "unconfirmed LSP marker exists", marker, False
                 )
                 _assert_path_exists(
-                    session, "rejected LSP PID file exists", pid_file, False
+                    session, "unconfirmed LSP PID file exists", pid_file, False
                 )
-            session.extended_command("lsp-start")
-            session.wait_for_text("LSP command [RET for")
-            session.key("RET")
-            session.wait_for_text(prompt)
-            session.wait_for_text("PageDown/C-v: next; PageUp/M-v: previous")
-            session.type("yes")
-            session.wait_for_region_exact_text(
-                "minibuffer", prompt + "yes"
-            )
-            session.send(b"\x1b[6~" * 12)
-            session.wait_for_region_contents("body", tail)
-            _assert_minibuffer(session, prompt + "yes")
-            _assert_path_exists(
-                session, "unconfirmed LSP marker exists", marker, False
-            )
-            _assert_path_exists(
-                session, "unconfirmed LSP PID file exists", pid_file, False
-            )
-            session.send(b"\x1b[5~" * 12)
-            session.wait_for_text("Discovered LSP command")
-            _assert_minibuffer(session, prompt + "yes")
-            _assert_path_exists(
-                session, "unconfirmed LSP marker exists", marker, False
-            )
-            _assert_path_exists(
-                session, "unconfirmed LSP PID file exists", pid_file, False
-            )
-            session.key("RET")
-            session.wait_for_file(marker, b"spawned")
-            session.wait_for_text("LSP started.")
-            session.wait_for_region_text("mode-line", "Diag:")
-            pid_data = session.observe_file_bytes(pid_file)
-            pid = int(pid_data.decode("ascii").strip())
-            session.assert_external_state(
-                "nixd PID is greater than 1", pid > 1, True
-            )
-            session.assert_external_state("nixd process is running", _process_running(pid), True)
-            _wait_for_body_viewport(
-                session, original,
-                "original buffer viewport restored after confirmation",
-            )
-            session.extended_command("lsp-stop")
-            session.wait_for_text("LSP stopped.")
+                session.key("RET")
 
-            session.wait_for_external_state(
-                "nixd process exited after lsp-stop",
-                lambda: not _process_running(pid),
-                True,
-            )
-            _wait_for_body_viewport(
-                session, original,
-                "original buffer viewport preserved after LSP cleanup",
-            )
+            with _measure_phase("nixd_start_handshake"):
+                session.wait_for_file(marker, b"spawned")
+                session.wait_for_text("LSP started.")
+                pid_data = session.observe_file_bytes(pid_file)
+                pid = int(pid_data.decode("ascii").strip())
+                session.assert_external_state(
+                    "nixd PID is greater than 1", pid > 1, True
+                )
+                session.assert_external_state(
+                    "nixd process is running", _process_running(pid), True
+                )
+                _wait_for_body_viewport(
+                    session, original,
+                    "original buffer viewport restored after confirmation",
+                )
+
+            with _measure_phase("diagnostics_visibility"):
+                session.wait_for_region_text("mode-line", "Diag:")
+
+            with _measure_phase("nixd_stop_process_exit"):
+                session.extended_command("lsp-stop")
+                session.wait_for_text("LSP stopped.")
+                session.wait_for_external_state(
+                    "nixd process exited after lsp-stop",
+                    lambda: not _process_running(pid),
+                    True,
+                )
+                _wait_for_body_viewport(
+                    session, original,
+                    "original buffer viewport preserved after LSP cleanup",
+                )
             output, code = session.quit()
         assert_exit_zero("lsp-trust-review", output, code)
 
