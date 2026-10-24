@@ -20,7 +20,8 @@ root source tree responsible for every feature."
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli"
                "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit"
-               "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit")
+               "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit"
+               "loom-core-buffer")
   :pathname "."
   :serial t
   :components
@@ -29,8 +30,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "packages/core/buffer/src/package")
-   (:file "packages/core/window-tree/src/package")
+  ((:file "packages/core/window-tree/src/package")
    (:file "packages/core/minibuffer/src/package")
    (:file "packages/core/editor-session/src/package")
    (:file "packages/core/command/src/package")
@@ -205,28 +205,6 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:module "core-buffer-domain"
-      :pathname "."
-      :serial t
-      :components
-      (
-       (:file "packages/core/buffer/src/domain-buffer-storage")
-       (:file "packages/core/buffer/src/domain-buffer-storage-support")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table-position")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table-coalescing")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table-splicing")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table-support")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table")
-       (:file "packages/core/buffer/src/domain-buffer-piece-table-undo")
-       (:file "packages/core/buffer/src/domain-buffer")
-       (:file "packages/core/buffer/src/domain-buffer-accessors")
-       (:file "packages/core/buffer/src/domain-buffer-editing")
-       (:file "packages/core/buffer/src/domain-buffer-deletion")
-       (:file "packages/core/buffer/src/domain-buffer-history")
-       (:file "packages/core/buffer/src/domain-buffer-narrowing-support")
-       (:file "packages/core/buffer/src/domain-buffer-narrowing")
-       (:file "packages/core/buffer/src/domain-buffer-positions")
-      ))
      (:module "core-editor-domain"
       :pathname "."
       :serial t
@@ -816,21 +794,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "t/package")
-   (:file "t/test-helpers-core")
-   (:file "t/test-helpers-prompts")
-   (:file "t/test-helpers-lsp")
-   (:file "t/unit/protocol-test")
-   (:file "t/unit/buffer-test-support")
-   (:file "t/unit/buffer-basic-test")
-   (:file "t/unit/buffer-insert-test")
-   (:file "t/unit/buffer-delete-char-test")
-   (:file "t/unit/buffer-region-test")
-   (:file "t/unit/buffer-undo-test")
-   (:file "t/unit/buffer-redo-test")
-   (:file "t/unit/buffer-read-only-test")
-   (:file "t/unit/buffer-storage-test")
-   (:file "t/unit/buffer-view-test")
+  ((:file "t/unit/protocol-test")
    (:file "t/unit/sexp-motion-test")
    (:file "t/unit/structural-editing-test")
    (:file "t/unit/syntax-highlighting-test")
@@ -995,9 +959,21 @@ root source tree responsible for every feature."
    (:file "t/integration/concurrent-runtime-shutdown-test")
    (:file "t/integration/concurrent-runtime-submission-test")
    (:file "t/integration/advanced-test")
-   (:file "t/integration/piece-table-model-test")
    (:file "t/integration/editor-flow-test"))
-  :perform (asdf:test-op (o s)
+  :perform
+  (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test"))))
+
+(asdf:defsystem "loom/test-support"
+  :description "Shared test package and fixtures for loom slice tests"
+  :depends-on ("loom")
+  :pathname "."
+  :serial t
+  :in-order-to ((asdf:prepare-op (asdf:load-op "cl-weave")))
+  :components
+  ((:file "t/package")
+   (:file "t/test-helpers-core")
+   (:file "t/test-helpers-prompts")
+   (:file "t/test-helpers-lsp")))

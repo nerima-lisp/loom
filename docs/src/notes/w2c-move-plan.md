@@ -2,7 +2,7 @@
 
 ## 目的と前提
 
-本書は`docs/src/notes/requirements-modern-editor.md`の4.2節と11章、および`docs/src/notes/design-core-and-slices.md`の4〜6章を根拠にW2cのslice移設順、並列単位、W3開始条件を定める。ここでいう移設には物理pathの変更とASDF上の所有権切替を含む。
+本書は`docs/src/notes/requirements-modern-editor.md`の4.2節と11章、および`docs/src/notes/design-core-and-slices.md`の4〜6章を根拠にW2cのslice移設順、並列単位、W3開始条件を定める。W2a〜W2dは設計5章の移設phase、FR-A05は要件4.2のsource移設要件、W3-1〜W3-11は要件11.6の実装laneを指す。ここでいう移設には物理pathの変更とASDF上の所有権切替を含む。
 
 調査はリポジトリ内の静的な読み取りと検索に限る。実際の移設、ビルド、テストは行わない。表の現行pathは`origin/main`の`555c2dda3ee0ba883774898e628cc4f7024a5a96`を基準とする。移設先は各sourceまたはtest assertionのownerを示し、ASDF componentの切替は表の移設と同じcommitで行う。
 
@@ -14,7 +14,7 @@
 
 `core/buffer`のcommand ownerはsource directory名から推定せず、現行W2a specと責務定義で確認した。editing、movement、regionのspecは対象commandを`:core/buffer` ownerで登録し（`packages/core/buffer/src/command-specs-editing.lisp:4-47`、`packages/core/buffer/src/command-specs-movement.lisp:4-122`、`packages/core/buffer/src/command-specs-region.lisp:4-91`）、requirementはcore/bufferにbuffer編集、位置、narrowing、read-onlyを割り当てる（`docs/src/notes/requirements-modern-editor.md:145`）。特に`application-commands-movement-view-support.lisp`は現行treeではgoto-lineの入力・検証だけを含み（`packages/core/editor/src/application-commands-movement-view-support.lisp:3-36`）、W2a specもgoto-lineを`:core/buffer` ownerで登録する（`packages/core/buffer/src/command-specs-movement.lisp:114-122`）。設計表の`:3-66`とscroll helperの記述は現行sourceと一致しないため、この計画では現行W2a ownerを維持する。
 
-ここで確定するのはW2a command catalogの論理ownerであり、ASDF componentの所属ではない。表で`packages/core/buffer`をtargetとするapplication command sourceはcommand macro（`packages/core/editor/src/application-commands-editing.lisp:3-19`）、editor stateとwindow tree（`packages/core/editor/src/application-commands-movement-support.lisp:17-30`）、minibuffer（`packages/core/editor/src/application-commands-movement-view-support.lisp:28-36`）を参照する一方、batch 0 gateは`loom-core-buffer`の依存を0件に保つ。表のこれらのtargetはASDF所属が未確定の暫定pathである。batch 0 integration ownerは最初のbatch 0移設前にこれらのcomponentをrootに残すか上位systemへ置くかを決め、表とASDF照合を同じ判断に合わせる。それまではこれらを`loom-core-buffer`へ登録しない。
+ここで確定するのはW2a command catalogの論理ownerであり、ASDF componentの所属ではない。1.2表の`移設先`は物理pathを示し、ASDF ownerは別に決める。`packages/core/buffer`を移設先とするapplication command sourceはcommand macro（`packages/core/editor/src/application-commands-editing.lisp:3-19`）、editor stateとwindow tree（`packages/core/editor/src/application-commands-movement-support.lisp:17-30`）、minibuffer（`packages/core/editor/src/application-commands-movement-view-support.lisp:28-36`）を参照する。batch 0ではこれらのfileを表のpathへ物理移動してもroot `loom` componentが所有し、依存0件の`loom-core-buffer`には登録しない。package bootstrapの移設後、batch 2でcomponent ownerを`loom-core-command`へ切り替える。例外のword-motion helperとcaller 2 fileはbatch 0では現在の`core/editor` pathとroot component ownerに保ち、batch 2で3 fileを一緒に`core/command`へ移す。3 fileはいずれも`LOOM` packageに属するためhelperをexportしない。各batchの開始前にW2cの進行役がintegration ownerを1人指名し、そのownerが共有root manifestを適用する。
 
 | owner | 現在のpath | LOC | W2c移設先 / 扱い |
 |---|---|---:|---|
@@ -289,8 +289,8 @@
 | kill-ring | `packages/core/editor/src/application-commands-kill-region-support.lisp` | 50 | `packages/feature/kill-ring/src/application-commands-kill-region-support.lisp` |
 | kill-ring | `packages/core/editor/src/application-commands-kill-support.lisp` | 91 | `packages/feature/kill-ring/src/application-commands-kill-support.lisp` |
 | kill-ring | `packages/core/editor/src/application-commands-kill-word-support.lisp` | 60 | `packages/feature/kill-ring/src/application-commands-kill-word-support.lisp` |
-| kill-ring | `packages/core/editor/src/application-commands-kill.lisp` | 24 | `packages/feature/kill-ring/src/application-commands-kill.lisp` |
-| core/buffer | `packages/core/editor/src/application-commands-movement-support.lisp` | 72 | `packages/core/buffer/src/application-commands-movement-support.lisp` |
+| core/command | `packages/core/editor/src/application-commands-kill.lisp` | 24 | `packages/core/command/src/application-commands-kill.lisp`（batch 2でword-motion helperと一緒に移す） |
+| core/command | `packages/core/editor/src/application-commands-movement-support.lisp` | 72 | `packages/core/command/src/application-commands-movement-support.lisp`（batch 2でword-motion helperと一緒に移す） |
 | core/buffer | `packages/core/editor/src/application-commands-movement-view-support.lisp` | 36 | `packages/core/buffer/src/application-commands-movement-view-support.lisp` |
 | core/buffer | `packages/core/editor/src/application-commands-movement.lisp` | 52 | `packages/core/buffer/src/application-commands-movement.lisp` |
 | core/command | `packages/core/editor/src/application-commands-prefix-argument-support.lisp` | 22 | `packages/core/command/src/application-commands-prefix-argument-support.lisp` |
@@ -310,7 +310,7 @@
 | lisp-structure | `packages/core/editor/src/application-structural-editing-offsets.lisp` | 24 | `packages/feature/lisp-structure/src/application-structural-editing-offsets.lisp` |
 | lisp-structure | `packages/core/editor/src/application-structural-editing-support.lisp` | 46 | `packages/feature/lisp-structure/src/application-structural-editing-support.lisp` |
 | lisp-structure | `packages/core/editor/src/application-structural-editing.lisp` | 116 | `packages/feature/lisp-structure/src/application-structural-editing.lisp` |
-| core/buffer | `packages/core/editor/src/application-word-motion.lisp` | 25 | `packages/core/buffer/src/application-word-motion.lisp` |
+| core/command | `packages/core/editor/src/application-word-motion.lisp` | 25 | `packages/core/command/src/application-word-motion.lisp`（callerと一緒にbatch 2で移す） |
 | core/minibuffer | `packages/core/minibuffer/src/commands-prompts.lisp` | 35 | `packages/core/minibuffer/src/commands-prompts.lisp` |
 | core/minibuffer | `packages/core/minibuffer/src/minibuffer-activation.lisp` | 72 | `packages/core/minibuffer/src/minibuffer-activation.lisp` |
 | core/minibuffer | `packages/core/minibuffer/src/minibuffer-completion.lisp` | 60 | `packages/core/minibuffer/src/minibuffer-completion.lisp` |
@@ -584,30 +584,31 @@ system名は設計書のhyphen区切りを使う。
 
 ### 2.2 test systemの依存と共有support
 
-次図の矢印はsystem間の`depends-on`を表し、左のsystemが右のsystemに依存する。
+次図の通常の矢印はsystem間の`:depends-on`を表し、左のsystemが右のsystemに依存する。`loom/test`から共有supportとslice testへの矢印は、直接依存ではなく`asdf:prepare-op`の`:in-order-to` prerequisiteである。
 各sliceのtest systemは、自分のproduction systemとrootの`loom/test-support`へ依存する。
-`loom/test-support`は`loom` production aggregateに依存し、共有test packageと共通fixtureを所有する。
-共有supportの外部test dependencyは現行`loom/test`が宣言する`cl-weave`、`cl-date-kit`、`cl-codec-kit`、`cl-parser-kit`、`cl-regex-kit`、`cl-boundary-kit`、`cl-concurrent-kit`、`cl-vcs-kit`、`cl-process-kit`を起点にする（`loom.asd:784-786`）。
+`loom/test-support`は`loom` production aggregateに依存し、共有test packageと共通fixtureを所有する。packageとfixtureが使う外部systemはsupportのprepare prerequisiteで先にloadする。
 各slice testが直接参照するlibraryは別表の候補を照合してslice側へ宣言する。
-rootの`loom/test`は共有support、全slice test system、未移設のroot integration testを集約する。
+rootの`loom/test`は現在の外部test library依存を保ち、共有supportと全slice test systemをprepare prerequisiteとしてloadしてから、未移設のroot test componentをloadする。
 
 ```text
 loom production aggregate -> 全slice production system
 loom/test-support -> loom production aggregate
 loom/test-support owns 共有test package、共通fixture
 slice/test -> 自slice production system、loom/test-support、直接使うtest library
-loom/test aggregate -> loom/test-support、全slice/test、rootに残るtest
+loom/test :prepare-op/:in-order-to -> loom/test-support、全slice/test
+loom/test :depends-on -> loom production aggregate、外部test library
 ```
 
 `loom/test-support`はASDF system名であり、既存test fileのpackage名`loom/test`を変える必要はない。
 supportがaggregate testに依存すると逆向きの循環になるため、supportはproduction aggregateだけに依存する。
 `t/package.lisp`は複数のfeature packageとcore packageを`:use`するため、support依存が全sliceのproductionを引く広いtest境界になる。
+root `loom/test`の`:depends-on`へlocal test system名を加えない。dependency-contractはrootの直接依存をflake inputとして検証するため、local systemは`:in-order-to` prerequisiteとしてloadする。
 test packageをslice別に分ける案は、全testのpackage宣言とfixture共有を改めるためW2cの範囲に含めない。
 
 | test system | 直接使うtest library候補 |
 | --- | --- |
 | `core/buffer/test` | `cl-host-kit` |
-| `core/window-tree/test` | なし |
+| `core/window-tree/test` | `cl-weave` |
 | `core/minibuffer/test` | `cl-tty-kit`、`cl-history-kit` |
 | `core/editor-session/test` | `cl-host-kit` |
 | `core/command/test` | `cl-host-kit`、`cl-tty-kit`、`cl-json-kit` |
@@ -686,7 +687,7 @@ W2a specは`loom.asd:726-729`でroot componentとして登録され、`packages/
 
 ### 3.1 W2c移設バッチ
 
-batch内のslice sourceとslice testは別担当が並行で準備できるが、共有root manifestの適用は一つのintegration ownerが行う。
+batch内のslice sourceとslice testは別担当が並行で準備できる。W2cの進行役は各batchの開始前に一人のintegration ownerを指名し、その人が共有root manifestを適用する。
 依存相手がmainに統合される前に、依存するsliceの移設commitをmainへ入れない。
 
 | batch | slice | 先行条件 | 並列実施条件 |
@@ -709,8 +710,6 @@ W2bが所有するrunner、coverage、dependency test、E2E discoveryをW2c担�
 root aggregateへのcomponent切替は統合ownerが一つずつ行い、変更中のshared fileを並行rebaseしない。
 
 ## 4. 並列分割と競合の扱い
-
-`.asd`、`src/`、`t/`はsliceごとに分かれるため、sourceとtestの下準備は競合しにくい。
 
 | path / decision point | 競合の性質 | 担当と対処 |
 |---|---|---|
@@ -759,23 +758,23 @@ root aggregate、flake、runner、E2E harnessを編集しない。
 
 ## 6. commit gateとbatch gate
 
-現要件11.5と設計5章は、W2の各commitで全unit suiteと全E2Eを求めている。
-この計画ではその条件をbatch境界だけに緩めない。
-静的調査では実行時間やflakeの過剰検査を示す証拠がなく、検証強度を落とす前提を置けないためである。
-test件数のbaselineはW2c着手時点のmainで登録されている件数とする。移設後の登録先と重複の有無はbatch境界で1.1表と1.2表のpath割当をASDF component一覧に照合する。
+現要件11.5と設計5章は、W2の各commitで全unit suiteと全E2Eを求めている。W2cでは各slice commitで全unit suiteを実行する。1〜3 slice commitごとのpush tipで`nix run .#e2e`を1回実行する。
+
+push tipは一時bookmarkでoriginへpushし、CIをdispatchする。全jobがsuccessでheadShaがpush SHAと一致することを確認した後、同じSHAをmainへpushする。一時bookmarkをremoteから削除し、mainのref SHAとmain CIも確認する。
+
+ローカルflake checkはpush条件から外す。別プロジェクトの負荷が高い環境でserial flake checkを実行したところ、`MAIN CLI integration`が60秒でtimeoutする失敗を繰り返したためである。in-process suiteは必ずexit 0とし、ほかのin-processとlocal E2Eの失敗は不具合として扱う。GitHub Actions CIではflake check、PTY E2E、Offline release archiveを含む全jobのsuccessを確認する。
+
+origin/mainがpush前に進んでいたらrebaseし、in-process suiteを再実行する。rebase後の新しいpush tipでもlocal E2Eを1回実行する。test件数のbaselineはW2c着手時点のmainで登録されている件数とする。
 
 | gate | 実行範囲 | 合格条件 |
 |---|---|---|
-| slice commit | 移設したsliceのunit test、`nix develop -c loom-test`、`nix run .#e2e` | unit/E2E全件が成功し、登録test件数がbaselineを下回らない |
-| batch境界 | `nix flake check --print-build-logs`、ASDF production/test system一覧、W2b dependency-union gate、root aggregate component一覧と1.1・1.2表のpath割当 | 全flake checkが成功する。移設済みpathは表のowner systemへ一度だけ登録され、移設前の未登録pathも担当batchで登録される |
+| slice commit | `nix develop --command sbcl --script run-tests.lisp` | 全unit testが成功し、登録test件数がbaselineを下回らない |
+| push tip（1〜3 slice commitごと） | `nix run .#e2e`を1回実行し、一時bookmarkをpushしてCIをdispatchする。その後同じSHAをmainへpushする | E2Eとdispatch CI・main CIの全jobが成功し、headShaと各ref SHAがpush SHAに一致する。ローカルflake checkは実行しない |
+| batch境界 | ASDF production/test system一覧、W2b dependency-union gate、root aggregate component一覧と1.1・1.2表のpath割当 | 各pathが意図したsystemへ一度だけ登録され、未登録pathが担当batchで登録される |
 | W2d境界 | warningからfailureへの切替、既知allowlist、未知依存/private symbol/domain上位層参照のnegative control | 許可済み違反だけが残り、negative controlはfailureになる |
-| W3 lane統合 | lane固有test、全unit、全E2E、flake check、境界gate | laneのpath所有権、export、他lane API依存を満たし、既存scenarioと追加scenarioが全件成功する |
+| W3 lane統合 | lane固有test、全unit、全E2E、GitHub CIのflake check、境界gate | laneのpath所有権、export、他lane API依存を満たし、既存scenarioと追加scenarioおよびCIの全jobが成功する |
 
-batchごとに全件を再確認することで、複数sliceを統合する点でも依存の欠落を検出する。
-このbatch gateはcommit gateに追加するものであり、その代替ではない。
-全件をbatch境界だけへ移した場合は、slice commitの段階でintegration regressionを検出できず、失敗したsliceの特定が遅れる。
-さらに中間commitが独立に動作する保証を失い、bisectで原因範囲がbatch内に広がる。
-現要件を変えてこの損失を受け入れるには、実測した実行コストと合格条件を要件側で決め直す必要がある。
+batch境界gateはsliceごとのunit gate、およびpush tipのE2E/CI gateを置き換えない。E2Eが失敗した場合は、修正をpushする前に範囲内の各slice commitを検査する。
 
 ## 7. 要件と設計との差分と未確定点
 
@@ -783,7 +782,8 @@ batchごとに全件を再確認することで、複数sliceを統合する点�
 |---|---|---|
 | split行の内容と移設先 | 確定 | 1.1・1.2表に関数名、assertion内容、source行、固有の移設先を記載 |
 | 複数sourceの同一targetへの統合 | 確定 | source file境界を維持し、別sourceを同一targetへ統合しない。表のtarget pathはsourceまたは分割片ごとに固有 |
-| batch 0の`core/buffer`依存とcommand source owner | 一部未確定 | `loom-core-buffer`の直接依存は0件。application command sourceはcommand macro、editor state、window tree、minibufferを参照する（1.1表のsource line根拠）。W2a specはbatch 0ではroot `loom`が所有し、batch 2で`loom-core-command`へ移す。application command sourceのASDF ownerはbatch 0 integration ownerが最初の移設前に決め、決定まではroot componentに残す |
+| application command sourceのASDF owner | 確定 | 最終ownerは`loom-core-command`とする。command macroとeditor state、buffer、minibuffer APIに依存するため、`loom-core-buffer`の0依存条件を保てる。sourceとpackage bootstrapの移設まではroot componentに残す | `packages/core/command/src/package.lisp:3-15`、`loom.asd:32-41`、3節のcore移設順 |
+| batch 0の`core/buffer` word-motion helper | 解決済み | `application-word-motion.lisp`とそのcaller `application-commands-movement-support.lisp`、`application-commands-kill.lisp`をbatch 2で`core/command`へ一緒に移す。3 fileは`LOOM` packageを維持し、helperをexportしない。batch 0ではこれらをroot componentのままにできるため、`core/buffer` sliceの移設を進める | `packages/core/editor/src/application-word-motion.lisp:8-25`、`packages/core/editor/src/application-commands-movement-support.lisp:71-72`、`packages/core/editor/src/application-commands-kill.lisp:9-15` |
 | file-tree/filesの循環境界API | 一部未確定 | `visit-file`をfilesからexportし、`buffer-load`/`buffer-save` methodをfilesへ移す。native-path helperのexportかsource分割かはbatch 6 integration ownerがfile移設前に決める |
 | ASDF所有権の照合 | 確定 | section 8のASDF component列挙で`system`と`pathname`を出し、1.1・1.2の割当と照合する。現在のcomponent未登録sourceも2節に列挙 |
 
@@ -794,11 +794,11 @@ batchごとに全件を再確認することで、複数sliceを統合する点�
 | coreの移設順 | 設計5章はcommandをeditor-sessionより先に置く | editor-sessionをcommandより先に移す | core/commandがeditor-sessionをimportする |
 | modeとfile I/O | 設計5章の概略順はfiles、buffers、file-treeをmodeより先に置く | mode、buffers、files、file-treeの順へ変える | filesとfile-treeが`major-mode-for-path`を参照する |
 | file-treeとfilesの境界 | file-tree既存pathを広く残す順序 | `visit-file` exportとbuffer I/O provider移設で依存方向を固定する。native-path helper境界はbatch 6開始前に確定する | `visit-file`の既存定義とfile-tree callerは3節に記載。private helperはpublic contract未定 |
-| command specの配置 | W2a specはroot `loom` componentに登録済み | 3つの誤配置sourceをcore/buffer directoryからcore/commandへ移し、batch 0ではroot所有を維持する | `loom.asd:726-729`、3節のbatch 0 gate |
+| command specの配置 | W2a specはroot `loom` componentに登録済み | 3つのspec fileはbatch 0を通じて現在の`packages/core/buffer/src/` pathとroot `loom` ASDF所有を維持し、batch 2でpathと`loom-core-command`所有を同一commitで切り替える | `loom.asd:726-729`、3節のbatch 0/2割当、1commit/1slice規則 |
 | test support | 各slice testの配置は定義済みだが、共有packageのsystem所有が残る | `loom/test-support`を追加し、root aggregateの外へ共有packageを置く | slice/testから`loom/test` aggregateへの循環を避ける |
 | movement-view helper | 設計資料はscrollとgoto-lineを分割する | 現行sourceにscroll helperはない。W2a catalogの`:core/buffer` ownerを保ち、goto-line helperを同じownerに割り当てる | 現行sourceは`packages/core/editor/src/application-commands-movement-view-support.lisp:3-36`、W2a specは`packages/core/buffer/src/command-specs-movement.lisp:114-122` |
 | W3開始時期 | W2完了後にW3開始 | 条件を満たすbranch作業だけW2dと重ねる。main mergeはW2d成功後 | W3 path所有とroot共有pathを分離できる。gate違反は統合前に検出する |
-| commit gate | W2各commitでunitとE2E全件 | 維持する。batch境界で追加確認する | 実行負荷を理由に落とす根拠がない |
+| commit gate | slice commitごとの全unit suite、push tipのE2EとGitHub CI | slice commitごとに全unitを実行し、1〜3 sliceごとのpush tipでE2Eを1回実行して一時bookmark CIとmain CIの全jobを確認する（6節） | 中間commit単位のE2E保証を失い、失敗時のbisect範囲を最大3 slice commitとする。ローカルflake checkはpush条件から外す |
 | `commands-internal.lisp` | 設計資料は選択buffer/window registry helperの移設を示唆する | 現root fileを残す。registry関数の新たな移設先は設けない | 現行fileの定義は`%order-region`だけ（`src/application/commands-internal.lisp:3-12`）。buffer registryは`registered-buffers`、`register-buffer`、`unregister-buffer`としてすでにfeature/buffersにある（`packages/feature/buffers/src/domain-buffer-registry.lisp:14-26`）。設計資料の選択window helperとregistry helperの記述は現行sourceにない |
 
 W2c表のtarget pathにはまだ新規作成していないpathが含まれる。
@@ -806,7 +806,7 @@ W2c表のtarget pathにはまだ新規作成していないpathが含まれる�
 
 ## 8. source inventoryとASDF所有権の再現
 
-rebase後に次のscriptを実行すると、1.1・1.2表の現在path列をtracked source inventoryと照合する。欠落、余剰、重複があればexit 1になる。
+`main@origin`へrebaseした後、W2cのsource移動を始める前に次のscriptを実行すると、1.1・1.2表の現在path列をtracked source inventoryと照合できる。欠落、余剰、重複があればexit 1になる。このscriptは移設前pathのbaseline検査であり、各batch完了時にはそのまま再利用しない。
 
 ```bash
 python3 - <<'PY'
@@ -857,7 +857,7 @@ if missing or extra or duplicates or len(actual) != len(assigned):
 PY
 ```
 
-ASDF ownershipは次のcommandでsystem名とcomponent pathnameのTSVを作り、移設後は各pathが表の移設先systemに一度だけ現れることを確認する。移設前の一覧ではroot componentと各slice `.asd`の所有状態を分けて読める。
+ASDF ownershipは次のcommandでsystem名とcomponent pathnameのTSVを作る。この出力自体は判定を行わない。各batchの完了時に、実際のcomponent pathとsystem名を1.1・1.2表の移設先と照合し、各pathが意図したsystemに一度だけ登録されていることを確認する。移設前の一覧ではroot componentと各slice `.asd`の所有状態を分けて読める。
 
 ```bash
 sbcl --noinform --non-interactive \
