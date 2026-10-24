@@ -604,19 +604,26 @@
                (second form))
       (string (second form)))))
 
+(defvar *boundary-source-records* nil)
+
+;; The ASDF component set is fixed for one suite run, so both checks share this scan.
+(eval-when (:load-toplevel)
+  (setf *boundary-source-records*
+        (loop for pathname in (boundary-lisp-components (asdf:find-system "loom"))
+              for path = (boundary-relative-path pathname)
+              for text = (uiop:read-file-string pathname)
+              for package-name = (boundary-source-package-name text)
+              for layer = (boundary-path-layer path)
+              collect (make-boundary-record
+                       :path path :slice (boundary-path-slice path)
+                       :layer layer
+                       :package (or (and package-name (find-package package-name))
+                                    (unless (eq layer :declaration)
+                                      (find-package "ASDF-USER")))
+                       :text text))))
+
 (defun boundary-source-records ()
-  (loop for pathname in (boundary-lisp-components (asdf:find-system "loom"))
-        for path = (boundary-relative-path pathname)
-        for text = (uiop:read-file-string pathname)
-        for package-name = (boundary-source-package-name text)
-        for layer = (boundary-path-layer path)
-        collect (make-boundary-record
-                 :path path :slice (boundary-path-slice path)
-                 :layer layer
-                 :package (or (and package-name (find-package package-name))
-                              (unless (eq layer :declaration)
-                                (find-package "ASDF-USER")))
-                 :text text)))
+  *boundary-source-records*)
 
 (defun boundary-name-part (text)
   (with-output-to-string (out)
