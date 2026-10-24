@@ -38,7 +38,7 @@
 (defun %session-workspace-live-buffers (manager)
   "Return buffers displayed by every workspace in MANAGER."
   (mapcan (lambda (workspace)
-            (mapcar loom/core/window-tree:window-buffer
+            (mapcar #'loom/core/window-tree:window-buffer
                     (loom/core/window-tree:window-tree-windows
                      (loom/feature/workspace:workspace-window-tree workspace))))
           (loom/feature/workspace:workspace-manager-workspaces manager)))
