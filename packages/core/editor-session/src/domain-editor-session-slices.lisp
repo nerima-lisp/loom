@@ -12,7 +12,9 @@
 
 (defun register-slice-state (name constructor)
   (check-type name symbol)
-  (check-type constructor function)
+  (check-type constructor symbol)
+  (unless (fboundp constructor)
+    (error "Slice state constructor ~S is not fbound" constructor))
   (multiple-value-bind (registered-constructor registered-p)
       (gethash name *slice-state-constructors*)
     (when (and registered-p (not (eq registered-constructor constructor)))
@@ -39,7 +41,7 @@
     (let ((session (%make-editor-session names)))
       (dolist (entry (nreverse constructors))
         (setf (gethash (car entry) (%editor-session-slice-states session))
-              (funcall (cdr entry) session)))
+              (funcall (symbol-function (cdr entry)) session)))
       session)))
 
 (defun editor-session-slice (session name)

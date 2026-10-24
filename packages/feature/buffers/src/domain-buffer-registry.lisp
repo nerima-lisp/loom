@@ -9,7 +9,7 @@
   (declare (ignore session))
   (%make-buffer-registry))
 
-(register-slice-state :feature/buffers #'%make-buffer-registry-state)
+(register-slice-state :feature/buffers '%make-buffer-registry-state)
 
 (defun registered-buffers (session)
   (copy-list
