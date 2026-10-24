@@ -369,6 +369,9 @@
 
       root = ./.;
       src = sourceRoot;
+      packageArgs = _: {
+        lispAsdPath = [ "packages//" ];
+      };
 
       lispDependencies =
         ctx: with siblingsFor ctx; [
