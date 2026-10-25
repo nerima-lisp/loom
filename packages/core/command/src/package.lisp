@@ -2,7 +2,19 @@
   (:use #:cl)
   (:import-from #:loom/core/buffer
                 #:buffer-insert-string
-                #:buffer-record-undo-boundary)
+                #:buffer-record-undo-boundary
+                #:buffer-visible-point-line
+                #:buffer-visible-line-count
+                #:buffer-narrow-start-offset
+                #:buffer-visible-text
+                #:buffer-point-offset
+                #:buffer-point-column
+                #:buffer-point-line
+                #:buffer-line
+                #:buffer-offset-position
+                #:buffer-position-line
+                #:buffer-position-column
+                #:buffer-delete-region)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
                 #:editor-state-clear-last-yank

@@ -31,6 +31,7 @@
      (:file "application-commands-prefix-argument")
      (:file "application-word-motion")
      (:file "application-commands-movement-support")
+     (:file "application-commands-emacs-defaults")
      (:file "application-commands-kill")
      (:file "application-commands-extended-command")
      (:file "commands-keybinding-spec")

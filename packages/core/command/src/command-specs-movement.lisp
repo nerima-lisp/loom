@@ -125,7 +125,7 @@
   )
 
   (progn
-  (register-command-spec :core/buffer "recenter-top-bottom" "recenter-top-bottom" #'loom::recenter-top-bottom
+  (register-command-spec :core/buffer "recenter-top-bottom" "recenter-top-bottom" #'recenter-top-bottom
                        :keys '((:control #\l))
                        :keymap :global
                        :group "movement"
@@ -136,7 +136,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "transpose-chars" "transpose-chars" #'loom::transpose-chars
+  (register-command-spec :core/buffer "transpose-chars" "transpose-chars" #'transpose-chars
                        :keys '((:control #\t))
                        :keymap :global
                        :group "editing"

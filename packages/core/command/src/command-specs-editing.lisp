@@ -48,7 +48,7 @@
   )
 
   (progn
-  (register-command-spec :core/buffer "upcase-word" "upcase-word" #'loom::upcase-word
+  (register-command-spec :core/buffer "upcase-word" "upcase-word" #'upcase-word
                        :keys '((:alt #\u))
                        :keymap :global
                        :group "editing"
@@ -59,7 +59,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "downcase-word" "downcase-word" #'loom::downcase-word
+  (register-command-spec :core/buffer "downcase-word" "downcase-word" #'downcase-word
                        :keys '((:alt #\l))
                        :keymap :global
                        :group "editing"
@@ -70,7 +70,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "capitalize-word" "capitalize-word" #'loom::capitalize-word
+  (register-command-spec :core/buffer "capitalize-word" "capitalize-word" #'capitalize-word
                        :keys '((:alt #\c))
                        :keymap :global
                        :group "editing"

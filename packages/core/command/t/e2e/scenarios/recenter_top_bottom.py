@@ -24,24 +24,24 @@ def recenter_top_bottom(binary):
         with Session(binary, [path], rows=9) as session:
             session.wait_ready()
             session.send(keys.ctrl("n") * 7)
-            session.wait_for_region_exact_text("body", "line7", index=7)
-            session.wait_for_region_cursor("body", 0, index=7)
+            session.wait_for_region_exact_text("body", "line7", index=6)
+            session.wait_for_region_cursor("body", 0, index=6)
 
             session.send(keys.ctrl("l"))
-            session.wait_for_region_exact_text("body", "line7", index=4)
-            session.wait_for_region_cursor("body", 0, index=4)
+            session.wait_for_region_exact_text("body", "line7", index=3)
+            session.wait_for_region_cursor("body", 0, index=3)
 
             session.send(keys.ctrl("l"))
             session.wait_for_region_exact_text("body", "line7", index=0)
             session.wait_for_region_cursor("body", 0, index=0)
 
             session.send(keys.ctrl("l"))
-            session.wait_for_region_exact_text("body", "line7", index=7)
-            session.wait_for_region_cursor("body", 0, index=7)
+            session.wait_for_region_exact_text("body", "line7", index=6)
+            session.wait_for_region_cursor("body", 0, index=6)
 
             session.send(keys.ctrl("l"))
-            session.wait_for_region_exact_text("body", "line7", index=4)
-            session.wait_for_region_cursor("body", 0, index=4)
+            session.wait_for_region_exact_text("body", "line7", index=3)
+            session.wait_for_region_cursor("body", 0, index=3)
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, initial)

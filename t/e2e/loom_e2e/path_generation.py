@@ -35,7 +35,15 @@ _MUTATION_CASES = (
     ("prefix-u4", "prefix-C-u-4", "specified prefix behavior is observed", ["file_bytes"]),
 )
 
-_W3_1 = {"universal-argument", "execute-extended-command"}
+_W3_1 = {
+    "universal-argument",
+    "execute-extended-command",
+    "capitalize-word",
+    "downcase-word",
+    "recenter-top-bottom",
+    "transpose-chars",
+    "upcase-word",
+}
 _W3_2 = {"keyboard-quit", "save-buffers-kill-terminal"}
 _W3_3 = {"find-file", "save-buffer", "write-file", "recent-file", "toggle-read-only"}
 _W3_7A = {"set-major-mode", "indent-for-tab-command", "comment-line"}
