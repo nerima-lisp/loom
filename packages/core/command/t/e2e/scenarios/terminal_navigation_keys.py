@@ -128,26 +128,39 @@ def terminal_navigation_page(binary):
         lines = [f"line{index}" for index in range(20)]
         initial = ("\n".join(lines) + "\n").encode("ascii")
         path = _navigation_file(directory, lines)
-        with Session(binary, [path], rows=8) as session:
-            session.wait_ready()
-            session.wait_for_region_cursor("body", 0, index=0)
+        session = Session(binary, [path], rows=8)
+        try:
+            with session:
+                session.wait_ready()
+                session.wait_for_region_cursor("body", 0, index=0)
 
-            session.send(b"\x1b[B" * 14)
-            session.wait_for_region_text("body", "line9")
-            session.send(b"\x1b[6~")
-            session.wait_for_region_text("body", "line14", index=1)
-            session.assert_screen_text(
-                "line14", match="contains", region="body", index=1
-            )
-            session.send(b"\x1b[5~")
-            session.wait_for_region_text("body", "line9")
-            session.assert_screen_text("line9", match="starts_with", region="body")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, initial)
-            session.assert_file_bytes(path, initial)
-
-            output, code = session.quit()
-            if code != 0:
-                raise AssertionError(
-                    f"movement/terminal-navigation-page exited with {code}: {output!r}"
+                session.send(b"\x1b[B" * 14)
+                session.wait_for_region_text("body", "line9")
+                session.send(b"\x1b[6~")
+                session.wait_for_region_text("body", "line14", index=1)
+                session.assert_screen_text(
+                    "line14", match="contains", region="body", index=1
                 )
+                session.send(b"\x1b[5~")
+                session.wait_for_region_text("body", "line9")
+                session.assert_screen_text(
+                    "line9", match="starts_with", region="body"
+                )
+                session.send(keys.ctrl("x") + keys.ctrl("s"))
+                session.wait_for_file(path, initial)
+                session.assert_file_bytes(path, initial)
+
+                output, code = session.quit()
+                if code != 0:
+                    raise AssertionError(
+                        f"movement/terminal-navigation-page exited with {code}: {output!r}"
+                    )
+        except TimeoutError:
+            print("movement/terminal-navigation-page body screen on timeout:")
+            print(session.region_contents("body"))
+            trace_tail = session.trace_bytes.decode(
+                "utf-8", errors="replace"
+            ).splitlines()[-8:]
+            print("movement/terminal-navigation-page trace tail on timeout:")
+            print("\n".join(trace_tail))
+            raise
