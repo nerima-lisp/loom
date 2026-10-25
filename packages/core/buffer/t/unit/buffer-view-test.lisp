@@ -108,13 +108,30 @@
       (expect (buffer-visible-offset-position buffer 1) :to-be nil)
       (expect (buffer-visible-offset-position buffer 8) :to-be nil)))
 
-  (it "reports point coordinates relative to a multiline visible region"
+  (it "reads visible lines and point coordinates across narrowed and piece-backed text"
     (let ((buffer (make-buffer :initial-content (format nil "zero~%one~%two"))))
       (buffer-narrow-to-region buffer 0 2 2 1)
       (buffer-set-point buffer 1 1)
       (expect (buffer-visible-point-line buffer) :to-equal 1)
       (expect (buffer-visible-point-column buffer) :to-equal 1)
-      (expect (buffer-visible-line-count buffer) :to-equal 3)))
+      (expect (buffer-visible-line-count buffer) :to-equal 3)
+      (expect (buffer-visible-line buffer 0) :to-equal "ro")
+      (expect (buffer-visible-line buffer 1) :to-equal "one")
+      (expect (buffer-visible-line buffer 2) :to-equal "t"))
+    (let ((buffer (make-buffer :initial-content (format nil "ab~%cd~%"))))
+      (buffer-set-point buffer 0 1)
+      (buffer-insert-string buffer "X")
+      (expect (buffer-visible-line-count buffer) :to-equal 3)
+      (expect (buffer-visible-line buffer 0) :to-equal "aXb")
+      (expect (buffer-visible-line buffer 1) :to-equal "cd")
+      (expect (buffer-visible-line buffer 2) :to-equal ""))
+    (let ((buffer (make-buffer)))
+      (expect (buffer-visible-line-count buffer) :to-equal 1)
+      (expect (buffer-visible-line buffer 0) :to-equal ""))
+    (let ((buffer (make-buffer :initial-content "x")))
+      (buffer-narrow-to-region buffer 0 0 0 0)
+      (expect (buffer-visible-line-count buffer) :to-equal 1)
+      (expect (buffer-visible-line buffer 0) :to-equal "")))
 
   (it "rejects a visible line number outside the narrowed view"
     (let ((buffer (make-buffer :initial-content "one")))

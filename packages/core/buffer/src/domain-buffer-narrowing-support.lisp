@@ -11,19 +11,60 @@
              (setf line-start (1+ newline))
           finally (return (values line (- bounded-offset line-start))))))
 
-(defun %visible-lines (buffer)
-  "Return BUFFER's visible text split into lines without trailing newlines."
-  (let ((text (buffer-visible-text buffer))
-        (start 0)
-        (lines nil))
-    (loop for newline = (position #\Newline text :start start)
-          do (if newline
-                 (progn
-                   (push (subseq text start newline) lines)
-                   (setf start (1+ newline)))
-                 (progn
-                   (push (subseq text start) lines)
-                   (return (nreverse lines)))))))
+(defun %visible-line-scan (buffer &optional target-line)
+  "Count visible lines, returning TARGET-LINE without building the complete text."
+  (let ((visible-start (%buffer-narrow-start-offset buffer))
+        (visible-end (%buffer-narrow-end-offset buffer))
+        (cursor 0)
+        (line-index 0)
+        (line-count 1)
+        (line-stream (and target-line (make-string-output-stream))))
+    (dolist (piece (%buffer-pieces buffer))
+      (when (>= cursor visible-end)
+        (return))
+      (let* ((piece-end (+ cursor (%piece-length piece)))
+             (visible-piece-start (max visible-start cursor))
+             (visible-piece-end (min visible-end piece-end)))
+        (when (< visible-piece-start visible-piece-end)
+          (let* ((source (%piece-source-text buffer piece))
+                 (source-start
+                   (+ (%piece-start piece) (- visible-piece-start cursor)))
+                 (source-end
+                   (+ (%piece-start piece) (- visible-piece-end cursor))))
+            (loop with segment-start = source-start
+                  for newline = (position #\Newline source
+                                          :start segment-start
+                                          :end source-end)
+                  do (if newline
+                         (progn
+                           (when (and target-line
+                                      (eql line-index target-line))
+                             (write-string source line-stream
+                                           :start segment-start
+                                           :end newline)
+                             (return-from %visible-line-scan
+                               (values
+                                (get-output-stream-string line-stream)
+                                line-count
+                                t)))
+                           (incf line-count)
+                           (incf line-index)
+                           (setf segment-start (1+ newline)))
+                         (progn
+                           (when (and target-line
+                                      (eql line-index target-line))
+                             (write-string source line-stream
+                                           :start segment-start
+                                           :end source-end))
+                           (return))))))
+        (setf cursor piece-end)))
+    (values
+     (when (and target-line
+                (eql line-index target-line))
+       (get-output-stream-string line-stream))
+     line-count
+     (and target-line
+          (eql line-index target-line)))))
 
 (defun %validate-narrow-region-order
     (start-line start-column end-line end-column)
