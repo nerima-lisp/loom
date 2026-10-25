@@ -257,6 +257,20 @@
                                                       (auto-save-enabled-p
                                                        buffer)
                                                       :to-be-falsy))))))
+          (it "toggles global mode when no explicit value is supplied"
+              (%with-minibuffer-state (minibuffer "text")
+                                      (let ((state *editor-state*))
+                                        (expect
+                                         (editor-state-auto-save-mode-p state)
+                                         :to-be-falsy)
+                                        (expect (auto-save-mode) :to-be-truthy)
+                                        (expect
+                                         (editor-state-auto-save-mode-p state)
+                                         :to-be-truthy)
+                                        (expect (auto-save-mode) :to-be nil)
+                                        (expect
+                                         (editor-state-auto-save-mode-p state)
+                                         :to-be-falsy))))
           (it "runs automatic saving from the session tick hook"
               (%with-minibuffer-state (minibuffer "text")
                                       (declare (ignore minibuffer))
