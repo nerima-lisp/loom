@@ -54,6 +54,7 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                            keymap-state
                                            terminal-session
                                            force-ready-p)
+    (declare (ignore frame-dirty-p))
     (cond
       ((eq status :terminate)
        (values :terminate reason exit-status last-width last-height nil))
@@ -67,8 +68,7 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
             (%poll-terminal-resize (editor-state-renderer *editor-state*)
                                    last-width
                                    last-height)
-          (when (or (not (null status)) frame-dirty-p)
-            (%render-event-loop-frame output-stream))
+          (%render-event-loop-frame output-stream)
           (values status nil nil width height more-ready-p)))
       (t nil))))
 
