@@ -48,7 +48,7 @@
               (let ((received-context nil))
                 (with-replaced-function
                  (loom::%run-loom
-                  (lambda (startup-context &key fd)
+                  (lambda (startup-context &key (fd 0))
                     (expect fd :to-equal 0)
                     (setf received-context startup-context)
                     23))
