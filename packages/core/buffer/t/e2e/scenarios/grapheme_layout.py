@@ -60,9 +60,14 @@ def d7_grapheme_cell_layout(binary):
             session.wait_for_region_text("body", "éx", index=0)
             session.wait_for_region_text("body", "漢x", index=2)
             for glyph in ("e\u0301", family, "漢"):
+                expected = glyph.encode("utf-8")
+                session.wait_until(
+                    lambda _screen: expected in session.output_bytes,
+                    what=f"PTY output containing {glyph!r}",
+                )
                 session.assert_pty_output(
                     session.output_bytes,
-                    glyph.encode("utf-8"),
+                    expected,
                     match="contains",
                 )
 
