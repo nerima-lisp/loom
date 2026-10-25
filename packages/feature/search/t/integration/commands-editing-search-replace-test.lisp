@@ -57,8 +57,8 @@
     (%with-minibuffer-state (minibuffer "abc"
                              (keymap-state (make-keymap-state (make-keymap))))
       (loom/feature/search::search-forward)
-      (%type-string minibuffer "(")
-      (loom::%dispatch-key-event (%special-key :enter) keymap-state)
+      (%search-type-string minibuffer "(")
+      (loom::%dispatch-key-event (%search-special-key :enter) keymap-state)
       (expect (loom:minibuffer-message-string minibuffer)
               :to-contain "Invalid regular expression")
       (expect (%selected-test-buffer) :to-have-point (cons 0 0))))

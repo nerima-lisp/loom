@@ -18,7 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search")
   :pathname "."
   :serial t
   :components
@@ -42,8 +42,7 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "packages/feature/search/src/package")
-    ))
+     ))
    (:module "feature-workspace-package"
     :pathname "."
     :serial t
@@ -163,9 +162,7 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "packages/feature/search/src/domain-buffer-search")
-     (:file "packages/feature/search/src/domain-isearch")
-    ))
+     ))
    (:module "feature-workspace-domain"
     :pathname "."
     :serial t
@@ -423,9 +420,7 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "packages/feature/search/src/application-commands-search")
-     (:file "packages/feature/search/src/application-commands-isearch")
-    ))
+     ))
    (:module "feature-file-tree-application"
     :pathname "."
     :serial t
@@ -545,8 +540,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/terminal/src/command-specs-terminal")
      (:file "packages/feature/shell/src/command-specs-shell")
      (:file "packages/feature/session/src/command-specs-session")
-     (:file "packages/feature/search/src/command-specs-search")
-     (:file "packages/feature/search/src/command-specs-isearch")
      (:file "packages/feature/register/src/command-specs-register")
      (:file "packages/feature/project/src/command-specs-project")
      (:file "packages/feature/lsp/src/command-specs-lsp")
@@ -670,7 +663,6 @@ root source tree responsible for every feature."
    (:file "t/unit/workspace-navigation-test")
    (:file "t/unit/editor-state-recent-files-test")
    (:file "t/unit/buffer-registry-test")
-   (:file "t/unit/isearch-test")
    (:file "t/unit/register-test")
    (:file "t/unit/keyboard-macro-test")
    (:file "t/unit/file-tree-test")
@@ -727,16 +719,12 @@ root source tree responsible for every feature."
    (:file "t/integration/commands-movement-scroll-edit-test")
    (:file "t/integration/commands-window-test")
    (:file "t/integration/commands-buffer-lifecycle-test")
-   (:file "t/integration/commands-editing-test-support")
    (:file "t/integration/commands-editing-buffer-mutation-test")
    (:file "t/integration/commands-editing-buffer-mark-test")
    (:file "t/integration/commands-editing-buffer-narrowing-test")
    (:file "t/integration/commands-editing-buffer-history-test")
    (:file "t/integration/commands-editing-buffer-read-only-test")
    (:file "t/integration/commands-editing-file-test")
-   (:file "t/integration/commands-editing-isearch-test")
-   (:file "t/integration/commands-editing-search-navigation-test")
-   (:file "t/integration/commands-editing-search-replace-test")
    (:file "t/integration/commands-editing-minibuffer-keybinding-test")
    (:file "t/integration/commands-editing-quit-test")
    (:file "t/integration/project-test")
@@ -791,7 +779,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
@@ -800,8 +788,4 @@ root source tree responsible for every feature."
   :serial t
   :in-order-to ((asdf:prepare-op (asdf:load-op "cl-weave")))
   :components
-  ((:file "t/package")
-   (:file "t/test-support/buffer-test-support")
-   (:file "t/test-helpers-core")
-   (:file "t/test-helpers-prompts")
-   (:file "t/test-helpers-lsp")))
+  ((:file "t/package") (:file "t/test-support/buffer-test-support") (:file "t/test-helpers-core") (:file "t/test-helpers-prompts") (:file "t/integration/commands-editing-test-support") (:file "t/test-helpers-lsp")))
