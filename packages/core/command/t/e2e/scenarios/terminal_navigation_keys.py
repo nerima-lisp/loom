@@ -3,6 +3,7 @@
 import os
 import tempfile
 
+from loom_e2e import keys
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
@@ -13,9 +14,8 @@ def _assert_cursor(session, col, index=0):
         raise AssertionError(f"body cursor did not reach {expected!r}")
 
 
-def _navigation_file(directory):
+def _navigation_file(directory, lines):
     path = os.path.join(directory, "navigation.txt")
-    lines = ["abcdef"] + [f"line{index}" for index in range(1, 30)]
     with open(path, "wb") as handle:
         handle.write(("\n".join(lines) + "\n").encode("ascii"))
     return path
@@ -32,7 +32,9 @@ def _navigation_file(directory):
 )
 def terminal_navigation_arrows(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = _navigation_file(directory)
+        path = _navigation_file(
+            directory, ["abcdef"] + [f"line{index}" for index in range(1, 30)]
+        )
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
@@ -68,7 +70,9 @@ def terminal_navigation_arrows(binary):
 )
 def terminal_navigation_home_end(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = _navigation_file(directory)
+        path = _navigation_file(
+            directory, ["abcdef"] + [f"line{index}" for index in range(1, 30)]
+        )
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
@@ -92,21 +96,21 @@ def terminal_navigation_home_end(binary):
 
 @scenario(
     "movement/terminal-navigation-delete",
-    commands=["delete-char", "move-beginning-of-line"],
+    commands=["delete-char", "save-buffer"],
 )
 def terminal_navigation_delete(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = _navigation_file(directory)
+        path = _navigation_file(directory, ["abc"])
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
-
-            session.send(b"\x1b[H")
-            session.wait_for_region_cursor("body", 0, index=0)
             _assert_cursor(session, 0)
             session.send(b"\x1b[3~")
-            session.wait_for_region_text_prefix("body", "bcdef")
-            session.assert_screen_text("bcdef", match="starts_with", region="body")
+            session.wait_for_region_text_prefix("body", "bc")
+            session.assert_screen_text("bc", match="starts_with", region="body")
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, b"bc\n")
+            session.assert_file_bytes(path, b"bc\n")
 
             output, code = session.quit()
             if code != 0:
@@ -117,25 +121,25 @@ def terminal_navigation_delete(binary):
 
 @scenario(
     "movement/terminal-navigation-page",
-    commands=["scroll-down-command", "scroll-up-command"],
+    commands=["next-line", "scroll-down-command", "scroll-up-command"],
 )
 def terminal_navigation_page(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = _navigation_file(directory)
+        path = _navigation_file(directory, [f"line{index}" for index in range(20)])
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
 
+            session.send(b"\x1b[B" * 14)
+            session.wait_for_region_text("body", "line9")
             session.send(b"\x1b[6~")
-            page_row = session.layout.body_height
-            page_line = f"line{page_row}"
-            session.wait_for_region_text("body", page_line, index=1)
+            session.wait_for_region_text("body", "line14", index=1)
             session.assert_screen_text(
-                page_line, match="contains", region="body", index=1
+                "line14", match="contains", region="body", index=1
             )
             session.send(b"\x1b[5~")
-            session.wait_for_region_text("body", "bcdef")
-            session.assert_screen_text("bcdef", match="starts_with", region="body")
+            session.wait_for_region_text("body", "line9")
+            session.assert_screen_text("line9", match="starts_with", region="body")
 
             output, code = session.quit()
             if code != 0:
