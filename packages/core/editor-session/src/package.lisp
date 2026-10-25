@@ -76,6 +76,20 @@
                      #:register-visual-row-layout
                      #:register-buffer-truncate-policy
                      #:buffer-truncate-lines-p
+                     #:register-hit-test-provider
+                     #:make-hit-test-result
+                     #:hit-test-coordinate
+                     #:hit-test-result
+                     #:hit-test-result-p
+                     #:hit-test-result-owner
+                     #:hit-test-result-kind
+                     #:hit-test-result-window
+                     #:hit-test-result-buffer
+                     #:hit-test-result-position
+                     #:hit-test-result-target
+                     #:hit-test-buffer-position
+                     #:request-terminal-clipboard-write
+                     #:drain-terminal-clipboard-requests
                      #:next-visual-line-once
                      #:previous-visual-line-once
                      #:editor-state-clear-last-yank
