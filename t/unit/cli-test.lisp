@@ -25,6 +25,25 @@
            (dolist (argv (list (list "loom" "--definitely-invalid")
                                (list "loom" "+2")))
              (expect (loom::%main-exit-code argv) :to-equal 64)))
+          (it "returns usage status for a missing path"
+              (host-kit:with-temporary-directory (dir)
+                                                 (let* ((path
+                                                         (merge-pathnames
+                                                          "missing.txt"
+                                                          dir))
+                                                        (*error-output*
+                                                         (make-string-output-stream)))
+                                                   (expect
+                                                    (loom::%main-exit-code
+                                                     (list "loom"
+                                                           (namestring path)))
+                                                    :to-equal
+                                                    64)
+                                                   (expect
+                                                    (get-output-stream-string
+                                                     *error-output*)
+                                                    :to-contain
+                                                    "PATH does not exist"))))
           (it "adapts a cl-cli invocation into a startup context"
               (let ((received-context nil))
                 (with-replaced-function

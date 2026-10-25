@@ -59,6 +59,10 @@ from it."
                                                        (rest requests))
           (cl-cli:cli-usage-error (condition)
             (error condition))
+          (cl-cli:cli-invalid-positional-value (condition)
+            (error 'cl-cli:cli-usage-error
+                   :message
+                   (cl-cli:cli-error-message condition)))
           (error (condition)
             (%log-loom-error condition)
             (values :runtime-error 1)))
