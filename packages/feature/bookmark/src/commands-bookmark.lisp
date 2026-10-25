@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/bookmark)
 
 (define-bookmark-command set-bookmark
     ("Set bookmark: ") (bookmark-name minibuffer)

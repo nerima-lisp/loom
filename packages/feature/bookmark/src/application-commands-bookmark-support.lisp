@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/bookmark)
 
 (defun %bookmark-table ()
   "Return the current session's named bookmark table, creating it on demand."

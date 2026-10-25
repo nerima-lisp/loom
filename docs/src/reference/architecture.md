@@ -88,7 +88,7 @@ buffer-facing boundary methods live in
 keybinding composition. The editor state also owns the bounded canonical
 recent-file list and the named-bookmark table: file-tree commands update the
 recent-file list when files are opened or saved, while `commands-bookmark.lisp`
-and `commands-bookmark-support.lisp` create, resolve, list, and delete bookmarks.
+and `application-commands-bookmark-support.lisp` create, resolve, list, and delete bookmarks.
 Feature application files orchestrate their own domain and infrastructure
 boundaries. Minibuffer code calls `cl-tty-kit` and
 `cl-history-kit` directly, and the M-x registry uses the local command
