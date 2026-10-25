@@ -5,23 +5,23 @@
   (it
     "uses mode metadata to classify non-Lisp source"
     (let ((line "def answer(): # note"))
-      (expect (%mode-token-kinds line :python)
+      (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line :python))
               :to-equal
               '(:keyword :whitespace :plain :delimiter :delimiter :delimiter
                 :whitespace :comment))
-      (expect (%mode-token-texts line :python)
+      (expect (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line :python))
               :to-equal
               '("def" " " "answer" "(" ")" ":" " " "# note"))
-      (expect (apply #'concatenate 'string (%mode-token-texts line :python))
+      (expect (apply #'concatenate 'string (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line :python)))
               :to-equal line)))
 
   (it
     "classifies generic numbers, keywords, and strings"
     (let ((line ":value 42 \"text\""))
-      (expect (%mode-token-kinds line :python)
+      (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line :python))
               :to-equal
               '(:delimiter :plain :whitespace :number :whitespace :string))
-      (expect (apply #'concatenate 'string (%mode-token-texts line :python))
+      (expect (apply #'concatenate 'string (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line :python)))
               :to-equal line)))
 
   (it-each
@@ -34,9 +34,9 @@
         ("42" " " "\"text\"")))
       "uses ~A's generic syntax rules"
       (mode line expected-kinds expected-texts)
-    (expect (%mode-token-kinds line mode) :to-equal expected-kinds)
-    (expect (%mode-token-texts line mode) :to-equal expected-texts)
-    (expect (apply #'concatenate 'string (%mode-token-texts line mode))
+    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line mode)) :to-equal expected-kinds)
+    (expect (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line mode)) :to-equal expected-texts)
+    (expect (apply #'concatenate 'string (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line mode)))
             :to-equal line))
 
   (it-each
@@ -62,26 +62,26 @@
         ("*" " " "TODO" " " "task" " " "# note")))
       "colors ~A keywords and comments from mode metadata"
       (mode line expected-kinds expected-texts)
-    (expect (%mode-token-kinds line mode) :to-equal expected-kinds)
-    (expect (%mode-token-texts line mode) :to-equal expected-texts)
-    (expect (apply #'concatenate 'string (%mode-token-texts line mode))
+    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line mode)) :to-equal expected-kinds)
+    (expect (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line mode)) :to-equal expected-texts)
+    (expect (apply #'concatenate 'string (mapcar #'syntax-token-text (syntax-highlight-line-for-mode line mode)))
             :to-equal line))
 
   (it
     "keeps Emacs Lisp on its own vocabulary rather than Common Lisp's"
     (let ((line "(defcustom loom-x 1)"))
-      (expect (%mode-token-kinds line :emacs-lisp)
+      (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line :emacs-lisp))
               :to-equal
               '(:delimiter :keyword :whitespace :plain :whitespace :number
                 :delimiter))
-      (expect (%mode-token-kinds line :common-lisp)
+      (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode line :common-lisp))
               :to-equal
               '(:delimiter :plain :whitespace :plain :whitespace :number
                 :delimiter))))
 
   (it
     "keeps Common Lisp on its reader-aware tokenizer"
-    (expect (%mode-token-kinds "(defun run ()) ; note" :common-lisp)
+    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode "(defun run ()) ; note" :common-lisp))
             :to-contain :keyword)
-    (expect (%mode-token-kinds "(defun run ()) ; note" "lisp")
+    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode "(defun run ()) ; note" "lisp"))
             :to-contain :comment)))

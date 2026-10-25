@@ -18,18 +18,11 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init" "loom-feature-syntax-highlighting")
   :pathname "."
   :serial t
   :components
   (
-   (:module "feature-syntax-highlighting-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/syntax-highlighting/src/package")
-    ))
    (:module "feature-project-package"
     :pathname "."
     :serial t
@@ -112,15 +105,6 @@ root source tree responsible for every feature."
     :components
     (
      (:file "src/package-user")
-    ))
-   (:module "feature-syntax-highlighting-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting")
-     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-common-lisp")
-     (:file "packages/feature/syntax-highlighting/src/domain-syntax-highlighting-generic")
     ))
    (:module "feature-project-domain"
     :pathname "."
@@ -455,13 +439,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/bookmark/src/command-specs-bookmark")
      (:file "packages/feature/auto-save/src/command-specs-auto-save")
      ))
-   (:module "feature-syntax-highlighting-presentation"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/syntax-highlighting/src/presentation-syntax-highlighting")
-    ))
    (:module "root-presentation"
     :pathname "."
     :serial t
@@ -533,8 +510,6 @@ root source tree responsible for every feature."
   :serial t
   :components
   ((:file "t/unit/protocol-test")
-   (:file "t/unit/syntax-highlighting-test")
-   (:file "t/unit/major-mode-syntax-highlighting-test")
    (:file "t/unit/project-test")
    (:file "t/unit/terminal-renderer-test")
    (:file "t/unit/terminal-renderer-cursor-test")
@@ -651,7 +626,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test" "loom-feature-syntax-highlighting/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
