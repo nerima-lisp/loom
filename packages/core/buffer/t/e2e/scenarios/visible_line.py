@@ -11,7 +11,7 @@ from loom_e2e.session import Session
 
 
 @scenario("d13/20k-line-key-response", commands=["forward-char"])
-def d13_20k_line_key_response(binary):
+def d13_20k_line_key_response(binary, *, benchmark_target_ms=None):
     line_count = 20_000
     with tempfile.TemporaryDirectory(prefix="loom-d13-") as directory:
         path = os.path.join(directory, "large.txt")
@@ -54,9 +54,13 @@ def d13_20k_line_key_response(binary):
                 metric="D13 input-to-redraw",
                 unit="ms",
             )
-            if elapsed_ms > 50.0:
+            if (
+                benchmark_target_ms is not None
+                and elapsed_ms > benchmark_target_ms
+            ):
                 raise AssertionError(
-                    "20,000-line key response exceeded 50 ms: "
+                    "20,000-line key response exceeded "
+                    f"{benchmark_target_ms:g} ms: "
                     f"{elapsed_ms:.3f} ms"
                 )
 
@@ -65,3 +69,8 @@ def d13_20k_line_key_response(binary):
                 raise AssertionError(
                     f"d13/20k-line-key-response exited with {code}: {output!r}"
                 )
+
+    if benchmark_target_ms is not None:
+        return {
+            "d13_20k_line_key_response_milliseconds": round(elapsed_ms, 3)
+        }

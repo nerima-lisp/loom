@@ -186,7 +186,7 @@ def main(argv):
         _run_harness_preflight()
         measurements = {}
         try:
-            for name, function in benchmark_scenarios().items():
+            for name, function in benchmark_scenarios(registered).items():
                 try:
                     measurements[name] = _run_with_artifacts(
                         f"benchmarks/{name}", function, binary, artifacts_dir
@@ -210,6 +210,9 @@ def main(argv):
                     "startup_to_first_screen_seconds": "startup_to_first_screen",
                     "open_100000_lines_5mb_seconds": "open_100000_lines_5mb",
                     "input_to_redraw_p95_milliseconds": "input_to_redraw_p95",
+                    "d13_20k_line_key_response_milliseconds": (
+                        "d13_20k_line_key_response"
+                    ),
                 }[metric]
             ] else "over target"
             print(f"{metric}: {value:.3f} (target {target:g}; {status})")

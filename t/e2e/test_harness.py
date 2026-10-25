@@ -8,7 +8,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from loom_e2e import keys, registry
-from loom_e2e.benchmarks import _redraw_samples, benchmark_scenarios
+from loom_e2e.benchmarks import (
+    _redraw_samples,
+    benchmark_scenarios,
+    build_benchmark_report,
+)
 from loom_e2e.deadline import run_scenario
 from loom_e2e.layout import validate_dimensions
 from loom_e2e.process import LoomProcess
@@ -516,6 +520,56 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                     if item["type"] == "benchmark_measurement"
                 ]
                 self.assertEqual(saved, measurements)
+
+
+    def test_d13_benchmark_adapter_returns_registered_scenario_measurement(self):
+        d13_scenario = Mock(
+            return_value={"d13_20k_line_key_response_milliseconds": 12.345}
+        )
+        benchmark = benchmark_scenarios(
+            [
+                (
+                    "d13/20k-line-key-response",
+                    ["forward-char"],
+                    d13_scenario,
+                )
+            ]
+        )["d13-20k-line-key-response"]
+
+        result = benchmark("loom-binary")
+
+        d13_scenario.assert_called_once_with(
+            "loom-binary", benchmark_target_ms=50.0
+        )
+        self.assertEqual(
+            result,
+            {"d13_20k_line_key_response_milliseconds": 12.345},
+        )
+
+    def test_d13_measurement_is_reported_with_its_own_target(self):
+        report = build_benchmark_report(
+            {
+                "startup": {"startup_to_first_screen_seconds": 0.2},
+                "redraw": {"input_to_redraw_p95_milliseconds": 12.0},
+                "large-file-open": {
+                    "open_100000_lines_5mb_seconds": 0.4,
+                    "input": {"lines": 100_000, "bytes": 5_000_000},
+                },
+                "d13-20k-line-key-response": {
+                    "d13_20k_line_key_response_milliseconds": 49.5,
+                },
+            }
+        )
+
+        self.assertEqual(
+            report["measurements"]["d13_20k_line_key_response_milliseconds"],
+            49.5,
+        )
+        self.assertEqual(
+            report["targets"]["d13_20k_line_key_response_milliseconds"],
+            50.0,
+        )
+        self.assertTrue(report["within_targets"]["d13_20k_line_key_response"])
 
 
 if __name__ == "__main__":

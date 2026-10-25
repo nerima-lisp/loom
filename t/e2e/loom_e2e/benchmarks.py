@@ -1,4 +1,4 @@
-"""Report-only PTY measurements for the editor's startup and redraw paths."""
+"""PTY benchmark scenarios for startup, redraw, file open, and key response."""
 
 import math
 import os
@@ -21,6 +21,7 @@ _LINE_BYTES = 50
 _OPEN_MARKER = b"LOOM_E2E_OPEN_BENCHMARK"
 _OPEN_LAST_LINE_MARKER = b"LOOM_E2E_LAST_LINE_MARKER"
 _REDRAW_SAMPLES = 25
+_D13_KEY_RESPONSE_TARGET_MS = 50.0
 
 
 def _large_file(path):
@@ -145,12 +146,30 @@ def _measure_large_file_open(binary):
     }
 
 
-def benchmark_scenarios():
-    return {
+def benchmark_scenarios(registered=None):
+    scenarios = {
         "startup": _measure_startup,
         "redraw": _measure_redraw,
-        "large-file-open": _measure_large_file_open,
     }
+    if registered is not None:
+        d13_scenario = next(
+            (
+                function
+                for name, _commands, function in registered
+                if name == "d13/20k-line-key-response"
+            ),
+            None,
+        )
+        if d13_scenario is not None:
+            def measure_d13_key_response(binary):
+                return d13_scenario(
+                    binary,
+                    benchmark_target_ms=_D13_KEY_RESPONSE_TARGET_MS,
+                )
+
+            scenarios["d13-20k-line-key-response"] = measure_d13_key_response
+    scenarios["large-file-open"] = _measure_large_file_open
+    return scenarios
 
 
 def build_benchmark_report(measurements):
@@ -163,7 +182,7 @@ def build_benchmark_report(measurements):
     startup_seconds = values["startup_to_first_screen_seconds"]
     open_seconds = values["open_100000_lines_5mb_seconds"]
     redraw_milliseconds = values["input_to_redraw_p95_milliseconds"]
-    return {
+    report = {
         "measurements": {
             "startup_to_first_screen_seconds": startup_seconds,
             "open_100000_lines_5mb_seconds": open_seconds,
@@ -198,3 +217,23 @@ def build_benchmark_report(measurements):
             "cleanup_budget_seconds": SCENARIO_CLEANUP_TIMEOUT_SECONDS,
         },
     }
+    d13_measurement = measurements.get("d13-20k-line-key-response")
+    if d13_measurement is not None:
+        d13_milliseconds = values[
+            "d13_20k_line_key_response_milliseconds"
+        ]
+        report["measurements"][
+            "d13_20k_line_key_response_milliseconds"
+        ] = d13_milliseconds
+        report["targets"][
+            "d13_20k_line_key_response_milliseconds"
+        ] = _D13_KEY_RESPONSE_TARGET_MS
+        report["within_targets"]["d13_20k_line_key_response"] = (
+            d13_milliseconds <= _D13_KEY_RESPONSE_TARGET_MS
+        )
+        report["protocol"]["d13_key_response_samples"] = 1
+        report["protocol"]["d13_key_response_interval"] = (
+            "from C-f input to cursor-position output in a loaded "
+            "20,000-line buffer"
+        )
+    return report
