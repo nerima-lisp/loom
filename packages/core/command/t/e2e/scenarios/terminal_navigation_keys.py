@@ -137,9 +137,9 @@ def terminal_navigation_page(binary):
                 session.send(b"\x1b[B" * 14)
                 session.wait_for_region_text("body", "line9")
                 session.send(b"\x1b[6~")
-                session.wait_for_region_text("body", "line14", index=1)
+                session.wait_for_region_text("body", "line14", index=0)
                 session.assert_screen_text(
-                    "line14", match="contains", region="body", index=1
+                    "line14", match="contains", region="body", index=0
                 )
                 session.send(b"\x1b[5~")
                 session.wait_for_region_text("body", "line9")
