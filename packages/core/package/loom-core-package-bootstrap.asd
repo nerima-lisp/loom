@@ -9,6 +9,7 @@
     :components
     ((:file "packages/core/command/src/package")
      (:file "packages/feature/buffers/src/package")
+     (:file "packages/feature/files/src/package")
      (:file "packages/feature/bookmark/src/package")
      (:file "src/package-exports")
      (:file "src/package-application")
