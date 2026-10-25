@@ -120,21 +120,27 @@ def d7_grapheme_vs16_width(binary):
 
 @scenario(
     "d7/grapheme-wrap-boundary",
-    commands=["forward-char"],
+    commands=["forward-char", "keyboard-quit", "toggle-truncate-lines"],
 )
 def d7_grapheme_wrap_boundary(binary):
     with tempfile.TemporaryDirectory(prefix="loom-d7-") as directory:
         path = _write_buffer(directory, ["a" * 39 + "e\u0301x"])
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
+            session.wait_for_region_text("mode-line", "Truncate")
+            session.extended_command("toggle-truncate-lines")
+            session.wait_for_region_text("minibuffer", "Wrap long lines")
             session.wait_for_region_text("body", "aaaa", index=0)
             start_row, start_column = session.screen.cursor
-            _move_and_assert(
-                session,
-                keys.ctrl("f") * 41,
-                (start_row + 1, start_column),
-                "cursor after a grapheme ending at the wrap boundary",
-            )
+            expected = (start_row + 1, start_column)
+            description = "grapheme ending at the wrap boundary"
+            session.send(keys.ctrl("f") * 41 + keys.ctrl("g"))
+            session.wait_for_region_text("minibuffer", "Quit", timeout=1.0)
+            if session.observe_cursor(expected=expected, sample=description) is not True:
+                raise AssertionError(
+                    f"cursor after {description} was {session.screen.cursor!r}, "
+                    f"expected {expected!r}"
+                )
 
 
 @scenario(
@@ -197,7 +203,7 @@ def d7_grapheme_overlay_replacement(binary):
 
 @scenario(
     "d7/grapheme-resize-overlay-cleanup",
-    commands=["forward-char", "kill-line"],
+    commands=["forward-char", "kill-line", "toggle-truncate-lines"],
 )
 def d7_grapheme_resize_overlay_cleanup(binary):
     family = "👩‍👩‍👧‍👦"
@@ -205,6 +211,9 @@ def d7_grapheme_resize_overlay_cleanup(binary):
         path = _write_buffer(directory, ["a" * 19 + family + "x"])
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
+            session.wait_for_region_text("mode-line", "Truncate")
+            session.extended_command("toggle-truncate-lines")
+            session.wait_for_region_text("minibuffer", "Wrap long lines")
             session.wait_for_region_text("body", family[0] + "x", index=0)
             session.assert_pty_output(
                 session.output_bytes,

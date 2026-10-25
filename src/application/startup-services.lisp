@@ -270,12 +270,14 @@
    t))
 
 (defun %install-loom-terminal-signal-handlers (terminal-session)
+  ;; Wake bytes 1-4 carry lifecycle signals; byte 5 requests a resize redraw.
   (dolist
       (entry
        (list (cons sb-unix:sigterm 1)
              (cons sb-unix:sighup 2)
              (cons sb-unix:sigtstp 3)
-             (cons sb-unix:sigcont 4)))
+             (cons sb-unix:sigcont 4)
+             (cons sb-unix:sigwinch 5)))
     (let ((signal (car entry))
           (byte (cdr entry)))
       (sb-sys:enable-interrupt signal
@@ -292,7 +294,11 @@
 (defun %uninstall-loom-terminal-signal-handlers ()
   (dolist
       (signal
-       (list sb-unix:sigterm sb-unix:sighup sb-unix:sigtstp sb-unix:sigcont))
+       (list sb-unix:sigterm
+             sb-unix:sighup
+             sb-unix:sigtstp
+             sb-unix:sigcont
+             sb-unix:sigwinch))
     (sb-sys:enable-interrupt signal :default))
   nil)
 

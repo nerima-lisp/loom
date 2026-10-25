@@ -91,11 +91,10 @@
              (end-column (+ cell-column advance)))
         (when (> end-column start-column)
           (return-from loom-renderer-clip-index
-            (values source-index
-                    (if (and (< cell-column start-column)
-                             (not (string= grapheme (string #\Tab))))
-                        (- end-column start-column)
-                        0))))
+            (if (and (< cell-column start-column)
+                     (not (string= grapheme (string #\Tab))))
+                (values end-index (- end-column start-column))
+                (values source-index 0))))
         (setf source-index end-index
               cell-column end-column)))))
 
