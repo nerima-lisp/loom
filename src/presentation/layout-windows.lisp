@@ -119,25 +119,62 @@ into the remaining width."
          (%layout-mode-line-text renderer buffer)
          width))))
 
-(defun %layout-draw-window-buffer (renderer window x-offset &optional height selected-p)
+(defun %layout-draw-window-buffer
+    (renderer window x-offset &optional height selected-p)
   "Draw WINDOW's buffer in whichever line-display mode that buffer selects.
 
 When HEIGHT is supplied, draw only that many rows, leaving the caller to draw
 the mode line or another footer in the remaining window rows."
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (x (%layout-window-body-x (+ x-offset (loom/core/window-tree:window-x window)) selected-p))
+         (x (+ x-offset (loom/core/window-tree:window-x window)))
          (y (loom/core/window-tree:window-y window))
          (width (loom/core/window-tree:window-width window))
-         (height (or height (loom/core/window-tree:window-height window))))
-    (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
-        (%layout-draw-truncated-buffer
-         renderer buffer x y width height
-         (loom/core/window-tree:window-scroll-line window)
-         (loom/core/window-tree:window-scroll-column window))
-        (%layout-draw-wrapped-buffer
-         renderer buffer x y width height
-         (loom/core/window-tree:window-scroll-line window)
-         (loom/core/window-tree:window-scroll-sub-row window)))))
+         (height (or height (loom/core/window-tree:window-height window)))
+         (gutter-width (%layout-window-gutter-width buffer width))
+         (body-x (%layout-window-body-x (+ x gutter-width) selected-p))
+         (body-width (- width gutter-width))
+         (line-count (buffer-visible-line-count buffer))
+         (scroll-line (loom/core/window-tree:window-scroll-line window))
+         (scroll-sub-row (loom/core/window-tree:window-scroll-sub-row window))
+         (truncate-p
+           (loom/core/editor-session:buffer-truncate-lines-p
+            *editor-state* buffer)))
+    (labels ((draw-number (line row)
+               (loom-renderer-write-string
+                renderer x (+ y row)
+                (format nil "~vD " (1- gutter-width) (1+ line))
+                :style '((:fg 8))))
+             (draw-gutter ()
+               (when (plusp gutter-width)
+                 (if truncate-p
+                     (dotimes (row height)
+                       (let ((line (+ scroll-line row)))
+                         (when (< line line-count)
+                           (draw-number line row))))
+                     (let ((row 0)
+                           (line scroll-line)
+                           (sub-row scroll-sub-row))
+                       (loop while (and (< row height) (< line line-count))
+                             for segments =
+                               (%layout-line-segments
+                                renderer buffer line body-width)
+                             do (loop for segment-index from sub-row
+                                      below (length segments)
+                                      while (< row height)
+                                      do (when (zerop segment-index)
+                                           (draw-number line row))
+                                         (incf row))
+                                (incf line)
+                                (setf sub-row 0)))))))
+      (if truncate-p
+          (%layout-draw-truncated-buffer
+           renderer buffer body-x y body-width height
+           scroll-line
+           (loom/core/window-tree:window-scroll-column window))
+          (%layout-draw-wrapped-buffer
+           renderer buffer body-x y body-width height
+           scroll-line scroll-sub-row))
+      (draw-gutter))))
 
 (defun %layout-draw-truncated-buffer
     (renderer buffer x y width height start-line start-column)
@@ -291,8 +328,11 @@ the mode line or another footer in the remaining window rows."
              (tab-width (%layout-mode-tab-width (buffer-major-mode buffer)))
              (prefix-widths (%loom-renderer-cell-prefix-widths
                              text :tab-width tab-width))
+             (body-width
+               (- window-width
+                  (%layout-window-gutter-width buffer window-width)))
              (ranges (loom-renderer-wrap-segments
-                      renderer text window-width :tab-width tab-width)))
+                      renderer text body-width :tab-width tab-width)))
         (mapcar
          (lambda (range)
            (let* ((start (car range))

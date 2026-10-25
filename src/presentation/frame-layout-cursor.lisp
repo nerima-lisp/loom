@@ -62,23 +62,28 @@ the walk is therefore bounded by the window height."
                   0)))))
 
 (defun %layout-buffer-cell (renderer window buffer line column)
-  "Return LINE/COLUMN's (COLUMN ROW) within WINDOW, in whichever display mode
-BUFFER selects. The completion popup and the cursor both place themselves with
-this, so a popup cannot drift away from the point it belongs to."
-  (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
-      (%truncated-cell renderer window buffer line column)
-      (%wrapped-cell renderer window buffer
-                     (loom/core/window-tree:window-width window)
-                     line column)))
+  "Return LINE/COLUMN's (COLUMN, ROW) within WINDOW's text body.
+
+The completion popup and cursor both use this geometry so they stay anchored to
+the same body cells."
+  (let* ((window-width (loom/core/window-tree:window-width window))
+         (body-width
+           (- window-width (%layout-window-gutter-width buffer window-width))))
+    (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
+        (%truncated-cell renderer window buffer line column)
+        (%wrapped-cell renderer window buffer body-width line column))))
 
 (defun %window-cursor-position (renderer window x-offset)
   (let* ((buffer (loom/core/window-tree:window-buffer window))
          (line (buffer-visible-point-line buffer))
-         (column (buffer-visible-point-column buffer)))
+         (column (buffer-visible-point-column buffer))
+         (gutter-width
+           (%layout-window-gutter-width
+            buffer (loom/core/window-tree:window-width window))))
     (multiple-value-bind (screen-column screen-row)
         (%layout-buffer-cell renderer window buffer line column)
       (values (+ x-offset (loom/core/window-tree:window-x window)
-                 screen-column)
+                 gutter-width screen-column)
               (+ (loom/core/window-tree:window-y window) screen-row)))))
 
 (defun %selected-window-cursor-geometry (renderer window x-offset)

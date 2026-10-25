@@ -55,3 +55,14 @@ a measurable string rather than a bounds check of their own."
 (defun %layout-window-content-height (window)
   "Return the rows available for WINDOW's buffer above its mode line."
   (max 0 (1- (loom/core/window-tree:window-height window))))
+(defun %layout-window-gutter-width (buffer width)
+  "Return the reserved line-number gutter width for BUFFER in WIDTH cells."
+  (let* ((line-count (max 1 (buffer-visible-line-count buffer)))
+         (number-width (length (write-to-string line-count)))
+         (gutter-width (1+ number-width)))
+    (if (or (member (buffer-major-mode buffer)
+                    '(:fundamental :markdown :org :text)
+                    :test #'eq)
+            (< width (1+ gutter-width)))
+        0
+        gutter-width)))

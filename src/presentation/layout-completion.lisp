@@ -78,9 +78,12 @@ nonnegative, and vertical placement fits; otherwise return NIL."
 
 (defun %layout-draw-completion-popup (renderer window x-offset rows selected
                                        column row)
-  (let* ((width (loom/core/window-tree:window-width window))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
+         (window-width (loom/core/window-tree:window-width window))
+         (gutter-width (%layout-window-gutter-width buffer window-width))
+         (width (- window-width gutter-width))
          (x (+ x-offset (loom/core/window-tree:window-x window)
-               (min column (1- width))))
+               gutter-width (min column (1- width))))
          (y (+ row (loom/core/window-tree:window-y window)))
          (cells (%layout-completion-cells renderer rows width column)))
     (loop for text in rows
@@ -89,8 +92,11 @@ nonnegative, and vertical placement fits; otherwise return NIL."
               renderer x y offset text selected cells))))
 
 (defun %layout-draw-completion-content (renderer window x-offset completion)
-  (let ((width (loom/core/window-tree:window-width window))
-        (height (%layout-window-content-height window)))
+  (let* ((buffer (loom/core/window-tree:window-buffer window))
+         (window-width (loom/core/window-tree:window-width window))
+         (width (- window-width
+                   (%layout-window-gutter-width buffer window-width)))
+         (height (%layout-window-content-height window)))
     (when (and (plusp width) (plusp height))
       (multiple-value-bind (rows selected)
           (%layout-completion-rows renderer completion)

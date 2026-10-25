@@ -23,9 +23,11 @@
                (- point-column (1- width))))))))
 
 (defun %layout-keep-truncated-point-visible (renderer window)
-  (let ((height (%layout-window-content-height window))
-        (width (loom/core/window-tree:window-width window))
-        (buffer (loom/core/window-tree:window-buffer window)))
+  (let* ((height (%layout-window-content-height window))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (window-width (loom/core/window-tree:window-width window))
+         (width (- window-width
+                   (%layout-window-gutter-width buffer window-width))))
     (%layout-follow-truncated-line window buffer height)
     (%layout-follow-truncated-column renderer window buffer width)))
 
@@ -37,8 +39,10 @@ it the pair simply becomes point's own; when point is below, the pair is walked
 back HEIGHT-1 rows from point instead of forward from the old position, so a
 jump to a distant line costs the window's height rather than the jump."
   (let* ((height (%layout-window-content-height window))
-         (width (loom/core/window-tree:window-width window))
-         (buffer (loom/core/window-tree:window-buffer window)))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (window-width (loom/core/window-tree:window-width window))
+         (width (- window-width
+                   (%layout-window-gutter-width buffer window-width))))
     (when (and (plusp height) (plusp width))
       (setf (loom/core/window-tree:window-scroll-column window) 0)
       (multiple-value-bind (point-line point-row)
