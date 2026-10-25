@@ -36,15 +36,18 @@ group is also made available to BUFFER-REDO. Once the history is exhausted,
 further calls are a no-op (or signal, at the implementation's discretion).
 Returns BUFFER."
   (%ensure-buffer-writable buffer)
-    (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
-                       until (or (null entry) (eq entry :boundary))
-                       collect entry)))
-      (when group
-        (push :boundary (%buffer-redo-list buffer))
-        (dolist (entry group)
-          (push (%apply-undo-entry buffer entry)
-                (%buffer-redo-list buffer)))))
-  buffer)
+  ;; Command dispatch can leave a transition boundary before the latest group.
+  (when (eq (car (%buffer-undo-list buffer)) :boundary)
+    (pop (%buffer-undo-list buffer)))
+  (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
+                     until (or (null entry) (eq entry :boundary))
+                     collect entry)))
+    (when group
+      (push :boundary (%buffer-redo-list buffer))
+      (dolist (entry group)
+        (push (%apply-undo-entry buffer entry)
+              (%buffer-redo-list buffer))))
+    buffer))
 
 (defun buffer-redo (buffer)
   "Redo the most recently undone change group in BUFFER.
