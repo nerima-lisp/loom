@@ -5,6 +5,8 @@
 HEIGHT (terminal columns and rows), as if by CL-TTY-KIT:SCREEN-RESIZE and
 CL-TTY-KIT:RENDERER-RESIZE. Returns RENDERER."
   (cl-tty-kit:renderer-resize (%loom-renderer-cl-tty-renderer renderer) width height)
+  (clrhash (%loom-renderer-glyphs renderer))
+  (clrhash (%loom-renderer-presented-glyphs renderer))
   renderer)
 
 (defun loom-renderer-invalidate (renderer)

@@ -16,7 +16,7 @@
 
 (defun %make-major-mode-definition
     (key name parent-key aliases extensions filenames comment-prefix
-     indentation-width language-id keywords keybindings truncate-lines)
+     indentation-width tab-width language-id keywords keybindings truncate-lines)
   (list :name (or name (string-capitalize (symbol-name key)))
         :aliases aliases
         :parent (or parent-key :fundamental)
@@ -24,6 +24,7 @@
         :filenames filenames
         :comment-prefix comment-prefix
         :indentation-width indentation-width
+        :tab-width tab-width
         :truncate-lines (and truncate-lines t)
         :language-id (or language-id (string-downcase (symbol-name key)))
         :keywords (%validate-major-mode-keywords (or keywords '()))
@@ -37,13 +38,16 @@
   key)
 
 (defun %validate-major-mode-registration-options
-    (name comment-prefix language-id indentation-width)
+    (name comment-prefix language-id indentation-width tab-width)
   (%validate-major-mode-text name ":name")
   (%validate-major-mode-text comment-prefix ":comment-prefix")
   (%validate-major-mode-text language-id ":language-id")
   (unless (and (integerp indentation-width) (plusp indentation-width))
     (error "Major-mode indentation width must be a positive integer: ~S"
-           indentation-width)))
+           indentation-width))
+  (unless (and (integerp tab-width) (plusp tab-width))
+    (error "Major-mode tab width must be a positive integer: ~S"
+           tab-width)))
 
 (defun %normalize-major-mode-registration-lists
     (aliases extensions filenames)
@@ -56,18 +60,18 @@
 
 (defun register-major-mode
     (mode &key name aliases (parent :fundamental) extensions filenames
-            comment-prefix (indentation-width 2) language-id keywords
-            keybindings (truncate-lines t))
+            comment-prefix (indentation-width 2) (tab-width 8) language-id
+            keywords keybindings (truncate-lines t))
   "Register an extension-defined major mode and return its canonical key.
 
 KEYBINDINGS is an alist of (KEY-FORM . COMMAND) entries.  KEY-FORM uses the
 same single- and multi-chord notation accepted by the global key binding API.
-  COMMAND may be a function or a callable function symbol."
+COMMAND may be a function or a callable function symbol."
   (let ((key (%new-major-mode-key mode)))
     (when (%major-mode-definition key)
       (error "Major mode is already defined: ~S" mode))
     (%validate-major-mode-registration-options
-     name comment-prefix language-id indentation-width)
+     name comment-prefix language-id indentation-width tab-width)
     (let ((parent-key (major-mode-from-name parent)))
       (multiple-value-bind (normalized-aliases normalized-extensions
                             normalized-filenames)
@@ -79,8 +83,8 @@ same single- and multi-chord notation accepted by the global key binding API.
          key
          (%make-major-mode-definition
           key name parent-key normalized-aliases normalized-extensions
-          normalized-filenames comment-prefix indentation-width language-id
-          keywords keybindings truncate-lines))))))
+          normalized-filenames comment-prefix indentation-width tab-width
+          language-id keywords keybindings truncate-lines))))))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.

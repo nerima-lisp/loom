@@ -34,6 +34,7 @@
    #:major-mode-name
    #:major-mode-comment-prefix
    #:major-mode-indentation-width
+   #:major-mode-tab-width
    #:major-mode-language-id
    #:major-mode-keywords
    #:major-mode-truncate-lines-p

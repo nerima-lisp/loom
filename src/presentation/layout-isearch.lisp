@@ -81,14 +81,21 @@
 
 (defun %layout-line-run-geometry (window x-offset line start end)
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (text (%layout-visible-line buffer line))
+         (source-text (%layout-visible-line buffer line))
+         (display (multiple-value-list
+                   (%layout-buffer-line-display buffer line)))
+         (text (first display))
+         (mapping (second display))
          (width (loom/core/window-tree:window-width window))
          (height (%layout-window-content-height window))
          (y (loom/core/window-tree:window-y window))
          (x (+ x-offset (loom/core/window-tree:window-x window))))
-    (multiple-value-bind (start end) (%layout-line-run-bounds text start end)
+    (multiple-value-bind (start end)
+        (%layout-line-run-bounds source-text start end)
       (when (and (plusp width) (plusp height) (> end start))
-        (values buffer text width height x y start end)))))
+        (values buffer text width height x y
+                (aref mapping start)
+                (aref mapping end))))))
 
 (defun %layout-draw-line-run (renderer window x-offset line start end style)
   "Redraw characters [START, END) of WINDOW's buffer LINE in STYLE.

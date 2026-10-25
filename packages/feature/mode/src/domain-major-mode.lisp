@@ -56,6 +56,9 @@
 
 (defun major-mode-indentation-width (mode)
   (or (getf (%major-mode-definition mode) :indentation-width) 2))
+(defun major-mode-tab-width (mode)
+  "Return MODE’s tab-stop width, defaulting to 8 cells."
+  (or (getf (%major-mode-definition mode) :tab-width) 8))
 
 (defun major-mode-language-id (mode)
   (getf (%major-mode-definition mode) :language-id))

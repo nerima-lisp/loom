@@ -48,10 +48,13 @@ jump to a distant line costs the window's height rather than the jump."
 
 (defun %layout-wrapped-point-location (renderer buffer width)
   (let ((line (buffer-visible-point-line buffer)))
-    (values line
-            (%loom-segment-index
-             (%layout-line-segments renderer buffer line width)
-             (buffer-visible-point-column buffer)))))
+    (multiple-value-bind (text mapping)
+        (%layout-buffer-line-display buffer line)
+      (let* ((column (aref mapping
+                           (min (max (buffer-visible-point-column buffer) 0)
+                                (1- (length mapping)))))
+             (segments (loom-renderer-wrap-segments renderer text width)))
+        (values line (%loom-segment-index segments column))))))
 
 (defun %layout-point-before-viewport-p
     (point-line point-row scroll-line scroll-row)

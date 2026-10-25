@@ -4,7 +4,9 @@
 (defun %layout-line-segments (renderer buffer line width)
   "Return the wrapped character ranges of BUFFER's visible LINE in WIDTH cells."
   (loom-renderer-wrap-segments renderer
-                               (%layout-visible-line buffer line)
+                               (nth-value 0
+                                          (%layout-buffer-line-display
+                                           buffer line))
                                width))
 
 (defun %layout-segment-count (renderer buffer line width)
@@ -80,7 +82,9 @@ Returns NIL once the count is known to exceed LIMIT."
     (loop while (and (< row height) (< line line-count))
           do (incf row
                    (%layout-draw-wrapped-line
-                    renderer (buffer-visible-line buffer line) x (+ y row)
+                    renderer (nth-value 0
+                                        (%layout-buffer-line-display buffer line))
+                    x (+ y row)
                     width mode sub-row (- height row)))
              (setf sub-row 0)
              (incf line))

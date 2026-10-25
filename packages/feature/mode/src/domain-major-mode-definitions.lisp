@@ -1,15 +1,13 @@
 (in-package #:loom/feature/mode)
 
 (defparameter +major-mode-definitions+
-  `((:fundamental
-     :name "Fundamental"
+  `((:fundamental :name "Fundamental"
      :comment-prefix nil
      :indentation-width 2
      :truncate-lines t
      :language-id "plaintext"
-     :keywords ())
-    (:common-lisp
-     :name "Common Lisp"
+     :keywords () :tab-width 8)
+    (:common-lisp :name "Common Lisp"
      :comment-prefix ";"
      :aliases ("lisp" "cl" "common lisp")
      :indentation-width 2
@@ -26,9 +24,8 @@
                  "progn" "progv" "quote" "return" "return-from" "setf"
                  "tagbody" "the" "throw" "typecase" "unless" "unwind-protect"
                  "when" "with-open-file" "with-output-to-string" "with-slots"
-                 "with-standard-io-syntax" "write" "t"))
-    (:python
-     :name "Python"
+                 "with-standard-io-syntax" "write" "t") :tab-width 8)
+    (:python :name "Python"
      :comment-prefix "#"
      :indentation-width 4
      :truncate-lines t
@@ -37,9 +34,8 @@
                  "class" "continue" "def" "del" "elif" "else" "except"
                  "False" "finally" "for" "from" "global" "if" "import"
                  "in" "is" "lambda" "match" "None" "nonlocal" "not" "or"
-                 "pass" "raise" "return" "True" "try" "while" "with" "yield"))
-    (:rust
-     :name "Rust"
+                 "pass" "raise" "return" "True" "try" "while" "with" "yield") :tab-width 8)
+    (:rust :name "Rust"
      :comment-prefix "//"
      :indentation-width 4
      :truncate-lines t
@@ -48,18 +44,16 @@
                  "dyn" "else" "enum" "extern" "fn" "for" "if" "impl"
                  "in" "let" "loop" "match" "mod" "move" "mut" "pub"
                  "ref" "return" "self" "Self" "static" "struct" "super"
-                 "trait" "type" "unsafe" "use" "where" "while"))
-    (:shell
-     :name "Shell"
+                 "trait" "type" "unsafe" "use" "where" "while") :tab-width 8)
+    (:shell :name "Shell"
      :comment-prefix "#"
      :aliases ("sh" "bash" "zsh")
      :indentation-width 2
      :truncate-lines t
      :language-id "shellscript"
      :keywords ("case" "do" "done" "elif" "else" "esac" "fi" "for"
-                 "function" "if" "in" "select" "then" "until" "while"))
-    (:emacs-lisp
-     :name "Emacs Lisp"
+                 "function" "if" "in" "select" "then" "until" "while") :tab-width 8)
+    (:emacs-lisp :name "Emacs Lisp"
      :comment-prefix ";"
      :aliases ("el" "elisp")
      :indentation-width 2
@@ -73,9 +67,8 @@
                  "provide" "require" "save-excursion" "save-restriction"
                  "setq" "setq-default" "t" "throw" "unless"
                  "unwind-protect" "when" "while" "with-current-buffer"
-                 "with-temp-buffer"))
-    (:nix
-     :name "Nix"
+                 "with-temp-buffer") :tab-width 8)
+    (:nix :name "Nix"
      :comment-prefix "#"
      :indentation-width 2
      :truncate-lines t
@@ -84,51 +77,45 @@
                  "dirOf" "else" "false" "fetchTarball" "fetchurl" "if"
                  "import" "in" "inherit" "isNull" "let" "map" "null" "or"
                  "rec" "removeAttrs" "then" "throw" "toString" "true"
-                 "with"))
-    (:typescript
-     :name "TypeScript"
+                 "with") :tab-width 8)
+    (:typescript :name "TypeScript"
      :comment-prefix "//"
      :aliases ("ts")
      :indentation-width 2
      :truncate-lines t
      :language-id "typescript"
-     :keywords ,+typescript-keywords+)
-    (:typescript-react
-     :name "TypeScript React"
+     :keywords ,+typescript-keywords+ :tab-width 8)
+    (:typescript-react :name "TypeScript React"
      :comment-prefix "//"
      :aliases ("tsx")
      :indentation-width 2
      :truncate-lines t
      :language-id "typescriptreact"
-     :keywords ,+typescript-keywords+)
-    (:markdown
-     :name "Markdown"
+     :keywords ,+typescript-keywords+ :tab-width 8)
+    (:markdown :name "Markdown"
      :comment-prefix "#"
      :indentation-width 2
      :truncate-lines nil
      :language-id "markdown"
-     :keywords ())
-    (:org
-     :name "Org"
+     :keywords () :tab-width 8)
+    (:org :name "Org"
      :comment-prefix "#"
      :indentation-width 2
      :truncate-lines nil
      :language-id "org"
      :keywords ("CANCELLED" "CLOSED" "DEADLINE" "DONE" "NEXT"
-                 "SCHEDULED" "TODO" "WAITING"))
-    (:json
-     :name "JSON"
+                 "SCHEDULED" "TODO" "WAITING") :tab-width 8)
+    (:json :name "JSON"
      :comment-prefix nil
      :indentation-width 2
      :truncate-lines t
      :language-id "json"
-     :keywords ())
-    (:text
-     :name "Text"
+     :keywords () :tab-width 8)
+    (:text :name "Text"
      :comment-prefix nil
      :aliases ("plain text")
      :indentation-width 2
      :truncate-lines nil
      :language-id "plaintext"
-     :keywords ()))
+     :keywords () :tab-width 8))
   "The built-in major modes and the metadata consumed by editor features.")

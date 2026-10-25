@@ -4,7 +4,7 @@
   "Return the longest prefix of TEXT that fits WIDTH screen cells."
   (loom-renderer-truncate-string nil text width))
 
-(defun %layout-screen-column (renderer text column)
+(defun %layout-screen-column (renderer text column &optional (tab-width 8))
   "Return the screen column COLUMN characters into TEXT.
 
 A buffer position is a character count; a terminal position is a cell count,
@@ -15,7 +15,8 @@ COLUMN outside TEXT clamps to its ends rather than erroring, because point may
 sit past the end of a line the renderer has already clipped."
   (loom-renderer-string-width
    renderer
-   (subseq text 0 (min (max column 0) (length text)))))
+   (subseq text 0 (min (max column 0) (length text)))
+   :tab-width tab-width))
 
 (defun %layout-visible-line (buffer line)
   "Return BUFFER's visible LINE, or the empty string when LINE is out of range.
@@ -26,12 +27,30 @@ a measurable string rather than a bounds check of their own."
       (buffer-visible-line buffer line)
       ""))
 
+(defun %layout-mode-tab-width (mode)
+  (max 1 (loom/feature/mode:major-mode-tab-width mode)))
+
+(defun %layout-buffer-line-display (buffer line)
+  "Return BUFFER's line with tabs expanded and source-to-display indexes."
+  (%loom-renderer-expand-tabs
+   (%layout-visible-line buffer line)
+   :tab-width (%layout-mode-tab-width (buffer-major-mode buffer))))
+
+(defun %layout-buffer-display-column (buffer line source-column)
+  (multiple-value-bind (text mapping)
+      (%layout-buffer-line-display buffer line)
+    (declare (ignore text))
+    (aref mapping
+          (min (max source-column 0)
+               (1- (length mapping))))))
+
 (defun %layout-buffer-point-screen-column (renderer buffer)
   "Return the screen column of BUFFER's point within its own visible line."
   (%layout-screen-column
    renderer
    (%layout-visible-line buffer (buffer-visible-point-line buffer))
-   (buffer-visible-point-column buffer)))
+   (buffer-visible-point-column buffer)
+   (%layout-mode-tab-width (buffer-major-mode buffer))))
 
 (defun %layout-window-content-height (window)
   "Return the rows available for WINDOW's buffer above its mode line."
