@@ -75,3 +75,9 @@ introducing a second thread into the editor's input path."
                 for path = (%auto-save-attempt buffer)
                 when path
                   collect path))))))
+
+(defun %auto-save-tick (session current-time)
+  (declare (ignore session))
+  (maybe-auto-save :now current-time))
+
+(register-session-hook :tick :feature/auto-save #'%auto-save-tick)

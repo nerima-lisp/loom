@@ -257,6 +257,24 @@
                                                       (auto-save-enabled-p
                                                        buffer)
                                                       :to-be-falsy))))))
+          (it "runs automatic saving from the session tick hook"
+              (%with-minibuffer-state (minibuffer "text")
+                                      (declare (ignore minibuffer))
+                                      (let ((state *editor-state*))
+                                        (expect
+                                         (editor-state-auto-save-last-run-at
+                                          state)
+                                         :to-be
+                                         nil)
+                                        (loom/core/editor-session:run-session-hooks
+                                         :tick
+                                         (editor-state-session state)
+                                         123)
+                                        (expect
+                                         (editor-state-auto-save-last-run-at
+                                          state)
+                                         :to-equal
+                                         123))))
 
 (describe "automatic save command boundaries"
           (it

@@ -58,7 +58,6 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
       ((eq status :terminate)
        (values :terminate reason exit-status last-width last-height nil))
       (status
-        (loom/feature/auto-save:maybe-auto-save)
         (loom/core/editor-session:run-session-hooks :tick
                                                     (editor-state-session
                                                      *editor-state*)
