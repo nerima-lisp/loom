@@ -130,14 +130,26 @@ the mode line or another footer in the remaining window rows."
          (width (loom/core/window-tree:window-width window))
          (height (or height (loom/core/window-tree:window-height window))))
     (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
-        (loom/feature/syntax-highlighting:syntax-draw-buffer
+        (%layout-draw-truncated-buffer
          renderer buffer x y width height
-         :start-line (loom/core/window-tree:window-scroll-line window)
-         :start-column (loom/core/window-tree:window-scroll-column window))
+         (loom/core/window-tree:window-scroll-line window)
+         (loom/core/window-tree:window-scroll-column window))
         (%layout-draw-wrapped-buffer
          renderer buffer x y width height
          (loom/core/window-tree:window-scroll-line window)
          (loom/core/window-tree:window-scroll-sub-row window)))))
+
+(defun %layout-draw-truncated-buffer
+    (renderer buffer x y width height start-line start-column)
+  (let ((mode (buffer-major-mode buffer))
+        (line-count (buffer-visible-line-count buffer)))
+    (dotimes (row height)
+      (let ((line (+ start-line row)))
+        (when (< line line-count)
+          (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
+           renderer
+           (nth-value 0 (%layout-buffer-line-display buffer line))
+           x (+ y row) width mode start-column))))))
 
 (defun %layout-draw-window-overlays (renderer leaf x-offset)
   (%layout-draw-window-buffer
@@ -276,19 +288,21 @@ the mode line or another footer in the remaining window rows."
   (let ((renderer (editor-state-renderer session)))
     (when renderer
       (let* ((text (buffer-line buffer logical-line))
-             (ranges (loom-renderer-wrap-segments renderer text window-width)))
+             (tab-width (%layout-mode-tab-width (buffer-major-mode buffer)))
+             (prefix-widths (%loom-renderer-cell-prefix-widths
+                             text :tab-width tab-width))
+             (ranges (loom-renderer-wrap-segments
+                      renderer text window-width :tab-width tab-width)))
         (mapcar
          (lambda (range)
            (let* ((start (car range))
                   (end (cdr range))
+                  (segment-start (aref prefix-widths start))
                   (widths (make-array (1+ (- end start)) :initial-element 0)))
-             (loop for column from start below end
-                   for index from 1
+             (loop for column from start to end
+                   for index from 0
                    do (setf (aref widths index)
-                            (+ (aref widths (1- index))
-                               (loom-renderer-string-width
-                                renderer
-                                (subseq text column (1+ column))))))
+                            (- (aref prefix-widths column) segment-start)))
              (list start end widths)))
          ranges)))))
 

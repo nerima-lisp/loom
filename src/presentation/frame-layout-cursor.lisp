@@ -29,12 +29,14 @@ that %LAYOUT-DRAW-MINIBUFFER draws."
        :y (%layout-minibuffer-row (loom-renderer-height renderer))))))
 
 (defun %truncated-cell (renderer window buffer line column)
-  "Return LINE/COLUMN's (COLUMN ROW) inside a window drawing one row per line."
-  (values (- (%layout-screen-column renderer
-                                    (%layout-visible-line buffer line)
-                                    column)
-             (loom/core/window-tree:window-scroll-column window))
-          (- line (loom/core/window-tree:window-scroll-line window))))
+  "Return LINE/COLUMN's cell and row inside a one-row-per-line window."
+  (multiple-value-bind (text mapping)
+      (%layout-buffer-line-display buffer line)
+    (values (- (%layout-screen-column
+                renderer text
+                (aref mapping (min (max column 0) (1- (length mapping)))))
+               (loom/core/window-tree:window-scroll-column window))
+            (- line (loom/core/window-tree:window-scroll-line window)))))
 
 (defun %wrapped-cell (renderer window buffer width line column)
   "Return LINE/COLUMN's (COLUMN ROW) inside a window that wraps long lines.
@@ -42,18 +44,22 @@ that %LAYOUT-DRAW-MINIBUFFER draws."
 The row is counted from the window's own (line, segment) origin, which
 %LAYOUT-KEEP-WRAPPED-POINT-VISIBLE has already moved to keep point on screen;
 the walk is therefore bounded by the window height."
-  (let* ((text (%layout-visible-line buffer line))
-         (segments (loom-renderer-wrap-segments renderer text width))
-         (index (%loom-segment-index segments column))
-         (segment (nth index segments)))
-    (values (loom-renderer-segment-cells renderer text segment column)
-            (or (%layout-rows-between
-                 renderer buffer width
-                 (loom/core/window-tree:window-scroll-line window)
-                 (loom/core/window-tree:window-scroll-sub-row window)
-                 line index
-                 (%layout-window-content-height window))
-                0))))
+  (multiple-value-bind (text mapping)
+      (%layout-buffer-line-display buffer line)
+    (let* ((display-column
+             (aref mapping (min (max column 0) (1- (length mapping)))))
+           (segments (loom-renderer-wrap-segments renderer text width))
+           (index (%loom-segment-index segments display-column))
+           (segment (nth index segments)))
+      (values (loom-renderer-segment-cells
+               renderer text segment display-column)
+              (or (%layout-rows-between
+                   renderer buffer width
+                   (loom/core/window-tree:window-scroll-line window)
+                   (loom/core/window-tree:window-scroll-sub-row window)
+                   line index
+                   (%layout-window-content-height window))
+                  0)))))
 
 (defun %layout-buffer-cell (renderer window buffer line column)
   "Return LINE/COLUMN's (COLUMN ROW) within WINDOW, in whichever display mode
