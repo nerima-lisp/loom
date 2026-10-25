@@ -1,5 +1,5 @@
 (asdf:defsystem "loom-feature-lang-lisp"
-  :depends-on ()
+  :depends-on ("loom-feature-mode")
   :components ((:file "src/package")))
 
 (asdf:defsystem "loom-feature-lang-lisp/test"
