@@ -177,7 +177,7 @@
 | core/buffer | `t/unit/buffer-region-test.lisp` | 83 | `packages/core/buffer/t/unit/buffer-region-test.lisp` |
 | split: buffers + core/editor-session | `t/unit/buffer-registry-test.lisp` | 61 | registry behavior (`:3-31`) → `packages/feature/buffers/t/unit/buffer-registry-test.lisp`、stable-symbol slice re-registration (`:32-61`) → `packages/core/editor-session/t/unit/slice-state-registration-test.lisp` |
 | core/buffer | `t/unit/buffer-storage-test.lisp` | 218 | `packages/core/buffer/t/unit/buffer-storage-test.lisp` |
-| core/buffer | `t/unit/buffer-test-support.lisp` | 7 | `packages/core/buffer/t/unit/buffer-test-support.lisp` |
+| root test-support | `t/unit/buffer-test-support.lisp` | 7 | `t/test-support/buffer-test-support.lisp` |
 | core/buffer | `t/unit/buffer-undo-test.lisp` | 60 | `packages/core/buffer/t/unit/buffer-undo-test.lisp` |
 | core/buffer | `t/unit/buffer-view-test.lisp` | 157 | `packages/core/buffer/t/unit/buffer-view-test.lisp` |
 | root gate | `t/unit/cli-test.lisp` | 73 | `t/unit/cli-test.lisp` をrootに保持 |

@@ -18,18 +18,11 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-clipboard" "loom-feature-mouse")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse")
   :pathname "."
   :serial t
   :components
   (
-   (:module "feature-mode-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/mode/src/package")
-    ))
    (:module "feature-syntax-highlighting-package"
     :pathname "."
     :serial t
@@ -155,18 +148,6 @@ root source tree responsible for every feature."
     :components
     (
      (:file "src/package-user")
-    ))
-   (:module "feature-mode-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/mode/src/domain-major-mode-keywords")
-     (:file "packages/feature/mode/src/domain-major-mode-definitions")
-     (:file "packages/feature/mode/src/domain-major-mode-registry-support")
-     (:file "packages/feature/mode/src/domain-major-mode")
-     (:file "packages/feature/mode/src/domain-major-mode-registry")
-     (:file "packages/feature/mode/src/domain-major-mode-path")
     ))
    (:module "feature-syntax-highlighting-domain"
     :pathname "."
@@ -408,15 +389,6 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/auto-save/src/infrastructure-auto-save")
     ))
-   (:module "feature-mode-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/mode/src/application-major-mode-support")
-     (:file "packages/feature/mode/src/application-major-mode")
-     (:file "packages/feature/mode/src/application-major-mode-editing")
-    ))
    (:module "feature-project-application"
     :pathname "."
     :serial t
@@ -597,8 +569,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/search/src/command-specs-isearch")
      (:file "packages/feature/register/src/command-specs-register")
      (:file "packages/feature/project/src/command-specs-project")
-     (:file "packages/feature/mode/src/command-specs-modes")
-     (:file "packages/feature/mode/src/command-specs-major-mode-editing")
      (:file "packages/feature/lsp/src/command-specs-lsp")
      (:file "packages/feature/lsp/src/command-specs-lsp-navigation")
      (:file "packages/feature/lsp/src/command-specs-lsp-completion")
@@ -709,8 +679,6 @@ root source tree responsible for every feature."
    (:file "t/unit/sexp-motion-test")
    (:file "t/unit/structural-editing-test")
    (:file "t/unit/syntax-highlighting-test")
-   (:file "t/unit/major-mode-test")
-   (:file "t/unit/major-mode-extension-test")
    (:file "t/unit/major-mode-syntax-highlighting-test")
    (:file "t/unit/project-test")
    (:file "t/unit/terminal-renderer-test")
@@ -798,9 +766,6 @@ root source tree responsible for every feature."
    (:file "t/integration/kill-yank-test")
    (:file "t/integration/kill-yank-region-test")
    (:file "t/integration/kill-yank-yank-test")
-   (:file "t/integration/major-mode-test")
-   (:file "t/integration/major-mode-comment-line-test")
-   (:file "t/integration/major-mode-keymap-dispatch-test")
    (:file "t/integration/project-test")
    (:file "t/integration/project-missing-root-test")
    (:file "t/integration/commands-misc-test")
@@ -853,7 +818,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
@@ -863,6 +828,7 @@ root source tree responsible for every feature."
   :in-order-to ((asdf:prepare-op (asdf:load-op "cl-weave")))
   :components
   ((:file "t/package")
+   (:file "t/test-support/buffer-test-support")
    (:file "t/test-helpers-core")
    (:file "t/test-helpers-prompts")
    (:file "t/test-helpers-lsp")))

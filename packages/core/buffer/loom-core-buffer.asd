@@ -33,8 +33,7 @@
     ((:module "unit"
       :serial t
       :components
-      ((:file "buffer-test-support")
-       (:file "buffer-basic-test")
+      ((:file "buffer-basic-test")
        (:file "buffer-insert-test")
        (:file "buffer-delete-char-test")
        (:file "buffer-region-test")

@@ -64,17 +64,7 @@
   :depends-on ("loom-core-command" "loom/test-support" "cl-host-kit" "cl-tty-kit")
   :serial t
   :components
-  ((:module "buffer-test-support"
-    :pathname "../../../"
-    :serial t
-    :components
-    ((:file "packages/core/buffer/t/unit/buffer-test-support")))
-   (:module "minibuffer-test-support"
-    :pathname "../../../"
-    :serial t
-    :components
-    ((:file "packages/core/minibuffer/t/unit/minibuffer-input-test-support")))
-   (:module "t"
+  ((:module "t"
     :serial t
     :components
     ((:module "unit"
