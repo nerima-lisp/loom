@@ -1,4 +1,4 @@
-(in-package #:loom/feature/file-tree)
+(in-package #:loom/feature/files)
 
 (defparameter *loom-real-filesystem* (cl-boundary-kit:make-filesystem))
 

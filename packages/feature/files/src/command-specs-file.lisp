@@ -1,7 +1,7 @@
 (in-package #:loom/core/command)
 
 (progn
-  (register-command-spec :feature/files "find-file" "find-file" #'loom/feature/file-tree:find-file
+  (register-command-spec :feature/files "find-file" "find-file" #'loom/feature/files:find-file
                        :keys '(((:control #\x) (:control #\f)))
                        :keymap :global
                        :group "files and projects"
@@ -12,7 +12,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :feature/files "recent-file" "recent-file" #'loom/feature/file-tree:recent-file
+  (register-command-spec :feature/files "recent-file" "recent-file" #'loom/feature/files:recent-file
                        :keys '(((:control #\x) #\r #\f))
                        :keymap :global
                        :group "files and projects"

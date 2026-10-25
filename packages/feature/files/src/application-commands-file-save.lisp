@@ -1,4 +1,4 @@
-(in-package #:loom/feature/file-tree)
+(in-package #:loom/feature/files)
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.

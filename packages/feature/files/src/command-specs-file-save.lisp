@@ -1,7 +1,7 @@
 (in-package #:loom/core/command)
 
 (progn
-  (register-command-spec :feature/files "save-buffer" "save-buffer" #'loom/feature/file-tree:save-buffer
+  (register-command-spec :feature/files "save-buffer" "save-buffer" #'loom/feature/files:save-buffer
                        :keys '(((:control #\x) (:control #\s)))
                        :keymap :global
                        :group "files and projects"
@@ -12,7 +12,7 @@
                        :needs-region nil
                        :external '("shell")
                        :modes '(:all))
-  (register-command-spec :feature/files "write-file" "write-file" #'loom/feature/file-tree:write-file
+  (register-command-spec :feature/files "write-file" "write-file" #'loom/feature/files:write-file
                        :keys '(((:control #\x) (:control #\w)))
                        :keymap :global
                        :group "files and projects"

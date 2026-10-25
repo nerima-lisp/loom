@@ -1,4 +1,4 @@
-(in-package #:loom/feature/file-tree)
+(in-package #:loom/feature/files)
 
 (defun %make-file-buffer (path &key name initial-content)
   "Create a buffer for PATH and infer its major mode from the path."

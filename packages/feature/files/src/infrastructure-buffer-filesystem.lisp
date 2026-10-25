@@ -1,4 +1,4 @@
-(in-package #:loom/feature/file-tree)
+(in-package #:loom/feature/files)
 
 (defmethod buffer-load (path)
   (let ((content

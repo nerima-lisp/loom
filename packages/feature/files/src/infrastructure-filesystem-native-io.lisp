@@ -1,4 +1,4 @@
-(in-package #:loom/feature/file-tree)
+(in-package #:loom/feature/files)
 
 #+sbcl
 (defmacro %with-native-file-descriptor ((fd path flags &optional mode) &body body)
