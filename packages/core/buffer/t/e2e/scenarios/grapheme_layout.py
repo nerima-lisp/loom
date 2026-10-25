@@ -57,6 +57,7 @@ def d7_grapheme_cell_layout(binary):
         path = _write_buffer(directory, lines)
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
+            session.wait_for_region_text("body", "éx", index=0)
             session.wait_for_region_text("body", "漢x", index=2)
             for glyph in ("e\u0301", family, "漢"):
                 session.assert_pty_output(
