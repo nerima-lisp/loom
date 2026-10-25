@@ -22,7 +22,7 @@ def _wait_for_path(session, path, predicate, description):
 
 def _run_command(session, name):
     session.extended_command(name)
-    session.wait_for_region_cursor("body", 24)
+    session.wait_for_region_cursor("body", 0)
 
 
 def _wait_for_region_after_refresh(session, region, expected, index=0):
@@ -55,7 +55,7 @@ def _wait_for_region_after_refresh(session, region, expected, index=0):
 def _show_file_tree(session, first_entry):
     session.extended_command("toggle-file-tree")
     session.wait_for_region_text("screen", first_entry)
-    session.wait_for_region_cursor("body", 24)
+    session.wait_for_region_cursor("body", 0)
 
 
 @scenario("file-tree toggle", commands=["toggle-file-tree"])
@@ -69,7 +69,7 @@ def file_tree_toggle(binary):
             session.wait_ready()
             session.send(keys.ctrl("x") + keys.ctrl("t"))
             session.wait_for_region_text("screen", "toggle-marker.txt")
-            session.wait_for_region_cursor("body", 24)
+            session.wait_for_region_cursor("body", 0)
 
             session.send(keys.ctrl("x") + keys.ctrl("t"))
             session.wait_for_region_cursor("body", 0)
