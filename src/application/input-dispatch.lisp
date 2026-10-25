@@ -29,25 +29,32 @@ end-of-file (no octet was read at all)."
 (defun %dispatch-input-chunk (decoder buffer count keymap-state)
   "Decode octets and route key and non-key events through their hooks."
   (let* ((chunk
-          (if (= count (length buffer))
-              buffer
-              (subseq buffer 0 count)))
+           (if (= count (length buffer))
+               buffer
+               (subseq buffer 0 count)))
          (session (editor-state-session *editor-state*)))
     (dolist (event (cl-tty-kit:decode-input-chunk decoder chunk))
-      (let ((event-type (cl-tty-kit:key-event-type event)))
-        (if (member event-type '(:character :special) :test #'eq)
+      (let* ((key-event-p (typep event 'cl-tty-kit:key-event))
+             (event-type (if key-event-p
+                             (cl-tty-kit:key-event-type event)
+                             :mouse)))
+        (if (and key-event-p
+                 (member event-type '(:character :special) :test #'eq))
             (%dispatch-key-event event keymap-state)
-            (handler-case (let ((result
-                                 (loom/core/editor-session:run-session-hooks
-                                  :input-event
-                                  session
-                                  event-type
-                                  (if (eq event-type :paste)
-                                      (or (cl-tty-kit:key-event-text event)
-                                          (cl-tty-kit:key-event-code event))
-                                      (cl-tty-kit:key-event-code event)))))
-                            (when (eq result :pass)
-                              (%dispatch-key-event event keymap-state nil)))
+            (handler-case
+                (let ((result
+                        (loom/core/editor-session:run-session-hooks
+                         :input-event
+                         session
+                         event-type
+                         (if key-event-p
+                             (if (eq event-type :paste)
+                                 (or (cl-tty-kit:key-event-text event)
+                                     (cl-tty-kit:key-event-code event))
+                                 (cl-tty-kit:key-event-code event))
+                             event))))
+                  (when (and key-event-p (eq result :pass))
+                    (%dispatch-key-event event keymap-state nil)))
               (error (condition)
                 (minibuffer-message (editor-state-minibuffer *editor-state*)
                                     (princ-to-string condition)))))))))

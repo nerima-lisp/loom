@@ -238,6 +238,52 @@
             (expect (search "visible-argument" mx-line) :to-be nil)
             (expect (search "sensitive-argument" key-line) :to-be nil)
             (expect (read-line stream nil) :to-be nil))))))
+  (it "accepts paste and mouse routes and rejects unsupported routes"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((loom/core/command::*registered-command-specs* nil)
+             (loom/core/command::*command-trace-sequence* 0)
+             (trace-path (namestring (merge-pathnames "commands.jsonl" directory)))
+             (calls nil)
+             (paste-payload "paste-payload")
+             (mouse-payload '(:button :left :x 4 :y 2 :marker "mouse-payload"))
+             (command (lambda (&rest arguments)
+                        (setf calls (append calls (list arguments)))
+                        (first arguments))))
+        (loom/core/command:register-command-spec
+         :test "test/input-event-routes" "input-event-routes" command
+         :keys nil :keymap :global :group nil
+         :mutates nil :prompts nil :needs-region nil
+         :external nil :modes '(:all))
+        (with-replaced-function
+            (uiop:getenv
+             (lambda (name)
+               (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
+          (expect (loom/core/command:invoke-command
+                   "test/input-event-routes" :paste paste-payload)
+                  :to-equal paste-payload)
+          (expect (loom/core/command:invoke-command
+                   "test/input-event-routes" :mouse mouse-payload)
+                  :to-equal mouse-payload))
+        (expect calls :to-equal (list (list paste-payload) (list mouse-payload)))
+        (with-open-file (stream trace-path)
+          (let* ((paste-line (read-line stream nil))
+                 (mouse-line (read-line stream nil))
+                 (paste-event (json-kit:parse paste-line))
+                 (mouse-event (json-kit:parse mouse-line)))
+            (expect (gethash "command" paste-event)
+                    :to-equal "test/input-event-routes")
+            (expect (gethash "route" paste-event) :to-equal "paste")
+            (expect (gethash "seq" paste-event) :to-equal 1)
+            (expect (gethash "command" mouse-event)
+                    :to-equal "test/input-event-routes")
+            (expect (gethash "route" mouse-event) :to-equal "mouse")
+            (expect (gethash "seq" mouse-event) :to-equal 2)
+            (expect (search "paste-payload" paste-line) :to-be nil)
+            (expect (search "mouse-payload" mouse-line) :to-be nil)
+            (expect (read-line stream nil) :to-be nil)))
+        (signals error
+          (loom/core/command:invoke-command "test/input-event-routes" :unsupported))
+        (expect calls :to-equal (list (list paste-payload) (list mouse-payload))))))
 
   (it "continues key and M-x commands when trace writes fail"
     (host-kit:with-temporary-directory (directory)
