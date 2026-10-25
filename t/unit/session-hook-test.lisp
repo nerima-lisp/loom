@@ -269,6 +269,11 @@
                         (loom/core/editor-session:register-session-hook :tick
                                                                         "core/command"
                                                                         #'identity))
+               (signals error
+                        (loom/core/editor-session:register-session-hook
+                         :tick
+                         :feature/unknown
+                         #'identity))
                (signals type-error
                         (loom/core/editor-session:register-session-hook :tick
                                                                         :core/command

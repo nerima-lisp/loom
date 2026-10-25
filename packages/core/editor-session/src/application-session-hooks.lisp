@@ -287,6 +287,8 @@
     (error "Unknown session hook kind: ~S" kind))
   (unless (keywordp owner)
     (error "Session hook owner must be a keyword: ~S" owner))
+  (unless (member owner +session-hook-owner-order+ :test (function eq))
+    (error "Unknown session hook owner: ~S" owner))
   (when
       (and
        (member kind
