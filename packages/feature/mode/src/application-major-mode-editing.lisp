@@ -317,3 +317,436 @@ non-negative column, or NIL to use the preceding line's indentation."
    :key-input
    :feature/mode
    (function %major-mode-enter-key-input-hook)))
+
+(progn
+  (defun %comment-dwim-line-prefix-column (line comment-start)
+    (let* ((indentation (%major-mode-line-indentation line))
+           (end (+ indentation (length comment-start))))
+      (and (<= end (length line))
+           (string= comment-start line :start2 indentation :end2 end)
+           indentation)))
+
+  (defun %comment-dwim-marker-removal-end (line start-column comment-start)
+    (let ((end (+ start-column (length comment-start))))
+      (if (and (< end (length line))
+               (char= (char line end) #\Space))
+          (1+ end)
+          end)))
+
+  (defun %comment-dwim-region-line-bounds (buffer span)
+    (let* ((start (buffer-offset-position buffer (buffer-span-start span)))
+           (end (buffer-offset-position buffer (buffer-span-end span)))
+           (start-line (buffer-position-line start))
+           (end-line (buffer-position-line end)))
+      (values start-line
+              (max start-line
+                   (if (and (> end-line start-line)
+                            (zerop (buffer-position-column end)))
+                       (1- end-line)
+                       end-line)))))
+
+  (defun %comment-dwim-region-lines-commented-p
+      (buffer start-line end-line comment-start)
+    (loop for line-number from start-line to end-line
+          always
+          (%comment-dwim-line-prefix-column
+           (buffer-line buffer line-number)
+           comment-start)))
+
+  (defun %comment-dwim-offset-after-insert
+      (offset insertion-offset length &optional include-boundary)
+    (when offset
+      (if (if include-boundary
+              (>= offset insertion-offset)
+              (> offset insertion-offset))
+          (+ offset length)
+          offset)))
+
+  (defun %comment-dwim-offset-after-delete (offset start-offset end-offset)
+    (when offset
+      (cond
+        ((< offset start-offset) offset)
+        ((<= offset end-offset) start-offset)
+        (t (- offset (- end-offset start-offset))))))
+
+  (defun %comment-dwim-save-state (buffer)
+    (multiple-value-bind (mark-line mark-column)
+        (buffer-mark buffer)
+      (values
+       (loom/core/buffer:buffer-point-offset buffer)
+       (and mark-line
+            (loom/core/buffer:buffer-position-offset
+             buffer mark-line mark-column))
+       (buffer-mark-active-p buffer))))
+
+  (defun %comment-dwim-restore-state
+      (buffer point-offset mark-offset mark-active)
+    (let ((point (buffer-offset-position buffer point-offset)))
+      (buffer-set-point buffer
+                        (buffer-position-line point)
+                        (buffer-position-column point)))
+    (when mark-offset
+      (let ((mark (buffer-offset-position buffer mark-offset)))
+        (buffer-set-mark buffer
+                         (buffer-position-line mark)
+                         (buffer-position-column mark))))
+    (unless mark-active
+      (buffer-deactivate-mark buffer)))
+
+  (defun %comment-dwim-text-between-offsets (buffer start-offset end-offset)
+    (let ((start (buffer-offset-position buffer start-offset))
+          (end (buffer-offset-position buffer end-offset)))
+      (loom/core/buffer:buffer-region-string
+       buffer
+       (buffer-position-line start)
+       (buffer-position-column start)
+       (buffer-position-line end)
+       (buffer-position-column end))))
+
+  (defun %comment-dwim-wrapped-region-kind-p
+      (buffer start-offset end-offset comment-start comment-end)
+    (let* ((selection
+             (%comment-dwim-text-between-offsets
+              buffer start-offset end-offset))
+           (start-length (length comment-start))
+           (end-length (length comment-end))
+           (inside
+             (and (>= (length selection) (+ start-length end-length))
+                  (string= comment-start selection
+                           :start2 0 :end2 start-length)
+                  (string= comment-end selection
+                           :start2 (- (length selection) end-length)
+                           :end2 (length selection))))
+           (outside
+             (and (>= start-offset start-length)
+                  (<= (+ end-offset end-length)
+                      (length (loom/core/buffer:buffer-text buffer)))
+                  (string= comment-start
+                           (%comment-dwim-text-between-offsets
+                            buffer (- start-offset start-length)
+                            start-offset))
+                  (string= comment-end
+                           (%comment-dwim-text-between-offsets
+                            buffer end-offset (+ end-offset end-length))))))
+      (cond (inside :inside)
+            (outside :outside)
+            (t nil))))
+
+  (defun %comment-dwim-toggle-block-span
+      (buffer start-line start-column end-line end-column
+       comment-start comment-end)
+    (let* ((start-offset
+             (loom/core/buffer:buffer-position-offset
+              buffer start-line start-column))
+           (end-offset
+             (loom/core/buffer:buffer-position-offset
+              buffer end-line end-column))
+           (wrapped-kind
+             (%comment-dwim-wrapped-region-kind-p
+              buffer start-offset end-offset comment-start comment-end)))
+      (multiple-value-bind (point-offset mark-offset mark-active)
+          (%comment-dwim-save-state buffer)
+        (cond
+          ((eq wrapped-kind :inside)
+           (let* ((suffix-start (- end-offset (length comment-end)))
+                  (suffix-end end-offset)
+                  (suffix-start-position (buffer-offset-position buffer suffix-start))
+                  (suffix-end-position (buffer-offset-position buffer suffix-end)))
+             (buffer-set-point buffer
+                               (buffer-position-line suffix-start-position)
+                               (buffer-position-column suffix-start-position))
+             (buffer-delete-region buffer
+                                   (buffer-position-line suffix-start-position)
+                                   (buffer-position-column suffix-start-position)
+                                   (buffer-position-line suffix-end-position)
+                                   (buffer-position-column suffix-end-position))
+             (setf point-offset (%comment-dwim-offset-after-delete point-offset
+                                                                   suffix-start
+                                                                   suffix-end)
+                   mark-offset (%comment-dwim-offset-after-delete mark-offset
+                                                                  suffix-start
+                                                                  suffix-end))
+             (let* ((prefix-start start-offset)
+                    (prefix-end (+ start-offset (length comment-start)))
+                    (prefix-start-position (buffer-offset-position buffer prefix-start))
+                    (prefix-end-position (buffer-offset-position buffer prefix-end)))
+               (buffer-set-point buffer
+                                 (buffer-position-line prefix-start-position)
+                                 (buffer-position-column prefix-start-position))
+               (buffer-delete-region buffer
+                                     (buffer-position-line prefix-start-position)
+                                     (buffer-position-column prefix-start-position)
+                                     (buffer-position-line prefix-end-position)
+                                     (buffer-position-column prefix-end-position))
+               (setf point-offset (%comment-dwim-offset-after-delete point-offset
+                                                                     prefix-start
+                                                                     prefix-end)
+                     mark-offset (%comment-dwim-offset-after-delete mark-offset
+                                                                    prefix-start
+                                                                    prefix-end)))))
+          ((eq wrapped-kind :outside)
+           (let* ((suffix-start end-offset)
+                  (suffix-end (+ end-offset (length comment-end)))
+                  (suffix-start-position (buffer-offset-position buffer suffix-start))
+                  (suffix-end-position (buffer-offset-position buffer suffix-end)))
+             (buffer-set-point buffer
+                               (buffer-position-line suffix-start-position)
+                               (buffer-position-column suffix-start-position))
+             (buffer-delete-region buffer
+                                   (buffer-position-line suffix-start-position)
+                                   (buffer-position-column suffix-start-position)
+                                   (buffer-position-line suffix-end-position)
+                                   (buffer-position-column suffix-end-position))
+             (setf point-offset (%comment-dwim-offset-after-delete point-offset
+                                                                   suffix-start
+                                                                   suffix-end)
+                   mark-offset (%comment-dwim-offset-after-delete mark-offset
+                                                                  suffix-start
+                                                                  suffix-end))
+             (let* ((prefix-start (- start-offset (length comment-start)))
+                    (prefix-end start-offset)
+                    (prefix-start-position (buffer-offset-position buffer prefix-start))
+                    (prefix-end-position (buffer-offset-position buffer prefix-end)))
+               (buffer-set-point buffer
+                                 (buffer-position-line prefix-start-position)
+                                 (buffer-position-column prefix-start-position))
+               (buffer-delete-region buffer
+                                     (buffer-position-line prefix-start-position)
+                                     (buffer-position-column prefix-start-position)
+                                     (buffer-position-line prefix-end-position)
+                                     (buffer-position-column prefix-end-position))
+               (setf point-offset (%comment-dwim-offset-after-delete point-offset
+                                                                     prefix-start
+                                                                     prefix-end)
+                     mark-offset (%comment-dwim-offset-after-delete mark-offset
+                                                                    prefix-start
+                                                                    prefix-end)))))
+          (t
+            (let ((end-position (buffer-offset-position buffer end-offset)))
+              (buffer-set-point buffer
+                                (buffer-position-line end-position)
+                                (buffer-position-column end-position))
+              (buffer-insert-string buffer comment-end)
+              (setf point-offset (%comment-dwim-offset-after-insert point-offset
+                                                                    end-offset
+                                                                    (length comment-end))
+                    mark-offset (%comment-dwim-offset-after-insert mark-offset
+                                                                   end-offset
+                                                                   (length comment-end))))
+            (let ((start-position (buffer-offset-position buffer start-offset)))
+              (buffer-set-point buffer
+                                (buffer-position-line start-position)
+                                (buffer-position-column start-position))
+              (buffer-insert-string buffer comment-start)
+              (setf point-offset (%comment-dwim-offset-after-insert point-offset
+                                                                    start-offset
+                                                                    (length
+                                                                     comment-start)
+                                                                    t)
+                    mark-offset (%comment-dwim-offset-after-insert mark-offset
+                                                                   start-offset
+                                                                   (length
+                                                                    comment-start)
+                                                                   t)))))
+        (%comment-dwim-restore-state
+         buffer point-offset mark-offset mark-active)
+        (null wrapped-kind))))
+
+  (defun %comment-dwim-toggle-lines
+      (buffer start-line end-line comment-start remove-p)
+    (multiple-value-bind (point-offset mark-offset mark-active)
+        (%comment-dwim-save-state buffer)
+      (loop for line-number from start-line to end-line
+            for line = (buffer-line buffer line-number)
+            for indentation = (%major-mode-line-indentation line)
+            do
+               (if remove-p
+                   (let* ((end
+                            (%comment-dwim-marker-removal-end
+                             line indentation comment-start))
+                          (start-offset
+                            (loom/core/buffer:buffer-position-offset
+                             buffer line-number indentation))
+                          (end-offset
+                            (loom/core/buffer:buffer-position-offset
+                             buffer line-number end))
+                          (start-position
+                            (buffer-offset-position buffer start-offset))
+                          (end-position
+                            (buffer-offset-position buffer end-offset)))
+                     (buffer-set-point
+                      buffer
+                      (buffer-position-line start-position)
+                      (buffer-position-column start-position))
+                     (buffer-delete-region
+                      buffer
+                      (buffer-position-line start-position)
+                      (buffer-position-column start-position)
+                      (buffer-position-line end-position)
+                      (buffer-position-column end-position))
+                     (setf point-offset
+                           (%comment-dwim-offset-after-delete
+                            point-offset start-offset end-offset)
+                           mark-offset
+                           (%comment-dwim-offset-after-delete
+                            mark-offset start-offset end-offset)))
+                   (let* ((insertion (format nil "~A " comment-start))
+                          (insertion-offset
+                            (loom/core/buffer:buffer-position-offset
+                             buffer line-number indentation))
+                          (position
+                            (buffer-offset-position buffer insertion-offset)))
+                     (buffer-set-point
+                      buffer
+                      (buffer-position-line position)
+                      (buffer-position-column position))
+                     (buffer-insert-string buffer insertion)
+                     (setf point-offset
+                           (%comment-dwim-offset-after-insert
+                            point-offset insertion-offset
+                            (length insertion) t)
+                           mark-offset
+                           (%comment-dwim-offset-after-insert
+                            mark-offset insertion-offset
+                            (length insertion) t)))))
+      (%comment-dwim-restore-state
+       buffer point-offset mark-offset mark-active)))
+
+  (defun %comment-dwim-comment-region
+      (buffer span comment-start comment-end)
+    (if (null comment-end)
+        (multiple-value-bind (start-line end-line)
+            (%comment-dwim-region-line-bounds buffer span)
+          (%comment-dwim-toggle-lines
+           buffer start-line end-line comment-start
+           (%comment-dwim-region-lines-commented-p
+            buffer start-line end-line comment-start)))
+        (let* ((start-offset (buffer-span-start span))
+               (end-offset (buffer-span-end span))
+               (start (buffer-offset-position buffer start-offset))
+               (end (buffer-offset-position buffer end-offset)))
+          (multiple-value-bind (start-line end-line)
+              (%comment-dwim-region-line-bounds buffer span)
+            (if (or
+                 (%comment-dwim-wrapped-region-kind-p
+                  buffer start-offset end-offset comment-start comment-end)
+                 (not
+                  (%comment-dwim-region-lines-commented-p
+                   buffer start-line end-line comment-start)))
+                (%comment-dwim-toggle-block-span
+                 buffer
+                 (buffer-position-line start)
+                 (buffer-position-column start)
+                 (buffer-position-line end)
+                 (buffer-position-column end)
+                 comment-start comment-end)
+                (%comment-dwim-toggle-lines
+                 buffer start-line end-line comment-start t))))))
+
+  (defun %comment-dwim-current-line
+      (buffer comment-start comment-end)
+    (let* ((line-number (buffer-point-line buffer))
+           (line (buffer-line buffer line-number))
+           (indentation (%major-mode-line-indentation line)))
+      (if comment-end
+          (let* ((comment-column (search comment-start line))
+                 (end-column
+                  (and comment-column
+                       (search comment-end line
+                               :start2 (+ comment-column
+                                          (length comment-start))))))
+            (if end-column
+                (buffer-set-point
+                 buffer line-number (+ comment-column (length comment-start)))
+              (when
+                  (%comment-dwim-toggle-block-span
+                   buffer line-number indentation
+                   line-number (length line)
+                   comment-start comment-end)
+                (buffer-set-point
+                 buffer line-number (+ indentation (length comment-start))))))
+        (let* ((prefix-column
+                (%comment-dwim-line-prefix-column line comment-start))
+               (inline-column
+                (and (null prefix-column)
+                     (let ((column
+                            (search comment-start line
+                                    :start2 indentation)))
+                       (and column
+                            (> column indentation)
+                            (member (char line (1- column))
+                                    (list #\Space #\Tab)
+                                    :test (function char=))
+                            (+ column (length comment-start)))))))
+          (multiple-value-bind (point-offset mark-offset mark-active)
+              (%comment-dwim-save-state buffer)
+            (cond
+             (prefix-column
+              (setf point-offset
+                    (loom/core/buffer:buffer-position-offset
+                     buffer line-number
+                     (+ prefix-column (length comment-start)))))
+             (inline-column
+              (setf point-offset
+                    (loom/core/buffer:buffer-position-offset
+                     buffer line-number inline-column)))
+             (t
+              (let* ((last-nonblank
+                      (position-if-not
+                       (lambda (character)
+                         (member character (list #\Space #\Tab)
+                                 :test (function char=)))
+                       line :from-end t))
+                     (insertion-column
+                      (if last-nonblank
+                          (1+ last-nonblank)
+                        indentation))
+                     (insertion
+                      (if last-nonblank
+                          (format nil " ~A" comment-start)
+                        comment-start))
+                     (insertion-offset
+                      (loom/core/buffer:buffer-position-offset
+                       buffer line-number insertion-column))
+                     (position
+                      (buffer-offset-position buffer insertion-offset)))
+                (buffer-set-point
+                 buffer
+                 (buffer-position-line position)
+                 (buffer-position-column position))
+                (buffer-insert-string buffer insertion)
+                (setf point-offset
+                      (%comment-dwim-offset-after-insert
+                       point-offset insertion-offset
+                       (length insertion) t)
+                      mark-offset
+                      (%comment-dwim-offset-after-insert
+                       mark-offset insertion-offset
+                       (length insertion) t))
+                (setf point-offset
+                      (+ insertion-offset (length insertion))))))
+            (%comment-dwim-restore-state
+             buffer point-offset mark-offset mark-active))))))
+
+  (defun comment-dwim ()
+    "Comment the active region, or insert or locate a marker on the current line."
+    (let* ((buffer
+            (window-buffer
+             (window-tree-selected-window
+              (editor-state-window-tree *editor-state*))))
+           (mode (and buffer (buffer-major-mode buffer)))
+           (comment-start (and mode (major-mode-comment-start mode)))
+           (comment-end (and mode (major-mode-comment-end mode))))
+      (cond
+       ((null buffer) nil)
+       ((null comment-start)
+        (%comment-line-no-prefix-message mode))
+       ((let ((span (buffer-active-region-span buffer)))
+          (and span
+               (> (buffer-span-end span) (buffer-span-start span))))
+        (%comment-dwim-comment-region
+         buffer (buffer-active-region-span buffer)
+         comment-start comment-end))
+       (t
+        (%comment-dwim-current-line buffer comment-start comment-end))))
+    nil))

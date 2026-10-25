@@ -29,3 +29,7 @@
                          :needs-region nil
                          :external 'nil
                          :modes '(:common-lisp :python :rust :shell :emacs-lisp :nix :typescript :typescript-react :markdown :org)))
+
+(register-internal-command
+ :feature/mode "mode/comment-dwim" (function loom/feature/mode:comment-dwim)
+ :mutates t :prompts nil :needs-region nil :external nil :modes (list :all))

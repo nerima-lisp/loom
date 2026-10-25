@@ -74,4 +74,5 @@
    #:toggle-truncate-lines
    #:major-mode-comment-start
    #:major-mode-comment-end
-   #:major-mode-skip-closing-delimiter-p))
+   #:major-mode-skip-closing-delimiter-p
+   #:comment-dwim))
