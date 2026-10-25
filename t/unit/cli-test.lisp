@@ -25,6 +25,30 @@
            (dolist (argv (list (list "loom" "--definitely-invalid")
                                (list "loom" "+2")))
              (expect (loom::%main-exit-code argv) :to-equal 64)))
+          (it "adapts a cl-cli invocation into a startup context"
+              (let ((received-context nil))
+                (with-replaced-function
+                 (loom::%run-loom
+                  (lambda (startup-context &key fd)
+                    (expect fd :to-equal 0)
+                    (setf received-context startup-context)
+                    23))
+                 (expect
+                  (cl-cli:run-app (loom::%make-loom-app)
+                                  :argv
+                                  '("loom" "notes.txt"))
+                  :to-equal
+                  23))
+                (expect
+                 (loom/core/editor-session:startup-context-p received-context)
+                 :to-be-truthy)
+                (expect
+                 (loom/core/editor-session:startup-file-request-path
+                  (first
+                   (loom/core/editor-session:startup-context-file-requests
+                    received-context)))
+                 :to-equal
+                 "notes.txt")))
           (it
            "dispatches registered options and file requests through startup context"
            (let* ((loom/core/editor-session::*cli-options*

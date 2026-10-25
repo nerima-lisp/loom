@@ -147,6 +147,12 @@ its arguments, option values, and file paths."
                                                      options
                                                      (nreverse file-requests)))))
 
+(defun %run-loom-cli-invocation (invocation)
+  (%run-loom
+   (%parse-startup-context
+    (let ((path (cl-cli:positional-value invocation :path)))
+      (if path (list path) nil)))))
+
 (defun %make-loom-app ()
   "Build the CL-CLI application specification for the loom binary."
   (cl-cli:make-app :name
@@ -164,7 +170,7 @@ its arguments, option values, and file paths."
                                             :description
                                             "A file to open, or a directory to browse (defaults to \".\")"))
                    :handler
-                   (function %run-loom)))
+                   (function %run-loom-cli-invocation)))
 
 (defparameter *loom-app*
   (%make-loom-app)
