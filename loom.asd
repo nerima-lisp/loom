@@ -18,7 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window")
   :pathname "."
   :serial t
   :components
@@ -43,13 +43,6 @@ root source tree responsible for every feature."
     :components
     (
      (:file "packages/feature/search/src/package")
-    ))
-   (:module "feature-window-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/window/src/package")
     ))
    (:module "feature-workspace-package"
     :pathname "."
@@ -447,12 +440,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/file-tree/src/application-commands-file")
      (:file "packages/feature/file-tree/src/application-commands-file-save")
     ))
-   (:module "feature-window-application"
-  :pathname "."
-  :serial t
-  :components
-  ((:file "packages/feature/window/src/application-commands-window")
-   (:file "packages/feature/window/src/application-commands-window-scroll")))
    (:module "feature-workspace-application"
     :pathname "."
     :serial t
@@ -561,7 +548,6 @@ root source tree responsible for every feature."
      (:file "src/application/commands-bookmark-support")
      (:file "src/application/commands-bookmark")
      (:file "src/application/commands-quit")
-     (:file "packages/feature/window/src/command-specs-window-scroll")
      (:file "packages/feature/terminal/src/command-specs-terminal")
      (:file "packages/feature/shell/src/command-specs-shell")
      (:file "packages/feature/session/src/command-specs-session")
@@ -589,7 +575,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/bookmark/src/command-specs-bookmark")
      (:file "packages/feature/auto-save/src/command-specs-auto-save")
      (:file "packages/feature/workspace/src/command-specs-workspace")
-     (:file "packages/feature/window/src/command-specs-window")
      ))
    (:module "feature-user-init-application"
     :pathname "."
@@ -818,7 +803,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
