@@ -60,18 +60,7 @@ from it."
           (cl-cli:cli-usage-error (condition)
             (error condition))
           (error (condition)
-            (let ((logger
-                   (log-kit:make-logger :name
-                                        "loom"
-                                        :handler
-                                        (log-kit:make-text-handler :stream
-                                                                   *error-output*)
-                                        :level
-                                        log-kit:+level-error+)))
-              (log-kit:log-error logger
-                                 (princ-to-string condition)
-                                 :condition-type
-                                 (type-of condition)))
+            (%log-loom-error condition)
             (values :runtime-error 1)))
       (if (eq reason :runtime-error)
           1
@@ -83,16 +72,5 @@ from it."
                            reason))
                          status)
             (error (condition)
-              (let ((logger
-                     (log-kit:make-logger :name
-                                          "loom"
-                                          :handler
-                                          (log-kit:make-text-handler :stream
-                                                                     *error-output*)
-                                          :level
-                                          log-kit:+level-error+)))
-                (log-kit:log-error logger
-                                   (princ-to-string condition)
-                                   :condition-type
-                                   (type-of condition)))
+              (%log-loom-error condition)
               1))))))

@@ -33,6 +33,19 @@
     (when session
       (loom/feature/lsp:lsp-session-stop session))))
 
+(defun %log-loom-error (condition)
+  (let ((logger
+         (log-kit:make-logger :name
+                              "loom"
+                              :handler
+                              (log-kit:make-text-handler :stream *error-output*)
+                              :level
+                              log-kit:+level-error+)))
+    (log-kit:log-error logger
+                       (princ-to-string condition)
+                       :condition-type
+                       (type-of condition))))
+
 (defun %run-loom-session (startup-context fd)
   (let ((session (editor-state-session *editor-state*))
         (terminal-session nil)
@@ -65,18 +78,7 @@
                                                               *standard-input*
                                                               terminal-session)))
           (error (condition)
-            (let ((logger
-                   (log-kit:make-logger :name
-                                        "loom"
-                                        :handler
-                                        (log-kit:make-text-handler :stream
-                                                                   *error-output*)
-                                        :level
-                                        log-kit:+level-error+)))
-              (log-kit:log-error logger
-                                 (princ-to-string condition)
-                                 :condition-type
-                                 (type-of condition)))
+            (%log-loom-error condition)
             (setf reason :runtime-error
                   status 1)))
       (when terminal-session
@@ -84,35 +86,13 @@
                                                                   session
                                                                   reason)
           (error (condition)
-            (let ((logger
-                   (log-kit:make-logger :name
-                                        "loom"
-                                        :handler
-                                        (log-kit:make-text-handler :stream
-                                                                   *error-output*)
-                                        :level
-                                        log-kit:+level-error+)))
-              (log-kit:log-error logger
-                                 (princ-to-string condition)
-                                 :condition-type
-                                 (type-of condition)))
+            (%log-loom-error condition)
             (setf reason :runtime-error
                   status 1)))
         (handler-case (loom/core/editor-session:cancel-session-background-work
                        session)
           (error (condition)
-            (let ((logger
-                   (log-kit:make-logger :name
-                                        "loom"
-                                        :handler
-                                        (log-kit:make-text-handler :stream
-                                                                   *error-output*)
-                                        :level
-                                        log-kit:+level-error+)))
-              (log-kit:log-error logger
-                                 (princ-to-string condition)
-                                 :condition-type
-                                 (type-of condition)))
+            (%log-loom-error condition)
             (setf reason :runtime-error
                   status 1)))
         (unwind-protect
@@ -122,18 +102,7 @@
                 (%uninstall-loom-terminal-signal-handlers)))
           (handler-case (%close-loom-terminal-session terminal-session)
             (error (condition)
-              (let ((logger
-                     (log-kit:make-logger :name
-                                          "loom"
-                                          :handler
-                                          (log-kit:make-text-handler :stream
-                                                                     *error-output*)
-                                          :level
-                                          log-kit:+level-error+)))
-                (log-kit:log-error logger
-                                   (princ-to-string condition)
-                                   :condition-type
-                                   (type-of condition)))
+              (%log-loom-error condition)
               (setf reason :runtime-error
                     status 1))))))
     (values reason status)))
