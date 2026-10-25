@@ -23,6 +23,7 @@
      (:file "infrastructure-concurrent-runtime-prefetch")
      (:file "infrastructure-concurrent-runtime-results")
      (:file "application-commands-file-tree")
+     (:file "command-specs-file-tree")
      (:file "application-file-tree-runtime")))))
 
 (asdf:defsystem "loom-feature-file-tree/test"
