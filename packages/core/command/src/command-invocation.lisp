@@ -28,6 +28,8 @@
 
 (defun invoke-command (id route &rest arguments)
   "Resolve ID, record ROUTE, then call the registered command with ARGUMENTS."
+  (unless (member route '(:key :mx :macro :paste :mouse))
+    (error "Unsupported command route ~S." route))
   (let ((spec (%find-command-spec-by-id id)))
     (unless spec
       (error "No command is registered with ID ~S." id))
