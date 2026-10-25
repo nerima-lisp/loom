@@ -758,7 +758,7 @@ root aggregate、flake、runner、E2E harnessを編集しない。
 
 ## 6. commit gateとbatch gate
 
-現要件11.5と設計5章は、W2の各commitで全unit suiteと全E2Eを求めている。W2cでは各slice commitで全unit suiteを実行する。1〜3 slice commitごとのpush tipで`nix run .#e2e`を1回実行する。
+現要件11.5と設計5章は、W2の各commitで全unit suiteと全E2Eを求めている。W2cでは各slice commitで全unit suiteを実行する。batchごとにpushし、そのpush tipで`nix run .#e2e`を1回実行する。slice数が多いbatchは、1 pushあたり最大5 slice commitを目安に分ける。
 
 push tipは一時bookmarkでoriginへpushし、CIをdispatchする。全jobがsuccessでheadShaがpush SHAと一致することを確認した後、同じSHAをmainへpushする。一時bookmarkをremoteから削除し、mainのref SHAとmain CIも確認する。
 
@@ -769,7 +769,7 @@ origin/mainがpush前に進んでいたらrebaseし、in-process suiteを再実�
 | gate | 実行範囲 | 合格条件 |
 |---|---|---|
 | slice commit | `nix develop --command sbcl --script run-tests.lisp` | 全unit testが成功し、登録test件数がbaselineを下回らない |
-| push tip（1〜3 slice commitごと） | `nix run .#e2e`を1回実行し、一時bookmarkをpushしてCIをdispatchする。その後同じSHAをmainへpushする | E2Eとdispatch CI・main CIの全jobが成功し、headShaと各ref SHAがpush SHAに一致する。ローカルflake checkは実行しない |
+| push tip（batchごと。slice数が多いbatchは最大5 slice commitごと） | `nix run .#e2e`を1回実行し、一時bookmarkをpushしてCIをdispatchする。その後同じSHAをmainへpushする | E2Eとdispatch CI・main CIの全jobが成功し、headShaと各ref SHAがpush SHAに一致する。ローカルflake checkは実行しない |
 | batch境界 | ASDF production/test system一覧、W2b dependency-union gate、root aggregate component一覧と1.1・1.2表のpath割当 | 各pathが意図したsystemへ一度だけ登録され、未登録pathが担当batchで登録される |
 | W2d境界 | warningからfailureへの切替、既知allowlist、未知依存/private symbol/domain上位層参照のnegative control | 許可済み違反だけが残り、negative controlはfailureになる |
 | W3 lane統合 | lane固有test、全unit、全E2E、GitHub CIのflake check、境界gate | laneのpath所有権、export、他lane API依存を満たし、既存scenarioと追加scenarioおよびCIの全jobが成功する |
@@ -798,7 +798,7 @@ batch境界gateはsliceごとのunit gate、およびpush tipのE2E/CI gateを�
 | test support | 各slice testの配置は定義済みだが、共有packageのsystem所有が残る | `loom/test-support`を追加し、root aggregateの外へ共有packageを置く | slice/testから`loom/test` aggregateへの循環を避ける |
 | movement-view helper | 設計資料はscrollとgoto-lineを分割する | 現行sourceにscroll helperはない。W2a catalogの`:core/buffer` ownerを保ち、goto-line helperを同じownerに割り当てる | 現行sourceは`packages/core/editor/src/application-commands-movement-view-support.lisp:3-36`、W2a specは`packages/core/buffer/src/command-specs-movement.lisp:114-122` |
 | W3開始時期 | W2完了後にW3開始 | 条件を満たすbranch作業だけW2dと重ねる。main mergeはW2d成功後 | W3 path所有とroot共有pathを分離できる。gate違反は統合前に検出する |
-| commit gate | slice commitごとの全unit suite、push tipのE2EとGitHub CI | slice commitごとに全unitを実行し、1〜3 sliceごとのpush tipでE2Eを1回実行して一時bookmark CIとmain CIの全jobを確認する（6節） | 中間commit単位のE2E保証を失い、失敗時のbisect範囲を最大3 slice commitとする。ローカルflake checkはpush条件から外す |
+| commit gate | slice commitごとの全unit suite、push tipのE2EとGitHub CI | slice commitごとに全unitを実行し、batchごとのpush tip（slice数が多いbatchは最大5 slice commitごと）でE2Eを1回実行して一時bookmark CIとmain CIの全jobを確認する（6節） | 中間commit単位のE2E保証を失い、失敗時のbisect範囲を1 batch、最大5 slice commitとする。ローカルflake checkはpush条件から外す |
 | `commands-internal.lisp` | 設計資料は選択buffer/window registry helperの移設を示唆する | 現root fileを残す。registry関数の新たな移設先は設けない | 現行fileの定義は`%order-region`だけ（`src/application/commands-internal.lisp:3-12`）。buffer registryは`registered-buffers`、`register-buffer`、`unregister-buffer`としてすでにfeature/buffersにある（`packages/feature/buffers/src/domain-buffer-registry.lisp:14-26`）。設計資料の選択window helperとregistry helperの記述は現行sourceにない |
 
 W2c表のtarget pathにはまだ新規作成していないpathが含まれる。

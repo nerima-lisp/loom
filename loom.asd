@@ -21,7 +21,7 @@ root source tree responsible for every feature."
   :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli"
                "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit"
                "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit"
-               "loom-core-buffer")
+               "loom-core-buffer" "loom-core-window-tree")
   :pathname "."
   :serial t
   :components
@@ -30,8 +30,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "packages/core/window-tree/src/package")
-   (:file "packages/core/minibuffer/src/package")
+  ((:file "packages/core/minibuffer/src/package")
    (:file "packages/core/editor-session/src/package")
    (:file "packages/core/command/src/package")
    (:file "packages/feature/buffers/src/package")
@@ -212,17 +211,6 @@ root source tree responsible for every feature."
       (
        (:file "packages/core/command/src/domain-prefix-argument")
       ))
-     (:module "core-window-tree-domain"
-      :pathname "."
-      :serial t
-      :components
-      (
-       (:file "packages/core/window-tree/src/domain-window")
-       (:file "packages/core/window-tree/src/domain-window-support")
-       (:file "packages/core/window-tree/src/domain-window-layout")
-       (:file "packages/core/window-tree/src/domain-window-operations")
-       (:file "packages/core/window-tree/src/domain-window-accessors")
-       (:file "packages/core/window-tree/src/domain-window-deletion")))
      (:file "packages/core/editor-session/src/domain-editor-session-slices")
     ))
    (:module "feature-search-domain"
@@ -810,11 +798,6 @@ root source tree responsible for every feature."
    (:file "t/unit/filesystem-rename-boundary-test")
    (:file "t/unit/filesystem-delete-test")
    (:file "t/unit/filesystem-listing-test")
-   (:file "t/unit/window-basic-test")
-   (:file "t/unit/window-delete-behavior-test")
-   (:file "t/unit/window-delete-node-test")
-   (:file "t/unit/window-delete-other-windows-test")
-   (:file "t/unit/window-layout-test")
    (:file "t/unit/workspace-test")
    (:file "t/unit/workspace-navigation-test")
    (:file "t/unit/editor-state-test")
@@ -964,7 +947,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
