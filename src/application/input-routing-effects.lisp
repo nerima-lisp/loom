@@ -5,12 +5,12 @@
   (unless (or (eq command :prefix)
               (member command +yank-command-names+ :test #'equal)
               (member command +yank-preserving-command-names+ :test #'equal))
-    (%clear-last-yank)))
+    (editor-state-clear-last-yank *editor-state*)))
 
 (defun %dispatch-self-insert-event (event)
   "Execute EVENT as a self-insert command in the current editor state."
   (record-undo-boundary-for-command t)
-  (%clear-last-yank)
+  (editor-state-clear-last-yank *editor-state*)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
   (let ((*current-prefix-argument*
           (consume-prefix-argument-for-editor)))
