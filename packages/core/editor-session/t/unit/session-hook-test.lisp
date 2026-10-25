@@ -1,8 +1,7 @@
 (in-package #:loom/test)
 
 (progn
-  (describe "session hook registry"
-            (it
+  (describe "session hook registry" (it
              "orders hooks by owner, deduplicates registrations, and snapshots dispatch"
              (let* ((loom/core/editor-session::*session-hooks*
                      (make-hash-table :test #'eq))
@@ -269,15 +268,17 @@
                         (loom/core/editor-session:register-session-hook :tick
                                                                         "core/command"
                                                                         #'identity))
-               (signals error
-                        (loom/core/editor-session:register-session-hook
-                         :tick
-                         :feature/unknown
-                         #'identity))
-               (signals type-error
-                        (loom/core/editor-session:register-session-hook :tick
-                                                                        :core/command
-                                                                        42))
+               (progn
+                 (signals type-error
+                          (loom/core/editor-session:register-session-hook
+                           :tick
+                           :core/command
+                           42))
+                 (signals error
+                          (loom/core/editor-session:register-session-hook
+                           :tick
+                           :feature/unknown
+                           (function identity))))
                (loom/core/editor-session:register-session-hook :tick
                                                                :feature/lifecycle
                                                                (lambda
@@ -345,33 +346,6 @@
                         (loom/core/editor-session:run-session-hooks
                          :terminal-modes
                          (%make-test-editor-session)))))
-            (it "propagates hook errors and skips later hooks"
-                (let* ((loom/core/editor-session::*session-hooks*
-                        (make-hash-table :test #'eq))
-                       (session (%make-test-editor-session))
-                       (events nil))
-                  (loom/core/editor-session:register-session-hook
-                   :tick
-                   :core/command
-                   (lambda (&rest arguments)
-                     (declare (ignore arguments))
-                     (push :before events)))
-                  (loom/core/editor-session:register-session-hook
-                   :tick
-                   :core/minibuffer
-                   (lambda (&rest arguments)
-                     (declare (ignore arguments))
-                     (push :failing events)
-                     (error "hook failed")))
-                  (loom/core/editor-session:register-session-hook
-                   :tick
-                   :feature/lifecycle
-                   (lambda (&rest arguments)
-                     (declare (ignore arguments))
-                     (push :after events)))
-                  (signals simple-error
-                    (loom/core/editor-session:run-session-hooks :tick session))
-                  (expect (nreverse events) :to-equal '(:before :failing))))
             (it
              "dispatches lifecycle and buffer-close hooks under their declared owners"
              (let* ((loom/core/editor-session::*session-hooks*
@@ -662,11 +636,11 @@
             (it "coalesces pending terminal-suspend requests"
                 (let ((session (%make-test-editor-session))
                       (other-session (%make-test-editor-session)))
-                  (expect (request-terminal-suspend session) :to-equal :queued)
-                  (expect (request-terminal-suspend session)
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)
+                  (expect (loom/core/editor-session:request-terminal-suspend session)
                           :to-equal
                           :coalesced)
-                  (expect (request-terminal-suspend other-session)
+                  (expect (loom/core/editor-session:request-terminal-suspend other-session)
                           :to-equal
                           :queued)))
             (it "wakes the root once for a new terminal-suspend request"
@@ -683,8 +657,8 @@
                                                                                   received-session))
                                                                         (incf
                                                                          wake-count)))
-                  (expect (request-terminal-suspend session) :to-equal :queued)
-                  (expect (request-terminal-suspend session)
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)
+                  (expect (loom/core/editor-session:request-terminal-suspend session)
                           :to-equal
                           :coalesced)
                   (expect wake-count :to-equal 1)))
@@ -727,7 +701,7 @@
              (let* ((session (%make-test-editor-session))
                     (polled nil)
                     (token-a
-                     (register-background-work session
+                     (loom/core/editor-session:register-background-work session
                                                :feature/search
                                                (lambda (received-session token)
                                                  (declare (ignore
@@ -737,7 +711,7 @@
                                                (lambda (&rest arguments)
                                                  (declare (ignore arguments)))))
                     (token-b
-                     (register-background-work session
+                     (loom/core/editor-session:register-background-work session
                                                :feature/project
                                                (lambda (received-session token)
                                                  (declare (ignore
@@ -746,24 +720,24 @@
                                                  (values nil t))
                                                (lambda (&rest arguments)
                                                  (declare (ignore arguments))))))
-               (expect (notify-background-work-ready session token-a)
+               (expect (loom/core/editor-session:notify-background-work-ready session token-a)
                        :to-equal
                        :queued)
-               (expect (notify-background-work-ready session token-b)
+               (expect (loom/core/editor-session:notify-background-work-ready session token-b)
                        :to-equal
                        :queued)
-               (expect (notify-background-work-ready session token-a)
+               (expect (loom/core/editor-session:notify-background-work-ready session token-a)
                        :to-equal
                        :coalesced)
                (multiple-value-bind (frame-dirty-p more-ready-p)
-                   (poll-ready-background-work session)
+                   (loom/core/editor-session:poll-ready-background-work session)
                  (expect frame-dirty-p :to-be t)
                  (expect more-ready-p :to-be nil))
                (expect (nreverse polled) :to-equal (list token-a token-b))
-               (expect (notify-background-work-ready session token-a)
+               (expect (loom/core/editor-session:notify-background-work-ready session token-a)
                        :to-equal
                        :ignored)
-               (expect (notify-background-work-ready session token-b)
+               (expect (loom/core/editor-session:notify-background-work-ready session token-b)
                        :to-equal
                        :ignored)))
             (it "wakes once when background work first becomes ready"
@@ -781,12 +755,12 @@
                         (lambda (received-session token)
                           (declare (ignore received-session token))))
                        (token-a
-                        (register-background-work session
+                        (loom/core/editor-session:register-background-work session
                                                   :feature/search
                                                   poller
                                                   cancel-function))
                        (token-b
-                        (register-background-work session
+                        (loom/core/editor-session:register-background-work session
                                                   :feature/project
                                                   poller
                                                   cancel-function)))
@@ -797,21 +771,21 @@
                                                                                   received-session))
                                                                         (incf
                                                                          wake-count)))
-                  (expect (notify-background-work-ready session token-a)
+                  (expect (loom/core/editor-session:notify-background-work-ready session token-a)
                           :to-equal
                           :queued)
-                  (expect (notify-background-work-ready session token-b)
+                  (expect (loom/core/editor-session:notify-background-work-ready session token-b)
                           :to-equal
                           :queued)
-                  (expect (notify-background-work-ready session token-a)
+                  (expect (loom/core/editor-session:notify-background-work-ready session token-a)
                           :to-equal
                           :coalesced)
                   (expect wake-count :to-equal 1)
                   (multiple-value-bind (frame-dirty-p more-ready-p)
-                      (poll-ready-background-work session)
+                      (loom/core/editor-session:poll-ready-background-work session)
                     (expect frame-dirty-p :to-be nil)
                     (expect more-ready-p :to-be nil))
-                  (expect (notify-background-work-ready session token-b)
+                  (expect (loom/core/editor-session:notify-background-work-ready session token-b)
                           :to-equal
                           :queued)
                   (expect wake-count :to-equal 2)))
@@ -821,7 +795,7 @@
                     (poll-count 0)
                     (renotify-result nil)
                     (token nil))
-               (setf token (register-background-work session
+               (setf token (loom/core/editor-session:register-background-work session
                                                      :feature/search
                                                      (lambda
                                                          (received-session
@@ -831,29 +805,27 @@
                                                        (incf poll-count)
                                                        (if (= poll-count 1)
                                                            (progn
-                                                             (setf renotify-result (notify-background-work-ready
-                                                                                    session
-                                                                                    received-token))
+                                                             (setf renotify-result (loom/core/editor-session:notify-background-work-ready session received-token))
                                                              (values t nil))
                                                            (values nil t)))
                                                      (lambda (&rest arguments)
                                                        (declare (ignore
                                                                  arguments)))))
-               (expect (notify-background-work-ready session token)
+               (expect (loom/core/editor-session:notify-background-work-ready session token)
                        :to-equal
                        :queued)
                (multiple-value-bind (frame-dirty-p more-ready-p)
-                   (poll-ready-background-work session)
+                   (loom/core/editor-session:poll-ready-background-work session)
                  (expect frame-dirty-p :to-be t)
                  (expect more-ready-p :to-be t))
                (expect renotify-result :to-equal :queued)
                (expect poll-count :to-equal 1)
                (multiple-value-bind (frame-dirty-p more-ready-p)
-                   (poll-ready-background-work session)
+                   (loom/core/editor-session:poll-ready-background-work session)
                  (expect frame-dirty-p :to-be nil)
                  (expect more-ready-p :to-be nil))
                (expect poll-count :to-equal 2)
-               (expect (notify-background-work-ready session token)
+               (expect (loom/core/editor-session:notify-background-work-ready session token)
                        :to-equal
                        :ignored)))
             (it
@@ -861,7 +833,7 @@
              (let* ((session (%make-test-editor-session))
                     (cancel-count 0)
                     (cancelled-token
-                     (register-background-work session
+                     (loom/core/editor-session:register-background-work session
                                                :feature/search
                                                (lambda (received-session token)
                                                  (declare (ignore
@@ -871,22 +843,22 @@
                                                (lambda (&rest arguments)
                                                  (declare (ignore arguments))
                                                  (incf cancel-count)))))
-               (cancel-background-work session cancelled-token)
-               (cancel-background-work session cancelled-token)
+               (loom/core/editor-session:cancel-background-work session cancelled-token)
+               (loom/core/editor-session:cancel-background-work session cancelled-token)
                (expect cancel-count :to-equal 1)
-               (expect (notify-background-work-ready session cancelled-token)
+               (expect (loom/core/editor-session:notify-background-work-ready session cancelled-token)
                        :to-equal
                        :queued)
                (multiple-value-bind (frame-dirty-p more-ready-p)
-                   (poll-ready-background-work session)
+                   (loom/core/editor-session:poll-ready-background-work session)
                  (expect frame-dirty-p :to-be nil)
                  (expect more-ready-p :to-be nil))
-               (expect (notify-background-work-ready session cancelled-token)
+               (expect (loom/core/editor-session:notify-background-work-ready session cancelled-token)
                        :to-equal
                        :ignored))
              (let* ((session (%make-test-editor-session))
                     (token
-                     (register-background-work session
+                     (loom/core/editor-session:register-background-work session
                                                :feature/search
                                                (lambda
                                                    (received-session
@@ -897,8 +869,8 @@
                                                  (error "poller failed"))
                                                (lambda (&rest arguments)
                                                  (declare (ignore arguments))))))
-               (notify-background-work-ready session token)
-               (signals error (poll-ready-background-work session))))
+               (loom/core/editor-session:notify-background-work-ready session token)
+               (signals error (loom/core/editor-session:poll-ready-background-work session))))
             (it "parses registered CLI options and copies startup file requests"
                 (let* ((loom/core/editor-session::*cli-options*
                         (make-hash-table :test #'equal))
@@ -919,8 +891,8 @@
                    "--session-file"
                    :value)
                   (setf context (loom::%parse-startup-context argv))
-                  (expect (startup-context-argv context) :to-equal argv)
-                  (let ((options (startup-context-options context)))
+                  (expect (loom/core/editor-session:startup-context-argv context) :to-equal argv)
+                  (let ((options (loom/core/editor-session:startup-context-options context)))
                     (expect (gethash "--resume" options) :to-be t)
                     (expect (gethash "--session-file" options)
                             :to-equal
@@ -928,41 +900,41 @@
                     (setf (gethash "--session-file" options) "changed")
                     (expect
                      (gethash "--session-file"
-                              (startup-context-options context))
+                              (loom/core/editor-session:startup-context-options context))
                      :to-equal
                      "state file"))
-                  (let ((argv-copy (startup-context-argv context)))
+                  (let ((argv-copy (loom/core/editor-session:startup-context-argv context)))
                     (setf (char (first argv-copy) 2) #\X)
-                    (expect (startup-context-argv context) :to-equal argv))
-                  (let* ((requests (startup-context-file-requests context))
+                    (expect (loom/core/editor-session:startup-context-argv context) :to-equal argv))
+                  (let* ((requests (loom/core/editor-session:startup-context-file-requests context))
                          (first-request (first requests))
                          (second-request (second requests))
                          (returned-path
-                          (startup-file-request-path first-request)))
+                          (loom/core/editor-session:startup-file-request-path first-request)))
                     (expect (length requests) :to-equal 2)
-                    (expect (startup-file-request-p first-request) :to-be t)
+                    (expect (loom/core/editor-session:startup-file-request-p first-request) :to-be t)
                     (expect returned-path :to-equal "file one")
-                    (expect (startup-file-request-line first-request)
+                    (expect (loom/core/editor-session:startup-file-request-line first-request)
                             :to-equal
                             7)
-                    (expect (startup-file-request-column first-request)
+                    (expect (loom/core/editor-session:startup-file-request-column first-request)
                             :to-equal
                             3)
-                    (expect (startup-file-request-path second-request)
+                    (expect (loom/core/editor-session:startup-file-request-path second-request)
                             :to-equal
                             "notes.txt")
-                    (expect (startup-file-request-line second-request)
+                    (expect (loom/core/editor-session:startup-file-request-line second-request)
                             :to-equal
                             1)
-                    (expect (startup-file-request-column second-request)
+                    (expect (loom/core/editor-session:startup-file-request-column second-request)
                             :to-equal
                             1)
                     (setf (char returned-path 0) #\X)
-                    (expect (startup-file-request-path first-request)
+                    (expect (loom/core/editor-session:startup-file-request-path first-request)
                             :to-equal
                             "file one")
                     (setf (first requests) nil)
-                    (expect (length (startup-context-file-requests context))
+                    (expect (length (loom/core/editor-session:startup-context-file-requests context))
                             :to-equal
                             2))
                   (let* ((line-only-context
@@ -970,12 +942,41 @@
                            (list "+8" "line-only.txt")))
                          (request
                           (first
-                           (startup-context-file-requests line-only-context))))
-                    (expect (startup-file-request-line request) :to-equal 8)
-                    (expect (startup-file-request-column request) :to-equal 1))
+                           (loom/core/editor-session:startup-context-file-requests line-only-context))))
+                    (expect (loom/core/editor-session:startup-file-request-line request) :to-equal 8)
+                    (expect (loom/core/editor-session:startup-file-request-column request) :to-equal 1))
                   (signals error
                            (loom::%parse-startup-context
-                            (list "--unregistered")))))))
+                            (list "--unregistered")))))
+            (it "propagates hook errors and skips later hooks"
+                (let* ((loom/core/editor-session::*session-hooks*
+                        (make-hash-table :test (function eq)))
+                       (session (%make-test-editor-session))
+                       (events nil))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :core/command
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :before events)))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :core/minibuffer
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :failing events)
+                     (error "hook failed")))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :feature/lifecycle
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :after events)))
+                  (signals simple-error
+                           (loom/core/editor-session:run-session-hooks :tick session))
+                  (expect (nreverse events)
+                          :to-equal
+                          (quote (:before :failing)))))))
 
 (progn
   (describe "public session extension APIs"
@@ -1006,7 +1007,7 @@
                 (let* ((loom/core/editor-session::*terminal-suspend-requests*
                         (make-hash-table :test (function eq)))
                        (session (%make-test-editor-session)))
-                  (expect (request-terminal-suspend session) :to-equal :queued)
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)
                   (expect
                    (loom/core/editor-session:consume-terminal-suspend-request
                     session)
@@ -1017,7 +1018,7 @@
                     session)
                    :to-be
                    nil)
-                  (expect (request-terminal-suspend session) :to-equal :queued)))
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)))
             (it "clears the root wake callback when given NIL"
                 (let* ((loom/core/editor-session::*terminal-suspend-requests*
                         (make-hash-table :test (function eq)))
@@ -1032,12 +1033,12 @@
                                                                                   received-session))
                                                                         (incf
                                                                          wake-count)))
-                  (expect (request-terminal-suspend session) :to-equal :queued)
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)
                   (loom/core/editor-session:consume-terminal-suspend-request
                    session)
                   (loom/core/editor-session:set-session-wake-function session
                                                                       nil)
-                  (expect (request-terminal-suspend session) :to-equal :queued)
+                  (expect (loom/core/editor-session:request-terminal-suspend session) :to-equal :queued)
                   (loom/core/editor-session:consume-terminal-suspend-request
                    session)
                   (expect wake-count :to-equal 1)

@@ -18,7 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-minibuffer" "loom-feature-clipboard" "loom-feature-mouse")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-feature-clipboard" "loom-feature-mouse")
   :pathname "."
   :serial t
   :components
@@ -27,8 +27,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "packages/core/editor-session/src/package")
-   (:file "packages/core/command/src/package")
+  ((:file "packages/core/command/src/package")
    (:file "packages/feature/buffers/src/package")
    (:file "packages/feature/bookmark/src/package")
    (:file "src/package-exports")
@@ -207,8 +206,7 @@ root source tree responsible for every feature."
       (
        (:file "packages/core/command/src/domain-prefix-argument")
       ))
-     (:file "packages/core/editor-session/src/domain-editor-session-slices")
-    ))
+     ))
    (:module "feature-search-domain"
     :pathname "."
     :serial t
@@ -428,12 +426,6 @@ root source tree responsible for every feature."
   :components
   ((:file "packages/feature/bookmark/src/domain-editor-bookmark")
    (:file "packages/feature/buffers/src/domain-buffer-registry")
-   (:file "packages/core/editor-session/src/application-editor-state-support")
-   (:file "packages/core/editor-session/src/application-editor-state-types")
-   (:file "packages/core/editor-session/src/application-editor-state")
-   (:file "packages/core/editor-session/src/application-session-hooks")
-   (:file "packages/core/editor-session/src/application-session-extension-points")
-   (:file "packages/core/editor-session/src/application-session-hit-test-clipboard")
    (:file "src/application/editor-state-recent-files")
    (:file "src/application/editor-state-operations")
    (:file "packages/core/command/src/domain-key-event-descriptor")
@@ -489,7 +481,6 @@ root source tree responsible for every feature."
      (:file "packages/core/editor/src/application-structural-editing-application")
      (:file "packages/core/editor/src/application-commands-movement-support")
      (:file "packages/core/editor/src/application-commands-movement-view-support")
-     (:file "packages/core/editor-session/src/application-commands-movement-visual-lines")
      (:file "packages/core/editor/src/application-commands-movement")
      (:file "packages/core/editor/src/application-commands-editing-support")
      (:file "packages/core/editor/src/application-commands-editing")
@@ -792,7 +783,6 @@ root source tree responsible for every feature."
    (:file "t/unit/filesystem-listing-test")
    (:file "t/unit/workspace-test")
    (:file "t/unit/workspace-navigation-test")
-   (:file "t/unit/editor-state-test")
    (:file "t/unit/editor-state-recent-files-test")
    (:file "t/unit/buffer-registry-test")
    (:file "t/unit/keymap-test-support")
@@ -824,8 +814,7 @@ root source tree responsible for every feature."
    (:file "t/unit/lsp-request-decode-test")
    (:file "t/unit/completion-popup-test")
   (:file "t/unit/cli-test")
-  (:file "t/unit/editor-session-api-test")
-   (:file "t/unit/dependency-contract-test")
+  (:file "t/unit/dependency-contract-test")
    (:file "t/unit/boundary-architecture-test")
    (:file "t/integration/commands-sexp-test")
    (:file "t/integration/commands-structural-editing-test")
@@ -929,12 +918,13 @@ root source tree responsible for every feature."
    (:file "t/integration/concurrent-runtime-shutdown-test")
    (:file "t/integration/concurrent-runtime-submission-test")
    (:file "t/integration/advanced-test")
-   (:file "t/integration/editor-flow-test"))
+   (:file "t/integration/editor-flow-test")
+   (:file "t/unit/editor-state-test"))
   :perform
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-minibuffer/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"

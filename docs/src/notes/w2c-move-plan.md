@@ -184,7 +184,10 @@
 | completion | `t/unit/completion-popup-test.lisp` | 52 | `packages/feature/completion/t/unit/completion-popup-test.lisp` |
 | root gate | `t/unit/dependency-contract-test.lisp` | 149 | `t/unit/dependency-contract-test.lisp` をrootに保持 |
 | split: bookmark + file-tree + files + kill-ring | `t/unit/editor-state-recent-files-test.lisp` | 95 | bookmark assertions (`:3-17`) → `packages/feature/bookmark/t/unit/editor-state-bookmarks-test.lisp`、recent-file completion adapter assertion (`:20-28`) → `packages/feature/file-tree/t/unit/editor-state-recent-file-completion-test.lisp`、recent-file state assertions (`:30-76`) → `packages/feature/files/t/unit/editor-state-recent-files-test.lisp`、yank tracking reset (`:78-95`) → `packages/feature/kill-ring/t/unit/editor-state-yank-reset-test.lisp` |
-| split: core/editor-session + workspace + keyboard-macro | `t/unit/editor-state-test.lisp` | 187 | editor-state accessors, session/window invariant, and save-hook assertions (`:3-26`, `:46-187`) → `packages/core/editor-session/t/unit/editor-state-test.lisp`、workspace defaults (`:29-45`, first assertion) → `packages/feature/workspace/t/unit/editor-state-workspace-test.lisp`、keyboard-macro defaults (`:29-45`, second assertion) → `packages/feature/keyboard-macro/t/unit/editor-state-keyboard-macro-state-test.lisp` |
+| split: core/editor-session + workspace + keyboard-macro | `t/unit/editor-state-test.lisp` | 50 | editor-state accessors and session/window invariant (`:3-47`, `:50`) → `packages/core/editor-session/t/unit/editor-state-test.lisp`; workspace defaults and supplied manager (`:49-50`) plus keyboard-macro default (`:49`) remain in the root test until batch 3, then move to `packages/feature/workspace/t/unit/editor-state-workspace-test.lisp` and `packages/feature/keyboard-macro/t/unit/editor-state-keyboard-macro-state-test.lisp` |
+| core/editor-session | `t/unit/editor-session-api-test.lisp` | 286 | `packages/core/editor-session/t/unit/editor-session-api-test.lisp` |
+| core/editor-session | `t/unit/frame-snapshot-test.lisp` | 170 | `packages/core/editor-session/t/unit/frame-snapshot-test.lisp` |
+| core/editor-session | `t/unit/session-hook-test.lisp` | 1065 | `packages/core/editor-session/t/unit/session-hook-test.lisp` |
 | evaluation | `t/unit/evaluation-result-test.lisp` | 29 | `packages/feature/evaluation/t/unit/evaluation-result-test.lisp` |
 | evaluation | `t/unit/evaluation-test.lisp` | 110 | `packages/feature/evaluation/t/unit/evaluation-test.lisp` |
 | file-tree | `t/unit/file-tree-selection-test.lisp` | 91 | `packages/feature/file-tree/t/unit/file-tree-selection-test.lisp` |
@@ -278,12 +281,14 @@
 | core/command | `packages/core/command/src/domain-prefix-argument.lisp` | 66 | `packages/core/command/src/domain-prefix-argument.lisp` |
 | core/command | `packages/core/command/src/package.lisp` | 72 | `packages/core/command/src/package.lisp` |
 | core/editor-session | `packages/core/editor-session/src/application-commands-movement-visual-lines.lisp` | 158 | `packages/core/editor-session/src/application-commands-movement-visual-lines.lisp` |
-| core/editor-session | `packages/core/editor-session/src/application-editor-state-save-hooks.lisp` | 55 | `packages/core/editor-session/src/application-editor-state-save-hooks.lisp` |
+| core/editor-session | `packages/core/editor-session/src/application-session-hooks.lisp` | 368 | `packages/core/editor-session/src/application-session-hooks.lisp` |
+| core/editor-session | `packages/core/editor-session/src/application-session-extension-points.lisp` | 335 | `packages/core/editor-session/src/application-session-extension-points.lisp` |
+| core/editor-session | `packages/core/editor-session/src/application-session-hit-test-clipboard.lisp` | 161 | `packages/core/editor-session/src/application-session-hit-test-clipboard.lisp` |
 | core/editor-session | `packages/core/editor-session/src/application-editor-state-support.lisp` | 40 | `packages/core/editor-session/src/application-editor-state-support.lisp` |
-| core/editor-session | `packages/core/editor-session/src/application-editor-state-types.lisp` | 59 | `packages/core/editor-session/src/application-editor-state-types.lisp` |
+| core/editor-session | `packages/core/editor-session/src/application-editor-state-types.lisp` | 73 | `packages/core/editor-session/src/application-editor-state-types.lisp` |
 | core/editor-session | `packages/core/editor-session/src/application-editor-state.lisp` | 25 | `packages/core/editor-session/src/application-editor-state.lisp` |
 | core/editor-session | `packages/core/editor-session/src/domain-editor-session-slices.lisp` | 85 | `packages/core/editor-session/src/domain-editor-session-slices.lisp` |
-| core/editor-session | `packages/core/editor-session/src/package.lisp` | 71 | `packages/core/editor-session/src/package.lisp` |
+| core/editor-session | `packages/core/editor-session/src/package.lisp` | 118 | `packages/core/editor-session/src/package.lisp` |
 | core/buffer | `packages/core/editor/src/application-commands-editing-support.lisp` | 21 | `packages/core/buffer/src/application-commands-editing-support.lisp` |
 | core/buffer | `packages/core/editor/src/application-commands-editing.lisp` | 19 | `packages/core/buffer/src/application-commands-editing.lisp` |
 | kill-ring | `packages/core/editor/src/application-commands-kill-region-support.lisp` | 50 | `packages/feature/kill-ring/src/application-commands-kill-region-support.lisp` |
@@ -679,7 +684,7 @@ buffers + files -> bookmark
 `buffer-load`と`buffer-save`のgenericは`packages/core/buffer/src/domain-buffer.lisp:86-98`に残し、現在file-tree packageにあるmethod (`packages/feature/file-tree/src/infrastructure-buffer-filesystem.lisp:4-33`) をfilesへ移す。移設後の依存は`mode -> buffers -> files -> file-tree`とし、`buffer-save` genericを下位層に残すためbuffersからfilesへの逆依存は作らない。
 **未確定:** `packages/feature/file-tree/src/infrastructure-filesystem-native-paths.lisp:3-57`をfilesへ移す場合、`packages/feature/file-tree/src/infrastructure-file-tree-filesystem-support.lisp:23,37`、`packages/feature/file-tree/src/infrastructure-file-tree-filesystem.lisp:11-54`、`packages/feature/file-tree/src/infrastructure-filesystem-native-delete.lisp:15`、`packages/feature/file-tree/src/infrastructure-filesystem-native-mutations.lisp:5-40`も現在の`*loom-filesystem*`、`*loom-real-filesystem*`、`%native-path-operation-p`、`%native-path-exists-p`、`%native-namestring`、`%native-file-writable-p`、`%native-directory-prefixes`、`%native-directory-p`を参照している。これらの関数は現sourceでprivateであり、複数sourceがslice境界をまたいで参照する。現行package export（`packages/feature/file-tree/src/package.lisp:1-45`）にも共有native filesystem APIの契約にも公開範囲と所属を決める根拠がない。batch 6のfiles/file-tree統合ownerが、native-path sourceを移す前に関数の公開範囲と所属を決め、package exportと呼出し側を同じ差分で更新する。決定が済むまでbatch 6のfile-tree移設を開始しない。
 
-rootのinput routingは`src/application/input-routing-effects.lisp:3-13`で`%clear-last-yank`を呼び、現在のwrapperは`editor-state-clear-last-yank`へ委譲する（`src/application/editor-state-operations.lisp:3-4`）。この既存APIは`loom/core/editor-session`からexportされ（`packages/core/editor-session/src/package.lisp:71`）、定義は`packages/core/editor-session/src/application-editor-state-support.lisp:33`、command invocationの既存callerは`packages/core/command/src/command-invocation.lisp:125,142`にある。W2cではroot input routingを`loom/core/editor-session:editor-state-clear-last-yank`の直接呼出しへ切り替え、`%clear-last-yank`のsourceを設計どおりkill-ringへ移す。新しいkill-ring public APIは追加しない。
+rootのinput routingは`src/application/input-routing-effects.lisp:3-13`で`%clear-last-yank`を呼び、現在のwrapperは`editor-state-clear-last-yank`へ委譲する（`src/application/editor-state-operations.lisp:3-4`）。この既存APIは`loom/core/editor-session`からexportされ（`packages/core/editor-session/src/package.lisp:95`）、定義は`packages/core/editor-session/src/application-editor-state-support.lisp:33`、command invocationの既存callerは`packages/core/command/src/command-invocation.lisp:125,142`にある。W2cではroot input routingを`loom/core/editor-session:editor-state-clear-last-yank`の直接呼出しへ切り替え、`%clear-last-yank`のsourceを設計どおりkill-ringへ移す。新しいkill-ring public APIは追加しない。
 `commands-misc.lisp`、`commands-quit.lisp`、`commands-help-test.lisp`、`commands-misc-test.lisp`、`commands-sexp-test.lisp`、`commands-editing-file-test.lisp`も単一sliceに移さず、1.1表の分割先ごとにassertionとfixtureを分ける。
 
 W2a specは`loom.asd:726-729`でroot componentとして登録され、`packages/core/buffer/src/command-specs-*.lisp`の3 fileも`loom-core-buffer`には登録されていない。sourceは`in-package #:loom/core/command`で`register-command-spec`を呼ぶ。
@@ -717,7 +722,7 @@ root aggregateへのcomponent切替は統合ownerが一つずつ行い、変更�
 | `t/package.lisp`と共有fixture | 全slice testが共有packageとhelperを使う | W2cではroot test-support ownerが維持し、slice ownerは個別test fileだけを動かす |
 | `run-tests.lisp`、coverage、dependency contract、E2E discovery | W2b runner境界と重なる | W2b ownerだけが変更する。W2b完了前はW2cのslice移設を開始しない |
 | file-tree/files/buffersのAPI | 現在のsource配置と最終ownerが異なる | filesのhelper移設と`buffer-save` provider移設を先に同時レビューし、DAG上の一方向性を確認する |
-| command specの配置 | 現行root treeではspecを確認できない。core/commandはcore/bufferに依存するため、specをbuffer systemへ入れると循環する | W2c着手時にmainへ統合されたW2a成果物とcomponent登録を確認する |
+| command specの配置 | W2a specはroot `loom` componentに登録済み。3 fileは`packages/core/buffer/src/`にあるが`loom-core-buffer`には未登録。core/commandがcore/bufferに依存するため、buffer systemへ登録すると循環する | W2c着手時にmainへ統合されたW2a成果物とcomponent登録を確認する |
 | 混在integration test | 一つのfixtureが複数slice APIを呼ぶ | assertion単位でslice testへ分ける。rootに残るassertionはaggregate integration testに置く |
 
 ## 5. W3 laneの開始条件
@@ -802,7 +807,6 @@ batch境界gateはsliceごとのunit gate、およびpush tipのE2E/CI gateを�
 | `commands-internal.lisp` | 設計資料は選択buffer/window registry helperの移設を示唆する | 現root fileを残す。registry関数の新たな移設先は設けない | 現行fileの定義は`%order-region`だけ（`src/application/commands-internal.lisp:3-12`）。buffer registryは`registered-buffers`、`register-buffer`、`unregister-buffer`としてすでにfeature/buffersにある（`packages/feature/buffers/src/domain-buffer-registry.lisp:14-26`）。設計資料の選択window helperとregistry helperの記述は現行sourceにない |
 
 W2c表のtarget pathにはまだ新規作成していないpathが含まれる。
-分割行は確認した定義またはassertionと移設先を対応づけている。実装時に分割片を固有のtarget pathへ置き、別source fileとの結合を持ち込まない。
 
 ## 8. source inventoryとASDF所有権の再現
 
