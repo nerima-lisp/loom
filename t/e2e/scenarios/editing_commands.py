@@ -125,13 +125,14 @@ def delete_char(binary):
 def indent_for_tab_command(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = os.path.join(directory, "indent.py")
-        _write(path, b"value\n")
+        _write(path, b"    root\nvalue\n")
 
         with Session(binary, [path]) as session:
             session.wait_ready()
+            session.key("DOWN")
             session.extended_command("indent-for-tab-command")
-            _wait_for_body_prefix(session, "    value")
-            _save(session, path, b"    value\n")
+            session.wait_for_region_text("body", "    value", index=1)
+            _save(session, path, b"    root\n    value\n")
             _close(session, "editing/indent-for-tab-command")
 
 

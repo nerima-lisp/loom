@@ -96,6 +96,17 @@ COMMAND may be a function or a callable function symbol."
           normalized-filenames comment-prefix comment-start comment-end
           skip-closing-delimiter indentation-width tab-width language-id
           keywords keybindings truncate-lines))))))
+(defun register-major-mode-indentation-rule (mode function)
+  "Register MODE's line indentation rule and return its canonical key.
+
+FUNCTION is called with BUFFER and a zero-based LINE-NUMBER. It returns a
+non-negative indentation column, or NIL to use the preceding line's indentation.
+Register extension-defined modes with REGISTER-MAJOR-MODE first."
+  (let ((key (or (major-mode-from-name mode)
+                 (error "Unknown major mode for indentation rule: ~S" mode))))
+    (check-type function function)
+    (setf (gethash key *major-mode-indentation-rules*) function)
+    key))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.
@@ -105,6 +116,7 @@ Built-in modes cannot be removed; unknown modes return NIL."
       ((null key) nil)
       ((gethash key *registered-major-modes*)
        (remhash key *registered-major-modes*)
+       (remhash key *major-mode-indentation-rules*)
        (setf *registered-major-mode-order*
              (delete key *registered-major-mode-order* :test #'eq))
        (incf *major-mode-registry-version*)

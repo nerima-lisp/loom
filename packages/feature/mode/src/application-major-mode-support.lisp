@@ -13,25 +13,35 @@
      (error "Major mode ~S has a non-callable command binding: ~S" mode command))))
 
 (defun %build-major-mode-keymap (mode fallback seen)
-  (when (member mode seen :test #'eq)
+  (when (member mode seen :test (function eq))
     (error "Circular major-mode inheritance involving ~S" mode))
   (let* ((parent-mode (major-mode-parent mode))
          (parent-keymap
-          (if (and parent-mode (not (eq parent-mode mode)))
-              (%build-major-mode-keymap parent-mode fallback (cons mode seen))
-              fallback))
+           (if (and parent-mode (not (eq parent-mode mode)))
+               (%build-major-mode-keymap parent-mode fallback (cons mode seen))
+               fallback))
          (keymap
-          (loom/core/command:make-keymap :parent
-                                         parent-keymap
-                                         :name
-                                         (string-downcase (symbol-name mode)))))
+           (loom/core/command:make-keymap
+            :parent parent-keymap
+            :name (string-downcase (symbol-name mode)))))
     (dolist (binding (major-mode-keybindings mode))
-      (loom/core/command:keymap-define-key keymap
-                                           (loom/core/command:defkeys-key-sequence
-                                            (car binding))
-                                           (%major-mode-command-designator
-                                            (cdr binding)
-                                            mode)))
+      (loom/core/command:keymap-define-key
+       keymap
+       (loom/core/command:defkeys-key-sequence (car binding))
+       (%major-mode-command-designator (cdr binding) mode)))
+    (dolist (key-sequence
+              (list (defkeys-key-sequence :tab)
+                    (defkeys-key-sequence
+                     (quote (:control :alt #\\)))))
+      (multiple-value-bind (command-id owner)
+          (loom/core/command:keymap-lookup keymap key-sequence)
+        (declare (ignore command-id))
+        (unless owner
+          (loom/core/command:keymap-define-key
+           keymap
+           key-sequence
+           (loom/core/command:command-id-for-function
+            (quote indent-for-tab-command))))))
     keymap))
 
 (defun %major-mode-completion-candidates (input)

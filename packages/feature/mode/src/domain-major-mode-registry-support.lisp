@@ -3,6 +3,8 @@
 
 (defparameter *registered-major-modes* (make-hash-table :test #'eq)
   "Dynamically registered major-mode definitions keyed by canonical keyword.")
+(defparameter *major-mode-indentation-rules* (make-hash-table :test #'eq)
+  "Major-mode indentation callbacks keyed by canonical mode.")
 
 (defparameter *registered-major-mode-order* nil
   "Canonical keys for dynamically registered modes, in registration order.")
