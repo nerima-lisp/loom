@@ -101,12 +101,12 @@
                     :ready))
                  (expect (loom::%wait-for-editor-input :input) :to-be t))
                 (expect wait-calls :to-be 1)))
-          (it "continues when waiting receives an unsupported stream"
+          (it "continues when stream-fd rejects an unsupported stream"
               (let ((loom::*editor-state*
                      (make-editor-state :session (%make-test-editor-session))))
                 (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
                 (with-replaced-function
-                 (cl-tty-kit:fd-wait
+                 (cl-tty-kit:stream-fd
                   (lambda (&rest arguments)
                     (declare (ignore arguments))
                     (error 'type-error
@@ -114,4 +114,44 @@
                            :unsupported-stream
                            :expected-type
                            'stream)))
-                 (expect (loom::%wait-for-editor-input :input) :to-be t)))))
+                 (expect (loom::%wait-for-editor-input :input) :to-be t))))
+          (it "propagates errors from fd-wait after resolving the stream fd"
+              (let ((loom::*editor-state*
+                     (make-editor-state :session (%make-test-editor-session))))
+                (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
+                (with-replaced-function
+                 (cl-tty-kit:stream-fd (lambda (stream)
+                                         (declare (ignore stream))
+                                         10))
+                 (with-replaced-function
+                  (cl-tty-kit:fd-wait
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (error 'type-error
+                            :datum
+                            :unsupported-fd
+                            :expected-type
+                            'fixnum)))
+                  (signals type-error
+                    (loom::%wait-for-editor-input :input)))))
+          (it "propagates errors from the terminal wake poll"
+              (let ((loom::*editor-state*
+                     (make-editor-state :session (%make-test-editor-session))))
+                (setf (editor-state-auto-save-mode-p loom::*editor-state*) t)
+                (with-replaced-function
+                 (cl-tty-kit:stream-fd (lambda (stream)
+                                         (declare (ignore stream))
+                                         10))
+                 (with-replaced-function
+                  (loom::%poll-loom-terminal-session
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (error 'type-error
+                            :datum
+                            :invalid-poll
+                            :expected-type
+                            'fixnum)))
+                  (signals type-error
+                    (loom::%wait-for-editor-input
+                     :input
+                     :terminal-session))))))))

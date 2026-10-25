@@ -41,33 +41,39 @@ or auto-save buffers, the loop keeps its original blocking read behavior.")
      (editor-state-auto-save-mode-p *editor-state*)
      (editor-state-auto-save-buffers *editor-state*)))))
 
+(defun %stream-fd-if-supported (stream)
+  (handler-case (values (cl-tty-kit:stream-fd stream) t)
+    (type-error () (values nil nil))))
+
 (defun %wait-for-editor-input (input-stream &optional terminal-session)
   "Wait for terminal input and session wake notifications together when possible."
   (if terminal-session
       (let ((timeout-ms
              (when (%event-loop-background-work-p)
                (max 1 (round (* 1000 *event-loop-poll-interval*))))))
-        (handler-case (multiple-value-bind (input-ready-p wake-ready-p)
-                          (%poll-loom-terminal-session terminal-session
-                                                       (cl-tty-kit:stream-fd
-                                                        input-stream)
-                                                       timeout-ms)
-                        (values input-ready-p
-                                wake-ready-p
-                                (and timeout-ms
-                                     (not input-ready-p)
-                                     (not wake-ready-p))))
-          (type-error ()
-            (values t nil nil))))
+        (multiple-value-bind (input-fd supported-p)
+            (%stream-fd-if-supported input-stream)
+          (if supported-p
+              (multiple-value-bind (input-ready-p wake-ready-p)
+                  (%poll-loom-terminal-session terminal-session
+                                               input-fd
+                                               timeout-ms)
+                (values input-ready-p
+                        wake-ready-p
+                        (and timeout-ms
+                             (not input-ready-p)
+                             (not wake-ready-p))))
+              (values t nil nil))))
       (if (%event-loop-background-work-p)
-          (handler-case (if (cl-tty-kit:fd-wait
-                             (cl-tty-kit:stream-fd input-stream)
-                             :input
-                             *event-loop-poll-interval*)
-                            (values t nil nil)
-                            (values nil nil t))
-            (type-error ()
-              (values t nil nil)))
+          (multiple-value-bind (input-fd supported-p)
+              (%stream-fd-if-supported input-stream)
+            (if supported-p
+                (if (cl-tty-kit:fd-wait input-fd
+                                        :input
+                                        *event-loop-poll-interval*)
+                    (values t nil nil)
+                    (values nil nil t))
+                (values t nil nil)))
           (values t nil nil))))
 
 (defun %process-loom-wake-events (terminal-session session bytes poll-work-p)
