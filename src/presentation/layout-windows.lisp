@@ -119,13 +119,14 @@ into the remaining width."
          (%layout-mode-line-text renderer buffer)
          width))))
 
-(defun %layout-draw-window-buffer (renderer window x-offset &optional height)
+(defun %layout-draw-window-buffer
+    (renderer window x-offset &optional height selected-p)
   "Draw WINDOW's buffer in whichever line-display mode that buffer selects.
 
 When HEIGHT is supplied, draw only that many rows, leaving the caller to draw
 the mode line or another footer in the remaining window rows."
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (x (+ x-offset (loom/core/window-tree:window-x window)))
+         (x (%layout-window-body-x window x-offset selected-p))
          (y (loom/core/window-tree:window-y window))
          (width (loom/core/window-tree:window-width window))
          (height (or height (loom/core/window-tree:window-height window))))
@@ -151,9 +152,9 @@ the mode line or another footer in the remaining window rows."
            (nth-value 0 (%layout-buffer-line-display buffer line))
            x (+ y row) width mode start-column))))))
 
-(defun %layout-draw-window-overlays (renderer leaf x-offset)
+(defun %layout-draw-window-overlays (renderer leaf x-offset selected-p)
   (%layout-draw-window-buffer
-   renderer leaf x-offset (%layout-window-content-height leaf))
+   renderer leaf x-offset (%layout-window-content-height leaf) selected-p)
   (%layout-draw-diagnostics renderer leaf x-offset)
   (%layout-draw-region renderer leaf x-offset)
   (%layout-draw-matching-paren renderer leaf x-offset)
@@ -202,7 +203,8 @@ the mode line or another footer in the remaining window rows."
   (let ((leaves (loom/core/window-tree:window-tree-windows window-tree))
         (selected (loom/core/window-tree:window-tree-selected-window window-tree)))
     (dolist (leaf leaves)
-      (%layout-draw-window-overlays renderer leaf x-offset))
+      (%layout-draw-window-overlays renderer leaf x-offset
+                                    (eq leaf selected)))
     (dolist (leaf leaves)
       (%layout-draw-window-separator renderer leaf x-offset))
     (dolist (leaf leaves)
@@ -309,3 +311,71 @@ the mode line or another footer in the remaining window rows."
 (eval-when (:load-toplevel :execute)
   (register-visual-row-layout :core/presentation
                               (function %visual-row-layout)))
+
+(defvar *layout-trace-last-entry* nil)
+(defvar *layout-trace-last-warning-entry* nil)
+
+(defun %layout-window-body-x (window x-offset selected-p)
+  (let ((body-x (+ x-offset (loom/core/window-tree:window-x window))))
+    (when selected-p
+      (%layout-record-selected-body-x body-x))
+    body-x))
+
+(defun %layout-record-selected-body-x (body-x)
+  (let ((trace-file (uiop:getenv "LOOM_TRACE_LAYOUT")))
+    (if (null trace-file)
+        (when (or *layout-trace-last-entry*
+                  *layout-trace-last-warning-entry*)
+          (setf *layout-trace-last-entry* nil
+                *layout-trace-last-warning-entry* nil))
+        (unless (and *layout-trace-last-entry*
+                     (string= trace-file
+                              (car *layout-trace-last-entry*))
+                     (eql body-x
+                          (cdr *layout-trace-last-entry*)))
+          (handler-case
+              (progn
+                (when (zerop (length trace-file))
+                  (error "LOOM_TRACE_LAYOUT path must not be empty"))
+                (let* ((trace-path
+                         (uiop:parse-native-namestring trace-file))
+                       (line
+                         (json-kit:stringify
+                          (json-kit:make-json-object
+                           (list (cons "body_x" body-x))))))
+                  (when (wild-pathname-p trace-path)
+                    (error "LOOM_TRACE_LAYOUT path must not contain wildcards"))
+                  (with-open-file (stream trace-path
+                                          :direction :output
+                                          :if-exists :append
+                                          :if-does-not-exist :create)
+                    (write-line line stream)
+                    (finish-output stream)))
+                (setf *layout-trace-last-entry* (cons trace-file body-x))
+                (when (and *layout-trace-last-warning-entry*
+                           (string= trace-file
+                                    (car *layout-trace-last-warning-entry*))
+                           (eql body-x
+                                (cdr *layout-trace-last-warning-entry*)))
+                  (setf *layout-trace-last-warning-entry* nil))
+                nil)
+            (error (condition)
+              (unless (and *layout-trace-last-warning-entry*
+                           (string= trace-file
+                                    (car *layout-trace-last-warning-entry*))
+                           (eql body-x
+                                (cdr *layout-trace-last-warning-entry*)))
+                (setf *layout-trace-last-warning-entry*
+                      (cons trace-file body-x))
+                (handler-case
+                    (let ((logger
+                            (log-kit:make-logger
+                             :name "loom.layout-trace"
+                             :handler
+                             (log-kit:make-text-handler :stream *error-output*)
+                             :level log-kit:+level-warn+)))
+                      (log-kit:log-warn
+                       logger
+                       "Could not append LOOM_TRACE_LAYOUT"
+                       :error-type (type-of condition)))
+                  (error () nil)))))))))
