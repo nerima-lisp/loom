@@ -6,7 +6,7 @@
     "quits immediately when no buffer has unsaved changes"
     (%with-minibuffer-state (minibuffer "clean" (quit nil))
       (%capturing-loom-quit (quit)
-        (loom::save-buffers-kill-terminal)
+        (loom/feature/lifecycle:save-buffers-kill-terminal)
         (expect quit :to-be t))
       (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
 
@@ -25,7 +25,7 @@
           (window-set-buffer other-window other))
         (window-select-next tree)
         (buffer-insert-string other "!")
-        (loom::save-buffers-kill-terminal)
+        (loom/feature/lifecycle:save-buffers-kill-terminal)
         (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string other))
         (%capturing-loom-quit (quit)
           (%confirm-minibuffer minibuffer "d"))
@@ -50,7 +50,7 @@
           (window-set-buffer second-window second))
         (buffer-insert-string first "!")
         (buffer-insert-string second "!")
-        (loom::save-buffers-kill-terminal)
+        (loom/feature/lifecycle:save-buffers-kill-terminal)
         (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string first))
         (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "s")
         (expect (buffer-modified-p first) :to-be nil)
@@ -62,7 +62,7 @@
   (it
     "cancels quit without discarding a modified scratch buffer"
     (%with-modified-selected-minibuffer-buffer (minibuffer buffer "draft" (quit nil))
-      (loom::save-buffers-kill-terminal)
+      (loom/feature/lifecycle:save-buffers-kill-terminal)
       (%expect-minibuffer-prompt minibuffer (%discard-buffer-prompt-string buffer))
       (%capturing-loom-quit (quit)
         (%confirm-minibuffer minibuffer "c"))
@@ -72,7 +72,7 @@
   (it
     "re-prompts on an unrecognized answer instead of quitting or discarding"
     (%with-modified-selected-minibuffer-buffer (minibuffer buffer "draft" (quit nil))
-      (loom::save-buffers-kill-terminal)
+      (loom/feature/lifecycle:save-buffers-kill-terminal)
       (%capturing-loom-quit (quit)
         (%confirm-minibuffer minibuffer "not-a-valid-answer"))
       (expect quit :to-be nil)
@@ -92,7 +92,7 @@
                         (quit nil))
           (%register-test-buffer *editor-state* hidden)
           (buffer-insert-string hidden "!")
-          (loom::save-buffers-kill-terminal)
+          (loom/feature/lifecycle:save-buffers-kill-terminal)
           (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string hidden))
           (%capturing-loom-quit (quit)
             (%confirm-minibuffer minibuffer "d"))

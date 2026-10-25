@@ -109,5 +109,4 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                (setf last-width width
                                      last-height height
                                      poll-ready-p more-ready-p)))))
-        (loom-quit ()
-          (values :normal 0))))))
+        (loom/feature/lifecycle:loom-quit () (values :normal 0))))))

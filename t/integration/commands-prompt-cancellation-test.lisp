@@ -90,7 +90,7 @@
     "cancelling save-buffers-kill-terminal's quit prompt reports Quit"
     (%with-minibuffer-state (minibuffer "")
       (buffer-insert-string (%selected-test-buffer) "unsaved")
-      (loom::save-buffers-kill-terminal)
+      (loom/feature/lifecycle:save-buffers-kill-terminal)
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
       (minibuffer-handle-key minibuffer (%special-key :control-g))
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit"))))

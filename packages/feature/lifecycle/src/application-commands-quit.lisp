@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/lifecycle)
 
 (define-condition loom-quit (condition) ()
   (:documentation

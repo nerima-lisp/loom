@@ -103,7 +103,7 @@ File-tree command tests can then operate on a real temporary directory."
 
 (defmacro %capturing-loom-quit ((quit-var) &body body)
   "Run BODY and set QUIT-VAR when it signals LOOM-QUIT."
-  `(handler-bind ((loom::loom-quit
+  `(handler-bind ((loom/feature/lifecycle:loom-quit
                     (lambda (condition)
                       (declare (ignore condition))
                       (setf ,quit-var t))))
