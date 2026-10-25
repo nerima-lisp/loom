@@ -18,21 +18,11 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-feature-clipboard" "loom-feature-mouse")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-clipboard" "loom-feature-mouse")
   :pathname "."
   :serial t
   :components
   (
-   (:module "bootstrap"
-  :pathname "."
-  :serial t
-  :components
-  ((:file "packages/core/command/src/package")
-   (:file "packages/feature/buffers/src/package")
-   (:file "packages/feature/bookmark/src/package")
-   (:file "src/package-exports")
-   (:file "src/package-application")
-   (:file "src/package")))
    (:module "feature-mode-package"
     :pathname "."
     :serial t
@@ -194,19 +184,6 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/project/src/domain-project")
     ))
-   (:module "core-domain-packages"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:module "core-editor-domain"
-      :pathname "."
-      :serial t
-      :components
-      (
-       (:file "packages/core/command/src/domain-prefix-argument")
-      ))
-     ))
    (:module "feature-search-domain"
     :pathname "."
     :serial t
@@ -293,15 +270,6 @@ root source tree responsible for every feature."
     :components
     (
      (:file "packages/feature/lsp/src/domain-lsp")
-    ))
-   (:module "root-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/core/command/src/domain-keymap-descriptor")
-     (:file "packages/core/command/src/domain-keymap")
-     (:file "packages/core/command/src/domain-keymap-state")
     ))
    (:module "feature-file-tree-domain"
     :pathname "."
@@ -428,16 +396,9 @@ root source tree responsible for every feature."
    (:file "packages/feature/buffers/src/domain-buffer-registry")
    (:file "src/application/editor-state-recent-files")
    (:file "src/application/editor-state-operations")
-   (:file "packages/core/command/src/domain-key-event-descriptor")
    (:file "src/application/completion-popup")
    (:file "src/application/completion-popup-input")
    (:file "src/application/commands-internal")
-   (:file "packages/core/command/src/command-registry-forms")
-   (:file "packages/core/command/src/command-registry-build")
-   (:file "packages/core/command/src/command-registry")
-   (:file "packages/core/command/src/command-registry-registration")
-   (:file "packages/core/command/src/command-repeat")
-   (:file "packages/core/command/src/command-invocation")
    (:file "packages/feature/buffers/src/application-window-buffer-support")
    (:file "packages/feature/buffers/src/application-commands-buffer")))
    (:module "feature-auto-save-infrastructure"
@@ -468,9 +429,6 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "packages/core/editor/src/application-commands-prefix-argument-support")
-     (:file "packages/core/editor/src/application-commands-prefix-argument")
-     (:file "packages/core/editor/src/application-word-motion")
      (:file "packages/core/editor/src/application-sexp-syntax")
      (:file "packages/core/editor/src/application-sexp-motion-support")
      (:file "packages/core/editor/src/application-sexp-motion-tokens")
@@ -479,19 +437,10 @@ root source tree responsible for every feature."
      (:file "packages/core/editor/src/application-structural-editing")
      (:file "packages/core/editor/src/application-structural-editing-offsets")
      (:file "packages/core/editor/src/application-structural-editing-application")
-     (:file "packages/core/editor/src/application-commands-movement-support")
-     (:file "packages/core/editor/src/application-commands-movement-view-support")
-     (:file "packages/core/editor/src/application-commands-movement")
-     (:file "packages/core/editor/src/application-commands-editing-support")
-     (:file "packages/core/editor/src/application-commands-editing")
      (:file "packages/core/editor/src/application-commands-yank-support")
      (:file "packages/core/editor/src/application-commands-yank-pop-support")
-     (:file "packages/core/editor/src/application-commands-region-support")
-     (:file "packages/core/editor/src/application-commands-region")
      (:file "packages/core/editor/src/application-commands-kill-support")
      (:file "packages/core/editor/src/application-commands-kill-region-support")
-     (:file "packages/core/editor/src/application-commands-kill-word-support")
-     (:file "packages/core/editor/src/application-commands-kill")
      (:file "packages/core/editor/src/application-commands-sexp")
      (:file "packages/core/editor/src/application-commands-structural-editing")
      (:file "packages/core/editor/src/application-commands-yank")
@@ -637,11 +586,9 @@ root source tree responsible for every feature."
     :components
     (
      (:file "src/application/commands-misc")
-     (:file "packages/core/minibuffer/src/application-commands-minibuffer")
      (:file "src/application/commands-bookmark-support")
      (:file "src/application/commands-bookmark")
      (:file "src/application/commands-quit")
-     (:file "packages/core/command/src/commands-keybinding-spec")
      (:file "packages/feature/window/src/command-specs-window-scroll")
      (:file "packages/feature/terminal/src/command-specs-terminal")
      (:file "packages/feature/shell/src/command-specs-shell")
@@ -671,16 +618,9 @@ root source tree responsible for every feature."
      (:file "packages/feature/buffers/src/command-specs-buffers")
      (:file "packages/feature/bookmark/src/command-specs-bookmark")
      (:file "packages/feature/auto-save/src/command-specs-auto-save")
-     (:file "packages/core/command/src/command-specs-prefix-argument")
-     (:file "packages/core/command/src/command-specs-input")
-     (:file "packages/core/command/src/command-specs-extended-command")
-     (:file "packages/core/buffer/src/command-specs-region")
-     (:file "packages/core/buffer/src/command-specs-movement")
-     (:file "packages/core/buffer/src/command-specs-editing")
      (:file "packages/feature/workspace/src/command-specs-workspace")
      (:file "packages/feature/window/src/command-specs-window")
-     (:file "packages/core/command/src/commands-keybindings")
-    ))
+     ))
    (:module "feature-user-init-application"
     :pathname "."
     :serial t
@@ -785,13 +725,9 @@ root source tree responsible for every feature."
    (:file "t/unit/workspace-navigation-test")
    (:file "t/unit/editor-state-recent-files-test")
    (:file "t/unit/buffer-registry-test")
-   (:file "t/unit/keymap-test-support")
    (:file "t/unit/isearch-test")
-   (:file "t/unit/keymap-lookup-test")
-   (:file "t/unit/keymap-state-test")
    (:file "t/unit/register-test")
    (:file "t/unit/keyboard-macro-test")
-   (:file "t/unit/prefix-argument-test")
    (:file "t/unit/file-tree-test")
    (:file "t/unit/file-tree-selection-test")
    (:file "t/unit/evaluation-test")
@@ -868,21 +804,14 @@ root source tree responsible for every feature."
    (:file "t/integration/project-test")
    (:file "t/integration/project-missing-root-test")
    (:file "t/integration/commands-misc-test")
-   (:file "t/integration/command-registry-definition-test")
-   (:file "t/integration/command-spec-validation-test")
    (:file "t/integration/commands-help-test")
-   (:file "t/integration/command-registration-test")
-   (:file "t/integration/command-keybinding-consistency-test")
    (:file "t/integration/commands-file-tree-navigation-test")
    (:file "t/integration/commands-file-tree-mutation-test")
    (:file "t/integration/commands-bookmark-test")
-   (:file "t/integration/commands-keybindings-test")
    (:file "t/integration/commands-prompt-cancellation-test")
    (:file "t/integration/register-test")
    (:file "t/integration/keyboard-macro-test")
-   (:file "t/integration/prefix-argument-dispatch-test")
    (:file "t/integration/prefix-argument-macro-test")
-   (:file "t/integration/prefix-argument-action-test")
    (:file "t/integration/user-init-test")
    (:file "t/integration/frame-layout-test-support")
    (:file "t/integration/layout-test")
@@ -924,7 +853,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-clipboard/test" "loom-feature-mouse/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"

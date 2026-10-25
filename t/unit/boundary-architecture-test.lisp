@@ -576,15 +576,39 @@
            (format nil "feature/~A" (subseq path start end))))
         (t "root")))
 
-(defun boundary-lisp-components (component)
-  (append
-   (when (typep component 'asdf:source-file)
-     (let ((pathname (asdf:component-pathname component)))
-       (when (and (pathname-type pathname)
-                  (string-equal (pathname-type pathname) "lisp"))
-         (list pathname))))
-   (when (typep component 'asdf:module)
-     (mapcan #'boundary-lisp-components (asdf:component-children component)))))
+(defun boundary-lisp-components
+    (component
+     &optional
+       (visited-systems (make-hash-table :test #'equal)))
+  (let ((system-name
+          (when (typep component 'asdf:system)
+            (asdf:component-name component))))
+    (unless (and system-name (gethash system-name visited-systems))
+      (when system-name
+        (setf (gethash system-name visited-systems) t))
+      (append
+       (when (typep component 'asdf:source-file)
+         (let ((pathname (asdf:component-pathname component)))
+           (when (and (pathname-type pathname)
+                      (string-equal (pathname-type pathname) "lisp"))
+             (list pathname))))
+       (when (typep component 'asdf:module)
+         (mapcan (lambda (child)
+                   (boundary-lisp-components child visited-systems))
+                 (asdf:component-children component)))
+       (when system-name
+         (loop for dependency in (asdf:system-depends-on component)
+               for dependency-name = (cond
+                                       ((stringp dependency) dependency)
+                                       ((consp dependency) (first dependency)))
+               when (and (stringp dependency-name)
+                         (not (uiop:string-suffix-p "/test" dependency-name))
+                         (or (uiop:string-prefix-p "loom-core-" dependency-name)
+                             (uiop:string-prefix-p "loom-feature-" dependency-name)))
+                 append (let ((dependency-system
+                               (asdf:find-system dependency-name nil)))
+                          (when dependency-system
+                            (boundary-lisp-components dependency-system visited-systems)))))))))
 
 (defun boundary-relative-path (pathname)
   (namestring
@@ -607,7 +631,7 @@
 (defvar *boundary-source-records* nil)
 
 ;; The ASDF component set is fixed for one suite run, so both checks share this scan.
-(eval-when (:load-toplevel)
+(eval-when (:load-toplevel :execute)
   (setf *boundary-source-records*
         (loop for pathname in (boundary-lisp-components (asdf:find-system "loom"))
               for path = (boundary-relative-path pathname)
@@ -1475,7 +1499,7 @@
             :to-equal
             (list (list (find-symbol "ERROR" "COMMON-LISP")
                         "reader evaluation ran"))))
-  (it "scans all migrated command specs as root boundary sources"
+  (it "scans all migrated command specs in aggregate boundary sources"
     (let* ((records (boundary-source-records))
            (spec-records
              (remove-if-not
