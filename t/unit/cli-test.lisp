@@ -21,6 +21,11 @@
                :to-be
                :version))
           (it
+           "returns usage status for unknown options and positions without files"
+           (dolist (argv (list (list "loom" "--definitely-invalid")
+                               (list "loom" "+2")))
+             (expect (loom::%main-exit-code argv) :to-equal 64)))
+          (it
            "dispatches registered options and file requests through startup context"
            (let* ((loom/core/editor-session::*cli-options*
                    (make-hash-table :test (function equal)))

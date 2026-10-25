@@ -38,15 +38,20 @@ its arguments, option values, and file paths."
                        (and (ascii-digit-string-p line-text)
                             (or (null separator)
                                 (ascii-digit-string-p column-text)))
-                     (error "Invalid startup position: ~S" argument))
+                     (error 'cl-cli:cli-usage-error
+                            :message
+                            (format nil "Invalid startup position: ~S" argument)))
                    (let ((line (parse-integer line-text))
                          (column
                           (if separator
                               (parse-integer column-text)
                               1)))
                      (unless (and (plusp line) (plusp column))
-                       (error "Startup line and column must be positive: ~S"
-                              argument))
+                       (error 'cl-cli:cli-usage-error
+                              :message
+                              (format nil
+                                      "Startup line and column must be positive: ~S"
+                                      argument)))
                      (values line column t)))))
              (add-file-request (path)
                (push
@@ -75,11 +80,17 @@ its arguments, option values, and file paths."
                           :option name
                           :message (format nil "Unknown option: ~A" name)))
                  (when (nth-value 1 (gethash name options))
-                   (error "Startup option is repeated: ~A" name))
+                   (error 'cl-cli:cli-usage-error
+                          :message
+                          (format nil "Startup option is repeated: ~A" name)))
                  (case value-kind
                    (:switch
                      (when inline-value-p
-                       (error "Startup switch does not take a value: ~A" name))
+                       (error 'cl-cli:cli-usage-error
+                              :message
+                              (format nil
+                                      "Startup switch does not take a value: ~A"
+                                      name)))
                      (setf (gethash (copy-seq name) options) t)
                      remaining)
                    (:value
@@ -89,8 +100,11 @@ its arguments, option values, and file paths."
                             (if (and remaining
                                      (not (string= (first remaining) "--")))
                                 (values (first remaining) (rest remaining))
-                                (error "Startup option requires a value: ~A"
-                                       name)))
+                                (error 'cl-cli:cli-usage-error
+                                       :message
+                                       (format nil
+                                               "Startup option requires a value: ~A"
+                                               name))))
                       (setf (gethash (copy-seq name) options) (copy-seq value))
                       rest))
                    (otherwise
@@ -116,14 +130,19 @@ its arguments, option values, and file paths."
                       (cond
                         (position-p
                           (when position-specified-p
-                            (error "Startup position is repeated: ~S" argument))
+                            (error 'cl-cli:cli-usage-error
+                                   :message
+                                   (format nil "Startup position is repeated: ~S"
+                                           argument)))
                           (setf position-specified-p t
                                 position-line line
                                 position-column column))
                         (t (add-file-request argument)))))
                    (t (add-file-request argument)))))
       (when (and position-specified-p (null file-requests))
-        (error "A startup position requires a file path."))
+        (error 'cl-cli:cli-usage-error
+               :message
+               "A startup position requires a file path."))
       (loom/core/editor-session:make-startup-context (mapcar #'copy-seq argv)
                                                      options
                                                      (nreverse file-requests)))))
