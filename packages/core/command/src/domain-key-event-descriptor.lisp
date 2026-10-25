@@ -5,16 +5,19 @@
        (keywordp code)
        (let ((name (symbol-name code)))
          (or (eq code :null)
+             (eq code :control-underscore)
              (and (= (length name) 9)
                   (string= "CONTROL-" name :end2 8))))))
 
 (defun %control-special-key-character (code)
-  (if (eq code :null)
-      #\Space
-      (let ((character (char-downcase (char (symbol-name code) 8))))
-        (if (char= character #\@)
-            #\Space
-            character))))
+  (case code
+    (:null #\Space)
+    (:control-underscore #\_)
+    (otherwise
+     (let ((character (char-downcase (char (symbol-name code) 8))))
+       (if (char= character #\@)
+           #\Space
+           character)))))
 
 (defun key-event->descriptor (event)
   "Convert a CL-TTY-KIT:KEY-EVENT into the (MODIFIERS . CODE) descriptor

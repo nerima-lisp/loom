@@ -9,4 +9,11 @@
     (expect (loom/core/command:key-event->descriptor (cl-tty-kit:make-key-event :type :special
                                         :code :control-f
                                         :modifiers '(:alt)))
-            :to-equal '((:control :alt) . #\f))))
+            :to-equal '((:control :alt) . #\f)))
+  (it
+    "normalizes ESC-prefixed C-_ as C-M-_"
+    (expect (loom/core/command:key-event->descriptor
+             (cl-tty-kit:make-key-event :type :special
+                                        :code :control-underscore
+                                        :modifiers '(:alt)))
+            :to-equal '((:control :alt) . #\_))))
