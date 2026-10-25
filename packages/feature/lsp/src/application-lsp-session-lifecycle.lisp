@@ -82,3 +82,17 @@ attempted before closing the transport; delivery is not guaranteed."
             (%lsp-finish-stop session)))
         (%lsp-finish-stop session)))
   session)
+
+(defun lsp-refresh-editor-state (state)
+  (let ((session (editor-state-lsp-session state))
+        (buffer
+         (loom/core/window-tree:window-buffer
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree state)))))
+    (when (and session (buffer-path buffer))
+      (lsp-session-refresh session buffer))))
+
+(defun lsp-stop-editor-state-lsp-session (state)
+  (let ((session (editor-state-lsp-session state)))
+    (when session
+      (lsp-session-stop session))))

@@ -6,9 +6,7 @@
 (defun %shutdown-editor-services (state)
   "Stop asynchronous services attached to STATE."
   (loom/feature/file-tree:shutdown-file-tree-runtime state)
-  (let ((session (editor-state-lsp-session state)))
-    (when session
-      (loom/feature/lsp:lsp-session-stop session))))
+  (loom/feature/lsp:lsp-stop-editor-state-lsp-session state))
 
 (defun %log-loom-error (condition)
   (let ((logger

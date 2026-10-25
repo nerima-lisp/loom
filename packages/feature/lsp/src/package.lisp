@@ -33,9 +33,11 @@
                      #:lsp-session-start
                      #:lsp-session-drain
                      #:lsp-session-refresh
+                     #:lsp-refresh-editor-state
                      #:lsp-session-sync-buffer
                      #:lsp-session-diagnostics
                      #:lsp-session-stop
+                     #:lsp-stop-editor-state-lsp-session
                      #:lsp-session-initialized-p
                      #:lsp-session-server-capabilities
                      #:lsp-session-server-info

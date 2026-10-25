@@ -4,13 +4,7 @@
   "Run background refresh work, compose the current frame, and present it."
   (loom/feature/terminal:poll-terminal-sessions *editor-state*)
   (loom/feature/file-tree:refresh-file-tree-runtime *editor-state*)
-  (let ((session (editor-state-lsp-session *editor-state*))
-        (buffer
-         (loom/core/window-tree:window-buffer
-          (loom/core/window-tree:window-tree-selected-window
-           (editor-state-window-tree *editor-state*)))))
-    (when (and session (buffer-path buffer))
-      (loom/feature/lsp:lsp-session-refresh session buffer)))
+  (loom/feature/lsp:lsp-refresh-editor-state *editor-state*)
   (compose-frame *editor-state*)
   (loom-renderer-present (editor-state-renderer *editor-state*)
                          :stream
