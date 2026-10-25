@@ -53,11 +53,13 @@ class LoomProcess:
                         os.execv(binary, argv)
                     else:
                         os.execve(binary, argv, env)
+                else:
+                    # A pending deadline alarm can interrupt setup as soon as it is unblocked.
+                    os.set_blocking(self._fd, False)
             finally:
                 if self._pid != 0:
                     signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
             self._set_terminal_size(columns, rows)
-            os.set_blocking(self._fd, False)
         except BaseException as error:
             if self._pid is not None and self._pid > 0:
                 try:

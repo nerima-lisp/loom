@@ -2,6 +2,7 @@ import errno
 import locale
 import os
 import pty
+import select
 import signal
 import shutil
 import sys
@@ -12,6 +13,7 @@ from unittest import mock
 
 from loom_e2e.deadline import (
     SCENARIO_CLEANUP_TIMEOUT_SECONDS,
+    SCENARIO_EXECUTION_TIMEOUT_SECONDS,
     SCENARIO_TIMEOUT_SECONDS,
     ScenarioCleanupDeadlineExceeded,
     ScenarioDeadlineExceeded,
@@ -394,42 +396,94 @@ class ScenarioDeadlineTests(unittest.TestCase):
 
     def test_alarm_before_fork_return_reaps_child_and_closes_pty(self):
         real_fork = pty.fork
+        real_read = os.read
         children = []
-        error = ScenarioDeadlineExceeded("interrupted before fork returned")
+        pty_fds = []
+        blocking_reads = []
+        child_ready = [False]
+        ready_read, ready_write = os.pipe()
+        os.set_inheritable(ready_write, True)
+        child = f'''import os, signal, time
+signal.signal(signal.SIGHUP, signal.SIG_IGN)
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+os.write({ready_write}, b"R")
+while True: time.sleep(1)
+'''
 
         def cleanup_children():
+            deadline = time.monotonic() + SCENARIO_CLEANUP_TIMEOUT_SECONDS
             for pid, fd in children:
                 try:
-                    os.kill(pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                try:
-                    os.waitpid(pid, 0)
-                except ChildProcessError:
-                    pass
+                    try:
+                        waited, _ = os.waitpid(pid, os.WNOHANG)
+                    except ChildProcessError:
+                        continue
+                    if waited == 0:
+                        try:
+                            os.kill(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                    while waited == 0:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError("test child was not reaped during cleanup")
+                        time.sleep(min(0.01, remaining))
+                        try:
+                            waited, _ = os.waitpid(pid, os.WNOHANG)
+                        except ChildProcessError:
+                            break
+                        if waited == pid:
+                            break
+                finally:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+
+        def cleanup_ready_pipe():
+            for fd in (ready_read, ready_write):
                 try:
                     os.close(fd)
                 except OSError:
                     pass
 
         self.addCleanup(cleanup_children)
+        self.addCleanup(cleanup_ready_pipe)
 
         def fork_and_interrupt():
             pid, fd = real_fork()
             if pid > 0:
                 children.append((pid, fd))
+                pty_fds.append(fd)
+                os.close(ready_write)
+                readable, _, _ = select.select(
+                    [ready_read], [], [], SCENARIO_EXECUTION_TIMEOUT_SECONDS
+                )
+                if readable:
+                    child_ready[0] = real_read(ready_read, 1) == b"R"
                 os.kill(os.getpid(), signal.SIGALRM)
             return pid, fd
 
-        def interrupt(_signum, _frame):
-            raise error
+        def reject_blocking_pty_read(fd, size):
+            if fd in pty_fds and os.get_blocking(fd):
+                blocking_reads.append(fd)
+                raise OSError(errno.EIO, "intercepted blocking PTY read")
+            return real_read(fd, size)
 
         previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
-        signal.signal(signal.SIGALRM, interrupt)
-        with mock.patch("loom_e2e.process.pty.fork", side_effect=fork_and_interrupt):
-            with self.assertRaises(ScenarioDeadlineExceeded) as raised:
-                LoomProcess(sys.executable, ["-c", _UNKILLABLE_CHILD])
-        self.assertIs(raised.exception, error)
+        with self.assertRaises(ScenarioDeadlineExceeded):
+            with scenario_deadline(
+                seconds=SCENARIO_TIMEOUT_SECONDS,
+                cleanup_seconds=SCENARIO_CLEANUP_TIMEOUT_SECONDS,
+            ):
+                with mock.patch(
+                    "loom_e2e.process.pty.fork", side_effect=fork_and_interrupt
+                ):
+                    with mock.patch(
+                        "loom_e2e.process.os.read", side_effect=reject_blocking_pty_read
+                    ):
+                        LoomProcess(sys.executable, ["-c", child])
+        self.assertTrue(child_ready[0], "child did not install handlers before SIGALRM")
         self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), previous_mask)
         self.assertEqual(len(children), 1)
         pid, fd = children[0]
@@ -440,6 +494,7 @@ class ScenarioDeadlineTests(unittest.TestCase):
         with self.assertRaises(OSError) as closed:
             os.fstat(fd)
         self.assertEqual(closed.exception.errno, errno.EBADF)
+        self.assertEqual(blocking_reads, [], "cleanup attempted a blocking PTY read")
         children.clear()
 
     def test_fork_failure_restores_alarm_signal_mask(self):
