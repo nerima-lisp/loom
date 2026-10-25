@@ -2,7 +2,7 @@
 
 (progn
   (register-command-spec :core/buffer "delete-char" "delete-char" #'loom::delete-char
-                       :keys '((:control #\d))
+                       :keys '((:control #\d) :delete)
                        :keymap :global
                        :group "editing"
                        :help nil

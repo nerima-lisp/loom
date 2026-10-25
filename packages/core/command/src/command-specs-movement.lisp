@@ -2,7 +2,7 @@
 
 (progn
   (register-command-spec :core/buffer "forward-char" "forward-char" #'loom::forward-char
-                       :keys '((:control #\f))
+                       :keys '((:control #\f) :right)
                        :keymap :global
                        :group "movement"
                        :help nil
@@ -13,7 +13,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "backward-char" "backward-char" #'loom::backward-char
-                       :keys '((:control #\b))
+                       :keys '((:control #\b) :left)
                        :keymap :global
                        :group "movement"
                        :help nil
@@ -24,7 +24,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "next-line" "next-line" #'loom::next-line
-                       :keys '((:control #\n))
+                       :keys '((:control #\n) :down)
                        :keymap :global
                        :group "movement"
                        :help nil
@@ -35,7 +35,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "previous-line" "previous-line" #'loom::previous-line
-                       :keys '((:control #\p))
+                       :keys '((:control #\p) :up)
                        :keymap :global
                        :group "movement"
                        :help nil
@@ -68,7 +68,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "move-beginning-of-line" "move-beginning-of-line" #'loom::move-beginning-of-line
-                       :keys '((:control #\a))
+                       :keys '((:control #\a) :home)
                        :keymap :global
                        :group "movement"
                        :help nil
@@ -79,7 +79,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "move-end-of-line" "move-end-of-line" #'loom::move-end-of-line
-                       :keys '((:control #\e))
+                       :keys '((:control #\e) :end)
                        :keymap :global
                        :group "movement"
                        :help nil

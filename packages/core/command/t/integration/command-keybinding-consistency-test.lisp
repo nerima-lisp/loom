@@ -47,4 +47,11 @@
                       (loom/core/command:command-completion-names ""))
               :to-be nil)
       (expect (%keymap-bound-command-ids keymap)
-              :to-contain "execute-extended-command"))))
+              :to-contain "execute-extended-command")))
+  (it "binds page keys to the Emacs scroll directions"
+    (let ((keymap (make-keymap)))
+      (loom/core/command:install-default-keybindings keymap)
+      (expect (keymap-lookup keymap (list :page-up))
+              :to-equal "scroll-down-command")
+      (expect (keymap-lookup keymap (list :page-down))
+              :to-equal "scroll-up-command"))))
