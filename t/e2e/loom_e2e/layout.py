@@ -36,6 +36,10 @@ class Layout:
         return index
 
     def row(self, region, index=0):
+        if region == "screen":
+            if not 0 <= index < self.rows:
+                raise IndexError(f"screen row index out of range: {index}")
+            return index
         if region == "body":
             return self.body_row(index)
         if region == "mode-line":

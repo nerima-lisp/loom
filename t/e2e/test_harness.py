@@ -343,6 +343,11 @@ class SessionObservationTests(unittest.TestCase):
 
         with self.subTest("body text"):
             self.assertEqual(session.region_text("body", 0).rstrip(), "alpha")
+            self.assertNotIn("42", session.region_text("body", 0))
+
+        with self.subTest("screen text and wait include gutter"):
+            self.assertEqual(session.region_text("screen", 0).rstrip(), "42 alpha")
+            session.wait_for_region_text("screen", "42")
 
         with self.subTest("body cursor"):
             session.screen.feed(b"\x1b[1;4H")
