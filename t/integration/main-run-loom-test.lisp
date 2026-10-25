@@ -442,7 +442,7 @@
                                        :start2
                                        resume-start))
                              15)
-                          (error "Loom did not restore the terminal after SIGCONT")))
+                          (error "Loom did not restore the terminal after SIGCONT"))
                       (unless
                           (wait-until
                            (lambda ()
@@ -451,7 +451,7 @@
                                      :start2
                                      resume-start))
                            15)
-                        (error "Loom did not redraw the buffer after SIGCONT"))
+                        (error "Loom did not redraw the buffer after SIGCONT")))
                       (let ((terminate-start (length output)))
                         (send-signal sb-unix:sigterm)
                         (unless
