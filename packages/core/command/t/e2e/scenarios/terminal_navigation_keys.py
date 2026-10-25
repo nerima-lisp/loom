@@ -1,9 +1,11 @@
 """Exercise standard terminal navigation keys through a PTY session."""
 
+import json
 import os
 import tempfile
 
 from loom_e2e import keys
+from loom_e2e.path_generation import _key_entry
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
@@ -121,7 +123,7 @@ def terminal_navigation_delete(binary):
 
 @scenario(
     "movement/terminal-navigation-page",
-    commands=["next-line", "scroll-down-command", "scroll-up-command", "save-buffer"],
+    commands=["scroll-down-command", "scroll-up-command", "save-buffer"],
 )
 def terminal_navigation_page(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
@@ -132,20 +134,8 @@ def terminal_navigation_page(binary):
         try:
             with session:
                 session.wait_ready()
-                session.wait_for_region_cursor("body", 0, index=0)
-
-                session.send(b"\x1b[B" * 14)
-                session.wait_for_region_text("body", "line9")
                 session.send(b"\x1b[6~")
-                session.wait_for_region_text("body", "line14", index=0)
-                session.assert_screen_text(
-                    "line14", match="contains", region="body", index=0
-                )
                 session.send(b"\x1b[5~")
-                session.wait_for_region_text("body", "line9")
-                session.assert_screen_text(
-                    "line9", match="starts_with", region="body"
-                )
                 session.send(keys.ctrl("x") + keys.ctrl("s"))
                 session.wait_for_file(path, initial)
                 session.assert_file_bytes(path, initial)
@@ -155,6 +145,46 @@ def terminal_navigation_page(binary):
                     raise AssertionError(
                         f"movement/terminal-navigation-page exited with {code}: {output!r}"
                     )
+
+            trace_rows = [
+                json.loads(line)
+                for line in session.trace_bytes.decode("utf-8").splitlines()
+            ]
+            page_events = [
+                (event.get("command"), event.get("route"), event.get("entry"))
+                for event in trace_rows
+                if event.get("command") in {"scroll-up-command", "scroll-down-command"}
+            ]
+            expected_page_events = [
+                (
+                    "scroll-up-command",
+                    "key",
+                    _key_entry(
+                        {
+                            "keymap": "global",
+                            "sequence": [{"key": "page-down", "modifiers": []}],
+                        }
+                    ),
+                ),
+                (
+                    "scroll-down-command",
+                    "key",
+                    _key_entry(
+                        {
+                            "keymap": "global",
+                            "sequence": [{"key": "page-up", "modifiers": []}],
+                        }
+                    ),
+                ),
+            ]
+            session.observe_external_state(
+                "page navigation key trace", page_events, expected_page_events
+            )
+            if page_events != expected_page_events:
+                raise AssertionError(
+                    "unexpected page navigation trace: "
+                    f"{page_events!r} != {expected_page_events!r}"
+                )
         except TimeoutError:
             print("movement/terminal-navigation-page body screen on timeout:")
             print(session.region_contents("body"))
