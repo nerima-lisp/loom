@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/files)
 
 (defun editor-path-string (path)
   "Return a stable string representation of PATH when it is available."

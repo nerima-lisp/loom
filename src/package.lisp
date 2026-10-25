@@ -7,4 +7,7 @@
                 #:editor-bookmark-path
                 #:editor-bookmark-buffer-name
                 #:editor-bookmark-line
-                #:editor-bookmark-column))
+                #:editor-bookmark-column)
+  (:import-from #:loom/feature/files
+                #:editor-path-string
+                #:remember-recent-file))

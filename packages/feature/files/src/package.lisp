@@ -1,8 +1,5 @@
 (defpackage #:loom/feature/files
   (:use #:cl)
-  (:import-from #:loom
-                #:editor-path-string
-                #:remember-recent-file)
   (:import-from #:loom/feature/buffers
                 #:register-buffer)
   (:import-from #:loom/core/buffer
@@ -25,6 +22,7 @@
   (:import-from #:loom/core/editor-session
                 #:*editor-session*
                 #:*editor-state*
+                #:*editor-recent-file-limit*
                 #:editor-state-minibuffer
                 #:editor-state-recent-files
                 #:editor-state-window-tree

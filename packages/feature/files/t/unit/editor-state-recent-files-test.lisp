@@ -3,7 +3,7 @@
 (describe "editor-state recent files"
   (it "bounds normalized files without mutating the input list"
     (let ((files (list "older" "current" "oldest")))
-      (expect (loom::%bounded-recent-files "current" files 2)
+      (expect (loom/feature/files::%bounded-recent-files "current" files 2)
               :to-equal
               (list "current" "older"))
       (expect files :to-equal (list "older" "current" "oldest"))))
@@ -13,7 +13,7 @@
       (expect (editor-path-string path) :to-equal (namestring path))))
 
   (it "returns no recent files when the configured limit is zero"
-    (expect (loom::%bounded-recent-files "current" '("older") 0)
+    (expect (loom/feature/files::%bounded-recent-files "current" '("older") 0)
             :to-be nil))
 
   (it "returns nil for a missing path without mutating recent files"
