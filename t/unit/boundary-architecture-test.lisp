@@ -74,6 +74,7 @@
      "packages/feature/user-init/src/package.lisp")
     ("LOOM/FEATURE/LSP" ("feature/lsp") (:domain :application :infrastructure)
      "packages/feature/lsp/src/package.lisp")
+    ("LOOM/FEATURE/LIFECYCLE" ("feature/lifecycle") (:application) "packages/feature/lifecycle/src/package.lisp")
     ("LOOM-USER" ("root") (:composition-root) "src/package-user.lisp")))
 
 (defparameter *boundary-report-vs-fail* :report)
