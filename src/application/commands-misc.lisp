@@ -1,10 +1,5 @@
 (in-package #:loom)
 
-(defun keyboard-quit ()
-  "Report a Quit message (C-g)."
-  (prefix-argument-reset (prefix-argument-for-editor))
-  (minibuffer-message (editor-state-minibuffer *editor-state*) "Quit"))
-
 (defun execute-extended-command ()
   "Prompt for a registered command and execute it (M-x)."
   (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)

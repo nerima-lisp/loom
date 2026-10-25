@@ -18,10 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli"
-               "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit"
-               "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit"
-               "loom-core-buffer" "loom-core-window-tree")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-minibuffer")
   :pathname "."
   :serial t
   :components
@@ -30,8 +27,7 @@ root source tree responsible for every feature."
   :pathname "."
   :serial t
   :components
-  ((:file "packages/core/minibuffer/src/package")
-   (:file "packages/core/editor-session/src/package")
+  ((:file "packages/core/editor-session/src/package")
    (:file "packages/core/command/src/package")
    (:file "packages/feature/buffers/src/package")
    (:file "packages/feature/bookmark/src/package")
@@ -440,14 +436,8 @@ root source tree responsible for every feature."
    (:file "src/application/editor-state-recent-files")
    (:file "src/application/editor-state-operations")
    (:file "packages/core/command/src/domain-key-event-descriptor")
-   (:file "packages/core/minibuffer/src/minibuffer")
-   (:file "packages/core/minibuffer/src/minibuffer-activation")
-   (:file "packages/core/minibuffer/src/minibuffer-history")
-   (:file "packages/core/minibuffer/src/minibuffer-completion")
    (:file "src/application/completion-popup")
    (:file "src/application/completion-popup-input")
-   (:file "packages/core/minibuffer/src/minibuffer-input")
-   (:file "packages/core/minibuffer/src/commands-prompts")
    (:file "src/application/commands-internal")
    (:file "packages/core/command/src/command-registry-forms")
    (:file "packages/core/command/src/command-registry-build")
@@ -655,6 +645,7 @@ root source tree responsible for every feature."
     :components
     (
      (:file "src/application/commands-misc")
+     (:file "packages/core/minibuffer/src/application-commands-minibuffer")
      (:file "src/application/commands-bookmark-support")
      (:file "src/application/commands-bookmark")
      (:file "src/application/commands-quit")
@@ -812,12 +803,6 @@ root source tree responsible for every feature."
    (:file "t/unit/prefix-argument-test")
    (:file "t/unit/file-tree-test")
    (:file "t/unit/file-tree-selection-test")
-   (:file "t/unit/minibuffer-test")
-   (:file "t/unit/minibuffer-input-test-support")
-   (:file "t/unit/minibuffer-input-activation-test")
-   (:file "t/unit/minibuffer-input-history-test")
-   (:file "t/unit/minibuffer-input-completion-test")
-   (:file "t/unit/minibuffer-input-classification-test")
    (:file "t/unit/evaluation-test")
    (:file "t/unit/evaluation-result-test")
    (:file "t/unit/shell-test")
@@ -947,7 +932,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-minibuffer/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"
