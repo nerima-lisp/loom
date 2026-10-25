@@ -251,7 +251,7 @@
   (describe "Loom child signal handling"
             (it-each
              (("SIGTERM" 143 ("term")) ("SIGHUP" 129 ("hup"))
-              ("SIGTSTP" 143 ("tstp" "cont" "term")))
+              ("SIGTSTP" 143 ("tstp" "term")))
              "restores terminal state for ~A and exits with status ~D"
              (signal-name expected-status expected-events)
              (progn

@@ -399,18 +399,10 @@
   (sb-sys:enable-interrupt sb-unix:sigcont :default)
   (unwind-protect (sb-posix:kill (sb-posix:getpid) sb-unix:sigtstp)
     (%install-loom-terminal-signal-handlers terminal-session))
-  (let ((terminate-p
-         (member :terminate
-                 (loom/core/editor-session:run-session-hooks :signal
-                                                             session
-                                                             :cont)
-                 :test
-                 (function eq))))
-    (unless terminate-p
-      (setf (%loom-terminal-session-suspended-p terminal-session) nil)
-      (%enable-loom-terminal-session terminal-session)
-      (loom-renderer-invalidate (editor-state-renderer *editor-state*))
-      (loom/core/editor-session:run-session-hooks :resume
-                                                  session
-                                                  terminal-session))
-    (and terminate-p :terminate)))
+  (setf (%loom-terminal-session-suspended-p terminal-session) nil)
+  (%enable-loom-terminal-session terminal-session)
+  (loom-renderer-invalidate (editor-state-renderer *editor-state*))
+  (loom/core/editor-session:run-session-hooks :resume
+                                              session
+                                              terminal-session)
+  nil)
