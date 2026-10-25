@@ -1,0 +1,4 @@
+(in-package #:loom/test)
+
+(describe "editor-state workspace defaults" (it "creates the default workspace" (let* ((buffer (make-buffer :name "*scratch*")) (tree (make-window-tree buffer 80 24)) (state (make-editor-state :window-tree tree :session (%make-test-editor-session (list buffer) :window-tree tree)))) (expect (editor-state-workspaces state) :to-be-truthy)))
+          (it "preserves an explicitly supplied workspace manager" (let* ((buffer (make-buffer :name "*scratch*")) (tree (make-window-tree buffer 80 24)) (workspaces (loom/feature/workspace:make-workspace-manager tree :name "writing")) (state (make-editor-state :window-tree tree :workspaces workspaces :session (%make-test-editor-session (list buffer) :window-tree tree)))) (expect (editor-state-workspaces state) :to-be workspaces))))
