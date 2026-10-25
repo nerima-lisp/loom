@@ -119,8 +119,7 @@ or auto-save buffers, the loop keeps its original blocking read behavior.")
                   (values :terminate :normal 0 nil nil)))
               (setf frame-dirty-p t))))
         ;; SIGWINCH wakes the poll so the event loop can query size and redraw.
-        (when (= byte 5)
-          (setf frame-dirty-p t))))
+))
     (when (and suspend-request-p (not suspended-p))
       (when
           (eq (%suspend-loom-terminal-session session terminal-session)

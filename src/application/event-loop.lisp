@@ -27,6 +27,9 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                              poll-ready-p
                                              force-ready-p))
               (values nil nil nil nil nil))
+        ;; Background polls may receive LSP responses that rendering drains.
+        (when (or poll-ready-p force-ready-p)
+          (setf frame-dirty-p t))
         (cond
           ((eq status :terminate)
            (values status reason exit-status frame-dirty-p more-ready-p))
@@ -54,23 +57,27 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                            keymap-state
                                            terminal-session
                                            force-ready-p)
-    (declare (ignore frame-dirty-p))
     (cond
       ((eq status :terminate)
        (values :terminate reason exit-status last-width last-height nil))
       (status
-        (loom/core/editor-session:run-session-hooks :tick
-                                                    (editor-state-session
-                                                     *editor-state*)
-                                                    (/ (get-internal-real-time)
-                                                       internal-time-units-per-second))
-        (multiple-value-bind (width height)
-            (%poll-terminal-resize (editor-state-renderer *editor-state*)
-                                   last-width
-                                   last-height)
-          (%render-event-loop-frame output-stream)
-          (values status nil nil width height more-ready-p)))
+       (loom/core/editor-session:run-session-hooks :tick
+                                                   (editor-state-session
+                                                    *editor-state*)
+                                                   (/ (get-internal-real-time)
+                                                      internal-time-units-per-second))
+       (multiple-value-bind (width height)
+           (%poll-terminal-resize (editor-state-renderer *editor-state*)
+                                  last-width
+                                  last-height)
+         (when (or (eq status :input)
+                   frame-dirty-p
+                   (/= width last-width)
+                   (/= height last-height))
+           (%render-event-loop-frame output-stream))
+         (values status nil nil width height more-ready-p)))
       (t nil))))
+
 
 (defun %run-event-loop (output-stream input-stream &optional terminal-session)
   "Run input, background wake, lifecycle and render turns until shutdown."

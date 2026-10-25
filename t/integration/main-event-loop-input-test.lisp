@@ -116,33 +116,40 @@
            (list nil nil nil nil nil))))))
 
   (it
-    "returns timeout when no editor input is ready"
-    (let ((buffer (make-array 16 :element-type (quote (unsigned-byte 8))))
-          (decoder :decoder)
-          (keymap-state :keymap)
-          (terminal-session :terminal-session))
+    "returns timeout and requests rendering for a background poll"
+    (let* ((*editor-state* (%fresh-full-editor-state ""))
+           (buffer (make-array 16 :element-type '(unsigned-byte 8)))
+           (poll-ready-p nil)
+           (terminal-session :terminal-session))
       (with-replaced-function
           (loom::%wait-for-editor-input
            (lambda (stream received-terminal-session)
              (declare (ignore stream))
              (expect received-terminal-session :to-be terminal-session)
-             (values nil nil nil)))
+             (values nil nil poll-ready-p)))
         (with-replaced-function
-            (loom::%read-input-octets
-             (lambda (&rest arguments)
-               (declare (ignore arguments))
-               (error "input should not be read after a timeout")))
-          (expect
-           (multiple-value-list
-            (loom::%read-and-dispatch-event-loop-input
-             (make-string-input-stream "")
-             buffer
-             decoder
-             keymap-state
-             terminal-session
-             nil))
-           :to-equal
-           (list :timeout nil nil nil nil))))))
+            (loom::%process-loom-wake-events
+             (lambda (received-terminal-session session wake-bytes poll-work-p)
+               (declare (ignore received-terminal-session session wake-bytes))
+               (expect poll-work-p :to-be t)
+               (values nil nil nil nil nil)))
+          (with-replaced-function
+              (loom::%read-input-octets
+               (lambda (&rest arguments)
+                 (declare (ignore arguments))
+                 (error "input should not be read after a timeout")))
+            (flet ((run-turn ()
+                     (multiple-value-list
+                      (loom::%read-and-dispatch-event-loop-input
+                       (make-string-input-stream "")
+                       buffer
+                       :decoder
+                       :keymap-state
+                       terminal-session
+                       nil))))
+              (expect (run-turn) :to-equal (list :timeout nil nil nil nil))
+              (setf poll-ready-p t)
+              (expect (run-turn) :to-equal (list :timeout nil nil t nil))))))))
 
   (it
     "self-inserts decoded input and exits cleanly at end-of-file"
@@ -219,6 +226,86 @@
                                       (make-string-output-stream)
                                       (make-string-input-stream "")))))
       (expect turns :to-be 2)))
+(it
+ "redraws resize wakes only when dimensions change or the frame is dirty"
+ (let* ((*editor-state* (%fresh-full-editor-state ""))
+        (loom/core/editor-session:*editor-session*
+         (editor-state-session *editor-state*))
+        (turn-status :timeout)
+        (turn-dirty-p nil)
+        (next-width 80)
+        (next-height 24)
+        (render-count 0)
+        (buffer (make-array 16 :element-type '(unsigned-byte 8))))
+   (expect
+    (multiple-value-list
+     (loom::%process-loom-wake-events :terminal-session
+                                      (editor-state-session *editor-state*)
+                                      (list 5)
+                                      nil))
+    :to-equal
+    (list nil nil nil nil nil))
+   (with-replaced-function
+       (loom::%read-and-dispatch-event-loop-input
+        (lambda (&rest arguments)
+          (declare (ignore arguments))
+          (values turn-status nil nil turn-dirty-p nil)))
+     (with-replaced-function
+         (loom::%poll-terminal-resize
+          (lambda (&rest arguments)
+            (declare (ignore arguments))
+            (values next-width next-height)))
+       (with-replaced-function
+           (loom::%render-event-loop-frame
+            (lambda (&rest arguments)
+              (declare (ignore arguments))
+              (incf render-count)))
+         (loom::%run-event-loop-turn (make-string-output-stream)
+                                     (make-string-input-stream "")
+                                     buffer
+                                     :decoder
+                                     :keymap-state
+                                     80
+                                     24
+                                     :terminal-session
+                                     nil)
+         (expect render-count :to-be 0)
+         (setf next-width 100
+               next-height 30)
+         (loom::%run-event-loop-turn (make-string-output-stream)
+                                     (make-string-input-stream "")
+                                     buffer
+                                     :decoder
+                                     :keymap-state
+                                     80
+                                     24
+                                     :terminal-session
+                                     nil)
+         (expect render-count :to-be 1)
+         (setf turn-status :input)
+         (loom::%run-event-loop-turn (make-string-output-stream)
+                                     (make-string-input-stream "")
+                                     buffer
+                                     :decoder
+                                     :keymap-state
+                                     100
+                                     30
+                                     :terminal-session
+                                     nil)
+         (expect render-count :to-be 2)
+         (setf turn-status :timeout
+               turn-dirty-p t)
+         (loom::%run-event-loop-turn (make-string-output-stream)
+                                     (make-string-input-stream "")
+                                     buffer
+                                     :decoder
+                                     :keymap-state
+                                     100
+                                     30
+                                     :terminal-session
+                                     nil)
+         (expect render-count :to-be 3))))))
+
 
 (it
  "passes decoded non-key input through default routing without key-input hooks"
@@ -416,7 +503,7 @@
                   terminal-session
                   t))
                 :to-equal
-                (list :timeout nil nil nil nil))))
+                (list :timeout nil nil t nil))))
              (expect poll-count :to-be 2)))
           (it "marks the frame dirty after C-z and SIGTSTP suspend and resume"
               (let* ((*editor-state* (%fresh-full-editor-state ""))
