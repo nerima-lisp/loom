@@ -13,27 +13,26 @@ def _assert_cursor(session, col, index=0):
         raise AssertionError(f"body cursor did not reach {expected!r}")
 
 
+def _navigation_file(directory):
+    path = os.path.join(directory, "navigation.txt")
+    lines = ["abcdef"] + [f"line{index}" for index in range(1, 30)]
+    with open(path, "wb") as handle:
+        handle.write(("\n".join(lines) + "\n").encode("ascii"))
+    return path
+
+
 @scenario(
-    "movement/terminal-navigation-keys",
+    "movement/terminal-navigation-arrows",
     commands=[
         "backward-char",
-        "delete-char",
         "forward-char",
-        "move-beginning-of-line",
-        "move-end-of-line",
         "next-line",
         "previous-line",
-        "scroll-down-command",
-        "scroll-up-command",
     ],
 )
-def terminal_navigation_keys(binary):
+def terminal_navigation_arrows(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = os.path.join(directory, "navigation.txt")
-        lines = ["abcdef"] + [f"line{index}" for index in range(1, 30)]
-        with open(path, "wb") as handle:
-            handle.write(("\n".join(lines) + "\n").encode("ascii"))
-
+        path = _navigation_file(directory)
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
@@ -51,6 +50,29 @@ def terminal_navigation_keys(binary):
             session.wait_for_region_cursor("body", 0, index=0)
             _assert_cursor(session, 0)
 
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"movement/terminal-navigation-arrows exited with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "movement/terminal-navigation-home-end",
+    commands=[
+        "backward-char",
+        "forward-char",
+        "move-beginning-of-line",
+        "move-end-of-line",
+    ],
+)
+def terminal_navigation_home_end(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = _navigation_file(directory)
+        with Session(binary, [path], rows=8) as session:
+            session.wait_ready()
+            session.wait_for_region_cursor("body", 0, index=0)
+
             for home in (b"\x1b[H", b"\x1b[1~", b"\x1b[7~", b"\x1bOH"):
                 session.send(b"\x1b[C" + home)
                 session.wait_for_region_cursor("body", 0, index=0)
@@ -61,15 +83,48 @@ def terminal_navigation_keys(binary):
                 session.wait_for_region_cursor("body", 6, index=0)
                 _assert_cursor(session, 6)
 
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"movement/terminal-navigation-home-end exited with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "movement/terminal-navigation-delete",
+    commands=["delete-char", "move-beginning-of-line"],
+)
+def terminal_navigation_delete(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = _navigation_file(directory)
+        with Session(binary, [path], rows=8) as session:
+            session.wait_ready()
+            session.wait_for_region_cursor("body", 0, index=0)
+
             session.send(b"\x1b[H")
             session.wait_for_region_cursor("body", 0, index=0)
             _assert_cursor(session, 0)
-
             session.send(b"\x1b[3~")
             session.wait_for_region_text_prefix("body", "bcdef")
-            session.assert_screen_text(
-                "bcdef", match="starts_with", region="body"
-            )
+            session.assert_screen_text("bcdef", match="starts_with", region="body")
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"movement/terminal-navigation-delete exited with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "movement/terminal-navigation-page",
+    commands=["scroll-down-command", "scroll-up-command"],
+)
+def terminal_navigation_page(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = _navigation_file(directory)
+        with Session(binary, [path], rows=8) as session:
+            session.wait_ready()
+            session.wait_for_region_cursor("body", 0, index=0)
 
             session.send(b"\x1b[6~")
             page_row = session.layout.body_height
@@ -80,12 +135,10 @@ def terminal_navigation_keys(binary):
             )
             session.send(b"\x1b[5~")
             session.wait_for_region_text("body", "bcdef")
-            session.assert_screen_text(
-                "bcdef", match="starts_with", region="body"
-            )
+            session.assert_screen_text("bcdef", match="starts_with", region="body")
 
             output, code = session.quit()
             if code != 0:
                 raise AssertionError(
-                    f"movement/terminal-navigation-keys exited with {code}: {output!r}"
+                    f"movement/terminal-navigation-page exited with {code}: {output!r}"
                 )

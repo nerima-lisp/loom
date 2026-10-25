@@ -15,7 +15,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-arrows")
  (:id "r1:backward-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22left%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("backward-char")
   :rule :r1
@@ -24,7 +24,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-arrows")
  (:id "r1:next-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22down%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("next-line")
   :rule :r1
@@ -33,7 +33,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-arrows")
  (:id "r1:previous-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22up%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("previous-line")
   :rule :r1
@@ -42,7 +42,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-arrows")
  (:id "r1:move-beginning-of-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22home%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("move-beginning-of-line")
   :rule :r1
@@ -51,7 +51,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-home-end")
  (:id "r1:move-end-of-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22end%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("move-end-of-line")
   :rule :r1
@@ -60,7 +60,7 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:cursor)
-  :scenario "movement/terminal-navigation-keys")
+  :scenario "movement/terminal-navigation-home-end")
  (:id "r1:delete-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22delete%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
   :commands ("delete-char")
   :rule :r1
@@ -69,4 +69,4 @@
   :state "default"
   :outcome "command runs from its key sequence"
   :observe (:screen_text)
-  :scenario "movement/terminal-navigation-keys"))
+  :scenario "movement/terminal-navigation-delete"))
