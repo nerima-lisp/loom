@@ -119,14 +119,13 @@ into the remaining width."
          (%layout-mode-line-text renderer buffer)
          width))))
 
-(defun %layout-draw-window-buffer
-    (renderer window x-offset &optional height selected-p)
+(defun %layout-draw-window-buffer (renderer window x-offset &optional height selected-p)
   "Draw WINDOW's buffer in whichever line-display mode that buffer selects.
 
 When HEIGHT is supplied, draw only that many rows, leaving the caller to draw
 the mode line or another footer in the remaining window rows."
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (x (%layout-window-body-x window x-offset selected-p))
+         (x (%layout-window-body-x (+ x-offset (loom/core/window-tree:window-x window)) selected-p))
          (y (loom/core/window-tree:window-y window))
          (width (loom/core/window-tree:window-width window))
          (height (or height (loom/core/window-tree:window-height window))))
@@ -208,8 +207,7 @@ the mode line or another footer in the remaining window rows."
     (dolist (leaf leaves)
       (%layout-draw-window-separator renderer leaf x-offset))
     (dolist (leaf leaves)
-      (%layout-draw-window-mode-line renderer leaf x-offset (eq leaf selected)
-                                     workspace-name)))
+      (%layout-draw-window-mode-line renderer leaf x-offset (eq leaf selected) workspace-name)))
   renderer)
 
 (defparameter +layout-matching-paren-style+ '(:bold (:bg 5) (:fg 0))
@@ -315,11 +313,10 @@ the mode line or another footer in the remaining window rows."
 (defvar *layout-trace-last-entry* nil)
 (defvar *layout-trace-last-warning-entry* nil)
 
-(defun %layout-window-body-x (window x-offset selected-p)
-  (let ((body-x (+ x-offset (loom/core/window-tree:window-x window))))
-    (when selected-p
-      (%layout-record-selected-body-x body-x))
-    body-x))
+(defun %layout-window-body-x (body-x selected-p)
+  (when selected-p
+    (%layout-record-selected-body-x body-x))
+  body-x)
 
 (defun %layout-record-selected-body-x (body-x)
   (let ((trace-file (uiop:getenv "LOOM_TRACE_LAYOUT")))

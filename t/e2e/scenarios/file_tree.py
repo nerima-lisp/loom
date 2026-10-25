@@ -54,7 +54,7 @@ def _wait_for_region_after_refresh(session, region, expected, index=0):
 
 def _show_file_tree(session, first_entry):
     session.extended_command("toggle-file-tree")
-    session.wait_for_region_text("body", first_entry)
+    session.wait_for_region_text("screen", first_entry)
     session.wait_for_region_cursor("body", 24)
 
 
@@ -68,7 +68,7 @@ def file_tree_toggle(binary):
         with Session(binary, [directory]) as session:
             session.wait_ready()
             session.send(keys.ctrl("x") + keys.ctrl("t"))
-            session.wait_for_region_text("body", "toggle-marker.txt")
+            session.wait_for_region_text("screen", "toggle-marker.txt")
             session.wait_for_region_cursor("body", 24)
 
             session.send(keys.ctrl("x") + keys.ctrl("t"))
@@ -103,7 +103,7 @@ def file_tree_navigation(binary):
 
             _run_command(session, "file-tree-select-next")
             _run_command(session, "file-tree-open-selected")
-            _wait_for_region_after_refresh(session, "body", "child.txt", index=1)
+            _wait_for_region_after_refresh(session, "screen", "child.txt", index=1)
 
             _run_command(session, "file-tree-select-next")
             _run_command(session, "file-tree-open-selected")
@@ -111,7 +111,7 @@ def file_tree_navigation(binary):
 
             _run_command(session, "file-tree-select-previous")
             _run_command(session, "file-tree-open-selected")
-            session.wait_for_region_absent_text("body", "child.txt", index=1)
+            session.wait_for_region_absent_text("screen", "child.txt", index=1)
 
             output, code = session.quit()
         _assert_exit_zero("file-tree navigation", output, code)
@@ -140,7 +140,7 @@ def file_tree_create(binary):
                 session, created_file, os.path.isfile, "created file",
             )
             _wait_for_region_after_refresh(
-                session, "body", "created.txt", index=0,
+                session, "screen", "created.txt", index=0,
             )
 
             created_directory = os.path.join(directory, "created-dir")
@@ -152,7 +152,7 @@ def file_tree_create(binary):
                 session, created_directory, os.path.isdir, "created directory",
             )
             _wait_for_region_after_refresh(
-                session, "body", "created-dir", index=0,
+                session, "screen", "created-dir", index=0,
             )
 
             output, code = session.quit()
@@ -183,7 +183,7 @@ def file_tree_rename_delete(binary):
             _wait_for_path(
                 session, new_path, os.path.isfile, "renamed file",
             )
-            _wait_for_region_after_refresh(session, "body", "renamed.txt")
+            _wait_for_region_after_refresh(session, "screen", "renamed.txt")
 
             _run_command(session, "file-tree-select-next")
             _run_command(session, "file-tree-delete")
