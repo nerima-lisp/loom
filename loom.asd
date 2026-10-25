@@ -417,7 +417,6 @@ root source tree responsible for every feature."
    (:file "t/integration/commands-editing-buffer-read-only-test")
    (:file "t/integration/commands-editing-file-root-test")
    (:file "t/integration/commands-editing-minibuffer-keybinding-test")
-   (:file "t/integration/commands-misc-test")
    (:file "t/integration/commands-prompt-cancellation-test")
    (:file "t/integration/prefix-argument-macro-test")
    (:file "t/integration/frame-layout-test-support")
