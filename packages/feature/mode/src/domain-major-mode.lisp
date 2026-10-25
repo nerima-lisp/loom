@@ -20,6 +20,15 @@
         when (%major-mode-definition-matches-token-p token key definition)
           return key))
 
+(progn
+  (defun major-mode-comment-start (mode)
+    (getf (%major-mode-definition mode) :comment-start))
+  (defun major-mode-comment-end (mode)
+    (getf (%major-mode-definition mode) :comment-end))
+  (defun major-mode-skip-closing-delimiter-p (mode)
+    (not (null (getf (%major-mode-definition mode)
+                     :skip-closing-delimiter)))))
+
 (defun %dynamic-major-mode-key (token)
   (loop for key in *registered-major-mode-order*
         for definition = (%dynamic-major-mode-definition key)

@@ -16,6 +16,7 @@
 
 (defun %make-major-mode-definition
     (key name parent-key aliases extensions filenames comment-prefix
+     comment-start comment-end skip-closing-delimiter
      indentation-width tab-width language-id keywords keybindings truncate-lines)
   (list :name (or name (string-capitalize (symbol-name key)))
         :aliases aliases
@@ -23,6 +24,9 @@
         :extensions extensions
         :filenames filenames
         :comment-prefix comment-prefix
+        :comment-start comment-start
+        :comment-end comment-end
+        :skip-closing-delimiter (and skip-closing-delimiter t)
         :indentation-width indentation-width
         :tab-width tab-width
         :truncate-lines (and truncate-lines t)
@@ -38,9 +42,12 @@
   key)
 
 (defun %validate-major-mode-registration-options
-    (name comment-prefix language-id indentation-width tab-width)
+    (name comment-prefix comment-start comment-end
+     language-id indentation-width tab-width)
   (%validate-major-mode-text name ":name")
   (%validate-major-mode-text comment-prefix ":comment-prefix")
+  (%validate-major-mode-text comment-start ":comment-start")
+  (%validate-major-mode-text comment-end ":comment-end")
   (%validate-major-mode-text language-id ":language-id")
   (unless (and (integerp indentation-width) (plusp indentation-width))
     (error "Major-mode indentation width must be a positive integer: ~S"
@@ -60,7 +67,9 @@
 
 (defun register-major-mode
     (mode &key name aliases (parent :fundamental) extensions filenames
-            comment-prefix (indentation-width 2) (tab-width 8) language-id
+            comment-prefix (comment-start comment-prefix) comment-end
+            skip-closing-delimiter
+            (indentation-width 2) (tab-width 8) language-id
             keywords keybindings (truncate-lines t))
   "Register an extension-defined major mode and return its canonical key.
 
@@ -71,7 +80,8 @@ COMMAND may be a function or a callable function symbol."
     (when (%major-mode-definition key)
       (error "Major mode is already defined: ~S" mode))
     (%validate-major-mode-registration-options
-     name comment-prefix language-id indentation-width tab-width)
+     name comment-prefix comment-start comment-end
+     language-id indentation-width tab-width)
     (let ((parent-key (major-mode-from-name parent)))
       (multiple-value-bind (normalized-aliases normalized-extensions
                             normalized-filenames)
@@ -83,8 +93,9 @@ COMMAND may be a function or a callable function symbol."
          key
          (%make-major-mode-definition
           key name parent-key normalized-aliases normalized-extensions
-          normalized-filenames comment-prefix indentation-width tab-width
-          language-id keywords keybindings truncate-lines))))))
+          normalized-filenames comment-prefix comment-start comment-end
+          skip-closing-delimiter indentation-width tab-width language-id
+          keywords keybindings truncate-lines))))))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.

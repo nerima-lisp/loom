@@ -51,4 +51,4 @@
    #:set-major-mode
    #:indent-for-tab-command
    #:comment-line
-   #:toggle-truncate-lines))
+   #:toggle-truncate-lines #:major-mode-comment-start #:major-mode-comment-end #:major-mode-skip-closing-delimiter-p))

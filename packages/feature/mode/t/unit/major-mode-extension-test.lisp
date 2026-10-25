@@ -1,5 +1,11 @@
 (in-package #:loom/test)
 
+(progn
+  (asdf:load-system "loom-feature-lang-lisp")
+  (asdf:load-system "loom-feature-lang-nix")
+  (asdf:load-system "loom-feature-lang-web")
+  (asdf:load-system "loom-feature-lang-markup"))
+
 (describe
   "extension-defined major modes"
   (it
@@ -160,3 +166,77 @@
      (signals error
        (register-major-mode :loom-invalid-indentation :indentation-width 0))
      :to-be-truthy))
+  (it
+  "registers built-in modes from their owning language slices"
+  (let* ((mode-package (find-package "LOOM/FEATURE/MODE"))
+         (registered-modes
+           (symbol-value (find-symbol "*REGISTERED-MAJOR-MODES*" mode-package)))
+         (modes
+           '(:common-lisp :emacs-lisp :nix :typescript :typescript-react
+             :markdown :org :json)))
+    (expect (every (lambda (mode) (gethash mode registered-modes)) modes)
+            :to-be-truthy)
+    (expect
+     (mapcar #'major-mode-for-path
+             '("src/main.lisp" "src/main.lsp" "src/main.cl" "src/main.el"
+               "default.nix" "src/main.ts" "src/main.mts" "src/main.cts"
+               "src/main.tsx" "README.md" "README.markdown" "todo.org"
+               "config.json"))
+     :to-equal
+     '(:common-lisp :common-lisp :common-lisp :emacs-lisp :nix :typescript
+       :typescript :typescript :typescript-react :markdown :markdown :org
+       :json))
+    (expect (major-mode-from-name "common lisp") :to-be :common-lisp)
+    (expect (major-mode-from-name "elisp") :to-be :emacs-lisp)
+    (expect (major-mode-from-name "ts") :to-be :typescript)
+    (expect (major-mode-from-name "tsx") :to-be :typescript-react)
+    (expect
+     (every (lambda (mode)
+              (and (= (major-mode-indentation-width mode) 2)
+                   (= (major-mode-tab-width mode) 8)))
+            modes)
+     :to-be-truthy)
+    (expect (member "defun" (major-mode-keywords :common-lisp) :test #'string=)
+            :to-be-truthy)
+    (expect (member "defun" (major-mode-keywords :emacs-lisp) :test #'string=)
+            :to-be-truthy)
+    (expect (member "derivation" (major-mode-keywords :nix) :test #'string=)
+            :to-be-truthy)
+    (expect (member "interface" (major-mode-keywords :typescript) :test #'string=)
+            :to-be-truthy)
+    (expect
+     (equal (major-mode-keywords :typescript)
+            (major-mode-keywords :typescript-react))
+     :to-be-truthy)
+    (expect (major-mode-keywords :markdown) :to-equal nil)
+    (expect (member "TODO" (major-mode-keywords :org) :test #'string=)
+            :to-be-truthy)
+    (expect (major-mode-keywords :json) :to-equal nil)
+    (expect
+     (mapcar #'major-mode-comment-prefix modes)
+     :to-equal
+     '(";" ";" "#" "//" "//" "#" "#" nil))
+    (expect
+     (mapcar #'major-mode-comment-start modes)
+     :to-equal
+     '(";" ";" "#" "//" "//" "<!--" "#" nil))
+    (expect
+     (mapcar #'major-mode-comment-end modes)
+     :to-equal
+     '(nil nil nil nil nil "-->" nil nil))
+    (expect
+     (mapcar #'major-mode-skip-closing-delimiter-p modes)
+     :to-equal
+     '(t t t t t nil nil t))
+    (expect
+     (mapcar #'major-mode-truncate-lines-p modes)
+     :to-equal
+     '(t t t t t nil nil t))
+    (let ((mode (register-major-mode :loom-mode-metadata-defaults
+                                    :comment-prefix "#")))
+      (unwind-protect
+           (progn
+             (expect (major-mode-comment-start mode) :to-equal "#")
+             (expect (major-mode-comment-end mode) :to-be nil)
+             (expect (major-mode-skip-closing-delimiter-p mode) :to-be nil))
+        (unregister-major-mode mode)))))

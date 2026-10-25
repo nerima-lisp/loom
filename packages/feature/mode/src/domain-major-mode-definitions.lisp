@@ -3,116 +3,55 @@
 (defparameter +major-mode-definitions+
   `((:fundamental :name "Fundamental"
      :comment-prefix nil
+     :comment-start nil
+     :comment-end nil
+     :skip-closing-delimiter nil
      :indentation-width 2
      :truncate-lines t
      :language-id "plaintext"
      :keywords () :tab-width 8)
-    (:common-lisp :name "Common Lisp"
-     :comment-prefix ";"
-     :aliases ("lisp" "cl" "common lisp")
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "commonlisp"
-     :keywords ("and" "block" "case" "catch" "defclass" "defconstant"
-                 "defgeneric" "defmacro" "defmethod" "defpackage"
-                 "defparameter" "defstruct" "deftype" "defun" "defvar"
-                 "do" "do*" "dolist" "dotimes" "ecase" "else" "eval-when"
-                 "flet" "function" "go" "if" "in-package" "labels" "let"
-                 "let*" "loop" "macrolet" "multiple-value-bind"
-                 "multiple-value-call" "multiple-value-prog1"
-                 "multiple-value-setq" "nil" "or" "otherwise" "prog" "prog1"
-                 "progn" "progv" "quote" "return" "return-from" "setf"
-                 "tagbody" "the" "throw" "typecase" "unless" "unwind-protect"
-                 "when" "with-open-file" "with-output-to-string" "with-slots"
-                 "with-standard-io-syntax" "write" "t") :tab-width 8)
     (:python :name "Python"
      :comment-prefix "#"
+     :comment-start "#"
+     :comment-end nil
+     :skip-closing-delimiter t
      :indentation-width 4
      :truncate-lines t
      :language-id "python"
      :keywords ("and" "as" "assert" "async" "await" "break" "case"
-                 "class" "continue" "def" "del" "elif" "else" "except"
-                 "False" "finally" "for" "from" "global" "if" "import"
-                 "in" "is" "lambda" "match" "None" "nonlocal" "not" "or"
-                 "pass" "raise" "return" "True" "try" "while" "with" "yield") :tab-width 8)
+                "class" "continue" "def" "del" "elif" "else" "except"
+                "False" "finally" "for" "from" "global" "if" "import"
+                "in" "is" "lambda" "match" "None" "nonlocal" "not" "or"
+                "pass" "raise" "return" "True" "try" "while" "with" "yield") :tab-width 8)
     (:rust :name "Rust"
      :comment-prefix "//"
+     :comment-start "//"
+     :comment-end nil
+     :skip-closing-delimiter t
      :indentation-width 4
      :truncate-lines t
      :language-id "rust"
      :keywords ("as" "async" "await" "break" "const" "continue" "crate"
-                 "dyn" "else" "enum" "extern" "fn" "for" "if" "impl"
-                 "in" "let" "loop" "match" "mod" "move" "mut" "pub"
-                 "ref" "return" "self" "Self" "static" "struct" "super"
-                 "trait" "type" "unsafe" "use" "where" "while") :tab-width 8)
+                "dyn" "else" "enum" "extern" "fn" "for" "if" "impl"
+                "in" "let" "loop" "match" "mod" "move" "mut" "pub"
+                "ref" "return" "self" "Self" "static" "struct" "super"
+                "trait" "type" "unsafe" "use" "where" "while") :tab-width 8)
     (:shell :name "Shell"
      :comment-prefix "#"
+     :comment-start "#"
+     :comment-end nil
+     :skip-closing-delimiter t
      :aliases ("sh" "bash" "zsh")
      :indentation-width 2
      :truncate-lines t
      :language-id "shellscript"
      :keywords ("case" "do" "done" "elif" "else" "esac" "fi" "for"
-                 "function" "if" "in" "select" "then" "until" "while") :tab-width 8)
-    (:emacs-lisp :name "Emacs Lisp"
-     :comment-prefix ";"
-     :aliases ("el" "elisp")
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "emacs-lisp"
-     :keywords ("and" "catch" "cl-defmacro" "cl-defun" "cond"
-                 "condition-case" "defcustom" "defface" "defgroup"
-                 "defmacro" "defsubst" "defun" "defvar" "defvar-local"
-                 "dolist" "dotimes" "if" "ignore-errors" "interactive"
-                 "lambda" "let" "let*" "nil" "or" "pcase" "prog1" "progn"
-                 "provide" "require" "save-excursion" "save-restriction"
-                 "setq" "setq-default" "t" "throw" "unless"
-                 "unwind-protect" "when" "while" "with-current-buffer"
-                 "with-temp-buffer") :tab-width 8)
-    (:nix :name "Nix"
-     :comment-prefix "#"
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "nix"
-     :keywords ("abort" "assert" "baseNameOf" "builtins" "derivation"
-                 "dirOf" "else" "false" "fetchTarball" "fetchurl" "if"
-                 "import" "in" "inherit" "isNull" "let" "map" "null" "or"
-                 "rec" "removeAttrs" "then" "throw" "toString" "true"
-                 "with") :tab-width 8)
-    (:typescript :name "TypeScript"
-     :comment-prefix "//"
-     :aliases ("ts")
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "typescript"
-     :keywords ,+typescript-keywords+ :tab-width 8)
-    (:typescript-react :name "TypeScript React"
-     :comment-prefix "//"
-     :aliases ("tsx")
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "typescriptreact"
-     :keywords ,+typescript-keywords+ :tab-width 8)
-    (:markdown :name "Markdown"
-     :comment-prefix "#"
-     :indentation-width 2
-     :truncate-lines nil
-     :language-id "markdown"
-     :keywords () :tab-width 8)
-    (:org :name "Org"
-     :comment-prefix "#"
-     :indentation-width 2
-     :truncate-lines nil
-     :language-id "org"
-     :keywords ("CANCELLED" "CLOSED" "DEADLINE" "DONE" "NEXT"
-                 "SCHEDULED" "TODO" "WAITING") :tab-width 8)
-    (:json :name "JSON"
-     :comment-prefix nil
-     :indentation-width 2
-     :truncate-lines t
-     :language-id "json"
-     :keywords () :tab-width 8)
+                "function" "if" "in" "select" "then" "until" "while") :tab-width 8)
     (:text :name "Text"
      :comment-prefix nil
+     :comment-start nil
+     :comment-end nil
+     :skip-closing-delimiter nil
      :aliases ("plain text")
      :indentation-width 2
      :truncate-lines nil
