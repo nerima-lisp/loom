@@ -345,6 +345,33 @@
                         (loom/core/editor-session:run-session-hooks
                          :terminal-modes
                          (%make-test-editor-session)))))
+            (it "propagates hook errors and skips later hooks"
+                (let* ((loom/core/editor-session::*session-hooks*
+                        (make-hash-table :test #'eq))
+                       (session (%make-test-editor-session))
+                       (events nil))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :core/command
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :before events)))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :core/minibuffer
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :failing events)
+                     (error "hook failed")))
+                  (loom/core/editor-session:register-session-hook
+                   :tick
+                   :feature/lifecycle
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (push :after events)))
+                  (signals simple-error
+                    (loom/core/editor-session:run-session-hooks :tick session))
+                  (expect (nreverse events) :to-equal '(:before :failing))))
             (it
              "dispatches lifecycle and buffer-close hooks under their declared owners"
              (let* ((loom/core/editor-session::*session-hooks*
