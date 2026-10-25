@@ -34,9 +34,10 @@
                       (buffer-position-column start))))
 
 (defun buffer-active-region-span (buffer)
-  "Return the active region as an absolute half-open span, or NIL if the mark is unset."
+  "Return the active region of BUFFER as an absolute half-open span, or NIL
+when its mark is unset or inactive."
   (multiple-value-bind (mark-line mark-column) (buffer-mark buffer)
-    (when mark-line
+    (when (and (loom/core/buffer:buffer-mark-active-p buffer) mark-line)
       (let* ((point-offset (buffer-point-offset buffer))
              (mark-offset (buffer-clamped-position-offset buffer mark-line mark-column)))
         (make-buffer-span (min point-offset mark-offset)

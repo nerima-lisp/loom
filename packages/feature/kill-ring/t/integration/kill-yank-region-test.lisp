@@ -60,4 +60,13 @@
         (buffer-set-mark buffer 0 0)
         (loom::kill-region)
         (expect (buffer-text buffer) :to-equal "def")
-        (expect (first (editor-state-kill-ring *editor-state*)) :to-equal "cab")))))
+        (expect (first (editor-state-kill-ring *editor-state*)) :to-equal "cab"))))
+  (it
+    "deactivates the mark after killing a region"
+    (%expect-region-kill ("hello world" 5 0 " world" "hello")
+      (multiple-value-bind (line column) (buffer-mark buffer)
+        (expect line :to-equal 0)
+        (expect column :to-equal 0))
+      (expect (buffer-active-region-span buffer) :to-be nil)
+      (buffer-insert-string buffer "漢")
+      (expect (buffer-active-region-span buffer) :to-be nil))))

@@ -29,6 +29,8 @@
    #:buffer-set-point
    #:buffer-mark
    #:buffer-set-mark
+   #:buffer-deactivate-mark
+   #:buffer-mark-active-p
    #:buffer-insert-string
    #:buffer-delete-char
    #:buffer-delete-region

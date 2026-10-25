@@ -32,6 +32,7 @@
            (buffer-delete-region buffer start-line start-column end-line end-column)
            :prepend prepend
            :coalesce (editor-state-last-command-kill-p *editor-state*))
+          (loom/core/buffer:buffer-deactivate-mark buffer)
           (setf (editor-state-last-command-kill-p *editor-state*) t)
           t)
         (%message-no-active-region))))

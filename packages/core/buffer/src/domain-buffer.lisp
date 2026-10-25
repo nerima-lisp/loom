@@ -21,6 +21,7 @@
                 :point-column 0
                 :mark-line nil
                 :mark-column nil
+                :mark-active-p nil
                 :major-mode :fundamental
                 :truncate-lines :default
                 :read-only-p nil

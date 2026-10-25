@@ -14,8 +14,8 @@ mark slots below state the same union once instead of repeating it."
   '(or null integer))
 
 (defstruct (buffer (:constructor %make-buffer) (:conc-name %buffer-))
-  "Internal representation of a loom buffer: a piece table plus point, mark,
-modified-p, read-only state, and undo/redo state."
+  "Internal representation of a loom buffer: a piece table plus point,
+mark position and activity, modified-p, read-only state, and undo/redo state."
   (name "*scratch*" :type string)
   (path nil)
   (original "" :type string)
@@ -27,6 +27,7 @@ modified-p, read-only state, and undo/redo state."
   (point-column 0 :type integer)
   (mark-line nil :type %maybe-line/column)
   (mark-column nil :type %maybe-line/column)
+  (mark-active-p nil :type boolean)
   (major-mode :fundamental)
   (truncate-lines :default)
   (read-only-p nil :type boolean)

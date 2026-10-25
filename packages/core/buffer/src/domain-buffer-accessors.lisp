@@ -62,16 +62,24 @@ to BUFFER's visible region. Returns BUFFER."
   "Return the position of BUFFER's mark as (VALUES LINE COLUMN), both
 zero-based, or (VALUES NIL NIL) if no mark is currently set."
   (values (%buffer-mark-line buffer) (%buffer-mark-column buffer)))
+(defun buffer-mark-active-p (buffer)
+  "Return true when BUFFER mark is active."
+  (%buffer-mark-active-p buffer))
 
 (defun buffer-set-mark (buffer line column)
-  "Set BUFFER's mark to the zero-based (LINE, COLUMN) position. Returns
+  "Set BUFFER mark to the zero-based (LINE, COLUMN) position and activate it. Returns
 BUFFER."
   (multiple-value-bind (clamped-line clamped-column) (%clamp-position buffer line column)
     (let ((offset
             (%clamp-offset-to-narrowing
              buffer
              (%position-to-offset buffer clamped-line clamped-column))))
-      (%set-buffer-mark-from-offset buffer offset)))
+      (%set-buffer-mark-from-offset buffer offset)
+      (setf (%buffer-mark-active-p buffer) t)))
+  buffer)
+(defun buffer-deactivate-mark (buffer)
+  "Deactivate BUFFER mark while preserving its position. Returns BUFFER."
+  (setf (%buffer-mark-active-p buffer) nil)
   buffer)
 
 (defun buffer-region-string (buffer start-line start-column end-line end-column)
