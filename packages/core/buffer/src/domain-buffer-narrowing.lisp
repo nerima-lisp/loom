@@ -33,21 +33,27 @@
 
 (defun buffer-visible-point-line (buffer)
   "Return point's zero-based line within BUFFER's visible region."
-  (multiple-value-bind (line column)
-      (%text-offset-to-position-values
-       (buffer-visible-text buffer)
-       (- (buffer-point-offset buffer) (%buffer-narrow-start-offset buffer)))
-    (declare (ignore column))
-    line))
+  (if (buffer-narrowed-p buffer)
+      (multiple-value-bind (line column)
+          (%text-offset-to-position-values
+           (buffer-visible-text buffer)
+           (- (buffer-point-offset buffer)
+              (%buffer-narrow-start-offset buffer)))
+        (declare (ignore column))
+        line)
+      (%buffer-point-line buffer)))
 
 (defun buffer-visible-point-column (buffer)
   "Return point's zero-based column within BUFFER's visible region."
-  (multiple-value-bind (line column)
-      (%text-offset-to-position-values
-       (buffer-visible-text buffer)
-       (- (buffer-point-offset buffer) (%buffer-narrow-start-offset buffer)))
-    (declare (ignore line))
-    column))
+  (if (buffer-narrowed-p buffer)
+      (multiple-value-bind (line column)
+          (%text-offset-to-position-values
+           (buffer-visible-text buffer)
+           (- (buffer-point-offset buffer)
+              (%buffer-narrow-start-offset buffer)))
+        (declare (ignore line))
+        column)
+      (%buffer-point-column buffer)))
 
 (defun buffer-narrow-to-region
     (buffer start-line start-column end-line end-column)

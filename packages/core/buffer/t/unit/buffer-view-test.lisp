@@ -132,6 +132,23 @@
       (buffer-narrow-to-region buffer 0 0 0 0)
       (expect (buffer-visible-line-count buffer) :to-equal 1)
       (expect (buffer-visible-line buffer 0) :to-equal "")))
+  (it "uses stored point coordinates without materializing visible text"
+    (let* ((buffer (make-buffer :initial-content (format nil "one~%two")))
+           (visible-text-symbol
+             (find-symbol "BUFFER-VISIBLE-TEXT" "LOOM/CORE/BUFFER"))
+           (original-visible-text (symbol-function visible-text-symbol))
+           (visible-text-calls 0))
+      (buffer-set-point buffer 1 2)
+      (unwind-protect
+           (progn
+             (setf (symbol-function visible-text-symbol)
+                   (lambda (target)
+                     (incf visible-text-calls)
+                     (funcall original-visible-text target)))
+             (expect (buffer-visible-point-line buffer) :to-equal 1)
+             (expect (buffer-visible-point-column buffer) :to-equal 2)
+             (expect visible-text-calls :to-equal 0))
+        (setf (symbol-function visible-text-symbol) original-visible-text))))
 
   (it "rejects a visible line number outside the narrowed view"
     (let ((buffer (make-buffer :initial-content "one")))
