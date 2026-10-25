@@ -300,6 +300,10 @@
                                  sibling-directories))))
                (host-kit:with-temporary-directory (home)
                                                   (let* ((event-path (namestring (merge-pathnames "signal-events.txt" home)))
+       (resume-path
+        (let ((path (merge-pathnames "resume.txt" home)))
+          (host-kit:write-file-string "LOOM-RESUME-MARKER" path)
+          (namestring path)))
        (loom-form
         (list
          (format nil
@@ -324,10 +328,11 @@
                  :test (function eq))
          :terminate
          :continue)))
-  (setf sb-ext:*posix-argv* (list \"loom\"))
+  (setf sb-ext:*posix-argv* (list \"loom\" ~S))
   (funcall
    (symbol-function (find-symbol \"MAIN\" \"LOOM\"))))"
-                 event-path)))
+                 event-path
+                 resume-path)))
        (result
         (let* ((output "")
                (alternate-screen-enter
@@ -402,6 +407,12 @@
                        (search alternate-screen-enter output))
                      90)
                   (error "Loom did not enter the alternate screen: ~S" output))
+                (unless
+                    (wait-until
+                     (lambda ()
+                       (search "LOOM-RESUME-MARKER" output))
+                     15)
+                  (error "Loom did not render the resume marker: ~S" output))
                 (if (string= signal-name "SIGTSTP")
                     (let ((suspend-start (length output)))
                       (send-signal sb-unix:sigtstp)
@@ -432,6 +443,15 @@
                                        resume-start))
                              15)
                           (error "Loom did not restore the terminal after SIGCONT")))
+                      (unless
+                          (wait-until
+                           (lambda ()
+                             (search "LOOM-RESUME-MARKER"
+                                     output
+                                     :start2
+                                     resume-start))
+                           15)
+                        (error "Loom did not redraw the buffer after SIGCONT"))
                       (let ((terminate-start (length output)))
                         (send-signal sb-unix:sigterm)
                         (unless

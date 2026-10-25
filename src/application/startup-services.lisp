@@ -409,6 +409,7 @@
     (unless terminate-p
       (setf (%loom-terminal-session-suspended-p terminal-session) nil)
       (%enable-loom-terminal-session terminal-session)
+      (loom-renderer-invalidate (editor-state-renderer *editor-state*))
       (loom/core/editor-session:run-session-hooks :resume
                                                   session
                                                   terminal-session))
