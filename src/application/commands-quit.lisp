@@ -6,17 +6,6 @@
 src/application/event-loop.lisp to exit cleanly."))
 
 (progn
-  (defun %quit-buffer-list ()
-    "Return displayed and registered buffers with duplicates removed."
-    (let ((displayed
-            (mapcar (function loom/core/window-tree:window-buffer)
-                    (loom/core/window-tree:window-tree-windows
-                     (editor-state-window-tree *editor-state*))))
-          (registered (copy-list (loom/feature/buffers:registered-buffers *editor-session*))))
-      (remove-duplicates
-       (append displayed registered)
-       :test (function eq))))
-
   (cl-prolog-kit:define-rulebase *quit-answer-rulebase*
     ((quit-action ?answer ?has-path :save-and-continue)
      (:when (and ?has-path (string-equal ?answer "s"))))
@@ -75,4 +64,4 @@ original list when the answer is invalid."
 
   (defun save-buffers-kill-terminal ()
     "Exit after resolving all modified buffers in the session."
-    (%continue-quit (%quit-buffer-list))))
+    (%continue-quit (loom/feature/buffers:quit-buffer-list))))

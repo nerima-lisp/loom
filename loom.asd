@@ -18,7 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init" "loom-feature-syntax-highlighting" "loom-feature-lang-lisp" "loom-feature-lang-nix" "loom-feature-lang-web" "loom-feature-lang-markup" "loom-feature-minibuffer-ui")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init" "loom-feature-syntax-highlighting" "loom-feature-lang-lisp" "loom-feature-lang-nix" "loom-feature-lang-web" "loom-feature-lang-markup" "loom-feature-minibuffer-ui" "loom-feature-buffers")
   :pathname "."
   :serial t
   :components
@@ -290,11 +290,8 @@ root source tree responsible for every feature."
   :serial t
   :components
   ((:file "packages/feature/bookmark/src/domain-editor-bookmark")
-   (:file "packages/feature/buffers/src/domain-buffer-registry")
    (:file "src/application/editor-state-recent-files")
-   (:file "src/application/commands-internal")
-   (:file "packages/feature/buffers/src/application-window-buffer-support")
-   (:file "packages/feature/buffers/src/application-commands-buffer")))
+   (:file "src/application/commands-internal")))
    (:module "feature-auto-save-infrastructure"
     :pathname "."
     :serial t
@@ -435,7 +432,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/files/src/command-specs-file-save")
      (:file "packages/feature/file-tree/src/command-specs-file-tree")
      (:file "packages/feature/evaluation/src/command-specs-evaluation")
-     (:file "packages/feature/buffers/src/command-specs-buffers")
      (:file "packages/feature/bookmark/src/command-specs-bookmark")
      (:file "packages/feature/auto-save/src/command-specs-auto-save")
      ))
@@ -520,7 +516,6 @@ root source tree responsible for every feature."
    (:file "t/unit/filesystem-delete-test")
    (:file "t/unit/filesystem-listing-test")
    (:file "t/unit/editor-state-recent-files-test")
-   (:file "t/unit/buffer-registry-test")
    (:file "t/unit/file-tree-test")
    (:file "t/unit/file-tree-selection-test")
    (:file "t/unit/evaluation-test")
@@ -569,8 +564,6 @@ root source tree responsible for every feature."
    (:file "t/integration/commands-movement-line-test")
    (:file "t/integration/commands-movement-word-test")
    (:file "t/integration/commands-movement-scroll-edit-test")
-   (:file "t/integration/commands-window-test")
-   (:file "t/integration/commands-buffer-lifecycle-test")
    (:file "t/integration/commands-editing-buffer-mutation-test")
    (:file "t/integration/commands-editing-buffer-mark-test")
    (:file "t/integration/commands-editing-buffer-narrowing-test")
@@ -626,7 +619,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test" "loom-feature-syntax-highlighting/test" "loom-feature-lang-lisp/test" "loom-feature-lang-nix/test" "loom-feature-lang-web/test" "loom-feature-lang-markup/test" "loom-feature-minibuffer-ui/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test" "loom-feature-syntax-highlighting/test" "loom-feature-lang-lisp/test" "loom-feature-lang-nix/test" "loom-feature-lang-web/test" "loom-feature-lang-markup/test" "loom-feature-minibuffer-ui/test" "loom-feature-buffers/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"

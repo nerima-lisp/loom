@@ -26,4 +26,5 @@
                      #:unregister-buffer
                      #:registered-buffers
                      #:switch-to-buffer
-                     #:kill-buffer))
+                     #:kill-buffer
+                     #:quit-buffer-list))
