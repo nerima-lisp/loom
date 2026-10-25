@@ -58,7 +58,7 @@ skips line comments and block comments. A block comment ends at the first
 
 Adjacent kill commands coalesce into one kill-ring entry, the same way
 kill-word and kill-line do, so C-M-k C-M-k yanks back both expressions."
-  (%clear-last-yank)
+  (loom/core/editor-session:editor-state-clear-last-yank *editor-state*)
   (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
     (let ((end (%forward-sexp-offset text offset)))
       (when (and end (> end offset))
