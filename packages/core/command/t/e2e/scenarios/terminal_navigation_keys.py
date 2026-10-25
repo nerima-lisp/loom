@@ -121,11 +121,13 @@ def terminal_navigation_delete(binary):
 
 @scenario(
     "movement/terminal-navigation-page",
-    commands=["next-line", "scroll-down-command", "scroll-up-command"],
+    commands=["next-line", "scroll-down-command", "scroll-up-command", "save-buffer"],
 )
 def terminal_navigation_page(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        path = _navigation_file(directory, [f"line{index}" for index in range(20)])
+        lines = [f"line{index}" for index in range(20)]
+        initial = ("\n".join(lines) + "\n").encode("ascii")
+        path = _navigation_file(directory, lines)
         with Session(binary, [path], rows=8) as session:
             session.wait_ready()
             session.wait_for_region_cursor("body", 0, index=0)
@@ -140,6 +142,9 @@ def terminal_navigation_page(binary):
             session.send(b"\x1b[5~")
             session.wait_for_region_text("body", "line9")
             session.assert_screen_text("line9", match="starts_with", region="body")
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, initial)
+            session.assert_file_bytes(path, initial)
 
             output, code = session.quit()
             if code != 0:
