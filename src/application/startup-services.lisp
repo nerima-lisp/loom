@@ -1,34 +1,11 @@
 (in-package #:loom)
 
 (defun %enable-concurrent-file-tree (state)
-  "Replace STATE's synchronous file-tree lister with a cached runtime."
-  (let* ((tree (editor-state-file-tree state))
-         (lister (loom/feature/file-tree:file-tree-child-lister tree))
-         (root (first (loom/feature/file-tree:file-tree-prefetch-paths tree)))
-         (initial-entries (funcall lister root))
-         (runtime
-          (loom/feature/file-tree:make-loom-concurrent-runtime :directory-lister
-                                                               lister)))
-    (loom/feature/file-tree:loom-concurrent-runtime-prime-directory runtime
-                                                                    root
-                                                                    initial-entries)
-    (loom/feature/file-tree:file-tree-install-child-lister tree
-                                                           (lambda (path)
-                                                             (multiple-value-bind (entries
-                                                                                   present-p)
-                                                                 (loom/feature/file-tree:loom-concurrent-runtime-directory-entries
-                                                                  runtime
-                                                                  path)
-                                                               (when present-p
-                                                                 entries))))
-    (setf (editor-state-concurrent-runtime state) runtime)
-    runtime))
+  (loom/feature/file-tree:enable-file-tree-runtime state))
 
 (defun %shutdown-editor-services (state)
   "Stop asynchronous services attached to STATE."
-  (let ((runtime (editor-state-concurrent-runtime state)))
-    (when runtime
-      (loom/feature/file-tree:loom-concurrent-runtime-shutdown runtime)))
+  (loom/feature/file-tree:shutdown-file-tree-runtime state)
   (let ((session (editor-state-lsp-session state)))
     (when session
       (loom/feature/lsp:lsp-session-stop session))))

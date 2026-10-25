@@ -84,9 +84,7 @@ the scratch buffer and is itself the root."
                        nil)))
 
 (eval-when (:load-toplevel :execute)
-  (loom/feature/file-tree:register-recent-file-recorder :loom
-                                                        (function
-                                                         remember-recent-file)))
+  loom/feature/files:register-recent-file-recorder)
 
 (eval-when (:load-toplevel :execute)
   (loom/feature/evaluation:register-evaluation-package-provider :loom

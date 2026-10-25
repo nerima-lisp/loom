@@ -3,13 +3,7 @@
 (defun %render-event-loop-frame (stream)
   "Run background refresh work, compose the current frame, and present it."
   (loom/feature/terminal:poll-terminal-sessions *editor-state*)
-  (let ((runtime (editor-state-concurrent-runtime *editor-state*)))
-    (when runtime
-      (loom/feature/file-tree:loom-concurrent-runtime-drain runtime)
-      (loom/feature/file-tree:loom-concurrent-runtime-prefetch runtime
-                                                               (loom/feature/file-tree:file-tree-prefetch-paths
-                                                                (editor-state-file-tree
-                                                                 *editor-state*)))))
+  (loom/feature/file-tree:refresh-file-tree-runtime *editor-state*)
   (let ((session (editor-state-lsp-session *editor-state*))
         (buffer
          (loom/core/window-tree:window-buffer

@@ -61,7 +61,7 @@
     (when path
       (case (file-tree-entry-kind tree path)
         (:directory (file-tree-toggle-expand tree path))
-        (:file (%visit-existing-file path))
+        (:file (loom/feature/files:visit-file path))
         (otherwise (error "selected file-tree entry disappeared: ~S" path))))))
 
 (%define-file-tree-prompted-mutation-command

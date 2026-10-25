@@ -551,7 +551,7 @@ system名は設計書のhyphen区切りを使う。
 | `loom-feature-lifecycle` | `loom-core-buffer`、`loom-core-editor-session`、`loom-core-minibuffer`、`loom-core-window-tree`、`loom-core-command`、`loom-feature-buffers`、`loom-feature-files` | `cl-prolog-kit` | buffer終了、保存確認、起動契約 |
 | `loom-feature-files` | `loom-core-buffer`、`loom-core-window-tree`、`loom-core-editor-session`、`loom-core-minibuffer`、`loom-core-command`、`loom-feature-buffers`、`loom-feature-mode` | `cl-host-kit`、`cl-boundary-kit` | file I/O、path、mode判定、command specs。現file-tree sourceから分離する |
 | `loom-feature-buffers` | `loom-core-buffer`、`loom-core-editor-session`、`loom-core-minibuffer`、`loom-core-window-tree`、`loom-core-command` | なし | registryとbuffer command。save genericはcoreで宣言する |
-| `loom-feature-file-tree` | `loom-core-buffer`、`loom-core-editor-session`、`loom-core-minibuffer`、`loom-core-window-tree`、`loom-core-command`、`loom-feature-mode`、`loom-feature-buffers`、`loom-feature-files` | `cl-host-kit`、`cl-boundary-kit`、`cl-concurrent-kit` | path操作、buffer open、runtime。file I/O本体はfilesへ移す |
+| `loom-feature-file-tree` | `loom-core-editor-session`、`loom-core-minibuffer`、`loom-core-command`、`loom-feature-files` | `cl-host-kit`、`cl-boundary-kit`、`cl-concurrent-kit` | path操作とbuffer open。runtimeの起動・停止と描画時のdrain/prefetchはslice adapterが担う。file I/O本体はfilesが持つ |
 | `loom-feature-minibuffer-ui` | `loom-core-minibuffer`、`loom-feature-completion` | なし | 新設slice。W3-5 APIから逆算した推定 |
 | `loom-feature-completion` | `loom-core-buffer`、`loom-core-editor-session`、`loom-core-window-tree`、`loom-core-command` | なし | popupと候補処理のpackage import |
 | `loom-feature-help` | `loom-core-command`、`loom-core-editor-session`、`loom-core-minibuffer` | なし | help commandと状態参照 |
