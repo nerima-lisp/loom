@@ -68,10 +68,10 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "undo" "undo" #'loom::undo-command
-                       :keys '(((:control #\x) (:control #\u)))
+                       :keys '(((:control #\/)) ((:control #\_)) ((:control #\x) #\u))
                        :keymap :global
                        :group "editing"
-                       :help "C-x C-u Undo"
+                       :help "C-/ Undo"
                        :help-order 34
                        :mutates t
                        :prompts 'nil
@@ -79,10 +79,10 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "redo" "redo" #'loom::redo-command
-                       :keys '(((:control #\x) (:control #\y)))
+                       :keys '(((:control :alt #\_)))
                        :keymap :global
                        :group "editing"
-                       :help "C-x C-y Redo"
+                       :help "C-M-_ Redo"
                        :help-order 35
                        :mutates t
                        :prompts 'nil
