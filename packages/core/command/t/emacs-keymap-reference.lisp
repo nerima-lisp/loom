@@ -1,13 +1,13 @@
 (in-package #:loom/test)
 
 ;; Reference claims follow GNU Emacs manual sections: Undo,
-;; Moving Point, Scrolling, Deleting Text, Recentering, Case,
+;; Moving Point, Scrolling, Erasing, Recentering, Case,
 ;; Transpose, Fill Commands, Multi-line Indent, List Buffers,
 ;; Save Commands, Bookmarks, Lisp Eval, and Exiting.
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Undo.html
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Moving-Point.html
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Scrolling.html
-;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Deleting-Text.html
+;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Erasing.html
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Recentering.html
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Case.html
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Transpose.html
