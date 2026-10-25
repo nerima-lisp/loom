@@ -22,7 +22,7 @@ def undo_one_group(binary):
             session.wait_for_region_exact_text("body", "xya")
             session.wait_for_region_cursor("body", 2)
 
-            session.send(keys.ctrl("x") + keys.ctrl("u"))
+            session.send(keys.ctrl("x") + keys.text("u"))
             session.wait_for_region_exact_text("body", "a")
             session.wait_for_region_cursor("body", 0)
 

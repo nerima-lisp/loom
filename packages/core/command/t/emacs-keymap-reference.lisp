@@ -23,16 +23,16 @@
 ;; the latter remains a Loom requirement, not a cited Emacs baseline.
 (defparameter *emacs-keymap-reference*
   '((:id "undo-control-slash"
-     :keys ((:control #\/)) :emacs "undo" :target "undo"
+     :keys (((:control) . #\/)) :emacs "undo" :target "undo"
      :target-map :global :effective "undo" :owner :w3-1 :status :implemented)
     (:id "undo-control-underscore"
-     :keys ((:control #\_)) :emacs "undo" :target "undo"
+     :keys (((:control) . #\_)) :emacs "undo" :target "undo"
      :target-map :global :effective "undo" :owner :w3-1 :status :implemented)
     (:id "undo-control-x-u"
-     :keys ((:control #\x) #\u) :emacs "undo" :target "undo"
+     :keys (((:control) . #\x) #\u) :emacs "undo" :target "undo"
      :target-map :global :effective "undo" :owner :w3-1 :status :implemented)
     (:id "redo-control-meta-underscore"
-     :keys ((:control :alt #\_)) :emacs :not-established :target "redo"
+     :keys (((:alt :control) . #\_)) :emacs :not-established :target "redo"
      :target-map :global :effective "redo" :owner :w3-1 :status :implemented)
     (:id "backward-char-left"
      :keys (:left) :emacs "backward-char" :target "backward-char"
@@ -62,53 +62,57 @@
      :keys (:delete) :emacs "delete-char" :target "delete-char"
      :target-map :global :effective "delete-char" :owner :w3-1 :status :implemented)
     (:id "undo-legacy-control-x-control-u"
-     :keys ((:control #\x) (:control #\u))
+     :keys (((:control) . #\x) ((:control) . #\u))
      :emacs "upcase-region (normally disabled)" :target :unbound
      :target-map :global :effective nil :owner :w3-1 :status :removed)
     (:id "redo-legacy-control-x-control-y"
-     :keys ((:control #\x) (:control #\y)) :emacs :not-established
+     :keys (((:control) . #\x) ((:control) . #\y)) :emacs :not-established
      :target :unbound :target-map :global :effective nil
      :owner :w3-1 :status :removed)
     (:id "recenter-control-l"
-     :keys ((:control #\l)) :emacs "recenter-top-bottom"
+     :keys (((:control) . #\l)) :emacs "recenter-top-bottom"
      :target "recenter-top-bottom" :target-map :global
      :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "transpose-control-t"
-     :keys ((:control #\t)) :emacs "transpose-chars"
+     :keys (((:control) . #\t)) :emacs "transpose-chars"
      :target "transpose-chars" :target-map :global
      :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "upcase-word-meta-u"
-     :keys ((:alt #\u)) :emacs "upcase-word" :target "upcase-word"
+     :keys (((:alt) . #\u)) :emacs "upcase-word" :target "upcase-word"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "downcase-word-meta-l"
-     :keys ((:alt #\l)) :emacs "downcase-word" :target "downcase-word"
+     :keys (((:alt) . #\l)) :emacs "downcase-word" :target "downcase-word"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "capitalize-word-meta-c"
-     :keys ((:alt #\c)) :emacs "capitalize-word" :target "capitalize-word"
+     :keys (((:alt) . #\c)) :emacs "capitalize-word" :target "capitalize-word"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "fill-paragraph-meta-q"
-     :keys ((:alt #\q)) :emacs "fill-paragraph" :target "fill-paragraph"
+     :keys (((:alt) . #\q)) :emacs "fill-paragraph" :target "fill-paragraph"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "indent-region-control-meta-backslash"
-     :keys ((:control :alt #\\)) :emacs "indent-region" :target "indent-region"
+     :keys (((:alt :control) . #\\)) :emacs "indent-region" :target "indent-region"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "delete-indentation-meta-caret"
-     :keys ((:alt #\^)) :emacs "delete-indentation" :target "delete-indentation"
+     :keys (((:alt) . #\^)) :emacs "delete-indentation" :target "delete-indentation"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "goto-line-meta-g-meta-g"
-     :keys ((:alt #\g) (:alt #\g)) :emacs "goto-line (M-g g)"
+     :keys (((:alt) . #\g) ((:alt) . #\g)) :emacs :not-established
      :target "goto-line" :target-map :global :effective "goto-line"
      :owner :w3-1 :status :implemented)
+    (:id "goto-line-meta-g-plain-g"
+     :keys (((:alt) . #\g) #\g) :emacs "goto-line" :target "goto-line"
+     :target-map :global :effective "goto-line" :owner :w3-1
+     :status :implemented)
     (:id "list-buffers-control-x-control-b"
-     :keys ((:control #\x) (:control #\b)) :emacs "list-buffers"
+     :keys (((:control) . #\x) ((:control) . #\b)) :emacs "list-buffers"
      :target "list-buffers" :target-map :global
      :effective :not-asserted :owner :w3-3 :status :pending)
     (:id "save-some-buffers-control-x-s"
-     :keys ((:control #\x) #\s) :emacs "save-some-buffers"
+     :keys (((:control) . #\x) #\s) :emacs "save-some-buffers"
      :target "save-some-buffers" :target-map :global
      :effective :not-asserted :owner :w3-3 :status :pending)
     (:id "eval-last-sexp-control-x-control-e"
-     :keys ((:control #\x) (:control #\e)) :emacs "eval-last-sexp"
+     :keys (((:control) . #\x) ((:control) . #\e)) :emacs "eval-last-sexp"
      :target "eval-last-sexp" :target-map :global
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "eval-buffer-m-x"
@@ -116,15 +120,15 @@
      :target-map :extended-command :effective :not-asserted
      :owner :w3-7b :status :pending)
     (:id "file-tree-legacy-control-x-control-t"
-     :keys ((:control #\x) (:control #\t)) :emacs "transpose-lines"
+     :keys (((:control) . #\x) ((:control) . #\t)) :emacs "transpose-lines"
      :target :unbound :target-map :global :effective :not-asserted
      :owner :w3-10 :status :pending)
     (:id "file-tree-control-x-d"
-     :keys ((:control #\x) #\d) :emacs "dired"
+     :keys (((:control) . #\x) #\d) :emacs "dired"
      :target "toggle-file-tree" :target-map :global :effective :not-asserted
      :owner :w3-10 :status :pending)
     (:id "list-bookmarks-control-x-r-l"
-     :keys ((:control #\x) #\r #\l) :emacs "list-bookmarks"
+     :keys (((:control) . #\x) #\r #\l) :emacs "list-bookmarks"
      :target "list-bookmarks" :target-map :global :effective :not-asserted
      :owner :w3-10 :status :pending)
     (:id "load-session-m-x"
@@ -132,54 +136,54 @@
      :target-map :extended-command :effective :not-asserted
      :owner :w3-10 :status :pending)
     (:id "file-tree-next-local"
-     :keys ((:control #\c) #\n) :emacs :not-established
+     :keys (((:control) . #\c) #\n) :emacs :not-established
      :target "file-tree-select-next" :target-map :file-tree-local
      :effective :not-asserted :owner :w3-10 :status :pending)
     (:id "file-tree-previous-local"
-     :keys ((:control #\c) #\p) :emacs :not-established
+     :keys (((:control) . #\c) #\p) :emacs :not-established
      :target "file-tree-select-previous" :target-map :file-tree-local
      :effective :not-asserted :owner :w3-10 :status :pending)
     (:id "file-tree-open-local"
-     :keys ((:control #\c) #\o) :emacs :not-established
+     :keys (((:control) . #\c) #\o) :emacs :not-established
      :target "file-tree-open-selected" :target-map :file-tree-local
      :effective :not-asserted :owner :w3-10 :status :pending)
     (:id "file-tree-create-file-local"
-     :keys ((:control #\c) #\c) :emacs :not-established
+     :keys (((:control) . #\c) #\c) :emacs :not-established
      :target "file-tree-create-file" :target-map :file-tree-local
      :effective :not-asserted :owner :w3-10 :status :pending)
     (:id "file-tree-create-directory-local"
-     :keys ((:control #\c) #\d) :emacs :not-established
+     :keys (((:control) . #\c) #\d) :emacs :not-established
      :target "file-tree-create-directory" :target-map :file-tree-local
      :effective :not-asserted :owner :w3-10 :status :pending)
     (:id "paredit-forward-slurp-local"
-     :keys ((:control :right)) :emacs "forward-word"
+     :keys (((:control) . :right)) :emacs "forward-word"
      :target "forward-slurp-sexp" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "paredit-forward-barf-local"
-     :keys ((:control :left)) :emacs "backward-word"
+     :keys (((:control) . :left)) :emacs "backward-word"
      :target "forward-barf-sexp" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "paredit-backward-slurp-local"
-     :keys ((:control :alt :left)) :emacs "backward-sexp"
+     :keys (((:alt :control) . :left)) :emacs "backward-sexp"
      :target "backward-slurp-sexp" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "paredit-backward-barf-local"
-     :keys ((:control :alt :right)) :emacs "forward-sexp"
+     :keys (((:alt :control) . :right)) :emacs "forward-sexp"
      :target "backward-barf-sexp" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "paredit-wrap-meta-open"
-     :keys ((:alt #\()) :emacs "insert-parentheses"
+     :keys (((:alt) . #\()) :emacs "insert-parentheses"
      :target "wrap-round" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "paredit-splice-meta-s"
-     :keys ((:alt #\s)) :emacs :prefix :target "splice-sexp"
+     :keys (((:alt) . #\s)) :emacs :prefix :target "splice-sexp"
      :target-map :lisp-mode-local :effective :not-asserted
      :owner :w3-7b :status :pending)
     (:id "paredit-raise-meta-r"
-     :keys ((:alt #\r)) :emacs "move-to-window-line"
+     :keys (((:alt) . #\r)) :emacs "move-to-window-line"
      :target "raise-sexp" :target-map :lisp-mode-local
      :effective :not-asserted :owner :w3-7b :status :pending)
     (:id "suspend-frame-control-z"
-     :keys ((:control #\z)) :emacs "suspend-frame on text terminal"
+     :keys (((:control) . #\z)) :emacs "suspend-frame on text terminal"
      :target "suspend-frame" :target-map :global
      :effective :not-asserted :owner :w3-2 :status :pending)))

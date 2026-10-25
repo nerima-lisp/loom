@@ -112,7 +112,7 @@
                        :external 'nil
                        :modes '(:all))
   (register-command-spec :core/buffer "goto-line" "goto-line" #'loom::goto-line
-                       :keys '(((:alt #\g) (:alt #\g)))
+                       :keys '(((:alt #\g) (:alt #\g)) ((:alt #\g) #\g))
                        :keymap :global
                        :group "movement"
                        :help nil

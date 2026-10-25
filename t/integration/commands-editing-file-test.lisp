@@ -4,8 +4,8 @@
   "install-default-keybindings"
   (it-each
       (("C-x C-s" (((:control) . #\x) ((:control) . #\s)) loom/feature/file-tree:save-buffer)
-       ("C-x C-u" (((:control) . #\x) ((:control) . #\u)) loom::undo-command)
-       ("C-x C-y" (((:control) . #\x) ((:control) . #\y)) loom::redo-command)
+       ("C-x C-u" (((:control) . #\x) ((:control) . #\u)) nil)
+       ("C-x C-y" (((:control) . #\x) ((:control) . #\y)) nil)
        ("C-x C-q" (((:control) . #\x) ((:control) . #\q)) loom::toggle-read-only)
        ("C-x C-w" (((:control) . #\x) ((:control) . #\w)) loom/feature/file-tree:write-file)
        ("C-x k" (((:control) . #\x) (nil . #\k)) loom/feature/buffers:kill-buffer)
@@ -18,14 +18,14 @@
        ("Enter" ((nil . :enter)) loom::newline-command)
        ("C-x 2" (((:control) . #\x) (nil . #\2)) loom/feature/window:split-window-below)
        ("C-g" (((:control) . #\g)) loom::keyboard-quit))
-      "binds ~A to its default command" (label key-sequence command)
+      "maps ~A to its expected command" (label key-sequence command)
     (declare (ignore label))
     (let ((keymap (make-keymap)))
       (loom/application:install-default-keybindings keymap)
       (expect
  (keymap-lookup keymap key-sequence)
  :to-equal
- (loom/core/command:command-id-for-function command))))
+ (if command (loom/core/command:command-id-for-function command) nil))))
 
   (it
     "opens an empty buffer for an uncreated path and saves it"
