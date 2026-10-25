@@ -123,3 +123,27 @@
                        :external 'nil
                        :modes '(:all))
   )
+
+  (progn
+  (register-command-spec :core/buffer "recenter-top-bottom" "recenter-top-bottom" #'loom::recenter-top-bottom
+                       :keys '((:control #\l))
+                       :keymap :global
+                       :group "movement"
+                       :help nil
+                       :help-order nil
+                       :mutates nil
+                       :prompts 'nil
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all))
+  (register-command-spec :core/buffer "transpose-chars" "transpose-chars" #'loom::transpose-chars
+                       :keys '((:control #\t))
+                       :keymap :global
+                       :group "editing"
+                       :help nil
+                       :help-order nil
+                       :mutates t
+                       :prompts 'nil
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all)))

@@ -72,26 +72,26 @@
     (:id "recenter-control-l"
      :keys (((:control) . #\l)) :emacs "recenter-top-bottom"
      :target "recenter-top-bottom" :target-map :global
-     :effective :not-asserted :owner :w3-1 :status :pending)
+     :effective "recenter-top-bottom" :owner :w3-1 :status :implemented)
     (:id "transpose-control-t"
      :keys (((:control) . #\t)) :emacs "transpose-chars"
      :target "transpose-chars" :target-map :global
-     :effective :not-asserted :owner :w3-1 :status :pending)
+     :effective "transpose-chars" :owner :w3-1 :status :implemented)
     (:id "upcase-word-meta-u"
      :keys (((:alt) . #\u)) :emacs "upcase-word" :target "upcase-word"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :target-map :global :effective "upcase-word" :owner :w3-1 :status :implemented)
     (:id "downcase-word-meta-l"
      :keys (((:alt) . #\l)) :emacs "downcase-word" :target "downcase-word"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :target-map :global :effective "downcase-word" :owner :w3-1 :status :implemented)
     (:id "capitalize-word-meta-c"
      :keys (((:alt) . #\c)) :emacs "capitalize-word" :target "capitalize-word"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :target-map :global :effective "capitalize-word" :owner :w3-1 :status :implemented)
     (:id "fill-paragraph-meta-q"
      :keys (((:alt) . #\q)) :emacs "fill-paragraph" :target "fill-paragraph"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
     (:id "indent-region-control-meta-backslash"
-     :keys (((:alt :control) . #\\)) :emacs "indent-region" :target "indent-region"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :keys (((:alt :control) . #\\)) :emacs "indent-region" :target "indent-for-tab-command"
+     :target-map :mode-provider :effective "indent-for-tab-command" :owner :w3-7a :status :implemented)
     (:id "delete-indentation-meta-caret"
      :keys (((:alt) . #\^)) :emacs "delete-indentation" :target "delete-indentation"
      :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)

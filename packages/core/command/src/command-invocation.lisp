@@ -1,5 +1,7 @@
 (in-package #:loom/core/command)
 
+(progn (defvar *last-command-editor-state* nil) (defvar *last-command-id* nil) (defvar *previous-command-id* nil))
+
 (defun %command-trace-key-descriptor (descriptor)
   (let* ((normalized (normalize-key-descriptor descriptor))
          (code (cdr normalized)))
@@ -33,18 +35,24 @@
   (let ((spec (%find-command-spec-by-id id)))
     (unless spec
       (error "No command is registered with ID ~S." id))
-    (let ((trace-error
-            (record-command-trace
-             id
-             route
-             (%command-trace-key-entry
-              *command-trace-key-sequence*
-              *command-trace-keymap-name*)))
-          (minibuffer (and *editor-state*
-                           (editor-state-minibuffer *editor-state*))))
-      (when (and trace-error minibuffer)
-        (minibuffer-message minibuffer trace-error)))
-    (apply (%command-spec-command spec) arguments)))
+    (let* ((state *editor-state*)
+           (*previous-command-id*
+             (and (eq state *last-command-editor-state*)
+                  *last-command-id*)))
+      (setf *last-command-editor-state* state
+            *last-command-id* id)
+      (let ((trace-error
+              (record-command-trace
+               id
+               route
+               (%command-trace-key-entry
+                *command-trace-key-sequence*
+                *command-trace-keymap-name*)))
+            (minibuffer (and *editor-state*
+                             (editor-state-minibuffer *editor-state*))))
+        (when (and trace-error minibuffer)
+          (minibuffer-message minibuffer trace-error)))
+      (apply (%command-spec-command spec) arguments))))
 (defun invoke-key-command (id route sequence keymap-name &rest arguments)
   (unless (member route (list :key :macro))
     (error "Key command route must be :KEY or :MACRO: ~S" route))
