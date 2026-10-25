@@ -15,7 +15,7 @@
     ((:file "package")
      (:file "domain-editor-bookmark")
      (:file "application-commands-bookmark-support")
-     (:file "commands-bookmark")
+     (:file "application-commands-bookmark")
      (:file "command-specs-bookmark")))))
 
 (asdf:defsystem "loom-feature-bookmark/test"

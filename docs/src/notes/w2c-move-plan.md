@@ -19,7 +19,7 @@
 | owner | 現在のpath | LOC | W2c移設先 / 扱い |
 |---|---|---:|---|
 | bookmark | `src/application/commands-bookmark-support.lisp` | 77 | `packages/feature/bookmark/src/application-commands-bookmark-support.lisp` |
-| bookmark | `src/application/commands-bookmark.lisp` | 57 | `packages/feature/bookmark/src/commands-bookmark.lisp` |
+| bookmark | `src/application/commands-bookmark.lisp` | 57 | `packages/feature/bookmark/src/application-commands-bookmark.lisp` |
 | root | `src/application/commands-internal.lisp` | 12 | `src/application/commands-internal.lisp` をrootに保持 |
 | split: core/minibuffer + core/command + help | `src/application/commands-misc.lisp` | 26 | `keyboard-quit` (`:3-6`) → `packages/core/minibuffer/src/application-commands-minibuffer.lisp`、`execute-extended-command` (`:8-20`) → `packages/core/command/src/application-commands-extended-command.lisp`、`help-command` (`:22-26`) → `packages/feature/help/src/application-commands-help-command.lisp` |
 | split: lifecycle + buffers | `src/application/commands-quit.lisp` | 78 | `loom-quit`、quit prompt/action、`save-buffers-kill-terminal` (`:3-8`, `:20-78`) → `packages/feature/lifecycle/src/application-commands-quit.lisp`、`%quit-buffer-list` (`:9-18`) → `packages/feature/buffers/src/application-commands-quit-buffer-list.lisp` |

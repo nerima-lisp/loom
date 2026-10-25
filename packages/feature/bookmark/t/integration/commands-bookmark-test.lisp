@@ -20,7 +20,7 @@
       (expect (first (fifth expansion)) :to-be 'loom::with-prompts)
         (expect (search ":COMPLETION-FUNCTION" (prin1-to-string expansion))
                 :to-be-truthy)
-        (expect (search "LOOM::%BOOKMARK-NAME" (prin1-to-string expansion))
+        (expect (search "LOOM/FEATURE/BOOKMARK::%BOOKMARK-NAME" (prin1-to-string expansion))
                 :to-be-truthy))))
 
 (describe
