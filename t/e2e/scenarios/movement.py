@@ -551,14 +551,20 @@ def horizontal_scroll_follow(binary):
         path = _write_file(directory, "horizontal.py", b"abcdefghijklmnop\n")
         with Session(binary, [path], columns=12, rows=8) as session:
             session.wait_ready()
+            body_row, _ = session.region_cursor("body")
+            body_right_edge = session.columns - session.layout.body_x - 1
             _mx(session, "move-end-of-line")
-            session.wait_for_region_cursor("body", 11)
-            session.assert_screen_text(
-                "fgh", match="starts_with", region="body"
+            session.wait_for_region_cursor(
+                "body", body_right_edge, index=body_row
             )
-            session.assert_screen_text(
-                "p", match="ends_with", region="body", strip_right=True
-            )
+            visible = session.region_text("body", body_row)
+            expected_visible = "abcdefghijklmnop"[-body_right_edge:]
+            if not visible.startswith(expected_visible):
+                raise AssertionError(
+                    f"horizontal scroll starts at {visible[:len(expected_visible)]!r}"
+                )
+            if not visible.rstrip().endswith("p"):
+                raise AssertionError(f"horizontal scroll ends at {visible[-3:]!r}")
             output, code = session.quit()
     _assert_exit_zero("movement/horizontal scroll follow", output, code)
 

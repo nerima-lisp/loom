@@ -335,6 +335,26 @@ class SessionObservationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             session.observe_screen_text("actual screen text")
 
+    def test_body_region_uses_gutter_origin(self):
+        session = Session("unused", columns=12, rows=4)
+        session.screen = Screen(columns=12, rows=4)
+        session.screen.feed(b"42 alpha")
+        session.layout.body_x = 3
+
+        with self.subTest("body text"):
+            self.assertEqual(session.region_text("body", 0).rstrip(), "alpha")
+
+        with self.subTest("body cursor"):
+            session.screen.feed(b"\x1b[1;4H")
+            self.assertEqual(session.screen.cursor, (0, 3))
+            self.assertEqual(session.region_cursor("body"), (0, 0))
+            self.assertIs(
+                session.observe_cursor(expected=(0, 0), region="body"), True
+            )
+            with patch.object(session, "wait_for_cursor") as wait_for_cursor:
+                session.wait_for_region_cursor("body", 0)
+            self.assertEqual(wait_for_cursor.call_args.args[:2], (0, 3))
+
     def test_waited_screen_text_is_a_precondition(self):
         session = Session("unused")
         session.screen = Screen(columns=20, rows=4)

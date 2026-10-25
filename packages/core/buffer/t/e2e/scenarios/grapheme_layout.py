@@ -9,24 +9,34 @@ from loom_e2e.session import Session
 
 
 def _move_and_assert(session, payload, expected, description):
-    before = session.screen.cursor
+    before = session.region_cursor("body")
     session.send(payload)
     session.wait_until(
-        lambda screen: screen.cursor != before,
+        lambda _screen: session.region_cursor("body") != before,
         what=f"cursor movement for {description}",
     )
-    if session.observe_cursor(expected=expected, sample=description) is not True:
+    session.wait_for_region_cursor("body", expected[1], index=expected[0])
+    if (
+        session.observe_cursor(
+            expected=expected, sample=description, region="body"
+        )
+        is not True
+    ):
         raise AssertionError(
-            f"cursor after {description} was {session.screen.cursor!r}, "
+            f"cursor after {description} was {session.region_cursor('body')!r}, "
             f"expected {expected!r}"
         )
 
 
+def _body_screen_cell(session, row, column):
+    return session.layout.row("body", row), session.layout.body_x + column
+
+
 def _next_line(session, line, column):
     session.send(keys.ctrl("a"))
-    session.wait_for_cursor(line, column)
+    session.wait_for_region_cursor("body", column, index=line)
     session.send(keys.ctrl("n"))
-    session.wait_for_cursor(line + 1, column)
+    session.wait_for_region_cursor("body", column, index=line + 1)
 
 
 def _write_buffer(directory, lines, filename="layout.lisp"):
@@ -55,7 +65,7 @@ def d7_grapheme_cell_layout(binary):
                     match="contains",
                 )
 
-            start_row, start_column = session.screen.cursor
+            start_row, start_column = session.region_cursor("body")
             session.wait_for_region_cursor("body", start_column)
             _move_and_assert(
                 session,
@@ -109,7 +119,7 @@ def d7_grapheme_vs16_width(binary):
                 match="contains",
             )
 
-            start_row, start_column = session.screen.cursor
+            start_row, start_column = session.region_cursor("body")
             _move_and_assert(
                 session,
                 keys.ctrl("f") * 2,
@@ -124,21 +134,32 @@ def d7_grapheme_vs16_width(binary):
 )
 def d7_grapheme_wrap_boundary(binary):
     with tempfile.TemporaryDirectory(prefix="loom-d7-") as directory:
-        path = _write_buffer(directory, ["a" * 39 + "e\u0301x"])
+        path = _write_buffer(directory, [""])
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
+            session.region_cursor("body")
+            prefix = session.columns - session.layout.body_x - 1
+            session.send(keys.text("a" * prefix + "e\u0301x"))
             session.wait_for_region_text("mode-line", "Truncate")
             session.extended_command("toggle-truncate-lines")
             session.wait_for_region_text("minibuffer", "Wrap long lines")
             session.wait_for_region_text("body", "aaaa", index=0)
-            start_row, start_column = session.screen.cursor
-            expected = (start_row + 1, start_column)
+            start_row, _ = session.region_cursor("body")
+            expected = (start_row + 1, 0)
             description = "grapheme ending at the wrap boundary"
-            session.send(keys.ctrl("f") * 41 + keys.ctrl("g"))
+            session.send(keys.ctrl("f") * (prefix + 2) + keys.ctrl("g"))
             session.wait_for_region_text("minibuffer", "Quit", timeout=1.0)
-            if session.observe_cursor(expected=expected, sample=description) is not True:
+            session.wait_for_region_cursor(
+                "body", expected[1], index=expected[0]
+            )
+            if (
+                session.observe_cursor(
+                    expected=expected, sample=description, region="body"
+                )
+                is not True
+            ):
                 raise AssertionError(
-                    f"cursor after {description} was {session.screen.cursor!r}, "
+                    f"cursor after {description} was {session.region_cursor('body')!r}, "
                     f"expected {expected!r}"
                 )
 
@@ -159,9 +180,12 @@ def d7_grapheme_overlay_replacement(binary):
                 family.encode("utf-8"),
                 match="contains",
             )
-            start_row, start_column = session.screen.cursor
+            start_row, start_column = session.region_cursor("body")
+            screen_row, screen_column = _body_screen_cell(
+                session, start_row, start_column
+            )
             initial_bg = session.screen.cell_attrs(
-                start_row, start_column
+                screen_row, screen_column
             )["bg"]
 
             session.send(keys.ctrl("a"))
@@ -169,20 +193,24 @@ def d7_grapheme_overlay_replacement(binary):
             session.send(keys.ctrl("f") * len(family))
             session.wait_until(
                 lambda screen: screen.cell_attrs(
-                    start_row, start_column
+                    screen_row, screen_column
                 )["bg"] != initial_bg,
                 what="selected grapheme background style changed",
             )
             session.observe_cell_attrs(
-                start_row, start_column, purpose="selected grapheme background"
+                screen_row,
+                screen_column,
+                purpose="selected grapheme background",
             )
             session.assert_cell_attrs(
-                start_row, start_column, {"bg": "00cd00"}
+                screen_row, screen_column, {"bg": "00cd00"}
             )
             session.assert_cell_attrs(
-                start_row, start_column + 1, {"bg": "00cd00"}
+                screen_row, screen_column + 1, {"bg": "00cd00"}
             )
-            session.wait_for_cursor(start_row, start_column + 2)
+            session.wait_for_region_cursor(
+                "body", start_column + 2, index=start_row
+            )
 
             session.send(keys.ctrl("a"))
             session.send(keys.ctrl("@"))
@@ -190,14 +218,16 @@ def d7_grapheme_overlay_replacement(binary):
             session.send(keys.ctrl("w"))
             session.send(keys.text("漢"))
             session.wait_for_region_text("body", "漢x", index=0)
-            if family[0] in session.screen.text(start_row):
+            if family[0] in session.region_text("body", start_row):
                 raise AssertionError("replaced grapheme remained on screen")
-            session.wait_for_cursor(start_row, start_column + 2)
-            session.assert_cell_attrs(
-                start_row, start_column, {"bg": initial_bg}
+            session.wait_for_region_cursor(
+                "body", start_column + 2, index=start_row
             )
             session.assert_cell_attrs(
-                start_row, start_column + 1, {"bg": initial_bg}
+                screen_row, screen_column, {"bg": initial_bg}
+            )
+            session.assert_cell_attrs(
+                screen_row, screen_column + 1, {"bg": initial_bg}
             )
 
 
@@ -207,10 +237,17 @@ def d7_grapheme_overlay_replacement(binary):
 )
 def d7_grapheme_resize_overlay_cleanup(binary):
     family = "👩‍👩‍👧‍👦"
+    family_width = 2
     with tempfile.TemporaryDirectory(prefix="loom-d7-") as directory:
-        path = _write_buffer(directory, ["a" * 19 + family + "x"])
+        path = _write_buffer(directory, [""])
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
+            session.region_cursor("body")
+            prefix = 20 - session.layout.body_x - 1
+            session.send(keys.text("a" * prefix + family + "x"))
+            session.wait_for_region_text("body", family[0] + "x", index=0)
+            session.send(keys.ctrl("a"))
+            session.wait_for_region_cursor("body", 0)
             session.wait_for_region_text("mode-line", "Truncate")
             session.extended_command("toggle-truncate-lines")
             session.wait_for_region_text("minibuffer", "Wrap long lines")
@@ -220,11 +257,11 @@ def d7_grapheme_resize_overlay_cleanup(binary):
                 family.encode("utf-8"),
                 match="contains",
             )
-            start_row, start_column = session.screen.cursor
+            start_row, start_column = session.region_cursor("body")
             _move_and_assert(
                 session,
-                keys.ctrl("f") * (19 + len(family) + 1),
-                (start_row, start_column + 22),
+                keys.ctrl("f") * (prefix + len(family) + 1),
+                (start_row, start_column + prefix + family_width + 1),
                 "cursor after an edge grapheme before resize",
             )
 
@@ -232,14 +269,15 @@ def d7_grapheme_resize_overlay_cleanup(binary):
             session.resize(columns=20, rows=12)
             session.wait_for_region_text("body", "aaaa", index=0)
             session.wait_for_region_text("body", family[0], index=1)
+            clipped_row, clipped_column = _body_screen_cell(
+                session, start_row, start_column + prefix
+            )
             session.observe_cell_attrs(
-                start_row, start_column + 19,
+                clipped_row, clipped_column,
                 purpose="old glyph cell after shrinking across its right half",
             )
             if (
-                session.screen.cell_attrs(
-                    start_row, start_column + 19
-                )["data"]
+                session.screen.cell_attrs(clipped_row, clipped_column)["data"]
                 == family[0]
             ):
                 raise AssertionError("resized screen retained a clipped glyph head")
@@ -247,14 +285,18 @@ def d7_grapheme_resize_overlay_cleanup(binary):
             session.send(keys.ctrl("k"))
             session.send(keys.text("z"))
             session.wait_for_region_text("body", "z", index=0)
-            if session.screen.find(family[0]) is not None:
+            if family[0] in session.region_contents("body"):
                 raise AssertionError("replaced buffer retained a stale grapheme")
 
             session.resize(columns=40, rows=12)
             session.send(keys.ctrl("a"))
-            session.wait_for_cursor(start_row, start_column)
+            session.wait_for_region_cursor(
+                "body", start_column, index=start_row
+            )
             session.send(keys.ctrl("f"))
-            session.wait_for_cursor(start_row, start_column + 1)
+            session.wait_for_region_cursor(
+                "body", start_column + 1, index=start_row
+            )
             session.wait_for_region_text("body", "z", index=0)
-            if session.screen.find(family[0]) is not None:
+            if family[0] in session.region_contents("body"):
                 raise AssertionError("resized screen retained a stale grapheme")

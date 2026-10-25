@@ -1,6 +1,7 @@
 """Drive a loom process end to end: scratch HOME isolation, key input, and
 screen/file assertions that wait on real state instead of a fixed sleep."""
 
+import json
 import locale
 import os
 import shutil
@@ -31,7 +32,8 @@ from .screen import Screen
 DEFAULT_TIMEOUT = 10.0
 _SESSION_ENVIRONMENT_ALLOWLIST = ("PATH",)
 def _session_environment(
-    home_dir, locale_name, profile=keys.DEFAULT_PROFILE, trace_path=None
+    home_dir, locale_name, profile=keys.DEFAULT_PROFILE, trace_path=None,
+    layout_trace_path=None,
 ):
     """Build the child environment without inheriting parent credentials."""
     env = {
@@ -50,6 +52,8 @@ def _session_environment(
     )
     if trace_path is not None:
         env["LOOM_TRACE_COMMANDS"] = trace_path
+    if layout_trace_path is not None:
+        env["LOOM_TRACE_LAYOUT"] = layout_trace_path
     return env
 
 
@@ -97,6 +101,7 @@ class Session:
         self._home_dir = None
         self._locale_name = None
         self._trace_path = None
+        self._layout_trace_path = None
         self._trace_bytes = b""
         self._trace_offset = 0
         self._trace_line_counter_token = None
@@ -133,9 +138,16 @@ class Session:
             self._home_dir = os.path.join(self._scratch_dir, "home")
             os.makedirs(self._home_dir, exist_ok=True)
             self._trace_path = os.path.join(self._scratch_dir, "loom-trace.jsonl")
+            self._layout_trace_path = os.path.join(
+                self._scratch_dir, "loom-layout-trace.jsonl"
+            )
 
             env = _session_environment(
-                self._home_dir, locale, self.profile, self._trace_path
+                self._home_dir,
+                locale,
+                self.profile,
+                self._trace_path,
+                self._layout_trace_path,
             )
 
             self.started_at = time.monotonic()
@@ -242,7 +254,11 @@ class Session:
         self.first_screen_at = None
 
         env = _session_environment(
-            self._home_dir, self._locale_name, self.profile, self._trace_path
+            self._home_dir,
+            self._locale_name,
+            self.profile,
+            self._trace_path,
+            self._layout_trace_path,
         )
         self.process = LoomProcess(
             self.binary, self.arguments, env=env,
@@ -278,10 +294,50 @@ class Session:
         self._trace_offset = len(trace_data)
         self._artifacts_captured = True
 
+    def _refresh_layout_trace(self):
+        if self._layout_trace_path is None:
+            return
+        try:
+            with open(self._layout_trace_path, "rb") as handle:
+                trace_data = handle.read()
+        except FileNotFoundError:
+            return
+
+        lines = trace_data.splitlines()
+        if trace_data and not trace_data.endswith(b"\n"):
+            lines = lines[:-1]
+        latest_body_x = None
+        for line_number, line in enumerate(lines, 1):
+            try:
+                record = json.loads(line.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                raise ValueError(
+                    f"invalid layout trace JSON at line {line_number}"
+                ) from error
+            if not isinstance(record, dict):
+                raise ValueError(
+                    f"invalid layout trace record at line {line_number}: expected an object"
+                )
+            if "body_x" not in record:
+                continue
+            body_x = record["body_x"]
+            if (
+                isinstance(body_x, bool)
+                or not isinstance(body_x, int)
+                or not 0 <= body_x <= self.columns
+            ):
+                raise ValueError(
+                    f"invalid layout body_x at line {line_number}: {body_x!r}"
+                )
+            latest_body_x = body_x
+        if latest_body_x is not None:
+            self.layout.body_x = latest_body_x
+
     def pump(self, poll_timeout=0.05):
         """Read whatever is available without blocking and feed the screen."""
         data = self.process.poll(poll_timeout)
         self.screen.feed(data)
+        self._refresh_layout_trace()
         return data
 
     def _trace_line_count(self):
@@ -345,11 +401,16 @@ class Session:
             actual = self.screen.text(row)
         elif region == "screen":
             actual = "\n".join(self.screen.lines())
-        elif region == "body" and index is None:
-            actual = "\n".join(
-                self.screen.text(body_row)
-                for body_row in range(self.layout.body_height)
-            )
+        elif region == "body":
+            self._refresh_layout_trace()
+            if index is None:
+                actual = "\n".join(
+                    self.screen.text(body_row)[self.layout.body_x:]
+                    for body_row in range(self.layout.body_height)
+                )
+            else:
+                body_row = self.layout.row(region, index)
+                actual = self.screen.text(body_row)[self.layout.body_x:]
         else:
             row = self.layout.row(region, index)
             actual = self.screen.text(row)
@@ -413,17 +474,33 @@ class Session:
         return actual
 
     def observe_cursor(
-        self, expected=UNSET, *, purpose="scenario", sample=UNSET
+        self, expected=UNSET, *, purpose="scenario", sample=UNSET,
+        region=None, index=0,
     ):
         trace_lines = self._trace_line_count()
-        actual = self.screen.cursor
+        actual = (
+            self.screen.cursor
+            if region is None
+            else self.region_cursor(region, index)
+        )
         passed = None if expected is UNSET else actual == expected
         details = {} if sample is UNSET else {"sample": sample}
+        if region is not None:
+            details.update(region=region, index=index)
         record_observation(
             "cursor", actual, expected, passed,
             trace_lines=trace_lines, purpose=purpose, **details,
         )
         return passed
+
+    def region_cursor(self, region, index=0):
+        self.layout.row(region, index)
+        if region == "body":
+            self._refresh_layout_trace()
+        origin_row = self.layout.row(region, 0)
+        body_x = self.layout.body_x if region == "body" else 0
+        row, column = self.screen.cursor
+        return row - origin_row, column - body_x
 
     def observe_cell_attrs(
         self, row, column, expected=UNSET, *, purpose="scenario"
@@ -620,11 +697,19 @@ class Session:
         )
 
     def region_text(self, region, index=0):
-        return self.screen.text(self.layout.row(region, index))
+        row = self.layout.row(region, index)
+        if region == "body":
+            self._refresh_layout_trace()
+            return self.screen.text(row)[self.layout.body_x:]
+        return self.screen.text(row)
 
     def region_contents(self, region):
         if region == "body":
+            self._refresh_layout_trace()
             rows = range(self.layout.body_height)
+            return "\n".join(
+                self.screen.text(row)[self.layout.body_x:] for row in rows
+            )
         else:
             rows = (self.layout.row(region),)
         return "\n".join(self.screen.text(row) for row in rows)
@@ -633,7 +718,7 @@ class Session:
         row = self.layout.row(region, index)
         try:
             self.wait_until(
-                lambda screen: substring in screen.text(row),
+                lambda _screen: substring in self.region_text(region, index),
                 timeout,
                 f"{region} row {index} to contain {substring!r}",
             )
@@ -660,7 +745,7 @@ class Session:
         row = self.layout.row(region, index)
 
         def read_text():
-            actual = self.screen.text(row)
+            actual = self.region_text(region, index)
             return actual.rstrip() if strip_right else actual
 
         try:
@@ -694,7 +779,7 @@ class Session:
         row = self.layout.row(region, index)
         try:
             self.wait_until(
-                lambda _screen: self.screen.text(row).startswith(expected),
+                lambda _screen: self.region_text(region, index).startswith(expected),
                 timeout,
                 f"{region} row {index} to start with {expected!r}",
             )
@@ -785,7 +870,7 @@ class Session:
         row = self.layout.row(region, index)
         try:
             self.wait_until(
-                lambda _screen: substring not in self.screen.text(row),
+                lambda _screen: substring not in self.region_text(region, index),
                 timeout,
                 f"{substring!r} to disappear from {region} row {index}",
             )
@@ -828,20 +913,63 @@ class Session:
             purpose="precondition",
         )
 
-    def wait_for_cursor(self, row, col, timeout=DEFAULT_TIMEOUT):
+    def wait_for_cursor(
+        self, row, col, timeout=DEFAULT_TIMEOUT, *, region=None, index=0,
+        body_col=None,
+    ):
         expected = (row, col)
+        observation_expected = expected
+        if region is not None:
+            if region == "body":
+                self._refresh_layout_trace()
+                if body_col is None:
+                    body_col = col - self.layout.body_x
+            origin_row = self.layout.row(region, 0)
+            body_x = self.layout.body_x if region == "body" else 0
+            observation_expected = (
+                row - origin_row,
+                body_col if region == "body" else col - body_x,
+            )
+
+        def cursor_matches(screen):
+            if region == "body":
+                self._refresh_layout_trace()
+                terminal_col = body_col + self.layout.body_x
+                return screen.cursor == (row, terminal_col)
+            return screen.cursor == expected
+
         try:
             self.wait_until(
-                lambda screen: screen.cursor == expected,
+                cursor_matches,
                 timeout, f"cursor to reach (row={row}, col={col})",
             )
         except TimeoutError:
-            self.observe_cursor(expected=expected, purpose="precondition")
+            self.observe_cursor(
+                expected=observation_expected,
+                purpose="precondition",
+                region=region,
+                index=index,
+            )
             raise
-        self.observe_cursor(expected=expected, purpose="precondition")
+        self.observe_cursor(
+            expected=observation_expected,
+            purpose="precondition",
+            region=region,
+            index=index,
+        )
 
     def wait_for_region_cursor(self, region, col, index=0, timeout=DEFAULT_TIMEOUT):
-        self.wait_for_cursor(self.layout.row(region, index), col, timeout)
+        row = self.layout.row(region, index)
+        self._refresh_layout_trace()
+        terminal_col = col + (self.layout.body_x if region == "body" else 0)
+        self.wait_for_cursor(
+            row,
+            terminal_col,
+            timeout,
+            region=region,
+            index=index,
+            body_col=col if region == "body" else None,
+        )
 
     def wait_for_file(self, path, expected_bytes, timeout=DEFAULT_TIMEOUT):
         deadline = time.monotonic() + timeout
