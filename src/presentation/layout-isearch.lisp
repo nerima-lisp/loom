@@ -26,12 +26,9 @@
        (< draw-start end)
        (< column width)))
 
-(defun %layout-draw-truncated-line-run (renderer window x y text line start end style)
-  (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (window-width (loom/core/window-tree:window-width window))
-         (width (- window-width
-                   (%layout-window-gutter-width buffer window-width)))
-         (height (%layout-window-content-height window)))
+(defun %layout-draw-truncated-line-run
+    (renderer window x y text line width start end style)
+  (let ((height (%layout-window-content-height window)))
     (multiple-value-bind (draw-start column row)
         (%layout-truncated-line-position renderer window text line start)
       (when (%layout-truncated-line-visible-p row height draw-start end column width)
@@ -115,7 +112,7 @@ draws nothing rather than clipping to the wrong row."
     (when buffer
       (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
           (%layout-draw-truncated-line-run
-           renderer window x y text line start end style)
+           renderer window x y text line width start end style)
           (%layout-draw-wrapped-line-run
            renderer window x y text width height line start end style)))))
 

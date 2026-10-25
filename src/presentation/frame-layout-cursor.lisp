@@ -67,20 +67,19 @@ the walk is therefore bounded by the window height."
 The completion popup and cursor both use this geometry so they stay anchored to
 the same body cells."
   (let* ((window-width (loom/core/window-tree:window-width window))
-         (body-width
-           (- window-width (%layout-window-gutter-width buffer window-width))))
-    (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
-        (%truncated-cell renderer window buffer line column)
-        (%wrapped-cell renderer window buffer body-width line column))))
+         (gutter-width (%layout-window-gutter-width buffer window-width))
+         (body-width (- window-width gutter-width)))
+    (multiple-value-bind (column row)
+        (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
+            (%truncated-cell renderer window buffer line column)
+            (%wrapped-cell renderer window buffer body-width line column))
+      (values column row gutter-width))))
 
 (defun %window-cursor-position (renderer window x-offset)
   (let* ((buffer (loom/core/window-tree:window-buffer window))
          (line (buffer-visible-point-line buffer))
-         (column (buffer-visible-point-column buffer))
-         (gutter-width
-           (%layout-window-gutter-width
-            buffer (loom/core/window-tree:window-width window))))
-    (multiple-value-bind (screen-column screen-row)
+         (column (buffer-visible-point-column buffer)))
+    (multiple-value-bind (screen-column screen-row gutter-width)
         (%layout-buffer-cell renderer window buffer line column)
       (values (+ x-offset (loom/core/window-tree:window-x window)
                  gutter-width screen-column)

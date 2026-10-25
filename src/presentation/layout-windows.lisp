@@ -118,6 +118,8 @@ into the remaining width."
         (%layout-truncate-to-width
          (%layout-mode-line-text renderer buffer)
          width))))
+(defun %layout-write-window-string (renderer x y text &key style)
+  (loom-renderer-write-string renderer x y text :style style))
 
 (defun %layout-draw-window-buffer
     (renderer window x-offset &optional height selected-p)
@@ -133,14 +135,14 @@ the mode line or another footer in the remaining window rows."
          (gutter-width (%layout-window-gutter-width buffer width))
          (body-x (%layout-window-body-x (+ x gutter-width) selected-p))
          (body-width (- width gutter-width))
-         (line-count (buffer-visible-line-count buffer))
+         (line-count (%layout-buffer-visible-line-count buffer))
          (scroll-line (loom/core/window-tree:window-scroll-line window))
          (scroll-sub-row (loom/core/window-tree:window-scroll-sub-row window))
          (truncate-p
            (loom/core/editor-session:buffer-truncate-lines-p
             *editor-state* buffer)))
     (labels ((draw-number (line row)
-               (loom-renderer-write-string
+               (%layout-write-window-string
                 renderer x (+ y row)
                 (format nil "~vD " (1- gutter-width) (1+ line))
                 :style '((:fg 8))))
@@ -209,7 +211,7 @@ the mode line or another footer in the remaining window rows."
              (padding (make-string
                        (- width (loom-renderer-string-width renderer text))
                        :initial-element #\Space)))
-        (loom-renderer-write-string
+        (%layout-write-window-string
          renderer
          (+ x-offset (loom/core/window-tree:window-x window))
          (+ (loom/core/window-tree:window-y window) (1- height))

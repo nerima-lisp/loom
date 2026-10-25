@@ -23,18 +23,24 @@ sit past the end of a line the renderer has already clipped."
 
 Point can name a line an empty buffer does not have, and the callers here want
 a measurable string rather than a bounds check of their own."
-  (if (and (>= line 0) (< line (buffer-visible-line-count buffer)))
+  (if (and (>= line 0)
+           (< line (%layout-buffer-visible-line-count buffer)))
       (buffer-visible-line buffer line)
       ""))
+(defun %layout-buffer-visible-line-count (buffer)
+  (buffer-visible-line-count buffer))
 
 (defun %layout-mode-tab-width (mode)
   (max 1 (loom/feature/mode:major-mode-tab-width mode)))
+(defun %layout-buffer-major-mode (buffer)
+  (buffer-major-mode buffer))
 
 (defun %layout-buffer-line-display (buffer line)
   "Return BUFFER's line with tabs expanded and source-to-display indexes."
   (%loom-renderer-expand-tabs
    (%layout-visible-line buffer line)
-   :tab-width (%layout-mode-tab-width (buffer-major-mode buffer))))
+   :tab-width
+   (%layout-mode-tab-width (%layout-buffer-major-mode buffer))))
 
 (defun %layout-buffer-display-column (buffer line source-column)
   (multiple-value-bind (text mapping)
@@ -57,10 +63,10 @@ a measurable string rather than a bounds check of their own."
   (max 0 (1- (loom/core/window-tree:window-height window))))
 (defun %layout-window-gutter-width (buffer width)
   "Return the reserved line-number gutter width for BUFFER in WIDTH cells."
-  (let* ((line-count (max 1 (buffer-visible-line-count buffer)))
+  (let* ((line-count (max 1 (%layout-buffer-visible-line-count buffer)))
          (number-width (length (write-to-string line-count)))
          (gutter-width (1+ number-width)))
-    (if (or (member (buffer-major-mode buffer)
+    (if (or (member (%layout-buffer-major-mode buffer)
                     '(:fundamental :markdown :org :text)
                     :test #'eq)
             (< width (1+ gutter-width)))
