@@ -171,7 +171,7 @@
                     (signals error
                              (loom/core/editor-session:hit-test-coordinate
                               session 0 0)))))
-            (it "rejects invalid coordinates and skips providers outside the frame"
+            (it "rejects negative x, out-of-range y, and non-integer coordinates"
                 (let* ((loom/core/editor-session::*hit-test-providers* nil)
                        (loom/core/editor-session::*next-hit-test-provider-order* 0)
                        (calls 0))
@@ -186,11 +186,6 @@
                        nil))
                     (expect
                      (loom/core/editor-session:hit-test-coordinate
-                      session (loom/core/window-tree:window-tree-width tree) 0)
-                     :to-be
-                     nil)
-                    (expect
-                     (loom/core/editor-session:hit-test-coordinate
                       session 0 (loom/core/window-tree:window-tree-height tree))
                      :to-be
                      nil)
@@ -202,6 +197,31 @@
                     (signals error
                              (loom/core/editor-session:hit-test-coordinate
                               session 0 1.5)))))
+            (it
+                "dispatches screen coordinates beyond the window-tree width"
+                (let* ((loom/core/editor-session::*hit-test-providers* nil)
+                       (loom/core/editor-session::*next-hit-test-provider-order* 0)
+                       (received-coordinates nil))
+                  (multiple-value-bind (session window buffer position tree)
+                      (%make-editor-session-api-fixture :width 4 :height 3)
+                    (declare (ignore window buffer position))
+                    (expect (loom/core/window-tree:window-tree-width tree)
+                            :to-equal
+                            4)
+                    (let ((result
+                            (loom/core/editor-session:make-hit-test-result
+                             :feature/test :feature-item :target :sidebar-entry)))
+                      (loom/core/editor-session:register-hit-test-provider
+                       :feature/test 0
+                       (lambda (received-session x y)
+                         (expect received-session :to-be session)
+                         (setf received-coordinates (list x y))
+                         result))
+                      (expect
+                       (loom/core/editor-session:hit-test-coordinate session 4 0)
+                       :to-be
+                       result)
+                      (expect received-coordinates :to-equal (list 4 0))))))
             (it
              "returns buffer coordinates only through the compatibility wrapper"
              (let* ((loom/core/editor-session::*hit-test-providers* nil)

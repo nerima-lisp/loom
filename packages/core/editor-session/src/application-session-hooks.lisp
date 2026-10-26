@@ -200,16 +200,16 @@
   (and (eq (%render-operation-kind operation) :cursor)
        (%render-operation-value operation)))
 
-(defun %render-layout (operation glyph-layout-function)
+(defun %render-layout (text glyph-layout-function)
   (multiple-value-bind (glyphs widths)
-      (funcall glyph-layout-function (%render-operation-value operation))
+      (funcall glyph-layout-function text)
     (unless
         (and (vectorp glyphs)
              (not (stringp glyphs))
              (vectorp widths)
              (not (stringp widths))
              (= (length glyphs) (length widths))
-             (every #'stringp glyphs)
+             (every (function stringp) glyphs)
              (every
               (lambda (width)
                 (and (integerp width) (plusp width)))
@@ -222,34 +222,59 @@
   (+ (* y (%frame-snapshot-width snapshot)) x))
 
 (defun %apply-text-operation (snapshot cells operation glyph-layout-function)
-  (let ((x (%render-operation-x operation))
-        (y (%render-operation-y operation)))
-    (unless
-        (and (< x (%frame-snapshot-width snapshot))
-             (< y (%frame-snapshot-height snapshot)))
-      (error "Render operation starts outside the frame: (~D, ~D)" x y))
-    (multiple-value-bind (glyphs widths)
-        (%render-layout operation glyph-layout-function)
-      (loop for glyph across glyphs
-            for glyph-width across widths
-            while (< x (%frame-snapshot-width snapshot))
-            do (when (<= (+ x glyph-width) (%frame-snapshot-width snapshot))
-                 (let* ((index (%frame-cell-index snapshot x y))
-                        (old-cell (aref cells index))
-                        (style
-                         (if (%render-operation-style-supplied-p operation)
-                             (%copy-frame-value
-                              (%render-operation-style operation))
-                             (second old-cell))))
-                   (setf (aref cells index) (list (copy-seq glyph) style))
-                   (loop for offset from 1 below glyph-width
-                         for continuation-index = (%frame-cell-index snapshot
-                                                                     (+ x
-                                                                        offset)
-                                                                     y)
-                         do (setf (aref cells continuation-index) (list nil
-                                                                        (%copy-frame-value
-                                                                         style)))))
+  (labels ((clear-overlapping-glyphs (x y glyph-width)
+             (let ((frame-width (%frame-snapshot-width snapshot)))
+               (loop for candidate from 0 below frame-width
+                     for candidate-index = (%frame-cell-index snapshot candidate y)
+                     for candidate-cell = (aref cells candidate-index)
+                     for old-glyph = (first candidate-cell)
+                     when (and (stringp old-glyph) (plusp (length old-glyph)))
+                       do (multiple-value-bind (old-glyphs old-widths)
+                              (%render-layout old-glyph glyph-layout-function)
+                            (when (plusp (length old-glyphs))
+                              (let ((old-width
+                                      (reduce (function +) old-widths
+                                              :initial-value 0)))
+                                (when (and (< candidate (+ x glyph-width))
+                                           (< x (+ candidate old-width)))
+                                  (loop for column from candidate
+                                          below (min frame-width
+                                                     (+ candidate old-width))
+                                        for index =
+                                          (%frame-cell-index snapshot column y)
+                                        for old-cell = (aref cells index)
+                                        do (setf (aref cells index)
+                                                 (list
+                                                  " "
+                                                  (%copy-frame-value
+                                                   (second old-cell)))))))))))))
+    (let ((x (%render-operation-x operation))
+          (y (%render-operation-y operation)))
+      (unless (and (< x (%frame-snapshot-width snapshot))
+                   (< y (%frame-snapshot-height snapshot)))
+        (error "Render operation starts outside the frame: (~D, ~D)" x y))
+      (multiple-value-bind (glyphs widths)
+          (%render-layout (%render-operation-value operation)
+                          glyph-layout-function)
+        (loop for glyph across glyphs
+              for glyph-width across widths
+              while (< x (%frame-snapshot-width snapshot))
+              do (when (<= (+ x glyph-width) (%frame-snapshot-width snapshot))
+                   (clear-overlapping-glyphs x y glyph-width)
+                   (let* ((index (%frame-cell-index snapshot x y))
+                          (old-cell (aref cells index))
+                          (style
+                            (if (%render-operation-style-supplied-p operation)
+                                (%copy-frame-value
+                                 (%render-operation-style operation))
+                                (second old-cell))))
+                     (setf (aref cells index) (list (copy-seq glyph) style))
+                     (loop for offset from 1 below glyph-width
+                           for continuation-index =
+                             (%frame-cell-index snapshot (+ x offset) y)
+                           do (setf (aref cells continuation-index)
+                                    (list nil
+                                          (%copy-frame-value style))))))
                  (incf x glyph-width))))))
 
 (defun apply-render-operations (snapshot operations glyph-layout-function)

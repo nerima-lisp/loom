@@ -123,9 +123,9 @@
   (unless (and (integerp screen-x) (integerp screen-y))
     (error "Hit-test coordinates must be integers: ~S, ~S" screen-x screen-y))
   (let* ((window-tree (editor-session-slice session :core/window-tree))
-         (frame-width (loom/core/window-tree:window-tree-width window-tree))
          (frame-height (loom/core/window-tree:window-tree-height window-tree)))
-    (when (and (<= 0 screen-x) (< screen-x frame-width)
+    ;; Window-tree width excludes sidebars, so providers bound horizontal screen coordinates.
+    (when (and (<= 0 screen-x)
                (<= 0 screen-y) (< screen-y frame-height))
       (dolist (provider (%ordered-hit-test-providers))
         (let ((result

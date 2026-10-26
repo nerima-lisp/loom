@@ -78,11 +78,13 @@ the same body cells."
 (defun %window-cursor-position (renderer window x-offset)
   (let* ((buffer (loom/core/window-tree:window-buffer window))
          (line (buffer-visible-point-line buffer))
-         (column (buffer-visible-point-column buffer)))
+         (column (buffer-visible-point-column buffer))
+         (window-x (loom/core/window-tree:window-x window)))
     (multiple-value-bind (screen-column screen-row gutter-width)
         (%layout-buffer-cell renderer window buffer line column)
-      (values (+ x-offset (loom/core/window-tree:window-x window)
-                 gutter-width screen-column)
+      (values (min (+ x-offset window-x gutter-width screen-column)
+                   (+ x-offset window-x
+                      (1- (loom/core/window-tree:window-width window))))
               (+ (loom/core/window-tree:window-y window) screen-row)))))
 
 (defun %selected-window-cursor-geometry (renderer window x-offset)

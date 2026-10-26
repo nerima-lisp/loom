@@ -257,3 +257,90 @@ cursor at CURSOR when supplied. Returns RENDERER."
       (%loom-renderer-snapshot-glyphs renderer)
       (finish-output output-stream))
     renderer)
+
+(defun %loom-renderer-frame-cells (renderer)
+  (let* ((width (loom-renderer-width renderer))
+         (height (loom-renderer-height renderer))
+         (screen (cl-tty-kit:renderer-screen
+                  (%loom-renderer-cl-tty-renderer renderer)))
+         (glyphs (%loom-renderer-glyphs renderer))
+         (cells (make-array (* width height))))
+    (dotimes (y height cells)
+      (let ((x 0))
+        (loop while (< x width)
+              for screen-cell = (cl-tty-kit:screen-cell screen x y)
+              for overlay = (gethash (%loom-renderer-glyph-key renderer x y)
+                                     glyphs)
+              for glyph = (if overlay
+                              (%loom-renderer-glyph-text overlay)
+                              (string (cl-tty-kit:cell-char screen-cell)))
+              for style = (cl-tty-kit:cell-style screen-cell)
+              for advance = (if overlay
+                                (%loom-renderer-glyph-width overlay)
+                                (max 1 (%loom-renderer-grapheme-advance
+                                        glyph x 8)))
+              do (if (> (+ x advance) width)
+                     (setf (aref cells (+ (* y width) x))
+                           (list " " style))
+                     (progn
+                       (setf (aref cells (+ (* y width) x))
+                             (list glyph style))
+                       (loop for offset from 1 below advance
+                             for continuation-cell =
+                               (cl-tty-kit:screen-cell screen (+ x offset) y)
+                             do (setf (aref cells (+ (* y width) x offset))
+                                      (list nil
+                                            (cl-tty-kit:cell-style
+                                             continuation-cell))))))
+              do (incf x (if (> (+ x advance) width) 1 advance)))))))
+
+(defun %loom-renderer-frame-glyph-layout (text)
+  (let* ((display-text
+           (if (find (code-char 9) text)
+               (nth-value 0 (%loom-renderer-expand-tabs text))
+               text))
+         (column 0)
+         (glyphs nil)
+         (widths nil))
+    (dolist (grapheme (cl-tty-kit:string-graphemes display-text))
+      (let ((advance
+              (max 1 (%loom-renderer-grapheme-advance grapheme column 8))))
+        (push grapheme glyphs)
+        (push advance widths)
+        (incf column advance)))
+    (values (coerce (nreverse glyphs) 'vector)
+            (coerce (nreverse widths) 'vector))))
+
+(defun loom-renderer-load-frame-snapshot (renderer snapshot)
+  (unless (and (= (loom-renderer-width renderer)
+                  (loom/core/editor-session:frame-snapshot-width snapshot))
+               (= (loom-renderer-height renderer)
+                  (loom/core/editor-session:frame-snapshot-height snapshot)))
+    (error "Frame snapshot dimensions do not match the renderer."))
+  (loom-renderer-clear renderer)
+  (let ((screen (cl-tty-kit:renderer-screen
+                 (%loom-renderer-cl-tty-renderer renderer))))
+    (dotimes (y (loom-renderer-height renderer))
+      (dotimes (x (loom-renderer-width renderer))
+        (multiple-value-bind (glyph style)
+            (loom/core/editor-session:frame-snapshot-cell snapshot x y)
+          (let* ((single-character-p
+                   (and (stringp glyph) (= (length glyph) 1)))
+                 (character (if single-character-p
+                                (char glyph 0)
+                                #\Space)))
+            (if single-character-p
+                (cl-tty-kit:screen-write-string screen x y glyph :style style)
+                (cl-tty-kit:screen-put-cell
+                 screen x y
+                 (cl-tty-kit:make-cell :char character :style style)))
+            (when (and (stringp glyph) (not single-character-p))
+              (let ((width
+                      (max 1 (%loom-renderer-grapheme-advance glyph x 8))))
+                (when (<= (+ x width) (loom-renderer-width renderer))
+                  (setf (gethash (%loom-renderer-glyph-key renderer x y)
+                                 (%loom-renderer-glyphs renderer))
+                        (%make-loom-renderer-glyph
+                         x y glyph width
+                         (%loom-renderer-style-sequence style))))))))))
+  renderer))

@@ -607,4 +607,41 @@
                                                                           1
                                                                           0))
                  :to-equal
-                 "Z"))))
+                 "Z")))
+          (it
+ "presents hook output after applying render-hook operations"
+ (let* ((*editor-state* (%fresh-full-editor-state "abc"))
+        (loom/core/editor-session::*session-hooks*
+          (make-hash-table :test (function eq)))
+        (session (editor-state-session *editor-state*))
+        (hook-ran-p nil)
+        (presented-row nil)
+        (presented-cursor nil))
+   (loom/core/editor-session:register-session-hook
+    :render
+    :feature/user-init
+    (lambda (received-session snapshot)
+      (expect received-session :to-be session)
+      (expect (loom/core/editor-session:frame-snapshot-p snapshot) :to-be t)
+      (setf hook-ran-p t)
+      (list (loom/core/editor-session:make-render-operation :text 0 0 "Z")
+            (loom/core/editor-session:make-render-operation
+             :text 2 0 (format nil "~C!" #\Tab))
+            (loom/core/editor-session:make-render-operation :cursor 2 0 t))))
+   (with-replaced-function
+    (loom/feature/terminal:poll-terminal-sessions
+     (lambda (state) (declare (ignore state))))
+    (with-replaced-function
+     (loom:loom-renderer-present
+      (lambda (renderer &key stream cursor)
+        (declare (ignore renderer stream))
+        (setf presented-cursor cursor
+              presented-row
+              (cl-tty-kit:screen-row-string
+               (%layout-screen *editor-state*)
+               0 :start 0 :end 9))))
+     (loom::%render-event-loop-frame (make-string-output-stream))))
+   (expect hook-ran-p :to-be-truthy)
+   (expect presented-row :to-equal "Zb      !")
+   (expect (cl-tty-kit:cursor-x presented-cursor) :to-equal 2)
+   (expect (cl-tty-kit:cursor-y presented-cursor) :to-equal 0))))

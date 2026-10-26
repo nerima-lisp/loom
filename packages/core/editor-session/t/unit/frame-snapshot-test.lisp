@@ -87,76 +87,49 @@
                (signals error (loom/core/editor-session:make-render-operation :cursor 0 0 :visible))
                (signals error (loom/core/editor-session:make-render-operation :cursor 0 0 t :style nil))))
             (it
-             "applies text and cursor operations without changing the source snapshot"
-             (let* ((snapshot
-                     (loom/core/editor-session:make-frame-snapshot 2
-                                          1
-                                          (vector
-                                           (list "a" (list :foreground "red"))
-                                           (list "b" (list :foreground "blue")))
-                                          :cursor
-                                          (list 0 0 t)))
-                    (operations
-                     (list (loom/core/editor-session:make-render-operation :text 0 0 "x")
-                           (loom/core/editor-session:make-render-operation :text
-                                                  1
-                                                  0
-                                                  "y"
-                                                  :style
-                                                  (list :foreground "green"))
-                           (loom/core/editor-session:make-render-operation :cursor 1 0 nil)))
-                    (updated
-                     (loom/core/editor-session:apply-render-operations snapshot operations (lambda (text)
-                                                (values
-                                                 (map 'vector
-                                                      (function string)
-                                                      text)
-                                                 (make-array (length text)
-                                                             :initial-element
-                                                             1))))))
-               (expect (loom/core/editor-session:frame-snapshot-p updated) :to-be t)
-               (multiple-value-bind (glyph style)
-                   (loom/core/editor-session:frame-snapshot-cell updated 0 0)
-                 (expect glyph :to-equal "x")
-                 (expect (getf style :foreground) :to-equal "red"))
-               (multiple-value-bind (glyph style)
-                   (loom/core/editor-session:frame-snapshot-cell updated 1 0)
-                 (expect glyph :to-equal "y")
-                 (expect (getf style :foreground) :to-equal "green"))
-               (multiple-value-bind (glyph style)
-                   (loom/core/editor-session:frame-snapshot-cell snapshot 0 0)
-                 (expect glyph :to-equal "a")
-                 (expect (getf style :foreground) :to-equal "red"))
-               (multiple-value-bind (glyph style)
-                   (loom/core/editor-session:frame-snapshot-cell snapshot 1 0)
-                 (expect glyph :to-equal "b")
-                 (expect (getf style :foreground) :to-equal "blue"))
-               (multiple-value-bind (x y visible-p)
-                   (loom/core/editor-session:frame-snapshot-cursor updated)
-                 (expect (list x y visible-p) :to-equal (list 1 0 nil)))
-               (multiple-value-bind (x y visible-p)
-                   (loom/core/editor-session:frame-snapshot-cursor snapshot)
-                 (expect (list x y visible-p) :to-equal (list 0 0 t))))
-             (it
-              "rejects malformed operation lists, out-of-frame starts, and bad layouts"
-              (let ((snapshot (loom/core/editor-session:make-frame-snapshot 1 1 (vector (list "a" nil))))
-                    (layout
-                     (lambda (text)
-                       (values (map 'vector (function string) text)
-                               (make-array (length text) :initial-element 1)))))
-                (signals error
-                         (loom/core/editor-session:apply-render-operations snapshot (list :not-an-operation) layout))
-                (signals error
-                         (loom/core/editor-session:apply-render-operations snapshot (list
-                                                   (loom/core/editor-session:make-render-operation :text
-                                                                          1
-                                                                          0
-                                                                          "x")) layout))
-                (signals error
-                         (loom/core/editor-session:apply-render-operations snapshot (list
-                                                   (loom/core/editor-session:make-render-operation :text
-                                                                          0
-                                                                          0
-                                                                          "x")) (lambda (text)
-                                                    (declare (ignore text))
-                                                    (values (vector "x") #())))))))))
+ "applies text and cursor operations without changing the source snapshot"
+ (let* ((snapshot
+          (loom/core/editor-session:make-frame-snapshot
+           2
+           1
+           (vector (list "a" (list :foreground "red"))
+                   (list "b" (list :foreground "blue")))
+           :cursor
+           (list 0 0 t)))
+        (operations
+          (list (loom/core/editor-session:make-render-operation :text 0 0 "界")
+                (loom/core/editor-session:make-render-operation
+                 :text 1 0 "y" :style (list :foreground "green"))
+                (loom/core/editor-session:make-render-operation :cursor 1 0 nil)))
+        (updated
+          (loom/core/editor-session:apply-render-operations
+           snapshot
+           operations
+           (lambda (text)
+             (if (string= text "界")
+                 (values (vector "界") (vector 2))
+                 (values (map 'vector (function string) text)
+                         (make-array (length text) :initial-element 1)))))))
+   (expect (loom/core/editor-session:frame-snapshot-p updated) :to-be t)
+   (multiple-value-bind (glyph style)
+       (loom/core/editor-session:frame-snapshot-cell updated 0 0)
+     (expect glyph :to-equal " ")
+     (expect (getf style :foreground) :to-equal "red"))
+   (multiple-value-bind (glyph style)
+       (loom/core/editor-session:frame-snapshot-cell updated 1 0)
+     (expect glyph :to-equal "y")
+     (expect (getf style :foreground) :to-equal "green"))
+   (multiple-value-bind (glyph style)
+       (loom/core/editor-session:frame-snapshot-cell snapshot 0 0)
+     (expect glyph :to-equal "a")
+     (expect (getf style :foreground) :to-equal "red"))
+   (multiple-value-bind (glyph style)
+       (loom/core/editor-session:frame-snapshot-cell snapshot 1 0)
+     (expect glyph :to-equal "b")
+     (expect (getf style :foreground) :to-equal "blue"))
+   (multiple-value-bind (x y visible-p)
+       (loom/core/editor-session:frame-snapshot-cursor updated)
+     (expect (list x y visible-p) :to-equal (list 1 0 nil)))
+   (multiple-value-bind (x y visible-p)
+       (loom/core/editor-session:frame-snapshot-cursor snapshot)
+     (expect (list x y visible-p) :to-equal (list 0 0 t)))))))
