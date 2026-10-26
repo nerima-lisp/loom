@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "lang-lisp/command-path-mode-assignment",
+      "path_id": "r1:lang-lisp:mode-assignment",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "path extension",
+      "commands": [
+        "find-file"
+      ],
+      "command": "find-file",
+      "entry_mode": "mx",
+      "initial_bytes": "seed\n",
+      "expected_bytes": "seed\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(defun mode-from-el () t)"
+        }
+      ],
+      "mode_targets": [
+        {
+          "filename": "project.asd",
+          "mode": "Common Lisp",
+          "bytes": "(defsystem \"mode-from-asd\")\n",
+          "text": "(defsystem \"mode-from-asd\")"
+        },
+        {
+          "filename": "mode-from-el.el",
+          "mode": "Emacs Lisp",
+          "bytes": "(defun mode-from-el () t)\n",
+          "text": "(defun mode-from-el () t)"
+        }
+      ]
+    },
+    {
+      "name": "lang-lisp/command-path-indent-ret-elisp",
+      "path_id": "r1:lang-lisp:indent-ret-elisp",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+      "commands": [
+        "move-end-of-line",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "entry_mode": "key",
+      "entry_keys": [
+        "RET"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "extension": "el",
+      "initial_bytes": "(when ready\n)\n",
+      "expected_bytes": "(when ready\n  \n)\n",
+      "expected_cursor": [
+        1,
+        2
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(when ready",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": ")",
+          "index": 2
+        }
+      ],
+      "expected_prefixes": [
+        {
+          "region": "body",
+          "text": "  ",
+          "index": 1
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lang-lisp/command-path-indent-region-elisp",
+      "path_id": "r1:lang-lisp:indent-region-elisp",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "move-beginning-of-line",
+        "set-mark-command",
+        "next-line",
+        "move-end-of-line",
+        "indent-for-tab-command",
+        "save-buffer"
+      ],
+      "command": "indent-for-tab-command",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-\\"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-n",
+          "repeat": 3
+        },
+        {
+          "key": "C-e"
+        }
+      ],
+      "extension": "el",
+      "initial_bytes": "(defun region-indent (x)\n(let ((value x))\n(when value\n(+ value 1))))\n",
+      "expected_bytes": "(defun region-indent (x)\n  (let ((value x))\n    (when value\n      (+ value 1))))\n",
+      "expected_cursor": [
+        3,
+        20
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(defun region-indent (x)",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "  (let ((value x))",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "    (when value",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "      (+ value 1))))",
+          "index": 3
+        }
+      ],
+      "save_after_effect": true
+    }
+  ]
+}

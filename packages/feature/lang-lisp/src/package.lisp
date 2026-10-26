@@ -6,7 +6,7 @@
    :common-lisp
    :name "Common Lisp"
    :aliases '("lisp" "cl" "common lisp")
-   :extensions '("lisp" "lsp" "cl")
+   :extensions '("lisp" "lsp" "cl" "asd")
    :comment-prefix ";" :comment-start ";" :comment-end nil
    :skip-closing-delimiter t
    :indentation-width 2 :tab-width 8

@@ -1,0 +1,908 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "lisp-structure/r1/backward-barf-sexp/mx",
+      "path_id": "r1:backward-barf-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "backward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a b)\n",
+      "expected_bytes": "a (b)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 1
+        }
+      ],
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/backward-sexp/mx",
+      "path_id": "r1:backward-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "backward-sexp"
+      ],
+      "command": "backward-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": "(a b) c\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 7
+        }
+      ],
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b) c"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/backward-slurp-sexp/mx",
+      "path_id": "r1:backward-slurp-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "backward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "a (b)\n",
+      "expected_bytes": "(a b)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 3
+        }
+      ],
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/backward-up-list/mx",
+      "path_id": "r1:backward-up-list:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "backward-up-list"
+      ],
+      "command": "backward-up-list",
+      "entry_mode": "mx",
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(a (b c) d)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 5
+        }
+      ],
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b c) d)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/down-list/mx",
+      "path_id": "r1:down-list:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "down-list"
+      ],
+      "command": "down-list",
+      "entry_mode": "mx",
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(a (b c) d)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b c) d)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/forward-barf-sexp/mx",
+      "path_id": "r1:forward-barf-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a b)\n",
+      "expected_bytes": "(a) b\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 1
+        }
+      ],
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/forward-sexp/mx",
+      "path_id": "r1:forward-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "forward-sexp"
+      ],
+      "command": "forward-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": "(a b) c\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b) c"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/forward-slurp-sexp/mx",
+      "path_id": "r1:forward-slurp-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a) b\n",
+      "expected_bytes": "(a b)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 1
+        }
+      ],
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/kill-sexp/mx",
+      "path_id": "r1:kill-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-sexp",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": " c\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": " c"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/raise-sexp/mx",
+      "path_id": "r1:raise-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "raise-sexp",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(b c)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 3
+        }
+      ],
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(b c)"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/splice-sexp/mx",
+      "path_id": "r1:splice-sexp:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "splice-sexp",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "entry_mode": "mx",
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(a b c d)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 4
+        }
+      ],
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c d)"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/wrap-round/mx",
+      "path_id": "r1:wrap-round:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "wrap-round",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "entry_mode": "mx",
+      "initial_bytes": "a b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r1/forward-sexp/c-m-f",
+      "path_id": "r1:forward-sexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22f%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"f\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "forward-sexp"
+      ],
+      "command": "forward-sexp",
+      "entry_mode": "key",
+      "entry_keys": [
+        "ESC",
+        "C-f"
+      ],
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": "(a b) c\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b) c"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/backward-sexp/c-m-b",
+      "path_id": "r1:backward-sexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22b%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"b\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "backward-sexp"
+      ],
+      "command": "backward-sexp",
+      "entry_mode": "key",
+      "entry_keys": [
+        "ESC",
+        "C-b"
+      ],
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": "(a b) c\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 7
+        }
+      ],
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b) c"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/backward-up-list/c-m-u",
+      "path_id": "r1:backward-up-list:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22u%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "backward-up-list"
+      ],
+      "command": "backward-up-list",
+      "entry_mode": "key",
+      "entry_keys": [
+        "ESC",
+        "C-u"
+      ],
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(a (b c) d)\n",
+      "pre_keys": [
+        {
+          "key": "RIGHT",
+          "repeat": 5
+        }
+      ],
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b c) d)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/down-list/c-m-d",
+      "path_id": "r1:down-list:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "down-list"
+      ],
+      "command": "down-list",
+      "entry_mode": "key",
+      "entry_keys": [
+        "ESC",
+        "C-d"
+      ],
+      "initial_bytes": "(a (b c) d)\n",
+      "expected_bytes": "(a (b c) d)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b c) d)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r1/kill-sexp/c-m-k",
+      "path_id": "r1:kill-sexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22k%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "kill-sexp",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "entry_mode": "key",
+      "entry_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "(a b) c\n",
+      "expected_bytes": " c\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": " c"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/effect",
+      "path_id": "r3:forward-slurp-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/undo",
+      "path_id": "r3:forward-slurp-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/read-only",
+      "path_id": "r3:forward-slurp-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "forward-char",
+        "forward-slurp-sexp"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/macro-replay",
+      "path_id": "r3:forward-slurp-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/effect",
+      "path_id": "r3:forward-barf-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/undo",
+      "path_id": "r3:forward-barf-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/read-only",
+      "path_id": "r3:forward-barf-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "forward-char",
+        "forward-barf-sexp"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/macro-replay",
+      "path_id": "r3:forward-barf-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ]
+    }
+  ]
+}
