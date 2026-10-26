@@ -76,7 +76,7 @@ def _assert_result_text(session, expected):
 
 
 def _result_exit_code(session):
-    match = re.search(r"Exit code:\s*(-?\d+)", _result_text(session))
+    match = re.search(r"Exit code:\s*(\d+)", _result_text(session))
     if match is None:
         raise AssertionError(f"pipe-command result has no exit code: {_result_text(session)!r}")
     return int(match.group(1))
@@ -298,15 +298,11 @@ def pipe_command_r5_interrupted(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _pipe(session, "exec /bin/sh -c 'kill -KILL $$'")
-            session.wait_for_region_text(
-                "minibuffer", "Pipe command exited with code", timeout=1.0
-            )
-            code = _result_exit_code(session)
-            if code == 0:
-                raise AssertionError("interrupted shell command exited successfully")
-            _assert_exit_message(session, code)
+            session.wait_for_text("Exit code: 137")
+            _assert_exit_message(session, 137)
+            _assert_result_text(session, "Exit code: 137")
             session.assert_external_state(
-                "pipe-command exit code", code, code
+                "pipe-command exit code", _result_exit_code(session), 137
             )
             _assert_alive(session)
             _assert_source_unchanged(session, path)

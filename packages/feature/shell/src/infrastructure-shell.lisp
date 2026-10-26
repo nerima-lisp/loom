@@ -17,8 +17,9 @@
 
 (defun %shell-command-result (command working-directory timeout-seconds
                               process-result)
-  (let ((timed-out-p
-          (process-kit:process-result-timed-out-p process-result)))
+  (let* ((timed-out-p
+           (process-kit:process-result-timed-out-p process-result))
+         (signal (process-kit:process-result-signal process-result)))
     (make-shell-command-result
      :command command
      :directory (namestring working-directory)
@@ -29,9 +30,9 @@
                  timeout-seconds)
          (or (process-kit:process-result-stderr process-result) ""))
      :exit-code
-     (if timed-out-p
-         124
-         (process-kit:process-result-exit-code process-result)))))
+     (cond (timed-out-p 124)
+           (signal (+ 128 signal))
+           (t (process-kit:process-result-exit-code process-result))))))
 
 (defun %run-shell-process (command working-directory input-stream timeout-seconds)
   (process-kit:run-shell
