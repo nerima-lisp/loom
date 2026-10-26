@@ -1,1 +1,1 @@
-()
+((:id "r1:set-major-mode:mx" :commands ("set-major-mode") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "applies the selected major mode through M-x" :observe (:screen_text) :scenario "mode/pair-completion"))
