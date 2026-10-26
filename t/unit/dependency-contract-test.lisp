@@ -239,6 +239,6 @@
           (local-system-names (nth-value 1 (all-asdf-dependencies))))
       (dolist (system-name local-system-names)
         (unless (or (string= system-name "loom")
-                    (uiop:string-suffix-p "/test" system-name)
-                    (uiop:string-suffix-p "/test-support" system-name))
+                    (uiop:string-suffix-p system-name "/test")
+                    (uiop:string-suffix-p system-name "/test-support"))
           (expect root-dependencies :to-contain system-name))))))
