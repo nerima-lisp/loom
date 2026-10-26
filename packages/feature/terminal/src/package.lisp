@@ -48,7 +48,8 @@
                           #:*editor-state*
                           #:editor-state-window-tree
                           #:editor-state-terminal-sessions
-                          #:editor-state-minibuffer)
+                          #:editor-state-minibuffer
+                          #:register-session-hook)
             (:import-from #:loom/core/buffer
                           #:buffer-delete-region
                           #:buffer-insert-string
