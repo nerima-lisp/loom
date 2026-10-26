@@ -149,7 +149,8 @@
        (loom::backward-slurp-sexp "a (b)" 3)
        (loom::backward-barf-sexp "(a b)" 1)
        (loom::splice-sexp "(a (b c) d)" 4)
-       (loom::raise-sexp "(a (b c) d)" 3))
+       (loom::raise-sexp "(a (b c) d)" 3)
+       (loom::wrap-round "a b" 0))
       "rejects read-only edits with the Emacs message before changing text"
       (command content offset)
     (%with-selected-buffer-state (buffer content)

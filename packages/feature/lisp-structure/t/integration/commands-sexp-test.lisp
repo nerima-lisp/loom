@@ -97,6 +97,21 @@
       (buffer-set-point buffer 0 4)
       (loom::kill-sexp)
       (expect (buffer-text buffer) :to-equal "(a b)")
+      (expect (editor-state-kill-ring *editor-state*) :to-be nil)))
+  (it
+    "kill-sexp follows Emacs read-only point and error behavior"
+    (%with-selected-buffer-state (buffer "a b")
+      (buffer-set-point buffer 0 0)
+      (buffer-set-read-only buffer t)
+      (let ((message
+              (handler-case
+                  (progn (loom::kill-sexp) nil)
+                (error (condition) (format nil "~A" condition)))))
+        (expect message :to-equal
+                (format nil "Buffer is read-only: #<buffer ~A>"
+                        (buffer-name buffer))))
+      (expect (buffer-text buffer) :to-equal "a b")
+      (expect (buffer-point-column buffer) :to-equal 1)
       (expect (editor-state-kill-ring *editor-state*) :to-be nil))))
 
 (describe
