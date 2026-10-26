@@ -745,6 +745,201 @@
           "text": "ONE two"
         }
       ]
+    },
+    {
+      "name": "command-path/buffer/r3/capitalize-word/effect",
+      "path_id": "r3:capitalize-word:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "capitalize-word",
+        "save-buffer"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-c"
+      ],
+      "initial_bytes": "ONE two three\n",
+      "effect_bytes": "One two three\n",
+      "expected_bytes": "One two three\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/capitalize-word/undo",
+      "path_id": "r3:capitalize-word:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "capitalize-word",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-c"
+      ],
+      "initial_bytes": "ONE two three\n",
+      "effect_bytes": "One two three\n",
+      "expected_bytes": "ONE two three\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two three"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/effect",
+      "path_id": "r3:downcase-word:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"l\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "downcase-word",
+        "save-buffer"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-l"
+      ],
+      "initial_bytes": "ONE two\n",
+      "effect_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/undo",
+      "path_id": "r3:downcase-word:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"l\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "downcase-word",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-l"
+      ],
+      "initial_bytes": "ONE two\n",
+      "effect_bytes": "one two\n",
+      "expected_bytes": "ONE two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/undo",
+      "path_id": "r3:upcase-word:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "upcase-word",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-u"
+      ],
+      "initial_bytes": "one two\n",
+      "effect_bytes": "ONE two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
     }
   ]
 }

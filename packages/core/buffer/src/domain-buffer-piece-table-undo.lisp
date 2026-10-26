@@ -18,11 +18,22 @@
   (list :insert line column text))
 
 (defun %apply-undo-entry (buffer entry)
-  "Apply ENTRY to BUFFER and return the inverse action it records.
-
-The inverse is returned so BUFFER-UNDO can place it on the explicit redo
-stack. Replay does not clear redo history; ordinary edits still do."
-  (destructuring-bind (kind line column text) entry
-    (ecase kind
-      (:insert (%replay-insert-entry buffer line column text))
-      (:delete (%replay-delete-entry buffer line column text)))))
+  "Apply ENTRY to BUFFER, restore its point, and return the inverse action."
+  (destructuring-bind (kind line column text point-line point-column) entry
+    (let ((redo-line (%buffer-point-line buffer))
+          (redo-column (%buffer-point-column buffer)))
+      (let ((inverse
+              (ecase kind
+                (:insert (%replay-insert-entry buffer line column text))
+                (:delete (%replay-delete-entry buffer line column text)))))
+        (multiple-value-bind (clamped-line clamped-column)
+            (%clamp-position buffer point-line point-column)
+          (let ((offset
+                  (max (%buffer-narrow-start-offset buffer)
+                       (min (%position-to-offset buffer clamped-line clamped-column)
+                            (%buffer-narrow-end-offset buffer)))))
+            (multiple-value-bind (restored-line restored-column)
+                (%offset-to-position-values buffer offset)
+              (setf (%buffer-point-line buffer) restored-line
+                    (%buffer-point-column buffer) restored-column))))
+        (append inverse (list redo-line redo-column))))))
