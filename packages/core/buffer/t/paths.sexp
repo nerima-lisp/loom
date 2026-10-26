@@ -1,4 +1,4 @@
-; Insert scenarios type characters through core/self-insert, but the generator has no insert target commands.
+; Insert scenarios type characters through an untraced internal operation; the generator has no insert target commands.
 ; Resize is a terminal event without a command target. These six IDs remain no-trace until generation supports them.
 (
  (:id "r6:text:fullwidth:move"
@@ -11,7 +11,7 @@
   :observe ("cursor")
   :scenario "r6/text/fullwidth/move")
  (:id "r6:text:fullwidth:insert"
-  :commands ("core/self-insert")
+  :commands ()
   :rule "r6"
   :lane "W3-4"
   :entry "insert"
@@ -56,7 +56,7 @@
   :observe ("cursor")
   :scenario "r6/text/combining/move")
  (:id "r6:text:combining:insert"
-  :commands ("core/self-insert")
+  :commands ()
   :rule "r6"
   :lane "W3-4"
   :entry "insert"
@@ -101,7 +101,7 @@
   :observe ("cursor")
   :scenario "r6/text/emoji/move")
  (:id "r6:text:emoji:insert"
-  :commands ("core/self-insert")
+  :commands ()
   :rule "r6"
   :lane "W3-4"
   :entry "insert"
@@ -146,7 +146,7 @@
   :observe ("cursor")
   :scenario "r6/text/wrap/move")
  (:id "r6:text:wrap:insert"
-  :commands ("core/self-insert")
+  :commands ()
   :rule "r6"
   :lane "W3-4"
   :entry "insert"
@@ -191,7 +191,7 @@
   :observe ("cursor")
   :scenario "r6/text/truncate/move")
  (:id "r6:text:truncate:insert"
-  :commands ("core/self-insert")
+  :commands ()
   :rule "r6"
   :lane "W3-4"
   :entry "insert"
