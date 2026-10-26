@@ -78,9 +78,9 @@ def _assert_quit(session, name):
         raise AssertionError(f"{name}: editor exited with {code}: {output!r}")
 
 
-def _cached_names(directory):
+def _cached_names(directory, git="git"):
     return subprocess.run(
-        ["git", "-C", directory, "diff", "--cached", "--name-only"],
+        [git, "-C", directory, "diff", "--cached", "--name-only"],
         check=True,
         capture_output=True,
         text=True,
@@ -248,6 +248,7 @@ def _run_failure(binary, command, outcome):
         original_index = handle.read()
     marker = os.path.join(directory.name, "force-nonzero")
     original_path = os.environ.get("PATH")
+    real_git = shutil.which("git", path=original_path)
     if outcome == "nonzero":
         wrapper_dir = _install_git_wrapper(directory.name, "nonzero", marker)
         os.environ["PATH"] = os.pathsep.join(
@@ -319,10 +320,10 @@ def _run_failure(binary, command, outcome):
             with open(index_path, "rb") as handle:
                 current_index = handle.read()
             if outcome == "interrupted" and command == "git-stage-file":
-                if _cached_names(directory.name) != "tracked.txt":
+                if _cached_names(directory.name, real_git) != "tracked.txt":
                     raise AssertionError("interrupted git-stage-file did not run real Git")
             elif outcome == "interrupted" and command == "git-unstage-file":
-                if _cached_names(directory.name):
+                if _cached_names(directory.name, real_git):
                     raise AssertionError("interrupted git-unstage-file did not run real Git")
             elif current_index != original_index:
                 raise AssertionError(f"{command} changed the Git index on failure")
