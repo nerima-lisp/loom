@@ -133,15 +133,15 @@
                       :to-equal
                       (format nil "Wrote ~A" path))
               (expect (%read-test-file-octets path)
-                      :to-equal
+                      :to-equalp
                       #(111 108 100 32 102 105 114 115 116 32 115 101 99 111 110 100))
               (expect (%read-test-file-octets
                        (merge-pathnames "note.txt.1~" backup-dir))
-                      :to-equal
+                      :to-equalp
                       #(111 108 100))
               (expect (%read-test-file-octets
                        (merge-pathnames "note.txt.2~" backup-dir))
-                      :to-equal
+                      :to-equalp
                       #(111 108 100 32 102 105 114 115 116))))))))
   (it
     "leaves the original file untouched when its backup cannot be created"
@@ -164,7 +164,7 @@
                 (expect (loom/core/buffer:buffer-modified-p buffer)
                         :to-be-truthy)
                 (expect (%read-test-file-octets path)
-                        :to-equal
+                        :to-equalp
                         #(111 108 100))
                 (expect (loom:minibuffer-message-string minibuffer)
                         :to-equal
