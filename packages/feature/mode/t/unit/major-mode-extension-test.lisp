@@ -240,3 +240,43 @@
              (expect (major-mode-comment-end mode) :to-be nil)
              (expect (major-mode-skip-closing-delimiter-p mode) :to-be nil))
         (unregister-major-mode mode)))))
+  (it
+    "returns mode details and copied local keybindings"
+    (%with-registered-major-modes (:loom-test-description)
+      (register-major-mode
+       :loom-test-description
+       :name "Loom Test Description"
+       :description "A test editing mode."
+       :keybindings
+       (list (cons '(:control #\x)
+                   #'%loom-test-extension-command)))
+      (let ((buffer (make-buffer :name "mode-description")))
+        (buffer-set-major-mode buffer :loom-test-description)
+        (let ((description (mode-description-for-buffer buffer)))
+          (expect (getf description :mode) :to-be :loom-test-description)
+          (expect (getf description :name)
+                  :to-equal
+                  "Loom Test Description")
+          (expect (getf description :description)
+                  :to-equal
+                  "A test editing mode.")
+          (expect (getf description :keybindings)
+                  :to-equal
+                  (major-mode-keybindings :loom-test-description))
+          (setf (char (getf description :name) 0) #\X
+                (char (getf description :description) 0) #\X
+                (cdr (first (getf description :keybindings))) nil)
+          (expect (mode-description-for-buffer buffer)
+                  :to-equal
+                  (list :mode :loom-test-description
+                        :name "Loom Test Description"
+                        :description "A test editing mode."
+                        :keybindings
+                        (list (cons '(:control #\x)
+                                    #'%loom-test-extension-command)))))
+        (expect (mode-description-for-buffer (make-buffer))
+                :to-equal
+                '(:mode :fundamental
+                  :name "Fundamental"
+                  :description nil
+                  :keybindings nil)))))

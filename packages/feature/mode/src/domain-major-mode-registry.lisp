@@ -15,10 +15,11 @@
   parent-key)
 
 (defun %make-major-mode-definition
-    (key name parent-key aliases extensions filenames comment-prefix
+    (key name description parent-key aliases extensions filenames comment-prefix
      comment-start comment-end skip-closing-delimiter
      indentation-width tab-width language-id keywords keybindings truncate-lines)
   (list :name (or name (string-capitalize (symbol-name key)))
+        :description description
         :aliases aliases
         :parent (or parent-key :fundamental)
         :extensions extensions
@@ -42,9 +43,10 @@
   key)
 
 (defun %validate-major-mode-registration-options
-    (name comment-prefix comment-start comment-end
+    (name description comment-prefix comment-start comment-end
      language-id indentation-width tab-width)
   (%validate-major-mode-text name ":name")
+  (%validate-major-mode-text description ":description")
   (%validate-major-mode-text comment-prefix ":comment-prefix")
   (%validate-major-mode-text comment-start ":comment-start")
   (%validate-major-mode-text comment-end ":comment-end")
@@ -66,21 +68,22 @@
            (or filenames '()) ":filenames")))
 
 (defun register-major-mode
-    (mode &key name aliases (parent :fundamental) extensions filenames
+    (mode &key name description aliases (parent :fundamental) extensions filenames
             comment-prefix (comment-start comment-prefix) comment-end
             skip-closing-delimiter
             (indentation-width 2) (tab-width 8) language-id
             keywords keybindings (truncate-lines t))
   "Register an extension-defined major mode and return its canonical key.
 
-KEYBINDINGS is an alist of (KEY-FORM . COMMAND) entries.  KEY-FORM uses the
-same single- and multi-chord notation accepted by the global key binding API.
-COMMAND may be a function or a callable function symbol."
+DESCRIPTION is an optional user-facing summary. KEYBINDINGS is an alist of
+(KEY-FORM . COMMAND) entries. KEY-FORM uses the same single- and multi-chord
+notation accepted by the global key binding API. COMMAND may be a function or
+a callable function symbol."
   (let ((key (%new-major-mode-key mode)))
     (when (%major-mode-definition key)
       (error "Major mode is already defined: ~S" mode))
     (%validate-major-mode-registration-options
-     name comment-prefix comment-start comment-end
+     name description comment-prefix comment-start comment-end
      language-id indentation-width tab-width)
     (let ((parent-key (major-mode-from-name parent)))
       (multiple-value-bind (normalized-aliases normalized-extensions
@@ -92,7 +95,7 @@ COMMAND may be a function or a callable function symbol."
         (%register-major-mode-definition
          key
          (%make-major-mode-definition
-          key name parent-key normalized-aliases normalized-extensions
+          key name description parent-key normalized-aliases normalized-extensions
           normalized-filenames comment-prefix comment-start comment-end
           skip-closing-delimiter indentation-width tab-width language-id
           keywords keybindings truncate-lines))))))

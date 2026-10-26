@@ -14,6 +14,22 @@ bindings added after mode activation are still visible through the parent.
                        *major-mode-keymap-cache*)
               (%build-major-mode-keymap key fallback nil)))))
 
+(defun mode-description-for-buffer (buffer)
+  "Return a plist describing BUFFER's current major mode.
+
+The plist contains :MODE (canonical keyword), :NAME (display string),
+:DESCRIPTION (registered summary string or NIL), and :KEYBINDINGS (a fresh
+list of this mode's local (KEY-FORM . COMMAND) pairs). Parent, global, and
+implicit fallback bindings are not included."
+  (let* ((mode (or (major-mode-from-name (buffer-major-mode buffer))
+                   :fundamental))
+         (name (major-mode-name mode))
+         (description (getf (major-mode-definition mode) :description)))
+    (list :mode mode
+          :name (and name (copy-seq name))
+          :description (and description (copy-seq description))
+          :keybindings (major-mode-keybindings mode))))
+
 (defun %major-mode-keymap-provider (session buffer fallback-keymap)
   (declare (ignore session))
   (major-mode-keymap (buffer-major-mode buffer) fallback-keymap))

@@ -63,6 +63,7 @@
    #:register-major-mode
    #:unregister-major-mode
    #:major-mode-keymap
+   #:mode-description-for-buffer
    #:current-major-mode
    #:set-major-mode
    #:indent-for-tab-command
