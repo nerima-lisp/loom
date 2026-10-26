@@ -3,7 +3,9 @@
   (:import-from #:loom/feature/buffers
                 #:find-buffer-by-name
                 #:find-buffer-by-path
-                #:register-buffer)
+                #:register-buffer
+                #:register-buffer-switch-guard
+                #:run-buffer-switch-guard)
   (:import-from #:loom/core/buffer
                 #:buffer-delete-region
                 #:buffer-insert-string
