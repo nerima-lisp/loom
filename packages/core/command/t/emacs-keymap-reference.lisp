@@ -88,13 +88,13 @@
      :target-map :global :effective "capitalize-word" :owner :w3-1 :status :implemented)
     (:id "fill-paragraph-meta-q"
      :keys (((:alt) . #\q)) :emacs "fill-paragraph" :target "fill-paragraph"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :target-map :global :effective "fill-paragraph" :owner :w3-1 :status :implemented)
     (:id "indent-region-control-meta-backslash"
      :keys (((:alt :control) . #\\)) :emacs "indent-region" :target "indent-for-tab-command"
      :target-map :mode-provider :effective "indent-for-tab-command" :owner :w3-7a :status :implemented)
     (:id "delete-indentation-meta-caret"
      :keys (((:alt) . #\^)) :emacs "delete-indentation" :target "delete-indentation"
-     :target-map :global :effective :not-asserted :owner :w3-1 :status :pending)
+     :target-map :global :effective "delete-indentation" :owner :w3-1 :status :implemented)
     (:id "goto-line-meta-g-meta-g"
      :keys (((:alt) . #\g) ((:alt) . #\g)) :emacs :not-established
      :target "goto-line" :target-map :global :effective "goto-line"

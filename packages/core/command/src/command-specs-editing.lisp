@@ -81,3 +81,26 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all)))
+  (progn
+  (register-command-spec :core/buffer "fill-paragraph" "fill-paragraph" #'fill-paragraph
+                       :keys '((:alt #\q))
+                       :keymap :global
+                       :group "editing"
+                       :help nil
+                       :help-order nil
+                       :mutates t
+                       :prompts 'nil
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all))
+  (register-command-spec :core/buffer "delete-indentation" "delete-indentation" #'delete-indentation
+                       :keys '((:alt #\^))
+                       :keymap :global
+                       :group "editing"
+                       :help nil
+                       :help-order nil
+                       :mutates t
+                       :prompts 'nil
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all)))

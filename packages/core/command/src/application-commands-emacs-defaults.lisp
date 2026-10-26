@@ -9,7 +9,7 @@
              (loom/core/window-tree:window-tree-selected-window
               (editor-state-window-tree *editor-state*)))
            (buffer (loom/core/window-tree:window-buffer window))
-           (height (max 1 (loom/core/window-tree:window-height window)))
+           (height (max 1 (1- (loom/core/window-tree:window-height window))))
            (point-line (buffer-visible-point-line buffer))
            (position
              (if (equal *previous-command-id* "recenter-top-bottom")
@@ -116,3 +116,153 @@
        (concatenate 'string
                     (string-upcase (subseq word 0 1))
                     (string-downcase (subseq word 1)))))))
+(progn
+  (defun %command-horizontal-space-p (character)
+    (or (char= character #\Space)
+        (char= character #\Tab)))
+
+  (defun %command-set-point-at-offset (buffer offset)
+    (let ((position (buffer-offset-position buffer offset)))
+      (loom/core/buffer:buffer-set-point
+       buffer
+       (buffer-position-line position)
+       (buffer-position-column position))))
+
+  (defun delete-indentation ()
+    "Join the current line to the previous line."
+    (let* ((window
+             (loom/core/window-tree:window-tree-selected-window
+              (editor-state-window-tree *editor-state*)))
+           (buffer (loom/core/window-tree:window-buffer window))
+           (visible-start (buffer-narrow-start-offset buffer))
+           (text (buffer-visible-text buffer))
+           (point (- (buffer-point-offset buffer) visible-start))
+           (newline (position #\Newline text :end point :from-end t)))
+      (when newline
+        (let ((left-end newline)
+              (right-start (1+ newline)))
+          (loop while (and (> left-end 0)
+                           (%command-horizontal-space-p
+                            (char text (1- left-end))))
+                do (decf left-end))
+          (loop while (and (< right-start (length text))
+                           (%command-horizontal-space-p
+                            (char text right-start)))
+                do (incf right-start))
+          (let* ((left-character
+                   (when (> left-end 0) (char text (1- left-end))))
+                 (right-character
+                   (when (< right-start (length text))
+                     (char text right-start)))
+                 (separator
+                   (if (and left-character right-character
+                            (not (char= left-character #\Newline))
+                            (not (and (char= left-character #\(()
+                                      (char= right-character #\))))))
+                       " "
+                       "")))
+            (%replace-buffer-offset-range
+             buffer
+             (+ visible-start left-end)
+             (+ visible-start right-start)
+             separator)
+            (%command-set-point-at-offset
+             buffer
+             (+ visible-start left-end)))))))
+
+  (defun %command-line-ranges (text)
+    (loop with start = 0
+          for newline = (position #\Newline text :start start)
+          for end = (or newline (length text))
+          collect (cons start end)
+          while newline
+          do (setf start (1+ newline))))
+
+  (defun %command-blank-line-p (text range)
+    (every #'%command-horizontal-space-p
+           (subseq text (car range) (cdr range))))
+
+  (defun %command-paragraph-words (text start end)
+    (loop with word-start = nil
+          for offset from start below end
+          for character = (char text offset)
+          do (if (or (char= character #\Space)
+                     (char= character #\Tab)
+                     (char= character #\Newline))
+                 (when word-start
+                   (collect (subseq text word-start offset))
+                   (setf word-start nil))
+                 (unless word-start
+                   (setf word-start offset)))
+          finally (when word-start
+                    (collect (subseq text word-start end)))))
+
+  (defun %command-wrap-words (words width)
+    (with-output-to-string (output)
+      (let ((column 0))
+        (dolist (word words)
+          (if (zerop column)
+              (progn
+                (write-string word output)
+                (setf column (length word)))
+              (if (> (+ column 1 (length word)) width)
+                  (progn
+                    (write-char #\Newline output)
+                    (write-string word output)
+                    (setf column (length word)))
+                  (progn
+                    (write-char #\Space output)
+                    (write-string word output)
+                    (incf column (1+ (length word))))))))))
+
+  (defun fill-paragraph ()
+    "Fill the paragraph containing point to the default fill column."
+    (let* ((window
+             (loom/core/window-tree:window-tree-selected-window
+              (editor-state-window-tree *editor-state*)))
+           (buffer (loom/core/window-tree:window-buffer window))
+           (visible-start (buffer-narrow-start-offset buffer))
+           (text (buffer-visible-text buffer))
+           (point (- (buffer-point-offset buffer) visible-start))
+           (lines (%command-line-ranges text))
+           (line-index
+             (or (position-if
+                  (lambda (range)
+                    (<= (car range) point (cdr range)))
+                  lines)
+                 (1- (length lines)))))
+      (when (%command-blank-line-p text (nth line-index lines))
+        (setf line-index
+              (or (position-if
+                   (lambda (range)
+                     (not (%command-blank-line-p text range)))
+                   lines
+                   :start (1+ line-index))
+                  (position-if
+                   (lambda (range)
+                     (not (%command-blank-line-p text range)))
+                   lines
+                   :end line-index))))
+      (when line-index
+        (let ((first-line line-index)
+              (last-line line-index))
+          (loop while (and (> first-line 0)
+                           (not (%command-blank-line-p
+                                 text (nth (1- first-line) lines))))
+                do (decf first-line))
+          (loop while (and (< last-line (1- (length lines)))
+                           (not (%command-blank-line-p
+                                 text (nth (1+ last-line) lines))))
+                do (incf last-line))
+          (let* ((start (car (nth first-line lines)))
+                 (end (cdr (nth last-line lines)))
+                 (words (%command-paragraph-words text start end))
+                 (replacement (%command-wrap-words words 70))
+                 (point-offset (buffer-point-offset buffer)))
+            (when words
+              (%replace-buffer-offset-range
+               buffer (+ visible-start start) (+ visible-start end) replacement)
+              (%command-set-point-at-offset
+               buffer
+               (min point-offset
+                    (+ visible-start (length (buffer-visible-text buffer))))))))))))
