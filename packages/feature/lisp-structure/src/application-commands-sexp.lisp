@@ -57,7 +57,7 @@ skips line comments and nested block comments."
   (loom/core/editor-session:editor-state-clear-last-yank *editor-state*)
   (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
     (let* ((prefixed-p (%structural-prefix-p))
-           (count (if prefixed-p (max 0 (%command-prefix-count)) 1))
+           (count (if prefixed-p (max 0 (%structural-prefix-count)) 1))
            (end
              (loop with position = offset
                    with target = nil

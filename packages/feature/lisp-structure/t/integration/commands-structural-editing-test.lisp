@@ -8,8 +8,8 @@
        (loom::backward-slurp-sexp "a (b)
 " 3 "(a b)
 " 3)
-       (loom::forward-barf-sexp "(a b)
-" 1 "()a b
+       (loom::forward-barf-sexp "(a b c d e)
+" 1 "(a) b c d e
 " 1)
        (loom::forward-slurp-sexp "(a) b
 " 1 "(a b
@@ -27,12 +27,21 @@
       (command content offset expected expected-column)
     (%with-selected-buffer-state (buffer content)
       (progn
-  (buffer-set-major-mode buffer :common-lisp)
-  (buffer-set-point buffer 0 offset))
+        (buffer-set-major-mode buffer :common-lisp)
+        (buffer-set-point buffer 0 offset))
       (let ((loom/core/command:*current-prefix-argument* 4))
         (funcall command))
       (expect (buffer-text buffer) :to-equal expected)
       (expect (buffer-point-column buffer) :to-equal expected-column))))
+(describe
+  "structural prefix argument from editor state"
+  (it
+    "uses the active universal argument for commands invoked through M-x"
+    (let ((loom/core/command:*current-prefix-argument* nil))
+      (%with-selected-buffer-state (buffer "(a) b")
+        (loom/core/command:apply-prefix-argument-action :universal nil)
+        (expect (loom::%structural-prefix-p) :to-be t)
+        (expect (loom::%structural-prefix-count) :to-equal 4)))))
 
 (describe
   "structural command definition"
@@ -178,21 +187,29 @@
       (buffer-undo buffer)
       (expect (buffer-text buffer) :to-equal content)))
   (it-each
-      ((loom::backward-barf-sexp "(a b)
-" 1 1)
+      ((loom::forward-slurp-sexp "(a) b
+" 1 1 0)
+       (loom::forward-barf-sexp "(a b)
+" 1 1 0)
+       (loom::backward-slurp-sexp "a (b)
+" 3 1 0)
+       (loom::backward-barf-sexp "(a b)
+" 1 0 0)
+       (loom::splice-sexp "(a (b) c)
+" 4 1 0)
        (loom::raise-sexp "(a (b) c)
-" 4 4)
+" 4 1 0)
        (loom::wrap-round "a b
-" 0 0))
-      "~S restores point to the invocation position after undo"
-      (command content offset expected-column)
+" 0 1 0))
+      "~S restores the Emacs undo point"
+      (command content offset expected-line expected-column)
     (%with-selected-buffer-state (buffer content)
       (buffer-set-point buffer 0 offset)
       (buffer-record-undo-boundary buffer)
       (funcall command)
       (buffer-undo buffer)
       (expect (buffer-text buffer) :to-equal content)
-      (expect (buffer-point-line buffer) :to-equal 0)
+      (expect (buffer-point-line buffer) :to-equal expected-line)
       (expect (buffer-point-column buffer) :to-equal expected-column)))
   (it-each
       ((loom::forward-slurp-sexp "(a) b" 1)

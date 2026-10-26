@@ -6,8 +6,12 @@
       (1- end))))
 (defun %structural-prefix-p ()
   "Whether a structural command has a prefix different from the replay default."
-  (let ((argument loom/core/command:*current-prefix-argument*))
+  (let ((argument (%structural-prefix-count)))
     (and argument (/= argument 1))))
+(defun %structural-prefix-count ()
+  (or loom/core/command:*current-prefix-argument*
+      (loom/core/command:prefix-argument-value-for-editor)
+      1))
 
 (defun %structural-list-bounds (text classes offset)
   "Return (VALUES OPEN CLOSE) for the list enclosing OFFSET.

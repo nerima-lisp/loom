@@ -42,7 +42,7 @@
         (let ((target
                 (loop with position = close
                       with target = nil
-                      repeat (max 0 (%command-prefix-count))
+                      repeat (max 0 (%structural-prefix-count))
                       for start = (%backward-sexp-offset text position classes)
                       while (and start
                                  (> start open)
@@ -102,7 +102,7 @@
             (let ((target
                     (loop with position = (1+ open)
                           with target = nil
-                          repeat (max 0 (%command-prefix-count))
+                          repeat (max 0 (%structural-prefix-count))
                           for end = (%forward-sexp-offset text position classes)
                           while (and end
                                      (<= end offset)
@@ -114,12 +114,12 @@
               (when target
                 (values target
                         (%backward-barf-delimiter
-                         text target (string (char text open)))))
+                         text target (string (char text open))))))
             (%backward-barf-target text classes open close))
       (when target
         (values (list (list :delete open 1)
                       (list :insert (1- target) moved-delimiter))
-                :as-listed))))))
+                :as-listed)))))
 
 (defun %wrap-round-edits (text classes offset)
   "Wrap the prefix-count expressions after OFFSET in parentheses."
@@ -128,7 +128,7 @@
            (if (%structural-prefix-p)
                (loop with position = offset
                      with target = nil
-                     repeat (max 0 (%command-prefix-count))
+                     repeat (max 0 (%structural-prefix-count))
                      for next = (%forward-sexp-offset text position classes)
                      while next
                      do (setf target next
@@ -171,7 +171,7 @@
             (if (%structural-prefix-p)
                 (loop with position = offset
                       with target = nil
-                      repeat (max 0 (%command-prefix-count))
+                      repeat (max 0 (%structural-prefix-count))
                       for next = (%forward-sexp-offset
                                   text position classes)
                       while (and next (> next position) (<= next close))

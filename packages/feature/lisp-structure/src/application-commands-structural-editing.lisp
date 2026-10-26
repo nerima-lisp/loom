@@ -1,12 +1,18 @@
 (in-package #:loom)
 
-(defun %run-structural-command (edit-function buffer text offset start)
+(defun %run-structural-command
+    (edit-function buffer text offset start &optional undo-anchor)
   (multiple-value-bind (edits application-order reindent-offset point-offset)
       (funcall edit-function text (%sexp-syntax-classes text) offset)
     (when edits
       (when (loom/core/buffer:buffer-read-only-p buffer)
         (error "Buffer is read-only: #<buffer ~A>"
                (loom/core/buffer:buffer-name buffer)))
+      (when undo-anchor
+        (%record-structural-undo-anchor
+         buffer (ecase undo-anchor
+                  (:start start)
+                  (:end (+ start (length text))))))
       (%apply-structural-edits buffer start edits application-order)
       (let* ((adjusted-offset
                (or point-offset (%structural-adjusted-offset edits offset)))
@@ -42,8 +48,18 @@
                          point-column)))
               (loom/core/buffer:buffer-set-point
                buffer point-line restored-column))))))))
+(defun %record-structural-undo-anchor (buffer offset)
+  (let* ((position (buffer-offset-position buffer offset))
+         (line (buffer-position-line position))
+         (column (buffer-position-column position)))
+    ;; Emacs restores this point after undoing the structural edit group.
+    (loom/core/buffer:buffer-set-point buffer line column)
+    (loom/core/buffer:buffer-insert-string buffer " ")
+    (loom/core/buffer:buffer-delete-region
+     buffer line column line (1+ column))))
 
-(defmacro define-structural-command (name documentation edit-function)
+(defmacro define-structural-command
+    (name documentation edit-function &optional (undo-anchor :end))
   "Define a zero-argument structural editing command.
 
 EDIT-FUNCTION returns the edits to apply, or NIL when the operation has nothing
@@ -52,7 +68,8 @@ found by the depth scanner. NIL leaves the buffer untouched."
   `(defun ,name ()
      ,documentation
      (multiple-value-call #'%run-structural-command #',edit-function
-       (%sexp-motion-context))
+       (%sexp-motion-context)
+       ,undo-anchor)
      nil))
 
 (define-structural-command forward-slurp-sexp
@@ -78,7 +95,8 @@ and deleting it at the old position."
   "Move the enclosing list's opening delimiter in past its first expression (C-M-<right>).
 
 `(a b)' becomes `a (b)'."
-  %backward-barf-edits)
+  %backward-barf-edits
+  :start)
 
 (define-structural-command splice-sexp
   "Remove the enclosing list's delimiters, keeping its contents (M-s).
@@ -101,12 +119,15 @@ inside the new opening delimiter either way, which is where the next thing
 typed belongs."
   (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
     (let* ((classes (%sexp-syntax-classes text))
-           (edits (%wrap-round-edits text classes offset))
            (opening (%sexp-skip-forward-filler text classes offset)))
-      (when edits
-        (when (loom/core/buffer:buffer-read-only-p buffer)
-          (error "Buffer is read-only: #<buffer ~A>"
-                 (loom/core/buffer:buffer-name buffer)))
-        (%apply-structural-edits buffer start edits)
-        (%move-point-to-offset buffer (+ start opening 1)))))
+      (multiple-value-bind (edits application-order)
+          (%wrap-round-edits text classes offset)
+        (when edits
+          (when (loom/core/buffer:buffer-read-only-p buffer)
+            (error "Buffer is read-only: #<buffer ~A>"
+                   (loom/core/buffer:buffer-name buffer)))
+          (%record-structural-undo-anchor
+           buffer (+ start (length text)))
+          (%apply-structural-edits buffer start edits application-order)
+          (%move-point-to-offset buffer (+ start opening 1))))))
   nil)
