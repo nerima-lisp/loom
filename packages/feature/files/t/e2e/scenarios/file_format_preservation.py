@@ -24,7 +24,9 @@ def file_format_preservation(binary):
                 stage = "initial frame"
                 session.wait_ready()
                 stage = "initial file content"
-                session.wait_for_region_exact_text("body", "alpha", index=0)
+                session.wait_for_region_exact_text(
+                    "body", "alpha", index=0, timeout=2.0
+                )
                 stage = "typing edit"
                 session.type("!")
                 stage = "edited body"
