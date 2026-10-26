@@ -1,0 +1,714 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/buffer/r3/capitalize-word/read-only",
+      "path_id": "r3:capitalize-word:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "capitalize-word"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-c"
+      ],
+      "initial_bytes": "ONE two three\n",
+      "effect_bytes": "ONE two three\n",
+      "expected_bytes": "ONE two three\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two three"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two three"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/effect",
+      "path_id": "r3:delete-backward-char:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "delete-backward-char",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        ""
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "bc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/undo",
+      "path_id": "r3:delete-backward-char:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "delete-backward-char",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        ""
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "bc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/macro-replay",
+      "path_id": "r3:delete-backward-char:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "delete-backward-char",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        ""
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "bc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/read-only",
+      "path_id": "r3:downcase-word:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"l\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "downcase-word"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-l"
+      ],
+      "initial_bytes": "ONE two\n",
+      "effect_bytes": "ONE two\n",
+      "expected_bytes": "ONE two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/effect",
+      "path_id": "r3:fill-paragraph:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "fill-paragraph",
+        "save-buffer"
+      ],
+      "command": "fill-paragraph",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-q"
+      ],
+      "initial_bytes": "alpha beta\ngamma delta\n",
+      "effect_bytes": "alpha beta gamma delta\n",
+      "expected_bytes": "alpha beta gamma delta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/read-only",
+      "path_id": "r3:fill-paragraph:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "fill-paragraph"
+      ],
+      "command": "fill-paragraph",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-q"
+      ],
+      "initial_bytes": "alpha beta\ngamma delta\n",
+      "effect_bytes": "alpha beta\ngamma delta\n",
+      "expected_bytes": "alpha beta\ngamma delta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "gamma delta",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "gamma delta",
+          "index": 1
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/macro-replay",
+      "path_id": "r3:fill-paragraph:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "fill-paragraph",
+        "end-kbd-macro",
+        "undo",
+        "beginning-of-buffer",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "fill-paragraph",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-q"
+      ],
+      "initial_bytes": "alpha beta\ngamma delta\n",
+      "effect_bytes": "alpha beta gamma delta\n",
+      "expected_bytes": "alpha beta gamma delta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "replay_prefix_keys": [
+        "M-<"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "gamma delta",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/effect",
+      "path_id": "r3:newline:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "newline",
+        "RET"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/effect",
+      "path_id": "r3:open-line:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "forward-char",
+        "open-line",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "C-o"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/redo/effect",
+      "path_id": "r3:redo:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "mutation_case": "effect",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/effect",
+      "path_id": "r3:transpose-chars:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "transpose-chars",
+        "save-buffer"
+      ],
+      "command": "transpose-chars",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-t"
+      ],
+      "initial_bytes": "abcd\n",
+      "effect_bytes": "bacd\n",
+      "expected_bytes": "bacd\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "pre_command_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/read-only",
+      "path_id": "r3:transpose-chars:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "transpose-chars"
+      ],
+      "command": "transpose-chars",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-t"
+      ],
+      "initial_bytes": "abcd\n",
+      "effect_bytes": "abcd\n",
+      "expected_bytes": "abcd\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "pre_command_keys": [
+        "C-f"
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/macro-replay",
+      "path_id": "r3:transpose-chars:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "transpose-chars",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "forward-char",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "transpose-chars",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-t"
+      ],
+      "initial_bytes": "abcd\n",
+      "effect_bytes": "bacd\n",
+      "expected_bytes": "bacd\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "pre_command_keys": [
+        "C-f"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/effect",
+      "path_id": "r3:undo:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-/"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-h"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/read-only",
+      "path_id": "r3:upcase-word:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "upcase-word"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-u"
+      ],
+      "initial_bytes": "one two\n",
+      "effect_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    }
+  ]
+}
