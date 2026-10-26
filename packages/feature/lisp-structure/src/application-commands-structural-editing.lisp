@@ -1,9 +1,10 @@
 (in-package #:loom)
 
 (defun %run-structural-command (edit-function buffer text offset start)
-  (let ((edits (funcall edit-function text (%sexp-syntax-classes text) offset)))
+  (multiple-value-bind (edits application-order)
+      (funcall edit-function text (%sexp-syntax-classes text) offset)
     (when edits
-      (%apply-structural-edits buffer start edits)
+      (%apply-structural-edits buffer start edits application-order)
       (%move-point-to-offset
        buffer (+ start (%structural-adjusted-offset edits offset))))))
 

@@ -1,56 +1,93 @@
 """Data-driven R1 command-path cases for S-expression commands."""
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from loom_e2e import keys
 from loom_e2e.command_path_scenarios import (
     load_command_path_scenarios,
     run_command_path_scenario,
 )
 from loom_e2e.registry import scenario
-from loom_e2e.results import UNSET
 from loom_e2e.session import Session
 
 
 _CASES = load_command_path_scenarios(Path(__file__).with_name("command-paths.json"))
-_CURSOR_MOTION_COMMANDS = {
-    "backward-sexp",
-    "backward-up-list",
-    "down-list",
-    "forward-sexp",
-}
 
 
-class _CursorSettledSession(Session):
-    def observe_cursor(
-        self,
-        expected=UNSET,
-        *,
-        purpose="scenario",
-        sample=UNSET,
-        region=None,
-        index=0,
-    ):
-        if expected is not UNSET and region is not None:
-            self.wait_for_region_cursor(region, expected[1], index=expected[0])
-        return super().observe_cursor(
-            expected=expected,
-            purpose=purpose,
-            sample=sample,
-            region=region,
-            index=index,
-        )
+class _SynchronizedSession(Session):
+    def send(self, data):
+        payload = bytes(data)
+        super().send(payload)
+        if payload == keys.meta("x"):
+            self.wait_for_region_text("minibuffer", "M-x ")
+        elif payload == keys.ctrl("f"):
+            self.wait_for_region_cursor("body", 1)
+
+
+def _send_path_keys(session, names):
+    for name in names:
+        if name.startswith("C-") and len(name) == 3:
+            session.send(keys.ctrl(name[2]))
+        elif name.startswith("M-") and len(name) == 3:
+            session.send(keys.meta(name[2]))
+        elif name == "RET":
+            session.key("RET")
+        else:
+            session.type(name)
+
+
+def _run_read_only_scenario(binary, case):
+    initial = case["initial_bytes"].encode("utf-8")
+    with TemporaryDirectory(prefix="loom-e2e-command-path-") as directory:
+        path = Path(directory) / "buffer.txt"
+        path.write_bytes(initial)
+        with _SynchronizedSession(
+            binary, [str(path)], rows=case.get("rows", 24)
+        ) as session:
+            session.wait_ready()
+            session.send(keys.meta("x"))
+            session.type(case["read_only_command"])
+            session.key("RET")
+            session.wait_for_region_exact_text(
+                "minibuffer", case["expected_read_only_status"], strip_right=True
+            )
+            _send_path_keys(session, case["command_keys"])
+            session.wait_for_region_exact_text(
+                "minibuffer", case["expected_minibuffer"], strip_right=True
+            )
+            for expectation in case["expected_screen"]:
+                session.wait_for_region_exact_text(
+                    expectation["region"],
+                    expectation["text"],
+                    index=expectation.get("index", 0),
+                    strip_right=True,
+                )
+            for expectation in case["expected_screen"]:
+                session.assert_screen_text(
+                    expectation["text"],
+                    region=expectation["region"],
+                    index=expectation.get("index", 0),
+                    strip_right=True,
+                )
+            if session.observe_cursor(
+                expected=tuple(case["expected_cursor"]), region="body"
+            ) is not True:
+                raise AssertionError("read-only command moved the body cursor")
+            session.assert_file_bytes(path, initial)
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"{case['name']} exited with {code}: {output!r}"
+                )
 
 
 def _scenario_function(case):
     def run(binary):
-        session_factory = (
-            _CursorSettledSession
-            if case["command"] in _CURSOR_MOTION_COMMANDS
-            else Session
-        )
-        return run_command_path_scenario(
-            binary, case, session_factory=session_factory
-        )
+        if case["rule"] == "r3" and case["mutation_case"] == "read-only":
+            return _run_read_only_scenario(binary, case)
+        session_factory = _SynchronizedSession if case["rule"] == "r3" else Session
+        return run_command_path_scenario(binary, case, session_factory=session_factory)
 
     return run
 

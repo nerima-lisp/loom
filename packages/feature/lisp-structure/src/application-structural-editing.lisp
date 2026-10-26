@@ -4,8 +4,10 @@
   (%forward-sexp-offset text (1+ close) classes))
 
 (defun %forward-slurp-edits-at (text close target)
-  (list (list :insert target (string (char text close)))
-        (list :delete close 1)))
+  "Delete first so undo restores point after the original close delimiter, as Emacs does."
+  (values (list (list :delete close 1)
+                (list :insert (1- target) (string (char text close))))
+          :as-listed))
 
 (defun %forward-slurp-edits (text classes offset)
   "Move the enclosing list's closing delimiter past the expression after it."

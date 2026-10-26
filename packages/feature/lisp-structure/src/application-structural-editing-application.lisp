@@ -22,12 +22,10 @@
     (:insert (%apply-structural-insertion buffer start edit))
     (:delete (%apply-structural-deletion buffer start edit))))
 
-(defun %apply-structural-edits (buffer start edits)
-  "Apply EDITS, whose offsets are relative to START, to BUFFER.
-
-The edits run from the highest offset down, so each one is applied while the
-  offsets of the ones still to come are still describing the text they were
-  computed against. They are one undo group because nothing between them records
-  an undo boundary."
-  (dolist (edit (sort (copy-list edits) #'> :key #'second))
+(defun %apply-structural-edits (buffer start edits &optional order)
+  "Apply EDITS relative to START. :AS-LISTED uses adjusted offsets in order;
+otherwise edits run highest to lowest offset. Both forms are one undo group."
+  (dolist (edit (if (eq order :as-listed)
+                    edits
+                    (sort (copy-list edits) (function >) :key (function second))))
     (%apply-structural-edit buffer start edit)))

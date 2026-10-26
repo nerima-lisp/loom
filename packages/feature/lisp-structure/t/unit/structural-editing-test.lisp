@@ -1,9 +1,14 @@
 (in-package #:loom/test)
 
-(defun %apply-edits-to-string (text edits)
-  "Apply EDITS to TEXT the way %APPLY-STRUCTURAL-EDITS applies them to a buffer."
+(defun %apply-edits-to-string (text edits &optional order)
+  "Apply EDITS to TEXT using the same order as the buffer operation."
   (let ((result text))
-    (dolist (edit (sort (copy-list edits) #'> :key #'second) result)
+    (dolist (edit (if (eq order :as-listed)
+                      edits
+                      (sort (copy-list edits)
+                            (function >)
+                            :key (function second)))
+                 result)
       (let ((position (second edit)))
         (setf result
               (ecase (first edit)
@@ -16,10 +21,11 @@
                                       (subseq result (+ position (third edit)))))))))))
 
 (defun %structural-result (function text offset)
-  "Return the text FUNCTION's edits produce, or NIL when it declines to act."
-  (let* ((classes (loom::%sexp-syntax-classes text))
-         (edits (funcall function text classes offset)))
-    (and edits (%apply-edits-to-string text edits))))
+  "Return the text FUNCTION edits produce, or NIL when it declines to act."
+  (let ((classes (loom::%sexp-syntax-classes text)))
+    (multiple-value-bind (edits order)
+        (funcall function text classes offset)
+      (and edits (%apply-edits-to-string text edits order)))))
 
 (defun %balanced-p (text)
   "True when TEXT's structural parentheses pair up."
