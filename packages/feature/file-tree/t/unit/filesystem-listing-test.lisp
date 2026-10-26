@@ -130,10 +130,10 @@
                                                  :to-equal
                                                  conflict-path)
                                                 (let ((buffer
-                                                       (make-buffer :path
-                                                                    conflict-path
-                                                                    :initial-content
-                                                                    "destination")))
+                                                       (let ((buffer (buffer-load conflict-path)))
+                                                         (buffer-set-point buffer 0 0)
+                                                         (buffer-insert-string buffer "destination")
+                                                         buffer)))
                                                   (let ((loom/core/editor-session:*editor-session*
                                                          (%make-test-editor-session)))
                                                     (buffer-save buffer)))
