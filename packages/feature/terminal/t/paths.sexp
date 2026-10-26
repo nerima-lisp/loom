@@ -1,1 +1,36 @@
-()
+((:id "r1:terminal:mx"
+  :commands (:terminal)
+  :rule :r1
+  :entry "mx"
+  :state "default"
+  :outcome "command runs from M-x"
+  :observe (:screen_text)
+  :scenario "tooling/terminal"
+  :lane "W3-11")
+ (:id "r5:terminal:shell:success"
+  :commands (:terminal)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "success"
+  :observe (:external_state)
+  :scenario "tooling/terminal"
+  :lane "W3-11")
+ (:id "r1:terminal-stop:mx"
+  :commands (:terminal-stop)
+  :rule :r1
+  :entry "mx"
+  :state "default"
+  :outcome "command runs from M-x"
+  :observe (:screen_text)
+  :scenario "tooling/terminal-stop"
+  :lane "W3-11")
+ (:id "r5:terminal-stop:shell:success"
+  :commands (:terminal-stop)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "success"
+  :observe (:external_state)
+  :scenario "tooling/terminal-stop"
+  :lane "W3-11"))

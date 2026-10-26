@@ -18,7 +18,7 @@ root source tree responsible for every feature."
   :homepage "https://github.com/nerima-lisp/loom"
   :bug-tracker "https://github.com/nerima-lisp/loom/issues"
   :source-control (:git "https://github.com/nerima-lisp/loom.git")
-  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init" "loom-feature-syntax-highlighting" "loom-feature-lang-lisp" "loom-feature-lang-nix" "loom-feature-lang-web" "loom-feature-lang-markup" "loom-feature-minibuffer-ui" "loom-feature-buffers" "loom-feature-files" "loom-feature-file-tree" "loom-feature-bookmark" "loom-feature-project" "loom-feature-lsp" "loom-feature-lifecycle" "loom-feature-evaluation" "loom-feature-session")
+  :depends-on ("cl-tty-kit" "cl-host-kit" "cl-history-kit" "cl-prolog-kit" "cl-cli" "cl-regex-kit" "cl-boundary-kit" "cl-concurrent-kit" "cl-date-kit" "cl-json-kit" "cl-log-kit" "cl-process-kit" "cl-vcs-kit" "cl-resilience-kit" "loom-core-buffer" "loom-core-window-tree" "loom-core-editor-session" "loom-core-minibuffer" "loom-core-command" "loom-feature-mode" "loom-feature-clipboard" "loom-feature-mouse" "loom-feature-window" "loom-feature-kill-ring" "loom-feature-search" "loom-feature-completion" "loom-feature-help" "loom-feature-workspace" "loom-feature-lisp-structure" "loom-feature-register" "loom-feature-keyboard-macro" "loom-feature-user-init" "loom-feature-syntax-highlighting" "loom-feature-lang-lisp" "loom-feature-lang-nix" "loom-feature-lang-web" "loom-feature-lang-markup" "loom-feature-minibuffer-ui" "loom-feature-buffers" "loom-feature-files" "loom-feature-file-tree" "loom-feature-bookmark" "loom-feature-project" "loom-feature-lsp" "loom-feature-terminal" "loom-feature-lifecycle" "loom-feature-evaluation" "loom-feature-session")
   :pathname "."
   :serial t
   :components
@@ -56,13 +56,6 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/auto-save/src/package")
     ))
-   (:module "feature-terminal-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/terminal/src/package")
-    ))
    (:module "feature-git-package"
     :pathname "."
     :serial t
@@ -96,22 +89,6 @@ root source tree responsible for every feature."
     (
      (:file "packages/feature/auto-save/src/domain-auto-save")
     ))
-   (:module "feature-terminal-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/terminal/src/domain-terminal-support")
-     (:file "packages/feature/terminal/src/domain-terminal")
-     (:file "packages/feature/terminal/src/domain-terminal-screen-operations")
-     (:file "packages/feature/terminal/src/domain-terminal-screen-state")
-     (:file "packages/feature/terminal/src/domain-terminal-csi-screen-operations")
-     (:file "packages/feature/terminal/src/domain-terminal-csi-cursor")
-     (:file "packages/feature/terminal/src/domain-terminal-csi-edit")
-     (:file "packages/feature/terminal/src/domain-terminal-parser-csi")
-     (:file "packages/feature/terminal/src/domain-terminal-parser")
-     (:file "packages/feature/terminal/src/domain-terminal-session")
-    ))
    (:module "feature-shell-domain"
     :pathname "."
     :serial t
@@ -135,14 +112,6 @@ root source tree responsible for every feature."
      (:file "src/infrastructure/terminal-renderer-cursor")
      (:file "src/infrastructure/terminal-renderer-text")
      (:file "src/infrastructure/terminal-renderer-text-wrapping")
-    ))
-   (:module "feature-terminal-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/terminal/src/infrastructure-terminal")
-     (:file "packages/feature/terminal/src/infrastructure-terminal-session-runtime")
     ))
    (:module "feature-project-infrastructure"
     :pathname "."
@@ -211,15 +180,6 @@ root source tree responsible for every feature."
      (:file "packages/feature/auto-save/src/application-auto-save-support")
      (:file "packages/feature/auto-save/src/application-commands-auto-save")
     ))
-   (:module "feature-terminal-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     (:file "packages/feature/terminal/src/application-terminal-input-support")
-     (:file "packages/feature/terminal/src/application-terminal-input")
-     (:file "packages/feature/terminal/src/application-commands-terminal")
-    ))
    (:module "feature-git-application"
     :pathname "."
     :serial t
@@ -233,7 +193,6 @@ root source tree responsible for every feature."
     :serial t
     :components
     (
-     (:file "packages/feature/terminal/src/command-specs-terminal")
      (:file "packages/feature/shell/src/command-specs-shell")
      (:file "packages/feature/git/src/command-specs-git")
      (:file "packages/feature/format/src/command-specs-format")
@@ -315,13 +274,6 @@ root source tree responsible for every feature."
    (:file "t/unit/shell-test")
   (:file "t/unit/format-test")
   (:file "t/unit/auto-save-test")
-  (:file "t/unit/terminal-screen-basic-test")
-  (:file "t/unit/terminal-screen-cursor-test")
-  (:file "t/unit/terminal-screen-control-test")
-  (:file "t/unit/terminal-screen-validation-test")
-  (:file "t/unit/terminal-event-test")
-  (:file "t/unit/terminal-session-test")
-  (:file "t/unit/terminal-session-lifecycle-test")
   (:file "t/unit/git-test")
   (:file "t/unit/git-file-operations-test")
   (:file "t/unit/cli-test")
@@ -366,7 +318,7 @@ root source tree responsible for every feature."
   (asdf:test-op (o s)
              (declare (ignore o s))
              (unless (funcall (find-symbol "RUN-TESTS" (find-package "LOOM/TEST")))
-               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test" "loom-feature-syntax-highlighting/test" "loom-feature-lang-lisp/test" "loom-feature-lang-nix/test" "loom-feature-lang-web/test" "loom-feature-lang-markup/test" "loom-feature-minibuffer-ui/test" "loom-feature-buffers/test" "loom-feature-file-tree/test" "loom-feature-files/test" "loom-feature-bookmark/test" "loom-feature-project/test" "loom-feature-lifecycle/test" "loom-feature-evaluation/test" "loom-feature-session/test" "loom-feature-lsp/test"))))
+               (error "cl-weave tests failed"))) :in-order-to ((asdf:prepare-op (asdf:load-op "loom/test-support" "loom-core-buffer/test" "loom-core-window-tree/test" "loom-core-editor-session/test" "loom-core-minibuffer/test" "loom-core-command/test" "loom-core-package-bootstrap/test" "loom-feature-mode/test" "loom-feature-clipboard/test" "loom-feature-mouse/test" "loom-feature-window/test" "loom-feature-kill-ring/test" "loom-feature-search/test" "loom-feature-completion/test" "loom-feature-help/test" "loom-feature-workspace/test" "loom-feature-lisp-structure/test" "loom-feature-register/test" "loom-feature-keyboard-macro/test" "loom-feature-user-init/test" "loom-feature-syntax-highlighting/test" "loom-feature-lang-lisp/test" "loom-feature-lang-nix/test" "loom-feature-lang-web/test" "loom-feature-lang-markup/test" "loom-feature-minibuffer-ui/test" "loom-feature-buffers/test" "loom-feature-file-tree/test" "loom-feature-files/test" "loom-feature-bookmark/test" "loom-feature-project/test" "loom-feature-lifecycle/test" "loom-feature-evaluation/test" "loom-feature-session/test" "loom-feature-lsp/test" "loom-feature-terminal/test"))))
 
 (asdf:defsystem "loom/test-support"
   :description "Shared test package and fixtures for loom slice tests"

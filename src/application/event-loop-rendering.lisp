@@ -2,7 +2,7 @@
 
 (defun %render-event-loop-frame (stream)
   "Run background refresh work, compose the current frame, and present it."
-  (loom/feature/terminal:poll-terminal-sessions *editor-state*)
+  (loom/feature/terminal:terminal-event-loop-poll-sessions *editor-state*)
   (loom/feature/file-tree:refresh-file-tree-runtime *editor-state*)
   (loom/feature/lsp:lsp-refresh-editor-state *editor-state*)
   (compose-frame *editor-state*)

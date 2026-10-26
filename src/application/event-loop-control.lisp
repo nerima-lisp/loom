@@ -16,7 +16,7 @@ unchanged when the terminal size could not be read or has not changed."
     (if (and width height (or (/= width last-width) (/= height last-height)))
         (progn
           (loom-renderer-resize renderer width height)
-          (loom/feature/terminal:resize-terminal-sessions width
+          (loom/feature/terminal:terminal-event-loop-resize-sessions width
                                                           height
                                                           *editor-state*)
           (values width height))
@@ -35,8 +35,7 @@ or auto-save buffers, the loop keeps its original blocking read behavior.")
   (not
    (null
     (or
-     (some #'loom/feature/terminal:terminal-session-alive-p
-           (editor-state-terminal-sessions *editor-state*))
+     (loom/feature/terminal:terminal-event-loop-background-work-p *editor-state*)
      (editor-state-lsp-session *editor-state*)
      (editor-state-auto-save-mode-p *editor-state*)
      (editor-state-auto-save-buffers *editor-state*)))))

@@ -37,15 +37,20 @@
                      #:terminal-input-event-p
                      #:terminal-handle-key-event
                      #:terminal
-                     #:terminal-stop)
+                     #:terminal-stop
+                     #:terminal-event-loop-background-work-p
+                     #:terminal-event-loop-poll-sessions
+                     #:terminal-event-loop-resize-sessions)
             (:import-from #:loom/feature/buffers
                           #:registered-buffers
                           #:register-buffer)
-            (:import-from #:loom/core/editor-session #:*editor-session*
+            (:import-from #:loom/core/editor-session
+                          #:*editor-session*
                           #:editor-state-session
                           #:*editor-state*
                           #:editor-state-window-tree
-                          #:editor-state-terminal-sessions #:editor-state-minibuffer)
+                          #:editor-state-terminal-sessions
+                          #:editor-state-minibuffer)
             (:import-from #:loom/core/buffer
                           #:buffer-delete-region
                           #:buffer-insert-string
