@@ -215,7 +215,7 @@
     (expect
      (mapcar #'major-mode-comment-prefix modes)
      :to-equal
-     '(";" ";" "#" "//" "//" "#" "#" nil))
+     '(";" ";" "#" "//" "//" nil "#" nil))
     (expect
      (mapcar #'major-mode-comment-start modes)
      :to-equal
