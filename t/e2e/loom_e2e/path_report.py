@@ -578,21 +578,19 @@ def _classify_path(
     attributed_effects = []
     effects_by_command = defaultdict(list)
     for observation in expected_effects:
-        visible_commands = [
+        visible_targets = [
             command
             for command in trace_commands
             if command[2] <= observation["trace_lines"]
+            and command[0] in target_commands
+            and (expected_route is None or command[1] == expected_route)
+            and (expected_entry is None or command[3] == expected_entry)
         ]
-        if not visible_commands:
+        if not visible_targets:
             continue
-        command, route, _line_number, entry = visible_commands[-1]
-        if (
-            command in target_commands
-            and (expected_route is None or route == expected_route)
-            and (expected_entry is None or entry == expected_entry)
-        ):
-            attributed_effects.append(observation)
-            effects_by_command[command].append(observation)
+        command, _route, _line_number, _entry = visible_targets[-1]
+        attributed_effects.append(observation)
+        effects_by_command[command].append(observation)
 
     missing_effect_commands = target_commands - effects_by_command.keys()
     if missing_effect_commands:

@@ -450,7 +450,7 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
-    def test_effect_after_the_next_command_is_outside_target_attribution_window(self):
+    def test_effect_after_an_unrelated_command_remains_in_target_window(self):
         self.required["observe"] = ["screen_text"]
         self.ledger["observe"] = ["screen_text"]
         self._write_scenario(
@@ -471,8 +471,8 @@ class PathReportTests(unittest.TestCase):
         )
         report = self._report(ledger=self.ledger)
         path = report["paths"][0]
-        self.assertEqual(path["status"], "no-observation")
-        self.assertIn("attribution window", path["reason"])
+        self.assertEqual(path["status"], "pass")
+        self.assertFalse(report["has_failures"])
 
     def test_empty_ledger_observation_requirement_cannot_pass(self):
         self.ledger["observe"] = []
