@@ -67,7 +67,7 @@
              (tree (make-window-tree source 80 24))
              (session
                (loom/core/editor-session:make-editor-session
-                (list :core/window-tree :feature/buffers :feature/search)
+                (list :core/window-tree :feature/buffers :feature/search :feature/workspace)
                 :initial-slices (list (cons :core/window-tree tree))))
              (*editor-state*
                (make-editor-state
