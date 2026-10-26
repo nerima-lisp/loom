@@ -33,14 +33,20 @@
 (register-internal-command
  :feature/mode "mode/comment-dwim" (function loom/feature/mode:comment-dwim)
  :mutates t :prompts nil :needs-region nil :external nil :modes (list :all))
-(register-key-command
+(%register-command-spec
  :feature/mode
  "mode/newline-and-indent"
- (function loom/feature/mode:newline-and-indent)
- :global
  nil
+ (function loom/feature/mode:newline-and-indent)
+ :keys nil
+ :keymap :global
+ :group nil
+ :help nil
+ :help-order nil
  :mutates t
  :prompts nil
  :needs-region nil
  :external nil
- :modes '(:all))
+ :modes '(:all)
+ :catalog-visible-p nil
+ :trace-visible-p t)
