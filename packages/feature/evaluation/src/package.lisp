@@ -6,6 +6,7 @@
                 #:buffer-line-count
                 #:buffer-mark-saved
                 #:buffer-name
+                #:buffer-point-offset
                 #:buffer-set-point
                 #:buffer-text
                 #:make-buffer)
@@ -33,4 +34,5 @@
            #:evaluate-lisp-source
            #:eval-expression
            #:eval-buffer
+           #:eval-last-sexp
            #:register-evaluation-package-provider))

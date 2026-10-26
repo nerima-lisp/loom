@@ -131,8 +131,8 @@
          (ids (mapcar (lambda (entry) (gethash "id" entry)) catalog))
          (extended
            (loom/core/command:find-command-spec "execute-extended-command")))
-    (expect (length catalog) :to-equal 130)
-    (expect (length (remove-duplicates ids :test #'equal)) :to-equal 130)
+    (expect (length catalog) :to-equal 131)
+    (expect (length (remove-duplicates ids :test #'equal)) :to-equal 131)
     (expect (loop for entry in catalog
                   always (loop for field in required-fields
                                always (nth-value 1 (gethash field entry))))

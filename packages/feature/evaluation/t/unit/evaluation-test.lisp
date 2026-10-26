@@ -31,6 +31,32 @@
       (expect (loom/feature/evaluation:evaluation-result-success-p result) :to-be-falsy)
       (expect (loom/feature/evaluation:evaluation-result-error-message result)
               :to-contain "read"))))
+(describe
+  "eval-last-sexp"
+  (it "evaluates only the expression before point and preserves point"
+    (let* ((state (%fresh-editor-state "(+ 1 2) (+ 3 4) (+ 5 6)" :with-minibuffer t))
+           (source-buffer (window-buffer
+                           (window-tree-selected-window
+                            (editor-state-window-tree state)))))
+      (loom/core/buffer:buffer-set-point source-buffer 0 15)
+      (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+             (loom/core/editor-session:editor-state-session state)))
+        (loom/feature/evaluation:eval-last-sexp)
+        (let ((result (find "*Loom-Eval*"
+                            (%test-registered-buffers state)
+                            :key (function buffer-name)
+                            :test (function string=))))
+          (expect result :to-be-truthy)
+          (expect (buffer-text result)
+                  :to-equal (format nil "loom-eval> (+ 3 4)~%=> 7~%~%"))
+          (expect (loom/core/buffer:buffer-point-offset source-buffer)
+                  :to-equal 15)
+          (expect (buffer-text source-buffer) :to-equal "(+ 1 2) (+ 3 4) (+ 5 6)")
+          (expect (window-buffer
+                   (window-tree-selected-window
+                    (editor-state-window-tree state)))
+                  :to-be result))))))
 
 (describe
   "evaluation commands"

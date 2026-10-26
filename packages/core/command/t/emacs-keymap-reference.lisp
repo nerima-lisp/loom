@@ -114,11 +114,11 @@
     (:id "eval-last-sexp-control-x-control-e"
      :keys (((:control) . #\x) ((:control) . #\e)) :emacs "eval-last-sexp"
      :target "eval-last-sexp" :target-map :global
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "eval-last-sexp" :owner :w3-7b :status :implemented)
     (:id "eval-buffer-m-x"
      :keys nil :emacs "eval-buffer via M-x" :target "eval-buffer"
-     :target-map :extended-command :effective :not-asserted
-     :owner :w3-7b :status :pending)
+     :target-map :extended-command :effective "eval-buffer"
+     :owner :w3-7b :status :implemented)
     (:id "file-tree-legacy-control-x-control-t"
      :keys (((:control) . #\x) ((:control) . #\t)) :emacs "transpose-lines"
      :target :unbound :target-map :global :effective :not-asserted
