@@ -13,12 +13,14 @@
       (expect (buffer-point-column buffer) :to-equal 5)))
 
   (it
-    "undoes a delete by re-inserting the deleted text"
+    "undo of deletion leaves point after restored text"
     (let ((buffer (make-buffer :initial-content "hello world")))
+      (buffer-set-point buffer 0 5)
       (buffer-delete-region buffer 0 5 0 11)
       (expect (buffer-line buffer 0) :to-equal "hello")
       (buffer-undo buffer)
-      (expect (buffer-line buffer 0) :to-equal "hello world")))
+      (expect (buffer-line buffer 0) :to-equal "hello world")
+      (expect (buffer-point-column buffer) :to-equal 11)))
 
   (it
     "a boundary excludes earlier edits from the next undo's group"

@@ -30,11 +30,9 @@ invariant without manufacturing an undo entry or changing point."
   buffer)
 
 (defun buffer-undo (buffer)
-  "Undo the most recent change group in BUFFER, Emacs ring-style: repeated
-calls to BUFFER-UNDO keep walking through the inverse history. The inverse
-group is also made available to BUFFER-REDO. Once the history is exhausted,
-further calls are a no-op (or signal, at the implementation's discretion).
-Returns BUFFER."
+  "Undo the most recent change group in BUFFER, Emacs ring-style.
+Repeated calls keep walking through inverse history. The inverse group remains
+available to BUFFER-REDO. Returns BUFFER."
   (%ensure-buffer-writable buffer)
   ;; Command dispatch can leave a transition boundary before the latest group.
   (when (eq (car (%buffer-undo-list buffer)) :boundary)
@@ -45,9 +43,21 @@ Returns BUFFER."
     (when group
       (push :boundary (%buffer-redo-list buffer))
       (dolist (entry group)
-        (push (%apply-undo-entry buffer entry)
-              (%buffer-redo-list buffer))))
-    buffer))
+        (push (%apply-undo-entry buffer entry
+                                 (not (eq (first entry) :insert)))
+              (%buffer-redo-list buffer)))
+      ;; A same-position insert/delete pair is a replacement. Keep its saved point.
+      (when (and (= (length group) 2)
+                 (not (eq (first (first group))
+                          (first (second group))))
+                 (= (second (first group))
+                    (second (second group)))
+                 (= (third (first group))
+                    (third (second group))))
+        (buffer-set-point buffer
+                          (fifth (second group))
+                          (sixth (second group)))))
+  buffer))
 
 (defun buffer-redo (buffer)
   "Redo the most recently undone change group in BUFFER.
