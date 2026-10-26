@@ -292,8 +292,8 @@
                    (push :services-shutdown events))))
               (with-replaced-function
                (loom::%run-loom-session
-                (lambda (context fd)
-                  (declare (ignore fd))
+                (lambda (context fd render-frame-function)
+                  (declare (ignore fd render-frame-function))
                   (loom/core/editor-session:run-session-hooks :startup
                                                               session
                                                               context

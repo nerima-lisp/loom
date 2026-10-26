@@ -46,7 +46,7 @@
                                                                     session
                                                                     startup-context
                                                                     terminal-session)
-                        (loom/feature/user-init:load-user-init)
+                        (funcall *startup-load-user-init-function*)
                         (multiple-value-setq (reason status) (%run-event-loop
                                                               (%loom-terminal-session-stream
                                                                terminal-session)
@@ -352,7 +352,7 @@
     (%install-loom-terminal-signal-handlers terminal-session))
   (setf (%loom-terminal-session-suspended-p terminal-session) nil)
   (%enable-loom-terminal-session terminal-session)
-  (loom-renderer-invalidate (editor-state-renderer *editor-state*))
+  (funcall *startup-renderer-invalidate-function* *editor-state*)
   (loom/core/editor-session:run-session-hooks :resume
                                               session
                                               terminal-session)

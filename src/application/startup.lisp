@@ -41,6 +41,8 @@ from it."
                                 (%shutdown-editor-services *editor-state*)))))
 
 (defvar *event-loop-render-function* nil)
+(defvar *startup-load-user-init-function* nil)
+(defvar *startup-renderer-invalidate-function* nil)
 
 (defun %run-loom (startup-context &key
                                        (fd 0)

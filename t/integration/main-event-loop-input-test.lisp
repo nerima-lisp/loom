@@ -288,7 +288,7 @@
                                      80
                                      24
                                      :terminal-session
-                                     nil)
+                                     nil (constantly nil))
          (expect render-count :to-be 0)
          (setf next-width 100
                next-height 30)
@@ -300,7 +300,7 @@
                                      80
                                      24
                                      :terminal-session
-                                     nil)
+                                     nil (constantly nil))
          (expect render-count :to-be 1)
          (setf turn-status :input)
          (loom::%run-event-loop-turn (make-string-output-stream)
@@ -311,7 +311,7 @@
                                      100
                                      30
                                      :terminal-session
-                                     nil)
+                                     nil (constantly nil))
          (expect render-count :to-be 2)
          (setf turn-status :timeout
                turn-dirty-p t)
@@ -323,7 +323,7 @@
                                      100
                                      30
                                      :terminal-session
-                                     nil)
+                                     nil (constantly nil))
          (expect render-count :to-be 3))))))
 
 

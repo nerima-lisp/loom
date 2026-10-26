@@ -54,8 +54,8 @@
                       (lambda ()
                         (with-replaced-function
                          (loom::%run-event-loop
-                          (lambda (output-stream input-stream terminal-session)
-                            (declare (ignore output-stream input-stream))
+                          (lambda (output-stream input-stream terminal-session render-frame-function)
+                            (declare (ignore output-stream input-stream render-frame-function))
                             (expect terminal-session :to-be-truthy)
                             (values :normal 0)))
                          (let ((*error-output* (make-string-output-stream)))
@@ -85,12 +85,8 @@
                              (let ((*error-output* (make-string-output-stream)))
                                (with-replaced-function
                                 (loom::%run-event-loop
-                                 (lambda
-                                     (output-stream input-stream
-                                                    terminal-session)
-                                   (declare (ignore output-stream
-                                                    input-stream
-                                                    terminal-session))
+                                 (lambda (output-stream input-stream terminal-session render-frame-function)
+                                   (declare (ignore output-stream input-stream terminal-session render-frame-function))
                                    (error "event loop failed")))
                                 (expect (loom::%run-loom startup-context :fd fd)
                                         :to-equal
@@ -203,10 +199,8 @@
                          (record :user-init)))
                       (with-replaced-function
                        (loom::%run-event-loop
-                        (lambda
-                            (output-stream input-stream
-                                           received-terminal-session)
-                          (declare (ignore output-stream input-stream))
+                        (lambda (output-stream input-stream received-terminal-session render-frame-function)
+                          (declare (ignore output-stream input-stream render-frame-function))
                           (expect received-terminal-session
                                   :to-be
                                   terminal-session)
@@ -230,7 +224,7 @@
                              (record :terminal-close)))
                           (expect
                            (multiple-value-list
-                            (loom::%run-loom-session startup-context 7))
+                            (loom::%run-loom-session startup-context 7 (constantly nil)))
                            :to-equal
                            (list :normal 0))))))))))
                   (expect (reverse events)

@@ -90,7 +90,8 @@
                                                            :value)
              (with-replaced-function
               (loom::%run-loom
-               (lambda (context &key fd)
+               (lambda (context &key fd render-frame-function)
+                 (declare (ignore render-frame-function))
                  (incf call-count)
                  (setf received-context context)
                  (expect fd :to-be nil)
@@ -142,7 +143,8 @@
                 1))
              (with-replaced-function
               (loom::%run-loom
-               (lambda (context &key fd)
+               (lambda (context &key fd render-frame-function)
+                 (declare (ignore render-frame-function))
                  (declare (ignore fd))
                  (setf received-context context)
                  29))
@@ -158,7 +160,8 @@
               "--help")
              (with-replaced-function
               (loom::%run-loom
-               (lambda (context &key fd)
+               (lambda (context &key fd render-frame-function)
+                 (declare (ignore render-frame-function))
                  (declare (ignore fd))
                  (setf received-context context)
                  31))
