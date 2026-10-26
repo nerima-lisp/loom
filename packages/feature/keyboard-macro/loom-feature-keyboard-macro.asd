@@ -1,7 +1,8 @@
 (asdf:defsystem "loom-feature-keyboard-macro"
   :depends-on ("loom-core-command"
                "loom-core-editor-session"
-               "loom-core-minibuffer")
+               "loom-core-minibuffer"
+               "loom-core-window-tree")
   :serial t
   :components ((:file "src/package")
                (:file "src/domain-keyboard-macro")

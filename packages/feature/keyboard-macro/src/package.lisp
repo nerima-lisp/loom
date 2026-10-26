@@ -7,8 +7,10 @@
                 #:find-extended-command-spec
                 #:invoke-command
                 #:invoke-key-command
+                #:keymap-for-buffer
                 #:keymap-state-dispatch
                 #:keymap-state-sequence
+                #:keymap-state-use-keymap
                 #:make-keymap-state
                 #:prefix-argument-action
                 #:prefix-argument-for-editor
@@ -21,9 +23,14 @@
                 #:editor-state-keyboard-macro
                 #:editor-state-keymap
                 #:editor-state-minibuffer
+                #:editor-state-session
+                #:editor-state-window-tree
                 #:register-slice-state)
   (:import-from #:loom/core/minibuffer
                 #:minibuffer-message)
+  (:import-from #:loom/core/window-tree
+                #:window-buffer
+                #:window-tree-selected-window)
   (:export
    #:keyboard-macro-event
    #:keyboard-macro-event-p

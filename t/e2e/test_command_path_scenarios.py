@@ -10,6 +10,7 @@ from loom_e2e.deadline import ScenarioDeadlineExceeded
 from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
     _deadline_stage,
+    _key_bytes,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -51,6 +52,18 @@ def _catalog_row(
 
 
 _CORE_COMMAND_CATALOG = [
+    _catalog_row(
+        "comment-line",
+        "feature/mode",
+        keys=[_key(";", ("alt",))],
+        mutates=True,
+    ),
+    _catalog_row(
+        "indent-for-tab-command",
+        "feature/mode",
+        keys=[_key("tab")],
+        mutates=True,
+    ),
     _catalog_row("keyboard-quit", "core/command", keys=[_key("g", ("control",))]),
     _catalog_row(
         "universal-argument", "core/command", keys=[_key("u", ("control",))]
@@ -165,6 +178,9 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
+    def test_c_space_encodes_as_control_at(self):
+        self.assertEqual(_key_bytes("C-space"), b"\x00")
+
     def test_deadline_error_identifies_the_command_path_stage(self):
         with self.assertRaisesRegex(
             ScenarioDeadlineExceeded, r"test/undo \[undo and restore\]: expired"
@@ -195,6 +211,96 @@ class CommandPathScenarioTests(unittest.TestCase):
             with self.subTest(path_id=path_id):
                 self.assertEqual(case["lane"], generated_by_id[path_id]["lane"])
                 self.assertEqual(case["entry"], generated_by_id[path_id]["entry"])
+
+    def test_sidecar_declares_all_w37a_r3_mutation_paths(self):
+        generated = generate_required_paths(_CORE_COMMAND_CATALOG)
+        generated_by_id = {path["id"]: path for path in generated}
+        scenarios = load_command_path_scenarios(SCENARIO_DATA)
+        cases_by_path_id = {case["path_id"]: case for case in scenarios}
+        mutation_cases = {
+            "effect",
+            "undo",
+            "read-only",
+            "narrow",
+            "split-window",
+            "macro-replay",
+            "prefix-u4",
+        }
+        expected_path_ids = {
+            f"r3:{command}:{mutation_case}"
+            for command in ("comment-line", "indent-for-tab-command")
+            for mutation_case in mutation_cases
+        }
+        actual_path_ids = {
+            path_id
+            for path_id, case in cases_by_path_id.items()
+            if case["lane"] == "W3-7a" and case["rule"] == "r3"
+        }
+
+        self.assertEqual(len(actual_path_ids), 14)
+        self.assertEqual(actual_path_ids, expected_path_ids)
+        for path_id in expected_path_ids:
+            with self.subTest(path_id=path_id):
+                case = cases_by_path_id[path_id]
+                self.assertEqual(case["lane"], "W3-7a")
+                self.assertEqual(case["entry"], generated_by_id[path_id]["entry"])
+                self.assertEqual(case["mutation_case"], path_id.rsplit(":", 1)[1])
+                command = path_id.split(":", 2)[1]
+                self.assertEqual(case["command"], command)
+                self.assertIn(command, case["commands"])
+
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:undo"]["expected_undo_cursor"],
+            [0, 5],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"].get("prepare_keys", []),
+            [],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["command_keys"],
+            ["M-;"],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
+            "value #\n",
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["expected_cursor"],
+            [0, 7],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["effect_screen"][0][
+                "text"
+            ],
+            "value #",
+        )
+        self.assertIn(
+            "comment-line",
+            cases_by_path_id["r3:comment-line:macro-replay"]["commands"],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:indent-for-tab-command:undo"]["expected_undo_cursor"],
+            [1, 0],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["command_keys"],
+            ["TAB"],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["replay_prefix_keys"],
+            ["C-a"],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["prepare_keys"],
+            ["DOWN"],
+        )
+        for mutation_case in {"effect", "undo", "macro-replay", "prefix-u4"}:
+            case = cases_by_path_id[
+                f"r3:indent-for-tab-command:{mutation_case}"
+            ]
+            with self.subTest(path_id=case["path_id"]):
+                self.assertEqual(case["effect_screen"][0]["index"], 1)
 
     def test_sidecar_declares_all_prompt_results_and_exact_expectations(self):
         scenarios = load_command_path_scenarios(SCENARIO_DATA)
@@ -508,6 +614,7 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = sessions[0].calls
         self.assertEqual(case["replay_prefix_keys"], ["C-a"])
+        self.assertIn(("type", "start-kbd-macro"), calls)
         self.assertEqual(sum(call == ("send", b"\x01") for call in calls), 1)
         effect_file_assertions = [
             call[1]
@@ -542,6 +649,32 @@ class CommandPathScenarioTests(unittest.TestCase):
                 for call in calls
             ),
             2,
+        )
+
+    def test_r3_macro_replay_waits_for_the_declared_restore_screen_row(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(SCENARIO_DATA)
+            if case["path_id"] == "r3:indent-for-tab-command:macro-replay"
+        )
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        restore = case["restore_screen"][0]
+        self.assertIn(
+            (
+                "wait_exact_text",
+                restore["region"],
+                restore["text"],
+                {"index": restore.get("index", 0), "strip_right": True},
+            ),
+            sessions[0].calls,
         )
 
 

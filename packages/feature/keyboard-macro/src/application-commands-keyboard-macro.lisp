@@ -111,10 +111,22 @@
     (if events
         (let ((keymap-state
                (make-keymap-state (editor-state-keymap *editor-state*))))
-          (keyboard-macro-begin-replay macro)
-          (unwind-protect
-              (dolist (event events)
-                (%replay-keyboard-macro-event event keymap-state))
-            (keyboard-macro-end-replay macro)))
+          (labels ((refresh-keymap ()
+                     (let* ((window-tree
+                              (editor-state-window-tree *editor-state*))
+                            (window (window-tree-selected-window window-tree))
+                            (buffer (window-buffer window)))
+                       (keymap-state-use-keymap
+                        keymap-state
+                        (keymap-for-buffer
+                         (editor-state-session *editor-state*)
+                         buffer
+                         (editor-state-keymap *editor-state*))))))
+            (keyboard-macro-begin-replay macro)
+            (unwind-protect
+                (dolist (event events)
+                  (refresh-keymap)
+                  (%replay-keyboard-macro-event event keymap-state))
+              (keyboard-macro-end-replay macro))))
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "Keyboard macro is empty"))))

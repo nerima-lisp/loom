@@ -150,6 +150,24 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
+    def test_comment_line_path_matches_mode_comment_dwim_key_trace(self):
+        self.required["commands"] = ["comment-line"]
+        self.ledger["commands"] = ["comment-line"]
+        self.required["entry"] = "key: M-;"
+        self.ledger["entry"] = "key: M-;"
+        trace_entry = (
+            'key:{"keymap":"nix","sequence":'
+            '[{"key":";","modifiers":["alt"]}]}'
+        )
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("mode/comment-dwim",),
+            trace_route="key",
+            trace_entry=trace_entry,
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
     def test_language_ret_trace_matches_newline_and_indent_without_mode(self):
         self.required["commands"] = ["newline"]
         self.ledger["commands"] = ["newline"]
