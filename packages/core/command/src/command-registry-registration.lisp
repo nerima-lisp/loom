@@ -46,6 +46,7 @@
 
 (defvar *command-trace-keymap-name*
   nil)
+(defvar *current-command-route* nil "Route of the currently invoked command.")
 
 (defun command-spec-id (spec)
   (copy-seq (%command-spec-id spec)))

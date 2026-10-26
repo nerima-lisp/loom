@@ -52,7 +52,7 @@
                              (editor-state-minibuffer *editor-state*))))
         (when (and trace-error minibuffer)
           (minibuffer-message minibuffer trace-error)))
-      (apply (%command-spec-command spec) arguments))))
+      (let ((*current-command-route* route)) (apply (%command-spec-command spec) arguments)))))
 (defun invoke-key-command (id route sequence keymap-name &rest arguments)
   (unless (member route (list :key :macro))
     (error "Key command route must be :KEY or :MACRO: ~S" route))

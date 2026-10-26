@@ -11,7 +11,11 @@
                 (loom/core/command:command-completion-names ""))))
     (let ((spec (loom/core/command:find-extended-command-spec input)))
       (if spec
-          (invoke-command (loom/core/command:command-spec-id spec) :mx)
+          (invoke-command
+           (loom/core/command:command-spec-id spec)
+           (if (eq loom/core/command:*current-command-route* :macro)
+               :macro
+               :mx))
           (minibuffer-message
            minibuffer
            (format nil "Unknown command: ~A" input))))))

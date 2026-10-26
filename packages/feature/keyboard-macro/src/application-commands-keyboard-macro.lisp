@@ -78,17 +78,27 @@
                                                          *editor-state*)
                                                         key-event
                                                         :macro)
-            :handled)))
+            :handled))
+         (minibuffer-active-p ()
+           (loom/core/minibuffer:minibuffer-active-p
+            (editor-state-minibuffer *editor-state*)))
+         (dispatch-minibuffer-key (key-event)
+           (loom/core/minibuffer:minibuffer-handle-key
+            (editor-state-minibuffer *editor-state*)
+            key-event)))
     (ecase (keyboard-macro-event-kind event)
       (:self-insert
        (let* ((value (keyboard-macro-event-value event))
               (key-event
                (cl-tty-kit:make-key-event :type :character :code value)))
          (unless (key-input-handled-p key-event)
-           (record-undo-boundary-for-command t)
-           (let ((*current-prefix-argument*
-                  (consume-prefix-argument-for-editor)))
-             (invoke-command "core/self-insert" :macro value)))))
+           (if (minibuffer-active-p)
+               (dispatch-minibuffer-key key-event)
+               (progn
+                 (record-undo-boundary-for-command t)
+                 (let ((*current-prefix-argument*
+                        (consume-prefix-argument-for-editor)))
+                   (invoke-command "core/self-insert" :macro value)))))))
       (:key
        (let* ((descriptor (keyboard-macro-event-value event))
               (code (cdr descriptor))
@@ -102,15 +112,18 @@
                                           :modifiers
                                           (car descriptor))))
          (unless (key-input-handled-p key-event)
-           (%replay-keyboard-macro-key-event event keymap-state)))))))
+           (if (minibuffer-active-p)
+               (dispatch-minibuffer-key key-event)
+               (%replay-keyboard-macro-key-event event keymap-state))))))))
 
 (defun call-last-kbd-macro ()
   "Replay the last recorded keyboard macro (C-x e)."
   (let* ((macro (editor-state-keyboard-macro *editor-state*))
          (events (keyboard-macro-events macro)))
     (if events
-        (let ((keymap-state
-               (make-keymap-state (editor-state-keymap *editor-state*))))
+        (let* ((*current-command-route* :macro)
+               (keymap-state
+                 (make-keymap-state (editor-state-keymap *editor-state*))))
           (labels ((refresh-keymap ()
                      (let* ((window-tree
                               (editor-state-window-tree *editor-state*))

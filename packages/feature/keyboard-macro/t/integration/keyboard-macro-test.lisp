@@ -407,3 +407,43 @@
     (call-last-kbd-macro)
     (expect local-invocations :to-equal 2)
     (expect global-invocations :to-equal 0)))))
+(it
+ "records minibuffer input and replays an M-x command"
+ (%with-minibuffer-state (minibuffer "")
+  (let* ((buffer (%selected-test-buffer))
+         (keymap (loom/application:install-default-keybindings (make-keymap)))
+         (keymap-state (make-keymap-state keymap))
+         (macro (make-keyboard-macro))
+         (traces nil))
+   (setf (editor-state-keymap *editor-state*) keymap
+         (editor-state-keyboard-macro *editor-state*) macro)
+   (loom/core/buffer:buffer-insert-string buffer "x")
+   (buffer-set-point buffer 0 0)
+   (with-replaced-function
+    (loom/core/command:record-command-trace
+     (lambda (id route &optional entry)
+      (push (list id route entry) traces)
+      nil))
+    (flet ((dispatch (code &optional (modifiers nil) (type :character))
+             (loom::%dispatch-key-event
+              (cl-tty-kit:make-key-event :type type :code code :modifiers modifiers)
+              keymap-state)))
+     (keyboard-macro-start-recording macro)
+     (dispatch #\x '(:alt))
+     (loop for character across "delete-char"
+           do (dispatch character))
+     (dispatch :enter nil :special)
+     (keyboard-macro-stop-recording macro)
+     (expect (length (keyboard-macro-events macro)) :to-equal 13)
+     (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+     (loom/core/buffer:buffer-insert-string buffer "x")
+     (buffer-set-point buffer 0 0)
+     (call-last-kbd-macro)
+     (expect (buffer-text buffer) :to-equal "")
+     (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+     (expect
+      (find-if (lambda (trace)
+                 (and (equal (first trace) "delete-char")
+                      (eq (second trace) :macro)))
+               traces)
+      :to-be-truthy))))))

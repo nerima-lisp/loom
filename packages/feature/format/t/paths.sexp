@@ -206,5 +206,5 @@
    :observe (:screen_text :file_bytes)
    :scenario "format/format-current-buffer-undo"
    :lane "W3-11")
-  (:exclude :id "r3:format-current-buffer:macro-replay" :reason "format-current-buffer has no key binding and requires free-string minibuffer input; keyboard macros do not record that text, while replay requires a bound command-key sequence" :evidence "packages/feature/format/src/command-specs-format.lisp:3")
+  (:id "r3:format-current-buffer:macro-replay" :commands (:format-current-buffer) :rule :r3 :lane "W3-11" :entry "macro" :state "macro-recording" :outcome "replay has the same effect" :observe (:screen_text :file_bytes :cursor) :scenario "command-path/r3/format-current-buffer/macro-replay")
 )

@@ -102,6 +102,12 @@ _CORE_COMMAND_CATALOG = [
         keys=[_key("d", ("control",)), _key("delete")],
         mutates=True,
     ),
+    _catalog_row(
+        "format-current-buffer",
+        "feature/format",
+        prompts=["free-string"],
+        mutates=True,
+    ),
 ]
 _CORE_COMMAND_CATALOG.extend(
     _catalog_row(

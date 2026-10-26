@@ -76,6 +76,7 @@
    #:command-completion-candidates
    #:find-extended-command-spec
    #:record-command-trace
+   #:*current-command-route*
    #:command-catalog-json
    #:help-summary-message
    #:defkeys-single-chord-p

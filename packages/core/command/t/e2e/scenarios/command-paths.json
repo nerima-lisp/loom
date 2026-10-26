@@ -1040,6 +1040,48 @@
       "prepare_keys": [
         "DOWN"
       ]
+    },
+    {
+      "name": "command-path/r3/format-current-buffer/macro-replay",
+      "path_id": "r3:format-current-buffer:macro-replay",
+      "lane": "W3-11",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "format-current-buffer",
+        "save-buffer",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "beginning-of-buffer",
+        "call-last-kbd-macro"
+      ],
+      "command": "format-current-buffer",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-<",
+        "M-x",
+        "format-current-buffer",
+        "RET",
+        "nixfmt",
+        "RET"
+      ],
+      "initial_bytes": "1+1\n",
+      "effect_bytes": "1 + 1\n",
+      "expected_bytes": "1 + 1\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {"region": "body", "index": 0, "text": "1 + 1"}
+      ],
+      "effect_screen": [
+        {"region": "body", "index": 0, "text": "1 + 1"}
+      ],
+      "replay_prefix_keys": ["M-<"],
+      "restore_screen": [
+        {"region": "body", "index": 0, "text": "1+1"}
+      ]
     }
   ]
 }

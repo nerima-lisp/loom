@@ -108,6 +108,4 @@
        :self-insert-event-p self-insert-event-p
        :command command
        :recording-before
-         (and (not minibuffer-was-active)
-              macro
-              (loom/feature/keyboard-macro:keyboard-macro-recording-p macro))))))
+         (and macro (loom/feature/keyboard-macro:keyboard-macro-recording-p macro))))))

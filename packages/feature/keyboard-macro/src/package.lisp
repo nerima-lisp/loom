@@ -17,6 +17,7 @@
                 #:prefix-argument-reset
                 #:prefix-argument-value-for-editor
                 #:record-undo-boundary-for-command
+                #:*current-command-route*
                 #:self-insert-command)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
