@@ -590,6 +590,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "move-end-of-line",
         "comment-line",
         "save-buffer",
         "start-kbd-macro",
@@ -602,6 +603,7 @@
       "mutation_case": "macro-replay",
       "major_mode": "Python",
       "command_keys": [
+        "C-e",
         "M-;"
       ],
       "initial_bytes": "value\n",
@@ -612,9 +614,6 @@
         7
       ],
       "expected_minibuffer": "Keyboard macro defined",
-      "prepare_keys": [
-        "C-e"
-      ],
       "expected_screen": [
         {
           "region": "body",
@@ -773,7 +772,7 @@
       ],
       "expected_undo_cursor": [
         1,
-        0
+        4
       ]
     },
     {
@@ -946,19 +945,21 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "next-line",
         "indent-for-tab-command",
         "save-buffer",
         "start-kbd-macro",
         "end-kbd-macro",
         "undo",
         "move-beginning-of-line",
-        "call-last-kbd-macro",
-        "next-line"
+        "previous-line",
+        "call-last-kbd-macro"
       ],
       "command": "indent-for-tab-command",
       "mutation_case": "macro-replay",
       "major_mode": "Python",
       "command_keys": [
+        "DOWN",
         "TAB"
       ],
       "initial_bytes": "    root\nvalue\n",
@@ -983,10 +984,8 @@
           "text": "    value"
         }
       ],
-      "prepare_keys": [
-        "DOWN"
-      ],
       "replay_prefix_keys": [
+        "UP",
         "C-a"
       ],
       "restore_screen": [
