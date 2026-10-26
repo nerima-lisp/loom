@@ -68,7 +68,7 @@
   (let* ((root (asdf:system-source-directory (asdf:find-system "loom")))
          (manifest-paths
            (directory
-            (merge-pathnames "packages/*/*/t/command-ids.sexp" root)))
+            (merge-pathnames "packages/*/*/t/command-ids.lisp" root)))
          (actual (loom/core/command:help-summary-message)))
     (labels
         ((read-manifest (path)

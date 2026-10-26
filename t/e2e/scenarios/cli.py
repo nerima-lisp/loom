@@ -39,12 +39,12 @@ def _real_slice_directory(packages, owner):
 def _manifest_command_owners(repo_root):
     packages = repo_root / "packages"
     expected = {}
-    for manifest in sorted(packages.glob("*/*/t/command-ids.sexp")):
+    for manifest in sorted(packages.glob("*/*/t/command-ids.lisp")):
         category, slice_name, test_directory, filename = (
             manifest.relative_to(packages).parts
         )
         owner = f"{category}/{slice_name}"
-        if test_directory != "t" or filename != "command-ids.sexp":
+        if test_directory != "t" or filename != "command-ids.lisp":
             raise AssertionError(f"unexpected command ID manifest path: {manifest}")
         if _real_slice_directory(packages, owner) is None:
             raise AssertionError(f"command ID manifest has no real slice system: {owner!r}")

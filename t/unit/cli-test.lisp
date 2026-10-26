@@ -211,7 +211,7 @@
            (root (asdf:system-source-directory (asdf:find-system "loom")))
            (manifest-paths
              (directory
-              (merge-pathnames "packages/*/*/t/command-ids.sexp" root))))
+              (merge-pathnames "packages/*/*/t/command-ids.lisp" root))))
       (labels
           ((read-manifest (path)
              (with-open-file (stream path)
