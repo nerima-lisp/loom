@@ -203,19 +203,14 @@ def indent_macro(binary):
         path = _python_path(directory, "indent.py", b"root\nvalue\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(
-                keys.meta("x")
-                + b"set-major-mode\rPython\r"
-                + session.profile.key("DOWN")
-                + keys.ctrl("x")
-                + b"("
-                + session.profile.key("TAB")
-                + keys.ctrl("x")
-                + b")"
-                + session.profile.key("DOWN")
-                + keys.ctrl("x")
-                + b"e"
-            )
+            _select_python_mode(session)
+            session.key("DOWN")
+            session.send(keys.ctrl("x") + b"(" + session.profile.key("TAB"))
+            session.send(keys.ctrl("x") + b")")
+            session.key("DOWN")
+            session.send(keys.ctrl("x") + b"e")
+            _assert_body(session, "    value", 1)
+            _assert_body(session, "    value", 2)
             _save(session, path, expected)
             _close(session, "mode/indent-macro")
 
@@ -387,18 +382,13 @@ def comment_line_macro(binary):
         path = _python_path(directory, "comment.py", b"value\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(
-                keys.meta("x")
-                + b"set-major-mode\rPython\r"
-                + keys.ctrl("x")
-                + b"("
-                + keys.meta(";")
-                + keys.ctrl("x")
-                + b")"
-                + session.profile.key("DOWN")
-                + keys.ctrl("x")
-                + b"e"
-            )
+            _select_python_mode(session)
+            session.send(keys.ctrl("x") + b"(" + keys.meta(";"))
+            session.send(keys.ctrl("x") + b")")
+            session.key("DOWN")
+            session.send(keys.ctrl("x") + b"e")
+            _assert_body(session, "value #")
+            _assert_body(session, "value #", 1)
             _save(session, path, b"value #\nvalue #\n")
             _close(session, "mode/comment-line-macro")
 
@@ -488,14 +478,12 @@ def set_major_mode_history(binary):
         _write(path, b"")
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(
-                keys.meta("x")
-                + b"set-major-mode\rPython\r"
-                + keys.meta("x")
-                + b"set-major-mode\r"
-                + session.profile.key("UP")
-                + session.profile.key("RET")
-            )
+            _major_mode_prompt(session)
+            session.type("Python")
+            session.key("RET")
+            _major_mode_prompt(session)
+            session.key("UP")
+            session.key("RET")
             session.wait_for_region_text("minibuffer", "Mode: Python")
             session.assert_screen_text(
                 "Mode: Python", match="contains", region="minibuffer"
