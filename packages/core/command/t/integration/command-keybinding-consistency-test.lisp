@@ -97,83 +97,74 @@
             (expect target :to-be-truthy)
             (expect target-map :to-be-truthy)
             (cond
-              ((equal target-map :mode-provider)
-               (expect (equal owner :w3-7a) :to-be-truthy)
-               (expect (equal status :implemented) :to-be-truthy)
-               (expect (equal target "indent-for-tab-command")
-                       :to-be-truthy)
-               (expect (equal effective "indent-for-tab-command")
-                       :to-be-truthy))
-              ((equal target-map :extended-command)
-               (let* ((spec (loom/core/command:find-command-spec target))
-                      (name (and spec
-                                 (loom/core/command:command-spec-name spec))))
-                 (expect sequence :to-be nil)
-                 (expect spec :to-be-truthy)
-                 (expect (equal (loom/core/command:command-spec-id spec) target)
-                         :to-be-truthy)
-                 (expect name :to-be-truthy)
-                 (expect (eq (loom/core/command:find-extended-command-spec name)
-                             spec)
-                         :to-be-truthy)
-                 (expect (member name
-                                 (loom/core/command:command-completion-names "")
-                                 :test #'string-equal)
-                         :to-be-truthy)
-                 (if (equal effective :not-asserted)
-                     (progn
-                       (expect (equal status :pending) :to-be-truthy)
-                       (expect owner :to-be-truthy))
-                     (progn
-                       (expect (equal status :implemented) :to-be-truthy)
-                       (expect (equal target effective) :to-be-truthy)))))
-              ((and (keywordp target-map)
-                    (let ((name (symbol-name target-map)))
-                      (and (>= (length name) 6)
-                           (string-equal "-local"
-                                         name
-                                         :start2 (- (length name) 6)))))
-               (expect sequence :to-be-truthy)
-               (if (equal effective :not-asserted)
-                   (progn
-                     (expect (equal status :pending) :to-be-truthy)
-                     (expect owner :to-be-truthy))
-                   (let* ((spec (loom/core/command:find-command-spec target))
-                          (registered-map
-                            (and spec
-                                 (loom/core/command::%command-spec-keymap spec)))
-                          (modes
-                            (and spec
-                                 (remove :all
-                                         (loom/core/command::%command-spec-modes
-                                          spec)))))
-                     (expect (equal status :implemented) :to-be-truthy)
-                     (expect (equal target effective) :to-be-truthy)
-                     (expect spec :to-be-truthy)
-                     (expect registered-map :to-equal target-map)
-                     (expect modes :to-be-truthy)
-                     (dolist (mode modes)
-                       (expect (major-mode-definition mode) :to-be-truthy)
-                       (let ((mode-keymap
-                               (major-mode-keymap mode keymap)))
-                         (multiple-value-bind (binding keymap-owner)
-                             (keymap-lookup mode-keymap sequence)
-                           (expect binding :to-equal effective)
-                           (expect keymap-owner :to-be mode-keymap))))))
-              ((equal effective :not-asserted)
-               (progn
-                 (expect (equal status :pending) :to-be-truthy)
-                 (expect owner :to-be-truthy)
-                 (expect (or sequence (equal target-map :extended-command))
-                         :to-be-truthy)))
-              (t
-               (progn
-                 (expect (equal owner :w3-1) :to-be-truthy)
-                 (expect (equal target-map :global) :to-be-truthy)
-                 (expect (or (equal status :implemented)
-                             (equal status :removed))
-                         :to-be-truthy)
-                 (expect (if (equal target :unbound) nil target)
-                         :to-equal effective)
-                 (expect (keymap-lookup keymap sequence)
-                         :to-equal effective)))))))))))
+  ((equal target-map :mode-provider)
+   (expect (equal owner :w3-7a) :to-be-truthy)
+   (expect (equal status :implemented) :to-be-truthy)
+   (expect (equal target "indent-for-tab-command") :to-be-truthy)
+   (expect (equal effective "indent-for-tab-command") :to-be-truthy))
+  ((equal target-map :extended-command)
+   (let* ((spec (loom/core/command:find-command-spec target))
+          (name (and spec
+                     (loom/core/command:command-spec-name spec))))
+     (expect sequence :to-be nil)
+     (expect spec :to-be-truthy)
+     (expect (equal (loom/core/command:command-spec-id spec) target)
+             :to-be-truthy)
+     (expect name :to-be-truthy)
+     (expect (eq (loom/core/command:find-extended-command-spec name) spec)
+             :to-be-truthy)
+     (expect (member name
+                     (loom/core/command:command-completion-names "")
+                     :test #'string-equal)
+             :to-be-truthy)
+     (if (equal effective :not-asserted)
+         (progn
+           (expect (equal status :pending) :to-be-truthy)
+           (expect owner :to-be-truthy))
+         (progn
+           (expect (equal status :implemented) :to-be-truthy)
+           (expect (equal target effective) :to-be-truthy)))))
+  ((and (keywordp target-map)
+        (let ((name (symbol-name target-map)))
+          (and (>= (length name) 6)
+               (string-equal "-local" name :start2 (- (length name) 6)))))
+   (expect sequence :to-be-truthy)
+   (if (equal effective :not-asserted)
+       (progn
+         (expect (equal status :pending) :to-be-truthy)
+         (expect owner :to-be-truthy))
+       (let* ((spec (loom/core/command:find-command-spec target))
+              (registered-map
+                (and spec
+                     (loom/core/command::%command-spec-keymap spec)))
+              (modes
+                (and spec
+                     (remove :all
+                             (loom/core/command::%command-spec-modes spec)))))
+         (expect (equal status :implemented) :to-be-truthy)
+         (expect (equal target effective) :to-be-truthy)
+         (expect spec :to-be-truthy)
+         (expect registered-map :to-equal target-map)
+         (expect modes :to-be-truthy)
+         (dolist (mode modes)
+           (expect (major-mode-definition mode) :to-be-truthy)
+           (let ((mode-keymap (major-mode-keymap mode keymap)))
+             (multiple-value-bind (binding keymap-owner)
+                 (keymap-lookup mode-keymap sequence)
+               (expect binding :to-equal effective)
+               (expect keymap-owner :to-be mode-keymap)))))))
+  ((equal effective :not-asserted)
+   (progn
+     (expect (equal status :pending) :to-be-truthy)
+     (expect owner :to-be-truthy)
+     (expect (or sequence (equal target-map :extended-command))
+             :to-be-truthy)))
+  (t
+   (progn
+     (expect (equal owner :w3-1) :to-be-truthy)
+     (expect (equal target-map :global) :to-be-truthy)
+     (expect (or (equal status :implemented)
+                 (equal status :removed))
+             :to-be-truthy)
+     (expect (if (equal target :unbound) nil target) :to-equal effective)
+     (expect (keymap-lookup keymap sequence) :to-equal effective))))))))))
