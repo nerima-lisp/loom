@@ -78,7 +78,7 @@
     ("LOOM/FEATURE/HELP" ("feature/help") (:application) "packages/feature/help/src/package.lisp")
     ("LOOM-USER" ("root") (:composition-root) "src/package-user.lisp")))
 
-(defparameter *boundary-report-vs-fail* :report)
+(defparameter *boundary-report-vs-fail* :fail)
 ;; Slice-local allowlists mark matches KNOWN, not approved.
 (defvar *boundary-allowlist* nil)
 
@@ -1239,7 +1239,7 @@
         (when import-source (delete-package import-source))
         (when use-source (delete-package use-source))
         (when target-package (delete-package target-package))))
-    t))
+    (progn (expect *boundary-report-vs-fail* :to-equal :fail) t)))
 
 (describe
   "boundary architecture audit"
