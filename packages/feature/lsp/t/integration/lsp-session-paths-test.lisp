@@ -13,23 +13,24 @@
             :to-equal
             '("error" "warning" "info" "hint" "info")))
 
-  (it "derives language identifiers from buffer paths"
+  (it "uses the buffer major mode language identifier"
     (%with-initialized-fake-lsp-session ((transport session))
-      (let* ((text-buffer (make-buffer :name "notes.txt"
-                                       :path "/tmp/notes.txt"
-                                       :initial-content "notes"))
-             (plain-buffer (make-buffer :name "README"
-                                        :path "/tmp/README"
-                                        :initial-content "read me")))
-        (lsp-session-sync-buffer session text-buffer)
+      (let ((python-buffer (make-buffer :name "notes.txt"
+                                        :path "/tmp/notes.txt"
+                                        :initial-content "notes"))
+            (plain-buffer (make-buffer :name "README"
+                                       :path "/tmp/README"
+                                       :initial-content "read me")))
+        (buffer-set-major-mode python-buffer :python)
+        (lsp-session-sync-buffer session python-buffer)
         (lsp-session-sync-buffer session plain-buffer)
-        (let* ((text-open (%fake-sent-message transport 2))
+        (let* ((python-open (%fake-sent-message transport 2))
                (plain-open (%fake-sent-message transport 3)))
           (expect (gethash "languageId"
                            (gethash "textDocument"
-                                    (gethash "params" text-open)))
+                                    (gethash "params" python-open)))
                   :to-equal
-                  "txt")
+                  "python")
           (expect (gethash "languageId"
                            (gethash "textDocument"
                                     (gethash "params" plain-open)))

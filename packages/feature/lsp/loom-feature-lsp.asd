@@ -9,7 +9,8 @@
                              "loom-core-command"
                              "loom-feature-buffers"
                              "loom-feature-file-tree"
-                             "loom-feature-project")
+                             "loom-feature-project"
+                             "loom-feature-mode")
   :serial t
   :components ((:module "src"
                         :serial

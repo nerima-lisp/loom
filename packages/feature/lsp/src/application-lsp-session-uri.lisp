@@ -58,12 +58,5 @@
   (when (and (stringp uri) (uiop:string-prefix-p "file://" uri))
     (%lsp-utf8-decode (%lsp-uri-decode-octets uri))))
 
-(defun %lsp-language-id (path)
-  (let ((type (string-downcase (or (pathname-type (pathname path)) ""))))
-    (cond
-      ((member type '("lisp" "cl" "asd") :test #'string=)
-       "common-lisp")
-      ((string/= type "")
-       type)
-      (t
-       "plaintext"))))
+(defun %lsp-language-id (mode)
+  (loom/feature/mode:major-mode-language-id mode))
