@@ -19,7 +19,10 @@ def _comment_lisp_region(binary, mode, extension):
 
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.wait_for_region_exact_text("body", "hello\nworld", timeout=2.0)
+            session.wait_for_region_exact_text("body", "hello", timeout=2.0)
+            session.wait_for_region_exact_text(
+                "body", "world", index=1, timeout=2.0
+            )
             session.wait_for_region_cursor("body", 0, timeout=2.0)
             session.send(
                 keys.ctrl("a")
@@ -28,8 +31,9 @@ def _comment_lisp_region(binary, mode, extension):
                 + keys.ctrl("e")
                 + keys.meta(";")
             )
+            session.wait_for_region_exact_text("body", "; hello", timeout=2.0)
             session.wait_for_region_exact_text(
-                "body", "; hello\n; world", timeout=2.0
+                "body", "; world", index=1, timeout=2.0
             )
             session.wait_for_region_cursor("body", 7, index=1, timeout=2.0)
             if session.observe_cursor(
@@ -87,7 +91,6 @@ def _skip_lisp_closer(binary, mode, extension):
 @scenario(
     "lang-lisp/comment-dwim-cl",
     commands=[
-        "mode/comment-dwim",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
@@ -102,7 +105,6 @@ def common_lisp_comment_dwim(binary):
 @scenario(
     "lang-lisp/comment-dwim-el",
     commands=[
-        "mode/comment-dwim",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
@@ -116,7 +118,7 @@ def emacs_lisp_comment_dwim(binary):
 
 @scenario(
     "lang-lisp/pair-skip-cl",
-    commands=["core/self-insert", "save-buffer"],
+    commands=["save-buffer"],
 )
 def common_lisp_pair_skip(binary):
     _skip_lisp_closer(binary, "Common Lisp", "lisp")
@@ -124,7 +126,7 @@ def common_lisp_pair_skip(binary):
 
 @scenario(
     "lang-lisp/pair-skip-el",
-    commands=["core/self-insert", "save-buffer"],
+    commands=["save-buffer"],
 )
 def emacs_lisp_pair_skip(binary):
     _skip_lisp_closer(binary, "Emacs Lisp", "el")
