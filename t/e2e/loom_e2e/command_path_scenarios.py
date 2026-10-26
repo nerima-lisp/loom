@@ -287,13 +287,21 @@ def _send_key(session, name):
         session.key(name)
     else:
         session.send(payload)
-        if name == "M-x":
-            session.wait_for_region_text("minibuffer", "M-x ")
 
 
 def _send_keys(session, names):
-    for name in names:
-        _send_key(session, name)
+    index = 0
+    while index < len(names):
+        if (
+            names[index] == "M-x"
+            and index + 2 < len(names)
+            and names[index + 2] == "RET"
+        ):
+            _send_mx(session, names[index + 1])
+            index += 3
+        else:
+            _send_key(session, names[index])
+            index += 1
 
 
 def _send_mx(session, command):

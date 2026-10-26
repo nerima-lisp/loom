@@ -11,7 +11,7 @@ from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
     _deadline_stage,
     _key_bytes,
-    _send_key,
+    _send_keys,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -179,16 +179,18 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
-    def test_extended_command_key_waits_for_prompt(self):
+    def test_extended_command_sequence_waits_and_types_command(self):
         session = FakeSession()
 
-        _send_key(session, "M-x")
+        _send_keys(session, ["M-x", "comment-line", "RET"])
 
         self.assertEqual(
             session.calls,
             [
                 ("send", _key_bytes("M-x")),
                 ("wait_text", "minibuffer", "M-x ", {}),
+                ("type", "comment-line"),
+                ("key", "RET"),
             ],
         )
 
