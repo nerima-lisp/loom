@@ -33,7 +33,8 @@
   :depends-on ("loom-feature-session"
                "loom/test-support"
                "cl-weave"
-               "cl-host-kit")
+               "cl-host-kit"
+               "cl-history-kit")
   :serial t
   :components
   ((:file "t/integration/session-test-support")

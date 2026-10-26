@@ -639,7 +639,7 @@ test packageをslice別に分ける案は、全testのpackage宣言とfixture共
 | `bookmark/test` | `cl-host-kit` |
 | `window/test` | なし |
 | `workspace/test` | なし |
-| `session/test` | `cl-host-kit` |
+| `session/test` | `cl-host-kit`, `cl-history-kit` |
 | `register/test` | なし |
 | `keyboard-macro/test` | なし |
 | `lsp/test` | `cl-json-kit`、`cl-concurrent-kit`、`cl-date-kit`、`cl-host-kit`、`cl-process-kit` |
