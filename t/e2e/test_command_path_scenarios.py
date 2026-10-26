@@ -259,14 +259,14 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["command_keys"],
-            ["C-e", "M-;"],
+            ["M-x", "comment-line", "RET"],
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
-            "value #\n",
+            "# value\n",
         )
         self.assertIn(
-            "move-end-of-line",
+            "comment-line",
             cases_by_path_id["r3:comment-line:macro-replay"]["commands"],
         )
         self.assertEqual(
@@ -275,7 +275,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["command_keys"],
-            ["TAB"],
+            ["M-x", "indent-for-tab-command", "RET"],
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["replay_prefix_keys"],
