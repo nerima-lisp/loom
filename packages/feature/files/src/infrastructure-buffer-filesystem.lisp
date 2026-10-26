@@ -284,3 +284,36 @@ The string contains newline style and encoding, plus BOM when present. New file 
             (minibuffer-message minibuffer
                                 (format nil "Wrote ~A" path)))))
     buffer)))
+(progn
+  (defun %file-parent-directory (path)
+    (host-kit:pathname-directory-pathname (pathname path)))
+  (defun %file-parent-directory-exists-p (path)
+    (cl-boundary-kit:filesystem-directory-exists-p
+     *loom-filesystem*
+     (%file-parent-directory path)))
+  (defun %ensure-file-parent-directories (path)
+    (labels ((ensure-directory (directory)
+               (unless (cl-boundary-kit:filesystem-directory-exists-p
+                        *loom-filesystem*
+                        directory)
+                 (let* ((components (pathname-directory directory))
+                        (parent
+                          (if (<= (length components) 1)
+                              directory
+                              (make-pathname :directory (butlast components)
+                                             :name nil
+                                             :type nil
+                                             :defaults directory))))
+                   (unless (equal parent directory)
+                     (ensure-directory parent))
+                   (handler-case
+                       (cl-boundary-kit:filesystem-make-directory
+                        *loom-filesystem*
+                        directory)
+                     (error (condition)
+                       (unless (cl-boundary-kit:filesystem-directory-exists-p
+                                *loom-filesystem*
+                                directory)
+                         (error condition))))))))
+      (ensure-directory (%file-parent-directory path)))
+    path))

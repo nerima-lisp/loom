@@ -48,16 +48,43 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
        :on-cancel
        (lambda () (minibuffer-message minibuffer "Quit")))))
 
+  (progn
+  (defun %prompt-create-file-parent-directory (buffer on-saved)
+    (let* ((path (buffer-path buffer))
+           (parent (%file-parent-directory path))
+           (minibuffer (editor-state-minibuffer *editor-state*)))
+      (minibuffer-activate
+       minibuffer
+       (format nil
+               "Parent directory does not exist. Create it? (y/n): ~A"
+               parent)
+       :on-confirm
+       (lambda (answer)
+         (cond
+           ((string-equal answer "y")
+            (%ensure-file-parent-directories path)
+            (%save-buffer-with-confirmation buffer on-saved))
+           ((or (string-equal answer "n")
+                (string-equal answer "c"))
+            (minibuffer-message minibuffer "Save cancelled"))
+           (t
+            (%prompt-create-file-parent-directory buffer on-saved))))
+       :on-cancel
+       (lambda () (minibuffer-message minibuffer "Quit")))))
   (defun %save-buffer-with-confirmation (buffer on-saved)
-    (handler-case
-        (progn
-          (buffer-save buffer)
-          (funcall on-saved))
-      (%file-changed-on-disk (condition)
-        (%prompt-save-buffer-overwrite
-         buffer
-         (%file-changed-snapshot condition)
-         on-saved))))
+    (let ((path (buffer-path buffer)))
+      (if (or (%file-parent-directory-exists-p path)
+              (buffer-read-only-p buffer))
+          (handler-case
+              (progn
+                (buffer-save buffer)
+                (funcall on-saved))
+            (%file-changed-on-disk (condition)
+              (%prompt-save-buffer-overwrite
+               buffer
+               (%file-changed-snapshot condition)
+               on-saved)))
+          (%prompt-create-file-parent-directory buffer on-saved)))))
 
   (defun %save-buffer-or-warn-overwrite (buffer path)
     "Save BUFFER to PATH via BUFFER-SAVE, unless PATH already names an
