@@ -133,7 +133,7 @@ def org_list_continuation(binary):
     commands=["move-end-of-line", "newline", "save-buffer"],
 )
 def markdown_indent_ret(binary):
-    initial = b"- item\n"
+    initial = b"- item"
     expected = b"- item\n- "
 
     with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
@@ -273,7 +273,7 @@ def markdown_indent_region(binary):
     commands=["move-end-of-line", "newline", "save-buffer"],
 )
 def org_indent_ret(binary):
-    initial = b"- item\n"
+    initial = b"- item"
     expected = b"- item\n- "
 
     with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
