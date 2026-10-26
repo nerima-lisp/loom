@@ -6,18 +6,21 @@
   (origin-offset 0)
   (search-offset 0)
   (direction :forward)
+  (regexp-p nil)
   (pattern "")
   (match nil)
   (matches nil)
   (failed-p nil))
 
-(defun make-isearch-session (buffer origin-offset &key (direction :forward))
+(defun make-isearch-session (buffer origin-offset &key (direction :forward) (regexp-p nil))
   "Start a session in BUFFER with point at ORIGIN-OFFSET."
   (check-type direction (member :forward :backward))
+  (check-type regexp-p boolean)
   (%make-isearch-session :buffer buffer
                          :origin-offset origin-offset
                          :search-offset origin-offset
-                         :direction direction))
+                         :direction direction
+                         :regexp-p regexp-p))
 
 (defun isearch-session-buffer (session)
   "Return the buffer SESSION searches."
@@ -47,13 +50,21 @@
   "Return true when the current pattern has no match anywhere in range."
   (%isearch-failed-p session))
 
-(defun %isearch-all-matches (buffer pattern)
-  "Return every match for PATTERN in buffer order, restricted to the visible
-region: BUFFER-SEARCH-SPANS starting at the narrow start wraps over nothing, so
-the result needs no rotation back into order."
+(defun %isearch-all-matches (buffer pattern regexp-p)
+  "Return all literal or regexp matches in the visible region."
   (and (string/= pattern "")
-       (buffer-search-spans buffer pattern
-                            (buffer-narrow-start-offset buffer))))
+       (let* ((search-pattern (if regexp-p
+                                  pattern
+                                  (cl-regex-kit:escape pattern)))
+              (case-fold (%search-pattern-case-fold-p pattern))
+              (start (buffer-narrow-start-offset buffer)))
+         (if regexp-p
+             (handler-case
+                 (buffer-search-spans buffer search-pattern start
+                                      :case-fold case-fold)
+               (cl-regex-kit:regex-syntax-error () nil))
+             (buffer-search-spans buffer search-pattern start
+                                  :case-fold case-fold)))))
 
 (defun %isearch-forward-match (matches offset)
   (or (find-if (lambda (span) (>= (buffer-span-start span) offset)) matches)
@@ -78,7 +89,8 @@ the result needs no rotation back into order."
 An empty pattern is not a failure -- it is the state the prompt opens in -- so
 it clears the match without reporting one."
   (let* ((buffer (%isearch-buffer session))
-         (matches (%isearch-all-matches buffer pattern))
+         (matches (%isearch-all-matches buffer pattern
+                                        (%isearch-regexp-p session)))
          (match (and matches
                      (%isearch-select-match matches
                                             (%isearch-search-offset session)

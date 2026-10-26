@@ -39,7 +39,9 @@
    #:search-forward
    #:search-backward
    #:isearch-forward
+   #:isearch-forward-regexp
    #:isearch-backward
+   #:isearch-backward-regexp
    #:result-item
    #:result-item-p
    #:make-result-item

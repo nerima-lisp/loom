@@ -67,7 +67,7 @@
   (it "builds the help text from registry metadata"
     (expect (loom/core/command:help-summary-message)
             :to-equal
-            "Help: M-x Command  M-: Eval  C-x C-e Eval last sexp  M-! Pipe command  C-x g Git status  M-x git-diff  M-x git-diff-staged  M-x git-stage-file  M-x git-unstage-file  M-x format-current-buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x r S Save session  C-x r l Load session  C-x r f Recent file  C-x r m Set bookmark  C-x r b Jump bookmark  C-x r d Delete bookmark  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-k Cut  M-w Copy  C-y Paste  C-/ Undo  C-M-_ Redo  M-y Yank previous  C-x C-c Exit"))
+            "Help: M-x Command  M-: Eval  C-x C-e Eval last sexp  M-! Pipe command  C-x g Git status  M-x git-diff  M-x git-diff-staged  M-x git-stage-file  M-x git-unstage-file  M-x format-current-buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x r S Save session  C-x r l Load session  C-x r f Recent file  C-x r m Set bookmark  C-x r b Jump bookmark  C-x r d Delete bookmark  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-M-s Find by Regexp  C-k Cut  C-M-r Find by Regexp  M-w Copy  C-y Paste  C-/ Undo  C-M-_ Redo  M-y Yank previous  C-x C-c Exit"))
   (it "preserves registry order for equally ordered help entries"
     (let ((loom/core/command::*registered-command-specs* nil))
       (loom/core/command:register-command-spec

@@ -23,4 +23,25 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  )
+  (register-command-spec :feature/search "isearch-forward-regexp" "isearch-forward-regexp" #'loom/feature/search::isearch-forward-regexp
+                       :keys '((:control :alt #\s))
+                       :keymap :global
+                       :group "editing"
+                       :help "C-M-s Find by Regexp"
+                       :help-order 31
+                       :mutates nil
+                       :prompts '(:free-string)
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all))
+  (register-command-spec :feature/search "isearch-backward-regexp" "isearch-backward-regexp" #'loom/feature/search::isearch-backward-regexp
+                       :keys '((:control :alt #\r))
+                       :keymap :global
+                       :group "editing"
+                       :help "C-M-r Find by Regexp"
+                       :help-order 32
+                       :mutates nil
+                       :prompts '(:free-string)
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all)))

@@ -224,8 +224,8 @@
                          (lambda (entry)
                            (gethash "id" entry))
                          catalog)))
-                  (expect (length catalog) :to-equal 131)
-                  (expect (length (remove-duplicates ids :test #'equal)) :to-equal 131)
+                  (expect (length catalog) :to-equal 133)
+                  (expect (length (remove-duplicates ids :test #'equal)) :to-equal 133)
                   (expect
                    (loop for entry in catalog
                          always (loop for field in required-fields

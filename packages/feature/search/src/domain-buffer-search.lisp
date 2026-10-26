@@ -5,19 +5,25 @@
 A search cycle may make two such calls; this is not a deadline for the entire
 search command.")
 
-(defun %scan-next-occurrence (text pattern start)
+(defun %scan-next-occurrence (text pattern start &optional (case-fold-p nil))
   "Return the domain-local regex match at or after START, with wrap-around."
   (unless (string= pattern "")
-    (let ((regex (cl-regex-kit:compile-regex pattern)))
+    (let ((regex (cl-regex-kit:compile-regex pattern
+                                             :case-insensitive case-fold-p)))
       (or (cl-regex-kit:scan regex text :start start
                                         :timeout +regex-search-timeout-seconds+)
           (and (plusp start)
                (cl-regex-kit:scan regex text :end start
                                              :timeout +regex-search-timeout-seconds+))))))
 
-(defun %search-spans-in-text (text pattern start)
+(defun %search-pattern-case-fold-p (pattern)
+  "Return true when PATTERN contains no uppercase characters."
+  (notany (function upper-case-p) pattern))
+
+(defun %search-spans-in-text (text pattern start &optional (case-fold-p nil))
   "Return BUFFER-SPAN values for all regex matches in one search cycle."
-  (let ((regex (cl-regex-kit:compile-regex pattern)))
+  (let ((regex (cl-regex-kit:compile-regex pattern
+                                           :case-insensitive case-fold-p)))
     (flet ((spans-in (from to)
              (mapcar (lambda (match)
                        (make-buffer-span (cl-regex-kit:match-start match)
@@ -48,11 +54,12 @@ search command.")
         (car (last spans)))))
 
 (defun %search-forward-cps (buffer pattern on-match on-miss)
-  "Search from BUFFER's point and invoke exactly one result continuation."
+  "Search from the current point in BUFFER and invoke one result continuation."
   (let* ((text (buffer-visible-text buffer))
          (offset (buffer-narrow-start-offset buffer))
          (point (%search-visible-point buffer text))
-         (match (%scan-next-occurrence text pattern point)))
+         (match (%scan-next-occurrence text pattern point
+                                      (%search-pattern-case-fold-p pattern))))
     (if match
         (funcall on-match
                  (make-buffer-span (+ offset (cl-regex-kit:match-start match))
@@ -64,11 +71,12 @@ search command.")
   (%search-forward-cps buffer pattern #'identity (constantly nil)))
 
 (defun %search-backward-cps (buffer pattern on-match on-miss)
-  "Search before BUFFER's point and invoke exactly one result continuation."
+  "Search before the point in BUFFER and invoke one result continuation."
   (let* ((text (buffer-visible-text buffer))
          (point (%search-visible-point buffer text))
          (spans (unless (string= pattern "")
-                  (%search-spans-in-text text pattern 0)))
+                  (%search-spans-in-text text pattern 0
+                                         (%search-pattern-case-fold-p pattern))))
          (span (%search-backward-span spans point)))
     (if span
         (funcall on-match (%visible-buffer-span buffer span))
@@ -78,13 +86,15 @@ search command.")
   "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once."
   (%search-backward-cps buffer pattern #'identity (constantly nil)))
 
-(defun buffer-search-spans (buffer pattern start)
-  "Return BUFFER-SPAN values for PATTERN, starting at START and wrapping once."
+(defun buffer-search-spans (buffer pattern start &key (case-fold nil case-fold-supplied-p))
+  "Return BUFFER-SPAN values for PATTERN, starting at START and wrapping once.
+Searches are case-sensitive unless CASE-FOLD is true."
   (declare (type buffer-offset start))
   (unless (string= pattern "")
     (let* ((text (buffer-visible-text buffer))
            (offset (buffer-narrow-start-offset buffer))
-           (local-start (max 0 (min (length text) (- start offset)))))
+           (local-start (max 0 (min (length text) (- start offset))))
+           (case-fold-p (and case-fold-supplied-p case-fold)))
       (mapcar (lambda (span)
                 (%visible-buffer-span buffer span))
-              (%search-spans-in-text text pattern local-start)))))
+              (%search-spans-in-text text pattern local-start case-fold-p)))))

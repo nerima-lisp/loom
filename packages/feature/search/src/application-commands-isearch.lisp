@@ -14,8 +14,13 @@
 
 (defun %isearch-prompt-for (session)
   (let ((backward (eq (isearch-session-direction session) :backward))
-        (failed (isearch-session-failed-p session)))
+        (failed (isearch-session-failed-p session))
+        (regexp-p (%isearch-regexp-p session)))
     (cond
+      ((and regexp-p failed backward) "Failing regexp I-search backward: ")
+      ((and regexp-p failed) "Failing regexp I-search: ")
+      ((and regexp-p backward) "Regexp I-search backward: ")
+      (regexp-p "Regexp I-search: ")
       ((and failed backward) +isearch-failing-backward-prompt+)
       (failed +isearch-failing-prompt+)
       (backward +isearch-backward-prompt+)
@@ -55,28 +60,38 @@ last successful one put it."
                       (buffer-position-column position))))
 
 (defun %isearch-repeat-key-direction (key-event)
-  "Return :FORWARD for a C-s event, :BACKWARD for C-r, and NIL otherwise.
-
-Both terminal encodings of Ctrl+letter are normalized by the same function the
-global keymap routes through, so the chord is recognized here exactly when it
-would have been recognized there."
-  (let ((descriptor (loom/core/command:key-event->descriptor key-event)))
-    (when (equal (car descriptor) '(:control))
-      (case (cdr descriptor)
+  "Return the direction of a C-s or C-r repeat key, if any."
+  (let* ((descriptor (loom/core/command:key-event->descriptor key-event))
+         (modifiers (car descriptor))
+         (character (cdr descriptor)))
+    (when (equal modifiers (list :control))
+      (case character
         (#\s :forward)
-        (#\r :backward)
-        (t nil)))))
+        (#\r :backward)))))
 
 (defun %isearch-change (session minibuffer input)
   (isearch-apply-pattern session input)
   (%isearch-refresh session minibuffer))
 
 (defun %isearch-key (session minibuffer key-event)
-  (let ((repeat (%isearch-repeat-key-direction key-event)))
-    (when repeat
-      (isearch-repeat session repeat)
-      (%isearch-refresh session minibuffer)
-      t)))
+  (let* ((descriptor (loom/core/command:key-event->descriptor key-event))
+         (modifiers (car descriptor))
+         (character (cdr descriptor)))
+    (cond
+      ((and (equal modifiers (list :alt))
+            (eql character #\r))
+       (setf (%isearch-regexp-p session)
+             (not (%isearch-regexp-p session)))
+       (%isearch-change
+        session minibuffer
+        (loom/core/minibuffer:minibuffer-input-string minibuffer))
+       t)
+      (t
+       (let ((direction (%isearch-repeat-key-direction key-event)))
+         (when direction
+           (isearch-repeat session direction)
+           (%isearch-refresh session minibuffer)
+           t))))))
 
 (defun %isearch-confirm (session input)
   (declare (ignore session input))
@@ -106,34 +121,40 @@ would have been recognized there."
                                             (lambda ()
                                               (%isearch-cancel session))))
 
-(defun %isearch-start (direction)
+(defun %isearch-start (direction &key regexp-p)
   "Open an incremental-search prompt in DIRECTION over the selected buffer."
-  (let* ((buffer
-          (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
+  (let* ((selected-window
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree *editor-state*)))
+         (buffer (loom/core/window-tree:window-buffer selected-window))
          (minibuffer
-          (loom/core/editor-session:editor-state-minibuffer
-           loom/core/editor-session:*editor-state*)))
+           (loom/core/editor-session:editor-state-minibuffer
+            loom/core/editor-session:*editor-state*)))
     (when (and buffer minibuffer)
-      (let ((session
-             (make-isearch-session buffer
-                                   (buffer-point-offset buffer)
-                                   :direction
-                                   direction)))
+      (let ((session (make-isearch-session buffer
+                                          (buffer-point-offset buffer)
+                                          :direction direction
+                                          :regexp-p regexp-p)))
         (setf (loom/core/editor-session:editor-state-isearch
                loom/core/editor-session:*editor-state*) session)
         (%isearch-activate-minibuffer session minibuffer))))
   nil)
 
 (defun isearch-forward ()
-  "Search forward as the pattern is typed (C-s).
+  "Search literal text incrementally (C-s).
 
-Editing the pattern selects a match from the session's search offset; C-s repeats
-forward and C-r repeats backward. RET keeps point where the search left it and
-files the pattern in the minibuffer history, and C-g puts point back where the
-search started. When nothing matches, the prompt says so and point stops
-moving."
+C-s repeats forward and C-r repeats backward. M-r toggles between literal and
+regexp matching; C-M-s and C-M-r start regexp isearch. RET keeps point at the
+match and records the pattern in history. C-g restores the starting point. A
+nonmatching pattern leaves point at the last successful match."
   (%isearch-start :forward))
 
 (defun isearch-backward ()
-  "Search backward as the pattern is typed (C-r). See ISEARCH-FORWARD."
+  "Search backward through literal text incrementally (C-r)."
   (%isearch-start :backward))
+(defun isearch-forward-regexp ()
+  "Search forward incrementally using a regular expression (C-M-s)."
+  (%isearch-start :forward :regexp-p t))
+(defun isearch-backward-regexp ()
+  "Search backward incrementally using a regular expression (C-M-r)."
+  (%isearch-start :backward :regexp-p t))

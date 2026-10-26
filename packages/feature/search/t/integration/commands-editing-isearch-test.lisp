@@ -140,4 +140,94 @@
         (minibuffer-handle-key minibuffer (%control-key #\s))
         (expect (buffer-span-start
                  (loom/feature/search:isearch-session-match session))
-                :to-equal 8)))))
+                :to-equal 8))))
+  (it
+    "starts forward regexp incremental search through C-M-s key dispatch"
+    ;; C-M-s/C-M-r use regexp search; C-s/C-r use incremental literal search.
+    ;; GNU Emacs Manual:
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Search.html
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Incremental-Search.html
+    (%with-selected-minibuffer-buffer
+        (minibuffer buffer "ab"
+          (keymap (loom/core/command:install-default-keybindings (make-keymap)))
+          (keymap-state (make-keymap-state keymap)))
+      (setf (editor-state-keymap *editor-state*) keymap)
+      (buffer-set-point buffer 0 0)
+      (loom::%dispatch-key-event
+       (cl-tty-kit:make-key-event :type :character :code #\s
+                                  :modifiers (list :control :alt))
+       keymap-state)
+      (multiple-value-bind (symbol status)
+          (find-symbol "ISEARCH-FORWARD-REGEXP" "LOOM/FEATURE/SEARCH")
+        (expect status :to-equal :external)
+        (expect (fboundp symbol) :to-be-truthy))
+      (%search-type-string minibuffer ".")
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Regexp I-search: ")
+      (expect (buffer-point-column buffer) :to-equal 0)))
+  (it
+    "starts backward regexp incremental search through C-M-r key dispatch"
+    (%with-selected-minibuffer-buffer
+        (minibuffer buffer "ab"
+          (keymap (loom/core/command:install-default-keybindings (make-keymap)))
+          (keymap-state (make-keymap-state keymap)))
+      (setf (editor-state-keymap *editor-state*) keymap)
+      (buffer-set-point buffer 0 2)
+      (loom::%dispatch-key-event
+       (cl-tty-kit:make-key-event :type :character :code #\r
+                                  :modifiers (list :control :alt))
+       keymap-state)
+      (multiple-value-bind (symbol status)
+          (find-symbol "ISEARCH-BACKWARD-REGEXP" "LOOM/FEATURE/SEARCH")
+        (expect status :to-equal :external)
+        (expect (fboundp symbol) :to-be-truthy))
+      (%search-type-string minibuffer ".")
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Regexp I-search backward: ")
+      (expect (buffer-point-column buffer) :to-equal 1)))
+  (it
+    "toggles regexp matching with M-r during forward and backward isearch"
+    ;; C-M-s/C-M-r start regexp isearch; M-r toggles regexp mode during isearch.
+    ;; GNU Emacs Manual:
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexp-Search.html
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Special-Isearch.html
+    (%with-selected-minibuffer-buffer (minibuffer buffer "a.")
+      (buffer-set-point buffer 0 0)
+      (loom/feature/search:isearch-forward)
+      (%search-type-string minibuffer ".")
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "I-search: ")
+      (expect (buffer-point-column buffer) :to-equal 1)
+      (minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :character :code #\r
+                                  :modifiers (list :alt)))
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Regexp I-search: ")
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :character :code #\r
+                                  :modifiers (list :alt)))
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "I-search: ")
+      (expect (buffer-point-column buffer) :to-equal 1))
+    (%with-selected-minibuffer-buffer (minibuffer buffer "ba")
+      (buffer-set-point buffer 0 2)
+      (loom/feature/search:isearch-backward)
+      (%search-type-string minibuffer ".")
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Failing I-search backward: ")
+      (expect (buffer-point-column buffer) :to-equal 2)
+      (minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :character :code #\r
+                                  :modifiers (list :alt)))
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Regexp I-search backward: ")
+      (expect (buffer-point-column buffer) :to-equal 1)
+      (minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :character :code #\r
+                                  :modifiers (list :alt)))
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Failing I-search backward: ")
+      (expect (buffer-point-column buffer) :to-equal 1))))

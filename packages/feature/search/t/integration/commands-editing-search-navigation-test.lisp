@@ -56,18 +56,25 @@
       (expect misses :to-equal 1)))
 
   (it
-    "searches case-sensitively from point and wraps once"
+    "case-folds lowercase patterns from point and wraps once"
+    ;; GNU Emacs Manual 17.9: lowercase patterns fold case; uppercase makes searches case-sensitive.
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Lax-Search.html
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha ALPHA alpha")
       (buffer-set-point buffer 0 6)
       (loom/feature/search::search-forward)
       (%expect-minibuffer-prompt minibuffer (%search-regex-prompt-string))
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "alpha")
-      (expect (buffer-point-column buffer) :to-equal 12)
+      (expect (buffer-point-column buffer) :to-equal 6)
       (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
       (buffer-set-point buffer 0 17)
       (loom/feature/search::search-forward)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "alpha")
-      (expect (buffer-point-column buffer) :to-equal 0)))
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
+      (loom/feature/search::search-forward)
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "Alpha")
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")))
 
   (it
     "searches backward to the previous match"

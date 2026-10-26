@@ -482,6 +482,41 @@ def isearch_forward(binary):
     _assert_exit_zero("movement/isearch-forward", output, code)
 
 
+# Plain terminals encode C-M-letter as ESC followed by the Ctrl-letter byte.
+@scenario(
+    "movement/isearch-backward-regexp",
+    commands=["execute-extended-command", "end-of-buffer", "isearch-backward-regexp"],
+)
+def isearch_backward_regexp(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = _write_file(directory, "isearch-backward-regexp.txt", b"alpha needle omega needle")
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _mx(session, "end-of-buffer")
+            session.send(b"\x1b" + keys.ctrl("r"))
+            session.wait_for_region_text("minibuffer", "Regexp I-search backward: ")
+            session.type("n.e")
+            session.key("RET")
+            session.wait_for_region_cursor("body", 19)
+            output, code = session.quit()
+    _assert_exit_zero("movement/isearch-backward-regexp", output, code)
+
+
+@scenario("movement/isearch-forward-regexp", commands=["isearch-forward-regexp"])
+def isearch_forward_regexp(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = _write_file(directory, "isearch-forward-regexp.txt", b"alpha needle omega needle")
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.send(b"\x1b" + keys.ctrl("s"))
+            session.wait_for_region_text("minibuffer", "Regexp I-search: ")
+            session.type("n.e")
+            session.key("RET")
+            session.wait_for_region_cursor("body", 6)
+            output, code = session.quit()
+    _assert_exit_zero("movement/isearch-forward-regexp", output, code)
+
+
 @scenario(
     "movement/exchange-point-and-mark",
     commands=[
