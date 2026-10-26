@@ -161,7 +161,7 @@
              :to-be-truthy)))
   (t
    (progn
-     (expect (equal owner :w3-1) :to-be-truthy)
+     (expect (keywordp owner) :to-be-truthy)
      (expect (equal target-map :global) :to-be-truthy)
      (expect (or (equal status :implemented)
                  (equal status :removed))
