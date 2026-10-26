@@ -1338,6 +1338,1448 @@
       ],
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/narrow",
+      "path_id": "r3:forward-slurp-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "forward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;5C"
+      ],
+      "initial_bytes": "before\n(a) b\nafter\n",
+      "effect_bytes": "before\n(a b)\nafter\n",
+      "expected_bytes": "before\n(a b)\nafter\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/split-window",
+      "path_id": "r3:forward-slurp-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b)"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "forward-slurp-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/macro-replay",
+      "path_id": "r3:forward-slurp-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "forward-slurp-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;5C"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/narrow",
+      "path_id": "r3:forward-barf-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "forward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;5D"
+      ],
+      "initial_bytes": "before\n(a b)\nafter\n",
+      "effect_bytes": "before\n(a) b\nafter\n",
+      "expected_bytes": "before\n(a) b\nafter\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/split-window",
+      "path_id": "r3:forward-barf-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a) b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a) b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a) b"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "forward-barf-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/macro-replay",
+      "path_id": "r3:forward-barf-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "forward-barf-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;5D"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/narrow",
+      "path_id": "r3:backward-slurp-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "backward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "\u001b[1;7D"
+      ],
+      "initial_bytes": "before\na (b)\nafter\n",
+      "effect_bytes": "before\n(a b)\nafter\n",
+      "expected_bytes": "before\n(a b)\nafter\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/split-window",
+      "path_id": "r3:backward-slurp-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "backward-slurp-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        12,
+        3
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b)"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "backward-slurp-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/macro-replay",
+      "path_id": "r3:backward-slurp-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "backward-slurp-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "\u001b[1;7D"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/narrow",
+      "path_id": "r3:backward-barf-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "backward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;7C"
+      ],
+      "initial_bytes": "before\n(a b)\nafter\n",
+      "effect_bytes": "before\na (b)\nafter\n",
+      "expected_bytes": "before\na (b)\nafter\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/split-window",
+      "path_id": "r3:backward-barf-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "backward-barf-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "a (b)\n",
+      "expected_bytes": "a (b)\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a (b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "a (b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a (b)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "a (b)"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "backward-barf-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/macro-replay",
+      "path_id": "r3:backward-barf-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "backward-barf-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "\u001b[1;7C"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "a (b)\n",
+      "expected_bytes": "a (b)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/narrow",
+      "path_id": "r3:kill-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "kill-sexp",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "before\na b\nafter\n",
+      "effect_bytes": "before\n b\nafter\n",
+      "expected_bytes": "before\n b\nafter\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": " b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": " b"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/split-window",
+      "path_id": "r3:kill-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "kill-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": " b\n",
+      "expected_bytes": " b\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": " b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": " b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": " b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": " b"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "kill-sexp"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/macro-replay",
+      "path_id": "r3:kill-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "kill-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": " b\n",
+      "expected_bytes": " b\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": " b\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": " b"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/narrow",
+      "path_id": "r3:raise-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "raise-sexp",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-r"
+      ],
+      "initial_bytes": "before\n(a (b) c)\nafter\n",
+      "effect_bytes": "before\n(a b c)\nafter\n",
+      "expected_bytes": "before\n(a b c)\nafter\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/split-window",
+      "path_id": "r3:raise-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "raise-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        12,
+        3
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b c)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b c)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b c)"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "raise-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/macro-replay",
+      "path_id": "r3:raise-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "raise-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-r"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/narrow",
+      "path_id": "r3:splice-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "splice-sexp",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-s"
+      ],
+      "initial_bytes": "before\n(a (b) c)\nafter\n",
+      "effect_bytes": "before\n(a b c)\nafter\n",
+      "expected_bytes": "before\n(a b c)\nafter\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/split-window",
+      "path_id": "r3:splice-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "splice-sexp",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        12,
+        3
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b c)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a b c)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a b c)"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "splice-sexp"
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/macro-replay",
+      "path_id": "r3:splice-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "forward-char",
+        "splice-sexp",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-s"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/narrow",
+      "path_id": "r3:wrap-round:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "execute-extended-command",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "wrap-round",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-("
+      ],
+      "initial_bytes": "before\na b\nafter\n",
+      "effect_bytes": "before\n(a) b\nafter\n",
+      "expected_bytes": "before\n(a) b\nafter\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/split-window",
+      "path_id": "r3:wrap-round:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "split-window-below",
+        "execute-extended-command",
+        "wrap-round",
+        "keyboard-quit",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-g"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a) b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a) b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(a) b"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(a) b"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below",
+        "wrap-round"
+      ],
+      "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/macro-replay",
+      "path_id": "r3:wrap-round:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "start-kbd-macro",
+        "wrap-round",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-("
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "major_mode": "Common Lisp"
     }
   ]
 }
