@@ -221,6 +221,38 @@ outside" (buffer (%selected-test-buffer)))
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "Mode JSON has no line comment syntax")))
+  (it
+    "records M-; comment-dwim with its command, route, and key"
+    (host-kit:with-temporary-directory (directory)
+      (let ((trace-path (namestring (merge-pathnames "commands.jsonl" directory))))
+        (%with-minibuffer-state
+            (minibuffer "value" (buffer (%selected-test-buffer)))
+          (let ((keymap-state
+                  (loom/core/command:make-keymap-state
+                   (loom/core/editor-session:editor-state-keymap *editor-state*))))
+            (buffer-set-major-mode buffer :nix)
+            (buffer-set-point buffer 0 5)
+            (with-replaced-function
+                (uiop:getenv
+                 (lambda (name)
+                   (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
+              (loom::%dispatch-key-event
+               (cl-tty-kit:make-key-event
+                :type :character
+                :code #\;
+                :modifiers (list :alt))
+               keymap-state))
+            (expect (buffer-line buffer 0) :to-equal "value # ")
+            (with-open-file (stream trace-path)
+              (let* ((event (json-kit:parse (read-line stream nil)))
+                     (entry (gethash "entry" event)))
+                (expect (gethash "command" event)
+                        :to-equal "mode/comment-dwim")
+                (expect (gethash "route" event) :to-equal "key")
+                (expect (search "nix" entry) :to-be-truthy)
+                (expect (search ";" entry) :to-be-truthy)
+                (expect (search "alt" entry) :to-be-truthy)
+                (expect (read-line stream nil) :to-be nil))))))))
 
   (it
     "keeps M-x comment-line and routes M-; through local and global bindings"
