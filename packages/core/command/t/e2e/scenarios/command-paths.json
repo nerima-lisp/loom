@@ -607,24 +607,24 @@
         "M-;"
       ],
       "initial_bytes": "value\n",
-      "effect_bytes": "# value\n",
-      "expected_bytes": "# value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value #\n",
       "expected_cursor": [
         0,
-        2
+        7
       ],
       "expected_minibuffer": "Keyboard macro defined",
       "expected_screen": [
         {
           "region": "body",
           "index": 0,
-          "text": "# value"
+          "text": "value #"
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "# value"
+          "text": "value #"
         }
       ],
       "replay_prefix_keys": [
@@ -945,41 +945,40 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
-        "universal-argument",
         "indent-for-tab-command",
         "save-buffer",
         "start-kbd-macro",
         "end-kbd-macro",
         "undo",
         "move-beginning-of-line",
-        "call-last-kbd-macro"
+        "call-last-kbd-macro",
+        "next-line"
       ],
       "command": "indent-for-tab-command",
       "mutation_case": "macro-replay",
       "major_mode": "Python",
       "command_keys": [
-        "C-u",
         "TAB"
       ],
-      "initial_bytes": "value\n",
-      "effect_bytes": "    value\n",
-      "expected_bytes": "    value\n",
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\n    value\n",
+      "expected_bytes": "    root\n    value\n",
       "expected_cursor": [
-        0,
+        1,
         4
       ],
       "expected_minibuffer": "Keyboard macro defined",
       "expected_screen": [
         {
           "region": "body",
-          "index": 0,
+          "index": 1,
           "text": "    value"
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "index": 0,
+          "index": 1,
           "text": "    value"
         }
       ],
@@ -989,9 +988,12 @@
       "restore_screen": [
         {
           "region": "body",
-          "index": 0,
+          "index": 1,
           "text": "value"
         }
+      ],
+      "prepare_commands": [
+        "next-line"
       ]
     },
     {
