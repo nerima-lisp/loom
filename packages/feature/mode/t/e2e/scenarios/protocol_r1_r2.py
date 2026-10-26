@@ -189,3 +189,21 @@ def set_major_mode_invalid(binary):
                 region="minibuffer",
             )
             _close(session, "mode/set-major-mode-invalid")
+
+
+@scenario(
+    "mode/toggle-truncate-lines-mx",
+    commands=["toggle-truncate-lines"],
+)
+def toggle_truncate_lines_mx(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-truncate-lines-") as directory:
+        path = os.path.join(directory, "buffer.txt")
+        _write(path, b"")
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("toggle-truncate-lines")
+            session.wait_for_region_text("minibuffer", "Truncate long lines")
+            session.assert_screen_text(
+                "Truncate long lines", match="contains", region="minibuffer"
+            )
+            _close(session, "mode/toggle-truncate-lines-mx")
