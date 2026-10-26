@@ -157,8 +157,8 @@
                  (separator
                    (if (and left-character right-character
                             (not (char= left-character #\Newline))
-                            (not (and (char= left-character #\(()
-                                      (char= right-character #\))))))
+                            (not (and (char= left-character #\()
+                                      (char= right-character #\)))))
                        " "
                        "")))
             (%replace-buffer-offset-range
