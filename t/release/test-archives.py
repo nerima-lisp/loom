@@ -413,7 +413,7 @@ elif command == "nix":
     elif args == ["shell", "--store", str(store), "--offline", package,
                   "--command", package + "/bin/loom", "--help"]:
         action = "help"
-        print("Usage: loom [PATH]")
+        print("Usage: loom [PATH...]")
 if action is None:
     sys.exit("unexpected stub invocation")
 with open(os.environ["LOOM_RUNTIME_LOG"], "a") as log:
