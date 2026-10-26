@@ -30,7 +30,22 @@
       (expect (loom/feature/evaluation:evaluation-result-form-count result) :to-equal 0)
       (expect (loom/feature/evaluation:evaluation-result-success-p result) :to-be-falsy)
       (expect (loom/feature/evaluation:evaluation-result-error-message result)
-              :to-contain "read"))))
+              :to-contain "read")))
+  (it "evaluates only the last complete form when requested"
+    (multiple-value-bind (result selected-source)
+        (loom/feature/evaluation:evaluate-lisp-source
+         "(+ 1 2) (+ 3 4) (+ 5 6)" :last-expression-only t)
+      (expect selected-source :to-equal "(+ 5 6)")
+      (expect (loom/feature/evaluation:evaluation-result-form-count result) :to-equal 1)
+      (expect (loom/feature/evaluation:evaluation-result-value-lines result)
+              :to-equal '("11"))))
+  (it "returns malformed input for the evaluation error path"
+    (multiple-value-bind (result selected-source)
+        (loom/feature/evaluation:evaluate-lisp-source
+         "(+ 1 2) (incomplete" :last-expression-only t)
+      (expect selected-source :to-equal "(incomplete")
+      (expect (loom/feature/evaluation:evaluation-result-success-p result)
+              :to-be-falsy))))
 (describe
   "eval-last-sexp"
   (it "evaluates only the expression before point and preserves point"
