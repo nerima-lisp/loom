@@ -66,3 +66,8 @@
       (error "Major-mode keybindings must be (KEY-FORM . COMMAND): ~S"
              binding)))
   (copy-tree keybindings))
+
+(defparameter
+  *major-mode-pair-completion-rules*
+  (make-hash-table :test (function eq))
+  "Explicit opener/closer pair lists, keyed by canonical major mode.")

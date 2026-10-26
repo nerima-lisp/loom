@@ -286,25 +286,88 @@ non-negative column, or NIL to use the preceding line's indentation."
 (defun %registered-buffer-truncate-policy (session buffer)
   (declare (ignore session))
   (buffer-truncate-lines-p buffer))
+(defun %major-mode-pair-completion-rules-for-mode (mode)
+  (let* ((registered (gethash mode *major-mode-pair-completion-rules*))
+         (default (when (major-mode-skip-closing-delimiter-p mode)
+                    (cons #\( #\))))
+         (registered-opener (assoc #\( registered :test #'char=)))
+    (if (and default (null registered-opener))
+        (cons default registered)
+        registered)))
+
+(defun %major-mode-pair-completion-closer-at-point-p (buffer closer)
+  (let ((offset (loom/core/buffer:buffer-point-offset buffer))
+        (text (loom/core/buffer:buffer-text buffer)))
+    (and (< offset (length text))
+         (char= (char text offset) closer))))
+
+(defun %major-mode-set-point-offset (buffer offset)
+  (let ((position (buffer-offset-position buffer offset)))
+    (buffer-set-point buffer
+                      (buffer-position-line position)
+                      (buffer-position-column position))))
+
+(defun %major-mode-pair-completion-input (buffer event)
+  (let* ((mode (buffer-major-mode buffer))
+         (character (cl-tty-kit:key-event-code event))
+         (rules (%major-mode-pair-completion-rules-for-mode mode))
+         (opener-rule (assoc character rules :test #'char=))
+         (closer-rule
+           (and (major-mode-skip-closing-delimiter-p mode)
+                (rassoc character rules :test #'char=))))
+    (cond
+      (opener-rule
+       (let ((offset (loom/core/buffer:buffer-point-offset buffer)))
+         (loom/core/command:record-undo-boundary-for-command t)
+         (loom/core/command:self-insert-command character)
+         (buffer-insert-string buffer (string (cdr opener-rule)))
+         (%major-mode-set-point-offset buffer (1+ offset)))
+       :handled)
+      ((and closer-rule
+            (%major-mode-pair-completion-closer-at-point-p buffer character))
+       (loom/core/command:record-undo-boundary-for-command t)
+       (loom/core/editor-session:editor-state-clear-last-yank *editor-state*)
+       (setf (loom/core/editor-session:editor-state-last-command-kill-p
+              *editor-state*)
+             nil)
+       (%major-mode-set-point-offset
+        buffer (1+ (loom/core/buffer:buffer-point-offset buffer)))
+       :handled)
+      (t :pass))))
+
 (defun %major-mode-enter-key-input-hook (session event kind)
   (declare (ignore session))
   (let* ((window-tree (editor-state-window-tree *editor-state*))
          (buffer
-          (and window-tree
-               (window-buffer (window-tree-selected-window window-tree))))
+           (and window-tree
+                (window-buffer (window-tree-selected-window window-tree))))
          (minibuffer (editor-state-minibuffer *editor-state*))
-         (completion (editor-state-completion *editor-state*)))
-    (if (and (eq kind :key)
-             (eq (cl-tty-kit:key-event-type event) :special)
-             (eq (cl-tty-kit:key-event-code event) :enter)
-             buffer
-             (not completion)
-             (not (buffer-read-only-p buffer))
-             (not (and minibuffer (minibuffer-active-p minibuffer))))
-        (progn
-          (newline-and-indent)
-          :handled)
-        :pass)))
+         (completion (editor-state-completion *editor-state*))
+         (prefix-argument
+           (loom/core/editor-session:editor-state-prefix-argument
+            *editor-state*)))
+    (cond
+      ((and (eq kind :key)
+            (eq (cl-tty-kit:key-event-type event) :character)
+            (null (cl-tty-kit:key-event-modifiers event))
+            buffer
+            (not completion)
+            (not (buffer-read-only-p buffer))
+            (not (and minibuffer (minibuffer-active-p minibuffer)))
+            (not (and prefix-argument
+                      (loom/core/command:prefix-argument-active-p
+                       prefix-argument))))
+       (%major-mode-pair-completion-input buffer event))
+      ((and (eq kind :key)
+            (eq (cl-tty-kit:key-event-type event) :special)
+            (eq (cl-tty-kit:key-event-code event) :enter)
+            buffer
+            (not completion)
+            (not (buffer-read-only-p buffer))
+            (not (and minibuffer (minibuffer-active-p minibuffer))))
+       (newline-and-indent)
+       :handled)
+      (t :pass))))
 
 (eval-when (:load-toplevel :execute)
   (register-buffer-truncate-policy

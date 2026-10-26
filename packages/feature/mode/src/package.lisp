@@ -75,4 +75,5 @@
    #:major-mode-comment-start
    #:major-mode-comment-end
    #:major-mode-skip-closing-delimiter-p
-   #:comment-dwim))
+   #:comment-dwim
+   #:register-major-mode-pair-completion))

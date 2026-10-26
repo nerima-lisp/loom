@@ -117,6 +117,7 @@ Built-in modes cannot be removed; unknown modes return NIL."
       ((gethash key *registered-major-modes*)
        (remhash key *registered-major-modes*)
        (remhash key *major-mode-indentation-rules*)
+       (remhash key *major-mode-pair-completion-rules*)
        (setf *registered-major-mode-order*
              (delete key *registered-major-mode-order* :test #'eq))
        (incf *major-mode-registry-version*)
@@ -124,3 +125,23 @@ Built-in modes cannot be removed; unknown modes return NIL."
       ((%static-major-mode-definition key)
        (error "Cannot unregister built-in major mode: ~S" mode))
       (t nil))))
+
+(defun register-major-mode-pair-completion (mode opener closer)
+  "Register MODE's OPENER/CLOSER pair and return its canonical mode key.
+
+MODE must name a known major mode. OPENER and CLOSER must be distinct
+characters. Repeated calls keep distinct openers; a later registration for the
+same opener replaces only that opener's closer. A matching opener inserts its
+closer; an existing closer is skipped only when MODE enables
+skip-closing-delimiter."
+  (let ((key (or (major-mode-from-name mode)
+                 (error "Unknown major mode for pair completion: ~S" mode))))
+    (check-type opener character)
+    (check-type closer character)
+    (when (char= opener closer)
+      (error "Pair completion opener and closer must differ: ~S" opener))
+    (let ((pairs (gethash key *major-mode-pair-completion-rules*)))
+      (setf (gethash key *major-mode-pair-completion-rules*)
+            (append (remove opener pairs :key #'car :test #'char=)
+                    (list (cons opener closer)))))
+    key))

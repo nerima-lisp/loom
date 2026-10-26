@@ -217,3 +217,81 @@ run" (buffer (%selected-test-buffer)))
               :to-equal
               (quote (1 0)))
       (expect (loom/core/buffer:buffer-mark-active-p buffer) :to-be t))))
+
+(describe
+  "major-mode pair completion protocol"
+  (it
+    "retains distinct pairs, replaces duplicate openers, and rejects symmetric pairs"
+    (%with-registered-major-modes (:loom-test-pair-insertion)
+      (register-major-mode :loom-test-pair-insertion)
+      (expect
+       (loom/feature/mode:register-major-mode-pair-completion
+        :loom-test-pair-insertion #\( #\))
+       :to-be
+       :loom-test-pair-insertion)
+      (loom/feature/mode:register-major-mode-pair-completion
+       :loom-test-pair-insertion #\[ #\])
+      (loom/feature/mode:register-major-mode-pair-completion
+       :loom-test-pair-insertion #\[ #\})
+      (signals error
+        (loom/feature/mode:register-major-mode-pair-completion
+         :loom-test-pair-insertion #\x #\x))
+      (%with-minibuffer-state
+          (minibuffer "" (buffer (%selected-test-buffer)))
+        (buffer-set-major-mode buffer :loom-test-pair-insertion)
+        (let ((keymap-state
+                (loom/core/command:make-keymap-state
+                 (loom/core/editor-session:editor-state-keymap
+                  *editor-state*))))
+          (loom::%dispatch-key-event
+           (cl-tty-kit:make-key-event
+            :type :character :code #\( :modifiers nil)
+           keymap-state)
+          (expect (buffer-text buffer) :to-equal "()")
+          (expect (buffer-point-line buffer) :to-equal 0)
+          (expect (buffer-point-column buffer) :to-equal 1)
+          (loom::%dispatch-key-event
+           (cl-tty-kit:make-key-event
+            :type :character :code #\[ :modifiers nil)
+           keymap-state)
+          (expect (buffer-text buffer) :to-equal "([})")
+          (expect (buffer-point-line buffer) :to-equal 0)
+          (expect (buffer-point-column buffer) :to-equal 2)))))
+  (it
+    "skips an existing Lisp closer when the mode enables closer skipping"
+    (%with-minibuffer-state
+        (minibuffer "()" (buffer (%selected-test-buffer)))
+      (buffer-set-major-mode buffer :common-lisp)
+      (buffer-set-point buffer 0 1)
+      (let ((keymap-state
+              (loom/core/command:make-keymap-state
+               (loom/core/editor-session:editor-state-keymap
+                *editor-state*))))
+        (loom::%dispatch-key-event
+         (cl-tty-kit:make-key-event
+          :type :character :code #\) :modifiers nil)
+         keymap-state))
+      (expect (buffer-text buffer) :to-equal "()")
+      (expect (buffer-point-line buffer) :to-equal 0)
+      (expect (buffer-point-column buffer) :to-equal 2)))
+  (it
+    "inserts a closer when its mode does not enable closer skipping"
+    (%with-registered-major-modes (:loom-test-pair-no-skip)
+      (register-major-mode :loom-test-pair-no-skip)
+      (loom/feature/mode:register-major-mode-pair-completion
+       :loom-test-pair-no-skip #\( #\))
+      (%with-minibuffer-state
+          (minibuffer ")" (buffer (%selected-test-buffer)))
+        (buffer-set-major-mode buffer :loom-test-pair-no-skip)
+        (buffer-set-point buffer 0 0)
+        (let ((keymap-state
+                (loom/core/command:make-keymap-state
+                 (loom/core/editor-session:editor-state-keymap
+                  *editor-state*))))
+          (loom::%dispatch-key-event
+           (cl-tty-kit:make-key-event
+            :type :character :code #\) :modifiers nil)
+           keymap-state))
+        (expect (buffer-text buffer) :to-equal "))")
+        (expect (buffer-point-line buffer) :to-equal 0)
+        (expect (buffer-point-column buffer) :to-equal 1)))))
