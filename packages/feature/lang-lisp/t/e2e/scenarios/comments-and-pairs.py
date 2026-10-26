@@ -19,8 +19,8 @@ def _comment_lisp_region(binary, mode, extension):
 
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.wait_for_region_exact_text("body", "hello\nworld")
-            session.wait_for_region_cursor("body", 0)
+            session.wait_for_region_exact_text("body", "hello\nworld", timeout=2.0)
+            session.wait_for_region_cursor("body", 0, timeout=2.0)
             session.send(
                 keys.ctrl("a")
                 + b"\x00"
@@ -28,15 +28,17 @@ def _comment_lisp_region(binary, mode, extension):
                 + keys.ctrl("e")
                 + keys.meta(";")
             )
-            session.wait_for_region_exact_text("body", "; hello\n; world")
-            session.wait_for_region_cursor("body", 7, index=1)
+            session.wait_for_region_exact_text(
+                "body", "; hello\n; world", timeout=2.0
+            )
+            session.wait_for_region_cursor("body", 7, index=1, timeout=2.0)
             if session.observe_cursor(
                 expected=(1, 7), region="body", index=1
             ) is not True:
                 raise AssertionError(f"{mode}: point after M-; was not (1, 7)")
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, commented)
+            session.wait_for_file(path, commented, timeout=2.0)
             session.assert_file_bytes(path, commented)
             output, code = session.quit()
 
