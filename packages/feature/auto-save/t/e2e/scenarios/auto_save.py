@@ -49,7 +49,10 @@ def toggle_auto_save(binary):
                 )
 
 
-@scenario("auto-save/mode-sidecar-write", commands=["auto-save-mode"])
+@scenario(
+    "auto-save/mode-sidecar-write",
+    commands=["eval-expression", "switch-to-buffer", "auto-save-mode"],
+)
 def mode_sidecar_write(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = os.path.join(directory, "mode.txt")
@@ -58,6 +61,22 @@ def mode_sidecar_write(binary):
 
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
+            session.extended_command("eval-expression", timeout=2)
+            session.wait_for_region_text("minibuffer", "Eval: ", timeout=2)
+            session.type(
+                "(setf loom/feature/auto-save:*auto-save-interval* 0)"
+            )
+            session.key("RET")
+            session.wait_for_region_text(
+                "minibuffer", "Evaluated 1 form", timeout=2
+            )
+            session.extended_command("switch-to-buffer", timeout=2)
+            session.wait_for_region_text(
+                "minibuffer", "Switch to buffer: ", timeout=2
+            )
+            session.type(os.path.basename(path))
+            session.key("RET")
+            session.wait_for_region_text("body", "draft", timeout=2)
             session.type("x")
             session.extended_command("auto-save-mode", timeout=2)
             session.wait_for_file(sidecar, b"xdraft\n", timeout=2)
