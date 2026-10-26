@@ -87,11 +87,10 @@
                                                 (expect root
                                                         :to-equal
                                                         (namestring dir)))))
-          (it "opens missing startup files as empty registered buffers and rejects missing parents"
+          (it "opens startup files below missing directories as empty registered buffers"
               (host-kit:with-temporary-directory (directory)
-                (let* ((first-path (merge-pathnames "first.txt" directory))
+                (let* ((first-path (merge-pathnames "missing/deep/first.txt" directory))
                        (second-path (merge-pathnames "second.txt" directory))
-                       (invalid-parent-path (merge-pathnames "missing/child.txt" directory))
                        (*editor-state* nil))
                   (with-replaced-function
                    (loom::%initial-terminal-size
@@ -100,8 +99,13 @@
                    (loom::%initialize-editor-state
                     (namestring first-path)
                     (list (namestring second-path))))
-                  (let* ((session (editor-state-session *editor-state*))
-                         (buffers (loom/feature/buffers:registered-buffers session)))
+                  (let* ((state *editor-state*)
+                         (session (editor-state-session state))
+                         (buffers (loom/feature/buffers:registered-buffers session))
+                         (file-tree-root
+                          (first
+                           (loom/feature/file-tree:file-tree-prefetch-paths
+                            (editor-state-file-tree state)))))
                     (expect (length buffers) :to-equal 2)
                     (expect (mapcar (function loom/core/buffer:buffer-text) buffers)
                             :to-equal
@@ -116,21 +120,13 @@
                             :to-equal
                             (list "second.txt" "first.txt"))
                     (expect (probe-file first-path) :to-be nil)
-                    (expect (probe-file second-path) :to-be nil))
-                  (handler-case
-                      (progn
-                        (loom::%startup-file-and-root (namestring invalid-parent-path))
-                        (error "Expected a missing parent directory to be rejected"))
-                    (cl-cli:cli-invalid-positional-value (condition)
-                      (expect (cl-cli:cli-invalid-positional-value-name condition)
-                              :to-equal
-                              "PATH")
-                      (expect (cl-cli:cli-invalid-positional-value-value condition)
-                              :to-equal
-                              (namestring invalid-parent-path))
-                      (expect (cl-cli:cli-invalid-positional-value-cause condition)
-                              :to-be
-                              nil))))))
+                    (expect (probe-file second-path) :to-be nil)
+                    (expect (probe-file
+                             (host-kit:pathname-directory-pathname first-path))
+                            :to-be
+                            nil)
+                    (expect (host-kit:directory-exists-p file-tree-root) :to-be t)
+                    (expect file-tree-root :to-equal (probe-file directory))))))
           (it
            "saves a missing startup file directly without an external-change prompt"
            (host-kit:with-temporary-directory (directory)
