@@ -48,7 +48,7 @@ if [[ $(uname -s) == Linux ]]; then
   cmp "$scratch/expected-version" "$scratch/version"
   nix shell --store "$store" --offline "$package" \
     --command "$package/bin/loom" --help > "$scratch/help"
-  grep -F 'Usage: loom [PATH]' "$scratch/help"
+  grep -F 'Usage: loom [PATH...]' "$scratch/help"
   printf 'Verified offline Linux startup from the restored archive.\n'
 else
   printf 'Isolated-store execution requires Linux; startup is not checked here.\n'
