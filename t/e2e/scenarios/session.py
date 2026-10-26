@@ -179,7 +179,7 @@ def session_save_and_load(binary):
             )
             _wait_for_exact_line(session, "minibuffer", f"Session saved: {session_path}")
             data = _read_saved_session(session, session_path)
-            for fragment in (b":LOOM-SESSION 5", b"restore-spot", b"before", b"restored"):
+            for fragment in (b":LOOM-SESSION 6", b"restore-spot", b"before", b"restored"):
                 if fragment not in data:
                     raise AssertionError(
                         f"session file {session_path!r} missing {fragment!r}: {data!r}"

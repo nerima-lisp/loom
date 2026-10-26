@@ -21,12 +21,27 @@ recursing only into expanded directories."
          (%file-tree-flatten-children tree path depth active-paths)
       (remhash path active-paths))))
 
+(defun %file-tree-path-equal-p (first second &optional directory-p)
+  (or (equal first second)
+      (and directory-p
+           first
+           second
+           (equal (host-kit:ensure-directory-pathname (pathname first))
+                  (host-kit:ensure-directory-pathname (pathname second))))))
 (defun %file-tree-child-kind (path children)
-  (cdr (assoc path children :test (function equal))))
+  (or (cdr (assoc path children :test (function equal)))
+      (loop for (child-path . kind) in children
+            thereis (when (and (eq kind :directory)
+                               (%file-tree-path-equal-p path child-path t))
+                      kind))))
 
+(defun %file-tree-expanded-directory-key (tree path)
+  (loop for expanded-path being the hash-keys of (file-tree-expanded tree)
+        when (%file-tree-path-equal-p path expanded-path t)
+          return expanded-path))
 (defun %file-tree-expanded-directory-p (tree path kind)
   (and (eq kind :directory)
-       (gethash path (file-tree-expanded tree))))
+       (%file-tree-expanded-directory-key tree path)))
 
 (defun %file-tree-search-children (tree path children active-paths)
   (or (%file-tree-child-kind path children)
@@ -118,5 +133,9 @@ error if PATH does not name a directory in TREE. Returns the new
 expanded-p state."
   (unless (eq (%file-tree-find-kind tree path) :directory)
     (error "not a directory in tree: ~S" path))
-  (and (not (remhash path (file-tree-expanded tree)))
-       (setf (gethash path (file-tree-expanded tree)) t)))
+  (let ((expanded-path (%file-tree-expanded-directory-key tree path)))
+    (if expanded-path
+        (progn
+          (remhash expanded-path (file-tree-expanded tree))
+          nil)
+        (setf (gethash path (file-tree-expanded tree)) t))))

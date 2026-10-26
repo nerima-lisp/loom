@@ -108,6 +108,38 @@
               '(("/root/a.txt" . 0) ("/root/sub/" . 0)
                 ("/root/sub/b.txt" . 1) ("/root/sub/nested/" . 1)
                 ("/root/sub/nested/c.txt" . 2))))))
+(describe
+  "file-tree directory pathname restoration"
+  (it
+    "matches a restored directory pathname to its listed path"
+    (host-kit:with-temporary-directory (root)
+      (let* ((nested-path (merge-pathnames "nested/" root)))
+        (host-kit:create-directory nested-path)
+        (let* ((resolved-directory (truename nested-path))
+               (listed-directory (merge-pathnames "nested" root))
+               (restored-directory
+                 (make-pathname :directory (pathname-directory resolved-directory)
+                                :defaults resolved-directory))
+               (nested-file (merge-pathnames "child.txt" restored-directory))
+               (tree (make-file-tree root)))
+          (host-kit:write-file-string "child" nested-file)
+          (loom/feature/file-tree:file-tree-install-child-lister
+           tree (function loom/feature/file-tree:loom-fs-list-directory))
+          (expect (pathname-name listed-directory) :to-equal "nested")
+          (expect (pathname-name restored-directory) :to-be nil)
+          (expect (file-tree-entry-kind tree restored-directory)
+                  :to-equal :directory)
+          (expect (file-tree-toggle-expand tree restored-directory)
+                  :to-be-truthy)
+          (expect (find nested-file (file-tree-entries tree)
+                        :key (function car) :test (function equal))
+                  :to-be-truthy)
+          (expect (file-tree-toggle-expand tree listed-directory)
+                  :to-be-falsy)
+          (expect (find nested-file (file-tree-entries tree)
+                        :key (function car) :test (function equal))
+                  :to-be nil)
+          (expect (rest (file-tree-prefetch-paths tree)) :to-equal nil))))))
 
 (describe
   "file-tree cycle handling"
