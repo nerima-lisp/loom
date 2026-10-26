@@ -183,19 +183,21 @@
            (subseq text (car range) (cdr range))))
 
   (defun %command-paragraph-words (text start end)
-    (loop with word-start = nil
-          for offset from start below end
-          for character = (char text offset)
-          do (if (or (char= character #\Space)
-                     (char= character #\Tab)
-                     (char= character #\Newline))
-                 (when word-start
-                   (collect (subseq text word-start offset))
-                   (setf word-start nil))
-                 (unless word-start
-                   (setf word-start offset)))
-          finally (when word-start
-                    (collect (subseq text word-start end)))))
+    (let ((words nil)
+          (word-start nil))
+      (loop for offset from start below end
+            for character = (char text offset)
+            do (if (or (char= character #\Space)
+                       (char= character #\Tab)
+                       (char= character #\Newline))
+                   (when word-start
+                     (push (subseq text word-start offset) words)
+                     (setf word-start nil))
+                   (unless word-start
+                     (setf word-start offset)))
+            finally (when word-start
+                      (push (subseq text word-start end) words)))
+      (nreverse words)))
 
   (defun %command-wrap-words (words width)
     (with-output-to-string (output)
