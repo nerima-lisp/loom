@@ -135,7 +135,6 @@ root source tree responsible for every feature."
    (:file "t/integration/commands-editing-file-root-test")
    (:file "t/integration/commands-editing-minibuffer-keybinding-test")
    (:file "t/integration/commands-prompt-cancellation-test")
-   (:file "t/integration/prefix-argument-macro-test")
    (:file "t/integration/frame-layout-test-support")
    (:file "t/integration/layout-test")
    (:file "t/integration/layout-isearch-test")

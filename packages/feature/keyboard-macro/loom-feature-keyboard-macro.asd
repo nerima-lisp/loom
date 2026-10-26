@@ -13,4 +13,5 @@
   :serial t
   :components ((:file "t/unit/keyboard-macro-test")
                (:file "t/unit/editor-state-keyboard-macro-state-test")
-               (:file "t/integration/keyboard-macro-test")))
+               (:file "t/integration/keyboard-macro-test")
+               (:file "t/integration/prefix-argument-macro-test")))
