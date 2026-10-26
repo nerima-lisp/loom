@@ -231,4 +231,94 @@
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
   :scenario "git/real-git-unstage-file-interrupted"
+  :lane "W3-11")
+(:id "r2:git-stage-file:prompt-1:free-string:accept"
+  :commands (:git-stage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with an unstaged tracked-file change"
+  :outcome "accept stages the entered tracked file"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-stage-file/accept"
+  :lane "W3-11")
+(:id "r2:git-stage-file:prompt-1:free-string:cancel"
+  :commands (:git-stage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with an unstaged tracked-file change"
+  :outcome "cancel leaves the Git index unchanged"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-stage-file/cancel"
+  :lane "W3-11")
+(:id "r2:git-stage-file:prompt-1:free-string:empty"
+  :commands (:git-stage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with an unstaged tracked-file change"
+  :outcome "empty path reports cancellation without changing the index"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-stage-file/empty"
+  :lane "W3-11")
+(:id "r2:git-stage-file:prompt-1:free-string:tab"
+  :commands (:git-stage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with an unstaged tracked-file change"
+  :outcome "TAB completes and stages the tracked file"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-stage-file/tab"
+  :lane "W3-11")
+(:id "r2:git-stage-file:prompt-1:free-string:history"
+  :commands (:git-stage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with a modified file and a prior path prompt"
+  :outcome "UP recalls and stages the prior path"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-stage-file/history"
+  :lane "W3-11")
+(:id "r2:git-unstage-file:prompt-1:free-string:accept"
+  :commands (:git-unstage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with a staged tracked-file change"
+  :outcome "accept removes the entered tracked file from the index"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-unstage-file/accept"
+  :lane "W3-11")
+(:id "r2:git-unstage-file:prompt-1:free-string:cancel"
+  :commands (:git-unstage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with a staged tracked-file change"
+  :outcome "cancel leaves the Git index unchanged"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-unstage-file/cancel"
+  :lane "W3-11")
+(:id "r2:git-unstage-file:prompt-1:free-string:empty"
+  :commands (:git-unstage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with a staged tracked-file change"
+  :outcome "empty path reports cancellation without changing the index"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-unstage-file/empty"
+  :lane "W3-11")
+(:id "r2:git-unstage-file:prompt-1:free-string:tab"
+  :commands (:git-unstage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with a staged tracked-file change"
+  :outcome "TAB completes and unstages the tracked file"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-unstage-file/tab"
+  :lane "W3-11")
+(:id "r2:git-unstage-file:prompt-1:free-string:history"
+  :commands (:git-unstage-file)
+  :rule :r2
+  :entry "mx;prompt:1:free-string"
+  :state "temporary Git repository with staged tracked and untracked changes and a prior path prompt"
+  :outcome "UP recalls and unstages the prior path"
+  :observe (:screen_text :file_bytes :external_state)
+  :scenario "git/r2/git-unstage-file/history"
   :lane "W3-11"))

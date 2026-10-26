@@ -346,6 +346,165 @@ def _register_failure(command, outcome):
 
     return run
 
+def _assert_exact_message(session, message):
+    session.wait_for_region_exact_text(
+        "minibuffer", message, timeout=_WAIT
+    )
+    session.assert_screen_text(
+        message, match="exact", region="minibuffer", strip_right=True
+    )
+
+
+def _cached_blob(directory, path):
+    return subprocess.run(
+        ["git", "-C", directory, "show", f":{path}"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _run_prompt_path(binary, command, outcome):
+    directory, path = _repo()
+    other_path = os.path.join(directory.name, "other.txt")
+    prompt = (
+        "Git stage file: "
+        if command == "git-stage-file"
+        else "Git unstage file: "
+    )
+    verb = "stage" if command == "git-stage-file" else "unstage"
+    past_tense = "staged" if command == "git-stage-file" else "unstaged"
+    selected_path = "other.txt" if outcome == "history" else "tracked.txt"
+    main_bytes = _SOURCE + b"working change\n"
+
+    try:
+        with open(path, "ab") as handle:
+            handle.write(b"working change\n")
+
+        if outcome == "history":
+            _write(other_path, b"other\n")
+            if command == "git-unstage-file":
+                subprocess.run(
+                    ["git", "-C", directory.name, "add", "--", "tracked.txt", "other.txt"],
+                    check=True,
+                )
+        elif command == "git-unstage-file":
+            subprocess.run(
+                ["git", "-C", directory.name, "add", "--", "tracked.txt"],
+                check=True,
+            )
+
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
+
+            if outcome == "history":
+                _prompted(session, command, selected_path)
+                _assert_exact_message(
+                    session, f"Git {past_tense} {selected_path}"
+                )
+                if command == "git-stage-file":
+                    with open(other_path, "ab") as handle:
+                        handle.write(b"later change\n")
+                else:
+                    subprocess.run(
+                        ["git", "-C", directory.name, "add", "--", "other.txt"],
+                        check=True,
+                    )
+
+            _command(session, command)
+            session.wait_for_region_exact_text(
+                "minibuffer", prompt, timeout=_WAIT
+            )
+            if outcome == "cancel":
+                session.key("C-g")
+                _assert_exact_message(session, "Quit")
+            elif outcome == "empty":
+                session.key("RET")
+                _assert_exact_message(session, f"Git {verb} cancelled")
+            else:
+                if outcome == "tab":
+                    session.type("track")
+                    session.key("TAB")
+                elif outcome == "history":
+                    session.key("UP")
+                else:
+                    session.type(selected_path)
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    f"{prompt}{selected_path}",
+                    timeout=_WAIT,
+                )
+                session.key("RET")
+                _assert_exact_message(
+                    session, f"Git {past_tense} {selected_path}"
+                )
+
+            session.assert_screen_text(
+                "tracked", match="contains", region="body", index=None
+            )
+            session.assert_file_bytes(path, main_bytes)
+            expected_cached = (
+                selected_path
+                if command == "git-stage-file" and outcome in {"accept", "tab", "history"}
+                else ""
+                if command == "git-stage-file"
+                else "tracked.txt"
+                if outcome in {"cancel", "empty", "history"}
+                else ""
+            )
+            session.assert_external_state(
+                "git diff --cached --name-only",
+                _cached_names(directory.name),
+                expected_cached,
+            )
+            if command == "git-stage-file" and outcome in {"accept", "tab"}:
+                session.assert_external_state(
+                    "staged tracked.txt bytes",
+                    _cached_blob(directory.name, "tracked.txt"),
+                    main_bytes,
+                )
+            elif command == "git-stage-file" and outcome == "history":
+                session.assert_file_bytes(
+                    other_path, b"other\nlater change\n"
+                )
+                session.assert_external_state(
+                    "staged other.txt bytes",
+                    _cached_blob(directory.name, "other.txt"),
+                    b"other\nlater change\n",
+                )
+            elif command == "git-unstage-file" and outcome == "history":
+                session.assert_file_bytes(other_path, b"other\n")
+
+            if command == "git-unstage-file" and outcome in {
+                "cancel",
+                "empty",
+                "history",
+            }:
+                session.assert_external_state(
+                    "staged tracked.txt bytes",
+                    _cached_blob(directory.name, "tracked.txt"),
+                    main_bytes,
+                )
+
+            _assert_alive(session)
+            _assert_quit(session, f"git-r2-{command}-{outcome}")
+    finally:
+        directory.cleanup()
+
+
+def _register_prompt_path(command, outcome):
+    name = f"git/r2/{command}/{outcome}"
+
+    @scenario(name, commands=[command])
+    def run(binary):
+        _run_prompt_path(binary, command, outcome)
+
+    return run
+
+
+for _r2_command in ("git-stage-file", "git-unstage-file"):
+    for _r2_outcome in ("accept", "cancel", "empty", "tab", "history"):
+        _register_prompt_path(_r2_command, _r2_outcome)
+
 
 for _command_name in _COMMANDS:
     for _outcome in ("missing", "nonzero", "interrupted"):
