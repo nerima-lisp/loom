@@ -24,4 +24,13 @@
   :outcome "HTML, CSS, and YAML align to the previous line"
   :observe (:screen_text :file_bytes :cursor)
   :scenario "lang-web/default-indentation"
+  :lane "W3-7d")
+ (:id "r1:lang-web:comments:meta-semicolon"
+  :commands ("find-file" "save-buffer")
+  :rule :r1
+  :entry "key:M-;"
+  :state "language mode buffer with current line or active region"
+  :outcome "M-; toggles language comment syntax and leaves JSON unchanged"
+  :observe (:screen_text :file_bytes :cursor)
+  :scenario "lang-web/comments"
   :lane "W3-7d"))

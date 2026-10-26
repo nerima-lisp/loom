@@ -47,6 +47,7 @@
    :name "JavaScript"
    :aliases '("js" "javascript")
    :extensions '("js" "mjs" "cjs")
+   :comment-prefix "//" :comment-start "//" :comment-end nil
    :language-id "javascript"
    :indentation-width 2 :tab-width 8
    :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
@@ -60,6 +61,7 @@
    :name "JavaScript React"
    :aliases '("jsx")
    :extensions '("jsx")
+   :comment-prefix "//" :comment-start "//" :comment-end nil
    :language-id "javascriptreact"
    :indentation-width 2 :tab-width 8
    :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
@@ -72,6 +74,7 @@
    :html
    :name "HTML"
    :extensions '("html" "htm")
+   :comment-prefix nil :comment-start "<!--" :comment-end "-->"
    :language-id "html"
    :keywords '("article" "body" "button" "div" "doctype" "footer" "form"
                "head" "header" "html" "img" "input" "li" "link" "main" "meta"
@@ -81,6 +84,7 @@
    :css
    :name "CSS"
    :extensions '("css")
+   :comment-prefix nil :comment-start "/*" :comment-end "*/"
    :language-id "css"
    :keywords '("absolute" "auto" "block" "currentColor" "flex" "fixed" "grid"
                "inherit" "initial" "inline" "important" "none" "relative"
@@ -90,6 +94,7 @@
    :yaml
    :name "YAML"
    :extensions '("yaml" "yml")
+   :comment-prefix "#" :comment-start "#" :comment-end nil
    :language-id "yaml"
    :keywords '("false" "no" "null" "off" "on" "true" "yes"))
   (defun loom/feature/lang-web::%opening-for-close (character)
