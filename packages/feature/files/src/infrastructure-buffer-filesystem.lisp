@@ -213,9 +213,14 @@ The string contains newline style and encoding, plus BOM when present. New file 
                     (%file-snapshot-equal-p approved current)))
            (%remember-file-snapshot buffer current))
           (t
-           (error '%file-changed-on-disk
-                  :path path
-                  :snapshot current)))
+           (unless (and (not baseline-known-p)
+                        (null current)
+                        (not (member buffer
+                                     (registered-buffers *editor-session*)
+                                     :test #'eq)))
+             (error '%file-changed-on-disk
+                    :path path
+                    :snapshot current))))
         current))))
   (defun %buffer-output-octets (buffer baseline)
   (let* ((text (buffer-text buffer))

@@ -5,6 +5,7 @@
                 #:find-buffer-by-path
                 #:register-buffer
                 #:register-buffer-switch-guard
+                #:registered-buffers
                 #:run-buffer-switch-guard)
   (:import-from #:loom/core/buffer
                 #:buffer-delete-region

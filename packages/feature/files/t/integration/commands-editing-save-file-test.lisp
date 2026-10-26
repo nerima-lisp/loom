@@ -223,7 +223,9 @@
                                       :initial-content "stale"))
                  (window (window-tree-selected-window tree)))
             (let ((loom/feature/files::*loom-backup-directory* backup-dir))
-              (window-set-buffer window buffer)
+              (progn
+                (%register-test-buffer *editor-state* buffer)
+                (window-set-buffer window buffer))
               (loom/feature/files:save-buffer)
               (expect (minibuffer-prompt-string minibuffer)
                       :to-equal
@@ -253,7 +255,9 @@
                                       :initial-content "recoverable"))
                  (window (window-tree-selected-window tree)))
             (let ((loom/feature/files::*loom-backup-directory* backup-dir))
-              (window-set-buffer window buffer)
+              (progn
+                (%register-test-buffer *editor-state* buffer)
+                (window-set-buffer window buffer))
               (loom/feature/files:save-buffer)
               (expect (minibuffer-prompt-string minibuffer)
                       :to-equal
