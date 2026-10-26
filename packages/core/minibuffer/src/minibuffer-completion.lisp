@@ -110,9 +110,11 @@ Returns MINIBUFFER."
       (cond
         ((null matches) nil)
         ((null (rest matches))
-         (setf (%minibuffer-input minibuffer) (first matches)))
+         (setf (%minibuffer-input minibuffer) (first matches)
+               (%minibuffer-point minibuffer) (length (first matches))))
         (t
          (let ((common (%minibuffer-longest-common-prefix matches)))
            (when (%minibuffer-prefix-match-p input common)
-             (setf (%minibuffer-input minibuffer) common)))))))
+             (setf (%minibuffer-input minibuffer) common
+                   (%minibuffer-point minibuffer) (length common))))))))
   minibuffer)

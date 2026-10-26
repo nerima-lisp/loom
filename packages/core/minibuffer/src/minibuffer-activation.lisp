@@ -5,6 +5,7 @@
   (setf (%minibuffer-active-p minibuffer) nil
         (%minibuffer-prompt minibuffer) nil
         (%minibuffer-input minibuffer) ""
+        (%minibuffer-point minibuffer) 0
         (%minibuffer-on-confirm minibuffer) nil
         (%minibuffer-on-cancel minibuffer) nil
         (%minibuffer-on-change minibuffer) nil
@@ -46,6 +47,7 @@ MINIBUFFER."
   (setf (%minibuffer-active-p minibuffer) t
         (%minibuffer-prompt minibuffer) prompt
         (%minibuffer-input minibuffer) ""
+        (%minibuffer-point minibuffer) 0
         (%minibuffer-on-confirm minibuffer) on-confirm
         (%minibuffer-on-cancel minibuffer) on-cancel
         (%minibuffer-on-change minibuffer) on-change

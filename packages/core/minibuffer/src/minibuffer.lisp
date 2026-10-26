@@ -4,6 +4,8 @@
   (active-p nil)
   (prompt nil)
   (input "")
+  (point 0)
+  (kill-text "")
   (on-confirm nil)
   (on-cancel nil)
   (on-change nil)
@@ -43,3 +45,6 @@ as a string. Returns an empty string when MINIBUFFER is not active."
 (defun minibuffer-completion-candidates (minibuffer)
   "Return a copy of the active completion candidates, or NIL."
   (copy-list (%minibuffer-completion-candidates minibuffer)))
+(defun minibuffer-input-point (minibuffer)
+  "Return the character position of point in MINIBUFFER's current input."
+  (%minibuffer-point minibuffer))

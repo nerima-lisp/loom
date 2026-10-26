@@ -41,7 +41,12 @@
              (loop for result
                    in (loom/core/editor-session:run-session-hooks
                        :render session snapshot)
-                   append result)))
+                   append (remove-if-not
+                           (lambda (operation)
+                             (eq (loom/core/editor-session:render-operation-kind
+                                  operation)
+                                 :text))
+                           result))))
       (expect (mapcar (function loom/core/editor-session:render-operation-text)
                       operations)
               :to-equal
@@ -179,4 +184,62 @@
                 (append
                  (map 'list (function string) previous)
                  (make-list (- width (length previous))
-                            :initial-element " "))))))))
+                            :initial-element " ")))))))
+   ;; Minibuffer point follows the editing cursor in Emacs.
+  ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Moving-Point.html
+  (it
+    "places the render cursor after the point using terminal cell widths"
+    (let* ((minibuffer (loom/core/minibuffer:make-minibuffer))
+           (session
+             (loom/core/editor-session:make-editor-session
+              '(:core/window-tree :feature/workspace :feature/keyboard-macro)
+              :initial-slices
+              (list (cons :core/window-tree :window-tree)
+                    (cons :feature/workspace :workspaces)
+                    (cons :feature/keyboard-macro nil))))
+           (state
+             (loom/core/editor-session:make-editor-state
+              :session session
+              :window-tree
+              (loom/core/editor-session:editor-session-slice
+               session :core/window-tree)
+              :workspaces
+              (loom/core/editor-session:editor-session-slice
+               session :feature/workspace)
+              :minibuffer minibuffer))
+           (snapshot
+             (loom/core/editor-session:make-frame-snapshot
+              20 2 (make-array 40 :initial-element '(" " nil)))))
+      (loom/core/minibuffer:minibuffer-activate minibuffer "界: ")
+      (loop for character across "ab界z"
+            do (loom/core/minibuffer:minibuffer-handle-key
+                minibuffer
+                (cl-tty-kit:make-key-event
+                 :type :character :code character)))
+      (loom/core/minibuffer:minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event
+        :type :character :code #\a :modifiers '(:control)))
+      (loop repeat 3
+            do (loom/core/minibuffer:minibuffer-handle-key
+                minibuffer
+                (cl-tty-kit:make-key-event
+                 :type :character :code #\f :modifiers '(:control))))
+      (let* ((loom/core/editor-session:*editor-state* state)
+             (operations
+               (loop for result in
+                       (loom/core/editor-session:run-session-hooks
+                        :render session snapshot)
+                     append result))
+             (rendered
+               (loom/core/editor-session:apply-render-operations
+                snapshot operations
+                (lambda (text)
+                  (declare (ignore text))
+                  (values #() #())))))
+        (multiple-value-bind (x y visible-p)
+            (loom/core/editor-session:frame-snapshot-cursor rendered)
+          (expect (list x y visible-p) :to-equal '(8 1 t)))
+        (multiple-value-bind (x y visible-p)
+            (loom/core/editor-session:frame-snapshot-cursor snapshot)
+          (expect (list x y visible-p) :to-equal '(nil nil nil)))))))

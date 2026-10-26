@@ -1,6 +1,8 @@
 (asdf:defsystem "loom-feature-minibuffer-ui"
-  :depends-on ("loom-core-minibuffer"
-               "loom-feature-completion")
+  :depends-on ("loom-core-editor-session"
+               "loom-core-minibuffer"
+               "loom-feature-completion"
+               "cl-tty-kit")
   :serial t
   :components
   ((:module "src"
