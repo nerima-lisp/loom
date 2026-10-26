@@ -1,6 +1,8 @@
 (defpackage #:loom/feature/files
   (:use #:cl)
   (:import-from #:loom/feature/buffers
+                #:find-buffer-by-name
+                #:find-buffer-by-path
                 #:register-buffer)
   (:import-from #:loom/core/buffer
                 #:buffer-load

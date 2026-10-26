@@ -1,13 +1,13 @@
 (in-package #:loom/feature/files)
 
-(defmethod buffer-load (path)
+(defun %load-file-buffer (path &key (name (file-namestring path)))
   (let ((content
          (if (%native-path-operation-p path)
              (%native-read-file path)
              (cl-boundary-kit:filesystem-read-file *loom-filesystem* path))))
     (let ((buffer
            (make-buffer :name
-                        (file-namestring path)
+                        name
                         :path
                         path
                         :initial-content
@@ -22,6 +22,9 @@
                     (host-kit:file-writable-p path))))
         (buffer-set-read-only buffer t))
       buffer)))
+
+(defmethod buffer-load (path)
+  (%load-file-buffer path))
 
 (defmethod buffer-save (buffer)
   (let ((path (buffer-path buffer)))

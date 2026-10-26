@@ -55,3 +55,43 @@
                   :to-equal
                   (format nil "File exists: ~A (press C-x C-s again to overwrite)" existing-path))
           (expect (host-kit:read-file-string existing-path) :to-equal "old content"))))))
+
+(describe
+  "find-file buffer identity"
+  (it
+    "reuses the same buffer when a visited file is reopened"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "reopened.txt" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "")
+          (let ((before-count (length (%test-registered-buffers *editor-state*))))
+            (loom/feature/files:find-file)
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) path)
+            (let ((buffer (%selected-test-buffer)))
+              (buffer-set-point buffer 0 4)
+              (buffer-insert-string buffer " edit")
+              (loom/feature/files:find-file)
+              (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) path)
+              (expect (%selected-test-buffer) :to-be buffer)
+              (expect (buffer-text buffer) :to-equal "disk edit")
+              (expect (length (%test-registered-buffers *editor-state*))
+                      :to-equal (1+ before-count)))))))))
+
+(it
+  "disambiguates file buffers that share a basename"
+  (host-kit:with-temporary-directory (dir)
+    (let* ((left-path (merge-pathnames "left/same.txt" dir))
+           (right-path (merge-pathnames "right/same.txt" dir)))
+      (ensure-directories-exist left-path)
+      (ensure-directories-exist right-path)
+      (host-kit:write-file-string "left" left-path)
+      (host-kit:write-file-string "right" right-path)
+      (%with-minibuffer-state (minibuffer "")
+        (let* ((left (loom/feature/files:visit-file left-path))
+               (right (loom/feature/files:visit-file right-path)))
+          (expect (buffer-name left) :to-equal "same.txt")
+          (expect (buffer-name right) :to-equal "same.txt<right>")
+          (expect (buffer-path left) :to-equal left-path)
+          (expect (buffer-path right) :to-equal right-path)
+          (expect (buffer-text left) :to-equal "left")
+          (expect (buffer-text right) :to-equal "right"))))))

@@ -1,10 +1,24 @@
 (in-package #:loom/feature/files)
 
+(defun %file-buffer-name (path)
+  "Return a unique display name for PATH among the session buffers."
+  (let* ((filename (file-namestring path))
+         (existing (loom/feature/buffers:find-buffer-by-name *editor-session* filename)))
+    (if existing
+        (let ((directory (or (car (last (pathname-directory path))) "root")))
+          (loop for suffix from 1
+                for name = (if (= suffix 1)
+                               (format nil "~A<~A>" filename directory)
+                               (format nil "~A<~A-~D>" filename directory suffix))
+                unless (loom/feature/buffers:find-buffer-by-name *editor-session* name)
+                  return name))
+        filename)))
+
 (defun %make-file-buffer (path &key name initial-content)
   "Create a buffer for PATH and infer its major mode from the path."
   (let ((buffer
          (make-buffer :name
-                      (or name (file-namestring path))
+                      (or name (%file-buffer-name path))
                       :path
                       path
                       :initial-content
@@ -51,8 +65,12 @@ different owner is rejected."
 
 (defun %visit-existing-file (path)
   "Load PATH, display it in the selected window, and refresh recency."
-  (%show-buffer-in-selected-window (buffer-load path))
-  (%record-recent-file path))
+  (let ((buffer
+         (or (find-buffer-by-path *editor-session* path)
+             (%load-file-buffer path :name (%file-buffer-name path)))))
+    (%show-buffer-in-selected-window buffer)
+    (%record-recent-file path)
+    buffer))
 
 (defun visit-file (path)
   "Show the buffer for an existing PATH in the selected window.
@@ -62,10 +80,7 @@ already know which file to open -- a definition jump, for one -- and have no
 prompt to run. Returns the buffer, or NIL when PATH does not exist."
   (let ((existing (probe-file path)))
     (when existing
-      (%visit-existing-file existing)
-      (loom/core/window-tree:window-buffer
-       (loom/core/window-tree:window-tree-selected-window
-        (editor-state-window-tree *editor-state*))))))
+      (%visit-existing-file existing))))
 
 (defun find-file ()
   "Prompt for a path and show its buffer in the selected window.
@@ -77,11 +92,17 @@ an empty buffer associated with that path, so a later save creates the file."
                :on-cancel
                (minibuffer-message minibuffer "Quit"))
    ((path "Find file: "))
-   (let ((existing-path (probe-file path)))
+   (let* ((existing-path (probe-file path))
+          (directory-p
+            (and existing-path (host-kit:directory-pathname-p existing-path)))
+          (existing-buffer
+            (unless directory-p
+              (find-buffer-by-path *editor-session* (or existing-path path)))))
      (cond
-       ((and existing-path (host-kit:directory-pathname-p existing-path))
+       (directory-p
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             (format nil "Cannot open directory: ~A" path)))
+       (existing-buffer (%visit-existing-file (or existing-path path)))
        (existing-path (%visit-existing-file existing-path))
        (t (%show-buffer-in-selected-window (%make-file-buffer path)))))))
 
