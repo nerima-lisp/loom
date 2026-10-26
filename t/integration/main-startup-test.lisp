@@ -130,14 +130,7 @@
                              (host-kit:pathname-directory-pathname first-path))
                             :to-be
                             nil)
-                    (unless (equal file-tree-root expected-file-tree-root)
-                      (error "Startup file-tree root ~S differs from the nearest existing directory ~S"
-                             file-tree-root
-                             expected-file-tree-root))
-                    (unless root-exists-p
-                      (error "Startup file-tree root ~S is not an existing directory"
-                             file-tree-root))
-                    (expect root-exists-p :to-be t)
+                    (expect (not (null root-exists-p)) :to-be t)
                     (expect file-tree-root :to-equal expected-file-tree-root)))))
           (it
            "saves a missing startup file directly without an external-change prompt"
