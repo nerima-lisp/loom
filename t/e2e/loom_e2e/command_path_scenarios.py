@@ -62,6 +62,17 @@ def _validate_screen_expectations(value, location):
             raise CommandPathScenarioError(f"{where}.index must be non-negative")
 
 
+def _validate_cursor(value, location):
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or any(type(coordinate) is not int or coordinate < 0 for coordinate in value)
+    ):
+        raise CommandPathScenarioError(
+            f"{location} must be a region-relative row and column"
+        )
+
+
 def _validate_case(case, index):
     location = f"scenarios[{index}]"
     if not isinstance(case, dict):
@@ -77,15 +88,7 @@ def _validate_case(case, index):
     for field in ("initial_bytes", "expected_bytes", "expected_minibuffer"):
         if not isinstance(case.get(field), str):
             raise CommandPathScenarioError(f"{location}.{field} must be a string")
-    cursor = case.get("expected_cursor")
-    if (
-        not isinstance(cursor, list)
-        or len(cursor) != 2
-        or any(type(value) is not int or value < 0 for value in cursor)
-    ):
-        raise CommandPathScenarioError(
-            f"{location}.expected_cursor must be a region-relative row and column"
-        )
+    _validate_cursor(case.get("expected_cursor"), f"{location}.expected_cursor")
     cursor_region = case.get("expected_cursor_region", "body")
     if not isinstance(cursor_region, str) or cursor_region not in {
         "body",
@@ -137,6 +140,11 @@ def _validate_case(case, index):
         if case.get("mutation_case") not in _MUTATION_CASES:
             raise CommandPathScenarioError(
                 f"{location}.mutation_case is not a supported R3 case"
+            )
+        if case["mutation_case"] == "undo":
+            _validate_cursor(
+                case.get("expected_undo_cursor"),
+                f"{location}.expected_undo_cursor",
             )
         _validate_key_list(case.get("command_keys"), f"{location}.command_keys")
         if not isinstance(case.get("effect_bytes"), str):
@@ -304,6 +312,7 @@ def _assert_final_state(
     save=False,
     stage_prefix=None,
     check_minibuffer=True,
+    expected_cursor=None,
 ):
     def stage(label):
         if stage_prefix is None:
@@ -327,7 +336,7 @@ def _assert_final_state(
     with stage("cursor"):
         _assert_cursor(
             session,
-            case["expected_cursor"],
+            case["expected_cursor"] if expected_cursor is None else expected_cursor,
             case.get("expected_cursor_region", "body"),
         )
     expected_bytes = expected_bytes.encode("utf-8")
@@ -432,11 +441,10 @@ def _run_r3(session, case, path):
         with _deadline_stage(case["name"], "record and undo macro", session=session):
             _send_keys(session, ["C-x", "("])
             _send_keys(session, case["command_keys"])
-            session.wait_for_region_exact_text(
-                "body", case["effect_screen"][0]["text"], strip_right=True
-            )
+            _assert_effect_state(session, case, check_minibuffer=False)
             _send_keys(session, ["C-x", ")"])
             _assert_minibuffer(session, case["expected_minibuffer"])
+            _save_and_assert(session, path, effect)
             session.send(keys.ctrl("x") + keys.text("u"))
             session.wait_for_region_exact_text(
                 "body", case["restore_screen"][0]["text"], strip_right=True
@@ -472,6 +480,7 @@ def _run_r3(session, case, path):
             save=True,
             stage_prefix="undo result",
             check_minibuffer=False,
+            expected_cursor=case["expected_undo_cursor"],
         )
 
 

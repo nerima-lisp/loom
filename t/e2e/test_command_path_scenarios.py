@@ -417,6 +417,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             "effect_bytes": "bc\n",
             "expected_bytes": "abc\n",
             "expected_cursor": [0, 1],
+            "expected_undo_cursor": [0, 0],
             "expected_minibuffer": "",
             "expected_screen": [{"region": "body", "text": "abc"}],
             "effect_screen": [{"region": "body", "text": "bc"}],
@@ -434,6 +435,10 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertIn(("send", b"\x04"), calls)
         self.assertIn(("send", b"\x18u"), calls)
         self.assertIn(("assert_file_bytes", b"abc\n"), calls)
+        self.assertEqual(
+            [call[1] for call in calls if call[0] == "observe_cursor"],
+            [(0, 1), (0, 0)],
+        )
         self.assertTrue(
             any(call[0] == "assert_screen" and call[1] == "bc" for call in calls)
         )
