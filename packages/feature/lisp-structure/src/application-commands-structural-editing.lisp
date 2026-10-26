@@ -72,6 +72,9 @@ typed belongs."
            (edits (%wrap-round-edits text classes offset))
            (opening (%sexp-skip-forward-filler text classes offset)))
       (when edits
+        (when (loom/core/buffer:buffer-read-only-p buffer)
+          (error "Buffer is read-only: #<buffer ~A>"
+                 (loom/core/buffer:buffer-name buffer)))
         (%apply-structural-edits buffer start edits)
         (%move-point-to-offset buffer (+ start opening 1)))))
   nil)

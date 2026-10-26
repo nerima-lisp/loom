@@ -61,6 +61,10 @@ kill-word and kill-line do, so C-M-k C-M-k yanks back both expressions."
   (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
     (let ((end (%forward-sexp-offset text offset)))
       (when (and end (> end offset))
+        (when (loom/core/buffer:buffer-read-only-p buffer)
+          (%move-point-to-offset buffer (+ start end))
+          (error "Buffer is read-only: #<buffer ~A>"
+                 (loom/core/buffer:buffer-name buffer)))
         (%kill-between-offsets buffer (+ start offset) (+ start end)
                                :coalesce (editor-state-last-command-kill-p
                                           *editor-state*)))))
