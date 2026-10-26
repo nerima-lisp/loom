@@ -6,11 +6,27 @@ import shutil
 import subprocess
 import tempfile
 
+from loom_e2e import keys
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
 
 _SOURCE = b"tracked\n"
+_WAIT = 2.0
+_COMMANDS = (
+    "git-status",
+    "git-diff",
+    "git-diff-staged",
+    "git-stage-file",
+    "git-unstage-file",
+)
+_LABELS = {
+    "git-status": "status",
+    "git-diff": "diff",
+    "git-diff-staged": "diff",
+    "git-stage-file": "stage",
+    "git-unstage-file": "unstage",
+}
 
 
 def _write(path, contents):
@@ -40,12 +56,13 @@ def _repo():
 
 
 def _command(session, name):
-    session.extended_command(name)
+    session.extended_command(name, timeout=_WAIT)
 
 
-def _prompted(session, name, prompt, value):
+def _prompted(session, name, value):
+    prompt = "Git stage file: " if name == "git-stage-file" else "Git unstage file: "
     _command(session, name)
-    session.wait_for_text(prompt)
+    session.wait_for_region_text("minibuffer", prompt, timeout=_WAIT)
     session.type(value)
     session.key("RET")
 
@@ -56,7 +73,7 @@ def _assert_alive(session):
 
 
 def _assert_quit(session, name):
-    output, code = session.quit()
+    output, code = session.quit(timeout=_WAIT)
     if code != 0:
         raise AssertionError(f"{name}: editor exited with {code}: {output!r}")
 
@@ -70,149 +87,234 @@ def _cached_names(directory):
     ).stdout.strip()
 
 
+def _wait_message(session, message):
+    session.wait_for_region_contents("minibuffer", message, timeout=_WAIT)
+    session.assert_screen_text(message, match="contains", region="minibuffer")
+
+
+def _assert_buffer(session, expected):
+    session.assert_screen_text(
+        expected, match="contains", region="body", index=None
+    )
+
+
 @scenario(
-    "git/real-git-success",
-    commands=[
-        "git-status",
-        "git-diff",
-        "git-stage-file",
-        "git-diff-staged",
-        "git-unstage-file",
-    ],
+    "git/real-git-status-success",
+    commands=["git-status"],
 )
-def real_git_success(binary):
+def real_git_status_success(binary):
     directory, path = _repo()
     try:
         with open(path, "ab") as handle:
             handle.write(b"working change\n")
         with Session(binary, [path]) as session:
-            session.wait_ready()
+            session.wait_ready(timeout=_WAIT)
             _command(session, "git-status")
-            session.wait_for_region_contents("body", "tracked.txt")
-            session.assert_screen_text(
-                "tracked.txt", match="contains", region="body", index=None
-            )
+            session.wait_for_region_contents("body", "tracked.txt", timeout=_WAIT)
+            _assert_buffer(session, "tracked.txt")
+            session.send(keys.ctrl("x") + keys.text("g"))
+            session.wait_for_region_contents("body", "tracked.txt", timeout=_WAIT)
+            _assert_buffer(session, "tracked.txt")
+            _assert_alive(session)
+            _assert_quit(session, "real-git-status-success")
+    finally:
+        directory.cleanup()
 
+
+@scenario("git/real-git-diff-success", commands=["git-diff"])
+def real_git_diff_success(binary):
+    directory, path = _repo()
+    try:
+        with open(path, "ab") as handle:
+            handle.write(b"working change\n")
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
             _command(session, "git-diff")
-            session.wait_for_region_contents("body", "working change")
-            session.assert_screen_text(
-                "working change", match="contains", region="body", index=None
-            )
+            session.wait_for_region_contents("body", "+working change", timeout=_WAIT)
+            _assert_buffer(session, "+working change")
+            _assert_alive(session)
+            _assert_quit(session, "real-git-diff-success")
+    finally:
+        directory.cleanup()
 
-            _prompted(session, "git-stage-file", "Git stage file: ", "tracked.txt")
-            session.wait_for_text("Git staged tracked.txt")
+
+@scenario("git/real-git-diff-staged-success", commands=["git-diff-staged"])
+def real_git_diff_staged_success(binary):
+    directory, path = _repo()
+    try:
+        with open(path, "ab") as handle:
+            handle.write(b"staged change\n")
+        subprocess.run(["git", "-C", directory.name, "add", "tracked.txt"], check=True)
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
+            _command(session, "git-diff-staged")
+            session.wait_for_region_contents("body", "+staged change", timeout=_WAIT)
+            _assert_buffer(session, "+staged change")
+            _assert_alive(session)
+            _assert_quit(session, "real-git-diff-staged-success")
+    finally:
+        directory.cleanup()
+
+
+@scenario("git/real-git-stage-success", commands=["git-stage-file"])
+def real_git_stage_success(binary):
+    directory, path = _repo()
+    try:
+        with open(path, "ab") as handle:
+            handle.write(b"working change\n")
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
+            _prompted(session, "git-stage-file", "tracked.txt")
+            _wait_message(session, "Git staged tracked.txt")
             if _cached_names(directory.name) != "tracked.txt":
                 raise AssertionError("git-stage-file did not update the real index")
+            _assert_alive(session)
+            _assert_quit(session, "real-git-stage-success")
+    finally:
+        directory.cleanup()
 
-            _command(session, "git-diff-staged")
-            session.wait_for_region_contents("body", "working change")
-            session.assert_screen_text(
-                "working change", match="contains", region="body", index=None
-            )
 
-            _prompted(session, "git-unstage-file", "Git unstage file: ", "tracked.txt")
-            session.wait_for_text("Git unstaged tracked.txt")
+@scenario("git/real-git-unstage-success", commands=["git-unstage-file"])
+def real_git_unstage_success(binary):
+    directory, path = _repo()
+    try:
+        with open(path, "ab") as handle:
+            handle.write(b"staged change\n")
+        subprocess.run(["git", "-C", directory.name, "add", "tracked.txt"], check=True)
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
+            _prompted(session, "git-unstage-file", "tracked.txt")
+            _wait_message(session, "Git unstaged tracked.txt")
             if _cached_names(directory.name):
                 raise AssertionError("git-unstage-file left changes in the real index")
             _assert_alive(session)
-            _assert_quit(session, "real-git-success")
+            _assert_quit(session, "real-git-unstage-success")
     finally:
         directory.cleanup()
 
 
-@scenario("git/real-git-missing-executable", commands=["git-status"])
-def real_git_missing_executable(binary):
-    directory, path = _repo()
-    index_path = os.path.join(directory.name, ".git", "index")
-    with open(index_path, "rb") as handle:
-        original_index = handle.read()
-    original_path = os.environ.get("PATH")
-    try:
-        os.environ["PATH"] = ""
-        try:
-            with Session(binary, [path]) as session:
-                session.wait_ready()
-                _command(session, "git-status")
-                session.wait_for_text("Git status error:")
-                session.assert_screen_text(
-                    "Git status error:", match="contains", region="minibuffer"
-                )
-                session.assert_screen_text(
-                    "tracked", match="contains", region="body", index=None
-                )
-                session.assert_file_bytes(path, _SOURCE)
-                with open(index_path, "rb") as handle:
-                    session.assert_external_state(
-                        "Git index after missing executable", handle.read(), original_index
-                    )
-                _assert_alive(session)
-                _assert_quit(session, "real-git-missing-executable")
-        finally:
-            if original_path is None:
-                os.environ.pop("PATH", None)
-            else:
-                os.environ["PATH"] = original_path
-    finally:
-        directory.cleanup()
-
-
-@scenario("git/real-git-nonzero-preserves-result", commands=["git-status"])
-def real_git_nonzero_preserves_result(binary):
-    directory, path = _repo()
-    index_path = os.path.join(directory.name, ".git", "index")
-    with open(index_path, "rb") as handle:
-        original_index = handle.read()
-    marker = os.path.join(directory.name, "fail-git-status")
-    wrapper_dir = os.path.join(directory.name, "bin")
+def _install_git_wrapper(directory, mode, marker=None):
+    wrapper_dir = os.path.join(directory, "bin")
     os.makedirs(wrapper_dir)
     real_git = shutil.which("git")
     wrapper = os.path.join(wrapper_dir, "git")
-    _write(
-        wrapper,
-        (
+    if mode == "nonzero":
+        marker_test = f"[ -f {shlex.quote(marker)} ]"
+        body = (
             "#!/bin/sh\n"
-            "/bin/cat >/dev/null\n"
-            f"if [ -e {shlex.quote(marker)} ]; then\n"
-            f"  exec {shlex.quote(real_git)} \"$@\" --loom-e2e-invalid-option\n"
+            f"if {marker_test}; then\n"
+            f"  exec {shlex.quote(real_git)} --loom-e2e-invalid-option \"$@\"\n"
             "fi\n"
             f"exec {shlex.quote(real_git)} \"$@\"\n"
-        ).encode("utf-8"),
-    )
+        )
+    else:
+        body = (
+            "#!/bin/sh\n"
+            f"{shlex.quote(real_git)} \"$@\"\n"
+            "kill -TERM $$\n"
+        )
+    _write(wrapper, body.encode("utf-8"))
     os.chmod(wrapper, 0o755)
+    return wrapper_dir
+
+
+def _run_failure(binary, command, outcome):
+    directory, path = _repo()
+    if command == "git-diff":
+        with open(path, "ab") as handle:
+            handle.write(b"working change\n")
+    elif command in ("git-diff-staged", "git-unstage-file"):
+        with open(path, "ab") as handle:
+            handle.write(b"staged change\n")
+        subprocess.run(["git", "-C", directory.name, "add", "tracked.txt"], check=True)
+    elif command == "git-stage-file":
+        with open(path, "ab") as handle:
+            handle.write(b"working change\n")
+    index_path = os.path.join(directory.name, ".git", "index")
+    with open(index_path, "rb") as handle:
+        original_index = handle.read()
+    marker = os.path.join(directory.name, "force-nonzero")
     original_path = os.environ.get("PATH")
-    try:
+    if outcome == "nonzero":
+        wrapper_dir = _install_git_wrapper(directory.name, "nonzero", marker)
         os.environ["PATH"] = os.pathsep.join(
             part for part in (wrapper_dir, original_path) if part
         )
-        with open(path, "ab") as handle:
-            handle.write(b"pending change\n")
-        with Session(binary, [path]) as session:
-            session.wait_ready()
-            _command(session, "git-status")
-            session.wait_for_region_contents("body", "pending change")
-            session.assert_screen_text(
-                "pending change", match="contains", region="body", index=None
-            )
+    elif outcome == "interrupted":
+        wrapper_dir = _install_git_wrapper(directory.name, "interrupted")
+        os.environ["PATH"] = os.pathsep.join(
+            part for part in (wrapper_dir, original_path) if part
+        )
+    else:
+        os.environ["PATH"] = ""
 
-            with open(marker, "wb") as handle:
-                handle.write(b"fail\n")
-            _command(session, "git-status")
-            session.wait_for_region_contents(
-                "minibuffer", "Git status exited with status"
-            )
-            session.assert_screen_text(
-                "Git status exited with status", match="contains", region="minibuffer"
-            )
-            session.assert_screen_text(
-                "pending change", match="contains", region="body", index=None
-            )
-            session.assert_file_bytes(path, _SOURCE + b"pending change\n")
-            with open(index_path, "rb") as handle:
-                session.assert_external_state(
-                    "Git index after nonzero status", handle.read(), original_index
+    label = _LABELS[command]
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=_WAIT)
+            if outcome == "nonzero" and command == "git-status":
+                _command(session, command)
+                session.wait_for_region_contents("body", "##", timeout=_WAIT)
+                previous_body = session.region_contents("body")
+                with open(marker, "wb") as handle:
+                    handle.write(b"force failure\n")
+
+            if command in ("git-stage-file", "git-unstage-file"):
+                if outcome == "nonzero":
+                    _write(marker, b"force failure\n")
+                _prompted(session, command, "tracked.txt")
+            else:
+                if outcome == "nonzero" and command == "git-status":
+                    _command(session, command)
+                else:
+                    if outcome == "nonzero":
+                        _write(marker, b"force failure\n")
+                    _command(session, command)
+
+            if outcome == "missing":
+                message = f"Git {label} error:"
+            else:
+                message = f"Git {label} exited with status"
+                if outcome == "interrupted":
+                    message += " 143"
+            _wait_message(session, message)
+
+            if outcome == "nonzero" and command == "git-status":
+                session.assert_screen_text(
+                    previous_body, match="exact", region="body", index=None
                 )
+            elif outcome == "nonzero":
+                _assert_buffer(session, "unknown option")
+            elif outcome == "interrupted" and command == "git-status":
+                _assert_buffer(session, "##")
+            elif outcome == "interrupted" and command in ("git-diff", "git-diff-staged"):
+                _assert_buffer(session, "diff --git")
+            elif outcome == "missing":
+                _assert_buffer(session, "tracked")
+
+            session.assert_file_bytes(
+                path,
+                _SOURCE
+                + (
+                    b"working change\n"
+                    if command in ("git-diff", "git-stage-file")
+                    else b"staged change\n"
+                    if command in ("git-diff-staged", "git-unstage-file")
+                    else b""
+                ),
+            )
+            with open(index_path, "rb") as handle:
+                current_index = handle.read()
+            if outcome == "interrupted" and command == "git-stage-file":
+                if _cached_names(directory.name) != "tracked.txt":
+                    raise AssertionError("interrupted git-stage-file did not run real Git")
+            elif outcome == "interrupted" and command == "git-unstage-file":
+                if _cached_names(directory.name):
+                    raise AssertionError("interrupted git-unstage-file did not run real Git")
+            elif current_index != original_index:
+                raise AssertionError(f"{command} changed the Git index on failure")
             _assert_alive(session)
-            _assert_quit(session, "real-git-nonzero-preserves-result")
+            _assert_quit(session, f"real-git-{command}-{outcome}")
     finally:
         if original_path is None:
             os.environ.pop("PATH", None)
@@ -221,57 +323,16 @@ def real_git_nonzero_preserves_result(binary):
         directory.cleanup()
 
 
-@scenario("git/real-git-interrupted", commands=["git-status"])
-def real_git_interrupted(binary):
-    directory, path = _repo()
-    index_path = os.path.join(directory.name, ".git", "index")
-    with open(index_path, "rb") as handle:
-        original_index = handle.read()
-    wrapper_dir = os.path.join(directory.name, "bin")
-    os.makedirs(wrapper_dir)
-    real_git = shutil.which("git")
-    wrapper = os.path.join(wrapper_dir, "git")
-    _write(
-        wrapper,
-        (
-            "#!/bin/sh\n"
-            "/bin/cat >/dev/null\n"
-            f"{shlex.quote(real_git)} \"$@\"\n"
-            "kill -TERM $$\n"
-        ).encode("utf-8"),
-    )
-    os.chmod(wrapper, 0o755)
-    original_path = os.environ.get("PATH")
-    try:
-        os.environ["PATH"] = os.pathsep.join(
-            part for part in (wrapper_dir, original_path) if part
-        )
-        try:
-            with Session(binary, [path]) as session:
-                session.wait_ready()
-                _command(session, "git-status")
-                session.wait_for_region_contents(
-                    "minibuffer", "Git status exited with status 143"
-                )
-                session.assert_screen_text(
-                    "Git status exited with status 143",
-                    match="contains",
-                    region="minibuffer",
-                )
-                session.assert_screen_text(
-                    "##", match="contains", region="body", index=None
-                )
-                session.assert_file_bytes(path, _SOURCE)
-                with open(index_path, "rb") as handle:
-                    session.assert_external_state(
-                        "Git index after interruption", handle.read(), original_index
-                    )
-                _assert_alive(session)
-                _assert_quit(session, "real-git-interrupted")
-        finally:
-            if original_path is None:
-                os.environ.pop("PATH", None)
-            else:
-                os.environ["PATH"] = original_path
-    finally:
-        directory.cleanup()
+def _register_failure(command, outcome):
+    name = f"git/real-git-{command.removeprefix('git-')}-{outcome}"
+
+    @scenario(name, commands=[command])
+    def run(binary):
+        _run_failure(binary, command, outcome)
+
+    return run
+
+
+for _command_name in _COMMANDS:
+    for _outcome in ("missing", "nonzero", "interrupted"):
+        _register_failure(_command_name, _outcome)
