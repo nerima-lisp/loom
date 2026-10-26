@@ -16,6 +16,7 @@
     :components
     ((:file "application-editor-state-recent-files")
      (:file "infrastructure-filesystem-native-paths")
+     (:file "infrastructure-file-format")
      (:file "infrastructure-filesystem-native-io")
      (:file "infrastructure-buffer-filesystem")
      (:file "application-commands-file")
@@ -37,7 +38,8 @@
     ((:module "unit"
       :serial t
       :components
-      ((:file "editor-state-recent-files-test")))
+      ((:file "editor-state-recent-files-test")
+       (:file "file-format-test")))
      (:module "integration"
       :serial t
       :components
