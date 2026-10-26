@@ -10,6 +10,8 @@
    :skip-closing-delimiter t
    :indentation-width 2 :tab-width 8
    :truncate-lines t :language-id "nix"
+   :keybindings (list (cons '(:alt :control-backslash)
+                            #'loom/feature/mode:indent-for-tab-command))
    :keywords '("abort" "assert" "baseNameOf" "builtins" "derivation"
                "dirOf" "else" "false" "fetchTarball" "fetchurl" "if"
                "import" "in" "inherit" "isNull" "let" "map" "null" "or"
