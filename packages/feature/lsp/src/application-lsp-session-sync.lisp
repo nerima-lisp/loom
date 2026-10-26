@@ -45,7 +45,8 @@
 (defun %lsp-sync-new-document (session uri buffer text)
   (let ((document (make-lsp-document uri
                                      (%lsp-language-id
-                                      (buffer-major-mode buffer))
+                                      (loom/core/buffer:buffer-major-mode
+                                       buffer))
                                      1
                                      text)))
     (setf (gethash uri (lsp-session-documents session)) document)
