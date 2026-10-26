@@ -24,12 +24,12 @@
               (list newer))))
   (it "exports documented registry functions"
     (dolist (function
-             (list loom/feature/buffers:register-buffer
-                   loom/feature/buffers:unregister-buffer
-                   loom/feature/buffers:registered-buffers
-                   loom/feature/buffers:find-buffer-by-name
-                   loom/feature/buffers:find-buffer-by-path
-                   loom/feature/buffers:ensure-result-buffer))
+             (list #'loom/feature/buffers:register-buffer
+                   #'loom/feature/buffers:unregister-buffer
+                   #'loom/feature/buffers:registered-buffers
+                   #'loom/feature/buffers:find-buffer-by-name
+                   #'loom/feature/buffers:find-buffer-by-path
+                   #'loom/feature/buffers:ensure-result-buffer))
       (expect (documentation function (find-symbol "FUNCTION" "COMMON-LISP"))
               :to-be-truthy)))
   (it "finds the newest matching name and resolves file aliases by truename"
