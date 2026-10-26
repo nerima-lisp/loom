@@ -508,8 +508,12 @@ def _run_r3(session, case, path):
             _assert_minibuffer(session, case["expected_minibuffer"])
             _save_and_assert(session, path, effect)
             session.send(keys.ctrl("x") + keys.text("u"))
+            restore = case["restore_screen"][0]
             session.wait_for_region_exact_text(
-                "body", case["restore_screen"][0]["text"], strip_right=True
+                restore["region"],
+                restore["text"],
+                index=restore.get("index", 0),
+                strip_right=True,
             )
             _save_and_assert_precondition(session, path, initial)
 
