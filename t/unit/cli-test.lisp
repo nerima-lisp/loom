@@ -25,25 +25,43 @@
            (dolist (argv (list (list "loom" "--definitely-invalid")
                                (list "loom" "+2")))
              (expect (loom::%main-exit-code argv) :to-equal 64)))
-          (it "returns usage status for a missing path"
+          (it "accepts a missing path as a startup file"
               (host-kit:with-temporary-directory (dir)
-                                                 (let* ((path
-                                                         (merge-pathnames
-                                                          "missing.txt"
-                                                          dir))
-                                                        (*error-output*
-                                                         (make-string-output-stream)))
-                                                   (expect
-                                                    (loom::%main-exit-code
-                                                     (list "loom"
-                                                           (namestring path)))
-                                                    :to-equal
-                                                    64)
-                                                   (expect
-                                                    (get-output-stream-string
-                                                     *error-output*)
-                                                    :to-contain
-                                                    "PATH does not exist"))))
+                (let* ((path (merge-pathnames "missing.txt" dir))
+                       (received-context nil))
+                  (with-replaced-function
+                   (loom::%run-loom
+                    (lambda (startup-context &key render-frame-function)
+                      (declare (ignore render-frame-function))
+                      (setf received-context startup-context)
+                      23))
+                   (expect
+                    (loom::%main-exit-code (list "loom" (namestring path)))
+                    :to-equal
+                    23))
+                  (expect
+                   (loom/core/editor-session:startup-context-p received-context)
+                   :to-be
+                   t)
+                  (let ((requests
+                         (loom/core/editor-session:startup-context-file-requests
+                          received-context)))
+                    (expect (length requests) :to-equal 1)
+                    (expect
+                     (loom/core/editor-session:startup-file-request-path
+                      (first requests))
+                     :to-equal
+                     (namestring path))
+                    (expect
+                     (loom/core/editor-session:startup-file-request-line
+                      (first requests))
+                     :to-equal
+                     1)
+                    (expect
+                     (loom/core/editor-session:startup-file-request-column
+                      (first requests))
+                     :to-equal
+                     1)))))
           (it "adapts a cl-cli invocation into a startup context"
               (let ((received-context nil))
                 (with-replaced-function
