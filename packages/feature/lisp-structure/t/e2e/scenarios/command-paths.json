@@ -1362,7 +1362,9 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "\u001b[1;5C"
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "before\n(a) b\nafter\n",
       "effect_bytes": "before\n(a b)\nafter\n",
@@ -1371,7 +1373,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1538,7 +1540,9 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "\u001b[1;5D"
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
       ],
       "initial_bytes": "before\n(a b)\nafter\n",
       "effect_bytes": "before\n(a) b\nafter\n",
@@ -1547,7 +1551,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1718,7 +1722,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "\u001b[1;7D"
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "before\na (b)\nafter\n",
       "effect_bytes": "before\n(a b)\nafter\n",
@@ -1727,7 +1733,7 @@
         0,
         3
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1902,7 +1908,9 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "\u001b[1;7C"
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
       ],
       "initial_bytes": "before\n(a b)\nafter\n",
       "effect_bytes": "before\na (b)\nafter\n",
@@ -1911,7 +1919,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2060,7 +2068,7 @@
       "path_id": "r3:kill-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2117,7 +2125,7 @@
       "path_id": "r3:kill-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2125,13 +2133,13 @@
         "split-window-below",
         "execute-extended-command",
         "kill-sexp",
-        "keyboard-quit",
         "save-buffer"
       ],
       "command": "kill-sexp",
       "mutation_case": "split-window",
       "command_keys": [
-        "C-g"
+        "ESC",
+        "C-k"
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": " b\n",
@@ -2140,7 +2148,7 @@
         12,
         0
       ],
-      "expected_minibuffer": "Quit",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2166,8 +2174,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "kill-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp"
     },
@@ -2254,7 +2261,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-r"
+        "M-x",
+        "raise-sexp",
+        "RET"
       ],
       "initial_bytes": "before\n(a (b) c)\nafter\n",
       "effect_bytes": "before\n(a b c)\nafter\n",
@@ -2263,7 +2272,7 @@
         0,
         3
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2448,7 +2457,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-s"
+        "M-x",
+        "splice-sexp",
+        "RET"
       ],
       "initial_bytes": "before\n(a (b) c)\nafter\n",
       "effect_bytes": "before\n(a b c)\nafter\n",
@@ -2457,7 +2468,7 @@
         0,
         3
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2634,7 +2645,9 @@
       "command": "wrap-round",
       "mutation_case": "narrow",
       "command_keys": [
-        "M-("
+        "M-x",
+        "wrap-round",
+        "RET"
       ],
       "initial_bytes": "before\na b\nafter\n",
       "effect_bytes": "before\n(a) b\nafter\n",
@@ -2643,7 +2656,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
