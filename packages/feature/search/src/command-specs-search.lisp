@@ -30,7 +30,46 @@
   (register-command-spec
    :feature/search "replace-string" "replace-string"
    #'loom/feature/search:replace-string
+   :keys 'nil
+   :keymap :global
+   :group "editing"
+   :help nil
+   :help-order nil
+   :mutates t
+   :prompts '(:free-string :free-string)
+   :needs-region nil
+   :external 'nil
+   :modes '(:all))
+  (register-command-spec
+   :feature/search "search-replace-regexp" "replace-regexp"
+   #'loom/feature/search::replace-regexp
+   :keys 'nil
+   :keymap :global
+   :group "editing"
+   :help nil
+   :help-order nil
+   :mutates t
+   :prompts '(:free-string :free-string)
+   :needs-region nil
+   :external 'nil
+   :modes '(:all))
+  (register-command-spec
+   :feature/search "search-query-replace" "query-replace"
+   #'loom/feature/search::query-replace
    :keys '((:alt #\%))
+   :keymap :global
+   :group "editing"
+   :help nil
+   :help-order nil
+   :mutates t
+   :prompts '(:free-string :free-string)
+   :needs-region nil
+   :external 'nil
+   :modes '(:all))
+  (register-command-spec
+   :feature/search "search-query-replace-regexp" "query-replace-regexp"
+   #'loom/feature/search::query-replace-regexp
+   :keys '((:control :alt #\%))
    :keymap :global
    :group "editing"
    :help nil

@@ -8,5 +8,8 @@
   "search-forward"
   "search-next-error"
   "search-previous-error"
+  "search-query-replace"
+  "search-query-replace-regexp"
+  "search-replace-regexp"
   "search-result-visit"
 )

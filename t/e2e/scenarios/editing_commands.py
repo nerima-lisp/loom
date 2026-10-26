@@ -270,7 +270,7 @@ def replace_string(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             session.extended_command("replace-string")
-            session.wait_for_text("Replace (regex): ")
+            session.wait_for_text("Replace string: ")
             session.type("foo")
             session.key("RET")
             session.wait_for_text("With: ")
@@ -279,6 +279,80 @@ def replace_string(binary):
             _wait_for_body_prefix(session, "bar bar")
             _save(session, path, b"bar bar\n")
             _close(session, "editing/replace-string")
+
+
+@scenario(
+    "editing/replace-regexp",
+    commands=["execute-extended-command", "search-replace-regexp", "save-buffer"],
+)
+def replace_regexp(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "replace-regexp.txt")
+        _write(path, b"foo foo\n")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("replace-regexp")
+            session.wait_for_region_text("minibuffer", "Replace (regex): ")
+            session.type("(f)(oo)")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "With: ")
+            session.type(r"\2-\1")
+            session.key("RET")
+            _wait_for_body_prefix(session, "oo-f oo-f")
+            _save(session, path, b"oo-f oo-f\n")
+            _close(session, "editing/replace-regexp")
+
+
+@scenario("editing/query-replace", commands=["search-query-replace"])
+def query_replace(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "query-replace.txt")
+        _write(path, b"foo foo\n")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.send(keys.meta("%"))
+            session.wait_for_region_text("minibuffer", "Query replace: ")
+            session.type("foo")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "Query replace with: ")
+            session.type("bar")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "Query replace: ")
+            session.send(b"y")
+            _wait_for_body_prefix(session, "bar foo")
+            session.send(b"q")
+            session.wait_for_region_text("minibuffer", "Replaced 1 occurrence(s)")
+            _save(session, path, b"bar foo\n")
+            _close(session, "editing/query-replace")
+
+
+@scenario(
+    "editing/query-replace-regexp",
+    commands=["execute-extended-command", "search-query-replace-regexp"],
+)
+def query_replace_regexp(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "query-replace-regexp.txt")
+        _write(path, b"foo foo\n")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("query-replace-regexp")
+            session.wait_for_region_text("minibuffer", "Query replace regexp: ")
+            session.type("(f)(oo)")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "Query replace regexp with: ")
+            session.type(r"\2-\1")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "Query replace: ")
+            session.send(b"y")
+            _wait_for_body_prefix(session, "oo-f foo")
+            session.send(b"q")
+            session.wait_for_region_text("minibuffer", "Replaced 1 occurrence(s)")
+            _save(session, path, b"oo-f foo\n")
+            _close(session, "editing/query-replace-regexp")
 
 
 @scenario("editing/set-mark-command", commands=["set-mark-command", "kill-region", "save-buffer"])
