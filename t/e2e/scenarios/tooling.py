@@ -204,13 +204,29 @@ def format_on_save_mode(binary):
 def terminal(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
+        marker_path = os.path.join(directory, "terminal-success-marker")
+        marker_bytes = b"terminal-success-marker"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
-            session.type("printf terminal-e2e\n")
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
+            )
+            session.assert_screen_text(
+                "Terminal started", match="contains", region="minibuffer"
+            )
+            session.type(
+                f"printf terminal-success-marker > {shlex.quote(marker_path)}; "
+                "printf terminal-; printf e2e\n"
+            )
             session.wait_for_text("terminal-e2e", timeout=2)
             session.assert_screen_text(
                 "terminal-e2e", match="contains", region="screen"
+            )
+            with open(marker_path, "rb") as marker:
+                actual_marker = marker.read()
+            session.assert_external_state(
+                "terminal shell success marker", actual_marker, marker_bytes
             )
             session.type("exit\n")
             output, code = session.quit(timeout=2)
@@ -221,18 +237,29 @@ def terminal(binary):
 def terminal_nonzero(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
+        marker_path = os.path.join(directory, "terminal-nonzero-marker")
+        marker_bytes = b"23"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
-            session.type(
-                "trap 'printf \"terminal-exit:%s\\n\" "
-                "\"$?\"' 0\n"
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
             )
-            session.type("exit 23\n")
+            session.type(
+                "sh -c 'exit 23'; status=$?; "
+                f"printf %s \"$status\" > {shlex.quote(marker_path)}; "
+                "printf 'terminal-exit:%s\\n' \"$status\"\n"
+            )
             session.wait_for_text("terminal-exit:23", timeout=2)
             session.assert_screen_text(
                 "terminal-exit:23", match="contains", region="screen"
             )
+            with open(marker_path, "rb") as marker:
+                actual_marker = marker.read()
+            session.assert_external_state(
+                "terminal shell nonzero exit", actual_marker, marker_bytes
+            )
+            session.type("exit\n")
             output, code = session.quit(timeout=2)
         assert_exit_zero("terminal", output, code)
 
@@ -241,18 +268,30 @@ def terminal_nonzero(binary):
 def terminal_interrupted(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
+        marker_path = os.path.join(directory, "terminal-interrupted-marker")
+        marker_bytes = b"130"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
+            )
             session.type(
-                "trap 'printf \"\\163\\151\\147\\151\\156\\164\\055\\157\\153\\n\"; "
-                "exit 130' INT\n"
+                "sh -c 'trap \"exit 130\" INT; kill -INT \"$$\"'; "
+                "status=$?; "
+                f"printf %s \"$status\" > {shlex.quote(marker_path)}; "
+                "printf 'sigint-ok:%s\\n' \"$status\"\n"
             )
-            session.type('kill -INT "$$"\n')
-            session.wait_for_text("sigint-ok", timeout=2)
+            session.wait_for_text("sigint-ok:130", timeout=2)
             session.assert_screen_text(
-                "sigint-ok", match="contains", region="screen"
+                "sigint-ok:130", match="contains", region="screen"
             )
+            with open(marker_path, "rb") as marker:
+                actual_marker = marker.read()
+            session.assert_external_state(
+                "terminal shell interrupted exit", actual_marker, marker_bytes
+            )
+            session.type("exit\n")
             output, code = session.quit(timeout=2)
         assert_exit_zero("terminal", output, code)
 
@@ -261,21 +300,36 @@ def terminal_interrupted(binary):
 def terminal_stop(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
+        marker_path = os.path.join(directory, "terminal-stop-success-marker")
+        marker_bytes = b"terminal-stop-success-marker"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
-            session.type("printf terminal-stop-e2e\\n")
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
+            )
+            session.type(
+                f"printf terminal-stop-success-marker > {shlex.quote(marker_path)}; "
+                "printf terminal-stop-; printf e2e\n"
+            )
             session.wait_for_text("terminal-stop-e2e", timeout=2)
             session.assert_screen_text(
                 "terminal-stop-e2e", match="contains", region="screen"
             )
+            with open(marker_path, "rb") as marker:
+                actual_marker = marker.read()
+            session.assert_external_state(
+                "terminal-stop shell success marker", actual_marker, marker_bytes
+            )
             session.extended_command("terminal-stop", timeout=2)
-            session.wait_for_text("Terminal stopped", timeout=2)
-            session.assert_screen_text(
-                "terminal-stop-e2e", match="contains", region="screen"
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal stopped", timeout=2
             )
             session.assert_screen_text(
-                "Terminal stopped", match="contains", region="screen"
+                "Terminal stopped", match="contains", region="minibuffer"
+            )
+            session.assert_screen_text(
+                "terminal-stop-e2e", match="contains", region="screen"
             )
             output, code = session.quit(timeout=2)
         assert_exit_zero("terminal-stop", output, code)
@@ -289,32 +343,40 @@ def terminal_stop_nonzero(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
         marker_path = os.path.join(directory, "terminal-stop-nonzero-marker")
-        marker_bytes = b"terminal-stop-nonzero-marker"
-        ready_marker = "terminal-stop-nonzero-ready"
+        marker_bytes = b"23"
+        ready_marker = "terminal-stop-nonzero-exit:23"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
-            session.type(f"marker={shlex.quote(marker_path)}\n")
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
+            )
             session.type(
-                "trap 'printf terminal-stop-nonzero-marker > \"$marker\"; "
-                "exit 23' HUP\n"
+                f"marker={shlex.quote(marker_path)}; "
+                "sh -c 'exit 23'; status=$?; "
+                "printf %s \"$status\" > \"$marker\"; "
+                "printf 'terminal-stop-nonzero-exit:%s\\n' \"$status\"\n"
             )
-            ready_format = "".join(
-                f"\\{ord(character):03o}" for character in ready_marker
-            )
-            session.type(f"printf '{ready_format}\\n'\n")
             session.wait_for_text(ready_marker, timeout=2)
+            session.assert_screen_text(
+                ready_marker, match="contains", region="screen"
+            )
             session.extended_command("terminal-stop", timeout=2)
-            session.wait_for_text("Terminal stopped", timeout=2)
-            with open(marker_path, "rb") as marker:
-                actual_marker = marker.read()
-            session.assert_external_state(
-                "terminal-stop nonzero HUP marker",
-                actual_marker,
-                marker_bytes,
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal stopped", timeout=2
+            )
+            session.assert_screen_text(
+                "Terminal stopped", match="contains", region="minibuffer"
             )
             session.assert_screen_text(
                 ready_marker, match="contains", region="screen"
+            )
+            with open(marker_path, "rb") as marker:
+                actual_marker = marker.read()
+            session.assert_external_state(
+                "terminal-stop nonzero tool status",
+                actual_marker,
+                marker_bytes,
             )
             output, code = session.quit(timeout=2)
         assert_exit_zero("terminal-stop", output, code)
@@ -328,27 +390,39 @@ def terminal_stop_interrupted(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=b"terminal fixture\n")
         marker_path = os.path.join(directory, "terminal-stop-interrupted-marker")
-        marker_bytes = b"terminal-stop-interrupted-marker"
-        ready_marker = "terminal-stop-interrupted-ready"
+        marker_bytes = b"130"
+        ready_marker = "terminal-stop-interrupted-exit:130"
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2)
             session.extended_command("terminal", timeout=2)
-            session.type(f"marker={shlex.quote(marker_path)}\n")
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal started", timeout=2
+            )
             session.type(
-                "trap 'printf terminal-stop-interrupted-marker > \"$marker\"; "
-                "exit 129' HUP\n"
+                f"marker={shlex.quote(marker_path)}; "
+                "sh -c 'trap \"exit 130\" INT; kill -INT \"$$\"'; "
+                "status=$?; "
+                "printf %s \"$status\" > \"$marker\"; "
+                "printf 'terminal-stop-interrupted-exit:%s\\n' \"$status\"\n"
             )
-            ready_format = "".join(
-                f"\\{ord(character):03o}" for character in ready_marker
-            )
-            session.type(f"printf '{ready_format}\\n'\n")
             session.wait_for_text(ready_marker, timeout=2)
+            session.assert_screen_text(
+                ready_marker, match="contains", region="screen"
+            )
             session.extended_command("terminal-stop", timeout=2)
-            session.wait_for_text("Terminal stopped", timeout=2)
+            session.wait_for_region_contents(
+                "minibuffer", "Terminal stopped", timeout=2
+            )
+            session.assert_screen_text(
+                "Terminal stopped", match="contains", region="minibuffer"
+            )
+            session.assert_screen_text(
+                ready_marker, match="contains", region="screen"
+            )
             with open(marker_path, "rb") as marker:
                 actual_marker = marker.read()
             session.assert_external_state(
-                "terminal-stop interrupted HUP marker",
+                "terminal-stop interrupted tool status",
                 actual_marker,
                 marker_bytes,
             )
