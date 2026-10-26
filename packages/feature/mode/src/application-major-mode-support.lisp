@@ -29,16 +29,17 @@
        keymap
        (loom/core/command:defkeys-key-sequence (car binding))
        (%major-mode-command-designator (cdr binding) mode)))
-    (let ((comment-key-sequence
-            (defkeys-key-sequence (quote (:alt #\;)))))
-      (multiple-value-bind (command-id owner)
-          (loom/core/command:keymap-lookup keymap comment-key-sequence)
-        (declare (ignore command-id))
-        (unless (eq owner keymap)
-          (loom/core/command:keymap-define-key
-           keymap
-           comment-key-sequence
-           (quote comment-dwim)))))
+    (when (major-mode-comment-start mode)
+      (let ((comment-key-sequence
+              (defkeys-key-sequence (quote (:alt #\;)))))
+        (multiple-value-bind (command-id owner)
+            (loom/core/command:keymap-lookup keymap comment-key-sequence)
+          (declare (ignore command-id))
+          (unless (eq owner keymap)
+            (loom/core/command:keymap-define-key
+             keymap
+             comment-key-sequence
+             (quote comment-dwim))))))
     (dolist (key-sequence
               (list (defkeys-key-sequence :tab)
                     (defkeys-key-sequence

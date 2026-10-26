@@ -223,7 +223,7 @@ outside" (buffer (%selected-test-buffer)))
               "Mode JSON has no line comment syntax")))
 
   (it
-    "keeps M-x comment-line and dispatches mode-local M-; to comment-dwim"
+    "keeps M-x comment-line and routes M-; through local and global bindings"
     (%with-minibuffer-state
         (minibuffer "value" (buffer (%selected-test-buffer)))
       (buffer-set-major-mode buffer :python)
@@ -247,15 +247,49 @@ outside" (buffer (%selected-test-buffer)))
       (let* ((global-keymap
                (loom/application:install-default-keybindings
                 (loom/core/editor-session:editor-state-keymap *editor-state*)))
-             (mode-keymap
+             (comment-key-sequence
+               (loom/core/command:defkeys-key-sequence (list :alt #\;)))
+             (python-keymap
                (loom/feature/mode:major-mode-keymap :python global-keymap))
-             (keymap-state
-               (loom/core/command:make-keymap-state mode-keymap)))
+             (python-keymap-state
+               (loom/core/command:make-keymap-state python-keymap)))
+        (expect
+         (multiple-value-list
+          (loom/core/command:keymap-lookup
+           python-keymap comment-key-sequence))
+         :to-equal
+         (list
+          (loom/core/command:command-id-for-function
+           (function loom/feature/mode:comment-dwim))
+          python-keymap))
         (loom::%dispatch-key-event
          (cl-tty-kit:make-key-event
           :type :character
           :code #\;
           :modifiers (list :alt))
-         keymap-state))
-      (expect (buffer-line buffer 0) :to-equal "value #")
-      (expect buffer :to-have-point (cons 0 7)))))
+         python-keymap-state)
+        (expect (buffer-line buffer 0) :to-equal "value #")
+        (expect buffer :to-have-point (cons 0 7))
+        (buffer-set-major-mode buffer :text)
+        (let* ((text-keymap
+                 (loom/feature/mode:major-mode-keymap :text global-keymap))
+               (text-keymap-state
+                 (loom/core/command:make-keymap-state text-keymap)))
+          (expect
+           (multiple-value-list
+            (loom/core/command:keymap-lookup
+             text-keymap comment-key-sequence))
+           :to-equal
+           (list
+            (loom/core/command:command-id-for-function
+             (function loom/feature/mode:comment-line))
+            global-keymap))
+          (loom::%dispatch-key-event
+           (cl-tty-kit:make-key-event
+            :type :character
+            :code #\;
+            :modifiers (list :alt))
+           text-keymap-state)
+          (expect (loom:minibuffer-message-string minibuffer)
+                  :to-equal
+                  "Mode Text has no line comment syntax"))))))
