@@ -249,6 +249,21 @@ class CommandPathScenarioTests(unittest.TestCase):
                 self.assertEqual(case["command"], command)
                 self.assertIn(command, case["commands"])
 
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:undo"]["expected_undo_cursor"],
+            [0, 5],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["prepare_keys"],
+            ["C-e"],
+        )
+        for mutation_case in {"effect", "undo", "macro-replay", "prefix-u4"}:
+            case = cases_by_path_id[
+                f"r3:indent-for-tab-command:{mutation_case}"
+            ]
+            with self.subTest(path_id=case["path_id"]):
+                self.assertEqual(case["effect_screen"][0]["index"], 1)
+
     def test_sidecar_declares_all_prompt_results_and_exact_expectations(self):
         scenarios = load_command_path_scenarios(SCENARIO_DATA)
         prompt_cases = {

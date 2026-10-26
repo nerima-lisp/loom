@@ -423,7 +423,7 @@
       ],
       "expected_undo_cursor": [
         0,
-        7
+        5
       ]
     },
     {
@@ -612,6 +612,9 @@
         7
       ],
       "expected_minibuffer": "Keyboard macro defined",
+      "prepare_keys": [
+        "C-e"
+      ],
       "expected_screen": [
         {
           "region": "body",
@@ -715,6 +718,7 @@
       "effect_screen": [
         {
           "region": "body",
+          "index": 1,
           "text": "    value"
         }
       ],
@@ -760,6 +764,7 @@
       "effect_screen": [
         {
           "region": "body",
+          "index": 1,
           "text": "    value"
         }
       ],
@@ -974,6 +979,7 @@
       "effect_screen": [
         {
           "region": "body",
+          "index": 1,
           "text": "    value"
         }
       ],
@@ -1030,6 +1036,7 @@
       "effect_screen": [
         {
           "region": "body",
+          "index": 1,
           "text": "    value"
         }
       ],
