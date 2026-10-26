@@ -21,7 +21,7 @@ directory (or no argument) retains the scratch buffer and is itself the root."
                                          :type nil
                                          :defaults directory)
                           (cons (car (last components))
-                                missing-components)))))))
+                                missing-components))))))))
       (cond
         ((and argument (null resolved))
          (let* ((target-path
@@ -52,7 +52,7 @@ directory (or no argument) retains the scratch buffer and is itself the root."
                         nil)))))
         ((and resolved (not (host-kit:directory-pathname-p resolved)))
          (values resolved (make-pathname :name nil :type nil :defaults resolved)))
-        (t (values nil root)))))))
+        (t (values nil root))))))
 
 (defun %make-startup-buffer (startup-file)
   "Build the initial buffer for STARTUP-FILE or the default scratch buffer.
