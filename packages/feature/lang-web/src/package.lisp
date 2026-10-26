@@ -48,6 +48,7 @@
    :aliases '("js" "javascript")
    :extensions '("js" "mjs" "cjs")
    :comment-prefix "//" :comment-start "//" :comment-end nil
+   :skip-closing-delimiter t
    :language-id "javascript"
    :indentation-width 2 :tab-width 8
    :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
@@ -62,6 +63,7 @@
    :aliases '("jsx")
    :extensions '("jsx")
    :comment-prefix "//" :comment-start "//" :comment-end nil
+   :skip-closing-delimiter t
    :language-id "javascriptreact"
    :indentation-width 2 :tab-width 8
    :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
@@ -75,6 +77,7 @@
    :name "HTML"
    :extensions '("html" "htm")
    :comment-prefix nil :comment-start "<!--" :comment-end "-->"
+   :skip-closing-delimiter t
    :language-id "html"
    :keywords '("article" "body" "button" "div" "doctype" "footer" "form"
                "head" "header" "html" "img" "input" "li" "link" "main" "meta"
@@ -85,6 +88,7 @@
    :name "CSS"
    :extensions '("css")
    :comment-prefix nil :comment-start "/*" :comment-end "*/"
+   :skip-closing-delimiter t
    :language-id "css"
    :keywords '("absolute" "auto" "block" "currentColor" "flex" "fixed" "grid"
                "inherit" "initial" "inline" "important" "none" "relative"
@@ -95,6 +99,7 @@
    :name "YAML"
    :extensions '("yaml" "yml")
    :comment-prefix "#" :comment-start "#" :comment-end nil
+   :skip-closing-delimiter t
    :language-id "yaml"
    :keywords '("false" "no" "null" "off" "on" "true" "yes"))
   (defun loom/feature/lang-web::%opening-for-close (character)
@@ -197,4 +202,24 @@
                  :javascript-react :json))
     (loom/feature/mode:register-major-mode-indentation-rule
      mode
-     (function loom/feature/lang-web::%bracket-indentation-rule)))))
+     (function loom/feature/lang-web::%bracket-indentation-rule)))
+  (progn
+    (dolist (mode
+             (list :typescript :typescript-react :javascript
+                   :javascript-react :css))
+      (loom/feature/mode:register-major-mode-pair-completion
+       mode #\( #\))
+      (loom/feature/mode:register-major-mode-pair-completion
+       mode #\[ #\])
+      (loom/feature/mode:register-major-mode-pair-completion
+       mode #\{ #\}))
+    (loom/feature/mode:register-major-mode-pair-completion
+     :json #\[ #\])
+    (loom/feature/mode:register-major-mode-pair-completion
+     :json #\{ #\})
+    (loom/feature/mode:register-major-mode-pair-completion
+     :html #\< #\>)
+    (loom/feature/mode:register-major-mode-pair-completion
+     :yaml #\[ #\])
+    (loom/feature/mode:register-major-mode-pair-completion
+     :yaml #\{ #\}))))

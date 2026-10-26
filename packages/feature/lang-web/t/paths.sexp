@@ -33,4 +33,13 @@
   :outcome "M-; toggles language comment syntax and leaves JSON unchanged"
   :observe (:screen_text :file_bytes :cursor)
   :scenario "lang-web/comments"
+  :lane "W3-7d")
+ (:id "r1:lang-web:pair-completion:delimiter-pairs"
+  :commands ("find-file" "save-buffer")
+  :rule :r1
+  :entry "key:open-delimiter"
+  :state "language mode buffer at an opening delimiter"
+  :outcome "inserts registered delimiter pairs and skips existing closers only when the mode enables it"
+  :observe (:screen_text :file_bytes :cursor)
+  :scenario "lang-web/pair-completion"
   :lane "W3-7d"))
