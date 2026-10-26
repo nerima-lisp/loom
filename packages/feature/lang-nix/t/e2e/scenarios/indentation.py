@@ -66,7 +66,7 @@ def lang_nix_indentation_tab(binary):
             session.wait_ready()
             session.send(keys.ctrl("n") * 5)
             session.key("TAB")
-            session.wait_for_region_cursor("body", 5, index=2)
+            session.wait_for_region_cursor("body", 0, index=5)
             session.send(keys.ctrl("n"))
             session.key("TAB")
             session.send(keys.ctrl("n"))
