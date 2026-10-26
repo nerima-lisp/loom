@@ -11,6 +11,10 @@
   (let* ((offset (second edit))
          (from (%structural-edit-position buffer start offset))
          (to (%structural-edit-position buffer start (+ offset (third edit)))))
+    ;; Emacs records structural deletions at their end for undo.
+    (loom/core/buffer:buffer-set-point buffer
+                                       (buffer-position-line to)
+                                       (buffer-position-column to))
     (buffer-delete-region buffer
                           (buffer-position-line from)
                           (buffer-position-column from)
