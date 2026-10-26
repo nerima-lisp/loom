@@ -55,7 +55,7 @@
 (:id "r5:git-status:git:success"
   :commands (:git-status)
   :rule :r5
-  :entry "mx"
+  :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"g\",\"modifiers\":[]}]}"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:screen_text)
@@ -64,7 +64,7 @@
 (:id "r5:git-status:git:missing"
   :commands (:git-status)
   :rule :r5
-  :entry "mx"
+  :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"g\",\"modifiers\":[]}]}"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -73,7 +73,7 @@
 (:id "r5:git-status:git:nonzero"
   :commands (:git-status)
   :rule :r5
-  :entry "mx"
+  :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"g\",\"modifiers\":[]}]}"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -82,7 +82,7 @@
 (:id "r5:git-status:git:interrupted"
   :commands (:git-status)
   :rule :r5
-  :entry "mx"
+  :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"g\",\"modifiers\":[]}]}"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)

@@ -277,11 +277,11 @@ def _run_failure(binary, command, outcome):
                     _write(marker, b"force failure\n")
                 _prompted(session, command, "tracked.txt")
             else:
-                if outcome == "nonzero" and command == "git-status":
-                    _command(session, command)
+                if outcome == "nonzero" and command != "git-status":
+                    _write(marker, b"force failure\n")
+                if command == "git-status":
+                    session.send(keys.ctrl("x") + keys.text("g"))
                 else:
-                    if outcome == "nonzero":
-                        _write(marker, b"force failure\n")
                     _command(session, command)
 
             if outcome == "missing":
