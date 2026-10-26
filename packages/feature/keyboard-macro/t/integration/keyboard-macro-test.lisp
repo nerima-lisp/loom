@@ -383,10 +383,10 @@
          (mode-keymap (make-keymap))
          (macro (make-keyboard-macro))
          (buffer (%selected-test-buffer))
-         (descriptor (cons nil #\q))
+         (descriptor (cons '(:control) #\q))
          (keymap-state (make-keymap-state global-keymap))
          (event
-          (cl-tty-kit:make-key-event :type :character :code #\q :modifiers nil)))
+          (cl-tty-kit:make-key-event :type :character :code #\q :modifiers '(:control))))
    (let ((global-command (lambda () (incf global-invocations)))
          (mode-command (lambda () (incf local-invocations))))
     (%register-test-command global-command)
