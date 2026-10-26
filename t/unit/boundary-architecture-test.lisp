@@ -960,10 +960,10 @@
     (unless (stringp slice)
       (error "Malformed boundary allowlist slice name: ~S" slice))
     (cond ((member slice '("root" "core") :test #'string=)
-           "t/boundary-allowlist.sexp")
+           "t/boundary-allowlist.lisp")
           ((or (uiop:string-prefix-p "core/" slice)
                (uiop:string-prefix-p "feature/" slice))
-           (format nil "packages/~A/t/boundary-allowlist.sexp" slice))
+           (format nil "packages/~A/t/boundary-allowlist.lisp" slice))
           (t (error "No boundary allowlist path for slice: ~A" slice))))
 
   (defun boundary-expected-allowlist-slices (records)
@@ -1104,7 +1104,7 @@
               '(("root" (:package-direction "fixture.lisp" "ref" "reason"))
                 ("core")))
       (expect (boundary-allowlist-relative-path "core/buffer")
-              :to-equal "packages/core/buffer/t/boundary-allowlist.sexp")
+              :to-equal "packages/core/buffer/t/boundary-allowlist.lisp")
       (expect (handler-case
                   (progn
                     (boundary-validate-allowlist-groups
