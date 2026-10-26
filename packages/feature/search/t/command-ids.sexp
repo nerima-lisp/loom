@@ -1,0 +1,10 @@
+(
+  "isearch-backward"
+  "isearch-forward"
+  "replace-string"
+  "search-backward"
+  "search-forward"
+  "search-next-error"
+  "search-previous-error"
+  "search-result-visit"
+)

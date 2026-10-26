@@ -1,0 +1,9 @@
+(
+  "delete-other-windows"
+  "delete-window"
+  "other-window"
+  "scroll-down-command"
+  "scroll-up-command"
+  "split-window-below"
+  "split-window-right"
+)

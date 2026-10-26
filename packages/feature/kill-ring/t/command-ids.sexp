@@ -1,0 +1,9 @@
+(
+  "backward-kill-word"
+  "kill-line"
+  "kill-region"
+  "kill-ring-save"
+  "kill-word"
+  "yank"
+  "yank-pop"
+)

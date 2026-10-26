@@ -1,0 +1,3 @@
+(
+  "save-buffers-kill-terminal"
+)

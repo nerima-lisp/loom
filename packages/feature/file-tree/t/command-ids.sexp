@@ -1,0 +1,10 @@
+(
+  "file-tree-create-directory"
+  "file-tree-create-file"
+  "file-tree-delete"
+  "file-tree-open-selected"
+  "file-tree-rename"
+  "file-tree-select-next"
+  "file-tree-select-previous"
+  "toggle-file-tree"
+)
