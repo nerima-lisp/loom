@@ -67,3 +67,34 @@ def eval_last_sexp_mx(binary):
             raise AssertionError(
                 f"evaluation/eval-last-sexp-mx exited with {code}: {output!r}"
             )
+
+
+@scenario("evaluation/eval-buffer-mx", commands=["eval-buffer"])
+def eval_buffer_mx(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "expression.lisp")
+        with open(path, "wb") as handle:
+            handle.write(_SOURCE)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready(timeout=2.0)
+            session.extended_command("eval-buffer")
+            session.wait_for_region_text(
+                "minibuffer", "Evaluated 1 form", timeout=0.75
+            )
+            session.assert_screen_text(
+                "Evaluated 1 form", match="contains", region="minibuffer"
+            )
+            session.assert_screen_text(
+                "loom-eval> (+ 1 2)", match="contains", region="body"
+            )
+            session.assert_screen_text(
+                "=> 3", match="contains", region="body"
+            )
+            session.assert_file_bytes(path, _SOURCE)
+            output, code = session.quit(timeout=1.0)
+
+        if code != 0:
+            raise AssertionError(
+                f"evaluation/eval-buffer-mx exited with {code}: {output!r}"
+            )

@@ -21,7 +21,7 @@
   :rule :r1
   :lane "W3-7b"
   :entry "mx"
-  :state "default"
-  :outcome "eval-buffer runs from M-x"
-  :observe (:screen_text)
-  :scenario "macros/eval-buffer"))
+  :state "Common Lisp buffer containing (+ 1 2)"
+  :outcome "M-x eval-buffer displays the value 3 and preserves source bytes"
+  :observe (:screen_text :file_bytes)
+  :scenario "evaluation/eval-buffer-mx"))
