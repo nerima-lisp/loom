@@ -34,6 +34,7 @@ _SESSION_ENVIRONMENT_ALLOWLIST = ("PATH",)
 def _session_environment(
     home_dir, locale_name, profile=keys.DEFAULT_PROFILE, trace_path=None,
     layout_trace_path=None,
+    shell="/bin/sh",
 ):
     """Build the child environment without inheriting parent credentials."""
     env = {
@@ -45,7 +46,7 @@ def _session_environment(
         {
             "HOME": home_dir,
             "TERM": profile.term,
-            "SHELL": "/bin/sh",
+            "SHELL": shell,
             "LANG": locale_name,
             "LC_ALL": locale_name,
         }
@@ -87,11 +88,12 @@ class Session:
 
     def __init__(
         self, binary, arguments=None, columns=80, rows=24,
-        profile=keys.DEFAULT_PROFILE,
+        profile=keys.DEFAULT_PROFILE, shell="/bin/sh",
     ):
         self.binary = binary
         self.arguments = list(arguments or [])
         self.profile = keys.get_profile(profile)
+        self.shell = shell
         self.columns = columns
         self.rows = rows
         self.process = None
@@ -148,6 +150,7 @@ class Session:
                 self.profile,
                 self._trace_path,
                 self._layout_trace_path,
+                shell=self.shell,
             )
 
             self.started_at = time.monotonic()
@@ -259,6 +262,7 @@ class Session:
             self.profile,
             self._trace_path,
             self._layout_trace_path,
+            shell=self.shell,
         )
         self.process = LoomProcess(
             self.binary, self.arguments, env=env,
