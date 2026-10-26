@@ -170,11 +170,15 @@
              (not (char= (char text first-code) #\"))))
        nil)
       ((and (< first-code line-end) (%sexp-close-p text classes first-code))
-       (let ((open-offset
-              (%backward-up-list-offset text (1+ first-code) classes)))
-         (if open-offset
-             (%lisp-indent-column-at-offset text open-offset)
-             0)))
+       (let* ((open-offset
+              (%backward-up-list-offset text first-code classes))
+             (last-expression
+              (%backward-sexp-offset text first-code classes)))
+        (if open-offset
+            (if (and last-expression (> last-expression open-offset))
+                (%lisp-indent-column-at-offset text last-expression)
+                (%lisp-indent-column-at-offset text open-offset))
+            0)))
       (t
        (let ((open-offset (%backward-up-list-offset text line-start classes)))
          (if open-offset

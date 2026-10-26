@@ -2793,6 +2793,588 @@
         "C-a"
       ],
       "major_mode": "Common Lisp"
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/undo",
+      "path_id": "r3:backward-barf-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "backward-barf-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "a (b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/undo",
+      "path_id": "r3:backward-slurp-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "backward-slurp-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "a (b)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        3
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/undo",
+      "path_id": "r3:kill-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "kill-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": " b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": " b"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/undo",
+      "path_id": "r3:raise-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "raise-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "raise-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a (b) c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        4
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/undo",
+      "path_id": "r3:wrap-round:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "wrap-round",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-x",
+        "wrap-round",
+        "RET"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/prefix-u4",
+      "path_id": "r3:backward-barf-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "backward-barf-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/prefix-u4",
+      "path_id": "r3:backward-slurp-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "backward-slurp-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-barf-sexp/prefix-u4",
+      "path_id": "r3:forward-barf-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "forward-barf-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "forward-barf-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "()a b\n",
+      "expected_bytes": "()a b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "()a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "()a b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/forward-slurp-sexp/prefix-u4",
+      "path_id": "r3:forward-slurp-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "set-major-mode",
+        "forward-char",
+        "execute-extended-command",
+        "forward-slurp-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "forward-slurp-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a) b\n",
+      "effect_bytes": "(a b\n   )",
+      "expected_bytes": "(a b\n   )",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b\n   )"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b\n   )"
+        }
+      ],
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/prefix-u4",
+      "path_id": "r3:kill-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "kill-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b) c\n",
+      "effect_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/prefix-u4",
+      "path_id": "r3:raise-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "raise-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "raise-sexp",
+        "RET"
+      ],
+      "initial_bytes": "((a b c d e) z)\n",
+      "effect_bytes": "(a b c d z)\n",
+      "expected_bytes": "(a b c d z)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c d z)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c d z)"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/prefix-u4",
+      "path_id": "r3:splice-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "splice-sexp",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "splice-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b c) d)\n",
+      "effect_bytes": "(a b c d)\n",
+      "expected_bytes": "(a b c d)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c d)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c d)"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/prefix-u4",
+      "path_id": "r3:wrap-round:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "wrap-round",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-x",
+        "wrap-round",
+        "RET"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ]
     }
   ]
 }

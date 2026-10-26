@@ -3,7 +3,8 @@
                "loom-core-editor-session"
                "loom-core-window-tree"
                "loom-core-command"
-               "loom-feature-kill-ring")
+               "loom-feature-kill-ring"
+               "loom-feature-mode")
   :serial t
   :components
   ((:module "src"

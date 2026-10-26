@@ -1,20 +1,27 @@
 (in-package #:loom)
 
 (defun %forward-slurp-target (text classes close)
-  (%forward-sexp-offset text (1+ close) classes))
+  (let ((target (%forward-sexp-offset text (1+ close) classes)))
+    (when target
+      (if (and (%structural-prefix-p)
+               (< target (length text))
+               (char= (char text target) #\Newline))
+          (values (1+ target) target)
+          (values target nil)))))
 
-(defun %forward-slurp-edits-at (text close target)
-  "Delete first so undo restores point after the original close delimiter, as Emacs does."
+(defun %forward-slurp-edits-at (text close target reindent-offset)
   (values (list (list :delete close 1)
                 (list :insert (1- target) (string (char text close))))
-          :as-listed))
+          :as-listed
+          reindent-offset))
 
 (defun %forward-slurp-edits (text classes offset)
-  "Move the enclosing list's closing delimiter past the expression after it."
+  "Move the enclosing list close past the next expression."
   (%with-structural-list-bounds (open close) (text classes offset)
-    (let ((target (%forward-slurp-target text classes close)))
-      (when target
-        (%forward-slurp-edits-at text close target)))))
+    (multiple-value-bind (target reindent-offset)
+        (%forward-slurp-target text classes close)
+      (when (and open target)
+        (%forward-slurp-edits-at text close target reindent-offset)))))
 
 (defun %forward-barf-target-position (text classes open close)
   (let ((last-start (%backward-sexp-offset text close classes)))
@@ -29,13 +36,37 @@
                 (%forward-barf-delimiter text target delimiter))))))
 
 (defun %forward-barf-edits (text classes offset)
-  "Move the enclosing list's closing delimiter in past its last expression."
+  "Move the enclosing list close past the last prefix-count expressions."
   (%with-structural-list-bounds (open close) (text classes offset)
-    (multiple-value-bind (target moved-delimiter)
-        (%forward-barf-target text classes open close)
-      (when target
-        (list (list :delete close 1)
-              (list :insert target moved-delimiter))))))
+    (if (%structural-prefix-p)
+        (let ((target
+                (loop with position = close
+                      with target = nil
+                      repeat (max 0 (%command-prefix-count))
+                      for start = (%backward-sexp-offset text position classes)
+                      while (and start
+                                 (> start open)
+                                 (< start position))
+                      do (setf target start
+                               position start)
+                      finally (return target))))
+          (when target
+            (values (list (list :delete close 1)
+                          (list :insert
+                                target
+                                (if (= target (1+ open))
+                                    (string (char text close))
+                                    (%forward-barf-delimiter
+                                     text target
+                                     (string (char text close))))))
+                    :as-listed
+                    nil
+                    offset)))
+        (multiple-value-bind (target moved-delimiter)
+            (%forward-barf-target text classes open close)
+          (when target
+            (list (list :delete close 1)
+                  (list :insert target moved-delimiter)))))))
 
 (defun %backward-slurp-target (text classes open)
   (%backward-sexp-offset text open classes))
@@ -64,26 +95,53 @@
                 (%backward-barf-delimiter text target delimiter))))))
 
 (defun %backward-barf-edits (text classes offset)
-  "Move the enclosing list's opening delimiter in past its first expression."
+  "Move the enclosing list open past prefix-count expressions before point."
   (%with-structural-list-bounds (open close) (text classes offset)
     (multiple-value-bind (target moved-delimiter)
-        (%backward-barf-target text classes open close)
+        (if (%structural-prefix-p)
+            (let ((target
+                    (loop with position = (1+ open)
+                          with target = nil
+                          repeat (max 0 (%command-prefix-count))
+                          for end = (%forward-sexp-offset text position classes)
+                          while (and end
+                                     (<= end offset)
+                                     (<= end close))
+                          do (setf target (%sexp-skip-forward-filler
+                                           text classes end)
+                                   position target)
+                          finally (return target))))
+              (when target
+                (values target
+                        (%backward-barf-delimiter
+                         text target (string (char text open)))))
+            (%backward-barf-target text classes open close))
       (when target
-        (list (list :insert target moved-delimiter)
-              (list :delete open 1))))))
+        (values (list (list :delete open 1)
+                      (list :insert (1- target) moved-delimiter))
+                :as-listed))))))
 
 (defun %wrap-round-edits (text classes offset)
-  "Wrap the expression after OFFSET in a new pair of parentheses.
-
-With nothing to wrap -- at the end of the text, or before a closing delimiter
--- an empty pair is inserted instead, which is what makes this usable as a
-plain `insert a balanced pair' command."
+  "Wrap the prefix-count expressions after OFFSET in parentheses."
   (let* ((start (%sexp-skip-forward-filler text classes offset))
-         (end (%forward-sexp-offset text offset classes)))
+         (end
+           (if (%structural-prefix-p)
+               (loop with position = offset
+                     with target = nil
+                     repeat (max 0 (%command-prefix-count))
+                     for next = (%forward-sexp-offset text position classes)
+                     while next
+                     do (setf target next
+                              position next)
+                     finally (return target))
+               (%forward-sexp-offset text offset classes))))
     (if end
-        (list (list :insert end ")")
-              (list :insert start "("))
-        (list (list :insert start "()")))))
+        (values (list (list :insert start "(")
+                      (list :insert (1+ end) ")"))
+                :as-listed)
+        (values (list (list :insert start "(")
+                      (list :insert (1+ start) ")"))
+                :as-listed))))
 
 (defun %splice-edits (text classes offset)
   "Remove the enclosing list's delimiters, keeping its contents in place."
@@ -107,12 +165,21 @@ plain `insert a balanced pair' command."
       (values start end))))
 
 (defun %raise-edits (text classes offset)
-  "Replace the enclosing list with the expression at OFFSET.
-
-The expression has to lie strictly inside the list, otherwise there is nothing
-to raise it out of and the operation would delete rather than promote."
+  "Replace the enclosing list with the prefix-count expressions at OFFSET."
   (%with-structural-list-bounds (open close) (text classes offset)
-    (multiple-value-bind (start end)
-        (%raiseable-range text classes offset open close)
-      (when start
-        (%raise-range-edits open close start end)))))
+    (let ((end
+            (if (%structural-prefix-p)
+                (loop with position = offset
+                      with target = nil
+                      repeat (max 0 (%command-prefix-count))
+                      for next = (%forward-sexp-offset
+                                  text position classes)
+                      while (and next (> next position) (<= next close))
+                      do (setf target next
+                               position next)
+                      finally (return target))
+                (%forward-sexp-offset text offset classes))))
+      (when end
+        (let ((start (%sexp-skip-forward-filler text classes offset)))
+          (when (%raiseable-range-p open close start end)
+            (%raise-range-edits open close start end)))))))

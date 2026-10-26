@@ -1,4 +1,38 @@
 (in-package #:loom/test)
+(describe
+  "structural editing commands with C-u 4"
+  (it-each
+      ((loom::backward-barf-sexp "(a b)
+" 1 "(a b)
+" 1)
+       (loom::backward-slurp-sexp "a (b)
+" 3 "(a b)
+" 3)
+       (loom::forward-barf-sexp "(a b)
+" 1 "()a b
+" 1)
+       (loom::forward-slurp-sexp "(a) b
+" 1 "(a b
+   )" 1)
+       (loom::raise-sexp "((a b c d e) z)
+" 2 "(a b c d z)
+" 1)
+       (loom::splice-sexp "(a (b c) d)
+" 4 "(a b c d)
+" 3)
+       (loom::wrap-round "a b
+" 0 "(a b)
+" 1))
+      "C-u 4 ~S transforms ~S at ~D into ~S"
+      (command content offset expected expected-column)
+    (%with-selected-buffer-state (buffer content)
+      (progn
+  (buffer-set-major-mode buffer :common-lisp)
+  (buffer-set-point buffer 0 offset))
+      (let ((loom/core/command:*current-prefix-argument* 4))
+        (funcall command))
+      (expect (buffer-text buffer) :to-equal expected)
+      (expect (buffer-point-column buffer) :to-equal expected-column))))
 
 (describe
   "structural command definition"
@@ -143,6 +177,23 @@
       (expect (buffer-text buffer) :not :to-equal content)
       (buffer-undo buffer)
       (expect (buffer-text buffer) :to-equal content)))
+  (it-each
+      ((loom::backward-barf-sexp "(a b)
+" 1 1)
+       (loom::raise-sexp "(a (b) c)
+" 4 4)
+       (loom::wrap-round "a b
+" 0 0))
+      "~S restores point to the invocation position after undo"
+      (command content offset expected-column)
+    (%with-selected-buffer-state (buffer content)
+      (buffer-set-point buffer 0 offset)
+      (buffer-record-undo-boundary buffer)
+      (funcall command)
+      (buffer-undo buffer)
+      (expect (buffer-text buffer) :to-equal content)
+      (expect (buffer-point-line buffer) :to-equal 0)
+      (expect (buffer-point-column buffer) :to-equal expected-column)))
   (it-each
       ((loom::forward-slurp-sexp "(a) b" 1)
        (loom::forward-barf-sexp "(a b)" 1)

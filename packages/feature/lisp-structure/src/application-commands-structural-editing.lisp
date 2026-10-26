@@ -1,15 +1,47 @@
 (in-package #:loom)
 
 (defun %run-structural-command (edit-function buffer text offset start)
-  (multiple-value-bind (edits application-order)
+  (multiple-value-bind (edits application-order reindent-offset point-offset)
       (funcall edit-function text (%sexp-syntax-classes text) offset)
     (when edits
       (when (loom/core/buffer:buffer-read-only-p buffer)
         (error "Buffer is read-only: #<buffer ~A>"
                (loom/core/buffer:buffer-name buffer)))
       (%apply-structural-edits buffer start edits application-order)
-      (%move-point-to-offset
-       buffer (+ start (%structural-adjusted-offset edits offset))))))
+      (let* ((adjusted-offset
+               (or point-offset (%structural-adjusted-offset edits offset)))
+             (absolute-offset (+ start adjusted-offset)))
+        (%move-point-to-offset buffer absolute-offset)
+        (when reindent-offset
+          (let* ((point-position (buffer-offset-position buffer absolute-offset))
+                 (indent-position
+                   (buffer-offset-position buffer (+ start reindent-offset)))
+                 (point-line (buffer-position-line point-position))
+                 (point-column (buffer-position-column point-position))
+                 (indent-line (buffer-position-line indent-position))
+                 (line-before (buffer-line buffer indent-line))
+                 (old-indentation
+                   (loop for character across line-before
+                         while (or (char= character #\Space)
+                                   (char= character #\Tab))
+                         count 1)))
+            (%move-point-to-offset buffer (+ start reindent-offset))
+            (loom/feature/mode:indent-for-tab-command)
+            (let* ((line-after (buffer-line buffer point-line))
+                   (new-indentation
+                     (loop for character across line-after
+                           while (or (char= character #\Space)
+                                     (char= character #\Tab))
+                           count 1))
+                   (restored-column
+                     (if (= point-line indent-line)
+                         (if (< point-column old-indentation)
+                             (min point-column new-indentation)
+                             (+ new-indentation
+                                (- point-column old-indentation)))
+                         point-column)))
+              (loom/core/buffer:buffer-set-point
+               buffer point-line restored-column))))))))
 
 (defmacro define-structural-command (name documentation edit-function)
   "Define a zero-argument structural editing command.

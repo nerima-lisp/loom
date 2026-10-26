@@ -1,4 +1,15 @@
 (in-package #:loom/test)
+(describe
+  "kill-sexp with C-u 4"
+  (it
+    "kills up to four following expressions and stops at the buffer end"
+    (%with-selected-buffer-state (buffer "(a b) c
+")
+      (buffer-set-point buffer 0 0)
+      (let ((loom/core/command:*current-prefix-argument* 4))
+        (loom::kill-sexp))
+      (expect (buffer-text buffer) :to-equal "")
+      (expect (buffer-point-column buffer) :to-equal 0))))
 
 (describe
   "structural motion command definition"

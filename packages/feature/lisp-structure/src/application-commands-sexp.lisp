@@ -53,13 +53,25 @@ skips line comments and nested block comments."
   %down-list-offset)
 
 (defun kill-sexp ()
-  "Kill the S-expression after point and push it onto the kill ring (C-M-k).
-
-Adjacent kill commands coalesce into one kill-ring entry, the same way
-kill-word and kill-line do, so C-M-k C-M-k yanks back both expressions."
+  "Kill S-expressions after point and push them onto the kill ring (C-M-k)."
   (loom/core/editor-session:editor-state-clear-last-yank *editor-state*)
   (multiple-value-bind (buffer text offset start) (%sexp-motion-context)
-    (let ((end (%forward-sexp-offset text offset)))
+    (let* ((prefixed-p (%structural-prefix-p))
+           (count (if prefixed-p (max 0 (%command-prefix-count)) 1))
+           (end
+             (loop with position = offset
+                   with target = nil
+                   with consumed = nil
+                   for step from 1 to count
+                   for next = (%forward-sexp-offset text position)
+                   do (if (and next (> next position))
+                          (setf target next
+                                position next
+                                consumed t)
+                          (return (if (and prefixed-p consumed)
+                                      (length text)
+                                      target)))
+                   finally (return target))))
       (when (and end (> end offset))
         (when (loom/core/buffer:buffer-read-only-p buffer)
           (%move-point-to-offset buffer (+ start end))
@@ -67,6 +79,6 @@ kill-word and kill-line do, so C-M-k C-M-k yanks back both expressions."
                  (loom/core/buffer:buffer-name buffer)))
         (%kill-between-offsets buffer (+ start offset) (+ start end)
                                :coalesce (editor-state-last-command-kill-p
-                                          *editor-state*)))))
-  (setf (editor-state-last-command-kill-p *editor-state*) t)
+                                          *editor-state*))))
+    (setf (editor-state-last-command-kill-p *editor-state*) t))
   nil)

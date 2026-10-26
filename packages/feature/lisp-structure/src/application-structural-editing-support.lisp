@@ -4,6 +4,10 @@
   (let ((end (%sexp-forward-list-end text classes open)))
     (when end
       (1- end))))
+(defun %structural-prefix-p ()
+  "Whether a structural command has a prefix different from the replay default."
+  (let ((argument loom/core/command:*current-prefix-argument*))
+    (and argument (/= argument 1))))
 
 (defun %structural-list-bounds (text classes offset)
   "Return (VALUES OPEN CLOSE) for the list enclosing OFFSET.
