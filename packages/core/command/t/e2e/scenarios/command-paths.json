@@ -12,7 +12,8 @@
       "entry_mode": "open-mx",
       "initial_bytes": "abc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [0, 4],
+      "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "M-x ",
       "expected_screen": [{"region": "body", "text": "abc"}]
     },

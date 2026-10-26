@@ -66,7 +66,15 @@ def _validate_case(case, index):
         or any(type(value) is not int or value < 0 for value in cursor)
     ):
         raise CommandPathScenarioError(
-            f"{location}.expected_cursor must be a body-relative row and column"
+            f"{location}.expected_cursor must be a region-relative row and column"
+        )
+    cursor_region = case.get("expected_cursor_region", "body")
+    if not isinstance(cursor_region, str) or cursor_region not in {
+        "body",
+        "minibuffer",
+    }:
+        raise CommandPathScenarioError(
+            f"{location}.expected_cursor_region must be body or minibuffer"
         )
     _validate_screen_expectations(case.get("expected_screen"), f"{location}.expected_screen")
 
@@ -237,9 +245,9 @@ def _assert_screen(session, expectations):
         )
 
 
-def _assert_body_cursor(session, expected):
-    if session.observe_cursor(expected=tuple(expected), region="body") is not True:
-        raise AssertionError(f"body cursor did not equal {tuple(expected)!r}")
+def _assert_cursor(session, expected, region):
+    if session.observe_cursor(expected=tuple(expected), region=region) is not True:
+        raise AssertionError(f"{region} cursor did not equal {tuple(expected)!r}")
 
 
 def _save_and_assert(session, path, expected_bytes):
@@ -260,8 +268,19 @@ def _save_and_assert_precondition(session, path, expected_bytes):
 
 def _assert_final_state(session, case, path, expected_bytes, *, save=False):
     _assert_minibuffer(session, case["expected_minibuffer"])
+    for expectation in case["expected_screen"]:
+        session.wait_for_region_exact_text(
+            expectation["region"],
+            expectation["text"],
+            index=expectation.get("index", 0),
+            strip_right=True,
+        )
     _assert_screen(session, case["expected_screen"])
-    _assert_body_cursor(session, case["expected_cursor"])
+    _assert_cursor(
+        session,
+        case["expected_cursor"],
+        case.get("expected_cursor_region", "body"),
+    )
     expected_bytes = expected_bytes.encode("utf-8")
     if save:
         _save_and_assert(session, path, expected_bytes)
@@ -322,9 +341,20 @@ def _run_r2(session, case, path):
 
 
 def _assert_effect_state(session, case):
+    for expectation in case["effect_screen"]:
+        session.wait_for_region_exact_text(
+            expectation["region"],
+            expectation["text"],
+            index=expectation.get("index", 0),
+            strip_right=True,
+        )
     _assert_minibuffer(session, case["expected_minibuffer"])
     _assert_screen(session, case["effect_screen"])
-    _assert_body_cursor(session, case["expected_cursor"])
+    _assert_cursor(
+        session,
+        case["expected_cursor"],
+        case.get("expected_cursor_region", "body"),
+    )
 
 
 def _run_r3(session, case, path):
@@ -334,6 +364,7 @@ def _run_r3(session, case, path):
 
     if operation == "read-only":
         _send_mx(session, case["read_only_command"])
+        session.wait_for_region_text("minibuffer", case["expected_minibuffer"])
         _send_keys(session, case["command_keys"])
         _assert_final_state(session, case, path, case["expected_bytes"])
         return
@@ -341,11 +372,11 @@ def _run_r3(session, case, path):
     if operation == "macro-replay":
         _send_keys(session, ["C-x", "("])
         _send_keys(session, case["command_keys"])
-        _send_keys(session, ["C-x", ")"])
         session.wait_for_region_exact_text(
             "body", case["effect_screen"][0]["text"], strip_right=True
         )
-        _send_keys(session, ["C-x", "u"])
+        _send_keys(session, ["C-x", ")"])
+        session.send(keys.ctrl("x") + keys.text("u"))
         session.wait_for_region_exact_text(
             "body", case["restore_screen"][0]["text"], strip_right=True
         )
@@ -360,7 +391,7 @@ def _run_r3(session, case, path):
             )
             replay_results.append(replay_result)
             if replay_index == 0:
-                _send_keys(session, ["C-x", "u"])
+                session.send(keys.ctrl("x") + keys.text("u"))
                 session.wait_for_region_exact_text(
                     "body", case["restore_screen"][0]["text"], strip_right=True
                 )
@@ -377,7 +408,7 @@ def _run_r3(session, case, path):
     )
     _save_and_assert(session, path, expected_effect)
     if operation == "undo":
-        _send_keys(session, ["C-x", "u"])
+        session.send(keys.ctrl("x") + keys.text("u"))
         _assert_final_state(
             session, case, path, case["expected_bytes"], save=True
         )

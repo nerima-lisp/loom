@@ -318,6 +318,40 @@ class CommandPathScenarioTests(unittest.TestCase):
             any(call[0] == "assert_screen" and call[1] == "" for call in calls)
         )
 
+    def test_open_mx_checks_cursor_in_the_minibuffer(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(SCENARIO_DATA)
+            if case["entry_mode"] == "open-mx"
+        )
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertIn(
+            ("observe_cursor", (0, 4), {"region": "minibuffer"}),
+            calls,
+        )
+        self.assertLess(
+            calls.index(
+                ("wait_exact_text", "minibuffer", "M-x", {"strip_right": True})
+            ),
+            calls.index(
+                (
+                    "wait_exact_text",
+                    "body",
+                    "abc",
+                    {"index": 0, "strip_right": True},
+                )
+            ),
+        )
+
     def test_remaining_completion_flows_send_the_declared_terminal_keys(self):
         cases = [
             case
@@ -380,11 +414,21 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = sessions[0].calls
         self.assertIn(("send", b"\x04"), calls)
-        self.assertIn(("send", b"\x18"), calls)
-        self.assertIn(("send", b"u"), calls)
+        self.assertIn(("send", b"\x18u"), calls)
         self.assertIn(("assert_file_bytes", b"abc\n"), calls)
         self.assertTrue(
             any(call[0] == "assert_screen" and call[1] == "bc" for call in calls)
+        )
+        self.assertLess(
+            calls.index(("send", b"\x04")),
+            calls.index(
+                (
+                    "wait_exact_text",
+                    "body",
+                    "bc",
+                    {"index": 0, "strip_right": True},
+                )
+            ),
         )
 
     def test_r3_read_only_refusal_preserves_exact_bytes(self):
@@ -404,6 +448,10 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = sessions[0].calls
         self.assertIn(("type", "toggle-read-only"), calls)
+        self.assertLess(
+            calls.index(("wait_text", "minibuffer", "Buffer is read-only", {})),
+            calls.index(("send", b"\x04")),
+        )
         self.assertIn(("send", b"\x04"), calls)
         self.assertIn(("assert_screen", "Buffer is read-only", "exact", {
             "region": "minibuffer", "strip_right": True,
@@ -435,6 +483,17 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertEqual(
             [call[2] for call in calls if call[0] == "observe_file_bytes"],
             ["precondition", "precondition"],
+        )
+        self.assertEqual(
+            sum(call == ("send", b"\x18u") for call in calls),
+            2,
+        )
+        self.assertGreaterEqual(
+            sum(
+                call[:3] == ("wait_exact_text", "body", "bc")
+                for call in calls
+            ),
+            3,
         )
 
 
