@@ -9,5 +9,5 @@
   :keys '(((:control #\x) #\r #\d)) :keymap :global :group "session and registers" :help "C-x r d Delete bookmark" :help-order 22
   :mutates nil :prompts '(:completion) :needs-region nil :external '() :modes '(:all))
 (register-command-spec :feature/bookmark "list-bookmarks" "list-bookmarks" #'loom/feature/bookmark::list-bookmarks
-  :keys '() :keymap :global :group "session and registers" :help nil :help-order nil
+  :keys '(((:control #\x) #\r #\l)) :keymap :global :group "session and registers" :help nil :help-order nil
   :mutates nil :prompts '() :needs-region nil :external '() :modes '(:all))

@@ -111,7 +111,50 @@
       (setf (editor-state-file-tree *editor-state*) (%fresh-file-tree dir))
       (loom/feature/file-tree:file-tree-select-next)
       (loom/feature/file-tree:file-tree-delete-command)
-      (expect (host-kit:path-exists-p path) :to-be-falsy))))
+      (expect (host-kit:path-exists-p path) :to-be-falsy)))
+  (it
+    "routes local commands only while the sidebar is shown and preserves mode bindings"
+    (let* ((*editor-state* (%fresh-editor-state ""))
+           (buffer (%selected-test-buffer))
+           (session
+             (loom/core/editor-session:editor-state-session *editor-state*))
+           (global-keymap
+             (loom/core/command:install-default-keybindings
+              (loom/core/command:make-keymap :name "global")))
+           (tree (make-file-tree "/root/"))
+           (local-key
+             (loom/core/command:defkeys-key-sequence
+              '((:control #\c) #\n)))
+           (mode-key
+             (loom/core/command:defkeys-key-sequence '(:alt #\;))))
+      (loom/core/buffer:buffer-set-major-mode buffer :python)
+      (setf (loom/core/editor-session:editor-state-keymap *editor-state*)
+            global-keymap
+            (editor-state-file-tree *editor-state*) tree)
+      (expect (keymap-lookup global-keymap local-key) :to-be nil)
+      (let ((hidden-keymap
+              (loom/core/command:keymap-for-buffer
+               session buffer global-keymap)))
+        (expect (keymap-lookup hidden-keymap local-key) :to-be nil))
+      (file-tree-toggle tree)
+      (let ((visible-keymap
+              (loom/core/command:keymap-for-buffer
+               session buffer global-keymap)))
+        (multiple-value-bind (binding owner)
+            (keymap-lookup visible-keymap local-key)
+          (expect binding :to-equal "file-tree-select-next")
+          (expect (loom/core/command::keymap-name owner)
+                  :to-equal "file-tree-local"))
+        (multiple-value-bind (binding owner)
+            (keymap-lookup visible-keymap mode-key)
+          (expect binding
+                  :to-equal
+                  (loom/core/command:command-id-for-function
+                   (function loom/feature/mode:comment-dwim)))
+          (expect (eq owner
+                      (loom/feature/mode:major-mode-keymap
+                       :python global-keymap))
+                  :to-be t))))))
 
   (it
     "selected-path mutations do nothing when the file tree has no selection"

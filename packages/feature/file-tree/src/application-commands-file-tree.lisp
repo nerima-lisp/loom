@@ -93,3 +93,21 @@
  path
  (file-tree-delete tree path)
  (%invalidate-file-tree-path path))
+(progn
+  (defun %file-tree-keymap-provider (session buffer fallback-keymap)
+    (declare (ignore session buffer))
+    (let ((tree (and *editor-state*
+                     (editor-state-file-tree *editor-state*))))
+      (when (and tree (file-tree-visible-p tree))
+        (let ((keymap
+                (loom/core/command:make-keymap
+                 :parent fallback-keymap
+                 :name "file-tree-local")))
+          (loom/core/command:install-default-keybindings
+           keymap :keymap-name :file-tree-local)
+          keymap))))
+  (eval-when (:load-toplevel :execute)
+    (loom/core/command:register-buffer-keymap-provider
+     :feature/file-tree
+     (function %file-tree-keymap-provider)
+     :priority 100)))

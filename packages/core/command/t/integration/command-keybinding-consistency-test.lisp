@@ -15,11 +15,24 @@
 
 (describe
   "keybinding / M-x registry consistency"
-  (it "resolves every keybound ID to a registered command and M-x name"
-    (let* ((keymap (make-keymap))
-           (ids (progn
-                  (loom/core/command:install-default-keybindings keymap)
-                  (%keymap-bound-command-ids keymap)))
+  (it "resolves every keybound ID to a registered command and M-x name across declared keymaps"
+    (let* ((keymap-names
+             (remove-duplicates
+              (mapcar #'loom/core/command::%command-spec-keymap
+                      (loom/core/command:command-specs))
+              :test #'eq))
+           (ids
+             (remove-duplicates
+              (loop for keymap-name in keymap-names
+                    append
+                    (let ((keymap
+                            (make-keymap
+                             :name (string-downcase
+                                    (symbol-name keymap-name)))))
+                      (loom/core/command:install-default-keybindings
+                       keymap :keymap-name keymap-name)
+                      (%keymap-bound-command-ids keymap)))
+              :test #'equal))
            (names (loom/core/command:command-completion-names "")))
       (expect (remove-if #'loom/core/command:find-command-spec ids)
               :to-equal nil)
@@ -167,4 +180,54 @@
                  (equal status :removed))
              :to-be-truthy)
      (expect (if (equal target :unbound) nil target) :to-equal effective)
-     (expect (keymap-lookup keymap sequence) :to-equal effective))))))))))
+     (expect (keymap-lookup keymap sequence) :to-equal effective)))))))))
+  (it "composes buffer keymap providers by priority and preserves prior maps"
+    (let ((loom/core/command::*buffer-keymap-providers* nil)
+          (fallback (make-keymap :name "global"))
+          (calls nil)
+          (mode-key (list #\m))
+          (file-tree-key (list #\f))
+          (global-key (list #\g))
+          mode-keymap
+          file-tree-keymap)
+      (keymap-define-key fallback global-key "execute-extended-command")
+      (loom/core/command:register-buffer-keymap-provider
+       :file-tree
+       (lambda (session buffer parent)
+         (declare (ignore session buffer))
+         (setf calls (append calls (list :file-tree))
+               file-tree-keymap
+               (make-keymap :parent parent :name "file-tree-local"))
+         (keymap-define-key file-tree-keymap file-tree-key
+                             "execute-extended-command")
+         file-tree-keymap)
+       :priority 20)
+      (loom/core/command:register-buffer-keymap-provider
+       :mode
+       (lambda (session buffer parent)
+         (declare (ignore session buffer))
+         (setf calls (append calls (list :mode))
+               mode-keymap
+               (make-keymap :parent parent :name "mode-local"))
+         (keymap-define-key mode-keymap mode-key
+                             "execute-extended-command")
+         mode-keymap)
+       :priority 10)
+      (signals error
+        (loom/core/command:register-buffer-keymap-provider
+         :mode (function identity) :priority 30))
+      (let ((active
+              (loom/core/command:keymap-for-buffer nil :test-buffer fallback)))
+        (expect calls :to-equal '(:mode :file-tree))
+        (expect (multiple-value-list
+                 (keymap-lookup active mode-key))
+                :to-equal
+                (list "execute-extended-command" mode-keymap))
+        (expect (multiple-value-list
+                 (keymap-lookup active file-tree-key))
+                :to-equal
+                (list "execute-extended-command" file-tree-keymap))
+        (expect (multiple-value-list
+                 (keymap-lookup active global-key))
+                :to-equal
+                (list "execute-extended-command" fallback))))))

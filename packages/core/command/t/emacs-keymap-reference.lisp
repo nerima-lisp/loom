@@ -121,40 +121,40 @@
      :owner :w3-7b :status :implemented)
     (:id "file-tree-legacy-control-x-control-t"
      :keys (((:control) . #\x) ((:control) . #\t)) :emacs "transpose-lines"
-     :target :unbound :target-map :global :effective :not-asserted
-     :owner :w3-10 :status :pending)
+     :target :unbound :target-map :global :effective nil
+     :owner :w3-10 :status :removed)
     (:id "file-tree-control-x-d"
      :keys (((:control) . #\x) #\d) :emacs "dired"
-     :target "toggle-file-tree" :target-map :global :effective :not-asserted
-     :owner :w3-10 :status :pending)
+     :target "toggle-file-tree" :target-map :global :effective "toggle-file-tree"
+     :owner :w3-10 :status :implemented)
     (:id "list-bookmarks-control-x-r-l"
      :keys (((:control) . #\x) #\r #\l) :emacs "list-bookmarks"
-     :target "list-bookmarks" :target-map :global :effective :not-asserted
-     :owner :w3-10 :status :pending)
+     :target "list-bookmarks" :target-map :global :effective "list-bookmarks"
+     :owner :w3-10 :status :implemented)
     (:id "load-session-m-x"
      :keys nil :emacs :no-default-command :target "load-session"
-     :target-map :extended-command :effective :not-asserted
-     :owner :w3-10 :status :pending)
+     :target-map :extended-command :effective "load-session"
+     :owner :w3-10 :status :implemented)
     (:id "file-tree-next-local"
      :keys (((:control) . #\c) #\n) :emacs :not-established
      :target "file-tree-select-next" :target-map :file-tree-local
-     :effective :not-asserted :owner :w3-10 :status :pending)
+     :effective "file-tree-select-next" :owner :w3-10 :status :implemented)
     (:id "file-tree-previous-local"
      :keys (((:control) . #\c) #\p) :emacs :not-established
      :target "file-tree-select-previous" :target-map :file-tree-local
-     :effective :not-asserted :owner :w3-10 :status :pending)
+     :effective "file-tree-select-previous" :owner :w3-10 :status :implemented)
     (:id "file-tree-open-local"
      :keys (((:control) . #\c) #\o) :emacs :not-established
      :target "file-tree-open-selected" :target-map :file-tree-local
-     :effective :not-asserted :owner :w3-10 :status :pending)
+     :effective "file-tree-open-selected" :owner :w3-10 :status :implemented)
     (:id "file-tree-create-file-local"
      :keys (((:control) . #\c) #\c) :emacs :not-established
      :target "file-tree-create-file" :target-map :file-tree-local
-     :effective :not-asserted :owner :w3-10 :status :pending)
+     :effective "file-tree-create-file" :owner :w3-10 :status :implemented)
     (:id "file-tree-create-directory-local"
      :keys (((:control) . #\c) #\d) :emacs :not-established
      :target "file-tree-create-directory" :target-map :file-tree-local
-     :effective :not-asserted :owner :w3-10 :status :pending)
+     :effective "file-tree-create-directory" :owner :w3-10 :status :implemented)
     (:id "paredit-forward-slurp-local"
      :keys (((:control) . :right)) :emacs "forward-word"
      :target "forward-slurp-sexp" :target-map :lisp-mode-local

@@ -37,8 +37,8 @@ def _wait_for_region_after_refresh(session, region, expected, index=0):
                 index=index,
             )
             return
-        session.send(keys.ctrl("x") + keys.ctrl("t"))
-        session.send(keys.ctrl("x") + keys.ctrl("t"))
+        session.send(keys.ctrl("x") + keys.text("d"))
+        session.send(keys.ctrl("x") + keys.text("d"))
         session.pump()
         if time.monotonic() >= deadline:
             session.observe_screen_text(
@@ -67,11 +67,11 @@ def file_tree_toggle(binary):
 
         with Session(binary, [directory]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("x") + keys.ctrl("t"))
+            session.send(keys.ctrl("x") + keys.text("d"))
             session.wait_for_region_text("screen", "toggle-marker.txt")
             session.wait_for_region_cursor("body", 0)
 
-            session.send(keys.ctrl("x") + keys.ctrl("t"))
+            session.send(keys.ctrl("x") + keys.text("d"))
             session.wait_for_region_cursor("body", 0)
 
             output, code = session.quit()

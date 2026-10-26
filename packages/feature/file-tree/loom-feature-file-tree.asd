@@ -5,7 +5,8 @@
                "loom-feature-files"
                "cl-host-kit"
                "cl-boundary-kit"
-               "cl-concurrent-kit")
+               "cl-concurrent-kit"
+               "loom-feature-mode")
   :serial t
   :components
   ((:module "src"
