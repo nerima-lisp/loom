@@ -9,9 +9,15 @@ Tests rebind this to CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's in-memory fake.")
 (defun %native-path-operation-p (&rest paths)
   #+sbcl
   (and (eq *loom-filesystem* *loom-real-filesystem*)
-       (notany (lambda (path)
-                 (wild-pathname-p (pathname path)))
-               paths))
+       (some (lambda (path)
+               (wild-pathname-p (pathname path)))
+             paths))
+  #-sbcl
+  nil)
+
+(defun %native-file-octet-io-p ()
+  #+sbcl
+  (eq *loom-filesystem* *loom-real-filesystem*)
   #-sbcl
   nil)
 

@@ -141,7 +141,7 @@
        :format (%file-snapshot-format snapshot))))
   (defun %read-file-snapshot (path)
     (when (%file-path-exists-p path)
-      (if (%native-path-operation-p path)
+      (if (%native-file-octet-io-p)
           (let ((octets (%native-read-file-octets path)))
             (multiple-value-bind (text format) (%decode-file-octets octets)
               (%make-file-snapshot
@@ -231,7 +231,7 @@ The string contains newline style and encoding, plus BOM when present. New file 
       (run-session-hooks :before-save *editor-session* buffer)
       (%assert-file-save-current buffer path)
       (let* ((baseline (%file-buffer-snapshot buffer))
-             (native-p (%native-path-operation-p path))
+             (native-p (%native-file-octet-io-p))
              (text (buffer-text buffer))
              (octets (and native-p (%buffer-output-octets buffer baseline)))
              (new-snapshot
