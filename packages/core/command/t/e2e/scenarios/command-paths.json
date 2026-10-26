@@ -405,7 +405,7 @@
       "expected_bytes": "value\n",
       "expected_cursor": [
         0,
-        0
+        7
       ],
       "expected_minibuffer": "Mode: Python",
       "expected_screen": [
@@ -423,7 +423,7 @@
       ],
       "expected_undo_cursor": [
         0,
-        0
+        7
       ]
     },
     {
@@ -551,7 +551,7 @@
         4,
         7
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -902,7 +902,7 @@
         4,
         0
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",

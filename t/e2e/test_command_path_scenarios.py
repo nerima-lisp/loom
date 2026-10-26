@@ -10,6 +10,7 @@ from loom_e2e.deadline import ScenarioDeadlineExceeded
 from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
     _deadline_stage,
+    _key_bytes,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -177,6 +178,9 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
+    def test_c_space_encodes_as_control_at(self):
+        self.assertEqual(_key_bytes("C-space"), b"\x00")
+
     def test_deadline_error_identifies_the_command_path_stage(self):
         with self.assertRaisesRegex(
             ScenarioDeadlineExceeded, r"test/undo \[undo and restore\]: expired"
@@ -557,6 +561,7 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = sessions[0].calls
         self.assertEqual(case["replay_prefix_keys"], ["C-a"])
+        self.assertIn(("type", "start-kbd-macro"), calls)
         self.assertEqual(sum(call == ("send", b"\x01") for call in calls), 1)
         effect_file_assertions = [
             call[1]

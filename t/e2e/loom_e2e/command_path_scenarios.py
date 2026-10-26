@@ -270,6 +270,8 @@ def load_command_path_scenarios(path):
 
 
 def _key_bytes(name):
+    if name == "C-space":
+        return keys.ctrl("@")
     if name.startswith("C-") and len(name) == 3:
         return keys.ctrl(name[2])
     if name.startswith("M-") and len(name) == 3:
@@ -499,7 +501,7 @@ def _run_r3(session, case, path):
 
     if operation == "macro-replay":
         with _deadline_stage(case["name"], "record and undo macro", session=session):
-            _send_keys(session, ["C-x", "("])
+            _send_mx(session, "start-kbd-macro")
             _send_keys(session, case["command_keys"])
             _assert_effect_state(session, case, check_minibuffer=False)
             _send_keys(session, ["C-x", ")"])
