@@ -445,7 +445,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:comment-dwim",
             nix_owner,
-            ["set-mark-command", "save-buffer"],
+            ["comment-line"],
             "key: M-;",
             "Nix code line and a whole-line comment",
             "M-; appends an inline comment marker and toggles the selected comment off",
