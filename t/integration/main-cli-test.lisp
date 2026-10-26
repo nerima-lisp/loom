@@ -73,4 +73,39 @@
                     :timeout 60)))
       (expect (host-kit:process-result-timed-out-p result) :to-be nil)
       (expect (host-kit:process-result-exit-code result) :to-be 0)
-      (expect (host-kit:process-result-stdout result) :to-contain "loom"))))
+      (expect (host-kit:process-result-stdout result) :to-contain "loom")))
+  (it
+   "parses startup positions and all file paths through the public CLI"
+   (let ((startup-context nil))
+     (with-replaced-function
+      (loom::%run-loom
+       (lambda (context)
+         (setf startup-context context)
+         0))
+      (expect
+       (cl-cli:run-app
+        (loom::%make-loom-app)
+        :argv (list "loom" "+2:3" "first.txt" "second.txt"))
+       :to-equal
+       0))
+     (let ((requests
+            (loom/core/editor-session:startup-context-file-requests
+             startup-context)))
+       (expect
+        (mapcar
+         (function loom/core/editor-session:startup-file-request-path)
+         requests)
+        :to-equal
+        (list "first.txt" "second.txt"))
+       (expect
+        (mapcar
+         (function loom/core/editor-session:startup-file-request-line)
+         requests)
+        :to-equal
+        (list 2 1))
+       (expect
+        (mapcar
+         (function loom/core/editor-session:startup-file-request-column)
+         requests)
+        :to-equal
+        (list 3 1))))))

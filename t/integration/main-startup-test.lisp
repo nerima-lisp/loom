@@ -131,6 +131,32 @@
                       (expect (cl-cli:cli-invalid-positional-value-cause condition)
                               :to-be
                               nil))))))
+          (it
+           "saves a missing startup file directly without an external-change prompt"
+           (host-kit:with-temporary-directory (directory)
+                                              (let* ((path (merge-pathnames "created.txt" directory))
+                                                     (*editor-state* nil))
+                                                (expect (probe-file path) :to-be nil)
+                                                (with-replaced-function
+                                                 (loom::%initial-terminal-size
+                                                  (lambda ()
+                                                    (values 80 24)))
+                                                 (loom::%initialize-editor-state (namestring path)))
+                                                (let* ((state *editor-state*)
+                                                       (session (editor-state-session state))
+                                                       (buffer
+                                                        (loom/core/window-tree:window-buffer
+                                                         (loom/core/window-tree:window-tree-selected-window
+                                                          (editor-state-window-tree state))))
+                                                       (loom/core/editor-session:*editor-session* session))
+                                                  (loom/core/buffer:buffer-insert-string buffer "created")
+                                                  (loom/feature/files:save-buffer)
+                                                  (expect (host-kit:read-file-string path) :to-equal "created")
+                                                  (expect
+                                                   (loom:minibuffer-prompt-string (editor-state-minibuffer state))
+                                                   :to-be
+                                                   nil)
+                                                  (expect (loom/core/buffer:buffer-modified-p buffer) :to-be nil)))))
           (it "defaults to \".\" as root when given no argument"
               (multiple-value-bind (file root)
                   (loom::%startup-file-and-root nil)
