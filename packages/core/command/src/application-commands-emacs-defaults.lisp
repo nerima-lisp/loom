@@ -32,16 +32,72 @@
               (:top :bottom)
               (:bottom :middle)))))
 
-  (defun %replace-buffer-offset-range (buffer start end replacement)
-    (let ((start-position (buffer-offset-position buffer start))
-          (end-position (buffer-offset-position buffer end)))
-      (buffer-delete-region
-       buffer
-       (buffer-position-line start-position)
-       (buffer-position-column start-position)
-       (buffer-position-line end-position)
-       (buffer-position-column end-position))
-      (buffer-insert-string buffer replacement)))
+  (defun %replace-buffer-offset-range
+      (buffer start end replacement &key minimal-change-p)
+    (if minimal-change-p
+        (let* ((visible-start (buffer-narrow-start-offset buffer))
+               (text (buffer-visible-text buffer))
+               (original (subseq text
+                                 (- start visible-start)
+                                 (- end visible-start)))
+               (prefix 0)
+               (suffix 0))
+          (loop while (and (< prefix (length original))
+                           (< prefix (length replacement))
+                           (char= (char original prefix)
+                                  (char replacement prefix)))
+                do (incf prefix))
+          (loop while (and (< suffix (- (length original) prefix))
+                           (< suffix (- (length replacement) prefix))
+                           (char= (char original (- (length original) suffix 1))
+                                  (char replacement
+                                        (- (length replacement) suffix 1))))
+                do (incf suffix))
+          (let ((changed-start (+ start prefix))
+                (changed-end (- end suffix))
+                (changed-text
+                  (subseq replacement prefix (- (length replacement) suffix))))
+            (if (or (< changed-start changed-end)
+                    (plusp (length changed-text)))
+                (progn
+                  (if (< changed-start changed-end)
+                      (let ((start-position
+                              (buffer-offset-position buffer changed-start))
+                            (end-position
+                              (buffer-offset-position buffer changed-end)))
+                        (buffer-delete-region
+                         buffer
+                         (buffer-position-line start-position)
+                         (buffer-position-column start-position)
+                         (buffer-position-line end-position)
+                         (buffer-position-column end-position)))
+                      (let ((position
+                              (buffer-offset-position buffer changed-start)))
+                        (buffer-set-point
+                         buffer
+                         (buffer-position-line position)
+                         (buffer-position-column position))))
+                  (unless (string= changed-text "")
+                    (buffer-insert-string buffer changed-text)))
+                (unless (and (= start end)
+                             (string= replacement ""))
+                  (let ((position
+                          (buffer-offset-position
+                           buffer (+ start (length replacement)))))
+                    (buffer-set-point
+                     buffer
+                     (buffer-position-line position)
+                     (buffer-position-column position)))))))
+        (let ((start-position (buffer-offset-position buffer start))
+              (end-position (buffer-offset-position buffer end)))
+          (buffer-delete-region
+           buffer
+           (buffer-position-line start-position)
+           (buffer-position-column start-position)
+           (buffer-position-line end-position)
+           (buffer-position-column end-position))
+          (buffer-insert-string buffer replacement))))
+
 
   (defun transpose-chars ()
     "Transpose the characters before and at point."
@@ -56,13 +112,20 @@
              (= (buffer-point-column buffer)
                 (length (buffer-line buffer (buffer-point-line buffer)))))
            (start (if line-end-p (- point 2) (1- point)))
-           (end (if line-end-p point (1+ point))))
+           (end (if line-end-p point (1+ point)))
+           (start-offset (+ visible-start start))
+           (end-offset (+ visible-start end)))
       (unless (and (>= start 0) (<= end (length text)))
         (error "transpose-chars: point has fewer than two adjacent characters"))
+      (if line-end-p
+          (%replace-buffer-offset-range
+           buffer (1+ start-offset) end-offset "")
+          (%replace-buffer-offset-range
+           buffer start-offset (1+ start-offset) ""))
       (%replace-buffer-offset-range
+       buffer start-offset (1+ start-offset) "")
+      (buffer-insert-string
        buffer
-       (+ visible-start start)
-       (+ visible-start end)
        (concatenate 'string
                     (string (char text (1+ start)))
                     (string (char text start))))))
@@ -263,7 +326,11 @@
                  (point-offset (buffer-point-offset buffer)))
             (when words
               (%replace-buffer-offset-range
-               buffer (+ visible-start start) (+ visible-start end) replacement)
+               buffer
+               (+ visible-start start)
+               (+ visible-start end)
+               replacement
+               :minimal-change-p t)
               (%command-set-point-at-offset
                buffer
                (min point-offset

@@ -41,7 +41,9 @@ available to BUFFER-REDO. Returns BUFFER."
                      until (or (null entry) (eq entry :boundary))
                      collect entry)))
     (when group
-      (push :boundary (%buffer-redo-list buffer))
+      (progn
+        (push :boundary (%buffer-undo-list buffer))
+        (push :boundary (%buffer-redo-list buffer)))
       (dolist (entry group)
         (push (%apply-undo-entry buffer entry
                                  (not (eq (first entry) :insert)))
@@ -54,11 +56,13 @@ available to BUFFER-REDO. Returns BUFFER."
 Redo is a no-op when no explicit redo history remains. A subsequent normal
 edit clears the redo history. Returns BUFFER."
   (%ensure-buffer-writable buffer)
-    (let ((group (loop for entry = (pop (%buffer-redo-list buffer))
-                       until (or (null entry) (eq entry :boundary))
-                       collect entry)))
+  (let ((group (loop for entry = (pop (%buffer-redo-list buffer))
+                     until (or (null entry) (eq entry :boundary))
+                     collect entry)))
+    (when group
+      (push :boundary (%buffer-undo-list buffer))
       (dolist (entry group)
-        (%apply-undo-entry buffer entry)))
+        (%apply-undo-entry buffer entry))))
   buffer)
 
 (defun buffer-record-undo-boundary (buffer)

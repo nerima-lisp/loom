@@ -1,8 +1,6 @@
 (in-package #:loom/test)
 
-(describe
-  "buffer-undo"
-  (it
+(describe "buffer-undo" (it
     "undoes a single insert back to the prior text"
     (let ((buffer (make-buffer :initial-content "hello")))
       (buffer-set-point buffer 0 5)
@@ -101,4 +99,15 @@
       (expect (buffer-line buffer 0) :to-equal "012X789")
       (buffer-undo buffer)
       (expect (buffer-line buffer 0) :to-equal "0123456789")
-      (expect (buffer-point-column buffer) :to-equal 3))))
+      (expect (buffer-point-column buffer) :to-equal 3))) (it
+  "keeps the inverse undo group separate from earlier edits"
+  (let ((buffer (make-buffer :initial-content "a")))
+    (buffer-set-point buffer 0 0)
+    (buffer-insert-string buffer "x")
+    (buffer-record-undo-boundary buffer)
+    (buffer-delete-region buffer 0 0 0 1)
+    (expect (buffer-line buffer 0) :to-equal "a")
+    (buffer-undo buffer)
+    (expect (buffer-line buffer 0) :to-equal "xa")
+    (buffer-undo buffer)
+    (expect (buffer-line buffer 0) :to-equal "a"))))
