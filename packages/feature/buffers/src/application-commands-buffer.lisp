@@ -10,12 +10,7 @@
           :completion-function
           #'%buffer-name-completion-candidates))
    (let ((match
-          (find name
-                (registered-buffers *editor-session*)
-                :key
-                #'buffer-name
-                :test
-                #'string=)))
+          (find-buffer-by-name *editor-session* name)))
      (if match
          (window-set-buffer
           (window-tree-selected-window
@@ -33,12 +28,7 @@
           :completion-function
           #'%buffer-name-completion-candidates))
    (let ((buffer
-          (find name
-                (registered-buffers *editor-session*)
-                :key
-                #'buffer-name
-                :test
-                #'string=)))
+          (find-buffer-by-name *editor-session* name)))
      (cond
        ((null buffer)
         (minibuffer-message minibuffer (format nil "No such buffer: ~A" name)))
