@@ -38,6 +38,8 @@ _MUTATION_CASES = (
 _W3_1 = {
     "universal-argument",
     "execute-extended-command",
+    "delete-indentation",
+    "fill-paragraph",
     "capitalize-word",
     "downcase-word",
     "recenter-top-bottom",

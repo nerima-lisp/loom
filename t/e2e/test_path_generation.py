@@ -153,6 +153,21 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(paths["r1:forward-char:mx"]["lane"], "W3-4")
         self.assertNotIn("r1:legacy-forward:mx", paths)
 
+    def test_w3_1_lane_includes_fill_and_indentation_commands_only(self):
+        catalog = _catalog()
+        catalog.extend(
+            _row(command_id)
+            for command_id in ("fill-paragraph", "delete-indentation")
+        )
+
+        paths = _by_id(generate_required_paths(catalog))
+        for command_id in ("fill-paragraph", "delete-indentation"):
+            self.assertEqual(paths[f"r1:{command_id}:mx"]["lane"], "W3-1")
+
+        catalog.append(_row("future-command"))
+        with self.assertRaisesRegex(CatalogError, "no lane mapping"):
+            generate_required_paths(catalog)
+
     def test_r2_generates_all_prompt_cases_once_per_kind(self):
         ids = set(self.paths_by_id)
         self.assertTrue(
