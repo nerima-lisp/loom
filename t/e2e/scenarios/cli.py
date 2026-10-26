@@ -99,7 +99,7 @@ def help_flag(binary):
     with Session(binary, ["--help"]) as session:
         output, code = session.process.wait()
         session.observe_exit_code(code, expected=0)
-        session.assert_pty_output(output, b"Usage: loom [PATH]")
+        session.assert_pty_output(output, b"Usage: loom [PATH...]")
     _assert_exit_zero("--help", output, code)
 
 
