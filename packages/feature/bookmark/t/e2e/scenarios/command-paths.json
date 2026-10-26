@@ -1,0 +1,813 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/delete-bookmark/key",
+      "path_id": "r1:delete-bookmark:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]}",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Delete bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ]
+    },
+    {
+      "name": "command-path/r1/delete-bookmark/mx",
+      "path_id": "r1:delete-bookmark:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Delete bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/jump-to-bookmark/key",
+      "path_id": "r1:jump-to-bookmark:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22b%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]}",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Jump to bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ]
+    },
+    {
+      "name": "command-path/r1/jump-to-bookmark/mx",
+      "path_id": "r1:jump-to-bookmark:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Jump to bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/list-bookmarks/key",
+      "path_id": "r1:list-bookmarks:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22l%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"l\",\"modifiers\":[]}]}",
+      "commands": [
+        "list-bookmarks"
+      ],
+      "command": "list-bookmarks",
+      "entry_mode": "key",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No bookmarks",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "l"
+      ]
+    },
+    {
+      "name": "command-path/r1/list-bookmarks/mx",
+      "path_id": "r1:list-bookmarks:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "list-bookmarks"
+      ],
+      "command": "list-bookmarks",
+      "entry_mode": "mx",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No bookmarks",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/set-bookmark/key",
+      "path_id": "r1:set-bookmark:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22m%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        14
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Set bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "m"
+      ]
+    },
+    {
+      "name": "command-path/r1/set-bookmark/mx",
+      "path_id": "r1:set-bookmark:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        14
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Set bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/set-bookmark/accept",
+      "path_id": "r2:set-bookmark:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "m"
+      ],
+      "prompt_open": "Set bookmark: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "Research",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Bookmark set: Research",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/set-bookmark/cancel",
+      "path_id": "r2:set-bookmark:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "m"
+      ],
+      "prompt_open": "Set bookmark: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/set-bookmark/empty",
+      "path_id": "r2:set-bookmark:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "m"
+      ],
+      "prompt_open": "Set bookmark: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Bookmark name cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/accept",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "accept",
+      "input_text": "unknown",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: unknown",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/cancel",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/empty",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/invalid",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:invalid",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "invalid",
+      "input_text": "missing-bookmark",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: missing-bookmark",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/accept",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "accept",
+      "input_text": "unknown",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: unknown",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/cancel",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/empty",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/invalid",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:invalid",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "invalid",
+      "input_text": "missing-bookmark",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Unknown bookmark: missing-bookmark",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/set-bookmark/tab",
+      "path_id": "r2:set-bookmark:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "set-bookmark"
+      ],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "m"
+      ],
+      "prompt_open": "Set bookmark: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Bookmark set: a",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "tab_expected": "a"
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/tab",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "jump-to-bookmark"
+      ],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "b"
+      ],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "tab",
+      "input_text": "ho",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "fixture_keys": [
+        "C-x",
+        "r",
+        "m",
+        "h",
+        "o",
+        "m",
+        "e",
+        "RET"
+      ],
+      "tab_expected": "home"
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/tab",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "delete-bookmark"
+      ],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "d"
+      ],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "tab",
+      "input_text": "ho",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Deleted bookmark: home",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "fixture_keys": [
+        "C-x",
+        "r",
+        "m",
+        "h",
+        "o",
+        "m",
+        "e",
+        "RET"
+      ],
+      "tab_expected": "home"
+    },
+    {
+      "name": "command-path/r2/set-bookmark/free-string/history",
+      "path_id": "r2:set-bookmark:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"m\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": ["set-bookmark"],
+      "command": "set-bookmark",
+      "entry_mode": "key",
+      "entry_keys": ["C-x", "r", "m"],
+      "prompt_open": "Set bookmark: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "h",
+      "history_seed_input": "history",
+      "history_expected": "history",
+      "history_next_expected": "h",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Bookmark set: history",
+      "expected_screen": [{"region": "body", "text": "abc"}]
+    },
+    {
+      "name": "command-path/r2/jump-to-bookmark/completion/history",
+      "path_id": "r2:jump-to-bookmark:prompt-1:completion:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": ["jump-to-bookmark"],
+      "command": "jump-to-bookmark",
+      "entry_mode": "key",
+      "entry_keys": ["C-x", "r", "b"],
+      "prompt_open": "Jump to bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "history",
+      "input_text": "h",
+      "history_seed_input": "history",
+      "history_expected": "history",
+      "history_next_expected": "h",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "",
+      "expected_screen": [{"region": "body", "text": "abc"}],
+      "fixture_keys": ["C-x", "r", "m", "h", "i", "s", "t", "o", "r", "y", "RET"]
+    },
+    {
+      "name": "command-path/r2/delete-bookmark/completion/history",
+      "path_id": "r2:delete-bookmark:prompt-1:completion:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": ["delete-bookmark"],
+      "command": "delete-bookmark",
+      "entry_mode": "key",
+      "entry_keys": ["C-x", "r", "d"],
+      "prompt_open": "Delete bookmark: ",
+      "prompt_kind": "completion",
+      "prompt_case": "history",
+      "input_text": "h",
+      "history_seed_input": "history",
+      "history_expected": "history",
+      "history_next_expected": "h",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Unknown bookmark: history",
+      "expected_screen": [{"region": "body", "text": "abc"}],
+      "fixture_keys": ["C-x", "r", "m", "h", "i", "s", "t", "o", "r", "y", "RET"]
+    }
+  ]
+}

@@ -1,0 +1,514 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/call-last-kbd-macro/key",
+      "path_id": "r1:call-last-kbd-macro:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22e%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "call-last-kbd-macro"
+      ],
+      "command": "call-last-kbd-macro",
+      "entry_mode": "key",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Keyboard macro is empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "e"
+      ]
+    },
+    {
+      "name": "command-path/r1/call-last-kbd-macro/mx",
+      "path_id": "r1:call-last-kbd-macro:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "call-last-kbd-macro"
+      ],
+      "command": "call-last-kbd-macro",
+      "entry_mode": "mx",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Keyboard macro is empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/end-kbd-macro/key",
+      "path_id": "r1:end-kbd-macro:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22%29%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\")\",\"modifiers\":[]}]}",
+      "commands": [
+        "end-kbd-macro"
+      ],
+      "command": "end-kbd-macro",
+      "entry_mode": "key",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No keyboard macro is being defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        ")"
+      ]
+    },
+    {
+      "name": "command-path/r1/end-kbd-macro/mx",
+      "path_id": "r1:end-kbd-macro:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "end-kbd-macro"
+      ],
+      "command": "end-kbd-macro",
+      "entry_mode": "mx",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No keyboard macro is being defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/start-kbd-macro/key",
+      "path_id": "r1:start-kbd-macro:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22%28%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"(\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro"
+      ],
+      "command": "start-kbd-macro",
+      "entry_mode": "key",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Defining keyboard macro",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "("
+      ]
+    },
+    {
+      "name": "command-path/r1/start-kbd-macro/mx",
+      "path_id": "r1:start-kbd-macro:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro"
+      ],
+      "command": "start-kbd-macro",
+      "entry_mode": "mx",
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Defining keyboard macro",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/effect",
+      "path_id": "r3:call-last-kbd-macro:effect",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "effect",
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u"
+      ],
+      "command_keys": [
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "aXabc\n",
+      "expected_bytes": "aXabc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "aXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "aXabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/undo",
+      "path_id": "r3:call-last-kbd-macro:undo",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "undo",
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u"
+      ],
+      "command_keys": [
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "aXabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "aXabc"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/read-only",
+      "path_id": "r3:call-last-kbd-macro:read-only",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "save-buffer",
+        "execute-extended-command",
+        "toggle-read-only",
+        "call-last-kbd-macro"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "read-only",
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u",
+        "C-x",
+        "C-s"
+      ],
+      "command_keys": [
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/narrow",
+      "path_id": "r3:call-last-kbd-macro:narrow",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "set-mark-command",
+        "forward-char",
+        "move-end-of-line",
+        "narrow-to-region",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "narrow",
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u",
+        "C-f",
+        "C-@",
+        "C-e"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "Xaabc\n",
+      "expected_bytes": "Xaabc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "aabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "aabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/split-window",
+      "path_id": "r3:call-last-kbd-macro:split-window",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "split-window-below",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "split-window",
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u"
+      ],
+      "command_keys": [
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "aXabc\n",
+      "expected_bytes": "aXabc\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "aXabc"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "aXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "aXabc"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "aXabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/call-last-kbd-macro/prefix-u4",
+      "path_id": "r3:call-last-kbd-macro:prefix-u4",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "universal-argument",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "call-last-kbd-macro",
+      "mutation_case": "prefix-u4",
+      "fixture_keys": [
+        "C-x",
+        "(",
+        "a",
+        "C-x",
+        ")",
+        "C-x",
+        "u"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-x",
+        "e"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "aaaaXabc\n",
+      "expected_bytes": "aaaaXabc\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "aaaaXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "aaaaXabc"
+        }
+      ]
+    }
+  ]
+}

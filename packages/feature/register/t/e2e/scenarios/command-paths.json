@@ -1,0 +1,1369 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/copy-to-register/key",
+      "path_id": "r1:copy-to-register:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Copy region to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ]
+    },
+    {
+      "name": "command-path/r1/copy-to-register/mx",
+      "path_id": "r1:copy-to-register:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Copy region to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/insert-register/key",
+      "path_id": "r1:insert-register:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22i%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Insert register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ]
+    },
+    {
+      "name": "command-path/r1/insert-register/mx",
+      "path_id": "r1:insert-register:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Insert register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/jump-to-register/key",
+      "path_id": "r1:jump-to-register:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22j%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]}",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Jump to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ]
+    },
+    {
+      "name": "command-path/r1/jump-to-register/mx",
+      "path_id": "r1:jump-to-register:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Jump to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/point-to-register/key",
+      "path_id": "r1:point-to-register:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22%20%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]}",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        19
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Point to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ]
+    },
+    {
+      "name": "command-path/r1/point-to-register/mx",
+      "path_id": "r1:point-to-register:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "Xabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        19
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Point to register: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/copy-to-register/accept",
+      "path_id": "r2:copy-to-register:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ],
+      "prompt_open": "Copy region to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "The mark is not set",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/copy-to-register/cancel",
+      "path_id": "r2:copy-to-register:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ],
+      "prompt_open": "Copy region to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/copy-to-register/empty",
+      "path_id": "r2:copy-to-register:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ],
+      "prompt_open": "Copy region to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register name must be exactly one character",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/insert-register/accept",
+      "path_id": "r2:insert-register:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ],
+      "prompt_open": "Insert register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register a does not contain text",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/insert-register/cancel",
+      "path_id": "r2:insert-register:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ],
+      "prompt_open": "Insert register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/insert-register/empty",
+      "path_id": "r2:insert-register:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ],
+      "prompt_open": "Insert register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register name must be exactly one character",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-register/accept",
+      "path_id": "r2:jump-to-register:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ],
+      "prompt_open": "Jump to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register a does not contain a position",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-register/cancel",
+      "path_id": "r2:jump-to-register:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ],
+      "prompt_open": "Jump to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-register/empty",
+      "path_id": "r2:jump-to-register:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ],
+      "prompt_open": "Jump to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register name must be exactly one character",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/point-to-register/accept",
+      "path_id": "r2:point-to-register:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ],
+      "prompt_open": "Point to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Point stored in register a",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/point-to-register/cancel",
+      "path_id": "r2:point-to-register:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ],
+      "prompt_open": "Point to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/point-to-register/empty",
+      "path_id": "r2:point-to-register:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ],
+      "prompt_open": "Point to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register name must be exactly one character",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/effect",
+      "path_id": "r3:insert-register:effect",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "insert-register",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "effect",
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "XXabc\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/undo",
+      "path_id": "r3:insert-register:undo",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "insert-register",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "undo",
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/read-only",
+      "path_id": "r3:insert-register:read-only",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "execute-extended-command",
+        "toggle-read-only",
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "mutation_case": "read-only",
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "Xabc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/r3/insert-register/narrow",
+      "path_id": "r3:insert-register:narrow",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "narrow-to-region",
+        "move-end-of-line",
+        "move-beginning-of-line",
+        "insert-register",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "narrow",
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET",
+        "C-@",
+        "C-e"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "XXabc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/split-window",
+      "path_id": "r3:insert-register:split-window",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "split-window-below",
+        "insert-register",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "split-window",
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "XXabc\n",
+      "expected_cursor": [
+        12,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "XXabc"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "XXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "XXabc"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "XXabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/macro-replay",
+      "path_id": "r3:insert-register:macro-replay",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "start-kbd-macro",
+        "insert-register",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "macro-replay",
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "XXabc\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "Xabc"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/r3/insert-register/prefix-u4",
+      "path_id": "r3:insert-register:prefix-u4",
+      "lane": "W3-10",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]}",
+      "commands": [
+        "set-mark-command",
+        "forward-char",
+        "copy-to-register",
+        "universal-argument",
+        "insert-register",
+        "save-buffer"
+      ],
+      "command": "insert-register",
+      "mutation_case": "prefix-u4",
+      "fixture_keys": [
+        "C-@",
+        "C-f",
+        "C-x",
+        "r",
+        "s",
+        "a",
+        "RET"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-x",
+        "r",
+        "i",
+        "a",
+        "RET"
+      ],
+      "initial_bytes": "Xabc\n",
+      "effect_bytes": "XXabc\n",
+      "expected_bytes": "XXabc\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "XXabc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/copy-to-register/tab",
+      "path_id": "r2:copy-to-register:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ],
+      "prompt_open": "Copy region to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Copied region to register a",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "fixture_keys": [
+        "C-@",
+        "C-f"
+      ],
+      "tab_expected": "a"
+    },
+    {
+      "name": "command-path/r2/insert-register/tab",
+      "path_id": "r2:insert-register:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ],
+      "prompt_open": "Insert register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register a does not contain text",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "tab_expected": "a"
+    },
+    {
+      "name": "command-path/r2/jump-to-register/tab",
+      "path_id": "r2:jump-to-register:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ],
+      "prompt_open": "Jump to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Register a does not contain a position",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "tab_expected": "a"
+    },
+    {
+      "name": "command-path/r2/point-to-register/tab",
+      "path_id": "r2:point-to-register:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ],
+      "prompt_open": "Point to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "a",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Point stored in register a",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "tab_expected": "a"
+    },
+    {
+      "name": "command-path/r2/copy-to-register/free-string/history",
+      "path_id": "r2:copy-to-register:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "copy-to-register"
+      ],
+      "command": "copy-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "s"
+      ],
+      "prompt_open": "Copy region to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_input": "b",
+      "history_expected": "b",
+      "history_next_expected": "",
+      "history_cancel": true,
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "fixture_keys": [
+        "C-@",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/r2/insert-register/free-string/history",
+      "path_id": "r2:insert-register:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"i\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "insert-register"
+      ],
+      "command": "insert-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "i"
+      ],
+      "prompt_open": "Insert register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_input": "b",
+      "history_expected": "b",
+      "history_next_expected": "",
+      "history_cancel": true,
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/jump-to-register/free-string/history",
+      "path_id": "r2:jump-to-register:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"j\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "jump-to-register"
+      ],
+      "command": "jump-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "j"
+      ],
+      "prompt_open": "Jump to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_input": "b",
+      "history_expected": "b",
+      "history_next_expected": "",
+      "history_cancel": true,
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/point-to-register/free-string/history",
+      "path_id": "r2:point-to-register:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\" \",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "point-to-register"
+      ],
+      "command": "point-to-register",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "SPC"
+      ],
+      "prompt_open": "Point to register: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_input": "b",
+      "history_expected": "b",
+      "history_next_expected": "",
+      "history_cancel": true,
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
+    }
+  ]
+}

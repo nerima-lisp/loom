@@ -1,0 +1,1222 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/file-tree-create-directory/key",
+      "path_id": "r1:file-tree-create-directory:key:%7B%22keymap%22%3A%22file-tree-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "entry_keys": [
+        "C-c",
+        "d"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Create directory: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-create-directory/mx",
+      "path_id": "r1:file-tree-create-directory:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Create directory: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-create-file/key",
+      "path_id": "r1:file-tree-create-file:key:%7B%22keymap%22%3A%22file-tree-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "entry_keys": [
+        "C-c",
+        "c"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Create file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-create-file/mx",
+      "path_id": "r1:file-tree-create-file:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Create file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-delete/mx",
+      "path_id": "r1:file-tree-delete:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "file-tree-delete"
+      ],
+      "command": "file-tree-delete",
+      "entry_mode": "mx",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-open-selected/key",
+      "path_id": "r1:file-tree-open-selected:key:%7B%22keymap%22%3A%22file-tree-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22o%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"o\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-select-next",
+        "file-tree-open-selected"
+      ],
+      "command": "file-tree-open-selected",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-c",
+        "o"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        },
+        {
+          "key": "C-c"
+        },
+        {
+          "key": "n"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-open-selected/mx",
+      "path_id": "r1:file-tree-open-selected:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-select-next",
+        "execute-extended-command",
+        "file-tree-open-selected"
+      ],
+      "command": "file-tree-open-selected",
+      "entry_mode": "mx",
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        },
+        {
+          "key": "C-c"
+        },
+        {
+          "key": "n"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-rename/mx",
+      "path_id": "r1:file-tree-rename:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "file-tree-rename"
+      ],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-select-next/key",
+      "path_id": "r1:file-tree-select-next:key:%7B%22keymap%22%3A%22file-tree-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-select-next"
+      ],
+      "command": "file-tree-select-next",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-c",
+        "n"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-select-next/mx",
+      "path_id": "r1:file-tree-select-next:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "toggle-file-tree",
+        "execute-extended-command",
+        "file-tree-select-next"
+      ],
+      "command": "file-tree-select-next",
+      "entry_mode": "mx",
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-select-previous/key",
+      "path_id": "r1:file-tree-select-previous:key:%7B%22keymap%22%3A%22file-tree-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-select-previous"
+      ],
+      "command": "file-tree-select-previous",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-c",
+        "p"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/file-tree-select-previous/mx",
+      "path_id": "r1:file-tree-select-previous:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "toggle-file-tree",
+        "file-tree-select-next",
+        "execute-extended-command",
+        "file-tree-select-previous"
+      ],
+      "command": "file-tree-select-previous",
+      "entry_mode": "mx",
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "d"
+        },
+        {
+          "key": "C-c"
+        },
+        {
+          "key": "n"
+        }
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/toggle-file-tree/key",
+      "path_id": "r1:toggle-file-tree:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]}",
+      "commands": [
+        "toggle-file-tree"
+      ],
+      "command": "toggle-file-tree",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "d"
+      ],
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/toggle-file-tree/mx",
+      "path_id": "r1:toggle-file-tree:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-file-tree"
+      ],
+      "command": "toggle-file-tree",
+      "entry_mode": "mx",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-file/free-string/accept",
+      "path_id": "r2:file-tree-create-file:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create file: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "$scenario_dir/created-file.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "created-file.txt",
+          "index": 1,
+          "match": "contains"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "c"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "created-file.txt",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-file/free-string/cancel",
+      "path_id": "r2:file-tree-create-file:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create file: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "$scenario_dir/cancelled-file.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "c"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "buffer.txt",
+          "kind": "file"
+        },
+        {
+          "path": "cancelled-file.txt",
+          "kind": "absent"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-file/free-string/empty",
+      "path_id": "r2:file-tree-create-file:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create file: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "File-tree path escapes root",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "c"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "buffer.txt",
+          "kind": "file"
+        }
+      ],
+      "expected_minibuffer_match": "contains"
+    },
+    {
+      "name": "command-path/r2/file-tree-create-file/free-string/tab",
+      "path_id": "r2:file-tree-create-file:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-file"
+      ],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create file: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "$scenario_dir/tab-created-file.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "tab-created-file.txt",
+          "index": 1,
+          "match": "contains"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "c"
+      ],
+      "tab_expected": "$scenario_dir/tab-created-file.txt",
+      "expected_filesystem": [
+        {
+          "path": "tab-created-file.txt",
+          "kind": "file"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-directory/free-string/accept",
+      "path_id": "r2:file-tree-create-directory:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create directory: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "$scenario_dir/created-directory",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "created-directory",
+          "match": "contains"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "d"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "created-directory",
+          "kind": "directory"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-directory/free-string/cancel",
+      "path_id": "r2:file-tree-create-directory:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create directory: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "$scenario_dir/cancelled-directory",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "d"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "buffer.txt",
+          "kind": "file"
+        },
+        {
+          "path": "cancelled-directory",
+          "kind": "absent"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-directory/free-string/empty",
+      "path_id": "r2:file-tree-create-directory:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create directory: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "File-tree path escapes root",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "d"
+      ],
+      "expected_filesystem": [
+        {
+          "path": "buffer.txt",
+          "kind": "file"
+        }
+      ],
+      "expected_minibuffer_match": "contains"
+    },
+    {
+      "name": "command-path/r2/file-tree-create-directory/free-string/tab",
+      "path_id": "r2:file-tree-create-directory:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "file-tree-create-directory"
+      ],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "fixture_keys": [
+        "C-x",
+        "d",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Create directory: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "$scenario_dir/tab-created-directory",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "tab-created-directory",
+          "match": "contains"
+        }
+      ],
+      "entry_keys": [
+        "C-c",
+        "d"
+      ],
+      "tab_expected": "$scenario_dir/tab-created-directory",
+      "expected_filesystem": [
+        {
+          "path": "tab-created-directory",
+          "kind": "directory"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-rename/free-string/accept",
+      "path_id": "r2:file-tree-rename:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "file-tree-rename"
+      ],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "fixture_keys": [
+        "C-x",
+        "d"
+      ],
+      "fixture_wait": {
+        "region": "screen",
+        "text": "rename-source.txt",
+        "index": 1
+      },
+      "fixture_keys_after_wait": [
+        "C-c",
+        "n",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Rename $fixture_file:rename-source.txt to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "$scenario_dir/renamed-file.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "renamed-file.txt",
+          "match": "contains",
+          "index": 1
+        }
+      ],
+      "expected_filesystem": [
+        {
+          "path": "rename-source.txt",
+          "kind": "absent"
+        },
+        {
+          "path": "renamed-file.txt",
+          "kind": "file"
+        }
+      ],
+      "fixture_files": [
+        {
+          "path": "rename-source.txt",
+          "contents": "original\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-rename/free-string/cancel",
+      "path_id": "r2:file-tree-rename:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "file-tree-rename"
+      ],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "fixture_keys": [
+        "C-x",
+        "d"
+      ],
+      "fixture_wait": {
+        "region": "screen",
+        "text": "rename-source.txt",
+        "index": 1
+      },
+      "fixture_keys_after_wait": [
+        "C-c",
+        "n",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Rename $fixture_file:rename-source.txt to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "$scenario_dir/cancelled-rename.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "expected_filesystem": [
+        {
+          "path": "rename-source.txt",
+          "kind": "file"
+        },
+        {
+          "path": "cancelled-rename.txt",
+          "kind": "absent"
+        }
+      ],
+      "fixture_files": [
+        {
+          "path": "rename-source.txt",
+          "contents": "original\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-rename/free-string/empty",
+      "path_id": "r2:file-tree-rename:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "file-tree-rename"
+      ],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "fixture_keys": [
+        "C-x",
+        "d"
+      ],
+      "fixture_wait": {
+        "region": "screen",
+        "text": "rename-source.txt",
+        "index": 1
+      },
+      "fixture_keys_after_wait": [
+        "C-c",
+        "n",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Rename $fixture_file:rename-source.txt to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "File-tree path escapes root",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        }
+      ],
+      "expected_filesystem": [
+        {
+          "path": "rename-source.txt",
+          "kind": "file"
+        }
+      ],
+      "fixture_files": [
+        {
+          "path": "rename-source.txt",
+          "contents": "original\n"
+        }
+      ],
+      "expected_minibuffer_match": "contains"
+    },
+    {
+      "name": "command-path/r2/file-tree-rename/free-string/tab",
+      "path_id": "r2:file-tree-rename:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "file-tree-rename"
+      ],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "fixture_keys": [
+        "C-x",
+        "d"
+      ],
+      "fixture_wait": {
+        "region": "screen",
+        "text": "rename-source.txt",
+        "index": 1
+      },
+      "fixture_keys_after_wait": [
+        "C-c",
+        "n",
+        "C-c",
+        "n"
+      ],
+      "prompt_open": "Rename $fixture_file:rename-source.txt to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "$scenario_dir/tab-renamed-file.txt",
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "file tree"
+        },
+        {
+          "region": "screen",
+          "text": "tab-renamed-file.txt",
+          "match": "contains",
+          "index": 1
+        }
+      ],
+      "tab_expected": "$scenario_dir/tab-renamed-file.txt",
+      "expected_filesystem": [
+        {
+          "path": "rename-source.txt",
+          "kind": "absent"
+        },
+        {
+          "path": "tab-renamed-file.txt",
+          "kind": "file"
+        }
+      ],
+      "fixture_files": [
+        {
+          "path": "rename-source.txt",
+          "contents": "original\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-file/free-string/history",
+      "path_id": "r2:file-tree-create-file:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": ["file-tree-create-file"],
+      "command": "file-tree-create-file",
+      "entry_mode": "key",
+      "fixture_keys": ["C-x", "d", "C-c", "n"],
+      "prompt_open": "Create file: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "../history-",
+      "history_seed_input": "../history-seed.txt",
+      "history_expected": "../history-seed.txt",
+      "history_next_expected": "../history-",
+      "history_cancel": true,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [{"region": "body", "text": "file tree"}],
+      "entry_keys": ["C-c", "c"],
+      "expected_filesystem": [{"path": "buffer.txt", "kind": "file"}]
+    },
+    {
+      "name": "command-path/r2/file-tree-create-directory/free-string/history",
+      "path_id": "r2:file-tree-create-directory:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"file-tree-local\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"control\"]},{\"key\":\"d\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": ["file-tree-create-directory"],
+      "command": "file-tree-create-directory",
+      "entry_mode": "key",
+      "fixture_keys": ["C-x", "d", "C-c", "n"],
+      "prompt_open": "Create directory: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "../history-",
+      "history_seed_input": "../history-seed-directory",
+      "history_expected": "../history-seed-directory",
+      "history_next_expected": "../history-",
+      "history_cancel": true,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [{"region": "body", "text": "file tree"}],
+      "entry_keys": ["C-c", "d"],
+      "expected_filesystem": [{"path": "buffer.txt", "kind": "file"}]
+    },
+    {
+      "name": "command-path/r2/file-tree-rename/free-string/history",
+      "path_id": "r2:file-tree-rename:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": ["file-tree-rename"],
+      "command": "file-tree-rename",
+      "entry_mode": "mx",
+      "fixture_keys": ["C-x", "d"],
+      "fixture_wait": {"region": "screen", "text": "rename-source.txt", "index": 1},
+      "fixture_keys_after_wait": ["C-c", "n", "C-c", "n"],
+      "prompt_open": "Rename $fixture_file:rename-source.txt to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "../history-",
+      "history_seed_input": "../history-seed-rename.txt",
+      "history_expected": "../history-seed-rename.txt",
+      "history_next_expected": "../history-",
+      "history_cancel": true,
+      "columns": 240,
+      "initial_bytes": "file tree\n",
+      "expected_bytes": "file tree\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [{"region": "body", "text": "file tree"}],
+      "expected_filesystem": [{"path": "rename-source.txt", "kind": "file"}],
+      "fixture_files": [{"path": "rename-source.txt", "contents": "original\n"}]
+    }
+  ]
+}

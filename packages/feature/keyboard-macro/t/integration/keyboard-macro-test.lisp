@@ -237,50 +237,54 @@
                                          (keyboard-macro-replaying-p macro)
                                          :to-be
                                          nil))))
-          (it "keeps a pending key sequence while replaying a macro"
+          (it "records and replays a multi-key command sequence"
               (%with-minibuffer-state (minibuffer "")
-                                      (let* ((invoked nil)
+                                      (let* ((invocations 0)
                                              (keymap (make-keymap))
+                                             (keymap-state
+                                              (make-keymap-state keymap))
                                              (macro (make-keyboard-macro))
                                              (first-descriptor
-                                              (cons '(:control) #\x))
-                                             (second-descriptor (cons nil #\q)))
-                                        (let ((command
-                                               (lambda ()
-                                                 (setf invoked t)
-                                                 :done)))
-                                          (%register-test-command command)
-                                          (keymap-define-key keymap
-                                                             (list
-                                                              first-descriptor
-                                                              second-descriptor)
-                                                             command))
-                                        (setf (editor-state-keymap
-                                               *editor-state*) keymap
+                                              (cons (list :control) #\x))
+                                             (second-descriptor (cons nil #\q))
+                                             (command
+                                              (lambda ()
+                                                (incf invocations))))
+                                        (%register-test-command command)
+                                        (keymap-define-key
+                                         keymap
+                                         (list first-descriptor second-descriptor)
+                                         command)
+                                        (setf (editor-state-keymap *editor-state*)
+                                              keymap
                                               (editor-state-keyboard-macro
-                                               *editor-state*) macro)
-                                        (keyboard-macro-start-recording macro)
-                                        (keyboard-macro-record-event macro
-                                                                     (make-keyboard-macro-event
-                                                                      :kind
-                                                                      :key
-                                                                      :value
-                                                                      first-descriptor))
-                                        (keyboard-macro-record-event macro
-                                                                     (make-keyboard-macro-event
-                                                                      :kind
-                                                                      :key
-                                                                      :value
-                                                                      second-descriptor))
-                                        (keyboard-macro-stop-recording macro)
-                                        (call-last-kbd-macro)
-                                        (expect invoked :to-be-truthy)
-                                        (expect (minibuffer-active-p minibuffer)
-                                                :to-be-falsy)
-                                        (expect
-                                         (keyboard-macro-replaying-p macro)
-                                         :to-be
-                                         nil))))
+                                               *editor-state*)
+                                              macro)
+                                        (flet ((dispatch (code modifiers)
+                                                 (loom::%dispatch-key-event
+                                                  (cl-tty-kit:make-key-event
+                                                   :type :character
+                                                   :code code
+                                                   :modifiers modifiers)
+                                                  keymap-state)))
+                                          (keyboard-macro-start-recording macro)
+                                          (dispatch #\x (list :control))
+                                          (dispatch #\q nil)
+                                          (keyboard-macro-stop-recording macro)
+                                          (expect invocations :to-equal 1)
+                                          (expect
+                                           (mapcar
+                                            (function keyboard-macro-event-value)
+                                            (keyboard-macro-events macro))
+                                           :to-equal
+                                           (list first-descriptor
+                                                 second-descriptor))
+                                          (call-last-kbd-macro)
+                                          (expect invocations :to-equal 2)
+                                          (expect
+                                           (keyboard-macro-recording-p macro)
+                                           :to-be
+                                           nil)))))
           (it
            "routes keyboard-macro events through key-input hooks before dispatch"
            (%with-minibuffer-state (minibuffer "")

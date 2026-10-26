@@ -1,0 +1,543 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/kill-workspace/key",
+      "path_id": "r1:kill-workspace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22k%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"k\",\"modifiers\":[]}]}",
+      "commands": [
+        "kill-workspace"
+      ],
+      "command": "kill-workspace",
+      "entry_mode": "key",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Cannot delete the final workspace",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Cannot delete the final workspace"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "t",
+        "k"
+      ]
+    },
+    {
+      "name": "command-path/r1/kill-workspace/mx",
+      "path_id": "r1:kill-workspace:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "kill-workspace"
+      ],
+      "command": "kill-workspace",
+      "entry_mode": "mx",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Cannot delete the final workspace",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Cannot delete the final workspace"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/new-workspace/key",
+      "path_id": "r1:new-workspace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%222%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"2\",\"modifiers\":[]}]}",
+      "commands": [
+        "new-workspace"
+      ],
+      "command": "new-workspace",
+      "entry_mode": "key",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: workspace-2",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: workspace-2"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "t",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/r1/new-workspace/mx",
+      "path_id": "r1:new-workspace:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "new-workspace"
+      ],
+      "command": "new-workspace",
+      "entry_mode": "mx",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: workspace-2",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: workspace-2"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/next-workspace/key",
+      "path_id": "r1:next-workspace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "next-workspace"
+      ],
+      "command": "next-workspace",
+      "entry_mode": "key",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: main",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: main"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "t",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/r1/next-workspace/mx",
+      "path_id": "r1:next-workspace:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "next-workspace"
+      ],
+      "command": "next-workspace",
+      "entry_mode": "mx",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: main",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: main"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/previous-workspace/key",
+      "path_id": "r1:previous-workspace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"p\",\"modifiers\":[]}]}",
+      "commands": [
+        "previous-workspace"
+      ],
+      "command": "previous-workspace",
+      "entry_mode": "key",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: main",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: main"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "t",
+        "p"
+      ]
+    },
+    {
+      "name": "command-path/r1/previous-workspace/mx",
+      "path_id": "r1:previous-workspace:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "previous-workspace"
+      ],
+      "command": "previous-workspace",
+      "entry_mode": "mx",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: main",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Workspace: main"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/switch-workspace/key",
+      "path_id": "r1:switch-workspace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22o%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]}",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        21
+      ],
+      "expected_minibuffer": "Switch to workspace: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Switch to workspace:"
+        }
+      ],
+      "expected_cursor_region": "minibuffer",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ]
+    },
+    {
+      "name": "command-path/r1/switch-workspace/mx",
+      "path_id": "r1:switch-workspace:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        21
+      ],
+      "expected_minibuffer": "Switch to workspace: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Switch to workspace:"
+        }
+      ],
+      "expected_cursor_region": "minibuffer"
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/accept",
+      "path_id": "r2:switch-workspace:prompt-1:completion:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "accept",
+      "input_text": "main",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: main",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/cancel",
+      "path_id": "r2:switch-workspace:prompt-1:completion:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "cancel",
+      "input_text": "main",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/empty",
+      "path_id": "r2:switch-workspace:prompt-1:completion:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No such workspace: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/invalid",
+      "path_id": "r2:switch-workspace:prompt-1:completion:invalid",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "invalid",
+      "input_text": "missing",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No such workspace: missing",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/tab",
+      "path_id": "r2:switch-workspace:prompt-1:completion:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "tab",
+      "input_text": "work",
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Workspace: workspace-2",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ],
+      "fixture_keys": [
+        "C-x",
+        "t",
+        "2"
+      ],
+      "tab_expected": "workspace-2"
+    },
+    {
+      "name": "command-path/r2/switch-workspace/completion/history",
+      "path_id": "r2:switch-workspace:prompt-1:completion:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"t\",\"modifiers\":[]},{\"key\":\"o\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-workspace"
+      ],
+      "command": "switch-workspace",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "t",
+        "o"
+      ],
+      "prompt_open": "Switch to workspace: ",
+      "prompt_kind": "completion",
+      "prompt_case": "history",
+      "input_text": "w",
+      "history_seed_input": "workspace-2",
+      "history_expected": "workspace-2",
+      "history_next_expected": "w",
+      "history_cancel": true,
+      "initial_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_bytes": "WORKSPACE-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WORKSPACE-COMMAND-PATH"
+        }
+      ],
+      "fixture_keys": [
+        "C-x",
+        "t",
+        "2"
+      ]
+    }
+  ]
+}

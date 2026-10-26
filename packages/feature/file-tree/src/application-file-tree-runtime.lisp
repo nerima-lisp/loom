@@ -33,4 +33,11 @@
       (loom-concurrent-runtime-prefetch
        runtime
        (file-tree-prefetch-paths (editor-state-file-tree state))))))
+(defun file-tree-runtime-background-work-p (state)
+  "Whether a file-tree directory listing still needs to be drained."
+  (let ((runtime (editor-state-concurrent-runtime state)))
+    (and runtime
+         (plusp
+          (hash-table-count
+           (loom-concurrent-runtime-pending runtime))))))
 

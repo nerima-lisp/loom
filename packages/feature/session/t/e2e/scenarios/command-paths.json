@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/load-session/mx",
+      "path_id": "r1:load-session:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        14
+      ],
+      "expected_minibuffer": "Load session: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Load session:"
+        }
+      ],
+      "expected_cursor_region": "minibuffer"
+    },
+    {
+      "name": "command-path/r1/save-session/key",
+      "path_id": "r1:save-session:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22S%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]}",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_minibuffer": "Save session to: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save session to:"
+        }
+      ],
+      "expected_cursor_region": "minibuffer",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ]
+    },
+    {
+      "name": "command-path/r1/save-session/mx",
+      "path_id": "r1:save-session:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "mx",
+      "cancel_prompt_after_assert": true,
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_minibuffer": "Save session to: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save session to:"
+        }
+      ],
+      "expected_cursor_region": "minibuffer"
+    },
+    {
+      "name": "command-path/r2/load-session/free-string/accept",
+      "path_id": "r2:load-session:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "prompt_open": "Load session: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "$session_file",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session loaded: $session_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "RESTORED"
+        }
+      ],
+      "session_fixture": {
+        "path": "$session_file",
+        "contents": "(:loom-session 5 :buffers ((:name \"*restored*\" :path \"$buffer_file\" :text \"RESTORED\n\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil)) :recent-files () :bookmarks () :command-history (\"$session_file\") :workspaces ((:name \"main\" :layout (:leaf 0 0) :selected-window-index 0)) :current-workspace-index 0)"
+      }
+    },
+    {
+      "name": "command-path/r2/load-session/free-string/cancel",
+      "path_id": "r2:load-session:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "prompt_open": "Load session: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "unused",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/load-session/free-string/empty",
+      "path_id": "r2:load-session:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "prompt_open": "Load session: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session path cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/load-session/free-string/tab",
+      "path_id": "r2:load-session:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "prompt_open": "Load session: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "$session_file",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session loaded: $session_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "RESTORED"
+        }
+      ],
+      "tab_expected": "$session_file",
+      "session_fixture": {
+        "path": "$session_file",
+        "contents": "(:loom-session 5 :buffers ((:name \"*restored*\" :path \"$buffer_file\" :text \"RESTORED\n\" :point-line 0 :point-column 0 :mark-line nil :mark-column nil :modified-p nil)) :recent-files () :bookmarks () :command-history (\"$session_file\") :workspaces ((:name \"main\" :layout (:leaf 0 0) :selected-window-index 0)) :current-workspace-index 0)"
+      }
+    },
+    {
+      "name": "command-path/r2/save-session/free-string/accept",
+      "path_id": "r2:save-session:prompt-1:free-string:accept",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "prompt_open": "Save session to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "$session_file",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session saved: $session_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ]
+    },
+    {
+      "name": "command-path/r2/save-session/free-string/cancel",
+      "path_id": "r2:save-session:prompt-1:free-string:cancel",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "prompt_open": "Save session to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "unused",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ]
+    },
+    {
+      "name": "command-path/r2/save-session/free-string/empty",
+      "path_id": "r2:save-session:prompt-1:free-string:empty",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "prompt_open": "Save session to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session path cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ]
+    },
+    {
+      "name": "command-path/r2/save-session/free-string/tab",
+      "path_id": "r2:save-session:prompt-1:free-string:tab",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "prompt_open": "Save session to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "$session_file",
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Session saved: $session_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ],
+      "tab_expected": "$session_file"
+    },
+    {
+      "name": "command-path/r2/save-session/free-string/history",
+      "path_id": "r2:save-session:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"S\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "save-session"
+      ],
+      "command": "save-session",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "S"
+      ],
+      "prompt_open": "Save session to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "p",
+      "history_seed_input": "previous",
+      "history_expected": "previous",
+      "history_next_expected": "p",
+      "history_cancel": true,
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/load-session/free-string/history",
+      "path_id": "r2:load-session:prompt-1:free-string:history",
+      "lane": "W3-10",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "load-session"
+      ],
+      "command": "load-session",
+      "entry_mode": "mx",
+      "prompt_open": "Load session: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "p",
+      "history_seed_input": "previous",
+      "history_expected": "previous",
+      "history_next_expected": "p",
+      "history_cancel": true,
+      "initial_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_bytes": "SESSION-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "SESSION-COMMAND-PATH"
+        }
+      ]
+    }
+  ]
+}

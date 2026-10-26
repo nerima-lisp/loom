@@ -1,0 +1,434 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/delete-other-windows/key",
+      "path_id": "r1:delete-other-windows:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%221%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"1\",\"modifiers\":[]}]}",
+      "commands": [
+        "delete-other-windows"
+      ],
+      "command": "delete-other-windows",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "1"
+      ]
+    },
+    {
+      "name": "command-path/r1/delete-other-windows/mx",
+      "path_id": "r1:delete-other-windows:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "delete-other-windows"
+      ],
+      "command": "delete-other-windows",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/delete-window/key",
+      "path_id": "r1:delete-window:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%220%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"0\",\"modifiers\":[]}]}",
+      "commands": [
+        "delete-window"
+      ],
+      "command": "delete-window",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "0"
+      ]
+    },
+    {
+      "name": "command-path/r1/delete-window/mx",
+      "path_id": "r1:delete-window:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "delete-window"
+      ],
+      "command": "delete-window",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/other-window/key",
+      "path_id": "r1:other-window:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22o%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"o\",\"modifiers\":[]}]}",
+      "commands": [
+        "other-window"
+      ],
+      "command": "other-window",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "o"
+      ]
+    },
+    {
+      "name": "command-path/r1/other-window/mx",
+      "path_id": "r1:other-window:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "other-window"
+      ],
+      "command": "other-window",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "2"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/scroll-down-command/key",
+      "path_id": "r1:scroll-down-command:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22v%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"v\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "scroll-down-command"
+      ],
+      "command": "scroll-down-command",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "M-v"
+      ]
+    },
+    {
+      "name": "command-path/r1/scroll-down-command/mx",
+      "path_id": "r1:scroll-down-command:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "scroll-down-command"
+      ],
+      "command": "scroll-down-command",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/scroll-up-command/key",
+      "path_id": "r1:scroll-up-command:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22v%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"v\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "scroll-up-command"
+      ],
+      "command": "scroll-up-command",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-v"
+      ]
+    },
+    {
+      "name": "command-path/r1/scroll-up-command/mx",
+      "path_id": "r1:scroll-up-command:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "scroll-up-command"
+      ],
+      "command": "scroll-up-command",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/split-window-below/key",
+      "path_id": "r1:split-window-below:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%222%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"2\",\"modifiers\":[]}]}",
+      "commands": [
+        "split-window-below"
+      ],
+      "command": "split-window-below",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/r1/split-window-below/mx",
+      "path_id": "r1:split-window-below:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "split-window-below"
+      ],
+      "command": "split-window-below",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/split-window-right/key",
+      "path_id": "r1:split-window-right:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%223%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"3\",\"modifiers\":[]}]}",
+      "commands": [
+        "split-window-right"
+      ],
+      "command": "split-window-right",
+      "entry_mode": "key",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "3"
+      ]
+    },
+    {
+      "name": "command-path/r1/split-window-right/mx",
+      "path_id": "r1:split-window-right:mx",
+      "lane": "W3-10",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "split-window-right"
+      ],
+      "command": "split-window-right",
+      "entry_mode": "mx",
+      "initial_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_bytes": "WINDOW-COMMAND-PATH\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "WINDOW-COMMAND-PATH"
+        }
+      ]
+    }
+  ]
+}

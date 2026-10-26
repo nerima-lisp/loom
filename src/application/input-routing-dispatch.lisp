@@ -82,5 +82,5 @@ The outcome is NIL for an unbound key, :PENDING for an incomplete prefix, and
       (error (condition)
         (minibuffer-message (input-routing-decision-minibuffer decision)
                             (princ-to-string condition))))
-    (when (eq dispatched-p :handled)
+    (when (member dispatched-p '(:handled :pending) :test #'eq)
       (%record-dispatched-key-event macro event decision))))

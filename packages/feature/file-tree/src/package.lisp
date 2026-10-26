@@ -57,4 +57,4 @@
                      #:save-buffer
                      #:write-file
                      #:register-recent-file-recorder)
-            (:export #:enable-file-tree-runtime #:shutdown-file-tree-runtime #:refresh-file-tree-runtime))
+            (:export #:enable-file-tree-runtime #:shutdown-file-tree-runtime #:refresh-file-tree-runtime #:file-tree-runtime-background-work-p))
