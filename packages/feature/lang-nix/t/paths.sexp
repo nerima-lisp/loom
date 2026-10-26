@@ -25,6 +25,15 @@
   :observe (:file_bytes)
   :scenario "lang-nix-indentation-control-meta-backslash"
   :lane "W3-7c")
+ (:id "w3-7c:lang-nix:comment-dwim"
+  :commands (:set-mark-command :save-buffer)
+  :rule :r1
+  :entry "key: M-;"
+  :state "Nix code line and a whole-line comment"
+  :outcome "M-; appends an inline comment marker and toggles the selected comment off"
+  :observe (:file_bytes)
+  :scenario "lang-nix-comment-dwim"
+  :lane "W3-7c")
  (:id "w3-7c:lang-nix:pair-completion"
   :commands (:save-buffer)
   :rule :r1

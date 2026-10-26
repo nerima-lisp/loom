@@ -6,7 +6,7 @@
    :nix
    :name "Nix"
    :extensions '("nix")
-   :comment-prefix "#" :comment-start "#" :comment-end nil
+   :comment-prefix "#" :comment-start "# " :comment-end nil
    :skip-closing-delimiter t
    :indentation-width 2 :tab-width 8
    :truncate-lines t :language-id "nix"

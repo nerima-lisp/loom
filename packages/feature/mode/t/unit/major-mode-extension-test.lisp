@@ -219,7 +219,7 @@
     (expect
      (mapcar #'major-mode-comment-start modes)
      :to-equal
-     '(";" ";" "#" "//" "//" "<!-- " "#" nil))
+     '(";" ";" "# " "//" "//" "<!-- " "#" nil))
     (expect
      (mapcar #'major-mode-comment-end modes)
      :to-equal
