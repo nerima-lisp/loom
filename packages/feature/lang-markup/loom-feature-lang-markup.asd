@@ -5,5 +5,6 @@
   :components ((:file "src/package")))
 
 (asdf:defsystem "loom-feature-lang-markup/test"
-  :depends-on ("loom-feature-lang-markup")
-  :components ())
+  :depends-on ("loom-feature-lang-markup" "loom/test-support" "cl-weave")
+  :serial t
+  :components ((:file "t/integration/markup-display-lines-test")))
