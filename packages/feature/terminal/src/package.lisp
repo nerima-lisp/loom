@@ -38,9 +38,7 @@
                      #:terminal-handle-key-event
                      #:terminal
                      #:terminal-stop
-                     #:terminal-event-loop-background-work-p
-                     #:terminal-event-loop-poll-sessions
-                     #:terminal-event-loop-resize-sessions)
+                     #:terminal-event-loop-background-work-p)
             (:import-from #:loom/feature/buffers
                           #:registered-buffers
                           #:register-buffer)

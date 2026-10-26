@@ -24,9 +24,11 @@
      (:file "domain-terminal-session")
      (:file "infrastructure-terminal")
      (:file "infrastructure-terminal-session-runtime")
+     (:file "infrastructure-terminal-event-loop")
      (:file "application-terminal-input-support")
      (:file "application-terminal-input")
      (:file "application-terminal-event-loop")
+     (:file "application-terminal-hooks")
      (:file "application-commands-terminal")
      (:file "command-specs-terminal")))))
 

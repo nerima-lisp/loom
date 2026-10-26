@@ -16,9 +16,11 @@ unchanged when the terminal size could not be read or has not changed."
     (if (and width height (or (/= width last-width) (/= height last-height)))
         (progn
           (loom-renderer-resize renderer width height)
-          (loom/feature/terminal:terminal-event-loop-resize-sessions width
-                                                          height
-                                                          *editor-state*)
+          (loom/core/editor-session:run-session-hooks
+           :resize
+           (loom/core/editor-session:editor-state-session *editor-state*)
+           width
+           height)
           (values width height))
         (values last-width last-height))))
 
