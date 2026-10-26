@@ -9,11 +9,13 @@ request is pending."
     (error "Cannot start a stopping LSP session"))
   (unless (or (lsp-session-initialized-p session)
               (lsp-session-pending-initialize-id session))
-    (setf (lsp-session-pending-initialize-id session)
-          (%lsp-send-request
-           session
-   "initialize"
-           (%lsp-initialize-params session))))
+    (handler-case
+        (setf (lsp-session-pending-initialize-id session)
+              (%lsp-send-request session "initialize"
+                                 (%lsp-initialize-params session)))
+      (lsp-transport-send-exit-error (condition)
+        (setf (lsp-session-transport-error session) condition)
+        (error condition))))
   session)
 
 (defparameter *lsp-initialize-timeout-seconds* 1.0

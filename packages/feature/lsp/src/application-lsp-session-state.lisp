@@ -38,6 +38,7 @@ rejected."
   (pending-requests (make-hash-table))
   pending-shutdown-id
   (exit-sent-p nil)
+  transport-error
   last-error
   (closed-p nil))
 
