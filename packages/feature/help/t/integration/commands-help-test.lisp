@@ -65,7 +65,10 @@
                   help-buffer)
           (expect (search "C-h k" (%help-test-buffer-text))
                   :to-be-truthy)
-          (expect (minibuffer-message-string minibuffer) :to-be nil))))
+          (progn
+            (expect (loom/core/buffer:buffer-modified-p help-buffer)
+                    :to-be nil)
+            (expect (minibuffer-message-string minibuffer) :to-be nil)))))
 
     ;; GNU Emacs Manual: C-h k displays the command bound to a key sequence.
     ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Key-Help.html
