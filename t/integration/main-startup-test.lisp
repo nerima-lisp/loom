@@ -87,34 +87,50 @@
                                                 (expect root
                                                         :to-equal
                                                         (namestring dir)))))
-          (it "rejects a missing path as a CLI positional error"
-              (host-kit:with-temporary-directory (dir)
-                                                 (let ((path
-                                                        (merge-pathnames
-                                                         "missing.txt"
-                                                         dir)))
-                                                   (handler-case (progn
-                                                                   (loom::%startup-file-and-root
-                                                                    (namestring
-                                                                     path))
-                                                                   (error
-                                                                    "Expected a missing path to be rejected"))
-                                                     (cl-cli:cli-invalid-positional-value (condition)
-                                                       (expect
-                                                        (cl-cli:cli-invalid-positional-value-name
-                                                         condition)
-                                                        :to-equal
-                                                        "PATH")
-                                                       (expect
-                                                        (cl-cli:cli-invalid-positional-value-value
-                                                         condition)
-                                                        :to-equal
-                                                        (namestring path))
-                                                       (expect
-                                                        (cl-cli:cli-invalid-positional-value-cause
-                                                         condition)
-                                                        :to-be
-                                                        nil))))))
+          (it "opens missing startup files as empty registered buffers and rejects missing parents"
+              (host-kit:with-temporary-directory (directory)
+                (let* ((first-path (merge-pathnames "first.txt" directory))
+                       (second-path (merge-pathnames "second.txt" directory))
+                       (invalid-parent-path (merge-pathnames "missing/child.txt" directory))
+                       (*editor-state* nil))
+                  (with-replaced-function
+                   (loom::%initial-terminal-size
+                    (lambda ()
+                      (values 80 24)))
+                   (loom::%initialize-editor-state
+                    (namestring first-path)
+                    (list (namestring second-path))))
+                  (let* ((session (editor-state-session *editor-state*))
+                         (buffers (loom/feature/buffers:registered-buffers session)))
+                    (expect (length buffers) :to-equal 2)
+                    (expect (mapcar (function loom/core/buffer:buffer-text) buffers)
+                            :to-equal
+                            (list "" ""))
+                    (expect (mapcar (function loom/core/buffer:buffer-name)
+                                    (reverse buffers))
+                            :to-equal
+                            (list "first.txt" "second.txt"))
+                    (expect (mapcar (function file-namestring)
+                                    (mapcar (function loom/core/buffer:buffer-path)
+                                            buffers))
+                            :to-equal
+                            (list "second.txt" "first.txt"))
+                    (expect (probe-file first-path) :to-be nil)
+                    (expect (probe-file second-path) :to-be nil))
+                  (handler-case
+                      (progn
+                        (loom::%startup-file-and-root (namestring invalid-parent-path))
+                        (error "Expected a missing parent directory to be rejected"))
+                    (cl-cli:cli-invalid-positional-value (condition)
+                      (expect (cl-cli:cli-invalid-positional-value-name condition)
+                              :to-equal
+                              "PATH")
+                      (expect (cl-cli:cli-invalid-positional-value-value condition)
+                              :to-equal
+                              (namestring invalid-parent-path))
+                      (expect (cl-cli:cli-invalid-positional-value-cause condition)
+                              :to-be
+                              nil))))))
           (it "defaults to \".\" as root when given no argument"
               (multiple-value-bind (file root)
                   (loom::%startup-file-and-root nil)

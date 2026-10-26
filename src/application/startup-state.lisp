@@ -1,32 +1,49 @@
 (in-package #:loom)
 
 (defun %startup-file-and-root (argument)
-  "Return the existing startup file, if ARGUMENT names one, and the file-tree root.
+  "Return an existing or creatable startup file and its file-tree root.
 
 An existing regular file opens in the selected window while its containing
-directory becomes the file-tree root. A directory (or no argument) retains
-the scratch buffer and is itself the root."
+directory becomes the file-tree root. A missing file is accepted when its
+parent directory exists. A directory (or no argument) retains the scratch
+buffer and is itself the root."
   (let* ((root (or argument "."))
          (resolved (probe-file root)))
     (cond
       ((and argument (null resolved))
-       (error 'cl-cli:cli-invalid-positional-value
-              :message
-              (format nil "PATH does not exist: ~A" argument)
-              :name
-              "PATH"
-              :value
-              argument
-              :cause
-              nil))
+       (let* ((path (pathname argument))
+              (parent-path
+                (merge-pathnames
+                 (make-pathname :name nil :type nil :defaults path)
+                 *default-pathname-defaults*))
+              (parent (probe-file parent-path)))
+         (if (and parent (host-kit:directory-pathname-p parent))
+             (values (merge-pathnames (file-namestring path) parent)
+                     parent)
+             (error (quote cl-cli:cli-invalid-positional-value)
+                    :message
+                    (format nil "PATH does not exist: ~A" argument)
+                    :name
+                    "PATH"
+                    :value
+                    argument
+                    :cause
+                    nil))))
       ((and resolved (not (host-kit:directory-pathname-p resolved)))
        (values resolved (make-pathname :name nil :type nil :defaults resolved)))
       (t (values nil root)))))
 
 (defun %make-startup-buffer (startup-file)
-  "Build the initial buffer for STARTUP-FILE, or the default scratch buffer."
+  "Build the initial buffer for STARTUP-FILE or the default scratch buffer.
+
+New files use the files feature constructor to initialize save metadata."
   (if startup-file
-      (buffer-load startup-file)
+      (if (probe-file startup-file)
+          (buffer-load startup-file)
+          (loom/feature/files::%make-file-buffer
+           startup-file
+           :name
+           (file-namestring startup-file)))
       (make-buffer :name "*scratch*")))
 
 (defun %make-startup-window-tree (initial-buffer width height)
@@ -166,5 +183,5 @@ the scratch buffer and is itself the root."
                             (equal path-string (editor-path-string buffer-file)))))
                    (loom/feature/buffers:registered-buffers session))
                 (loom/feature/buffers:register-buffer session
-                                                      (buffer-load file))
+                                                      (%make-startup-buffer file))
                 (remember-recent-file file)))))))))
