@@ -1,7 +1,9 @@
 (asdf:defsystem "loom-feature-help"
   :depends-on ("loom-core-command"
                "loom-core-editor-session"
-               "loom-core-minibuffer")
+               "loom-core-minibuffer"
+               "loom-feature-buffers"
+               "loom-feature-mode")
   :serial t
   :components
   ((:module "src"
