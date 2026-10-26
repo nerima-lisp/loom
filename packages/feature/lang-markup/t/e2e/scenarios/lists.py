@@ -127,3 +127,260 @@ def org_list_continuation(binary):
                     f"lang-markup/org-list-continuation exited "
                     f"with {code}: {output!r}"
                 )
+
+@scenario(
+    "lang-markup/markdown-indent-ret",
+    commands=["move-end-of-line", "newline", "save-buffer"],
+)
+def markdown_indent_ret(binary):
+    initial = b"- item\n"
+    expected = b"- item\n- "
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "markdown-indent-ret.md")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "- item", index=0)
+            session.send(keys.ctrl("e"))
+            session.key("RET")
+            session.wait_for_region_exact_text("body", "-", index=1)
+            session.wait_for_region_cursor("body", 2, index=1)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/markdown-indent-ret exited "
+                    f"with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "lang-markup/markdown-indent-tab",
+    commands=[
+        "next-line",
+        "move-end-of-line",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
+)
+def markdown_indent_tab(binary):
+    initial = b"- root\n  - child\n      continuation\n"
+    expected = b"- root\n  - child\n  continuation\n"
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "markdown-indent-tab.md")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "- root", index=0)
+            session.send(keys.ctrl("n") * 2 + keys.ctrl("e"))
+            session.key("TAB")
+            session.wait_for_region_exact_text(
+                "body", "  continuation", index=2
+            )
+            session.wait_for_region_cursor("body", 14, index=2)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/markdown-indent-tab exited "
+                    f"with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "lang-markup/markdown-indent-region",
+    commands=[
+        "move-beginning-of-line",
+        "set-mark-command",
+        "next-line",
+        "move-end-of-line",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
+)
+def markdown_indent_region(binary):
+    initial = (
+        b"# Heading\n"
+        b"- root\n"
+        b"  - child\n"
+        b"      continuation\n"
+        b"        deeper\n"
+    )
+    expected = (
+        b"# Heading\n"
+        b"- root\n"
+        b"  - child\n"
+        b"  continuation\n"
+        b"  deeper\n"
+    )
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "markdown-indent-region.md")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "# Heading", index=0)
+            session.send(
+                keys.ctrl("a")
+                + keys.ctrl("n") * 3
+                + keys.ctrl("@")
+                + keys.ctrl("n")
+                + keys.ctrl("e")
+                + b"\x1b"
+                + keys.ctrl("\\")
+            )
+            session.wait_for_region_exact_text("body", "  deeper", index=4)
+            session.wait_for_region_cursor("body", 8, index=4)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/markdown-indent-region exited "
+                    f"with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "lang-markup/org-indent-ret",
+    commands=["move-end-of-line", "newline", "save-buffer"],
+)
+def org_indent_ret(binary):
+    initial = b"- item\n"
+    expected = b"- item\n- "
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "org-indent-ret.org")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "- item", index=0)
+            session.send(keys.ctrl("e"))
+            session.key("RET")
+            session.wait_for_region_exact_text("body", "-", index=1)
+            session.wait_for_region_cursor("body", 2, index=1)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/org-indent-ret exited "
+                    f"with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "lang-markup/org-indent-tab",
+    commands=[
+        "next-line",
+        "move-end-of-line",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
+)
+def org_indent_tab(binary):
+    initial = b"- root\n  - child\n      continuation\n"
+    expected = b"- root\n  - child\n  continuation\n"
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "org-indent-tab.org")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "- root", index=0)
+            session.send(keys.ctrl("n") * 2 + keys.ctrl("e"))
+            session.key("TAB")
+            session.wait_for_region_exact_text(
+                "body", "  continuation", index=2
+            )
+            session.wait_for_region_cursor("body", 14, index=2)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/org-indent-tab exited "
+                    f"with {code}: {output!r}"
+                )
+
+
+@scenario(
+    "lang-markup/org-indent-region",
+    commands=[
+        "move-beginning-of-line",
+        "set-mark-command",
+        "next-line",
+        "move-end-of-line",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
+)
+def org_indent_region(binary):
+    initial = (
+        b"* Heading\n"
+        b"- root\n"
+        b"  - child\n"
+        b"      continuation\n"
+        b"        deeper\n"
+    )
+    expected = (
+        b"* Heading\n"
+        b"- root\n"
+        b"  - child\n"
+        b"  continuation\n"
+        b"  deeper\n"
+    )
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
+        path = os.path.join(directory, "org-indent-region.org")
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "* Heading", index=0)
+            session.send(
+                keys.ctrl("a")
+                + keys.ctrl("n") * 3
+                + keys.ctrl("@")
+                + keys.ctrl("n")
+                + keys.ctrl("e")
+                + b"\x1b"
+                + keys.ctrl("\\")
+            )
+            session.wait_for_region_exact_text("body", "  deeper", index=4)
+            session.wait_for_region_cursor("body", 8, index=4)
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, expected)
+            session.assert_file_bytes(path, expected)
+
+            output, code = session.quit()
+            if code != 0:
+                raise AssertionError(
+                    f"lang-markup/org-indent-region exited "
+                    f"with {code}: {output!r}"
+                )
