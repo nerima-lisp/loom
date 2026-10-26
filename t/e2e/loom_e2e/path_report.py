@@ -5,6 +5,8 @@ from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 
+from .path_generation import LANE_REGISTRY
+
 
 _STATUSES = (
     "not-in-ledger",
@@ -290,8 +292,8 @@ def _counts(items):
     return result
 
 
-def _group_counts(items, field):
-    groups = defaultdict(list)
+def _group_counts(items, field, include_names=()):
+    groups = defaultdict(list, {name: [] for name in include_names})
     for item in items:
         groups[item.get(field) or "unassigned"].append(item)
     return {name: _counts(group) for name, group in sorted(groups.items())}
@@ -698,7 +700,7 @@ def build_report(
         "paths": paths,
         "counts": counts,
         "by_rule": _group_counts(paths, "rule"),
-        "by_lane": _group_counts(paths, "lane"),
+        "by_lane": _group_counts(paths, "lane", set(LANE_REGISTRY.values())),
         "scenario_observation_classes": _scenario_observation_counts(
             artifacts_by_scenario, selected
         ),

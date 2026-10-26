@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from loom_e2e.path_generation import LANE_REGISTRY
 from loom_e2e.path_report import build_report, render_summary, write_report
 
 
@@ -619,6 +620,29 @@ class PathReportTests(unittest.TestCase):
         destination = self.root / "reports" / "coverage.json"
         write_report(report, destination)
         self.assertEqual(json.loads(destination.read_text(encoding="utf-8")), report)
+
+    def test_by_lane_includes_zero_count_registered_lanes(self):
+        report = self._report(ledger=self.ledger)
+        lanes = set(LANE_REGISTRY.values())
+
+        self.assertEqual(set(report["by_lane"]), lanes)
+        for lane in lanes - {self.required["lane"]}:
+            counts = report["by_lane"][lane]
+            self.assertEqual(
+                {key: counts[key] for key in ("pass", "excluded", "failures", "total")},
+                {"pass": 0, "excluded": 0, "failures": 0, "total": 0},
+            )
+
+        summary = report["summary"]
+        self.assertEqual(summary.count("By lane:"), 1)
+        lane_rows = [line for line in summary.splitlines() if line.startswith("  W3-")]
+        expected_rows = [
+            f"  {lane}: pass={counts['pass']} excluded={counts['excluded']} "
+            f"failures={counts['failures']} total={counts['total']}"
+            for lane, counts in report["by_lane"].items()
+        ]
+        self.assertEqual(lane_rows, expected_rows)
+        self.assertEqual(len(lane_rows), len(lanes))
 
 
 if __name__ == "__main__":
