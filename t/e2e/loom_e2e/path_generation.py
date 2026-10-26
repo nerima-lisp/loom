@@ -34,6 +34,12 @@ _MUTATION_CASES = (
     ("macro-replay", "macro-recording", "replay has the same effect", ["file_bytes"]),
     ("prefix-u4", "prefix-C-u-4", "specified prefix behavior is observed", ["file_bytes"]),
 )
+_R3_EXCLUDED_CASES = {
+    # Restore replaces the session registry and is covered by R8, not buffer undo/read-only.
+    "load-session": {case[0] for case in _MUTATION_CASES},
+    # Recording call-last-kbd-macro and replaying the recording would recurse into itself.
+    "call-last-kbd-macro": {"macro-replay"},
+}
 _LISP_MODE_LOCAL_BINDINGS = {
     "forward-slurp-sexp": ("right", ("control",)),
     "forward-barf-sexp": ("left", ("control",)),
@@ -742,7 +748,10 @@ def generate_required_paths(catalog):
                 )
 
         if row["mutates"]:
+            excluded_cases = _R3_EXCLUDED_CASES.get(command_id, set())
             for case, state, outcome, observe in _MUTATION_CASES:
+                if case in excluded_cases:
+                    continue
                 paths.append(
                     _path(
                         f"r3:{command_id}:{case}",

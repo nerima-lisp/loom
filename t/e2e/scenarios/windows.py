@@ -112,7 +112,6 @@ def window_split_selection(binary):
     "workspace switching",
     commands=[
         "new-workspace",
-        "switch-workspace",
         "next-workspace",
         "previous-workspace",
         "kill-workspace",
@@ -162,20 +161,6 @@ def workspace_switching(binary):
             _wait_for_body_text(session, "OTHER-WORKSPACE")
             _assert_mode_line(session)
 
-            session.extended_command("switch-workspace")
-            session.wait_for_region_text("minibuffer", "Switch to workspace: ")
-            session.type("main")
-            session.key("RET")
-            _wait_for_body_text(session, "MAIN-WORKSPACE")
-            _assert_mode_line(session)
-
-            session.extended_command("switch-workspace")
-            session.wait_for_region_text("minibuffer", "Switch to workspace: ")
-            session.type("workspace-2")
-            session.key("RET")
-            _wait_for_body_text(session, "OTHER-WORKSPACE")
-            _assert_mode_line(session)
-
             session.extended_command("kill-workspace")
             _wait_for_body_text(session, "MAIN-WORKSPACE")
             _assert_mode_line(session)
@@ -185,3 +170,65 @@ def workspace_switching(binary):
 
             output, code = session.quit()
         _assert_exit_zero("workspace switching", output, code)
+
+
+@scenario(
+    "workspace prompt switches to an existing workspace",
+    commands=["new-workspace", "switch-workspace"],
+)
+def workspace_prompt_switches_to_existing_workspace(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-workspace-prompt-") as directory:
+        main_path = os.path.join(directory, "main.txt")
+        with open(main_path, "wb") as handle:
+            handle.write(b"MAIN-WORKSPACE\n")
+
+        with Session(binary, [main_path]) as session:
+            session.wait_ready()
+            _assert_mode_line(session)
+
+            session.extended_command("new-workspace")
+            _assert_mode_line(session)
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+
+            session.extended_command("switch-workspace")
+            session.wait_for_region_text("minibuffer", "Switch to workspace: ")
+            session.type("main")
+            session.key("RET")
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+            _assert_mode_line(session)
+            session.wait_for_region_text("minibuffer", "Workspace: main")
+
+            output, code = session.quit()
+        _assert_exit_zero("workspace prompt switch to existing", output, code)
+
+
+@scenario(
+    "workspace prompt preserves the active workspace for an unknown name",
+    commands=["new-workspace", "switch-workspace"],
+)
+def workspace_prompt_rejects_unknown_workspace(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-workspace-prompt-") as directory:
+        main_path = os.path.join(directory, "main.txt")
+        with open(main_path, "wb") as handle:
+            handle.write(b"MAIN-WORKSPACE\n")
+
+        with Session(binary, [main_path]) as session:
+            session.wait_ready()
+            _assert_mode_line(session)
+
+            session.extended_command("new-workspace")
+            _assert_mode_line(session)
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+
+            session.extended_command("switch-workspace")
+            session.wait_for_region_text("minibuffer", "Switch to workspace: ")
+            session.type("missing")
+            session.key("RET")
+            _wait_for_body_text(session, "MAIN-WORKSPACE")
+            _assert_mode_line(session)
+            session.wait_for_region_text(
+                "minibuffer", "No such workspace: missing"
+            )
+
+            output, code = session.quit()
+        _assert_exit_zero("workspace prompt rejects unknown name", output, code)

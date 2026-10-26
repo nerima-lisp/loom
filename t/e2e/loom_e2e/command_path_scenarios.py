@@ -2,7 +2,7 @@
 
 import json
 import tempfile
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 
 from . import keys
@@ -65,9 +65,16 @@ def _validate_screen_expectations(value, location):
         where = f"{location}[{index}]"
         if not isinstance(expectation, dict):
             raise CommandPathScenarioError(f"{where} must be an object")
-        if expectation.get("region") not in {"body", "minibuffer"}:
+        if expectation.get("region") not in {"body", "minibuffer", "screen"}:
             raise CommandPathScenarioError(
-                f"{where}.region must be body or minibuffer"
+                f"{where}.region must be body, minibuffer, or screen"
+            )
+        if (
+            not isinstance(expectation.get("match", "exact"), str)
+            or expectation.get("match", "exact") not in {"exact", "contains"}
+        ):
+            raise CommandPathScenarioError(
+                f"{where}.match must be exact or contains"
             )
         if not isinstance(expectation.get("text"), str):
             raise CommandPathScenarioError(f"{where}.text must be a string")
@@ -96,6 +103,14 @@ def _validate_case(case, index):
     location = f"scenarios[{index}]"
     if not isinstance(case, dict):
         raise CommandPathScenarioError(f"{location} must be an object")
+    for dimension in ("columns", "rows"):
+        value = case.get(dimension)
+        if dimension in case and (
+            isinstance(value, bool) or not isinstance(value, int) or value <= 0
+        ):
+            raise CommandPathScenarioError(
+                f"{location}.{dimension} must be a positive integer"
+            )
     for field in ("name", "path_id", "lane", "rule", "command", "entry"):
         _nonempty_string(case.get(field), f"{location}.{field}")
     if case["rule"] not in {"r1", "r2", "r3"}:
@@ -108,6 +123,14 @@ def _validate_case(case, index):
         if not isinstance(case.get(field), str):
             raise CommandPathScenarioError(f"{location}.{field} must be a string")
     _validate_cursor(case.get("expected_cursor"), f"{location}.expected_cursor")
+    minibuffer_match = case.get("expected_minibuffer_match", "exact")
+    if not isinstance(minibuffer_match, str) or minibuffer_match not in {
+        "exact",
+        "contains",
+    }:
+        raise CommandPathScenarioError(
+            f"{location}.expected_minibuffer_match must be exact or contains"
+        )
     cursor_region = case.get("expected_cursor_region", "body")
     if not isinstance(cursor_region, str) or cursor_region not in {
         "body",
@@ -133,20 +156,60 @@ def _validate_case(case, index):
             _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
         _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
     elif case["rule"] == "r2":
-        if case.get("command") != "execute-extended-command":
+        entry_mode = case.get(
+            "entry_mode",
+            "open-mx" if case["command"] == "execute-extended-command" else None,
+        )
+        if entry_mode not in {"key", "mx", "open-mx"}:
             raise CommandPathScenarioError(
-                f"{location}.command must be execute-extended-command"
+                f"{location}.entry_mode must be key, mx, or open-mx"
             )
+        if entry_mode == "key":
+            _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
+            prompt_open = case.get("prompt_open")
+            if not isinstance(prompt_open, str) or not prompt_open.strip():
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_open must be non-empty text"
+                )
+        elif entry_mode == "mx":
+            if case["command"] == "execute-extended-command":
+                raise CommandPathScenarioError(
+                    f"{location}.entry_mode mx cannot target execute-extended-command"
+                )
+            if not case["entry"].startswith("mx;prompt:"):
+                raise CommandPathScenarioError(
+                    f"{location}.entry must be the generated M-x prompt entry"
+                )
+            prompt_open = case.get("prompt_open")
+            if not isinstance(prompt_open, str) or not prompt_open.strip():
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_open must be non-empty text"
+                )
+        elif case["command"] != "execute-extended-command":
+            raise CommandPathScenarioError(
+                f"{location}.entry_mode open-mx requires execute-extended-command"
+            )
+
         if case.get("prompt_case") not in _PROMPT_CASES:
             raise CommandPathScenarioError(
                 f"{location}.prompt_case is not a supported completion case"
             )
         if not isinstance(case.get("input_text"), str):
             raise CommandPathScenarioError(f"{location}.input_text must be a string")
+        prompt_kind = case.get(
+            "prompt_kind",
+            "completion" if entry_mode == "open-mx" else None,
+        )
+        if prompt_kind not in {"free-string", "completion", "yes-no", "numeric"}:
+            raise CommandPathScenarioError(
+                f"{location}.prompt_kind is not a supported prompt kind"
+            )
         if "accepted_command" in case:
             _nonempty_string(case["accepted_command"], f"{location}.accepted_command")
-        if case["prompt_case"] in {"accept", "tab", "history"} and not case.get(
-            "accepted_command"
+        if (
+            entry_mode == "open-mx"
+            and case["prompt_case"] in {"accept", "tab", "history"}
+            and not case.get("accepted_command")
         ):
             raise CommandPathScenarioError(
                 f"{location}.accepted_command is required for accepted completion"
@@ -154,12 +217,31 @@ def _validate_case(case, index):
         if case["prompt_case"] == "tab":
             _nonempty_string(case.get("tab_expected"), f"{location}.tab_expected")
         if case["prompt_case"] == "history":
+            history_value_field = (
+                "history_seed_command"
+                if entry_mode == "open-mx"
+                else "history_seed_input"
+            )
             _nonempty_string(
-                case.get("history_seed_command"),
-                f"{location}.history_seed_command",
+                case.get(history_value_field),
+                f"{location}.{history_value_field}",
             )
             _nonempty_string(
                 case.get("history_expected"), f"{location}.history_expected"
+            )
+            if entry_mode != "open-mx" and not isinstance(
+                case.get("history_next_expected"), str
+            ):
+                raise CommandPathScenarioError(
+                    f"{location}.history_next_expected must be text for target prompts"
+                )
+            if "history_cancel" in case and type(case["history_cancel"]) is not bool:
+                raise CommandPathScenarioError(
+                    f"{location}.history_cancel must be a boolean"
+                )
+        elif "history_cancel" in case:
+            raise CommandPathScenarioError(
+                f"{location}.history_cancel is only valid for history prompts"
             )
     else:
         if case.get("mutation_case") not in _MUTATION_CASES:
@@ -189,6 +271,11 @@ def _validate_case(case, index):
             _nonempty_string(
                 case.get("read_only_command"), f"{location}.read_only_command"
             )
+            if "expected_read_only_status" in case:
+                _nonempty_string(
+                    case["expected_read_only_status"],
+                    f"{location}.expected_read_only_status",
+                )
         if "major_mode" in case:
             _nonempty_string(case["major_mode"], f"{location}.major_mode")
         for field in ("prepare_keys", "post_setup_keys"):
@@ -229,12 +316,106 @@ def _validate_case(case, index):
                 f"{location}.expected_bytes must match {expected_bytes_source}"
             )
 
+    if "fixture_keys" in case:
+        _validate_key_list(case["fixture_keys"], f"{location}.fixture_keys")
+    if "fixture_wait" in case:
+        if case["rule"] != "r2":
+            raise CommandPathScenarioError(
+                f"{location}.fixture_wait is only valid for R2 scenarios"
+            )
+        fixture_wait = case["fixture_wait"]
+        if not isinstance(fixture_wait, dict):
+            raise CommandPathScenarioError(f"{location}.fixture_wait must be an object")
+        _validate_screen_expectations([fixture_wait], f"{location}.fixture_wait")
+        _nonempty_string(fixture_wait["text"], f"{location}.fixture_wait.text")
+    if "fixture_keys_after_wait" in case:
+        if "fixture_wait" not in case:
+            raise CommandPathScenarioError(
+                f"{location}.fixture_keys_after_wait requires fixture_wait"
+            )
+        _validate_key_list(
+            case["fixture_keys_after_wait"],
+            f"{location}.fixture_keys_after_wait",
+        )
+
+    if "fixture_files" in case:
+        fixture_files = case["fixture_files"]
+        if not isinstance(fixture_files, list):
+            raise CommandPathScenarioError(f"{location}.fixture_files must be a list")
+        fixture_names = set()
+        for fixture_index, fixture in enumerate(fixture_files):
+            where = f"{location}.fixture_files[{fixture_index}]"
+            if not isinstance(fixture, dict):
+                raise CommandPathScenarioError(f"{where} must be an object")
+            fixture_name = _scenario_filename(fixture.get("path"), f"{where}.path")
+            if fixture_name in {"buffer.txt", "session.sexp"}:
+                raise CommandPathScenarioError(
+                    f"{where}.path is reserved by the scenario runner"
+                )
+            if fixture_name in fixture_names:
+                raise CommandPathScenarioError(
+                    f"{location}.fixture_files contains duplicate paths"
+                )
+            fixture_names.add(fixture_name)
+            if not isinstance(fixture.get("contents"), str):
+                raise CommandPathScenarioError(f"{where}.contents must be a string")
+
+    if "expected_filesystem" in case:
+        expected_filesystem = case["expected_filesystem"]
+        if not isinstance(expected_filesystem, list) or not expected_filesystem:
+            raise CommandPathScenarioError(
+                f"{location}.expected_filesystem must be a non-empty list"
+            )
+        expected_paths = set()
+        for expected_index, expectation in enumerate(expected_filesystem):
+            where = f"{location}.expected_filesystem[{expected_index}]"
+            if not isinstance(expectation, dict):
+                raise CommandPathScenarioError(f"{where} must be an object")
+            expected_name = _scenario_filename(
+                expectation.get("path"), f"{where}.path"
+            )
+            if expected_name in expected_paths:
+                raise CommandPathScenarioError(
+                    f"{location}.expected_filesystem contains duplicate paths"
+                )
+            expected_paths.add(expected_name)
+            if not isinstance(expectation.get("kind"), str) or expectation.get(
+                "kind"
+            ) not in {"file", "directory", "absent"}:
+                raise CommandPathScenarioError(
+                    f"{where}.kind must be file, directory, or absent"
+                )
+
+    session_fixture = case.get("session_fixture")
+    if session_fixture is not None and (
+        not isinstance(session_fixture, dict)
+        or session_fixture.get("path") != "$session_file"
+        or not isinstance(session_fixture.get("contents"), str)
+    ):
+        raise CommandPathScenarioError(
+            f"{location}.session_fixture must define the temporary session path and text"
+        )
+
     if case["expected_bytes"] != case["initial_bytes"] and case["rule"] != "r3":
         if case.get("save_after_effect") is not True:
             raise CommandPathScenarioError(
                 f"{location} must save changed bytes before asserting them"
             )
     return dict(case)
+
+
+def _scenario_filename(value, location):
+    _nonempty_string(value, location)
+    if (
+        value in {".", ".."}
+        or "/" in value
+        or "\\" in value
+        or "\x00" in value
+    ):
+        raise CommandPathScenarioError(
+            f"{location} must be a filename inside the scenario directory"
+        )
+    return value
 
 
 def _validate_key_list(value, location):
@@ -286,6 +467,8 @@ def _key_bytes(name):
         return b"\x1b[95;7u"
     if name == "C-space":
         return keys.ctrl("@")
+    if name in {"SPC", "SPACE"}:
+        return keys.text(" ")
     if name.startswith("C-") and len(name) == 3:
         return keys.ctrl(name[2])
     if name.startswith("M-") and len(name) == 3:
@@ -324,13 +507,16 @@ def _select_major_mode(session, mode):
     session.wait_for_region_text("minibuffer", f"Mode: {mode}")
 
 
-def _assert_minibuffer(session, expected):
+def _assert_minibuffer(session, expected, match="exact"):
     expected = expected.rstrip()
-    session.wait_for_region_exact_text(
-        "minibuffer", expected, strip_right=True
-    )
+    if match == "contains":
+        session.wait_for_region_text("minibuffer", expected)
+    else:
+        session.wait_for_region_exact_text(
+            "minibuffer", expected, strip_right=True
+        )
     session.assert_screen_text(
-        expected, region="minibuffer", strip_right=True
+        expected, match=match, region="minibuffer", strip_right=True
     )
 
 
@@ -392,11 +578,45 @@ def _assert_final_state(
             case["name"], f"{stage_prefix} {label}", session=session
         )
 
+    scenario_dir = path.parent.resolve()
+    for expectation in case.get("expected_filesystem", []):
+        with stage(f"filesystem {expectation['path']}"):
+            target = (scenario_dir / expectation["path"]).resolve()
+            try:
+                target.relative_to(scenario_dir)
+            except ValueError as error:
+                raise CommandPathScenarioError(
+                    f"{case['name']}.expected_filesystem.path escaped its scenario directory"
+                ) from error
+            if target.is_file():
+                actual = "file"
+            elif target.is_dir():
+                actual = "directory"
+            elif target.exists() or target.is_symlink():
+                actual = "other"
+            else:
+                actual = "absent"
+            try:
+                session.assert_external_state(
+                    f"filesystem/{expectation['path']}",
+                    actual,
+                    expectation["kind"],
+                )
+            except AssertionError as error:
+                screen = session.screen.dump() if session.screen is not None else ""
+                raise AssertionError(f"{error}\n--- screen ---\n{screen}") from error
+
     if check_minibuffer:
         with stage("minibuffer"):
-            _assert_minibuffer(session, case["expected_minibuffer"])
+            _assert_minibuffer(
+                session,
+                case["expected_minibuffer"],
+                case.get("expected_minibuffer_match", "exact"),
+            )
     for expectation in case["expected_screen"]:
-        with stage(f"{expectation['region']} screen"):
+        with stage(
+            f"screen {expectation['region']} {expectation['text']!r}"
+        ):
             if expectation.get("match", "exact") == "contains":
                 session.wait_for_region_text(
                     expectation["region"],
@@ -410,7 +630,8 @@ def _assert_final_state(
                     index=expectation.get("index", 0),
                     strip_right=True,
                 )
-    _assert_screen(session, case["expected_screen"])
+    with stage("screen assertions"):
+        _assert_screen(session, case["expected_screen"])
     with stage("cursor"):
         _assert_cursor(
             session,
@@ -441,6 +662,7 @@ def _run_r1(session, case, path):
         path,
         case["expected_bytes"],
         save=case.get("save_after_effect", False),
+        stage_prefix="final state",
     )
     if entry_mode == "open-mx" or case.get("cancel_prompt_after_assert", False):
         _send_key(session, "C-g")
@@ -449,36 +671,148 @@ def _run_r1(session, case, path):
         )
 
 
+def _open_r2_prompt(session, case):
+    entry_mode = case.get(
+        "entry_mode",
+        "open-mx" if case["command"] == "execute-extended-command" else None,
+    )
+    if entry_mode == "key":
+        _send_keys(session, case["entry_keys"])
+    elif entry_mode == "mx":
+        _send_mx(session, case["command"])
+    else:
+        session.send(keys.meta("x"))
+        session.wait_for_region_text("minibuffer", "M-x ")
+
+    if entry_mode != "open-mx":
+        session.wait_for_region_text("minibuffer", case["prompt_open"])
+
+
+def _r2_prompt_display(case, value):
+    if case.get("entry_mode") in {None, "open-mx"}:
+        return value
+    return (case["prompt_open"] + value).rstrip()
+
+
 def _run_r2(session, case, path):
     prompt_case = case["prompt_case"]
-    if prompt_case == "history":
-        _send_mx(session, case["history_seed_command"])
+    entry_mode = case.get(
+        "entry_mode",
+        "open-mx" if case["command"] == "execute-extended-command" else None,
+    )
 
-    session.send(keys.meta("x"))
-    session.wait_for_region_text("minibuffer", "M-x ")
-    if prompt_case == "history":
-        session.key("UP")
-        session.wait_for_region_exact_text(
-            "minibuffer", case["history_expected"], strip_right=True
-        )
-    else:
-        session.type(case["input_text"])
-        if prompt_case == "tab":
-            session.key("TAB")
-            session.wait_for_region_exact_text(
-                "minibuffer", case["tab_expected"], strip_right=True
+    def stage(label):
+        return _deadline_stage(case["name"], label, session=session)
+
+    if case.get("fixture_keys"):
+        with stage("fixture keys"):
+            _send_keys(session, case["fixture_keys"])
+    if case.get("fixture_wait"):
+        fixture_wait = case["fixture_wait"]
+        with stage("fixture wait"):
+            session.wait_for_region_text(
+                fixture_wait["region"],
+                fixture_wait["text"],
+                index=fixture_wait.get("index", 0),
             )
-    if prompt_case == "cancel":
-        _send_key(session, "C-g")
-    else:
-        session.key("RET")
+    if case.get("fixture_keys_after_wait"):
+        with stage("fixture keys after wait"):
+            _send_keys(session, case["fixture_keys_after_wait"])
+    if prompt_case == "history":
+        if entry_mode == "open-mx":
+            with stage("history seed command"):
+                _send_mx(session, case["history_seed_command"])
+        else:
+            with stage("history seed prompt open"):
+                _open_r2_prompt(session, case)
+            with stage("history seed input"):
+                session.type(case["history_seed_input"])
+            with stage("history seed accept (RET)"):
+                session.key("RET")
 
+    with stage("target prompt open"):
+        _open_r2_prompt(session, case)
+    if prompt_case == "history":
+        with stage("history target input"):
+            session.type(case["input_text"])
+            if case["input_text"]:
+                session.wait_for_region_text("minibuffer", case["input_text"])
+        if entry_mode == "open-mx":
+            with stage("history previous (UP)"):
+                session.key("UP")
+                session.wait_for_region_exact_text(
+                    "minibuffer", case["history_expected"], strip_right=True
+                )
+        else:
+            with stage("history previous (M-p)"):
+                session.send(keys.meta("p"))
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    _r2_prompt_display(case, case["history_expected"]),
+                    strip_right=True,
+                )
+        if entry_mode != "open-mx":
+            with stage("history next (M-n)"):
+                session.send(keys.meta("n"))
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    _r2_prompt_display(case, case["history_next_expected"]),
+                    strip_right=True,
+                )
+            with stage("history previous (M-p)"):
+                session.send(keys.meta("p"))
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    _r2_prompt_display(case, case["history_expected"]),
+                    strip_right=True,
+                )
+    else:
+        with stage("target prompt input"):
+            session.type(case["input_text"])
+            if case["input_text"]:
+                session.wait_for_region_text("minibuffer", case["input_text"])
+        if prompt_case == "tab":
+            with stage("TAB completion"):
+                session.key("TAB")
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    _r2_prompt_display(case, case["tab_expected"]),
+                    strip_right=True,
+                )
+                if case["command"] in {
+                    "copy-to-register",
+                    "insert-register",
+                    "jump-to-register",
+                    "point-to-register",
+                }:
+                    session.assert_screen_text(
+                        _r2_prompt_display(case, case["tab_expected"]),
+                        region="minibuffer",
+                        strip_right=True,
+                    )
+    if prompt_case == "cancel" or (
+        prompt_case == "history" and case.get("history_cancel", False)
+    ):
+        with stage("prompt cancel (C-g)"):
+            _send_key(session, "C-g")
+    else:
+        with stage("prompt accept (RET)"):
+            session.key("RET")
+
+    with stage("prompt result"):
+        _assert_minibuffer(
+            session,
+            case["expected_minibuffer"],
+            case.get("expected_minibuffer_match", "exact"),
+        )
     _assert_final_state(
         session,
         case,
         path,
         case["expected_bytes"],
         save=case.get("save_after_effect", False),
+        stage_prefix="final state",
+        check_minibuffer=False,
     )
 
 
@@ -507,6 +841,8 @@ def _run_r3(session, case, path):
     operation = case["mutation_case"]
     initial = case["initial_bytes"].encode("utf-8")
     effect = case["effect_bytes"].encode("utf-8")
+    if case.get("fixture_keys"):
+        _send_keys(session, case["fixture_keys"])
 
     if "pre_command_keys" in case:
         _send_keys(session, case["pre_command_keys"])
@@ -520,7 +856,11 @@ def _run_r3(session, case, path):
 
     if operation == "read-only":
         _send_mx(session, case["read_only_command"])
-        session.wait_for_region_text("minibuffer", case["expected_minibuffer"])
+        session.wait_for_region_exact_text(
+            "minibuffer",
+            case.get("expected_read_only_status", case["expected_minibuffer"]),
+            strip_right=True,
+        )
         _send_keys(session, case["command_keys"])
         _assert_final_state(session, case, path, case["expected_bytes"])
         return
@@ -576,23 +916,91 @@ def _run_r3(session, case, path):
         )
 
 
+def _resolve_path_tokens(value, buffer_path, session_path, fixture_files=()):
+    if isinstance(value, str):
+        resolved = (
+            value.replace(
+                "$buffer_file", str(Path(buffer_path).resolve(strict=False))
+            )
+            .replace(
+                "$session_file", str(Path(session_path).resolve(strict=False))
+            )
+            .replace(
+                "$scenario_dir",
+                str(Path(buffer_path).parent.resolve(strict=False)),
+            )
+        )
+        for fixture in fixture_files:
+            fixture_name = fixture["path"]
+            resolved = resolved.replace(
+                f"$fixture_file:{fixture_name}",
+                str(
+                    buffer_path.with_name(fixture_name).resolve(strict=False)
+                ),
+            )
+        return resolved
+    if isinstance(value, list):
+        return [
+            _resolve_path_tokens(item, buffer_path, session_path, fixture_files)
+            for item in value
+        ]
+    if isinstance(value, dict):
+        return {
+            key: _resolve_path_tokens(item, buffer_path, session_path, fixture_files)
+            for key, item in value.items()
+        }
+    return value
+
+
 def run_command_path_scenario(binary, case, *, session_factory=Session):
     """Execute one strict R1, R2, or R3 example against a loom binary."""
     initial = case["initial_bytes"].encode("utf-8")
     with tempfile.TemporaryDirectory(prefix="loom-e2e-command-path-") as directory:
         path = Path(directory) / "buffer.txt"
+        session_path = path.with_name("session.sexp")
         path.write_bytes(initial)
-        with session_factory(
-            binary, [str(path)], rows=case.get("rows", 24)
-        ) as session:
-            session.wait_ready()
+        case = _resolve_path_tokens(
+            case, path, session_path, case.get("fixture_files", [])
+        )
+        for fixture in case.get("fixture_files", []):
+            (Path(directory) / fixture["path"]).write_text(
+                fixture["contents"], encoding="utf-8"
+            )
+        fixture = case.get("session_fixture")
+        if fixture is not None:
+            fixture_path = Path(fixture["path"])
+            if fixture_path != session_path.resolve(strict=False):
+                raise CommandPathScenarioError(
+                    f"{case['name']}.session_fixture.path must resolve inside its scenario directory"
+                )
+            session_path.write_text(fixture["contents"], encoding="utf-8")
+
+        with ExitStack() as stack:
+            session_context = session_factory(
+                binary,
+                [str(path)],
+                columns=case.get("columns", 80),
+                rows=case.get("rows", 24),
+            )
+            if case["rule"] == "r2":
+                with _deadline_stage(case["name"], "session startup"):
+                    session = stack.enter_context(session_context)
+                with _deadline_stage(case["name"], "session ready", session=session):
+                    session.wait_ready()
+            else:
+                session = stack.enter_context(session_context)
+                session.wait_ready()
             if case["rule"] == "r1":
                 _run_r1(session, case, path)
             elif case["rule"] == "r2":
                 _run_r2(session, case, path)
             else:
                 _run_r3(session, case, path)
-            output, code = session.quit()
+            if case["rule"] == "r2":
+                with _deadline_stage(case["name"], "session quit", session=session):
+                    output, code = session.quit()
+            else:
+                output, code = session.quit()
             if code != 0:
                 raise AssertionError(
                     f"{case['name']} exited with {code}: {output!r}"

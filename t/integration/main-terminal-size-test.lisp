@@ -81,7 +81,25 @@
               (let ((loom::*editor-state*
                      (make-editor-state :session (%make-test-editor-session))))
                 (setf (editor-state-lsp-session loom::*editor-state*) :session)
-                (expect (loom::%event-loop-background-work-p) :to-be t))))
+                (expect (loom::%event-loop-background-work-p) :to-be t)))
+          (it "polls while a file-tree listing is pending"
+              (let* ((runtime
+                       (make-loom-concurrent-runtime
+                        :directory-lister
+                        (lambda (path)
+                          (declare (ignore path))
+                          nil)))
+                     (state (make-editor-state :session (%make-test-editor-session))))
+                (unwind-protect
+                     (progn
+                       (multiple-value-bind (promises accepted)
+                           (loom-concurrent-runtime-prefetch runtime (list #P"/"))
+                         (declare (ignore promises))
+                         (expect accepted :to-be 1))
+                       (setf (editor-state-concurrent-runtime state) runtime)
+                       (let ((loom::*editor-state* state))
+                         (expect (loom::%event-loop-background-work-p) :to-be t)))
+                  (loom-concurrent-runtime-shutdown runtime)))))
 
 (describe "%wait-for-editor-input"
           (it "returns immediately when no background work is pending"

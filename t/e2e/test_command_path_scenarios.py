@@ -9,8 +9,11 @@ from loom_e2e import registry
 from loom_e2e.deadline import ScenarioDeadlineExceeded
 from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
+    _assert_final_state,
     _deadline_stage,
     _key_bytes,
+    _r2_prompt_display,
+    _resolve_path_tokens,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -21,6 +24,26 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/core/command/t/e2e/scenarios/command-paths.json"
+)
+FILE_TREE_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/file-tree/t/e2e/scenarios/command-paths.json"
+)
+REGISTER_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/register/t/e2e/scenarios/command-paths.json"
+)
+KEYBOARD_MACRO_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/keyboard-macro/t/e2e/scenarios/command-paths.json"
+)
+BOOKMARK_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/bookmark/t/e2e/scenarios/command-paths.json"
+)
+SESSION_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/session/t/e2e/scenarios/command-paths.json"
 )
 _DEFAULT_NAME = object()
 
@@ -131,9 +154,17 @@ _CORE_COMMAND_CATALOG.extend(
 )
 
 
+class FakeScreen:
+    cursor = (0, 0)
+
+    def dump(self):
+        return "fake screen"
+
+
 class FakeSession:
     def __init__(self, *_args, **_kwargs):
         self.calls = []
+        self.screen = FakeScreen()
 
     def __enter__(self):
         return self
@@ -181,12 +212,27 @@ class FakeSession:
         self.calls.append(("assert_file_bytes", expected))
         return expected
 
+    def assert_external_state(self, name, actual, expected, *, purpose="scenario"):
+        self.calls.append(("assert_external_state", name, actual, expected, purpose))
+        if actual != expected:
+            raise AssertionError(f"{name} was {actual}, expected {expected}")
+        return actual
+
     def observe_file_bytes(self, path, expected, *, purpose="scenario"):
         self.calls.append(("observe_file_bytes", expected, purpose))
         return expected
 
+    def test_space_key_tokens_send_one_space(self):
+        self.assertEqual(_key_bytes("SPC"), b" ")
+        self.assertEqual(_key_bytes("SPACE"), b" ")
 
 class CommandPathScenarioTests(unittest.TestCase):
+    def test_r2_prompt_display_matches_right_trimmed_screen(self):
+        case = {"entry_mode": "key", "prompt_open": "Register name: "}
+
+        self.assertEqual(_r2_prompt_display(case, ""), "Register name:")
+        self.assertEqual(_r2_prompt_display(case, "a"), "Register name: a")
+
     def test_c_space_encodes_as_control_at(self):
         self.assertEqual(_key_bytes("C-space"), b"\x00")
 
@@ -196,6 +242,233 @@ class CommandPathScenarioTests(unittest.TestCase):
         ):
             with _deadline_stage("test/undo", "undo and restore"):
                 raise ScenarioDeadlineExceeded("expired")
+
+    def test_filesystem_expectation_precedes_final_screen_wait(self):
+        case = {
+            "name": "test/filesystem-before-screen",
+            "expected_minibuffer": "",
+            "expected_screen": [
+                {
+                    "region": "screen",
+                    "text": "created-file.txt",
+                    "match": "contains",
+                }
+            ],
+            "expected_cursor": [0, 0],
+            "expected_filesystem": [
+                {"path": "created-file.txt", "kind": "file"}
+            ],
+        }
+
+        class DeadlineAtScreen(FakeSession):
+            def wait_for_region_text(self, region, text, **kwargs):
+                super().wait_for_region_text(region, text, **kwargs)
+                if region == "screen" and text == "created-file.txt":
+                    raise ScenarioDeadlineExceeded("screen expired")
+
+        with tempfile.TemporaryDirectory() as directory:
+            buffer_path = Path(directory) / "buffer.txt"
+            buffer_path.write_bytes(b"")
+            (Path(directory) / "created-file.txt").write_bytes(b"")
+            session = DeadlineAtScreen()
+
+            with self.assertRaisesRegex(
+                ScenarioDeadlineExceeded,
+                r"test/filesystem-before-screen \[final state screen screen 'created-file.txt'\]: screen expired",
+            ):
+                _assert_final_state(
+                    session,
+                    case,
+                    buffer_path,
+                    "",
+                    stage_prefix="final state",
+                )
+
+        filesystem_checks = [
+            index
+            for index, call in enumerate(session.calls)
+            if call[0] == "assert_external_state"
+            and call[1] == "filesystem/created-file.txt"
+        ]
+        screen_waits = [
+            index
+            for index, call in enumerate(session.calls)
+            if call[0] == "wait_text"
+            and call[1] == "screen"
+            and call[2] == "created-file.txt"
+        ]
+        self.assertEqual(len(filesystem_checks), 1)
+        self.assertEqual(len(screen_waits), 1)
+        self.assertLess(filesystem_checks[0], screen_waits[0])
+
+    def test_filesystem_mismatch_includes_the_current_screen(self):
+        case = {
+            "name": "test/filesystem-mismatch-screen",
+            "expected_minibuffer": "",
+            "expected_screen": [{"region": "body", "text": "buffer"}],
+            "expected_cursor": [0, 0],
+            "expected_filesystem": [{"path": "missing.txt", "kind": "file"}],
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            buffer_path = Path(directory) / "buffer.txt"
+            buffer_path.write_bytes(b"")
+            with self.assertRaisesRegex(AssertionError, "--- screen ---\\nfake screen"):
+                _assert_final_state(FakeSession(), case, buffer_path, "")
+
+    def test_r2_deadline_error_identifies_the_active_prompt_wait(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(FILE_TREE_SCENARIO_DATA)
+            if case["name"]
+            == "command-path/r2/file-tree-create-file/free-string/accept"
+        )
+
+        class DeadlineAtPromptOpen(FakeSession):
+            def wait_for_region_text(self, region, text, **kwargs):
+                super().wait_for_region_text(region, text, **kwargs)
+                if region == "minibuffer" and text == case["prompt_open"]:
+                    raise ScenarioDeadlineExceeded("expired")
+
+        def session_factory(*args, **kwargs):
+            return DeadlineAtPromptOpen(*args, **kwargs)
+
+        with self.assertRaises(ScenarioDeadlineExceeded) as raised:
+            run_command_path_scenario(
+                "unused", case, session_factory=session_factory
+            )
+
+        self.assertIn("[target prompt open]: expired", str(raised.exception))
+        self.assertIn("--- screen ---\nfake screen", str(raised.exception))
+
+    def test_r1_deadline_error_identifies_the_final_state_wait(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BOOKMARK_SCENARIO_DATA)
+            if case["name"] == "command-path/r1/set-bookmark/key"
+        )
+
+        class DeadlineAtPrompt(FakeSession):
+            def wait_for_region_exact_text(self, region, text, **kwargs):
+                super().wait_for_region_exact_text(region, text, **kwargs)
+                if (
+                    region == "minibuffer"
+                    and text == case["expected_minibuffer"].rstrip()
+                ):
+                    raise ScenarioDeadlineExceeded("expired")
+
+        with self.assertRaises(ScenarioDeadlineExceeded) as raised:
+            run_command_path_scenario(
+                "unused", case, session_factory=lambda *_args, **_kwargs: DeadlineAtPrompt()
+            )
+
+        self.assertIn("[final state minibuffer]: expired", str(raised.exception))
+        self.assertIn("--- screen ---\nfake screen", str(raised.exception))
+
+    def test_r2_history_waits_for_the_selected_command_before_accepting(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(SCENARIO_DATA)
+            if case["name"] == "command-path/r2/history"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        history_wait = (
+            "wait_exact_text",
+            "minibuffer",
+            case["history_expected"],
+            {"strip_right": True},
+        )
+        up_index = session.calls.index(("key", "UP"))
+        history_wait_index = session.calls.index(history_wait)
+        accept_index = next(
+            index
+            for index, call in enumerate(session.calls)
+            if index > up_index and call == ("key", "RET")
+        )
+        self.assertLess(up_index, history_wait_index)
+        self.assertLess(history_wait_index, accept_index)
+
+    def test_load_session_fixtures_encode_restored_text_with_a_newline(self):
+        cases = load_command_path_scenarios(SESSION_SCENARIO_DATA)
+        target_names = {
+            "command-path/r2/load-session/free-string/accept",
+            "command-path/r2/load-session/free-string/tab",
+        }
+        fixtures = [
+            case["session_fixture"]["contents"]
+            for case in cases
+            if case["name"] in target_names
+        ]
+
+        self.assertEqual(len(fixtures), len(target_names))
+        for contents in fixtures:
+            self.assertIn("RESTORED\n", contents)
+            self.assertNotIn(r"RESTORED\n", contents)
+
+    def test_r3_read_only_setup_and_command_statuses_are_separate(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(REGISTER_SCENARIO_DATA)
+            if case["name"] == "command-path/r3/insert-register/read-only"
+        )
+        case["expected_read_only_status"] = "Buffer is read-only"
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        setup_wait = (
+            "wait_exact_text",
+            "minibuffer",
+            case["expected_read_only_status"],
+            {"strip_right": True},
+        )
+        final_wait = (
+            "wait_exact_text",
+            "minibuffer",
+            case["expected_minibuffer"],
+            {"strip_right": True},
+        )
+        self.assertIn(setup_wait, session.calls)
+        self.assertIn(final_wait, session.calls)
+
+    def test_r2_fixture_wait_precedes_followup_keys(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(FILE_TREE_SCENARIO_DATA)
+            if case["name"]
+            == "command-path/r2/file-tree-rename/free-string/cancel"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        wait_index = session.calls.index(
+            ("wait_text", "screen", "rename-source.txt", {"index": 1})
+        )
+        first_selection_key = session.calls.index(("send", b"\x03"))
+        self.assertLess(wait_index, first_selection_key)
+        prompt_result = session.calls.index(
+            ("wait_exact_text", "minibuffer", "Quit", {"strip_right": True})
+        )
+        filesystem_check = session.calls.index(
+            (
+                "assert_external_state",
+                "filesystem/rename-source.txt",
+                "file",
+                "file",
+                "scenario",
+            )
+        )
+        self.assertLess(prompt_result, filesystem_check)
 
     def test_sidecar_covers_current_w31_catalog_paths_without_relabeling_owners(self):
         generated = generate_required_paths(_CORE_COMMAND_CATALOG)
@@ -388,6 +661,38 @@ class CommandPathScenarioTests(unittest.TestCase):
             ):
                 load_command_path_scenarios(path)
 
+    def test_loader_rejects_invalid_terminal_dimensions(self):
+        data = json.loads(SCENARIO_DATA.read_text(encoding="utf-8"))
+        data["scenarios"][0]["columns"] = True
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                r"scenarios\[0\]\.columns must be a positive integer",
+            ):
+                load_command_path_scenarios(path)
+
+    def test_loader_rejects_followup_fixture_keys_without_a_wait(self):
+        data = json.loads(FILE_TREE_SCENARIO_DATA.read_text(encoding="utf-8"))
+        case = next(
+            case
+            for case in data["scenarios"]
+            if case["name"]
+            == "command-path/r2/file-tree-rename/free-string/accept"
+        )
+        case.pop("fixture_wait")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                "fixture_keys_after_wait requires fixture_wait",
+            ):
+                load_command_path_scenarios(path)
+
     def test_loader_rejects_r3_expected_bytes_that_disagree_with_the_outcome(self):
         data = json.loads(SCENARIO_DATA.read_text(encoding="utf-8"))
         undo_case = next(
@@ -404,6 +709,73 @@ class CommandPathScenarioTests(unittest.TestCase):
                 CommandPathScenarioError, "expected_bytes must match initial_bytes"
             ):
                 load_command_path_scenarios(path)
+
+    def test_loader_accepts_every_generated_r3_mutation_case(self):
+        mutation_cases = (
+            "effect",
+            "undo",
+            "read-only",
+            "narrow",
+            "split-window",
+            "macro-replay",
+            "prefix-u4",
+        )
+        effect_case = next(
+            case
+            for case in json.loads(
+                SCENARIO_DATA.read_text(encoding="utf-8")
+            )["scenarios"]
+            if case.get("mutation_case") == "effect"
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            for mutation_case in mutation_cases:
+                case = json.loads(json.dumps(effect_case))
+                case["name"] = f"test/{mutation_case}"
+                case["path_id"] = f"r3:delete-char:{mutation_case}"
+                case["mutation_case"] = mutation_case
+                case["entry"] = (
+                    "macro" if mutation_case == "macro-replay" else effect_case["entry"]
+                )
+                case.pop("expected_undo_cursor", None)
+                case.pop("read_only_command", None)
+                case.pop("restore_screen", None)
+                case.pop("replay_prefix_keys", None)
+
+                if mutation_case == "undo":
+                    case["expected_undo_cursor"] = [0, 1]
+                elif mutation_case == "narrow":
+                    case["prepare_commands"] = ["narrow-to-region"]
+                elif mutation_case == "split-window":
+                    case["prepare_commands"] = ["split-window-below"]
+                elif mutation_case == "prefix-u4":
+                    case["command_keys"] = ["C-u", "C-d"]
+                elif mutation_case == "read-only":
+                    case["read_only_command"] = "toggle-read-only"
+                    case["expected_minibuffer"] = "Buffer is read-only"
+                    case["effect_bytes"] = case["initial_bytes"]
+                elif mutation_case == "macro-replay":
+                    case["restore_screen"] = [{"region": "body", "text": "abc"}]
+                    case["replay_prefix_keys"] = ["C-a"]
+
+                expected_source = (
+                    "effect_bytes"
+                    if mutation_case
+                    in {"effect", "narrow", "split-window", "macro-replay", "prefix-u4"}
+                    else "initial_bytes"
+                )
+                case["expected_bytes"] = case[expected_source]
+                path = Path(directory) / f"{mutation_case}.json"
+                path.write_text(
+                    json.dumps({"schema_version": 1, "scenarios": [case]}),
+                    encoding="utf-8",
+                )
+
+                loaded = load_command_path_scenarios(path)
+
+                with self.subTest(mutation_case=mutation_case):
+                    self.assertEqual(loaded[0]["mutation_case"], mutation_case)
+                    self.assertEqual(loaded[0]["expected_bytes"], case[expected_source])
 
     def test_accept_flow_uses_exact_body_cursor_and_saved_bytes(self):
         case = {
@@ -422,16 +794,21 @@ class CommandPathScenarioTests(unittest.TestCase):
             "expected_minibuffer": "",
             "expected_screen": [{"region": "body", "text": "One two"}],
             "save_after_effect": True,
+            "columns": 240,
+            "rows": 30,
         }
         sessions = []
+        factory_dimensions = []
 
         def session_factory(*args, **kwargs):
+            factory_dimensions.append(kwargs)
             session = FakeSession(*args, **kwargs)
             sessions.append(session)
             return session
 
         run_command_path_scenario("unused", case, session_factory=session_factory)
 
+        self.assertEqual(factory_dimensions, [{"columns": 240, "rows": 30}])
         calls = sessions[0].calls
         self.assertIn(("send", b"\x1bx"), calls)
         self.assertIn(("type", "capitalize-word"), calls)
@@ -562,6 +939,385 @@ class CommandPathScenarioTests(unittest.TestCase):
                 else:
                     self.assertIn(("key", "RET"), calls)
 
+    def test_register_tab_routes_record_the_completed_prompt_before_accept(self):
+        cases = [
+            case
+            for case in load_command_path_scenarios(REGISTER_SCENARIO_DATA)
+            if case.get("prompt_case") == "tab"
+        ]
+        self.assertEqual(
+            {case["command"] for case in cases},
+            {
+                "copy-to-register",
+                "insert-register",
+                "jump-to-register",
+                "point-to-register",
+            },
+        )
+
+        for case in cases:
+            with self.subTest(path_id=case["path_id"]):
+                sessions = []
+
+                def session_factory(*args, **kwargs):
+                    session = FakeSession(*args, **kwargs)
+                    sessions.append(session)
+                    return session
+
+                run_command_path_scenario(
+                    "unused", case, session_factory=session_factory
+                )
+
+                calls = sessions[0].calls
+                expected = case["prompt_open"] + case["tab_expected"]
+                tab_index = calls.index(("key", "TAB"))
+                wait_index = calls.index(
+                    (
+                        "wait_exact_text",
+                        "minibuffer",
+                        expected,
+                        {"strip_right": True},
+                    )
+                )
+                observation = (
+                    "assert_screen",
+                    expected,
+                    "exact",
+                    {"region": "minibuffer", "strip_right": True},
+                )
+                observation_index = calls.index(observation)
+                accept_index = calls.index(("key", "RET"), tab_index)
+
+                self.assertLess(tab_index, wait_index)
+                self.assertLess(wait_index, observation_index)
+                self.assertLess(observation_index, accept_index)
+
+    def test_r2_uses_declared_primary_entry_for_slice_prompt(self):
+        case = {
+            "name": "test/copy-to-register-prompt",
+            "path_id": "r2:copy-to-register:prompt-1:free-string:accept",
+            "lane": "W3-10",
+            "rule": "r2",
+            "commands": ["copy-to-register"],
+            "command": "copy-to-register",
+            "entry": 'key:{"keymap":"global","sequence":[{"key":"x","modifiers":["control"]},{"key":"r","modifiers":[]},{"key":"s","modifiers":[]}]};prompt:1:free-string',
+            "entry_mode": "key",
+            "entry_keys": ["C-x", "r", "s"],
+            "prompt_kind": "free-string",
+            "prompt_open": "Store to register:",
+            "prompt_case": "accept",
+            "input_text": "a",
+            "initial_bytes": "abc",
+            "expected_bytes": "abc",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Register stored",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            case = load_command_path_scenarios(scenario_path)[0]
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertEqual(
+            [call for call in calls if call[0] == "send"],
+            [("send", bytes([24])), ("send", b"r"), ("send", b"s")],
+        )
+        self.assertNotIn(("send", bytes([27]) + b"x"), calls)
+        self.assertIn(
+            ("wait_text", "minibuffer", "Store to register:", {}),
+            calls,
+        )
+        self.assertIn(("type", "a"), calls)
+        self.assertIn(("key", "RET"), calls)
+
+
+    def test_r2_target_prompt_history_checks_meta_p_and_meta_n(self):
+        case = {
+            "name": "test/copy-to-register-history",
+            "path_id": "r2:copy-to-register:prompt-1:free-string:history",
+            "lane": "W3-10",
+            "rule": "r2",
+            "commands": ["copy-to-register"],
+            "command": "copy-to-register",
+            "entry": "key:test;prompt:1:free-string",
+            "entry_mode": "key",
+            "entry_keys": ["C-x", "r", "s"],
+            "prompt_kind": "free-string",
+            "prompt_open": "Store to register: ",
+            "prompt_case": "history",
+            "input_text": "fresh",
+            "history_seed_input": "a",
+            "history_expected": "a",
+            "history_next_expected": "fresh",
+            "initial_bytes": "abc",
+            "expected_bytes": "abc",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Register stored",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertEqual(
+            [call for call in calls if call[0] == "send" and call[1] in {b"\x1bp", b"\x1bn"}],
+            [
+                ("send", b"\x1bp"),
+                ("send", b"\x1bn"),
+                ("send", b"\x1bp"),
+            ],
+        )
+        self.assertIn(
+            (
+                "wait_exact_text",
+                "minibuffer",
+                "Store to register: a",
+                {"strip_right": True},
+            ),
+            calls,
+        )
+        self.assertIn(
+            (
+                "wait_exact_text",
+                "minibuffer",
+                "Store to register: fresh",
+                {"strip_right": True},
+            ),
+            calls,
+        )
+
+    def test_r2_target_prompt_history_can_cancel_after_navigation(self):
+        case = {
+            "name": "test/copy-to-register-history-cancel",
+            "path_id": "r2:copy-to-register:prompt-1:free-string:history",
+            "lane": "W3-10",
+            "rule": "r2",
+            "commands": ["copy-to-register"],
+            "command": "copy-to-register",
+            "entry": 'key:{"keymap":"global","sequence":[{"key":"x","modifiers":["control"]},{"key":"r","modifiers":[]},{"key":"s","modifiers":[]}]};prompt:1:free-string',
+            "entry_mode": "key",
+            "entry_keys": ["C-x", "r", "s"],
+            "prompt_kind": "free-string",
+            "prompt_open": "Store to register:",
+            "prompt_case": "history",
+            "input_text": "fresh",
+            "history_seed_input": "a",
+            "history_expected": "a",
+            "history_next_expected": "fresh",
+            "history_cancel": True,
+            "initial_bytes": "abc",
+            "expected_bytes": "abc",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Quit",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            case = load_command_path_scenarios(scenario_path)[0]
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        history_return = max(
+            index for index, call in enumerate(calls) if call == ("key", "RET")
+        )
+        cancel_index = calls.index(("send", b"\x07"))
+        self.assertLess(history_return, cancel_index)
+        self.assertNotIn(("key", "RET"), calls[cancel_index + 1 :])
+        self.assertIn(("type", "fresh"), calls)
+        self.assertIn(
+            ("wait_exact_text", "minibuffer", "Quit", {"strip_right": True}),
+            calls,
+        )
+
+    def test_fixture_files_and_expected_filesystem_are_observed(self):
+        case = dict(load_command_path_scenarios(SCENARIO_DATA)[0])
+        case["fixture_files"] = [
+            {"path": "rename-source.txt", "contents": "original\n"}
+        ]
+        case["expected_filesystem"] = [
+            {"path": "rename-source.txt", "kind": "file"}
+        ]
+        case["expected_screen"] = [
+            {"region": "screen", "text": "rename-source.txt", "match": "contains"}
+        ]
+        case["expected_minibuffer"] = "dynamic status"
+        case["expected_minibuffer_match"] = "contains"
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            case = load_command_path_scenarios(scenario_path)[0]
+        observed = {}
+
+        def session_factory(binary, files, **kwargs):
+            buffer_path = Path(files[0])
+            fixture_path = buffer_path.with_name("rename-source.txt")
+            observed["fixture_contents"] = fixture_path.read_text(encoding="utf-8")
+            session = FakeSession(binary, files, **kwargs)
+            observed["calls"] = session.calls
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        self.assertEqual(observed["fixture_contents"], "original\n")
+        self.assertIn(
+            (
+                "assert_external_state",
+                "filesystem/rename-source.txt",
+                "file",
+                "file",
+                "scenario",
+            ),
+            observed["calls"],
+        )
+        self.assertIn(
+            ("wait_text", "screen", "rename-source.txt", {"index": 0}),
+            observed["calls"],
+        )
+        self.assertIn(
+            (
+                "assert_screen",
+                "rename-source.txt",
+                "contains",
+                {"region": "screen", "index": 0, "strip_right": True},
+            ),
+            observed["calls"],
+        )
+        self.assertIn(
+            ("wait_text", "minibuffer", "dynamic status", {}),
+            observed["calls"],
+        )
+        self.assertIn(
+            (
+                "assert_screen",
+                "dynamic status",
+                "contains",
+                {"region": "minibuffer", "strip_right": True},
+            ),
+            observed["calls"],
+        )
+
+    def test_scenario_directory_and_fixture_file_tokens_resolve(self):
+        fixture_files = [{"path": "rename-source.txt", "contents": "original\n"}]
+        resolved = _resolve_path_tokens(
+            {
+                "target": "$scenario_dir/renamed.txt",
+                "source": "$fixture_file:rename-source.txt",
+            },
+            Path("/tmp/example/buffer.txt"),
+            Path("/tmp/example/session.sexp"),
+            fixture_files,
+        )
+        self.assertEqual(
+            resolved["target"],
+            str(Path("/tmp/example/renamed.txt").resolve(strict=False)),
+        )
+        self.assertEqual(
+            resolved["source"],
+            str(Path("/tmp/example/rename-source.txt").resolve(strict=False)),
+        )
+
+    def test_scenario_filesystem_paths_reject_directory_traversal(self):
+        case = dict(load_command_path_scenarios(SCENARIO_DATA)[0])
+        case["expected_filesystem"] = [{"path": "../outside", "kind": "absent"}]
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CommandPathScenarioError, "filename inside the scenario directory"
+            ):
+                load_command_path_scenarios(scenario_path)
+
+    def test_session_prompt_resolves_fixture_and_temporary_path_tokens(self):
+        case = {
+            "name": "test/load-session-prompt",
+            "path_id": "r2:load-session:prompt-1:free-string:accept",
+            "lane": "W3-10",
+            "rule": "r2",
+            "commands": ["load-session"],
+            "command": "load-session",
+            "entry": "mx;prompt:1:free-string",
+            "entry_mode": "mx",
+            "prompt_kind": "free-string",
+            "prompt_open": "Load session:",
+            "prompt_case": "accept",
+            "input_text": "$session_file",
+            "session_fixture": {
+                "path": "$session_file",
+                "contents": '(:buffer-path "$buffer_file")',
+            },
+            "initial_bytes": "before",
+            "expected_bytes": "before",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Session loaded",
+            "expected_screen": [{"region": "body", "text": "before"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            case = load_command_path_scenarios(scenario_path)[0]
+
+        observed = {}
+
+        def session_factory(binary, files, **kwargs):
+            buffer_path = Path(files[0])
+            session_path = buffer_path.with_name("session.sexp")
+            observed["buffer_path"] = str(buffer_path)
+            observed["session_path"] = str(session_path)
+            observed["fixture"] = session_path.read_text(encoding="utf-8")
+            session = FakeSession(binary, files, **kwargs)
+            observed["calls"] = session.calls
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        self.assertIn(observed["buffer_path"], observed["fixture"])
+        self.assertNotIn("$buffer_file", observed["fixture"])
+        self.assertIn(
+            (
+                "type",
+                str(Path(observed["session_path"]).resolve(strict=False)),
+            ),
+            observed["calls"],
+        )
+
     def test_r3_undo_records_exact_changed_and_restored_bytes(self):
         case = {
             "name": "test/undo",
@@ -620,6 +1376,38 @@ class CommandPathScenarioTests(unittest.TestCase):
             1,
         )
 
+
+    def test_r3_sends_fixture_keys_before_the_declared_mutation(self):
+        case = {
+            "name": "test/fixture-before-mutation",
+            "path_id": "r3:delete-char:effect",
+            "lane": "W3-4",
+            "rule": "r3",
+            "commands": ["delete-char"],
+            "command": "delete-char",
+            "mutation_case": "effect",
+            "fixture_keys": ["C-g"],
+            "command_keys": ["C-d"],
+            "initial_bytes": "abc\n",
+            "effect_bytes": "bc\n",
+            "expected_bytes": "bc\n",
+            "expected_cursor": [0, 1],
+            "expected_minibuffer": "",
+            "expected_screen": [{"region": "body", "text": "bc"}],
+            "effect_screen": [{"region": "body", "text": "bc"}],
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        sends = [call for call in sessions[0].calls if call[0] == "send"]
+        self.assertEqual(sends[:2], [("send", b"\x07"), ("send", b"\x04")])
+
     def test_r3_read_only_refusal_preserves_exact_bytes(self):
         case = next(
             case
@@ -638,7 +1426,14 @@ class CommandPathScenarioTests(unittest.TestCase):
         calls = sessions[0].calls
         self.assertIn(("type", "toggle-read-only"), calls)
         self.assertLess(
-            calls.index(("wait_text", "minibuffer", "Buffer is read-only", {})),
+            calls.index(
+                (
+                    "wait_exact_text",
+                    "minibuffer",
+                    "Buffer is read-only",
+                    {"strip_right": True},
+                )
+            ),
             calls.index(("send", b"\x04")),
         )
         self.assertIn(("send", b"\x04"), calls)

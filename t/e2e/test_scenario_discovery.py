@@ -1,4 +1,5 @@
 import contextlib
+import json
 import importlib.util
 import io
 import os
@@ -92,3 +93,125 @@ class SliceScenarioDiscoveryTests(unittest.TestCase):
             )
             self.assertEqual(select_scenarios(registered, "missing"), [])
             self.assertEqual(run.call_args.args[0], "slice discovery fixture")
+
+
+    def test_command_path_sidecar_is_registered(self):
+        with tempfile.TemporaryDirectory() as repository_root:
+            sidecar_path = os.path.join(
+                repository_root,
+                "packages",
+                "feature",
+                "discovery-fixture",
+                "t",
+                "e2e",
+                "scenarios",
+                "command-paths.json",
+            )
+            os.makedirs(os.path.dirname(sidecar_path))
+            with open(sidecar_path, "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "schema_version": 1,
+                        "scenarios": [
+                            {
+                                "name": "slice command path fixture",
+                                "path_id": "r1:fixture:mx",
+                                "lane": "W3-10",
+                                "rule": "r1",
+                                "entry": "mx",
+                                "commands": ["fixture-id"],
+                                "command": "fixture-id",
+                                "entry_mode": "mx",
+                                "initial_bytes": "fixture\n",
+                                "expected_bytes": "fixture\n",
+                                "expected_cursor": [0, 0],
+                                "expected_minibuffer": "",
+                                "expected_screen": [
+                                    {"region": "body", "text": "fixture"}
+                                ],
+                            }
+                        ],
+                    },
+                    handle,
+                )
+
+            with patch.object(registry, "_scenarios", []):
+                load_slice_scenarios(repository_root)
+                registered = registry.all_scenarios()
+
+            self.assertEqual(
+                format_scenario_listing(registered),
+                ["slice command path fixture\tcommands=fixture-id"],
+            )
+            self.assertEqual(
+                [
+                    entry[0]
+                    for entry in select_scenarios(
+                        registered, "slice command path fixture"
+                    )
+                ],
+                ["slice command path fixture"],
+            )
+
+    def test_sidecar_with_slice_runner_is_not_registered_twice(self):
+        with tempfile.TemporaryDirectory() as repository_root:
+            scenarios_directory = os.path.join(
+                repository_root,
+                "packages",
+                "feature",
+                "discovery-fixture",
+                "t",
+                "e2e",
+                "scenarios",
+            )
+            os.makedirs(scenarios_directory)
+            with open(
+                os.path.join(scenarios_directory, "command_path_scenarios.py"),
+                "w",
+                encoding="utf-8",
+            ) as handle:
+                handle.write(
+                    "from loom_e2e.registry import scenario\n"
+                    "@scenario('slice-owned command path', commands=['fixture-id'])\n"
+                    "def fixture(_binary):\n"
+                    "    pass\n"
+                )
+            with open(
+                os.path.join(scenarios_directory, "command-paths.json"),
+                "w",
+                encoding="utf-8",
+            ) as handle:
+                json.dump(
+                    {
+                        "schema_version": 1,
+                        "scenarios": [
+                            {
+                                "name": "slice-owned command path",
+                                "path_id": "r1:fixture:mx",
+                                "lane": "W3-10",
+                                "rule": "r1",
+                                "entry": "mx",
+                                "commands": ["fixture-id"],
+                                "command": "fixture-id",
+                                "entry_mode": "mx",
+                                "initial_bytes": "fixture\n",
+                                "expected_bytes": "fixture\n",
+                                "expected_cursor": [0, 0],
+                                "expected_minibuffer": "",
+                                "expected_screen": [
+                                    {"region": "body", "text": "fixture"}
+                                ],
+                            }
+                        ],
+                    },
+                    handle,
+                )
+
+            with patch.object(registry, "_scenarios", []):
+                load_slice_scenarios(repository_root)
+                registered = registry.all_scenarios()
+
+            self.assertEqual(
+                format_scenario_listing(registered),
+                ["slice-owned command path\tcommands=fixture-id"],
+            )

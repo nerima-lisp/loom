@@ -6,6 +6,23 @@ import sys
 from pathlib import Path
 
 
+from .command_path_scenarios import (
+    load_command_path_scenarios,
+    run_command_path_scenario,
+)
+from .registry import scenario
+
+
+_loaded_command_path_sidecars = set()
+
+
+def _command_path_scenario(case):
+    def run(binary):
+        return run_command_path_scenario(binary, case)
+
+    return run
+
+
 def load_slice_scenarios(repository_root):
     packages_root = Path(repository_root) / "packages"
     scenario_files = sorted(
@@ -29,6 +46,21 @@ def load_slice_scenarios(repository_root):
         except Exception:
             del sys.modules[module_name]
             raise
+
+    for path in sorted(
+        packages_root.glob("feature/**/t/e2e/scenarios/**/command-paths.json")
+    ):
+        # Slice modules may register their adjacent sidecar with a custom runner.
+        if path.with_name("command_path_scenarios.py").exists():
+            continue
+        sidecar_id = str(path.resolve())
+        if sidecar_id in _loaded_command_path_sidecars:
+            continue
+        for case in load_command_path_scenarios(path):
+            scenario(case["name"], commands=case["commands"])(
+                _command_path_scenario(case)
+            )
+        _loaded_command_path_sidecars.add(sidecar_id)
 
 
 def format_scenario_listing(registered):

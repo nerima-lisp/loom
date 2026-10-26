@@ -294,6 +294,41 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(self.paths_by_id["r3:kill-region:macro-replay"]["entry"], "macro")
         self.assertTrue(self.paths_by_id["r3:delete-char:undo"]["entry"].startswith("key:"))
 
+
+    def test_r3_omits_cases_without_a_valid_buffer_mutation_contract(self):
+        catalog = _catalog()
+        for row in catalog:
+            if row["id"] == "load-session":
+                row["mutates"] = True
+        catalog.append(
+            _row(
+                "call-last-kbd-macro",
+                owner="feature/keyboard-macro",
+                keys=[_key("x", ("control",)), _key("e")],
+                mutates=True,
+            )
+        )
+
+        paths = _by_id(generate_required_paths(catalog))
+
+        self.assertFalse(any(path_id.startswith("r3:load-session:") for path_id in paths))
+        macro_cases = {
+            path_id.rsplit(":", 1)[1]
+            for path_id in paths
+            if path_id.startswith("r3:call-last-kbd-macro:")
+        }
+        self.assertEqual(
+            macro_cases,
+            {
+                "effect",
+                "undo",
+                "read-only",
+                "narrow",
+                "split-window",
+                "prefix-u4",
+            },
+        )
+
     def test_r4_generates_region_present_and_absent(self):
         self.assertIn("r4:kill-region:region-present", self.paths_by_id)
         self.assertIn("r4:kill-region:region-absent", self.paths_by_id)

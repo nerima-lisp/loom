@@ -67,6 +67,103 @@ def register_copy_and_insert(binary):
         _assert_exit_zero("register copy and insert", output, code)
 
 
+@scenario("register copy region present", commands=["copy-to-register"])
+def register_copy_region_present(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "register-region-present.txt")
+        with open(path, "wb") as handle:
+            handle.write(b"hello")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.send(keys.ctrl("x") + b"h")
+            session.send(keys.ctrl("x") + b"rs")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Copy region to register:"
+            )
+            session.type("a")
+            session.key("RET")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Copied region to register a"
+            )
+            session.assert_screen_text(
+                "Copied region to register a", region="minibuffer", strip_right=True
+            )
+            session.assert_screen_text("hello", region="body", strip_right=True)
+            session.assert_file_bytes(path, b"hello")
+
+            output, code = session.quit()
+        _assert_exit_zero("register copy region present", output, code)
+
+
+@scenario("register copy region absent", commands=["copy-to-register"])
+def register_copy_region_absent(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "register-region-absent.txt")
+        with open(path, "wb") as handle:
+            handle.write(b"hello")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.send(keys.ctrl("x") + b"rs")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Copy region to register:"
+            )
+            session.type("a")
+            session.key("RET")
+            session.wait_for_region_exact_text("minibuffer", "The mark is not set")
+            session.assert_screen_text(
+                "The mark is not set", region="minibuffer", strip_right=True
+            )
+            session.assert_screen_text("hello", region="body", strip_right=True)
+            session.assert_file_bytes(path, b"hello")
+
+            output, code = session.quit()
+        _assert_exit_zero("register copy region absent", output, code)
+
+
+@scenario(
+    "register copy M-x tab completion",
+    commands=["execute-extended-command", "copy-to-register"],
+)
+def register_copy_mx_tab_completion(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "register-mx-tab.txt")
+        with open(path, "wb") as handle:
+            handle.write(b"hello")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.send(keys.ctrl("x") + b"h")
+            session.send(keys.meta("x"))
+            session.wait_for_region_exact_text("minibuffer", "M-x")
+            session.type("copy-to-register")
+            session.key("TAB")
+            session.wait_for_region_exact_text(
+                "minibuffer", "M-x copy-to-register"
+            )
+            session.assert_screen_text(
+                "M-x copy-to-register", region="minibuffer", strip_right=True
+            )
+            session.key("RET")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Copy region to register:"
+            )
+            session.type("a")
+            session.key("RET")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Copied region to register a"
+            )
+            session.assert_screen_text(
+                "Copied region to register a", region="minibuffer", strip_right=True
+            )
+            session.assert_screen_text("hello", region="body", strip_right=True)
+            session.assert_file_bytes(path, b"hello")
+
+            output, code = session.quit()
+        _assert_exit_zero("register copy M-x tab completion", output, code)
+
+
 @scenario("register point and jump", commands=["point-to-register", "jump-to-register"])
 def register_point_and_jump(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
