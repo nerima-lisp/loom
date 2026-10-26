@@ -80,8 +80,19 @@
                 :delimiter))))
 
   (it
-    "keeps Common Lisp on its reader-aware tokenizer"
-    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode "(defun run ()) ; note" :common-lisp))
+    "uses registered Common Lisp keywords in its reader-aware tokenizer"
+    (expect (not (null (member "do*"
+                              (loom/feature/mode:major-mode-keywords :common-lisp)
+                              :test #'string-equal)))
+            :to-be t)
+    (expect (mapcar #'syntax-token-kind
+                    (syntax-highlight-line-for-mode "do*" :common-lisp))
+            :to-equal '(:keyword))
+    (expect (mapcar #'syntax-token-kind
+                    (syntax-highlight-line-for-mode "(defun run ()) ; note"
+                                                    :common-lisp))
             :to-contain :keyword)
-    (expect (mapcar #'syntax-token-kind (syntax-highlight-line-for-mode "(defun run ()) ; note" "lisp"))
+    (expect (mapcar #'syntax-token-kind
+                    (syntax-highlight-line-for-mode "(defun run ()) ; note"
+                                                    "lisp"))
             :to-contain :comment)))

@@ -8,20 +8,6 @@
   kind
   text)
 
-(defparameter +syntax-lisp-keywords+
-  '("and" "block" "case" "catch" "cond" "declare" "defclass" "defconstant"
-    "defgeneric" "define-condition" "defmacro" "defmethod" "defpackage"
-    "defparameter" "defsetf" "defstruct" "deftype" "defun" "defvar" "do"
-    "dolist" "dotimes" "ecase" "etypecase" "eval-when" "flet" "function"
-    "handler-bind" "handler-case" "if" "labels" "lambda" "let" "let*"
-    "loop" "macrolet" "multiple-value-bind" "multiple-value-call"
-    "multiple-value-prog1" "multiple-value-setq" "nil" "or" "otherwise"
-    "prog" "prog1" "progn" "progv" "quote" "return" "return-from" "setf"
-    "tagbody" "the" "throw" "typecase" "unless" "unwind-protect" "when"
-    "with-open-file" "with-output-to-string" "with-slots"
-    "with-standard-io-syntax" "write" "t")
-  "Common Lisp forms that receive the keyword token category.")
-
 (defun %syntax-whitespace-p (character)
   (member character '(#\Space #\Tab #\Page #\Return #\Newline) :test #'char=))
 

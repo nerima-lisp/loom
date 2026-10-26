@@ -34,7 +34,7 @@
 (defun %syntax-keyword-token-p (text)
   (or (and (string/= text "")
            (char= (char text 0) #\:))
-      (member text +syntax-lisp-keywords+ :test #'string-equal)))
+      (member text (major-mode-keywords :common-lisp) :test #'string-equal)))
 
 (defun %syntax-token-kind (text)
   (cond ((%syntax-number-token-p text) :number)
