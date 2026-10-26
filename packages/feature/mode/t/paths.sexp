@@ -10,4 +10,5 @@
   (:id "r2:set-major-mode:prompt-1:completion:history" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "history" :observe (:screen_text) :scenario "mode/set-major-mode-history")
   (:id "r2:set-major-mode:prompt-1:completion:invalid" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "invalid" :observe (:screen_text) :scenario "mode/set-major-mode-invalid")
   (:id "r1:toggle-truncate-lines:mx" :commands ("toggle-truncate-lines") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text) :scenario "mode/toggle-truncate-lines-mx")
+  (:id "r1:comment-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%3B%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D" :commands ("comment-line") :rule :r1 :lane "W3-7a" :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}" :state "default" :outcome "command runs from its key sequence" :observe (:screen_text) :scenario "mode/comment-line-global-key")
 )
