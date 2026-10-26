@@ -14,7 +14,7 @@
     (check-type line (integer 0 *))
     (check-type column (integer 0 *))
     (check-type display-text string)
-    (%make-result-item file-path line column display-text))
+    (%make-result-item :file-path file-path :line line :column column :display-text display-text))
 
   (defstruct (search-result-list (:constructor %make-search-result-list))
     (buffer nil :read-only t)
