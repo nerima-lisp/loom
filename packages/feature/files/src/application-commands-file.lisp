@@ -23,6 +23,7 @@
                       path
                       :initial-content
                       initial-content)))
+    (%remember-file-snapshot buffer nil)
     (buffer-set-major-mode buffer (loom/feature/mode:major-mode-for-path path))
     buffer))
 
@@ -87,21 +88,31 @@ different owner is rejected."
   (declare (ignore input))
   (copy-list (editor-state-recent-files *editor-state*)))
 
-(defun %show-buffer-in-selected-window (buffer)
+(defun %show-buffer-in-selected-window (buffer &optional on-display)
   "Register BUFFER and display it in the selected window."
   (register-buffer *editor-session* buffer)
-  (loom/core/window-tree:window-set-buffer
-   (loom/core/window-tree:window-tree-selected-window
-    (editor-state-window-tree *editor-state*))
-   buffer))
+  (let ((window
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree *editor-state*)))
+        (continued nil))
+    (run-buffer-switch-guard
+     buffer
+     (lambda ()
+       (unless continued
+         (setf continued t)
+         (loom/core/window-tree:window-set-buffer window buffer)
+         (when on-display
+           (funcall on-display)))))
+  buffer))
 
 (defun %visit-existing-file (path)
-  "Load PATH, display it in the selected window, and refresh recency."
+  "Load PATH, display its file buffer, and refresh recency after the switch."
   (let ((buffer
          (or (find-buffer-by-path *editor-session* path)
              (%load-file-buffer path :name (%file-buffer-name path)))))
-    (%show-buffer-in-selected-window buffer)
-    (%record-recent-file path)
+    (%show-buffer-in-selected-window
+     buffer
+     (lambda () (%record-recent-file path)))
     buffer))
 
 (defun visit-file (path)

@@ -1,1 +1,1 @@
-()
+((:id "r1:switch-to-buffer:mx" :commands (:switch-to-buffer) :rule :r1 :entry "mx" :state "file buffer changed on disk while another buffer is selected" :outcome "M-x switch-to-buffer reloads exact external bytes before displaying the file buffer" :observe (:screen_text :file_bytes) :scenario "files/external-file-change-buffer-switch" :lane "W3-3"))

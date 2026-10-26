@@ -143,6 +143,7 @@
                        (merge-pathnames "note.txt.2~" backup-dir))
                       :to-equalp
                       #(111 108 100 32 102 105 114 115 116))))))))
+  (progn
   (it
     "leaves the original file untouched when its backup cannot be created"
     (host-kit:with-temporary-directory (dir)
@@ -167,4 +168,260 @@
                         :to-equalp
                         #(111 108 100))
                 (expect (loom:minibuffer-message-string minibuffer)
-                        :to-be nil)))))))))
+                        :to-be nil))))))))
+
+  (it
+    "rechecks disk contents after the overwrite confirmation"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "note.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (buffer-set-point buffer 0 3)
+              (buffer-insert-string buffer " local")
+              (%write-test-file-octets path #(101 120 116 101 114 110 97 108))
+              (loom/feature/files:save-buffer)
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect (%read-test-file-octets path)
+                      :to-equalp
+                      #(101 120 116 101 114 110 97 108))
+              (%confirm-minibuffer minibuffer "n")
+              (expect (%read-test-file-octets path)
+                      :to-equalp
+                      #(101 120 116 101 114 110 97 108))
+              (expect (loom/core/buffer:buffer-modified-p buffer)
+                      :to-be-truthy)
+              (loom/feature/files:save-buffer)
+              (%write-test-file-octets path #(114 97 99 101 100))
+              (%confirm-minibuffer minibuffer "y")
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect (%read-test-file-octets path)
+                      :to-equalp
+                      #(114 97 99 101 100))
+              (%confirm-minibuffer minibuffer "y")
+              (expect (%read-test-file-octets path)
+                      :to-equalp
+                      #(111 108 100 32 108 111 99 97 108))
+              (expect (loom/core/buffer:buffer-modified-p buffer)
+                      :to-be nil)))))))
+  (it
+    "checks restored file buffers before saving"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "restored.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((tree (editor-state-window-tree *editor-state*))
+                 (buffer (make-buffer :name "restored.txt"
+                                      :path path
+                                      :initial-content "stale"))
+                 (window (window-tree-selected-window tree)))
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (window-set-buffer window buffer)
+              (loom/feature/files:save-buffer)
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect (host-kit:read-file-string path) :to-equal "disk")
+              (%confirm-minibuffer minibuffer "n")
+              (expect (host-kit:read-file-string path) :to-equal "disk")
+              (loom/feature/files:save-buffer)
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect (host-kit:read-file-string path) :to-equal "disk")
+              (%confirm-minibuffer minibuffer "y")
+              (expect (host-kit:read-file-string path) :to-equal "stale")
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal
+                      (format nil "Wrote ~A" path))))))))
+  (it
+    "checks restored file buffers before recreating a missing file"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "missing.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((tree (editor-state-window-tree *editor-state*))
+                 (buffer (make-buffer :name "missing.txt"
+                                      :path path
+                                      :initial-content "recoverable"))
+                 (window (window-tree-selected-window tree)))
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (window-set-buffer window buffer)
+              (loom/feature/files:save-buffer)
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect (probe-file path) :to-be nil)
+              (%confirm-minibuffer minibuffer "n")
+              (expect (probe-file path) :to-be nil)
+              (loom/feature/files:save-buffer)
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (%confirm-minibuffer minibuffer "y")
+              (expect (host-kit:read-file-string path)
+                      :to-equal
+                      "recoverable")
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal
+                      (format nil "Wrote ~A" path)))))))))
+
+  (it
+    "checks a file buffer before switching and can reload the external version"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "target.txt" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "source"
+                                 (source (%selected-test-buffer))
+                                 (tree (editor-state-window-tree *editor-state*)))
+          (let ((target (loom/feature/files:visit-file path)))
+            (window-set-buffer (window-tree-selected-window tree) source)
+            (host-kit:write-file-string "external" path)
+            (loom/feature/buffers:switch-to-buffer)
+            (%confirm-minibuffer minibuffer (buffer-name target))
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                            path))
+            (expect (window-buffer (window-tree-selected-window tree))
+                    :to-be source)
+            (%confirm-minibuffer minibuffer "k")
+            (expect (window-buffer (window-tree-selected-window tree))
+                    :to-be target)
+            (expect (buffer-text target) :to-equal "disk")
+            (window-set-buffer (window-tree-selected-window tree) source)
+            (loom/feature/buffers:switch-to-buffer)
+            (%confirm-minibuffer minibuffer (buffer-name target))
+            (%confirm-minibuffer minibuffer "r")
+            (expect (buffer-text target) :to-equal "external")
+            (expect (window-buffer (window-tree-selected-window tree))
+                    :to-be target))))))
+  (it
+    "distinguishes restored file buffers from external changes"
+    (host-kit:with-temporary-directory (dir)
+      (let ((matching-path (merge-pathnames "matching.txt" dir))
+            (stale-path (merge-pathnames "stale.txt" dir))
+            (missing-path (merge-pathnames "missing.txt" dir))
+            (tree (editor-state-window-tree *editor-state*)))
+        (host-kit:write-file-string "same" matching-path)
+        (host-kit:write-file-string "disk" stale-path)
+        (%with-minibuffer-state (minibuffer "source"
+                                 (source (%selected-test-buffer))
+                                 (matching (make-buffer :name "matching.txt"
+                                                        :path matching-path
+                                                        :initial-content "same"))
+                                 (stale (make-buffer :name "stale.txt"
+                                                     :path stale-path
+                                                     :initial-content "stale"))
+                                 (missing (make-buffer :name "missing.txt"
+                                                       :path missing-path
+                                                       :initial-content "recoverable")))
+          (%register-test-buffer *editor-state* matching)
+          (%register-test-buffer *editor-state* stale)
+          (%register-test-buffer *editor-state* missing)
+          (loom/feature/buffers:switch-to-buffer)
+          (%confirm-minibuffer minibuffer "matching.txt")
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be matching)
+          (host-kit:write-file-string "external" matching-path)
+          (window-set-buffer (window-tree-selected-window tree) source)
+          (loom/feature/buffers:switch-to-buffer)
+          (%confirm-minibuffer minibuffer "matching.txt")
+          (expect (minibuffer-prompt-string minibuffer)
+                  :to-equal
+                  (format nil
+                          "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                          matching-path))
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be source)
+          (%confirm-minibuffer minibuffer "k")
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be matching)
+          (expect (buffer-text matching) :to-equal "same")
+          (host-kit:write-file-string "later" matching-path)
+          (window-set-buffer (window-tree-selected-window tree) source)
+          (loom/feature/buffers:switch-to-buffer)
+          (%confirm-minibuffer minibuffer "matching.txt")
+          (expect (minibuffer-prompt-string minibuffer)
+                  :to-equal
+                  (format nil
+                          "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                          matching-path))
+          (%confirm-minibuffer minibuffer "r")
+          (expect (buffer-text matching) :to-equal "later")
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be matching)
+          (window-set-buffer (window-tree-selected-window tree) source)
+          (loom/feature/buffers:switch-to-buffer)
+          (%confirm-minibuffer minibuffer "stale.txt")
+          (expect (minibuffer-prompt-string minibuffer)
+                  :to-equal
+                  (format nil
+                          "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                          stale-path))
+          (%confirm-minibuffer minibuffer "r")
+          (expect (buffer-text stale) :to-equal "disk")
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be stale)
+          (window-set-buffer (window-tree-selected-window tree) source)
+          (loom/feature/buffers:switch-to-buffer)
+          (%confirm-minibuffer minibuffer "missing.txt")
+          (expect (minibuffer-prompt-string minibuffer)
+                  :to-equal
+                  (format nil
+                          "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                          missing-path))
+          (expect (window-buffer (window-tree-selected-window tree))
+                  :to-be source)
+          (%confirm-minibuffer minibuffer "k")
+          (progn
+            (expect (window-buffer (window-tree-selected-window tree))
+                    :to-be missing)
+            (expect (probe-file missing-path) :to-be nil)
+            (loom/feature/files:save-buffer)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil "File changed on disk. Overwrite? (y/n): ~A"
+                            missing-path))
+            (%confirm-minibuffer minibuffer "n")
+            (expect (probe-file missing-path) :to-be nil))))))
+
+  (it
+    "reverts only after reading the file and confirming modified contents"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (buffer-set-point buffer 0 4)
+            (buffer-insert-string buffer " local")
+            (host-kit:write-file-string "external" path)
+            (loom/feature/files:revert-buffer)
+            (expect (buffer-text buffer) :to-equal "disk local")
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil "Discard local changes and revert ~A? (y/n): " path))
+            (%confirm-minibuffer minibuffer "n")
+            (expect (buffer-text buffer) :to-equal "disk local")
+            (loom/feature/files:revert-buffer)
+            (%confirm-minibuffer minibuffer "y")
+            (expect (buffer-text buffer) :to-equal "external")
+            (expect (loom/core/buffer:buffer-modified-p buffer)
+                    :to-be nil)
+            (buffer-set-point buffer 0 8)
+            (buffer-insert-string buffer " local")
+            (delete-file path)
+            (let ((before (buffer-text buffer)))
+              (loom/feature/files:revert-buffer)
+              (expect (buffer-text buffer) :to-equal before)
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal
+                      (format nil "File is unavailable: ~A" path)))))))))

@@ -29,6 +29,8 @@
            #:find-buffer-by-name
            #:find-buffer-by-path
            #:ensure-result-buffer
+           #:register-buffer-switch-guard
+           #:run-buffer-switch-guard
            #:switch-to-buffer
            #:kill-buffer
            #:quit-buffer-list))

@@ -8,7 +8,7 @@
                        :help "C-x C-s Save"
                        :help-order 14
                        :mutates t
-                       :prompts '(:free-string)
+                       :prompts '(:free-string :yes-no)
                        :needs-region nil
                        :external '("shell")
                        :modes '(:all))
@@ -23,4 +23,14 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  )
+  (register-command-spec :feature/files "revert-buffer" "revert-buffer" #'loom/feature/files:revert-buffer
+                       :keys 'nil
+                       :keymap :global
+                       :group "files and projects"
+                       :help "M-x revert-buffer"
+                       :help-order 15
+                       :mutates t
+                       :prompts '(:yes-no)
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all)))

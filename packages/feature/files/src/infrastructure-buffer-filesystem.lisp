@@ -198,14 +198,25 @@ The string contains newline style and encoding, plus BOM when present. New file 
                    (eq buffer (car *confirmed-file-overwrite*)))
               (values (cdr *confirmed-file-overwrite*) t)
               (values nil nil))
-        (unless (or (not baseline-known-p)
-                    (%file-snapshot-equal-p baseline current)
-                    (and approved-p
-                         (%file-snapshot-equal-p approved current)))
-          (error '%file-changed-on-disk
-                 :path path
-                 :snapshot current)))
-      current)))
+        (cond
+          (baseline-known-p
+           (unless (or (%file-snapshot-equal-p baseline current)
+                       (and approved-p
+                            (%file-snapshot-equal-p approved current)))
+             (error '%file-changed-on-disk
+                    :path path
+                    :snapshot current)))
+          ((or (and current
+                    (string= (buffer-text buffer)
+                             (%file-snapshot-text current)))
+               (and approved-p
+                    (%file-snapshot-equal-p approved current)))
+           (%remember-file-snapshot buffer current))
+          (t
+           (error '%file-changed-on-disk
+                  :path path
+                  :snapshot current)))
+        current))))
   (defun %buffer-output-octets (buffer baseline)
   (let* ((text (buffer-text buffer))
          (format (and baseline (%file-snapshot-format baseline))))
