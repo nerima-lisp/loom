@@ -112,9 +112,15 @@ def real_git_status_success(binary):
             _command(session, "git-status")
             session.wait_for_region_contents("body", "tracked.txt", timeout=_WAIT)
             _assert_buffer(session, "tracked.txt")
+            _write(
+                os.path.join(directory.name, "key-route-sentinel.txt"),
+                b"key route refresh\n",
+            )
             session.send(keys.ctrl("x") + keys.text("g"))
-            session.wait_for_region_contents("body", "tracked.txt", timeout=_WAIT)
-            _assert_buffer(session, "tracked.txt")
+            session.wait_for_region_contents(
+                "body", "key-route-sentinel.txt", timeout=_WAIT
+            )
+            _assert_buffer(session, "key-route-sentinel.txt")
             _assert_alive(session)
             _assert_quit(session, "real-git-status-success")
     finally:
