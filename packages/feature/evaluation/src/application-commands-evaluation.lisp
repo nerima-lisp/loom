@@ -57,8 +57,11 @@
     (%display-evaluation-result buffer result)
     result))
 
-(defun %evaluate-and-display (source)
-  (%append-evaluation-result source (evaluate-lisp-source source)))
+(defun %evaluate-and-display (source &key last-expression-only)
+  (multiple-value-bind (result evaluation-source)
+      (evaluate-lisp-source source :last-expression-only last-expression-only)
+    (when evaluation-source
+      (%append-evaluation-result evaluation-source result))))
 
 (defun eval-expression ()
   "Prompt for Lisp forms and evaluate them in LOOM-USER."
@@ -80,40 +83,14 @@
      (loom/core/window-tree:window-tree-selected-window
       (editor-state-window-tree *editor-state*))))))
 
-(defun %last-sexp-source-before-point (buffer)
-  (let* ((source (subseq (buffer-text buffer) 0 (buffer-point-offset buffer)))
-         (eof (gensym "EOF"))
-         (position 0)
-         (last-start nil)
-         (last-end nil))
-    (let ((*package* (%loom-evaluation-package))
-          (*read-eval* nil))
-      (loop
-        (handler-case
-            (multiple-value-bind (form next-position)
-                (read-from-string source nil eof :start position)
-              (if (eq form eof)
-                  (return
-                    (when last-start
-                      (string-left-trim (list #\Space #\Tab #\Newline #\Return)
-                                        (subseq source last-start last-end))))
-                  (setf last-start position
-                        last-end next-position
-                        position next-position)))
-          (error ()
-            (return
-              (string-left-trim (list #\Space #\Tab #\Newline #\Return)
-                                (subseq source position)))))))))
-
 (defun eval-last-sexp ()
   "Evaluate the last Lisp expression before point in the LOOM-USER package."
   (let* ((buffer
            (loom/core/window-tree:window-buffer
             (loom/core/window-tree:window-tree-selected-window
              (editor-state-window-tree *editor-state*))))
-         (source (%last-sexp-source-before-point buffer))
+         (source (subseq (buffer-text buffer) 0 (buffer-point-offset buffer)))
          (minibuffer (editor-state-minibuffer *editor-state*)))
-    (if source
-        (%evaluate-and-display source)
-        (when minibuffer
-          (minibuffer-message minibuffer "No Lisp expression before point")))))
+    (unless (%evaluate-and-display source :last-expression-only t)
+      (when minibuffer
+        (minibuffer-message minibuffer "No Lisp expression before point")))))

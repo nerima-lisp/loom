@@ -50,13 +50,13 @@ again as OWNER replaces its provider; a different owner is rejected."
         (setf error-message (princ-to-string condition))))
     (values form-count (nreverse value-lines) error-message)))
 
-(defun %evaluate-lisp-forms (source output-stream)
+(defun %evaluate-lisp-forms (source output-stream package)
   "Return the number of forms read, formatted value lines, and NIL or error text."
   (let ((form-count 0)
         (value-lines nil)
         (error-message nil))
     (handler-case
-        (let ((*package* (%loom-evaluation-package))
+        (let ((*package* package)
               (*read-eval* nil)
               (*standard-output* output-stream)
               (eof (gensym "EOF")))
@@ -66,25 +66,60 @@ again as OWNER replaces its provider; a different owner is rejected."
         (setf error-message (princ-to-string condition))))
     (values form-count value-lines error-message)))
 
-(defun evaluate-lisp-source (source)
-  "Read and evaluate SOURCE forms in LOOM-USER until EOF or the first error,
-and return an evaluation result.
+(defun evaluate-lisp-source (source &key last-expression-only)
+  "Read and evaluate SOURCE forms in LOOM-USER until EOF or the first error.
 
-Reader and evaluation errors are captured in the returned result.  Reader
-evaluation syntax such as #. is disabled, while the evaluated forms otherwise
-run with the same trusted access as user initialization code."
+When LAST-EXPRESSION-ONLY is true, evaluate the last complete form before EOF.
+If reading fails, evaluate the unread tail to report the reader error. Return
+the evaluation result and selected source as a second value.
+
+Reader evaluation syntax such as #. is disabled, while the evaluated forms
+otherwise run with the same trusted access as user initialization code."
   (check-type source string)
-  (let ((output-stream (make-string-output-stream))
-        (error-stream (make-string-output-stream))
-        (form-count 0)
-        (value-lines nil)
-        (error-message nil))
-    (let ((*error-output* error-stream))
-      (multiple-value-setq (form-count value-lines error-message)
-        (%evaluate-lisp-forms source output-stream)))
-    (make-evaluation-result
-     :form-count form-count
-     :value-lines value-lines
-     :output (get-output-stream-string output-stream)
-     :error-output (get-output-stream-string error-stream)
-     :error-message error-message)))
+  (labels ((last-expression-source (text package)
+             (let* ((eof (gensym "EOF"))
+                    (position 0)
+                    (last-start nil)
+                    (last-end nil))
+               (let ((*package* package)
+                     (*read-eval* nil))
+                 (loop
+                   (handler-case
+                       (multiple-value-bind (form next-position)
+                           (read-from-string text nil eof :start position)
+                         (if (eq form eof)
+                             (return
+                               (when last-start
+                                 (string-left-trim
+                                  (list #\Space #\Tab #\Newline #\Return)
+                                  (subseq text last-start last-end))))
+                             (setf last-start position
+                                   last-end next-position
+                                   position next-position)))
+                     (error ()
+                       (return
+                         (string-left-trim
+                          (list #\Space #\Tab #\Newline #\Return)
+                          (subseq text position))))))))))
+    (let* ((package (%loom-evaluation-package))
+           (evaluation-source
+             (if last-expression-only
+                 (last-expression-source source package)
+                 source))
+           (input-source (or evaluation-source ""))
+           (output-stream (make-string-output-stream))
+           (error-stream (make-string-output-stream))
+           (form-count 0)
+           (value-lines nil)
+           (error-message nil))
+      (let ((*error-output* error-stream))
+        (multiple-value-setq (form-count value-lines error-message)
+          (%evaluate-lisp-forms input-source output-stream package)))
+      (values
+       (make-evaluation-result
+        :form-count form-count
+        :value-lines value-lines
+        :output (get-output-stream-string output-stream)
+        :error-output (get-output-stream-string error-stream)
+        :error-message error-message)
+       evaluation-source))))
