@@ -6,7 +6,9 @@
                  :on-cancel (minibuffer-message minibuffer "Quit"))
       ((input "M-x "
               :completion-function
-              (function loom/core/command:command-completion-names)))
+              (lambda (input)
+                (declare (ignore input))
+                (loom/core/command:command-completion-names ""))))
     (let ((spec (loom/core/command:find-extended-command-spec input)))
       (if spec
           (invoke-command (loom/core/command:command-spec-id spec) :mx)

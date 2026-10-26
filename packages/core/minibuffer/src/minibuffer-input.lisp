@@ -57,10 +57,9 @@ ran off the end of the history, both leave the input untouched."
     (and on-key (funcall on-key key-event) t)))
 
 (defun %minibuffer-notify-change (minibuffer)
-  "Notify MINIBUFFER's ON-CHANGE hook with the current input.
-
-Editing-key branches notify this hook even when the input is unchanged;
-confirm and cancel do not."
+  "Refresh completion state and notify MINIBUFFER's on-change hook."
+  (when (%minibuffer-completion-function minibuffer)
+    (%minibuffer-refresh-completion-candidates minibuffer))
   (let ((on-change (%minibuffer-on-change minibuffer)))
     (when on-change
       (funcall on-change (%minibuffer-input minibuffer)))))

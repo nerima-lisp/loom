@@ -9,6 +9,7 @@
   (on-change nil)
   (on-key nil)
   (completion-function nil)
+  (completion-candidates nil)
   (history nil)
   (message nil))
 
@@ -39,3 +40,6 @@ as a string. Returns an empty string when MINIBUFFER is not active."
 (defun minibuffer-message-string (minibuffer)
   "Return the minibuffer's current transient message, or NIL."
   (%minibuffer-message minibuffer))
+(defun minibuffer-completion-candidates (minibuffer)
+  "Return a copy of the active completion candidates, or NIL."
+  (copy-list (%minibuffer-completion-candidates minibuffer)))

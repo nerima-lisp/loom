@@ -50,6 +50,38 @@ different owner is rejected."
     (error "Recent-file recorder is not registered"))
   (funcall (cdr *recent-file-recorder*) path))
 
+(defun %find-file-candidates (input)
+  "Return path candidates from INPUT's existing parent directory."
+  (let* ((separator (position #\/ input :from-end t))
+         (directory-text (if separator (subseq input 0 (1+ separator)) ""))
+         (directory (if (string= directory-text "")
+                        #p"./"
+                        (pathname directory-text)))
+         (resolved-directory (probe-file directory))
+         (entries nil))
+    (when (and resolved-directory
+               (host-kit:directory-pathname-p resolved-directory))
+      (host-kit:call-with-directory-entries
+       (lambda (child-path metadata)
+         (let* ((kind (host-kit:file-metadata-kind metadata))
+                (name (if (eq kind :directory)
+                          (file-namestring child-path)
+                          (file-namestring child-path))))
+           (when (member kind '(:directory :regular-file))
+             (push (cons (concatenate 'string
+                                      directory-text
+                                      name
+                                      (if (eq kind :directory) "/" ""))
+                         kind)
+                   entries))))
+       resolved-directory))
+    (mapcar #'car
+            (sort entries
+                  (lambda (first second)
+                    (or (and (eq (cdr first) :directory)
+                             (eq (cdr second) :regular-file))
+                        (and (eq (cdr first) (cdr second))
+                             (string< (car first) (car second)))))))))
 (defun %recent-file-candidates (input)
   "Return recent file paths suitable for minibuffer completion."
   (declare (ignore input))
@@ -91,7 +123,7 @@ an empty buffer associated with that path, so a later save creates the file."
    (minibuffer (editor-state-minibuffer *editor-state*)
                :on-cancel
                (minibuffer-message minibuffer "Quit"))
-   ((path "Find file: "))
+   ((path "Find file: " :completion-function #'%find-file-candidates))
    (let* ((existing-path (probe-file path))
           (directory-p
             (and existing-path (host-kit:directory-pathname-p existing-path)))

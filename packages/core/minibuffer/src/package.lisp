@@ -7,6 +7,7 @@
    #:minibuffer-active-p
    #:minibuffer-prompt-string
    #:minibuffer-input-string
+   #:minibuffer-completion-candidates
    #:minibuffer-message-string
    #:minibuffer-activate
    #:minibuffer-set-prompt

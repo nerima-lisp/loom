@@ -9,6 +9,12 @@
     ((:file "package")))))
 
 (asdf:defsystem "loom-feature-minibuffer-ui/test"
-  :depends-on ("loom-feature-minibuffer-ui")
+  :depends-on ("loom-feature-minibuffer-ui"
+               "loom/test-support"
+               "cl-weave")
   :serial t
-  :components ())
+  :components
+  ((:module "t"
+    :serial t
+    :components
+    ((:file "minibuffer-ui-render-test")))))

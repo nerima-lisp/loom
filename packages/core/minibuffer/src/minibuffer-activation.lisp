@@ -9,7 +9,8 @@
         (%minibuffer-on-cancel minibuffer) nil
         (%minibuffer-on-change minibuffer) nil
         (%minibuffer-on-key minibuffer) nil
-        (%minibuffer-completion-function minibuffer) nil)
+        (%minibuffer-completion-function minibuffer) nil
+        (%minibuffer-completion-candidates minibuffer) nil)
   (let ((history (%minibuffer-history minibuffer)))
     (when history
       (history-kit:history-reset-navigation history)))
@@ -50,6 +51,7 @@ MINIBUFFER."
         (%minibuffer-on-change minibuffer) on-change
         (%minibuffer-on-key minibuffer) on-key
         (%minibuffer-completion-function minibuffer) completion-function
+        (%minibuffer-completion-candidates minibuffer) nil
         (%minibuffer-message minibuffer) nil)
   minibuffer)
 

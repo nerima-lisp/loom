@@ -405,6 +405,18 @@
       (expect (minibuffer-input-string minibuffer) :to-equal "forward-char")
       (minibuffer-handle-key minibuffer (%special-key :enter))
       (expect (buffer-point-column (%selected-test-buffer)) :to-equal 1)))
+  ;; M-x uses completion styles and TAB to complete command names.
+  ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Completion-Styles.html
+  ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Completion-Commands.html
+  (it "matches a flex-only command input in M-x candidates"
+    (%with-minibuffer-state (minibuffer "hi")
+      (loom::execute-extended-command)
+      (%type-string minibuffer "fch")
+      (expect
+       (find "forward-char"
+             (loom/core/minibuffer:minibuffer-completion-candidates minibuffer)
+             :test (function string=))
+       :to-be-truthy)))
   (it "reports an unregistered command without evaluating it"
     (%with-minibuffer-state (minibuffer "hi")
       (loom::execute-extended-command)
