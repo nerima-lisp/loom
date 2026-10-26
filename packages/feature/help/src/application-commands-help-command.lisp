@@ -5,7 +5,7 @@
     (loom/core/window-tree:window-buffer
      (loom/core/window-tree:window-tree-selected-window
       (loom/core/editor-session:editor-state-window-tree
-       loom/core/editor-session:*editor-state*)))
+       loom/core/editor-session:*editor-state*))))
 
   (defun %show-help (text)
     (let* ((state loom/core/editor-session:*editor-state*)
@@ -58,7 +58,7 @@
                 ((member key '("backspace" "delete") :test #'string-equal)
                  "DEL")
                 ((= (length key) 1) key)
-                (t (string-upcase key)))))
+                (t (string-upcase key))))))
 
   (defun %help-format-json-sequence (sequence)
     (format nil "~{~A~^ ~}"
@@ -79,7 +79,7 @@
             (gethash "name" entry)
             (gethash "id" entry)
             (gethash "group" entry)
-            (%help-entry-bindings entry)))))
+            (%help-entry-bindings entry))))
 
   (defun %help-key-tokens (input)
     (loop with start = 0
@@ -369,4 +369,4 @@
                (or (getf mode :name) "Unknown")
                (getf mode :mode)
                (or (getf mode :description) "No mode description.")
-               (%help-local-bindings-text mode)))))))
+               (%help-local-bindings-text mode))))))
