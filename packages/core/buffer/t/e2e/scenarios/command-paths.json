@@ -940,6 +940,695 @@
         0,
         0
       ]
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/undo",
+      "path_id": "r3:fill-paragraph:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
+      "commands": ["fill-paragraph", "undo", "save-buffer"],
+      "command": "fill-paragraph",
+      "mutation_case": "undo",
+      "command_keys": ["M-q"],
+      "initial_bytes": "alpha beta\ngamma delta\n",
+      "effect_bytes": "alpha beta gamma delta\n",
+      "expected_bytes": "alpha beta\ngamma delta\n",
+      "expected_cursor": [0, 0],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {"region": "body", "index": 0, "text": "alpha beta"},
+        {"region": "body", "index": 1, "text": "gamma delta"}
+      ],
+      "effect_screen": [{"region": "body", "text": "alpha beta gamma delta"}],
+      "expected_undo_cursor": [0, 10]
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/undo",
+      "path_id": "r3:transpose-chars:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
+      "commands": ["transpose-chars", "undo", "save-buffer"],
+      "command": "transpose-chars",
+      "mutation_case": "undo",
+      "command_keys": ["C-t"],
+      "pre_command_keys": ["C-f"],
+      "initial_bytes": "abcd\n",
+      "effect_bytes": "bacd\n",
+      "expected_bytes": "abcd\n",
+      "expected_cursor": [0, 2],
+      "expected_minibuffer": "",
+      "expected_screen": [{"region": "body", "text": "abcd"}],
+      "effect_screen": [{"region": "body", "text": "bacd"}],
+      "expected_undo_cursor": [0, 1]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/undo",
+      "path_id": "r3:newline:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": ["forward-char", "execute-extended-command", "newline", "undo", "save-buffer"],
+      "command": "newline",
+      "mutation_case": "undo",
+      "command_keys": ["C-f", "M-x", "newline", "RET"],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [1, 0],
+      "expected_minibuffer": "",
+      "expected_screen": [{"region": "body", "text": "abc"}],
+      "effect_screen": [
+        {"region": "body", "index": 0, "text": "a"},
+        {"region": "body", "index": 1, "text": "bc"}
+      ],
+      "expected_undo_cursor": [0, 1]
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/undo",
+      "path_id": "r3:open-line:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": ["forward-char", "open-line", "undo", "save-buffer"],
+      "command": "open-line",
+      "mutation_case": "undo",
+      "command_keys": ["C-f", "C-o"],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [0, 1],
+      "expected_minibuffer": "",
+      "expected_screen": [{"region": "body", "text": "abc"}],
+      "effect_screen": [
+        {"region": "body", "index": 0, "text": "a"},
+        {"region": "body", "index": 1, "text": "bc"}
+      ],
+      "expected_undo_cursor": [0, 1]
+    },
+    {
+      "name": "command-path/buffer/r3/capitalize-word/macro-replay",
+      "path_id": "r3:capitalize-word:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "capitalize-word",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-c"
+      ],
+      "initial_bytes": "ONE two three\n",
+      "effect_bytes": "One two three\n",
+      "expected_bytes": "One two three\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "ONE two three"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/macro-replay",
+      "path_id": "r3:delete-indentation:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "delete-indentation",
+        "end-kbd-macro",
+        "undo",
+        "beginning-of-buffer",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "M-^"
+      ],
+      "initial_bytes": "a\nb\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "M-<"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "b",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/macro-replay",
+      "path_id": "r3:downcase-word:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "downcase-word",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-l"
+      ],
+      "initial_bytes": "ONE two\n",
+      "effect_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/macro-replay",
+      "path_id": "r3:newline:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "execute-extended-command",
+        "newline",
+        "end-kbd-macro",
+        "undo",
+        "beginning-of-buffer",
+        "forward-char",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "newline",
+        "RET"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "replay_prefix_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/macro-replay",
+      "path_id": "r3:open-line:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "start-kbd-macro",
+        "forward-char",
+        "open-line",
+        "end-kbd-macro",
+        "undo",
+        "beginning-of-buffer",
+        "forward-char",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-f",
+        "C-o"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\nbc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "replay_prefix_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/redo/macro-replay",
+      "path_id": "r3:redo:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "redo",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/macro-replay",
+      "path_id": "r3:undo:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "undo",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-/"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "\u007f"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/macro-replay",
+      "path_id": "r3:upcase-word:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "upcase-word",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-u"
+      ],
+      "initial_bytes": "one two\n",
+      "effect_bytes": "ONE two\n",
+      "expected_bytes": "ONE two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/capitalize-word/narrow",
+      "path_id": "r3:capitalize-word:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "capitalize-word",
+        "save-buffer"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-c"
+      ],
+      "initial_bytes": "ONE two three\noutside\n",
+      "effect_bytes": "One two three\noutside\n",
+      "expected_bytes": "One two three\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-char/prefix-u4",
+      "path_id": "r3:delete-char:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "universal-argument",
+        "delete-char",
+        "save-buffer"
+      ],
+      "command": "delete-char",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "C-d"
+      ],
+      "initial_bytes": "abcdefgh\n",
+      "effect_bytes": "efgh\n",
+      "expected_bytes": "efgh\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "efgh"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "efgh"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/split-window",
+      "path_id": "r3:delete-indentation:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below",
+        "delete-indentation",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "M-^"
+      ],
+      "initial_bytes": "a\nb\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "a b",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a b",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "a b",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "pre_command_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
     }
   ]
 }
