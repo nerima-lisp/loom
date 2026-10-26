@@ -6,4 +6,22 @@
   :outcome "selects a language mode from its extension and preserves buffer edits"
   :observe (:screen_text :file_bytes :cursor)
   :scenario "lang-web/language-modes"
+  :lane "W3-7d")
+ (:id "r1:lang-web:syntax-indentation:tab"
+  :commands ("find-file" "indent-for-tab-command" "save-buffer")
+  :rule :r1
+  :entry "key:tab"
+  :state "file opened"
+  :outcome "indents nested brackets by mode width and ignores string and comment brackets"
+  :observe (:screen_text :file_bytes :cursor)
+  :scenario "lang-web/syntax-indentation"
+  :lane "W3-7d")
+ (:id "r1:lang-web:default-indentation:tab"
+  :commands ("find-file" "indent-for-tab-command" "save-buffer")
+  :rule :r1
+  :entry "key:tab"
+  :state "file opened"
+  :outcome "HTML, CSS, and YAML align to the previous line"
+  :observe (:screen_text :file_bytes :cursor)
+  :scenario "lang-web/default-indentation"
   :lane "W3-7d"))
