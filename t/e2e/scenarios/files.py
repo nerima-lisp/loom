@@ -82,6 +82,7 @@ def file_and_buffer_commands(binary):
             session.type("!")
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(copy_path, b"!beta\n")
+            _wait_for_body_row(session, 0, "!beta")
             _assert_body_text(session, 0, "!beta")
 
             session.send(keys.ctrl("x") + b"rf")
