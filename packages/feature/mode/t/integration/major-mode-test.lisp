@@ -167,6 +167,34 @@ run" (buffer (%selected-test-buffer)))
          (cl-tty-kit:make-key-event :type :special :code :enter)
          keymap-state))
       (expect (buffer-line buffer 1) :to-equal "  ")))
+  (it
+    "records RET with its command route and key"
+    (host-kit:with-temporary-directory (directory)
+      (let ((trace-path (namestring (merge-pathnames "commands.jsonl" directory))))
+        (%with-minibuffer-state
+            (minibuffer "root" (buffer (%selected-test-buffer)))
+          (let ((keymap-state
+                  (loom/core/command:make-keymap-state
+                   (loom/core/editor-session:editor-state-keymap *editor-state*))))
+            (buffer-set-major-mode buffer :python)
+            (buffer-set-point buffer 0 4)
+            (with-replaced-function
+                (uiop:getenv
+                 (lambda (name)
+                   (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
+              (loom::%dispatch-key-event
+               (cl-tty-kit:make-key-event :type :special :code :enter)
+               keymap-state))
+            (with-open-file (stream trace-path)
+              (let* ((event (json-kit:parse (read-line stream nil)))
+                     (entry (gethash "entry" event)))
+                (expect (gethash "command" event)
+                        :to-equal
+                        "mode/newline-and-indent")
+                (expect (gethash "route" event) :to-equal "key")
+                (expect (search "global" entry) :to-be-truthy)
+                (expect (search "enter" entry) :to-be-truthy)
+                (expect (read-line stream nil) :to-be nil))))))))
 
   (it
     "reindents the active region with C-M-backslash"
@@ -360,4 +388,31 @@ run" (buffer (%selected-test-buffer)))
         (buffer-set-point buffer 0 1)
         (signals error
           (loom/feature/mode:newline-and-indent))
-        (expect (buffer-text buffer) :to-equal "x")))))
+        (expect (buffer-text buffer) :to-equal "x"))))
+  (it
+    "preserves indentation and continuation on RET"
+    (%with-registered-major-modes (:loom-test-ret-continuation)
+      (register-major-mode :loom-test-ret-continuation)
+      (loom/feature/mode:register-major-mode-indentation-rule
+       :loom-test-ret-continuation
+       (lambda (buffer line-number)
+         (declare (ignore buffer))
+         (if (= line-number 1) 2 0)))
+      (loom/feature/mode:register-major-mode-newline-continuation
+       :loom-test-ret-continuation
+       (lambda (buffer line-number)
+         (declare (ignore buffer))
+         (when (zerop line-number) "- ")))
+      (%with-minibuffer-state
+          (minibuffer "- item" (buffer (%selected-test-buffer)))
+        (buffer-set-major-mode buffer :loom-test-ret-continuation)
+        (buffer-set-point buffer 0 6)
+        (let ((keymap-state
+                (loom/core/command:make-keymap-state
+                 (loom/core/editor-session:editor-state-keymap *editor-state*))))
+          (loom::%dispatch-key-event
+           (cl-tty-kit:make-key-event :type :special :code :enter)
+           keymap-state))
+        (expect (buffer-text buffer) :to-equal (format nil "- item~%  - "))
+        (expect (buffer-point-line buffer) :to-equal 1)
+        (expect (buffer-point-column buffer) :to-equal 4)))))

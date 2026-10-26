@@ -348,7 +348,12 @@ non-negative column, or NIL to use the preceding line's indentation."
       (opener-rule
        (let ((offset (loom/core/buffer:buffer-point-offset buffer)))
          (loom/core/command:record-undo-boundary-for-command t)
-         (loom/core/command:self-insert-command character)
+         (loom/core/command:invoke-key-command
+          "core/self-insert"
+          :key
+          (list (loom/core/command:key-event->descriptor event))
+          "global"
+          character)
          (buffer-insert-string buffer (string (cdr opener-rule)))
          (%major-mode-set-point-offset buffer (1+ offset)))
        :handled)
@@ -394,7 +399,11 @@ non-negative column, or NIL to use the preceding line's indentation."
             (not completion)
             (not (buffer-read-only-p buffer))
             (not (and minibuffer (minibuffer-active-p minibuffer))))
-       (newline-and-indent)
+       (loom/core/command:invoke-key-command
+        "mode/newline-and-indent"
+        :key
+        (list (loom/core/command:key-event->descriptor event))
+        "global")
        :handled)
       (t :pass))))
 

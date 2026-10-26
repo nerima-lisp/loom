@@ -33,3 +33,14 @@
 (register-internal-command
  :feature/mode "mode/comment-dwim" (function loom/feature/mode:comment-dwim)
  :mutates t :prompts nil :needs-region nil :external nil :modes (list :all))
+(register-key-command
+ :feature/mode
+ "mode/newline-and-indent"
+ (function loom/feature/mode:newline-and-indent)
+ :global
+ nil
+ :mutates t
+ :prompts nil
+ :needs-region nil
+ :external nil
+ :modes '(:all))
