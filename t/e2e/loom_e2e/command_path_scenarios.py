@@ -2,7 +2,7 @@
 
 import json
 import tempfile
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from . import keys
@@ -276,26 +276,37 @@ def _save_and_assert_precondition(session, path, expected_bytes):
         raise AssertionError("restored precondition bytes did not match exactly")
 
 
-def _assert_final_state(session, case, path, expected_bytes, *, save=False):
-    _assert_minibuffer(session, case["expected_minibuffer"])
+def _assert_final_state(
+    session, case, path, expected_bytes, *, save=False, stage_prefix=None
+):
+    def stage(label):
+        if stage_prefix is None:
+            return nullcontext()
+        return _deadline_stage(case["name"], f"{stage_prefix} {label}")
+
+    with stage("minibuffer"):
+        _assert_minibuffer(session, case["expected_minibuffer"])
     for expectation in case["expected_screen"]:
-        session.wait_for_region_exact_text(
-            expectation["region"],
-            expectation["text"],
-            index=expectation.get("index", 0),
-            strip_right=True,
-        )
+        with stage(f"{expectation['region']} screen"):
+            session.wait_for_region_exact_text(
+                expectation["region"],
+                expectation["text"],
+                index=expectation.get("index", 0),
+                strip_right=True,
+            )
     _assert_screen(session, case["expected_screen"])
-    _assert_cursor(
-        session,
-        case["expected_cursor"],
-        case.get("expected_cursor_region", "body"),
-    )
+    with stage("cursor"):
+        _assert_cursor(
+            session,
+            case["expected_cursor"],
+            case.get("expected_cursor_region", "body"),
+        )
     expected_bytes = expected_bytes.encode("utf-8")
-    if save:
-        _save_and_assert(session, path, expected_bytes)
-    else:
-        session.assert_file_bytes(path, expected_bytes)
+    with stage("file"):
+        if save:
+            _save_and_assert(session, path, expected_bytes)
+        else:
+            session.assert_file_bytes(path, expected_bytes)
 
 
 def _run_r1(session, case, path):
@@ -356,20 +367,23 @@ def _run_r2(session, case, path):
 
 
 def _assert_effect_state(session, case):
-    for expectation in case["effect_screen"]:
-        session.wait_for_region_exact_text(
-            expectation["region"],
-            expectation["text"],
-            index=expectation.get("index", 0),
-            strip_right=True,
-        )
-    _assert_minibuffer(session, case["expected_minibuffer"])
+    with _deadline_stage(case["name"], "effect screen"):
+        for expectation in case["effect_screen"]:
+            session.wait_for_region_exact_text(
+                expectation["region"],
+                expectation["text"],
+                index=expectation.get("index", 0),
+                strip_right=True,
+            )
+    with _deadline_stage(case["name"], "effect minibuffer"):
+        _assert_minibuffer(session, case["expected_minibuffer"])
     _assert_screen(session, case["effect_screen"])
-    _assert_cursor(
-        session,
-        case["expected_cursor"],
-        case.get("expected_cursor_region", "body"),
-    )
+    with _deadline_stage(case["name"], "effect cursor"):
+        _assert_cursor(
+            session,
+            case["expected_cursor"],
+            case.get("expected_cursor_region", "body"),
+        )
 
 
 def _run_r3(session, case, path):
@@ -400,9 +414,11 @@ def _run_r3(session, case, path):
 
         replay_results = []
         for replay_index in range(2):
-            with _deadline_stage(case["name"], f"replay {replay_index + 1}"):
+            replay_name = f"replay {replay_index + 1}"
+            with _deadline_stage(case["name"], f"{replay_name} command"):
                 _send_keys(session, ["C-x", "e"])
-                _assert_effect_state(session, case)
+            _assert_effect_state(session, case)
+            with _deadline_stage(case["name"], f"{replay_name} save"):
                 replay_result = _save_and_assert(
                     session, path, case["expected_bytes"].encode("utf-8")
                 )
@@ -428,11 +444,18 @@ def _run_r3(session, case, path):
     with _deadline_stage(case["name"], "save effect"):
         _save_and_assert(session, path, expected_effect)
     if operation == "undo":
-        with _deadline_stage(case["name"], "undo and restore"):
+        with _deadline_stage(case["name"], "undo command"):
             session.send(keys.ctrl("x") + keys.text("u"))
-            _assert_final_state(
-                session, case, path, case["expected_bytes"], save=True
-            )
+        _assert_final_state(
+            session,
+            case,
+            path,
+            case["expected_bytes"],
+            save=False,
+            stage_prefix="undo result",
+        )
+        with _deadline_stage(case["name"], "undo save"):
+            _save_and_assert(session, path, case["expected_bytes"].encode("utf-8"))
 
 
 def run_command_path_scenario(binary, case, *, session_factory=Session):
