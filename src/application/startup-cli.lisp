@@ -150,8 +150,7 @@ its arguments, option values, and file paths."
 (defun %run-loom-cli-invocation (invocation)
   (%run-loom
    (%parse-startup-context
-    (let ((path (cl-cli:positional-value invocation :path)))
-      (if path (list path) nil)))))
+    (cl-cli:positional-value invocation :path))))
 
 (defun %make-loom-app ()
   "Build the CL-CLI application specification for the loom binary."
@@ -167,14 +166,15 @@ its arguments, option values, and file paths."
                                             :path
                                             :required-p
                                             nil
+                                            :rest-p
+                                            t
                                             :description
-                                            "A file to open, or a directory to browse (defaults to \".\")"))
+                                            "Files to open, or a directory to browse (defaults to the current directory)"))
                    :handler
                    (function %run-loom-cli-invocation)))
 
 (defparameter *loom-app*
   (%make-loom-app)
-  "CL-CLI application spec for the loom binary: a single positional path
-argument and no subcommands (the \"root positional\" shape CL-CLI's own
-getting-started guide documents for script-style tools), which gets
---help/--version/-h/-V for free instead of main.lisp hand-parsing argv.")
+  "CL-CLI application spec for the loom binary: an optional rest positional of
+file paths and no subcommands, which gets --help/--version/-h/-V for free
+instead of main.lisp hand-parsing argv.")
