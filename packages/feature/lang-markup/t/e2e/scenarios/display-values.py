@@ -66,7 +66,7 @@ def markup_display_values(binary):
             session.wait_for_region_text("minibuffer", "Eval: ")
             session.type(expression)
             session.key("RET")
-            session.wait_for_text("=> T")
+            session.wait_for_text("=>")
             session.assert_screen_text("=> T", match="contains")
             session.assert_file_bytes(path, initial)
 
