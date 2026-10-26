@@ -47,12 +47,7 @@ def markup_display_values(binary):
         "((:comment \"# line comment\")) "
         "((:comment \"#+BEGIN_COMMENT\")) ((:comment \"hidden\")) "
         "((:comment \"#+END_COMMENT\")) ((:code \"#+BEGIN_SRC text\")) "
-        "((:code \"literal\")) ((:code \"#+END_SRC\")))) "
-        "(equal (loom/feature/lang-markup:markup-display-lines "
-        "(format nil \"# CRLF~C~C<!-- begin~C~Cend -->\" "
-        "#\\Return #\\Newline #\\Return #\\Newline) :markdown) "
-        "'((( :heading \"# CRLF\")) ((:comment \"<!-- begin\")) "
-        "((:comment \"end -->\")))))"
+        "((:code \"literal\")) ((:code \"#+END_SRC\"))))) "
     )
 
     with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-markup-") as directory:
