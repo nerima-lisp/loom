@@ -55,7 +55,7 @@
 (:id "r5:git-status:git:success"
   :commands (:git-status)
   :rule :r5
-  :entry "M-x git-status"
+  :entry "mx"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:screen_text)
@@ -64,7 +64,7 @@
 (:id "r5:git-status:git:missing"
   :commands (:git-status)
   :rule :r5
-  :entry "M-x git-status"
+  :entry "mx"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -73,7 +73,7 @@
 (:id "r5:git-status:git:nonzero"
   :commands (:git-status)
   :rule :r5
-  :entry "M-x git-status"
+  :entry "mx"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -82,7 +82,7 @@
 (:id "r5:git-status:git:interrupted"
   :commands (:git-status)
   :rule :r5
-  :entry "M-x git-status"
+  :entry "mx"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
@@ -91,7 +91,7 @@
 (:id "r5:git-diff:git:success"
   :commands (:git-diff)
   :rule :r5
-  :entry "M-x git-diff"
+  :entry "mx"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:screen_text)
@@ -100,7 +100,7 @@
 (:id "r5:git-diff:git:missing"
   :commands (:git-diff)
   :rule :r5
-  :entry "M-x git-diff"
+  :entry "mx"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -109,7 +109,7 @@
 (:id "r5:git-diff:git:nonzero"
   :commands (:git-diff)
   :rule :r5
-  :entry "M-x git-diff"
+  :entry "mx"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -118,7 +118,7 @@
 (:id "r5:git-diff:git:interrupted"
   :commands (:git-diff)
   :rule :r5
-  :entry "M-x git-diff"
+  :entry "mx"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
@@ -127,7 +127,7 @@
 (:id "r5:git-stage-file:git:success"
   :commands (:git-stage-file)
   :rule :r5
-  :entry "M-x git-stage-file"
+  :entry "mx"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:external_state :screen_text)
@@ -136,7 +136,7 @@
 (:id "r5:git-stage-file:git:missing"
   :commands (:git-stage-file)
   :rule :r5
-  :entry "M-x git-stage-file"
+  :entry "mx"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -145,7 +145,7 @@
 (:id "r5:git-stage-file:git:nonzero"
   :commands (:git-stage-file)
   :rule :r5
-  :entry "M-x git-stage-file"
+  :entry "mx"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -154,7 +154,7 @@
 (:id "r5:git-stage-file:git:interrupted"
   :commands (:git-stage-file)
   :rule :r5
-  :entry "M-x git-stage-file"
+  :entry "mx"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
@@ -163,7 +163,7 @@
 (:id "r5:git-diff-staged:git:success"
   :commands (:git-diff-staged)
   :rule :r5
-  :entry "M-x git-diff-staged"
+  :entry "mx"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:screen_text)
@@ -172,7 +172,7 @@
 (:id "r5:git-diff-staged:git:missing"
   :commands (:git-diff-staged)
   :rule :r5
-  :entry "M-x git-diff-staged"
+  :entry "mx"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -181,7 +181,7 @@
 (:id "r5:git-diff-staged:git:nonzero"
   :commands (:git-diff-staged)
   :rule :r5
-  :entry "M-x git-diff-staged"
+  :entry "mx"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -190,7 +190,7 @@
 (:id "r5:git-diff-staged:git:interrupted"
   :commands (:git-diff-staged)
   :rule :r5
-  :entry "M-x git-diff-staged"
+  :entry "mx"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
@@ -199,7 +199,7 @@
 (:id "r5:git-unstage-file:git:success"
   :commands (:git-unstage-file)
   :rule :r5
-  :entry "M-x git-unstage-file"
+  :entry "mx"
   :state "temporary Git repository"
   :outcome "success"
   :observe (:external_state :screen_text)
@@ -208,7 +208,7 @@
 (:id "r5:git-unstage-file:git:missing"
   :commands (:git-unstage-file)
   :rule :r5
-  :entry "M-x git-unstage-file"
+  :entry "mx"
   :state "temporary Git repository without Git on PATH"
   :outcome "missing"
   :observe (:screen_text :file_bytes :external_state)
@@ -217,7 +217,7 @@
 (:id "r5:git-unstage-file:git:nonzero"
   :commands (:git-unstage-file)
   :rule :r5
-  :entry "M-x git-unstage-file"
+  :entry "mx"
   :state "temporary Git repository with a real Git error route"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
@@ -226,7 +226,7 @@
 (:id "r5:git-unstage-file:git:interrupted"
   :commands (:git-unstage-file)
   :rule :r5
-  :entry "M-x git-unstage-file"
+  :entry "mx"
   :state "temporary Git repository with a terminating Git wrapper"
   :outcome "interrupted"
   :observe (:screen_text :file_bytes :external_state)
