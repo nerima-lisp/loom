@@ -8,10 +8,9 @@ from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
 
-def _exercise_lisp_comment_and_pair_completion(binary, mode, extension):
+def _comment_lisp_region(binary, mode, extension):
     initial = b"hello\nworld\n"
     commented = b"; hello\n; world\n"
-    completed = b"; hello\n; world\n(x)\n"
 
     with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-lisp-") as directory:
         path = os.path.join(directory, "comments." + extension)
@@ -22,7 +21,6 @@ def _exercise_lisp_comment_and_pair_completion(binary, mode, extension):
             session.wait_ready()
             session.wait_for_region_exact_text("body", "hello\nworld")
             session.wait_for_region_cursor("body", 0)
-
             session.send(
                 keys.ctrl("a")
                 + b"\x00"
@@ -40,28 +38,38 @@ def _exercise_lisp_comment_and_pair_completion(binary, mode, extension):
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, commented)
             session.assert_file_bytes(path, commented)
+            output, code = session.quit()
 
-            session.send(keys.ctrl("g"))
-            session.send(keys.ctrl("n"))
-            session.wait_for_region_cursor("body", 0, index=2)
+        if code != 0:
+            raise AssertionError(
+                f"lang-lisp/comment-dwim ({mode}) exited with {code}: {output!r}"
+            )
+
+
+def _skip_lisp_closer(binary, mode, extension):
+    initial = b"tail\n"
+    completed = b"(x)tail\n"
+
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-lisp-") as directory:
+        path = os.path.join(directory, "pairs." + extension)
+        with open(path, "wb") as handle:
+            handle.write(initial)
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "tail")
+            session.wait_for_region_cursor("body", 0)
             session.send(b"(")
-            session.wait_for_region_exact_text("body", "; hello\n; world\n()")
-            session.wait_for_region_cursor("body", 1, index=2)
-            if session.observe_cursor(
-                expected=(2, 1), region="body", index=2
-            ) is not True:
-                raise AssertionError(f"{mode}: point after paired opener was not (2, 1)")
-
+            session.wait_for_region_exact_text("body", "()tail")
+            session.wait_for_region_cursor("body", 1)
             session.send(b"x")
-            session.wait_for_region_exact_text("body", "; hello\n; world\n(x)")
-            session.wait_for_region_cursor("body", 2, index=2)
+            session.wait_for_region_exact_text("body", "(x)tail")
+            session.wait_for_region_cursor("body", 2)
             session.send(b")")
-            session.wait_for_region_exact_text("body", "; hello\n; world\n(x)")
-            session.wait_for_region_cursor("body", 3, index=2)
-            if session.observe_cursor(
-                expected=(2, 3), region="body", index=2
-            ) is not True:
-                raise AssertionError(f"{mode}: point after skipped closer was not (2, 3)")
+            session.wait_for_region_exact_text("body", "(x)tail")
+            session.wait_for_region_cursor("body", 3)
+            if session.observe_cursor(expected=(0, 3), region="body") is not True:
+                raise AssertionError(f"{mode}: point after skipped closer was not (0, 3)")
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, completed)
@@ -70,16 +78,14 @@ def _exercise_lisp_comment_and_pair_completion(binary, mode, extension):
 
         if code != 0:
             raise AssertionError(
-                f"lang-lisp/comment-pair-completion ({mode}) exited "
-                f"with {code}: {output!r}"
+                f"lang-lisp/pair-skip ({mode}) exited with {code}: {output!r}"
             )
 
 
 @scenario(
-    "lang-lisp/comment-pair-completion-cl",
+    "lang-lisp/comment-dwim-cl",
     commands=[
-        "comment-line",
-        "keyboard-quit",
+        "mode/comment-dwim",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
@@ -87,15 +93,14 @@ def _exercise_lisp_comment_and_pair_completion(binary, mode, extension):
         "set-mark-command",
     ],
 )
-def common_lisp_comment_and_pair_completion(binary):
-    _exercise_lisp_comment_and_pair_completion(binary, "Common Lisp", "lisp")
+def common_lisp_comment_dwim(binary):
+    _comment_lisp_region(binary, "Common Lisp", "lisp")
 
 
 @scenario(
-    "lang-lisp/comment-pair-completion-el",
+    "lang-lisp/comment-dwim-el",
     commands=[
-        "comment-line",
-        "keyboard-quit",
+        "mode/comment-dwim",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
@@ -103,5 +108,21 @@ def common_lisp_comment_and_pair_completion(binary):
         "set-mark-command",
     ],
 )
-def emacs_lisp_comment_and_pair_completion(binary):
-    _exercise_lisp_comment_and_pair_completion(binary, "Emacs Lisp", "el")
+def emacs_lisp_comment_dwim(binary):
+    _comment_lisp_region(binary, "Emacs Lisp", "el")
+
+
+@scenario(
+    "lang-lisp/pair-skip-cl",
+    commands=["core/self-insert", "save-buffer"],
+)
+def common_lisp_pair_skip(binary):
+    _skip_lisp_closer(binary, "Common Lisp", "lisp")
+
+
+@scenario(
+    "lang-lisp/pair-skip-el",
+    commands=["core/self-insert", "save-buffer"],
+)
+def emacs_lisp_pair_skip(binary):
+    _skip_lisp_closer(binary, "Emacs Lisp", "el")
