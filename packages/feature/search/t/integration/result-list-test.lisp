@@ -18,7 +18,7 @@
           (find-symbol name "LOOM/FEATURE/SEARCH")
         (expect status :to-equal :external)
         (expect (and symbol (fboundp symbol)) :to-be-truthy))))
-  (it "publishes formatted rows into result buffers owned by each session"
+  (it "publishes clean, read-only rows and refreshes the owned result buffer"
     (let* ((session-a
              (loom/core/editor-session:make-editor-session
               (list :feature/buffers :feature/search)))
@@ -56,7 +56,18 @@
       (expect (loom/feature/buffers:find-buffer-by-name
                session-a "*Search Results*")
               :to-be
-              first-list)))
+              first-list)
+      (expect (loom/core/buffer:buffer-read-only-p first-list) :to-be t)
+      (expect (loom/core/buffer:buffer-modified-p first-list) :to-be nil)
+      (expect (loom/core/buffer:buffer-read-only-p second-list) :to-be t)
+      (expect (loom/core/buffer:buffer-modified-p second-list) :to-be nil)
+      (let ((reused-list
+              (loom/feature/search::publish-result-list
+               session-a "*Search Results*" (list other-item))))
+        (expect reused-list :to-be first-list)
+        (expect (buffer-text reused-list) :to-equal "other.lisp:2:1: beta")
+        (expect (loom/core/buffer:buffer-read-only-p reused-list) :to-be t)
+        (expect (loom/core/buffer:buffer-modified-p reused-list) :to-be nil))))
   ;; GNU Emacs Manual, "Compilation Mode", documents M-g n/p navigation from any buffer:
   ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Compilation-Mode.html
   (it "navigates from result and source buffers and reuses file buffers by path"

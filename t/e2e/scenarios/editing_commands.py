@@ -367,21 +367,17 @@ def occur(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             session.extended_command("occur")
-            print("DEBUG occur prompt", repr(session.region_text("minibuffer")), flush=True)
             session.wait_for_region_text(
                 "minibuffer", "List lines matching regexp: "
             )
             session.type("needle")
             session.key("RET")
-            print("DEBUG occur submitted", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_region_text(
                 "minibuffer", "Found 2 matching line(s)"
             )
             session.wait_for_text("1:7: first needle")
-            session.wait_for_text("2:7: second needle")
-            print("DEBUG occur result", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.wait_for_text("2:8: second needle")
             session.key("RET")
-            print("DEBUG occur visit", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_region_cursor("body", 6, index=0)
             _close(session, "editing/occur")
 

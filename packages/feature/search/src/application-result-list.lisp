@@ -96,11 +96,16 @@
                                              :items item-vector)))
       (loop for item across item-vector
             do (check-type item result-item))
-      (%replace-result-list-contents buffer item-vector)
-      (loom/core/buffer:buffer-set-major-mode buffer :loom-search-results)
-      (setf (gethash buffer (search-result-state-lists state)) record
-            (search-result-state-active-buffer state) buffer)
-      buffer)))
+      (loom/core/buffer:buffer-set-read-only buffer nil)
+      (unwind-protect
+           (progn
+             (%replace-result-list-contents buffer item-vector)
+             (loom/core/buffer:buffer-set-major-mode buffer :loom-search-results)
+             (setf (gethash buffer (search-result-state-lists state)) record
+                   (search-result-state-active-buffer state) buffer)
+             (loom/core/buffer:buffer-mark-saved buffer)
+             buffer)
+        (loom/core/buffer:buffer-set-read-only buffer t)))))
 (progn
   (defun search-result-visit ()
     "Visit the result item on the selected row of a result list."
