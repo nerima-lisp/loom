@@ -1,6 +1,7 @@
 """Exercise Git commands through the PTY against temporary repositories."""
 
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -87,12 +88,16 @@ def real_git_success(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _command(session, "git-status")
-            session.wait_for_text("tracked.txt")
-            session.assert_screen_text("tracked.txt", match="contains", region="body")
+            session.wait_for_region_contents("body", "tracked.txt")
+            session.assert_screen_text(
+                "tracked.txt", match="contains", region="body", index=None
+            )
 
             _command(session, "git-diff")
-            session.wait_for_text("working change")
-            session.assert_screen_text("working change", match="contains", region="body")
+            session.wait_for_region_contents("body", "working change")
+            session.assert_screen_text(
+                "working change", match="contains", region="body", index=None
+            )
 
             _prompted(session, "git-stage-file", "Git stage file: ", "tracked.txt")
             session.wait_for_text("Git staged tracked.txt")
@@ -100,8 +105,10 @@ def real_git_success(binary):
                 raise AssertionError("git-stage-file did not update the real index")
 
             _command(session, "git-diff-staged")
-            session.wait_for_text("working change")
-            session.assert_screen_text("working change", match="contains", region="body")
+            session.wait_for_region_contents("body", "working change")
+            session.assert_screen_text(
+                "working change", match="contains", region="body", index=None
+            )
 
             _prompted(session, "git-unstage-file", "Git unstage file: ", "tracked.txt")
             session.wait_for_text("Git unstaged tracked.txt")
@@ -152,21 +159,47 @@ def real_git_missing_executable(binary):
 @scenario("git/real-git-nonzero-preserves-result", commands=["git-status"])
 def real_git_nonzero_preserves_result(binary):
     directory, path = _repo()
+    index_path = os.path.join(directory.name, ".git", "index")
+    with open(index_path, "rb") as handle:
+        original_index = handle.read()
+    marker = os.path.join(directory.name, "fail-git-status")
+    wrapper_dir = os.path.join(directory.name, "bin")
+    os.makedirs(wrapper_dir)
+    real_git = shutil.which("git")
+    wrapper = os.path.join(wrapper_dir, "git")
+    _write(
+        wrapper,
+        (
+            "#!/bin/sh\n"
+            "/bin/cat >/dev/null\n"
+            f"if [ -e {shlex.quote(marker)} ]; then\n"
+            f"  exec {shlex.quote(real_git)} \"$@\" --loom-e2e-invalid-option\n"
+            "fi\n"
+            f"exec {shlex.quote(real_git)} \"$@\"\n"
+        ).encode("utf-8"),
+    )
+    os.chmod(wrapper, 0o755)
+    original_path = os.environ.get("PATH")
     try:
+        os.environ["PATH"] = os.pathsep.join(
+            part for part in (wrapper_dir, original_path) if part
+        )
         with open(path, "ab") as handle:
             handle.write(b"pending change\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
             _command(session, "git-status")
-            session.wait_for_text("pending change")
+            session.wait_for_region_contents("body", "pending change")
             session.assert_screen_text(
                 "pending change", match="contains", region="body", index=None
             )
 
-            index_path = os.path.join(directory.name, ".git", "index")
-            _write(index_path, b"broken-index")
+            with open(marker, "wb") as handle:
+                handle.write(b"fail\n")
             _command(session, "git-status")
-            session.wait_for_text("Git status exited with status")
+            session.wait_for_region_contents(
+                "minibuffer", "Git status exited with status"
+            )
             session.assert_screen_text(
                 "Git status exited with status", match="contains", region="minibuffer"
             )
@@ -176,11 +209,15 @@ def real_git_nonzero_preserves_result(binary):
             session.assert_file_bytes(path, _SOURCE + b"pending change\n")
             with open(index_path, "rb") as handle:
                 session.assert_external_state(
-                    "Git index after nonzero status", handle.read(), b"broken-index"
+                    "Git index after nonzero status", handle.read(), original_index
                 )
             _assert_alive(session)
             _assert_quit(session, "real-git-nonzero-preserves-result")
     finally:
+        if original_path is None:
+            os.environ.pop("PATH", None)
+        else:
+            os.environ["PATH"] = original_path
         directory.cleanup()
 
 
@@ -196,23 +233,34 @@ def real_git_interrupted(binary):
     wrapper = os.path.join(wrapper_dir, "git")
     _write(
         wrapper,
-        f"#!/bin/sh\n{real_git} \"$@\"\nkill -TERM $$\n".encode("utf-8"),
+        (
+            "#!/bin/sh\n"
+            "/bin/cat >/dev/null\n"
+            f"{shlex.quote(real_git)} \"$@\"\n"
+            "kill -TERM $$\n"
+        ).encode("utf-8"),
     )
     os.chmod(wrapper, 0o755)
     original_path = os.environ.get("PATH")
     try:
-        os.environ["PATH"] = wrapper_dir
+        os.environ["PATH"] = os.pathsep.join(
+            part for part in (wrapper_dir, original_path) if part
+        )
         try:
             with Session(binary, [path]) as session:
                 session.wait_ready()
                 _command(session, "git-status")
-                session.wait_for_text("Git status exited with status 143")
+                session.wait_for_region_contents(
+                    "minibuffer", "Git status exited with status 143"
+                )
                 session.assert_screen_text(
                     "Git status exited with status 143",
                     match="contains",
                     region="minibuffer",
                 )
-                session.assert_screen_text("##", match="contains", region="body")
+                session.assert_screen_text(
+                    "##", match="contains", region="body", index=None
+                )
                 session.assert_file_bytes(path, _SOURCE)
                 with open(index_path, "rb") as handle:
                     session.assert_external_state(
