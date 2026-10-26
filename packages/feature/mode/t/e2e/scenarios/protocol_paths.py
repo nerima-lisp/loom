@@ -189,6 +189,7 @@ def indent_split_window(binary):
 @scenario(
     "mode/indent-macro",
     commands=[
+        "set-major-mode",
         "start-kbd-macro",
         "indent-for-tab-command",
         "end-kbd-macro",
@@ -202,8 +203,10 @@ def indent_macro(binary):
         path = _python_path(directory, "indent.py", b"root\nvalue\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
-            session.send(keys.ctrl("x") + b"(" + session.profile.key("TAB"))
+            session.extended_command("start-kbd-macro")
+            session.key("TAB")
             session.send(keys.ctrl("x") + b")")
             session.key("DOWN")
             session.send(keys.ctrl("x") + b"e")
@@ -367,6 +370,7 @@ def comment_line_split_window(binary):
 @scenario(
     "mode/comment-line-macro",
     commands=[
+        "set-major-mode",
         "start-kbd-macro",
         "comment-line",
         "end-kbd-macro",
@@ -379,7 +383,9 @@ def comment_line_macro(binary):
         path = _python_path(directory, "comment.py", b"value\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("x") + b"(" + keys.meta(";"))
+            _select_python_mode(session)
+            session.extended_command("start-kbd-macro")
+            session.send(keys.meta(";"))
             session.send(keys.ctrl("x") + b")")
             session.key("DOWN")
             session.send(keys.ctrl("x") + b"e")
@@ -474,14 +480,15 @@ def set_major_mode_history(binary):
         _write(path, b"")
         with Session(binary, [path]) as session:
             session.wait_ready()
-            session.send(
-                keys.meta("x")
-                + b"set-major-mode\rPython\r"
-                + keys.meta("x")
-                + b"set-major-mode\r"
-                + session.profile.key("UP")
-                + b"\r"
-            )
+            session.extended_command("set-major-mode")
+            session.wait_for_region_text("minibuffer", "Major mode: ")
+            session.type("Python")
+            session.key("RET")
+            session.wait_for_region_text("minibuffer", "Mode: Python")
+            session.extended_command("set-major-mode")
+            session.wait_for_region_text("minibuffer", "Major mode: ")
+            session.key("UP", "UP")
+            session.key("RET")
             session.wait_for_region_text("minibuffer", "Mode: Python")
             session.assert_screen_text(
                 "Mode: Python", match="contains", region="minibuffer"
