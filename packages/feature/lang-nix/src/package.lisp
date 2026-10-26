@@ -283,8 +283,7 @@
                  (case target-token
                    (#\} #\{)
                    (#\] #\[)
-                   (#\) #\())))
-            0)
+                   (#\) #\())) 0))
            ((and (stringp target-token) (string= target-token "in"))
             (or (loom/feature/lang-nix::%nix-context-indentation
                  stack :let)
