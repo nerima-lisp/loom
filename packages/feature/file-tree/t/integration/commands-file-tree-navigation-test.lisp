@@ -151,10 +151,15 @@
                   :to-equal
                   (loom/core/command:command-id-for-function
                    (function loom/feature/mode:comment-dwim)))
-          (expect (eq owner
-                      (loom/feature/mode:major-mode-keymap
-                       :python global-keymap))
-                  :to-be t))))))
+          (progn
+            (expect (eq owner
+                        (loom/feature/mode:major-mode-keymap
+                         :python global-keymap))
+                    :to-be t)
+            (expect (eq visible-keymap
+                        (loom/core/command:keymap-for-buffer
+                         session buffer global-keymap))
+                    :to-be t)))))))
 
   (it
     "selected-path mutations do nothing when the file tree has no selection"

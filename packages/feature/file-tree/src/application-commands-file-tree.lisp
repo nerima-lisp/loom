@@ -94,18 +94,23 @@
  (file-tree-delete tree path)
  (%invalidate-file-tree-path path))
 (progn
+  (defvar *file-tree-local-keymap-cache*
+    (make-hash-table :test (function eq)))
   (defun %file-tree-keymap-provider (session buffer fallback-keymap)
+    "Return a stable overlay so keymap identity does not clear pending prefixes."
     (declare (ignore session buffer))
     (let ((tree (and *editor-state*
                      (editor-state-file-tree *editor-state*))))
       (when (and tree (file-tree-visible-p tree))
-        (let ((keymap
-                (loom/core/command:make-keymap
-                 :parent fallback-keymap
-                 :name "file-tree-local")))
-          (loom/core/command:install-default-keybindings
-           keymap :keymap-name :file-tree-local)
-          keymap))))
+        (or (gethash fallback-keymap *file-tree-local-keymap-cache*)
+            (setf (gethash fallback-keymap *file-tree-local-keymap-cache*)
+                  (let ((keymap
+                          (loom/core/command:make-keymap
+                           :parent fallback-keymap
+                           :name "file-tree-local")))
+                    (loom/core/command:install-default-keybindings
+                     keymap :keymap-name :file-tree-local)
+                    keymap))))))
   (eval-when (:load-toplevel :execute)
     (loom/core/command:register-buffer-keymap-provider
      :feature/file-tree
