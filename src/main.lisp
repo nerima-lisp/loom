@@ -688,17 +688,22 @@ the mode line or another footer in the remaining window rows."
 
 (defun %layout-draw-window-overlays
     (renderer leaf x-offset selected-p buffer-cell-function)
-  (%layout-draw-window-buffer
-   renderer leaf x-offset (%layout-window-content-height leaf) selected-p)
-  (%layout-draw-mode-display-lines
-   renderer leaf x-offset
-   (%layout-buffer-mode-display-lines
-    (loom/core/window-tree:window-buffer leaf)))
-  (%layout-draw-diagnostics renderer leaf x-offset)
-  (%layout-draw-region renderer leaf x-offset)
-  (%layout-draw-matching-paren renderer leaf x-offset)
-  (%layout-draw-isearch renderer leaf x-offset)
-  (%layout-draw-completion renderer leaf x-offset buffer-cell-function))
+  (let* ((buffer (loom/core/window-tree:window-buffer leaf))
+         (mode (buffer-major-mode buffer))
+         (display-lines
+           (when (or (eq mode :markdown) (eq mode :org))
+             (loom/feature/mode:major-mode-display-lines
+              (buffer-visible-text buffer)
+              mode))))
+    (%layout-draw-window-buffer
+     renderer leaf x-offset (%layout-window-content-height leaf) selected-p)
+    (%layout-draw-mode-display-lines
+     renderer leaf buffer x-offset display-lines)
+    (%layout-draw-diagnostics renderer leaf x-offset)
+    (%layout-draw-region renderer leaf x-offset)
+    (%layout-draw-matching-paren renderer leaf x-offset)
+    (%layout-draw-isearch renderer leaf x-offset)
+    (%layout-draw-completion renderer leaf x-offset buffer-cell-function)))
 
 (defun %layout-draw-window-mode-line (renderer window x-offset selected-p
                                       &optional workspace-name)

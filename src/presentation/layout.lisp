@@ -34,13 +34,6 @@ a measurable string rather than a bounds check of their own."
   (max 1 (loom/feature/mode:major-mode-tab-width mode)))
 (defun %layout-buffer-major-mode (buffer)
   (buffer-major-mode buffer))
-(defun %layout-buffer-mode-display-lines (buffer)
-  (let ((mode (%layout-buffer-major-mode buffer)))
-    (when (or (eq mode :markdown) (eq mode :org))
-      (loom/feature/mode:major-mode-display-lines
-       (buffer-visible-text buffer)
-       mode))))
-
 (defun %layout-buffer-line-display (buffer line)
   "Return BUFFER's line with tabs expanded and source-to-display indexes."
   (%loom-renderer-expand-tabs
