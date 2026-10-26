@@ -1,4 +1,20 @@
 (in-package #:loom/core/minibuffer)
+(defvar *message-sinks* nil)
+(defun register-message-sink (owner function)
+  "Register FUNCTION to receive minibuffer messages for OWNER.
+
+OWNER must be a keyword. A later registration for the same owner replaces its
+function without changing its position. Sinks receive message text in
+registration order. Callback errors propagate and stop dispatch."
+  (unless (keywordp owner)
+    (error "Message sink owner must be a keyword: ~S" owner))
+  (check-type function function)
+  (let ((entry (assoc owner *message-sinks* :test (function eq))))
+    (if entry
+        (setf (cdr entry) function)
+        (setf *message-sinks*
+              (append *message-sinks* (list (cons owner function))))))
+  function)
 
 (defun %minibuffer-deactivate (minibuffer)
   "Reset MINIBUFFER to the inactive state, discarding prompt/input/callbacks."
@@ -69,8 +85,14 @@ ignore this. Returns MINIBUFFER."
   minibuffer)
 
 (defun minibuffer-message (minibuffer text)
-  "Display TEXT in MINIBUFFER as a transient status message: unlike
-MINIBUFFER-ACTIVATE, this does not solicit input and does not affect
-MINIBUFFER-ACTIVE-P. Returns MINIBUFFER."
+  "Display TEXT in MINIBUFFER and notify registered message sinks.
+
+This does not solicit input or affect MINIBUFFER-ACTIVE-P. Sink callbacks run
+synchronously in registration order after the message is stored. Callback
+errors propagate and stop dispatch. Returns MINIBUFFER."
   (setf (%minibuffer-message minibuffer) text)
+  (dolist (sink
+           (mapcar (lambda (entry) (cons (car entry) (cdr entry)))
+                   *message-sinks*))
+    (funcall (cdr sink) text))
   minibuffer)

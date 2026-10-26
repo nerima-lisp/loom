@@ -29,14 +29,14 @@
        (signals error
                 (minibuffer-set-history-entries
                  (make-minibuffer :history (history-kit:make-history))
-                 '("ok" 42)))))
+                 '("ok" 42))))
     (it
       "treats a missing history store as an empty optional feature"
       (let ((minibuffer (make-minibuffer)))
         (expect (minibuffer-history-entries minibuffer) :to-be nil)
         (expect (minibuffer-set-history-entries minibuffer '("ignored"))
                 :to-be minibuffer)
-        (expect (minibuffer-history-entries minibuffer) :to-be nil)))
+        (expect (minibuffer-history-entries minibuffer) :to-be nil))))
 
 (describe
   "minibuffer-message"
@@ -71,3 +71,51 @@
       (expect (minibuffer-prompt-string minibuffer) :to-equal prompt)
       (expect (minibuffer-input-string minibuffer) :to-equal input)
       (expect (minibuffer-message-string minibuffer) :to-equal message))))
+(describe
+  "minibuffer message sinks"
+  (it
+    "notifies registered owners in order with the message text"
+    (let* ((loom/core/minibuffer::*message-sinks* nil)
+           (received nil)
+           (first (lambda (text)
+                    (push (list :first text) received)))
+           (second (lambda (text)
+                     (push (list :second text) received))))
+      (expect
+       (loom/core/minibuffer:register-message-sink :test/first first)
+       :to-be first)
+      (loom/core/minibuffer:register-message-sink :test/second second)
+      (minibuffer-message (make-minibuffer) "Saved.")
+      (expect (nreverse received)
+              :to-equal
+              (list (list :first "Saved.")
+                    (list :second "Saved.")))))
+
+  (it
+    "replaces a previous sink registered by the same owner"
+    (let* ((loom/core/minibuffer::*message-sinks* nil)
+           (received nil)
+           (previous (lambda (text)
+                       (declare (ignore text))
+                       (push :previous received)))
+           (replacement (lambda (text)
+                          (declare (ignore text))
+                          (push :replacement received))))
+      (loom/core/minibuffer:register-message-sink :test/owner previous)
+      (expect
+       (loom/core/minibuffer:register-message-sink :test/owner replacement)
+       :to-be replacement)
+      (minibuffer-message (make-minibuffer) "Saved.")
+      (expect received :to-equal (list :replacement))))
+
+  (it
+    "propagates sink errors after storing the message"
+    (let* ((loom/core/minibuffer::*message-sinks* nil)
+           (minibuffer (make-minibuffer)))
+      (loom/core/minibuffer:register-message-sink
+       :test/failing
+       (lambda (text)
+         (declare (ignore text))
+         (error "sink failed")))
+      (signals error (minibuffer-message minibuffer "Saved."))
+      (expect (minibuffer-message-string minibuffer) :to-equal "Saved."))))

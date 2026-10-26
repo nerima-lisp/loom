@@ -13,6 +13,7 @@
    #:minibuffer-activate
    #:minibuffer-set-prompt
    #:minibuffer-message
+   #:register-message-sink
    #:minibuffer-history-entries
    #:minibuffer-set-history-entries
    #:minibuffer-complete
