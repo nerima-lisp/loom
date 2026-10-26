@@ -20,6 +20,70 @@
                        (princ-to-string condition)
                        :condition-type
                        (type-of condition))))
+(defun %call-with-loom-terminal-streams (fd fd-supplied-p thunk)
+  "Call THUNK with the selected terminal descriptor and input/output streams.
+
+Use the inherited standard streams when both are terminals. If either is
+redirected, open the controlling terminal so keyboard input and rendering stay
+together."
+  (if fd-supplied-p
+      (funcall thunk fd *standard-input* *standard-output*)
+      (labels ((terminal-stream-fd (stream)
+                 (multiple-value-bind (stream-fd supported-p)
+                     (%stream-fd-if-supported stream)
+                   (when (and supported-p (eql 1 (sb-unix:unix-isatty stream-fd)))
+                     stream-fd))))
+        (let ((input-fd (terminal-stream-fd *standard-input*))
+              (output-fd (terminal-stream-fd *standard-output*)))
+          (if (and input-fd output-fd)
+              (funcall thunk input-fd *standard-input* *standard-output*)
+              (let ((terminal-fd
+                      (sb-posix:open "/dev/tty" sb-posix:o-rdwr))
+                    (input-fd nil)
+                    (output-fd nil)
+                    (input-stream nil)
+                    (output-stream nil))
+                (unwind-protect
+                     (progn
+                       (setf input-fd (sb-posix:dup terminal-fd)
+                             output-fd (sb-posix:dup terminal-fd))
+                       (setf input-stream
+                             (sb-sys:make-fd-stream
+                              input-fd
+                              :input t
+                              :element-type '(unsigned-byte 8))
+                             input-fd nil)
+                       (setf output-stream
+                             (sb-sys:make-fd-stream
+                              output-fd
+                              :output t
+                              :element-type 'character)
+                             output-fd nil)
+                       (funcall thunk terminal-fd input-stream output-stream))
+                  (when output-stream
+                    (ignore-errors (close output-stream)))
+                  (when input-stream
+                    (ignore-errors (close input-stream)))
+                  (when output-fd
+                    (ignore-errors (sb-unix:unix-close output-fd)))
+                  (when input-fd
+                    (ignore-errors (sb-unix:unix-close input-fd)))
+                  (ignore-errors (sb-unix:unix-close terminal-fd)))))))))
+(defun %append-loom-message-to-buffer (text)
+  (when *editor-state*
+    (let* ((session (editor-state-session *editor-state*))
+           (buffer
+             (or (loom/feature/buffers:find-buffer-by-name session "*Messages*")
+                 (loom/feature/buffers:register-buffer
+                  session
+                  (loom/core/buffer:make-buffer :name "*Messages*"))))
+           (last-line (1- (loom/core/buffer:buffer-line-count buffer))))
+      (loom/core/buffer:buffer-set-point
+       buffer
+       last-line
+       (length (loom/core/buffer:buffer-line buffer last-line)))
+      (loom/core/buffer:buffer-insert-string buffer (format nil "~A~%" text))
+      (loom/core/buffer:buffer-mark-saved buffer))))
 
 (defun %run-loom-session (startup-context fd render-frame-function)
   (let ((session (editor-state-session *editor-state*))
@@ -46,7 +110,19 @@
                                                                     session
                                                                     startup-context
                                                                     terminal-session)
-                        (funcall *startup-load-user-init-function*)
+                        (progn
+                          (loom/core/minibuffer:register-message-sink
+                           :loom-messages
+                           (function %append-loom-message-to-buffer))
+                          (unless (gethash "--no-init"
+                                           (loom/core/editor-session:startup-context-options startup-context))
+                            (handler-case
+                                (funcall *startup-load-user-init-function*)
+                              (error (condition)
+                                     (%log-loom-error condition)
+                                     (loom/core/minibuffer:minibuffer-message
+                                      (loom/core/editor-session:editor-state-minibuffer *editor-state*)
+                                      (format nil "Error loading user init: ~A" condition))))))
                         (multiple-value-setq (reason status) (%run-event-loop
                                                               (%loom-terminal-session-stream
                                                                terminal-session)
@@ -54,23 +130,23 @@
                                                               terminal-session
                                                               render-frame-function)))
           (error (condition)
-            (%log-loom-error condition)
-            (setf reason :runtime-error
-                  status 1)))
+                 (%log-loom-error condition)
+                 (setf reason :runtime-error
+                       status 1)))
       (when terminal-session
         (handler-case (loom/core/editor-session:run-session-hooks :shutdown
                                                                   session
                                                                   reason)
           (error (condition)
-            (%log-loom-error condition)
-            (setf reason :runtime-error
-                  status 1)))
+                 (%log-loom-error condition)
+                 (setf reason :runtime-error
+                       status 1)))
         (handler-case (loom/core/editor-session:cancel-session-background-work
                        session)
           (error (condition)
-            (%log-loom-error condition)
-            (setf reason :runtime-error
-                  status 1)))
+                 (%log-loom-error condition)
+                 (setf reason :runtime-error
+                       status 1)))
         (unwind-protect
             (progn
               (loom/core/editor-session:set-session-wake-function session nil)
@@ -78,9 +154,9 @@
                 (%uninstall-loom-terminal-signal-handlers)))
           (handler-case (%close-loom-terminal-session terminal-session)
             (error (condition)
-              (%log-loom-error condition)
-              (setf reason :runtime-error
-                    status 1))))))
+                   (%log-loom-error condition)
+                   (setf reason :runtime-error
+                         status 1))))))
     (values reason status)))
 
 (defstruct

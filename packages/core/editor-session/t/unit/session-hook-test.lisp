@@ -667,35 +667,36 @@
              (let* ((loom/core/editor-session::*cli-options*
                      (make-hash-table :test #'equal))
                     (switch-name "--resume")
-                    (value-name "--session-file"))
+                    (value-name "--session-file")
+                    (init-name "--no-init"))
                (loom/core/editor-session:register-cli-option :feature/lifecycle
                                                              switch-name
                                                              :switch)
                (loom/core/editor-session:register-cli-option :feature/lifecycle
                                                              value-name
                                                              :value)
+               (loom/core/editor-session:register-cli-option :feature/user-init
+                                                             init-name
+                                                             :switch)
+               (expect (loom/core/editor-session:cli-option-value-kind init-name)
+                       :to-equal
+                       :switch)
                (signals error
-                        (loom/core/editor-session:register-cli-option
-                         :feature/lifecycle
-                         switch-name
-                         :switch))
+                 (loom/core/editor-session:register-cli-option :feature/lifecycle
+                                                               switch-name
+                                                               :switch))
                (signals error
-                        (loom/core/editor-session:register-cli-option
-                         :feature/files
-                         "--foreign-owner"
-                         :switch))
+                 (loom/core/editor-session:register-cli-option :feature/files
+                                                               "--foreign-owner"
+                                                               :switch))
                (signals error
-                        (loom/core/editor-session:register-cli-option
-                         :feature/lifecycle
-                         "-resume"
-                         :switch))
+                 (loom/core/editor-session:register-cli-option :feature/lifecycle
+                                                               "-resume"
+                                                               :switch))
                (signals error
-                        (loom/core/editor-session:register-cli-option
-                         :feature/lifecycle
-                         (concatenate 'string
-                                      "--"
-                                      (symbol-name (gensym "W2A-BAD-")))
-                         :invalid-value-kind))))
+                 (loom/core/editor-session:register-cli-option :feature/lifecycle
+                                                               "--bad-kind"
+                                                               :invalid-value-kind))))
             (it
              "coalesces ready tokens, polls each once in FIFO order, and removes done work"
              (let* ((session (%make-test-editor-session))

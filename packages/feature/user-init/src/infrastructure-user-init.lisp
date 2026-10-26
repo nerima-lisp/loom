@@ -1,4 +1,8 @@
 (in-package #:loom/feature/user-init)
+(eval-when (:load-toplevel :execute)
+  (loom/core/editor-session:register-cli-option :feature/user-init
+                                                "--no-init"
+                                                :switch))
 
 (defvar *user-init-package-provider* nil)
 (defun register-user-init-package-provider (owner function)

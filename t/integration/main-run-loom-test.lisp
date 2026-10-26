@@ -43,6 +43,59 @@
                                           (format nil
                                                   "~C[?1049h"
                                                   (code-char 27))))))
+  (defun %call-with-run-loom-init-file (contents thunk)
+  (host-kit:with-temporary-directory (home)
+    (let* ((init-path (merge-pathnames ".loom/init.lisp" home))
+           (original-host-getenv (function host-kit:getenv)))
+      (ensure-directories-exist init-path)
+      (host-kit:write-file-string contents init-path)
+      (flet ((test-getenv (name)
+               (cond
+                 ((string= name "HOME") (namestring home))
+                 ((string= name "LOOM_INIT_FILE") (namestring init-path))
+                 (t (funcall original-host-getenv name)))))
+        (with-replaced-function
+         (host-kit:getenv (function test-getenv))
+         (with-replaced-function
+          (uiop:getenv (function test-getenv))
+          (funcall thunk home init-path)))))))
+  (defun %call-with-test-run-loom-session (startup-context event-loop-function)
+  (let* ((session (%make-test-editor-session))
+         (state (make-editor-state :session session
+                                   :minibuffer (loom/core/minibuffer:make-minibuffer)))
+         (terminal-session nil)
+         (*editor-state* state)
+         (loom/core/editor-session::*session-hooks* (make-hash-table :test (function eq)))
+         (*standard-output* (make-string-output-stream)))
+    (setf terminal-session
+          (loom::%make-loom-terminal-session 0 *standard-output* 10 11))
+    (with-replaced-function
+     (loom::%open-loom-terminal-session
+      (lambda (fd stream)
+        (declare (ignore fd stream))
+        terminal-session))
+     (with-replaced-function
+      (loom::%install-loom-terminal-signal-handlers
+       (lambda (received-terminal-session)
+         (declare (ignore received-terminal-session))))
+      (with-replaced-function
+       (loom::%enable-loom-terminal-session
+        (lambda (received-terminal-session)
+          (declare (ignore received-terminal-session))))
+       (with-replaced-function
+        (loom::%run-event-loop event-loop-function)
+        (with-replaced-function
+         (loom/core/editor-session:cancel-session-background-work
+          (lambda (received-session)
+            (declare (ignore received-session))))
+         (with-replaced-function
+          (loom::%uninstall-loom-terminal-signal-handlers (lambda ()))
+          (with-replaced-function
+           (loom::%close-loom-terminal-session
+            (lambda (received-terminal-session)
+              (declare (ignore received-terminal-session))))
+           (multiple-value-list
+            (loom::%run-loom-session startup-context 0 (constantly nil))))))))))))
   (describe "%run-loom"
             (it
              "enables and restores raw mode against a real terminal descriptor, then returns 0"
@@ -241,7 +294,114 @@
                                 :cancel-background-work
                                 :wake-clear
                                 :signal-uninstall
-                                :terminal-close)))))))
+                                :terminal-close))))))
+            (it-each
+  (("TERM=dumb" "dumb") ("unset TERM" nil))
+  "rejects startup with ~A when standard streams are not terminals"
+  (term-description term-value)
+  (let* ((startup-context (loom::%parse-startup-context nil))
+         (event-loop-called nil)
+         (original-host-getenv (function host-kit:getenv))
+         (*standard-output* (make-string-output-stream))
+         (*error-output* (make-string-output-stream)))
+    (flet ((test-getenv (name)
+             (if (string= name "TERM")
+                 term-value
+                 (funcall original-host-getenv name))))
+      (with-open-file (*standard-input* "/dev/null"
+                                       :direction :input
+                                       :element-type (quote (unsigned-byte 8)))
+        (with-replaced-function
+         (host-kit:getenv (function test-getenv))
+         (with-replaced-function
+          (uiop:getenv (function test-getenv))
+          (with-replaced-function
+           (loom::%run-event-loop
+            (lambda (output-stream input-stream terminal-session render-frame-function)
+              (declare (ignore output-stream input-stream terminal-session render-frame-function))
+              (setf event-loop-called t)
+              (values :normal 0)))
+           (expect (loom::%run-loom startup-context) :to-equal 1)
+           (expect event-loop-called :to-be-falsy)
+           (expect (get-output-stream-string *error-output*)
+                   :to-contain
+                   "TERM"))))))))
+            (it
+  "reports a bad init through the minibuffer message sink and continues editing"
+  (let* ((loom/core/minibuffer::*message-sinks* nil)
+         (message-texts nil)
+         (event-loop-called nil)
+         (startup-context (loom::%parse-startup-context nil)))
+    (loom/core/minibuffer:register-message-sink
+     :loom-startup-integration
+     (lambda (text)
+       (push text message-texts)))
+    (%call-with-run-loom-init-file
+     "(error \"startup integration init failure\")"
+     (lambda (home init-path)
+       (declare (ignore home init-path))
+       (expect
+        (%call-with-test-run-loom-session
+         startup-context
+         (lambda (output-stream input-stream terminal-session render-frame-function)
+           (declare (ignore output-stream input-stream terminal-session render-frame-function))
+           (setf event-loop-called t)
+           (expect
+            (loom/core/minibuffer:minibuffer-message-string
+             (editor-state-minibuffer *editor-state*))
+            :to-contain
+            "startup integration init failure")
+           (progn
+             (expect
+               (some
+                 (lambda (text)
+                   (search "startup integration init failure" text))
+                 message-texts)
+               :to-be-truthy)
+             (let ((messages-buffer
+                     (loom/feature/buffers:find-buffer-by-name
+                      (loom/core/editor-session:editor-state-session *editor-state*)
+                      "*Messages*")))
+               (expect
+                 (and messages-buffer
+                      (search "startup integration init failure"
+                              (loom/core/buffer:buffer-text messages-buffer)))
+                 :to-be-truthy)))
+           (values :normal 0)))
+        :to-equal
+        (list :normal 0))
+       (expect event-loop-called :to-be-truthy)))))
+            (it
+  "skips a failing init with --no-init and continues editing"
+  (let* ((loom/core/minibuffer::*message-sinks* nil)
+         (message-texts nil)
+         (event-loop-called nil)
+         (startup-context (loom::%parse-startup-context (list "--no-init"))))
+    (loom/core/minibuffer:register-message-sink
+     :loom-startup-integration
+     (lambda (text)
+       (push text message-texts)))
+    (%call-with-run-loom-init-file
+     "(error \"startup integration init failure\")"
+     (lambda (home init-path)
+       (declare (ignore home init-path))
+       (expect
+        (%call-with-test-run-loom-session
+         startup-context
+         (lambda (output-stream input-stream terminal-session render-frame-function)
+           (declare (ignore output-stream input-stream terminal-session render-frame-function))
+           (setf event-loop-called t)
+           (expect
+            (loom/core/minibuffer:minibuffer-message-string
+             (editor-state-minibuffer *editor-state*))
+            :to-be
+            nil)
+           (expect message-texts :to-be nil)
+           (values :normal 0)))
+        :to-equal
+        (list :normal 0))
+       (expect event-loop-called :to-be-truthy)
+       (expect message-texts :to-be nil))))))
   (describe "Loom child signal handling"
             (it-each
              (("SIGTERM" 143 ("term")) ("SIGHUP" 129 ("hup"))

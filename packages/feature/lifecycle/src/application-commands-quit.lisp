@@ -4,6 +4,9 @@
   (:documentation
    "Signaled by SAVE-BUFFERS-KILL-TERMINAL to ask the main event loop in
 src/application/event-loop.lisp to exit cleanly."))
+(define-condition loom-quit-abort (condition) ()
+  (:documentation
+   "Signaled by KILL-LOOM-ABORT to request exit status 1 after modified buffers have been resolved."))
 
 (progn
   (cl-prolog-kit:define-rulebase *quit-answer-rulebase*
@@ -54,14 +57,89 @@ original list when the answer is invalid."
        :on-cancel
        (lambda () (minibuffer-message minibuffer "Quit")))))
 
-  (defun %continue-quit (buffers)
-    "Prompt for the next modified buffer in BUFFERS, or signal LOOM-QUIT."
+  (defun %continue-quit (buffers &optional (quit-condition (quote loom-quit)))
+    "Prompt for the next modified buffer in BUFFERS, or signal QUIT-CONDITION."
     (let ((buffer (find-if (function buffer-modified-p) buffers)))
-      (if buffer (%continue-quit-prompt
-           buffers buffer
+      (if buffer
+          (%continue-quit-prompt
+           buffers
+           buffer
            (lambda (next-buffers)
-             (%continue-quit next-buffers))) (signal (quote loom-quit)))))
+             (%continue-quit next-buffers quit-condition)))
+          (signal quit-condition))))
 
   (defun save-buffers-kill-terminal ()
     "Exit after resolving all modified buffers in the session."
-    (%continue-quit (loom/feature/buffers:quit-buffer-list))))
+    (%continue-quit (loom/feature/buffers:quit-buffer-list)))
+  (progn
+    (defun kill-loom-abort ()
+      "Abort with exit status 1 after resolving modified buffers."
+      (%continue-quit
+       (loom/feature/buffers:quit-buffer-list)
+       (quote loom-quit-abort)))
+
+    (defun suspend-frame ()
+      "Request suspension of the current text terminal frame."
+      (loom/core/editor-session:request-terminal-suspend
+       (loom/core/editor-session:editor-state-session *editor-state*)))
+
+    (defun %recovery-directory ()
+      (merge-pathnames #P".loom/recovery/" (user-homedir-pathname)))
+
+    (defun %recovery-file-path (directory reason index)
+      (loop for attempt from 0
+            for pathname =
+              (merge-pathnames
+               (format nil
+                       "buffer-~(~A~)-~D-~D-~D-~D.txt"
+                       reason
+                       (get-universal-time)
+                       (get-internal-real-time)
+                       index
+                       attempt)
+               directory)
+            unless (probe-file pathname)
+              return pathname))
+
+    (defun %save-recovery-buffer (buffer reason index)
+      (let ((pathname
+              (%recovery-file-path (%recovery-directory) reason index)))
+        (ensure-directories-exist pathname)
+        (with-open-file
+            (stream pathname
+                    :direction :output
+                    :if-exists :error
+                    :if-does-not-exist :create
+                    :external-format :utf-8)
+          (write-string (buffer-text buffer) stream)
+          (finish-output stream))
+        pathname))
+
+    (defun %lifecycle-signal-hook (session signal-name)
+      (declare (ignore session))
+      (if (member signal-name (quote (:term :hup)) :test (function eq))
+          :terminate
+          :continue))
+
+    (defun %lifecycle-shutdown-hook (session reason)
+      (when
+          (and
+           *editor-state*
+           (eq session
+               (loom/core/editor-session:editor-state-session *editor-state*))
+           (member reason (quote (:sigterm :sighup)) :test (function eq)))
+        (loop for buffer in (loom/feature/buffers:quit-buffer-list)
+              for index from 0
+              when (buffer-modified-p buffer)
+                do (%save-recovery-buffer buffer reason index)))
+      nil)
+
+    (eval-when (:load-toplevel :execute)
+      (loom/core/editor-session:register-session-hook
+       :signal
+       :feature/lifecycle
+       (function %lifecycle-signal-hook))
+      (loom/core/editor-session:register-session-hook
+       :shutdown
+       :feature/lifecycle
+       (function %lifecycle-shutdown-hook)))))

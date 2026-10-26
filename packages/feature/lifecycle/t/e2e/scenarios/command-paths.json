@@ -1,0 +1,485 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "lifecycle/save-buffers-kill-terminal-key",
+      "path_id": "r1:save-buffers-kill-terminal:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22c%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "ROUTE-BUFFER\n",
+      "expected_bytes": "ROUTE-BUFFER\n",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ROUTE-BUFFER!"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "C-c"
+      ],
+      "dirty_input": "!",
+      "dirty_input_at": "end"
+    },
+    {
+      "name": "lifecycle/save-buffers-kill-terminal-mx",
+      "path_id": "r1:save-buffers-kill-terminal:mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "ROUTE-BUFFER\n",
+      "expected_bytes": "ROUTE-BUFFER\n",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ROUTE-BUFFER!"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "entry_mode": "mx",
+      "dirty_input": "!",
+      "dirty_input_at": "end"
+    },
+    {
+      "name": "lifecycle/save-buffer-prompt-accept",
+      "path_id": "r2:save-buffers-kill-terminal:prompt-1:free-string:accept",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "accept",
+      "prompt_input": "d"
+    },
+    {
+      "name": "lifecycle/save-buffer-prompt-cancel",
+      "path_id": "r2:save-buffers-kill-terminal:prompt-1:free-string:cancel",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "cancel",
+      "prompt_input": "c"
+    },
+    {
+      "name": "lifecycle/save-buffer-prompt-empty",
+      "path_id": "r2:save-buffers-kill-terminal:prompt-1:free-string:empty",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "empty",
+      "prompt_input": ""
+    },
+    {
+      "name": "lifecycle/save-buffer-prompt-tab",
+      "path_id": "r2:save-buffers-kill-terminal:prompt-1:free-string:tab",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "tab",
+      "prompt_input": "\t"
+    },
+    {
+      "name": "lifecycle/save-buffer-prompt-history",
+      "path_id": "r2:save-buffers-kill-terminal:prompt-1:free-string:history",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"c\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffers-kill-terminal"
+      ],
+      "command": "save-buffers-kill-terminal",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "history",
+      "prompt_input": ""
+    },
+    {
+      "name": "lifecycle/abort-exits-one",
+      "path_id": "r1:kill-loom-abort:mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "UNSAVED-ABORT-DATA"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "entry_mode": "mx"
+    },
+    {
+      "name": "lifecycle/abort-prompt-accept",
+      "path_id": "r2:kill-loom-abort:prompt-1:free-string:accept",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "accept",
+      "prompt_input": "d"
+    },
+    {
+      "name": "lifecycle/abort-prompt-cancel",
+      "path_id": "r2:kill-loom-abort:prompt-1:free-string:cancel",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "cancel",
+      "prompt_input": "c"
+    },
+    {
+      "name": "lifecycle/abort-prompt-empty",
+      "path_id": "r2:kill-loom-abort:prompt-1:free-string:empty",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "empty",
+      "prompt_input": ""
+    },
+    {
+      "name": "lifecycle/abort-prompt-tab",
+      "path_id": "r2:kill-loom-abort:prompt-1:free-string:tab",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "tab",
+      "prompt_input": "\t"
+    },
+    {
+      "name": "lifecycle/abort-prompt-history",
+      "path_id": "r2:kill-loom-abort:prompt-1:free-string:history",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "kill-loom-abort"
+      ],
+      "command": "kill-loom-abort",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save state.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "PROMPT-CASE-UNSAVED"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Save state.txt? (s/d/c):"
+        }
+      ],
+      "prompt_case": "history",
+      "prompt_input": ""
+    },
+    {
+      "name": "lifecycle/c-z-suspend-resume",
+      "path_id": "r1:suspend-frame:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22z%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "suspend-frame"
+      ],
+      "command": "suspend-frame",
+      "initial_bytes": "LOOM-RECOVERY-SNAPSHOT",
+      "expected_bytes": "LOOM-RECOVERY-SNAPSHOT",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "LOOM-RECOVERY-SNAPSHOT"
+        },
+        {
+          "region": "minibuffer",
+          "text": ""
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-z"
+      ]
+    },
+    {
+      "name": "lifecycle/suspend-frame-mx",
+      "path_id": "r1:suspend-frame:mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "suspend-frame"
+      ],
+      "command": "suspend-frame",
+      "initial_bytes": "LOOM-RECOVERY-SNAPSHOT",
+      "expected_bytes": "LOOM-RECOVERY-SNAPSHOT",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "LOOM-RECOVERY-SNAPSHOT"
+        },
+        {
+          "region": "minibuffer",
+          "text": ""
+        }
+      ],
+      "entry_mode": "mx",
+      "entry_keys": []
+    }
+  ]
+}

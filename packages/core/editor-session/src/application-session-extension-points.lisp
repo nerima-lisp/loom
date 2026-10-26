@@ -99,8 +99,11 @@
    (%startup-context-file-requests context)))
 
 (defun register-cli-option (owner long-name value-kind)
-  (unless (eq owner :feature/lifecycle)
-    (error "Only :FEATURE/LIFECYCLE may register CLI options: ~S" owner))
+  (unless (or (eq owner :feature/lifecycle)
+              (eq owner :feature/user-init))
+    (error
+     "Only :FEATURE/LIFECYCLE and :FEATURE/USER-INIT may register CLI options: ~S"
+     owner))
   (unless
       (and (stringp long-name)
            (> (length long-name) 2)

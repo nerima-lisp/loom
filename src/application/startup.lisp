@@ -45,26 +45,45 @@ from it."
 (defvar *startup-renderer-invalidate-function* nil)
 
 (defun %run-loom (startup-context &key
-                                       (fd 0)
+                                       (fd 0 fd-supplied-p)
                                        (render-frame-function
                                         *event-loop-render-function*))
+  (let ((term (unless fd-supplied-p (host-kit:getenv "TERM"))))
+    (when (and (not fd-supplied-p)
+               (or (null term)
+                   (string= term "")
+                   (string-equal term "dumb")))
+      (format *error-output*
+              "~&Cannot start Loom: TERM is ~A; set TERM to a supported terminal type.~%"
+              (if (and term (string= term ""))
+                  "empty"
+                  (or term "unset")))
+      (finish-output *error-output*)
+      (return-from %run-loom 1)))
   (let* ((requests
-          (loom/core/editor-session:startup-context-file-requests
-           startup-context))
+           (loom/core/editor-session:startup-context-file-requests
+            startup-context))
          (request (first requests))
          (path
-          (and request
-               (loom/core/editor-session:startup-file-request-path request))))
+           (and request
+                (loom/core/editor-session:startup-file-request-path request))))
     (multiple-value-bind (reason status)
-        (handler-case (%call-with-started-editor-state path
-                                                       (lambda (state)
-                                                         (declare (ignore state))
-                                                         (%run-loom-session
-                                                          startup-context
-                                                          fd
-                                                          render-frame-function))
-                                                       request
-                                                       (rest requests))
+        (handler-case
+            (%call-with-loom-terminal-streams
+             fd
+             fd-supplied-p
+             (lambda (terminal-fd input-stream output-stream)
+               (let ((*standard-input* input-stream)
+                     (*standard-output* output-stream))
+                 (%call-with-started-editor-state
+                  path
+                  (lambda (state)
+                    (declare (ignore state))
+                    (%run-loom-session startup-context
+                                       terminal-fd
+                                       render-frame-function))
+                  request
+                  (rest requests)))))
           (cl-cli:cli-usage-error (condition)
             (error condition))
           (cl-cli:cli-invalid-positional-value (condition)
@@ -74,15 +93,15 @@ from it."
           (error (condition)
             (%log-loom-error condition)
             (values :runtime-error 1)))
-      (if (eq reason :runtime-error)
+      (if (member reason '(:runtime-error :abort) :test (function eq))
           1
-          (handler-case (or
-                         (first
-                          (loom/core/editor-session:run-session-hooks
-                           :exit-status
-                           (editor-state-session *editor-state*)
-                           reason))
-                         status)
+          (handler-case
+              (or (first
+                   (loom/core/editor-session:run-session-hooks
+                    :exit-status
+                    (editor-state-session *editor-state*)
+                    reason))
+                  status)
             (error (condition)
               (%log-loom-error condition)
               1))))))

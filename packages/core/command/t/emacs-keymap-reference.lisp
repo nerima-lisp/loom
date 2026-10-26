@@ -186,4 +186,4 @@
     (:id "suspend-frame-control-z"
      :keys (((:control) . #\z)) :emacs "suspend-frame on text terminal"
      :target "suspend-frame" :target-map :global
-     :effective :not-asserted :owner :w3-2 :status :pending)))
+     :effective "suspend-frame" :owner :w3-2 :status :implemented)))
