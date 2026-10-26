@@ -640,7 +640,20 @@ def _classify_path(
             item["reason"] = "generated path has no traceable target command"
             return item
 
-        declared_effect_types = ledger_observe & _observe_types(required)
+        generated_effect_types = _observe_types(required) & _EFFECT_TYPES
+        declared_effect_types = ledger_observe & _EFFECT_TYPES
+        if declared_effect_types != generated_effect_types:
+            item["status"] = "mismatch"
+            item["reason"] = (
+                "commandless R6 ledger effect types do not match the generated path"
+            )
+            item["missing_effect_types"] = sorted(
+                generated_effect_types - declared_effect_types
+            )
+            item["unexpected_effect_types"] = sorted(
+                declared_effect_types - generated_effect_types
+            )
+            return item
         if not declared_effect_types:
             item["status"] = "no-observation"
             item["reason"] = "commandless R6 path declares no matching effect type"

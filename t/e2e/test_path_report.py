@@ -887,6 +887,37 @@ class PathReportTests(unittest.TestCase):
 
         self.assertEqual(report["paths"][0]["status"], "no-observation")
 
+    def test_commandless_r6_route_rejects_ledger_missing_generated_effect_type(self):
+        self._configure_path(
+            path_id="r6:resize",
+            commands=[],
+            rule="r6",
+            lane="W3-4",
+            entry="terminal-resize",
+            state="resized-terminal",
+            outcome="screen redraws",
+            observe=["screen_text", "cursor"],
+            scenario="lifecycle/resize",
+        )
+        self.ledger["observe"] = ["screen_text"]
+        self._write_scenario(
+            [
+                {
+                    "type": "screen_text",
+                    "actual": "redrawn frame",
+                    "expected": "redrawn frame",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "mismatch")
+        self.assertEqual(report["paths"][0]["missing_effect_types"], ["cursor"])
+
     def test_commandless_r6_signal_path_rejects_precondition_only_observations(self):
         self._configure_path(
             path_id="r6:signal:sigterm",

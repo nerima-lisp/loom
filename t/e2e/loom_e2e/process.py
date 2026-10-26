@@ -263,7 +263,8 @@ class LoomProcess:
     def _wait_for_exit(self, timeout):
         deadline = time.monotonic() + timeout
         while self._status is None:
-            self.read_available()
+            if self._fd is not None:
+                self.read_available()
             try:
                 status = self._poll_exit()
             except InterruptedError:

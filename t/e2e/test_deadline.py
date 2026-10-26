@@ -150,6 +150,21 @@ class ScenarioDeadlineTests(unittest.TestCase):
         self.assertTrue(process.has_exited())
         self.assertIsNone(process._fd)
 
+    def test_close_reaps_child_after_pty_descriptor_was_closed(self):
+        process = LoomProcess(
+            sys.executable,
+            ["-c", "import time; time.sleep(60)"],
+        )
+        self.addCleanup(process.close)
+        descriptor = process._fd
+        os.close(descriptor)
+        process._fd = None
+
+        process.close()
+
+        self.assertTrue(process.has_exited())
+        self.assertIsNone(process._fd)
+
     def test_forced_reap_survives_cleanup_interrupt(self):
         process = self._track_unkillable_process()
         real_wait_for_exit = process._wait_for_exit
