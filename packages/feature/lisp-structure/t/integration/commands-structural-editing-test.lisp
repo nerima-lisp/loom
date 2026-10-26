@@ -142,7 +142,28 @@
       (funcall command)
       (expect (buffer-text buffer) :not :to-equal content)
       (buffer-undo buffer)
-      (expect (buffer-text buffer) :to-equal content))))
+      (expect (buffer-text buffer) :to-equal content)))
+  (it-each
+      ((loom::forward-slurp-sexp "(a) b" 1)
+       (loom::forward-barf-sexp "(a b)" 1)
+       (loom::backward-slurp-sexp "a (b)" 3)
+       (loom::backward-barf-sexp "(a b)" 1)
+       (loom::splice-sexp "(a (b c) d)" 4)
+       (loom::raise-sexp "(a (b c) d)" 3))
+      "rejects read-only edits with the Emacs message before changing text"
+      (command content offset)
+    (%with-selected-buffer-state (buffer content)
+      (buffer-set-point buffer 0 offset)
+      (buffer-set-read-only buffer t)
+      (let ((message
+              (handler-case
+                  (progn (funcall command) nil)
+                (error (condition) (format nil "~A" condition)))))
+        (expect message :to-equal
+                (format nil "Buffer is read-only: #<buffer ~A>"
+                        (buffer-name buffer))))
+      (expect (buffer-text buffer) :to-equal content)
+      (expect (buffer-point-column buffer) :to-equal offset))))
 
 (describe
   "structural editing keybindings"
