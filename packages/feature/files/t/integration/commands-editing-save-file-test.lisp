@@ -448,3 +448,92 @@
               (expect (loom:minibuffer-message-string minibuffer)
                       :to-equal
                       (format nil "File is unavailable: ~A" path)))))))))
+(describe
+  "saving to a missing parent directory"
+  (it
+    "creates the parent directories and saves after confirmation"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "nested/deep/new.txt" dir))
+             (nested (merge-pathnames "nested/" dir))
+             (parent (host-kit:pathname-directory-pathname path)))
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((buffer (loom/feature/files::%make-file-buffer
+                          path
+                          :initial-content "pending"))
+                 (window (window-tree-selected-window
+                          (editor-state-window-tree *editor-state*))))
+            (%register-test-buffer *editor-state* buffer)
+            (window-set-buffer window buffer)
+            (loom/feature/files:save-buffer)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "Parent directory does not exist. Create it? (y/n): ~A"
+                            parent))
+            (expect (host-kit:directory-exists-p nested) :to-be nil)
+            (expect (host-kit:directory-exists-p parent) :to-be nil)
+            (expect (probe-file path) :to-be nil)
+            (%confirm-minibuffer minibuffer "y")
+            (expect (host-kit:directory-exists-p nested) :to-be-truthy)
+            (expect (host-kit:directory-exists-p parent) :to-be-truthy)
+            (expect (host-kit:read-file-string path) :to-equal "pending")
+            (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal
+                    (format nil "Wrote ~A" path))
+            (expect (loom/core/buffer:buffer-modified-p buffer) :to-be nil))))))
+  (it
+    "does not create parent directories or a file after a negative answer"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "nested/deep/new.txt" dir))
+             (nested (merge-pathnames "nested/" dir))
+             (parent (host-kit:pathname-directory-pathname path)))
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((buffer (loom/feature/files::%make-file-buffer
+                          path
+                          :initial-content "pending"))
+                 (window (window-tree-selected-window
+                          (editor-state-window-tree *editor-state*))))
+            (%register-test-buffer *editor-state* buffer)
+            (window-set-buffer window buffer)
+            (loom/feature/files:save-buffer)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "Parent directory does not exist. Create it? (y/n): ~A"
+                            parent))
+            (%confirm-minibuffer minibuffer "n")
+            (expect (host-kit:directory-exists-p nested) :to-be nil)
+            (expect (host-kit:directory-exists-p parent) :to-be nil)
+            (expect (probe-file path) :to-be nil)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "Save cancelled"))))))
+  (it
+    "does not create parent directories or a file when the prompt is cancelled"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "nested/deep/new.txt" dir))
+             (nested (merge-pathnames "nested/" dir))
+             (parent (host-kit:pathname-directory-pathname path)))
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((buffer (loom/feature/files::%make-file-buffer
+                          path
+                          :initial-content "pending"))
+                 (window (window-tree-selected-window
+                          (editor-state-window-tree *editor-state*))))
+            (%register-test-buffer *editor-state* buffer)
+            (window-set-buffer window buffer)
+            (loom/feature/files:save-buffer)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "Parent directory does not exist. Create it? (y/n): ~A"
+                            parent))
+            (let ((on-cancel
+                    (loom/core/minibuffer::%minibuffer-on-cancel minibuffer)))
+              (loom/core/minibuffer::%minibuffer-deactivate minibuffer)
+              (funcall on-cancel))
+            (expect (host-kit:directory-exists-p nested) :to-be nil)
+            (expect (host-kit:directory-exists-p parent) :to-be nil)
+            (expect (probe-file path) :to-be nil)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "Quit")))))))
