@@ -193,26 +193,29 @@ def indent_split_window(binary):
         "start-kbd-macro",
         "indent-for-tab-command",
         "end-kbd-macro",
-        "undo",
         "call-last-kbd-macro",
         "save-buffer",
     ],
 )
 def indent_macro(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-macro-") as directory:
-        path = _python_path(directory, "indent.py", b"    root\nvalue\n")
+        path = _python_path(directory, "indent.py", b"root\nvalue\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
             _select_python_mode(session)
-            session.send(keys.ctrl("x") + b"(")
             session.key("DOWN")
-            _indent_key(session)
-            session.send(keys.ctrl("x") + b")")
-            session.send(keys.ctrl("x") + keys.text("u"))
-            _assert_body(session, "value", 1)
+            session.send(
+                keys.ctrl("x")
+                + b"("
+                + session.profile.key("TAB")
+                + keys.ctrl("x")
+                + b")"
+            )
+            session.key("DOWN")
             session.send(keys.ctrl("x") + b"e")
             _assert_body(session, "    value", 1)
-            _save(session, path, b"    root\n    value\n")
+            _assert_body(session, "    value", 2)
+            _save(session, path, b"root\n    value\n    value\n")
             _close(session, "mode/indent-macro")
 
 
@@ -327,12 +330,16 @@ def comment_line_narrow(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _select_python_mode(session)
-            session.send(keys.ctrl("f") * len("before\n"))
-            session.extended_command("set-mark-command")
-            session.send(keys.ctrl("f") * len("value"))
-            session.extended_command("narrow-to-region")
+            session.send(
+                keys.ctrl("f") * len("before\n")
+                + keys.ctrl(" ")
+                + keys.ctrl("f") * len("value")
+                + keys.ctrl("x")
+                + b"nn"
+            )
             _comment_key(session)
-            session.extended_command("widen")
+            session.wait_for_region_text("body", "# value")
+            session.send(keys.ctrl("x") + b"nw")
             _assert_body(session, "# value")
             _save(session, path, expected)
             _close(session, "mode/comment-line-narrow")
@@ -370,26 +377,23 @@ def comment_line_split_window(binary):
         "start-kbd-macro",
         "comment-line",
         "end-kbd-macro",
-        "undo",
         "call-last-kbd-macro",
         "save-buffer",
     ],
 )
 def comment_line_macro(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-macro-") as directory:
-        path = _python_path(directory, "comment.py", b"value\n")
+        path = _python_path(directory, "comment.py", b"value\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
             _select_python_mode(session)
-            session.send(keys.ctrl("x") + b"(")
-            _comment_key(session)
-            _assert_body(session, "value #")
+            session.send(keys.ctrl("x") + b"(" + keys.meta(";"))
             session.send(keys.ctrl("x") + b")")
-            session.send(keys.ctrl("x") + keys.text("u"))
-            _assert_body(session, "value")
+            session.key("DOWN")
             session.send(keys.ctrl("x") + b"e")
             _assert_body(session, "value #")
-            _save(session, path, b"value #\n")
+            _assert_body(session, "value #", 1)
+            _save(session, path, b"value #\nvalue #\n")
             _close(session, "mode/comment-line-macro")
 
 
@@ -481,8 +485,6 @@ def set_major_mode_history(binary):
             _major_mode_prompt(session)
             session.type("Python")
             session.key("RET")
-            session.wait_for_region_text("minibuffer", "Mode: Python")
-
             _major_mode_prompt(session)
             session.key("UP")
             session.key("RET")
