@@ -327,7 +327,7 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "macro",
-      "commands": ["start-kbd-macro", "delete-char", "end-kbd-macro", "undo", "beginning-of-line", "call-last-kbd-macro", "save-buffer"],
+      "commands": ["start-kbd-macro", "delete-char", "end-kbd-macro", "undo", "move-beginning-of-line", "call-last-kbd-macro", "save-buffer"],
       "command": "delete-char",
       "mutation_case": "macro-replay",
       "command_keys": ["C-d"],

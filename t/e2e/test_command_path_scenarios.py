@@ -496,6 +496,8 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         sessions = []
         self.assertEqual(case["expected_minibuffer"], "Keyboard macro defined")
+        self.assertIn("move-beginning-of-line", case["commands"])
+        self.assertNotIn("beginning-of-line", case["commands"])
 
         def session_factory(*args, **kwargs):
             session = FakeSession(*args, **kwargs)
