@@ -96,6 +96,28 @@ def comment_line_mx(binary):
             _close(session, "mode/comment-line-mx")
 
 
+@scenario(
+    "mode/comment-line-global-key",
+    commands=["comment-line"],
+)
+def comment_line_global_key(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-key-") as directory:
+        path = os.path.join(directory, "buffer.txt")
+        _write(path, b"value\n")
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.key(keys.meta(";"))
+            session.wait_for_region_text(
+                "minibuffer", "Mode Text has no line comment syntax"
+            )
+            session.assert_screen_text(
+                "Mode Text has no line comment syntax",
+                match="contains",
+                region="minibuffer",
+            )
+            _close(session, "mode/comment-line-global-key")
+
+
 def _major_mode_prompt(session):
     session.extended_command("set-major-mode")
     session.wait_for_region_text("minibuffer", "Major mode: ")
