@@ -34,6 +34,15 @@ _MUTATION_CASES = (
     ("macro-replay", "macro-recording", "replay has the same effect", ["file_bytes"]),
     ("prefix-u4", "prefix-C-u-4", "specified prefix behavior is observed", ["file_bytes"]),
 )
+_LISP_MODE_LOCAL_BINDINGS = {
+    "forward-slurp-sexp": ("right", ("control",)),
+    "forward-barf-sexp": ("left", ("control",)),
+    "backward-slurp-sexp": ("left", ("alt", "control")),
+    "backward-barf-sexp": ("right", ("alt", "control")),
+    "wrap-round": ("(", ("alt",)),
+    "splice-sexp": ("s", ("alt",)),
+    "raise-sexp": ("r", ("alt",)),
+}
 
 LANE_REGISTRY = {
     "core/command": "W3-1",
@@ -196,6 +205,8 @@ def _normalize_catalog(catalog):
                 "id": command_id,
                 "owner": owner,
                 "lane": lane,
+                "keymap": row["keymap"],
+                "modes": modes,
                 "keys": normalized_keys,
                 "mutates": row["mutates"],
                 "prompts": prompts,
@@ -207,7 +218,11 @@ def _normalize_catalog(catalog):
 
     rows.sort(key=lambda row: row["id"])
     for row in rows:
-        if not row["keys"] and not row["mx-eligible"]:
+        has_lisp_local_route = (
+            row["keymap"] == "lisp-mode-local"
+            and row["id"] in _LISP_MODE_LOCAL_BINDINGS
+        )
+        if not row["keys"] and not row["mx-eligible"] and not has_lisp_local_route:
             raise CatalogError(
                 f"catalog[{row['id']}] has no key or M-x entry"
             )
@@ -243,6 +258,350 @@ def _primary_entry(row):
     if row["keys"]:
         return _key_entry(row["keys"][0])
     return "mx"
+
+
+def _language_path(path_id, owner, commands, entry, state, outcome, observe):
+    return _path(
+        path_id,
+        commands,
+        "r1",
+        LANE_REGISTRY[owner],
+        entry,
+        state,
+        outcome,
+        observe,
+    )
+
+
+def _language_key_entry(keymap, key_name, modifiers=()):
+    return _key_entry(
+        {
+            "keymap": keymap,
+            "sequence": [{"key": key_name, "modifiers": list(modifiers)}],
+        }
+    )
+
+
+def _language_paths():
+    lisp_owner = "feature/lang-lisp"
+    lisp_paths = [
+        _language_path(
+            "r1:lang-lisp:mode-assignment",
+            lisp_owner,
+            ["find-file", "save-buffer"],
+            "path extension",
+            ".asd and .el files opened",
+            ".asd selects Common Lisp mode and .el selects Emacs Lisp mode",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-ret",
+            lisp_owner,
+            ["newline"],
+            _language_key_entry("global", "enter"),
+            "Common Lisp form with a closing delimiter on the next line",
+            "RET inserts a two-column body indent",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-ret-elisp",
+            lisp_owner,
+            ["newline"],
+            _language_key_entry("global", "enter"),
+            "Emacs Lisp form with a closing delimiter on the next line",
+            "RET inserts an Emacs Lisp body indent",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-tab",
+            lisp_owner,
+            ["indent-for-tab-command"],
+            _language_key_entry("global", "tab"),
+            "Common Lisp call with a first argument",
+            "TAB aligns under the first argument",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-elisp",
+            lisp_owner,
+            ["indent-for-tab-command"],
+            _language_key_entry("global", "tab"),
+            "Emacs Lisp nested defun, let, when, and lambda forms",
+            "TAB indents each nested body and ignores comment and string delimiters",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-region",
+            lisp_owner,
+            ["indent-for-tab-command"],
+            _language_key_entry("global", "\\", ("alt", "control")),
+            "Common Lisp nested body with an active region",
+            "C-M-\\ reindents the active region and adjusts point",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:indent-region-elisp",
+            lisp_owner,
+            ["indent-for-tab-command"],
+            _language_key_entry("global", "\\", ("alt", "control")),
+            "Emacs Lisp nested body with an active region",
+            "C-M-\\ reindents the active region and adjusts point",
+            ["screen_text", "cursor", "file_bytes"],
+        ),
+        _language_path(
+            "r1:lang-lisp:comment-cl",
+            lisp_owner,
+            ["comment-line", "save-buffer"],
+            "key:M-;",
+            "Common Lisp code line or active region",
+            "M-; toggles Lisp line comments for the current line or region",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:comment-elisp",
+            lisp_owner,
+            ["comment-line", "save-buffer"],
+            "key:M-;",
+            "Emacs Lisp code line or active region",
+            "M-; toggles Lisp line comments for the current line or region",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:pair-completion-cl",
+            lisp_owner,
+            ["save-buffer"],
+            "keys: registered Lisp delimiters",
+            "Common Lisp mode at an opening delimiter or existing closer",
+            "opening delimiters insert their pair and existing closers are skipped",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:pair-completion-elisp",
+            lisp_owner,
+            ["save-buffer"],
+            "keys: registered Lisp delimiters",
+            "Emacs Lisp mode at an opening delimiter or existing closer",
+            "opening delimiters insert their pair and existing closers are skipped",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:close-skip-cl",
+            lisp_owner,
+            ["self-insert-command", "save-buffer"],
+            "key:)",
+            "Common Lisp point is before an existing closing parenthesis",
+            "typing ) skips the existing closer without inserting another one",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-lisp:close-skip-elisp",
+            lisp_owner,
+            ["self-insert-command", "save-buffer"],
+            "key:)",
+            "Emacs Lisp point is before an existing closing parenthesis",
+            "typing ) skips the existing closer without inserting another one",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+    ]
+
+    nix_owner = "feature/lang-nix"
+    nix_paths = [
+        _language_path(
+            "r1:lang-nix:mode-assignment",
+            nix_owner,
+            ["find-file", "save-buffer"],
+            "path extension",
+            ".nix file opened",
+            ".nix selects Nix mode",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "w3-7c:lang-nix:indentation-ret",
+            nix_owner,
+            ["newline", "save-buffer"],
+            "key: RET",
+            "Nix buffer with a brace opener",
+            "RET inserts the next line with two-space indentation",
+            ["file_bytes"],
+        ),
+        _language_path(
+            "w3-7c:lang-nix:indentation-tab",
+            nix_owner,
+            ["indent-for-tab-command", "save-buffer"],
+            "key: TAB",
+            "Nix attrsets with } inside strings and comments, plus a with assignment",
+            "TAB indents a with body from its assignment and ignores later binding semicolons",
+            ["file_bytes"],
+        ),
+        _language_path(
+            "w3-7c:lang-nix:indentation-control-meta-backslash",
+            nix_owner,
+            ["set-mark-command", "indent-for-tab-command", "save-buffer"],
+            "key: C-M-backslash",
+            "Nix region with let/in, list, parenthesis, and with expressions",
+            "C-M-backslash applies Nix indentation and aligns matching clauses",
+            ["file_bytes"],
+        ),
+        _language_path(
+            "w3-7c:lang-nix:comment-dwim",
+            nix_owner,
+            ["set-mark-command", "save-buffer"],
+            "key: M-;",
+            "Nix code line and a whole-line comment",
+            "M-; appends an inline comment marker and toggles the selected comment off",
+            ["file_bytes"],
+        ),
+        _language_path(
+            "w3-7c:lang-nix:pair-completion",
+            nix_owner,
+            ["save-buffer"],
+            "keys: { [ ( then ) ] }",
+            "Nix mode with registered {}, [], and () pairs",
+            "openers insert closers and existing closers are skipped",
+            ["file_bytes"],
+        ),
+    ]
+
+    web_owner = "feature/lang-web"
+    web_paths = [
+        _language_path(
+            "r1:lang-web:extension-modes:find-file",
+            web_owner,
+            ["find-file", "save-buffer"],
+            "path extension",
+            (
+                "files with .ts/.mts/.cts/.tsx, .js/.mjs/.cjs/.jsx, .json, "
+                ".html/.htm, .css, .yaml/.yml opened"
+            ),
+            (
+                ".ts/.mts/.cts select TypeScript, .tsx TypeScript React, "
+                ".js/.mjs/.cjs JavaScript, .jsx JavaScript React; "
+                ".json selects JSON, .html/.htm HTML, .css CSS, and .yaml/.yml YAML"
+            ),
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:indentation-ret",
+            web_owner,
+            ["newline", "save-buffer"],
+            "key:RET",
+            "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML buffer after an opener",
+            "RET inserts a newline at the indentation required by the active language mode",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:syntax-indentation:tab",
+            web_owner,
+            ["find-file", "indent-for-tab-command", "save-buffer"],
+            "key:tab",
+            "TypeScript, JavaScript, JSX, or JSON file opened",
+            "TAB indents nested brackets by mode width and ignores string and comment brackets",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:default-indentation:tab",
+            web_owner,
+            ["find-file", "indent-for-tab-command", "save-buffer"],
+            "key:tab",
+            "HTML, CSS, or YAML file opened",
+            "TAB aligns to the previous line using the active language mode",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:indentation-region",
+            web_owner,
+            ["find-file", "set-mark-command", "indent-for-tab-command", "save-buffer"],
+            "key:C-M-backslash",
+            "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML buffer with an active region",
+            "C-M-backslash indents the selected region using the active language mode",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:comments:meta-semicolon",
+            web_owner,
+            ["find-file", "save-buffer"],
+            "key:M-;",
+            "TypeScript, JavaScript, JSX, HTML, CSS, or YAML line or active region",
+            "M-; toggles the active language comment syntax for the line or region",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+        _language_path(
+            "r1:lang-web:pair-completion:delimiter-pairs",
+            web_owner,
+            ["find-file", "save-buffer"],
+            "key:open-delimiter",
+            "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML mode at an opening delimiter",
+            "inserts registered delimiter pairs and skips existing closers when enabled",
+            ["screen_text", "file_bytes", "cursor"],
+        ),
+    ]
+
+    markup_owner = "feature/lang-markup"
+    markup_paths = []
+    for language, label in (("markdown", "Markdown"), ("org", "Org")):
+        markup_paths.extend(
+            [
+                _language_path(
+                    f"r1:lang-markup:{language}:indent-ret",
+                    markup_owner,
+                    ["newline", "save-buffer"],
+                    "key: RET",
+                    f"{label} list item with a continuation line",
+                    "RET continues the list item with indentation from the list syntax tree",
+                    ["screen_text", "file_bytes", "cursor"],
+                ),
+                _language_path(
+                    f"r1:lang-markup:{language}:indent-tab",
+                    markup_owner,
+                    ["indent-for-tab-command", "save-buffer"],
+                    "key: TAB",
+                    f"{label} list item with a nested continuation line",
+                    "TAB reindents the current line from the list syntax tree",
+                    ["screen_text", "file_bytes", "cursor"],
+                ),
+                _language_path(
+                    f"r1:lang-markup:{language}:indent-region",
+                    markup_owner,
+                    ["set-mark-command", "indent-for-tab-command", "save-buffer"],
+                    "key: C-M-backslash",
+                    f"{label} list region with nested items",
+                    "C-M-backslash reindents the selected list region from the syntax tree",
+                    ["screen_text", "file_bytes", "cursor"],
+                ),
+            ]
+        )
+
+    return lisp_paths + nix_paths + web_paths + markup_paths
+
+
+def _lisp_mode_local_paths(row):
+    binding = _LISP_MODE_LOCAL_BINDINGS.get(row["id"])
+    if binding is None:
+        return []
+    if row["keymap"] != "lisp-mode-local":
+        raise CatalogError(
+            f"catalog[{row['id']}] structural key route must use lisp-mode-local"
+        )
+    if set(row["modes"]) != {"common-lisp", "emacs-lisp"}:
+        raise CatalogError(
+            f"catalog[{row['id']}] lisp-mode-local route must cover Common Lisp and Emacs Lisp"
+        )
+
+    key_name, modifiers = binding
+    paths = []
+    for mode, suffix in (("common-lisp", "cl"), ("emacs-lisp", "el")):
+        paths.append(
+            _language_path(
+                f"r1:lang-lisp:structural-{row['id']}-{suffix}",
+                row["owner"],
+                [row["id"]],
+                _language_key_entry(mode, key_name, modifiers),
+                f"{mode} buffer at the structural command's target form",
+                f"the mode-local {key_name} binding runs {row['id']}",
+                ["screen_text", "file_bytes", "cursor"],
+            )
+        )
+    return paths
 
 
 def _fixed_paths():
@@ -335,6 +694,7 @@ def generate_required_paths(catalog):
     for row in rows:
         command_id = row["id"]
         lane = row["lane"]
+        paths.extend(_lisp_mode_local_paths(row))
         for key in row["keys"]:
             signature = json.dumps(key, sort_keys=True, separators=(",", ":"))
             paths.append(
@@ -429,6 +789,7 @@ def generate_required_paths(catalog):
                     )
                 )
 
+    paths.extend(_language_paths())
     paths.extend(_fixed_paths())
     ids = [path["id"] for path in paths]
     if len(ids) != len(set(ids)):

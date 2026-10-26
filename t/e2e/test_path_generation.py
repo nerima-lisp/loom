@@ -1,4 +1,5 @@
 import copy
+import json
 import unittest
 
 from loom_e2e.path_generation import (
@@ -113,13 +114,13 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
         self.assertEqual(
             rule_counts,
-            {"r1": 21, "r2": 34, "r3": 14, "r4": 2, "r5": 8, "r6": 32, "r7": 7, "r8": 4},
+            {"r1": 53, "r2": 34, "r3": 14, "r4": 2, "r5": 8, "r6": 32, "r7": 7, "r8": 4},
         )
         self.assertEqual(len(self.paths), len(self.paths_by_id))
         self.assertEqual(
             sum(len(row["keys"]) for row in self.catalog)
             + sum(row["mx-eligible"] for row in self.catalog),
-            rule_counts["r1"],
+            rule_counts["r1"] - 32,
         )
         execute_command = next(
             row for row in self.catalog if row["id"] == "execute-extended-command"
@@ -208,8 +209,19 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(normalized["lane"], "W3-4")
 
     def test_r1_generates_every_key_and_respects_mx_eligibility(self):
-        key_paths = [path for path in self.paths if path["rule"] == "r1" and path["entry"].startswith("key:")]
-        mx_paths = [path for path in self.paths if path["rule"] == "r1" and path["entry"] == "mx"]
+        catalog_ids = {row["id"] for row in self.catalog}
+        key_paths = [
+            path for path in self.paths
+            if path["rule"] == "r1"
+            and path["entry"].startswith("key:")
+            and path["id"].split(":")[1] in catalog_ids
+        ]
+        mx_paths = [
+            path for path in self.paths
+            if path["rule"] == "r1"
+            and path["entry"] == "mx"
+            and path["id"].split(":")[1] in catalog_ids
+        ]
 
         self.assertEqual(len(key_paths), sum(len(row["keys"]) for row in self.catalog))
         self.assertEqual(len(mx_paths), sum(row["mx-eligible"] for row in self.catalog))
@@ -382,5 +394,266 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             generate_required_paths(catalog)
 
 
+    def test_language_mode_fr_g_paths_cover_required_behaviors_and_exclusions(self):
+        catalog = _catalog()
+        catalog.append(
+            _row(
+                "comment-line",
+                owner="feature/lang-markup",
+                keys=[_key(";", ("alt",))],
+                **{"mx-eligible": False},
+            )
+        )
+        paths = generate_required_paths(catalog)
+        paths_by_id = _by_id(paths)
+        markup_comment_paths = [
+            path
+            for path in paths
+            if path["commands"] == ["comment-line"] and path["lane"] == "W3-7e"
+        ]
+        self.assertEqual(len(markup_comment_paths), 1)
+        markup_comment_id = markup_comment_paths[0]["id"]
+        self.assertTrue(markup_comment_id.startswith("r1:comment-line:key:"))
+        self.assertEqual(
+            markup_comment_paths[0]["entry"],
+            "key:" + json.dumps(
+                _key(";", ("alt",)), sort_keys=True, separators=(",", ":")
+            ),
+        )
+
+        required = {
+            "common-lisp": {
+                "mode": "r1:lang-lisp:mode-assignment",
+                "ret": "r1:lang-lisp:indent-ret",
+                "tab": "r1:lang-lisp:indent-tab",
+                "region": "r1:lang-lisp:indent-region",
+                "comment": "r1:lang-lisp:comment-cl",
+                "pair": "r1:lang-lisp:pair-completion-cl",
+                "close-skip": "r1:lang-lisp:close-skip-cl",
+            },
+            "emacs-lisp": {
+                "mode": "r1:lang-lisp:mode-assignment",
+                "ret": "r1:lang-lisp:indent-ret-elisp",
+                "tab": "r1:lang-lisp:indent-elisp",
+                "region": "r1:lang-lisp:indent-region-elisp",
+                "comment": "r1:lang-lisp:comment-elisp",
+                "pair": "r1:lang-lisp:pair-completion-elisp",
+                "close-skip": "r1:lang-lisp:close-skip-elisp",
+            },
+            "nix": {
+                "mode": "r1:lang-nix:mode-assignment",
+                "ret": "w3-7c:lang-nix:indentation-ret",
+                "tab": "w3-7c:lang-nix:indentation-tab",
+                "region": "w3-7c:lang-nix:indentation-control-meta-backslash",
+                "comment": "w3-7c:lang-nix:comment-dwim",
+                "pair": "w3-7c:lang-nix:pair-completion",
+            },
+            "typescript": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:syntax-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "javascript": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:syntax-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "jsx": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:syntax-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "json": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:syntax-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "html": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:default-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "css": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:default-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "yaml": {
+                "mode": "r1:lang-web:extension-modes:find-file",
+                "ret": "r1:lang-web:indentation-ret",
+                "tab": "r1:lang-web:default-indentation:tab",
+                "region": "r1:lang-web:indentation-region",
+                "comment": "r1:lang-web:comments:meta-semicolon",
+                "pair": "r1:lang-web:pair-completion:delimiter-pairs",
+            },
+            "markdown": {
+                "ret": "r1:lang-markup:markdown:indent-ret",
+                "tab": "r1:lang-markup:markdown:indent-tab",
+                "region": "r1:lang-markup:markdown:indent-region",
+                "comment": markup_comment_id,
+            },
+            "org": {
+                "ret": "r1:lang-markup:org:indent-ret",
+                "tab": "r1:lang-markup:org:indent-tab",
+                "region": "r1:lang-markup:org:indent-region",
+                "comment": markup_comment_id,
+            },
+        }
+        expected_lanes = {
+            "common-lisp": "W3-7b",
+            "emacs-lisp": "W3-7b",
+            "nix": "W3-7c",
+            "typescript": "W3-7d",
+            "javascript": "W3-7d",
+            "jsx": "W3-7d",
+            "json": "W3-7d",
+            "html": "W3-7d",
+            "css": "W3-7d",
+            "yaml": "W3-7d",
+            "markdown": "W3-7e",
+            "org": "W3-7e",
+        }
+
+        required_path_ids = {
+            path_id for behaviors in required.values() for path_id in behaviors.values()
+        }
+        missing_path_ids = sorted(required_path_ids - paths_by_id.keys())
+        self.assertFalse(missing_path_ids, f"missing language paths: {missing_path_ids}")
+
+        for language, behaviors in required.items():
+            for behavior, path_id in behaviors.items():
+                with self.subTest(language=language, behavior=behavior):
+                    self.assertEqual(paths_by_id[path_id]["lane"], expected_lanes[language])
+                    self.assertEqual(paths_by_id[path_id]["rule"], "r1")
+
+        # FR-G01 and FR-G04 exclude Markdown and Org in requirements-modern-editor.md:498.
+        # JSON M-; routes are launch-scope exclusions; see
+        # requirements-modern-editor.md:281-284,497.
+        excluded_path_ids = {
+            "r1:lang-markup:markdown:mode-assignment",
+            "r1:lang-markup:org:mode-assignment",
+            "r1:lang-markup:markdown:pair-completion",
+            "r1:lang-markup:org:pair-completion",
+        }
+        self.assertTrue(excluded_path_ids.isdisjoint(paths_by_id))
+        self.assertNotIn("comment", required["json"])
+        json_comment_paths = [
+            path
+            for path in paths
+            if "JSON" in path["state"] + path["outcome"]
+            and path["entry"] in {"key:M-;", "key: M-;"}
+        ]
+        self.assertEqual(json_comment_paths, [])
+
+        web_comment_path = paths_by_id["r1:lang-web:comments:meta-semicolon"]
+        self.assertNotIn("JSON", web_comment_path["state"] + web_comment_path["outcome"])
+        lisp_mode_path = paths_by_id["r1:lang-lisp:mode-assignment"]
+        self.assertIn(".asd", lisp_mode_path["state"])
+        self.assertIn(".el", lisp_mode_path["state"])
+        self.assertIn("Common Lisp mode", lisp_mode_path["outcome"])
+        self.assertIn("Emacs Lisp mode", lisp_mode_path["outcome"])
+        nix_mode_path = paths_by_id["r1:lang-nix:mode-assignment"]
+        self.assertIn(".nix", nix_mode_path["state"])
+        self.assertIn("Nix mode", nix_mode_path["outcome"])
+        web_mode_path = paths_by_id["r1:lang-web:extension-modes:find-file"]
+        web_mode_state = web_mode_path["state"]
+        for extension in (".ts", ".js", ".jsx", ".json", ".html", ".css", ".yaml"):
+            with self.subTest(web_extension=extension):
+                self.assertIn(extension, web_mode_state)
+        for extension in (".mts", ".cts", ".tsx", ".mjs", ".cjs", ".htm", ".yml"):
+            with self.subTest(web_extension=extension):
+                self.assertIn(extension, web_mode_state)
+        for mode_mapping in (
+            "TypeScript",
+            "TypeScript React",
+            "JavaScript",
+            "JavaScript React",
+            ".json selects JSON",
+            ".html/.htm HTML",
+            ".css CSS",
+            ".yaml/.yml YAML",
+        ):
+            with self.subTest(web_mode=mode_mapping):
+                self.assertIn(mode_mapping, web_mode_path["outcome"])
+
+        for path in paths:
+            self.assertEqual(set(path), _PATH_FIELDS)
+        self.assertEqual(
+            {paths_by_id[path_id]["lane"] for path_id in set(
+                path_id
+                for language_paths in required.values()
+                for path_id in language_paths.values()
+            )},
+            {"W3-7b", "W3-7c", "W3-7d", "W3-7e"},
+        )
+
+    def test_lisp_mode_local_structural_commands_keep_both_language_routes(self):
+        local_bindings = {
+            "forward-slurp-sexp": ("right", ("control",)),
+            "forward-barf-sexp": ("left", ("control",)),
+            "backward-slurp-sexp": ("left", ("alt", "control")),
+            "backward-barf-sexp": ("right", ("alt", "control")),
+            "wrap-round": ("(", ("alt",)),
+            "splice-sexp": ("s", ("alt",)),
+            "raise-sexp": ("r", ("alt",)),
+        }
+        catalog = _catalog()
+        catalog.extend(
+            _row(
+                command_id,
+                owner="feature/lisp-structure",
+                keymap="lisp-mode-local",
+                modes=["common-lisp", "emacs-lisp"],
+                mutates=True,
+            )
+            for command_id in local_bindings
+        )
+        paths_by_id = _by_id(generate_required_paths(catalog))
+        expected_path_ids = {
+            f"r1:lang-lisp:structural-{command_id}-{suffix}"
+            for command_id in local_bindings
+            for suffix in ("cl", "el")
+        }
+        missing_path_ids = sorted(expected_path_ids - paths_by_id.keys())
+        self.assertFalse(
+            missing_path_ids,
+            f"missing lisp-mode-local routes: {missing_path_ids}",
+        )
+        local_paths = [
+            path
+            for path in paths_by_id.values()
+            if path["id"].startswith("r1:lang-lisp:structural-")
+        ]
+        self.assertEqual(len(local_paths), 14)
+
+        for command_id, (key_name, _modifiers) in local_bindings.items():
+            for mode, suffix in (("common-lisp", "cl"), ("emacs-lisp", "el")):
+                path_id = f"r1:lang-lisp:structural-{command_id}-{suffix}"
+                with self.subTest(command=command_id, mode=mode):
+                    path = paths_by_id[path_id]
+                    self.assertEqual(path["lane"], "W3-7b")
+                    self.assertEqual(path["commands"], [command_id])
+                    expected_key = _key(key_name, _modifiers, keymap=mode)
+                    expected_entry = "key:" + json.dumps(
+                        expected_key, sort_keys=True, separators=(",", ":")
+                    )
+                    self.assertEqual(path["entry"], expected_entry)
 if __name__ == "__main__":
     unittest.main()
