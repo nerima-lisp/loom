@@ -311,19 +311,18 @@ cursor at CURSOR when supplied. Returns RENDERER."
     (values (coerce (nreverse glyphs) 'vector)
             (coerce (nreverse widths) 'vector))))
 
-(defun loom-renderer-load-frame-snapshot (renderer snapshot)
-  (unless (and (= (loom-renderer-width renderer)
-                  (loom/core/editor-session:frame-snapshot-width snapshot))
-               (= (loom-renderer-height renderer)
-                  (loom/core/editor-session:frame-snapshot-height snapshot)))
-    (error "Frame snapshot dimensions do not match the renderer."))
+(defun loom-renderer-load-frame-cells (renderer width height cells)
+  (unless (and (= (loom-renderer-width renderer) width)
+               (= (loom-renderer-height renderer) height)
+               (= (length cells) (* width height)))
+    (error "Frame cell dimensions do not match the renderer."))
   (loom-renderer-clear renderer)
   (let ((screen (cl-tty-kit:renderer-screen
                  (%loom-renderer-cl-tty-renderer renderer))))
-    (dotimes (y (loom-renderer-height renderer))
-      (dotimes (x (loom-renderer-width renderer))
-        (multiple-value-bind (glyph style)
-            (loom/core/editor-session:frame-snapshot-cell snapshot x y)
+    (dotimes (y height)
+      (dotimes (x width)
+        (destructuring-bind (glyph style)
+            (aref cells (+ (* y width) x))
           (let* ((single-character-p
                    (and (stringp glyph) (= (length glyph) 1)))
                  (character (if single-character-p
@@ -335,12 +334,12 @@ cursor at CURSOR when supplied. Returns RENDERER."
                  screen x y
                  (cl-tty-kit:make-cell :char character :style style)))
             (when (and (stringp glyph) (not single-character-p))
-              (let ((width
+              (let ((glyph-width
                       (max 1 (%loom-renderer-grapheme-advance glyph x 8))))
-                (when (<= (+ x width) (loom-renderer-width renderer))
+                (when (<= (+ x glyph-width) width)
                   (setf (gethash (%loom-renderer-glyph-key renderer x y)
                                  (%loom-renderer-glyphs renderer))
                         (%make-loom-renderer-glyph
-                         x y glyph width
+                         x y glyph glyph-width
                          (%loom-renderer-style-sequence style))))))))))
   renderer))

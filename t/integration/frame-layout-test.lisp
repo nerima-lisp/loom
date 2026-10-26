@@ -33,7 +33,7 @@
            (session (editor-state-session state)))
       (loom::compose-frame state)
       (let ((result
-              (loom/core/editor-session:hit-test-coordinate session 0 0)))
+              (let ((*editor-state* state)) (loom/core/editor-session:hit-test-coordinate session 0 0))))
         (expect result :to-be-truthy)
         (expect (loom/core/editor-session:hit-test-result-owner result)
                 :to-be

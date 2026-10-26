@@ -21,7 +21,7 @@
                        :condition-type
                        (type-of condition))))
 
-(defun %run-loom-session (startup-context fd)
+(defun %run-loom-session (startup-context fd render-frame-function)
   (let ((session (editor-state-session *editor-state*))
         (terminal-session nil)
         (signal-handlers-installed-p nil)
@@ -51,7 +51,8 @@
                                                               (%loom-terminal-session-stream
                                                                terminal-session)
                                                               *standard-input*
-                                                              terminal-session)))
+                                                              terminal-session
+                                                              render-frame-function)))
           (error (condition)
             (%log-loom-error condition)
             (setf reason :runtime-error

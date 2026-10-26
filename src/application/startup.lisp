@@ -40,7 +40,12 @@ from it."
                               (unwind-protect (funcall thunk *editor-state*)
                                 (%shutdown-editor-services *editor-state*)))))
 
-(defun %run-loom (startup-context &key (fd 0))
+(defvar *event-loop-render-function* nil)
+
+(defun %run-loom (startup-context &key
+                                       (fd 0)
+                                       (render-frame-function
+                                        *event-loop-render-function*))
   (let* ((requests
           (loom/core/editor-session:startup-context-file-requests
            startup-context))
@@ -54,7 +59,8 @@ from it."
                                                          (declare (ignore state))
                                                          (%run-loom-session
                                                           startup-context
-                                                          fd))
+                                                          fd
+                                                          render-frame-function))
                                                        request
                                                        (rest requests))
           (cl-cli:cli-usage-error (condition)

@@ -49,7 +49,8 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                            last-width
                                            last-height
                                            terminal-session
-                                           force-ready-p)
+                                           force-ready-p
+                                           render-frame-function)
   (multiple-value-bind (status reason exit-status frame-dirty-p more-ready-p)
       (%read-and-dispatch-event-loop-input input-stream
                                            buffer
@@ -74,19 +75,21 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                    frame-dirty-p
                    (/= width last-width)
                    (/= height last-height))
-           (%render-event-loop-frame output-stream))
+           (%render-event-loop-frame output-stream render-frame-function))
          (values status nil nil width height more-ready-p)))
       (t nil))))
 
 
-(defun %run-event-loop (output-stream input-stream &optional terminal-session)
+(defun %run-event-loop (output-stream input-stream
+                                           &optional terminal-session
+                                           render-frame-function)
   "Run input, background wake, lifecycle and render turns until shutdown."
   (let ((decoder (cl-tty-kit:make-input-decoder))
         (buffer (make-array 4096 :element-type '(unsigned-byte 8)))
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*)))
         (poll-ready-p nil))
     (multiple-value-bind (last-width last-height) (%initial-terminal-size)
-      (%render-event-loop-frame output-stream)
+      (%render-event-loop-frame output-stream render-frame-function)
       (handler-case (loop (multiple-value-bind (status reason
                                                        exit-status
                                                        width
@@ -100,7 +103,8 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                                     last-width
                                                     last-height
                                                     terminal-session
-                                                    poll-ready-p)
+                                                    poll-ready-p
+                                                    render-frame-function)
                             (cond
                               ((eq status :terminate)
                                (return (values reason exit-status)))

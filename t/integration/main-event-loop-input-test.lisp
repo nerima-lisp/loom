@@ -46,7 +46,11 @@
                    (loom::compose-frame
                     (lambda (state)
                       (expect state :to-be *editor-state*)
-                      (setf composed t)))
+                      (progn
+                        (setf composed t)
+                        (loom/core/editor-session:make-frame-snapshot
+                         80 24
+                         (make-array 1920 :initial-element (list " " nil))))))
                    (with-replaced-function
                     (loom:loom-renderer-present
                      (lambda (renderer &key stream cursor)
@@ -55,7 +59,7 @@
                                :to-be
                                (editor-state-renderer *editor-state*))
                        (setf presented t)))
-                    (loom::%render-event-loop-frame (make-string-output-stream))))))))
+                    (loom::%render-event-loop-frame (make-string-output-stream) #'loom::%render-root-frame)))))))
               (expect runtime-drained :to-be-truthy)
               (expect prefetched-paths :to-equal '(:prefetch-path))
               (expect lsp-refreshed :to-be-truthy)
@@ -74,13 +78,17 @@
         (loom::compose-frame
          (lambda (state)
            (expect state :to-be *editor-state*)
-           (setf composed t)))
+           (progn
+             (setf composed t)
+             (loom/core/editor-session:make-frame-snapshot
+              80 24
+              (make-array 1920 :initial-element (list " " nil))))))
         (with-replaced-function
          (loom:loom-renderer-present
           (lambda (renderer &key stream cursor)
             (declare (ignore renderer stream cursor))
             (setf presented t)))
-         (loom::%render-event-loop-frame (make-string-output-stream)))))
+         (loom::%render-event-loop-frame (make-string-output-stream) #'loom::%render-root-frame))))
       (expect composed :to-be-truthy)
       (expect presented :to-be-truthy)))
 
@@ -164,7 +172,11 @@
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*)))
+                                     *standard-input*
+                                     nil
+                                     (function
+                                       (lambda (stream)
+                                         (declare (ignore stream)))))))
           (expect (buffer-line (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                                0)
                   :to-equal "a")))))
@@ -182,7 +194,11 @@
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*)))
+                                     *standard-input*
+                                     nil
+                                     (function
+                                       (lambda (stream)
+                                         (declare (ignore stream)))))))
           (expect (length (buffer-line (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                                        0))
                   :to-equal 4096)))))
@@ -203,7 +219,11 @@
             (with-open-file (*standard-input* path :direction :input
                                               :element-type '(unsigned-byte 8))
               (loom::%run-event-loop (make-string-output-stream)
-                                     *standard-input*)))
+                                     *standard-input*
+                                     nil
+                                     (function
+                                       (lambda (stream)
+                                         (declare (ignore stream)))))))
           (expect (buffer-line (%selected-test-buffer) 0)
                   :to-equal ""))))))
 
@@ -640,7 +660,7 @@
               (cl-tty-kit:screen-row-string
                (%layout-screen *editor-state*)
                0 :start 0 :end 9))))
-     (loom::%render-event-loop-frame (make-string-output-stream))))
+     (loom::%render-event-loop-frame (make-string-output-stream) #'loom::%render-root-frame)))
    (expect hook-ran-p :to-be-truthy)
    (expect presented-row :to-equal "Zb      !")
    (expect (cl-tty-kit:cursor-x presented-cursor) :to-equal 2)
