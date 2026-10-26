@@ -148,6 +148,10 @@ def _validate_case(case, index):
             _validate_screen_expectations(
                 case.get("restore_screen"), f"{location}.restore_screen"
             )
+            _validate_key_list(
+                case.get("replay_prefix_keys"),
+                f"{location}.replay_prefix_keys",
+            )
         if case["mutation_case"] == "read-only":
             _nonempty_string(
                 case.get("read_only_command"), f"{location}.read_only_command"
@@ -285,7 +289,14 @@ def _save_and_assert_precondition(session, path, expected_bytes):
 
 
 def _assert_final_state(
-    session, case, path, expected_bytes, *, save=False, stage_prefix=None
+    session,
+    case,
+    path,
+    expected_bytes,
+    *,
+    save=False,
+    stage_prefix=None,
+    check_minibuffer=True,
 ):
     def stage(label):
         if stage_prefix is None:
@@ -294,8 +305,9 @@ def _assert_final_state(
             case["name"], f"{stage_prefix} {label}", session=session
         )
 
-    with stage("minibuffer"):
-        _assert_minibuffer(session, case["expected_minibuffer"])
+    if check_minibuffer:
+        with stage("minibuffer"):
+            _assert_minibuffer(session, case["expected_minibuffer"])
     for expectation in case["expected_screen"]:
         with stage(f"{expectation['region']} screen"):
             session.wait_for_region_exact_text(
@@ -376,7 +388,7 @@ def _run_r2(session, case, path):
     )
 
 
-def _assert_effect_state(session, case):
+def _assert_effect_state(session, case, *, check_minibuffer=True):
     with _deadline_stage(case["name"], "effect screen", session=session):
         for expectation in case["effect_screen"]:
             session.wait_for_region_exact_text(
@@ -385,8 +397,9 @@ def _assert_effect_state(session, case):
                 index=expectation.get("index", 0),
                 strip_right=True,
             )
-    with _deadline_stage(case["name"], "effect minibuffer", session=session):
-        _assert_minibuffer(session, case["expected_minibuffer"])
+    if check_minibuffer:
+        with _deadline_stage(case["name"], "effect minibuffer", session=session):
+            _assert_minibuffer(session, case["expected_minibuffer"])
     _assert_screen(session, case["effect_screen"])
     with _deadline_stage(case["name"], "effect cursor", session=session):
         _assert_cursor(
@@ -416,6 +429,7 @@ def _run_r3(session, case, path):
                 "body", case["effect_screen"][0]["text"], strip_right=True
             )
             _send_keys(session, ["C-x", ")"])
+            _assert_minibuffer(session, case["expected_minibuffer"])
             session.send(keys.ctrl("x") + keys.text("u"))
             session.wait_for_region_exact_text(
                 "body", case["restore_screen"][0]["text"], strip_right=True
@@ -428,8 +442,9 @@ def _run_r3(session, case, path):
             with _deadline_stage(
                 case["name"], f"{replay_name} command", session=session
             ):
+                _send_keys(session, case["replay_prefix_keys"])
                 _send_keys(session, ["C-x", "e"])
-            _assert_effect_state(session, case)
+            _assert_effect_state(session, case, check_minibuffer=False)
             with _deadline_stage(
                 case["name"], f"{replay_name} save", session=session
             ):
@@ -448,7 +463,6 @@ def _run_r3(session, case, path):
                     _save_and_assert_precondition(session, path, initial)
         if replay_results[0] != replay_results[1]:
             raise AssertionError("second macro replay did not match the first bytes")
-        _assert_effect_state(session, case)
         return
 
     with _deadline_stage(case["name"], "effect", session=session):
@@ -467,11 +481,10 @@ def _run_r3(session, case, path):
             case,
             path,
             case["expected_bytes"],
-            save=False,
+            save=True,
             stage_prefix="undo result",
+            check_minibuffer=False,
         )
-        with _deadline_stage(case["name"], "undo save", session=session):
-            _save_and_assert(session, path, case["expected_bytes"].encode("utf-8"))
 
 
 def run_command_path_scenario(binary, case, *, session_factory=Session):

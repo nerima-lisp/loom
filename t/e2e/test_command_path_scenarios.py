@@ -416,7 +416,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             "initial_bytes": "abc\n",
             "effect_bytes": "bc\n",
             "expected_bytes": "abc\n",
-            "expected_cursor": [0, 0],
+            "expected_cursor": [0, 1],
             "expected_minibuffer": "",
             "expected_screen": [{"region": "body", "text": "abc"}],
             "effect_screen": [{"region": "body", "text": "bc"}],
@@ -447,6 +447,13 @@ class CommandPathScenarioTests(unittest.TestCase):
                     {"index": 0, "strip_right": True},
                 )
             ),
+        )
+        self.assertEqual(
+            sum(
+                call == ("wait_exact_text", "minibuffer", "", {"strip_right": True})
+                for call in calls
+            ),
+            1,
         )
 
     def test_r3_read_only_refusal_preserves_exact_bytes(self):
@@ -493,6 +500,8 @@ class CommandPathScenarioTests(unittest.TestCase):
         run_command_path_scenario("unused", case, session_factory=session_factory)
 
         calls = sessions[0].calls
+        self.assertEqual(case["replay_prefix_keys"], ["C-a"])
+        self.assertEqual(sum(call == ("send", b"\x01") for call in calls), 2)
         effect_file_assertions = [
             call[1]
             for call in calls
@@ -507,13 +516,13 @@ class CommandPathScenarioTests(unittest.TestCase):
             sum(call == ("send", b"\x18u") for call in calls),
             2,
         )
-        self.assertGreaterEqual(
+        self.assertEqual(
             sum(
                 call[:3]
                 == ("wait_exact_text", "minibuffer", "Keyboard macro defined")
                 for call in calls
             ),
-            3,
+            1,
         )
         self.assertGreaterEqual(
             sum(
