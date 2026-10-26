@@ -26,6 +26,108 @@ def _exit_code(status):
     return status
 
 
+def _close_fds(*file_descriptors):
+    for descriptor in file_descriptors:
+        if descriptor is None:
+            continue
+        try:
+            os.close(descriptor)
+        except OSError as error:
+            if error.errno != errno.EBADF:
+                raise
+
+
+def _run_job_control_supervisor(
+    binary,
+    arguments,
+    env,
+    previous_mask,
+    application_pid_pipe,
+    ready_pipe,
+    start_pipe,
+):
+    application_pid_read, application_pid_write = application_pid_pipe
+    ready_read, ready_write = ready_pipe
+    start_read, start_write = start_pipe
+    _close_fds(application_pid_read)
+
+    application_pid = os.fork()
+    if application_pid == 0:
+        _close_fds(application_pid_write, ready_read, start_write)
+        os.setpgid(0, 0)
+        os.write(ready_write, b"ready")
+        _close_fds(ready_write)
+        if os.read(start_read, 2) != b"go":
+            os._exit(126)
+        _close_fds(start_read)
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+        signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+        argv = [binary, *arguments]
+        if env is None:
+            os.execv(binary, argv)
+        os.execve(binary, argv, env)
+
+    _close_fds(ready_write, start_read)
+    if os.read(ready_read, 5) != b"ready":
+        _close_fds(ready_read, start_write)
+        _waited_pid, status = os.waitpid(application_pid, 0)
+        os._exit(_exit_code(status))
+    _close_fds(ready_read)
+    os.tcsetpgrp(0, application_pid)
+    os.write(start_write, b"go")
+    _close_fds(start_write)
+
+    child_status = None
+
+    def _forward_child_signal(signum, _frame):
+        nonlocal child_status
+        if signum == signal.SIGCONT:
+            try:
+                child_pid, status = os.waitpid(application_pid, os.WNOHANG)
+            except ChildProcessError:
+                return
+            except InterruptedError:
+                pass
+            else:
+                if child_pid == application_pid and (
+                    os.WIFEXITED(status) or os.WIFSIGNALED(status)
+                ):
+                    child_status = status
+                    return
+        try:
+            os.killpg(application_pid, signum)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            # A killed application group can reject SIGCONT while it disappears.
+            if signum != signal.SIGCONT:
+                raise
+
+    signal.signal(signal.SIGCONT, _forward_child_signal)
+    signal.signal(signal.SIGHUP, _forward_child_signal)
+    signal.signal(signal.SIGTERM, _forward_child_signal)
+    signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+    os.write(application_pid_write, f"{application_pid}\n".encode("ascii"))
+    _close_fds(application_pid_write)
+
+    wait_options = os.WNOHANG | os.WUNTRACED
+    if hasattr(os, "WCONTINUED"):
+        wait_options |= os.WCONTINUED
+    while True:
+        if child_status is not None:
+            os._exit(_exit_code(child_status))
+        try:
+            child_pid, status = os.waitpid(application_pid, wait_options)
+        except InterruptedError:
+            continue
+        if child_pid == application_pid:
+            if os.WIFSTOPPED(status):
+                os.kill(os.getpid(), signal.SIGSTOP)
+            elif os.WIFEXITED(status) or os.WIFSIGNALED(status):
+                os._exit(_exit_code(status))
+        time.sleep(0.01)
+
+
 class LoomProcess:
     """A loom process running under a pty.fork() child.
 
@@ -34,30 +136,83 @@ class LoomProcess:
     HOME/LOOM_INIT_FILE isolation precisely.
     """
 
-    def __init__(self, binary, arguments, env=None, columns=80, rows=24):
+    def __init__(
+        self,
+        binary,
+        arguments,
+        env=None,
+        columns=80,
+        rows=24,
+        supervise_job_control=False,
+    ):
         self._pid = None
         self._fd = None
         self._status = None
         self._eof = False
         self._force_reap_poll = False
         self._output = bytearray()
+        self._supervise_job_control = supervise_job_control
+        self.application_pid = None
+        application_pid_pipe = None
+        ready_pipe = None
+        start_pipe = None
         try:
             # At-fork callbacks can swallow exceptions raised by signal handlers.
-            previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
+            previous_mask = signal.pthread_sigmask(
+                signal.SIG_BLOCK, {signal.SIGALRM}
+            )
             try:
+                if supervise_job_control:
+                    application_pid_pipe = os.pipe()
+                    ready_pipe = os.pipe()
+                    start_pipe = os.pipe()
                 self._pid, self._fd = pty.fork()
                 if self._pid == 0:
+                    if supervise_job_control:
+                        _run_job_control_supervisor(
+                            binary,
+                            arguments,
+                            env,
+                            previous_mask,
+                            application_pid_pipe,
+                            ready_pipe,
+                            start_pipe,
+                        )
+                        os._exit(127)
                     signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
                     argv = [binary, *arguments]
                     if env is None:
                         os.execv(binary, argv)
-                    else:
-                        os.execve(binary, argv, env)
+                    os.execve(binary, argv, env)
+                if supervise_job_control:
+                    _close_fds(
+                        application_pid_pipe[1],
+                        ready_pipe[0],
+                        ready_pipe[1],
+                        start_pipe[0],
+                        start_pipe[1],
+                    )
+                    reported_pid = bytearray()
+                    while b"\n" not in reported_pid:
+                        chunk = os.read(application_pid_pipe[0], 32)
+                        if not chunk:
+                            raise RuntimeError(
+                                "job-control supervisor exited before reporting "
+                                "the application PID"
+                            )
+                        reported_pid.extend(chunk)
+                    self.application_pid = int(
+                        reported_pid.partition(b"\n")[0]
+                    )
+                    _close_fds(application_pid_pipe[0])
                 else:
-                    # A pending deadline alarm can interrupt setup as soon as it is unblocked.
-                    os.set_blocking(self._fd, False)
+                    self.application_pid = self._pid
+                os.set_blocking(self._fd, False)
             finally:
                 if self._pid != 0:
+                    for pipe in (application_pid_pipe, ready_pipe, start_pipe):
+                        if pipe is not None:
+                            _close_fds(*pipe)
                     signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
             self._set_terminal_size(columns, rows)
         except BaseException as error:
@@ -136,14 +291,28 @@ class LoomProcess:
             time.sleep(min(0.001, remaining))
         return True
 
-    def force_kill(self):
-        """Send the final signal without waiting for PTY EOF or child reap."""
+    def _send_signal(self, signum):
         if self._status is not None:
             return
+        if self._supervise_job_control and self.application_pid is not None:
+            try:
+                os.killpg(self.application_pid, signum)
+            except ProcessLookupError:
+                pass
+            if signum in (signal.SIGHUP, signal.SIGTERM, signal.SIGKILL):
+                try:
+                    os.kill(self._pid, signal.SIGCONT)
+                except ProcessLookupError:
+                    pass
+            return
         try:
-            os.kill(self._pid, signal.SIGKILL)
+            os.kill(self._pid, signum)
         except ProcessLookupError:
             pass
+
+    def force_kill(self):
+        """Send the final signal without waiting for PTY EOF or child reap."""
+        self._send_signal(signal.SIGKILL)
 
     def read_available(self):
         """Return whatever bytes are ready without blocking (possibly empty)."""
@@ -221,10 +390,7 @@ class LoomProcess:
                         remaining = budget.remaining()
                         if remaining <= REAP_RESERVE_SECONDS:
                             break
-                    try:
-                        os.kill(self._pid, termination_signal)
-                    except ProcessLookupError:
-                        pass
+                    self._send_signal(termination_signal)
                     try:
                         timeout = 1.0
                         if budget is not None:
@@ -256,9 +422,7 @@ class LoomProcess:
                 try:
                     while self._status is None:
                         try:
-                            os.kill(self._pid, signal.SIGKILL)
-                        except ProcessLookupError:
-                            pass
+                            self._send_signal(signal.SIGKILL)
                         except BaseException as error:
                             forced_error = forced_error or error
                             break
@@ -303,9 +467,7 @@ class LoomProcess:
                         if self._status is not None:
                             break
                         try:
-                            os.kill(self._pid, signal.SIGKILL)
-                        except ProcessLookupError:
-                            pass
+                            self._send_signal(signal.SIGKILL)
                         except BaseException as error:
                             forced_error = forced_error or error
                         try:

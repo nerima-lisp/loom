@@ -91,6 +91,7 @@ def _catalog():
         "load-session",
         "new-workspace",
         "switch-workspace",
+        "suspend-frame",
     }
     rows.extend(_row(command_id) for command_id in sorted(fixed_names))
     return rows
@@ -115,7 +116,7 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
         self.assertEqual(
             rule_counts,
-            {"r1": 53, "r2": 34, "r3": 14, "r4": 2, "r5": 8, "r6": 32, "r7": 7, "r8": 4},
+            {"r1": 54, "r2": 34, "r3": 14, "r4": 2, "r5": 8, "r6": 32, "r7": 7, "r8": 4},
         )
         self.assertEqual(len(self.paths), len(self.paths_by_id))
         self.assertEqual(
@@ -368,6 +369,15 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             }
             | {"r6:resize": ["terminal_resize"]},
         )
+        self.assertEqual(
+            self.paths_by_id["r6:suspend:c-z"]["commands"], ["suspend-frame"]
+        )
+        for path_id in (
+            "r6:signal:sigterm",
+            "r6:signal:sighup",
+            "r6:signal:sigtstp-cont",
+        ):
+            self.assertEqual(self.paths_by_id[path_id]["commands"], [])
 
     def test_r7_generates_all_editor_invocation_paths(self):
         for path_id in (
@@ -380,8 +390,29 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             "r7:interruption",
         ):
             self.assertIn(path_id, self.paths_by_id)
-        self.assertEqual(self.paths_by_id["r7:xargs-non-tty"]["commands"], [])
-        self.assertEqual(self.paths_by_id["r7:plus-n"]["commands"], [])
+        self.assertEqual(
+            {
+                path_id: self.paths_by_id[path_id]["commands"]
+                for path_id in (
+                    "r7:git-commit",
+                    "r7:interactive-rebase",
+                    "r7:crontab",
+                    "r7:xargs-non-tty",
+                    "r7:plus-n",
+                    "r7:new-file",
+                    "r7:interruption",
+                )
+            },
+            {
+                "r7:git-commit": ["save-buffer", "save-buffers-kill-terminal"],
+                "r7:interactive-rebase": ["save-buffer", "save-buffers-kill-terminal"],
+                "r7:crontab": ["save-buffer", "save-buffers-kill-terminal"],
+                "r7:xargs-non-tty": ["save-buffer"],
+                "r7:plus-n": ["save-buffers-kill-terminal"],
+                "r7:new-file": ["save-buffer"],
+                "r7:interruption": ["keyboard-quit"],
+            },
+        )
 
     def test_r8_generates_every_post_restart_restore_path(self):
         for path_id in ("r8:session", "r8:split-windows", "r8:workspace", "r8:history"):

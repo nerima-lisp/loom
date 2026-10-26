@@ -631,8 +631,76 @@ def _classify_path(
             return item
 
     if not targets and not event_targets:
-        item["status"] = "no-trace"
-        item["reason"] = "generated path has no traceable target"
+        if (
+            required.get("rule") != "r6"
+            or required.get("commands") != []
+            or ledger.get("commands") != []
+        ):
+            item["status"] = "no-trace"
+            item["reason"] = "generated path has no traceable target command"
+            return item
+
+        declared_effect_types = ledger_observe & _observe_types(required)
+        if not declared_effect_types:
+            item["status"] = "no-observation"
+            item["reason"] = "commandless R6 path declares no matching effect type"
+            return item
+
+        commandless_effects = [
+            observation
+            for observation in effect_observations
+            if observation.get("type") in declared_effect_types
+        ]
+        commandless_expected_effects = [
+            observation
+            for observation in commandless_effects
+            if "expected" in observation
+        ]
+        if not commandless_expected_effects:
+            item["status"] = "no-observation"
+            item["reason"] = (
+                "commandless R6 path has no non-precondition expected effect observation"
+            )
+            return item
+
+        observed_effect_types = {
+            observation.get("type") for observation in commandless_expected_effects
+        }
+        missing_effect_types = declared_effect_types - observed_effect_types
+        if missing_effect_types:
+            item["status"] = "no-observation"
+            item["reason"] = (
+                "commandless R6 path is missing a declared effect observation"
+            )
+            item["missing_effect_types"] = sorted(missing_effect_types)
+            return item
+
+        mismatches = [
+            {
+                "type": observation.get("type"),
+                "match": observation.get("match", "exact"),
+                "expected": observation.get("expected"),
+                "actual": observation.get("actual"),
+            }
+            for observation in commandless_expected_effects
+            if not _matches(observation)
+        ]
+        if mismatches:
+            item["status"] = "mismatch"
+            item["reason"] = "one or more expected effect observations do not match"
+            item["mismatches"] = mismatches
+            return item
+
+        item["status"] = "pass"
+        item["failed"] = False
+        item["reason"] = (
+            "the expected binary, declared effect observations, and their values are verified"
+        )
+        if exclusion_error is not None:
+            item["failed"] = True
+            item["failure_reasons"].append(
+                f"invalid exclusion evidence: {exclusion_error}"
+            )
         return item
 
     trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)

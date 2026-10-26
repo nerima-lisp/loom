@@ -105,6 +105,31 @@ class PathReportTests(unittest.TestCase):
             **overrides,
         }
 
+    def _configure_path(
+        self,
+        *,
+        path_id,
+        commands,
+        rule,
+        lane,
+        entry,
+        state,
+        outcome,
+        observe,
+        scenario,
+    ):
+        self.required = {
+            "id": path_id,
+            "commands": commands,
+            "rule": rule,
+            "lane": lane,
+            "entry": entry,
+            "state": state,
+            "outcome": outcome,
+            "observe": observe,
+        }
+        self.ledger = {**self.required, "scenario": scenario}
+
     def test_generated_path_missing_from_ledger_is_reported(self):
         report = self._report()
         self.assertEqual(report["paths"][0]["status"], "not-in-ledger")
@@ -746,6 +771,290 @@ class PathReportTests(unittest.TestCase):
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_commandless_r6_signal_paths_pass_with_matching_external_state(self):
+        cases = (
+            (
+                "r6:signal:sigterm",
+                "SIGTERM",
+                "process exits and recovers state",
+            ),
+            (
+                "r6:signal:sighup",
+                "SIGHUP",
+                "process exits and recovers state",
+            ),
+            (
+                "r6:signal:sigtstp-cont",
+                "SIGTSTP then SIGCONT",
+                "terminal suspends and resumes",
+            ),
+        )
+        for path_id, entry, outcome in cases:
+            with self.subTest(path_id=path_id):
+                self._configure_path(
+                    path_id=path_id,
+                    commands=[],
+                    rule="r6",
+                    lane="W3-2",
+                    entry=entry,
+                    state="running-process",
+                    outcome=outcome,
+                    observe=["external_state"],
+                    scenario=f"lifecycle/{path_id.replace(':', '-')}",
+                )
+                self._write_scenario(
+                    [
+                        {
+                            "type": "external_state",
+                            "actual": "recovered",
+                            "expected": "recovered",
+                            "passed": True,
+                            "purpose": "scenario",
+                        }
+                    ],
+                    trace_commands=(),
+                )
+
+                report = self._report(ledger=self.ledger)
+
+                self.assertEqual(report["paths"][0]["status"], "pass")
+                self.assertFalse(report["paths"][0]["failed"])
+
+    def test_commandless_r6_route_passes_when_all_declared_effects_match(self):
+        self._configure_path(
+            path_id="r6:resize",
+            commands=[],
+            rule="r6",
+            lane="W3-4",
+            entry="terminal-resize",
+            state="resized-terminal",
+            outcome="screen redraws",
+            observe=["screen_text", "cursor"],
+            scenario="lifecycle/resize",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "screen_text",
+                    "actual": "redrawn frame",
+                    "expected": "redrawn frame",
+                    "passed": True,
+                    "purpose": "scenario",
+                },
+                {
+                    "type": "cursor",
+                    "actual": [0, 0],
+                    "expected": [0, 0],
+                    "passed": True,
+                    "purpose": "scenario",
+                },
+            ],
+            trace_commands=(),
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+        self.assertFalse(report["has_failures"])
+
+    def test_commandless_r6_route_requires_observations_for_all_declared_effects(self):
+        self._configure_path(
+            path_id="r6:resize",
+            commands=[],
+            rule="r6",
+            lane="W3-4",
+            entry="terminal-resize",
+            state="resized-terminal",
+            outcome="screen redraws",
+            observe=["screen_text", "cursor"],
+            scenario="lifecycle/resize",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "screen_text",
+                    "actual": "redrawn frame",
+                    "expected": "redrawn frame",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_commandless_r6_signal_path_rejects_precondition_only_observations(self):
+        self._configure_path(
+            path_id="r6:signal:sigterm",
+            commands=[],
+            rule="r6",
+            lane="W3-2",
+            entry="SIGTERM",
+            state="running-process",
+            outcome="process exits and recovers state",
+            observe=["external_state"],
+            scenario="lifecycle/sigterm-recovery",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "external_state",
+                    "actual": "recovered",
+                    "expected": "recovered",
+                    "passed": True,
+                    "purpose": "precondition",
+                }
+            ],
+            trace_commands=(),
+            observation_class="none",
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_commandless_r6_signal_path_rejects_empty_observations(self):
+        self._configure_path(
+            path_id="r6:signal:sigterm",
+            commands=[],
+            rule="r6",
+            lane="W3-2",
+            entry="SIGTERM",
+            state="running-process",
+            outcome="process exits and recovers state",
+            observe=["external_state"],
+            scenario="lifecycle/sigterm-recovery",
+        )
+        self._write_scenario(
+            [],
+            trace_commands=(),
+            observation_class="none",
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_commandless_r6_signal_path_requires_an_expected_value(self):
+        self._configure_path(
+            path_id="r6:signal:sigterm",
+            commands=[],
+            rule="r6",
+            lane="W3-2",
+            entry="SIGTERM",
+            state="running-process",
+            outcome="process exits and recovers state",
+            observe=["external_state"],
+            scenario="lifecycle/sigterm-recovery",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "external_state",
+                    "actual": "recovered",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+            observation_class="effect-unverified",
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-observation")
+
+    def test_commandless_r6_signal_path_rejects_mismatched_observation(self):
+        self._configure_path(
+            path_id="r6:signal:sigterm",
+            commands=[],
+            rule="r6",
+            lane="W3-2",
+            entry="SIGTERM",
+            state="running-process",
+            outcome="process exits and recovers state",
+            observe=["external_state"],
+            scenario="lifecycle/sigterm-recovery",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "external_state",
+                    "actual": "not-recovered",
+                    "expected": "recovered",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "mismatch")
+
+    def test_commandless_r6_signal_path_rejects_failed_scenario(self):
+        self._configure_path(
+            path_id="r6:signal:sigterm",
+            commands=[],
+            rule="r6",
+            lane="W3-2",
+            entry="SIGTERM",
+            state="running-process",
+            outcome="process exits and recovers state",
+            observe=["external_state"],
+            scenario="lifecycle/sigterm-recovery",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "external_state",
+                    "actual": "recovered",
+                    "expected": "recovered",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+            status="failed",
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "mismatch")
+
+    def test_unrelated_commandless_path_still_requires_trace(self):
+        self._configure_path(
+            path_id="r7:plus-n",
+            commands=[],
+            rule="r7",
+            lane="W3-2",
+            entry="+N FILE",
+            state="$EDITOR invocation",
+            outcome="line argument opens the requested line",
+            observe=["external_state"],
+            scenario="startup/plus-n",
+        )
+        self._write_scenario(
+            [
+                {
+                    "type": "external_state",
+                    "actual": "opened",
+                    "expected": "opened",
+                    "passed": True,
+                    "purpose": "scenario",
+                }
+            ],
+            trace_commands=(),
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
 
     def test_cell_attributes_compare_expected_subset(self):
         self.required["observe"] = ["cell_attrs"]

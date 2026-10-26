@@ -655,7 +655,7 @@ def _fixed_paths():
             ),
             _path("r6:mouse", [], "r6", "W3-8", "mouse", "mouse-event", "event is handled", ["screen_text", "cursor"]),
             _path("r6:paste", [], "r6", "W3-8", "paste", "bracketed-paste", "pasted bytes are preserved", ["file_bytes"]),
-            _path("r6:suspend:c-z", [], "r6", "W3-2", "C-z", "running-process", "process suspends and resumes", ["external_state"]),
+            _path("r6:suspend:c-z", ["suspend-frame"], "r6", "W3-2", "C-z", "running-process", "process suspends and resumes", ["external_state"]),
             _path("r6:signal:sigterm", [], "r6", "W3-2", "SIGTERM", "running-process", "process exits and recovers state", ["external_state"]),
             _path("r6:signal:sighup", [], "r6", "W3-2", "SIGHUP", "running-process", "process exits and recovers state", ["external_state"]),
             _path("r6:signal:sigtstp-cont", [], "r6", "W3-2", "SIGTSTP then SIGCONT", "running-process", "terminal suspends and resumes", ["external_state"]),
@@ -664,10 +664,18 @@ def _fixed_paths():
 
     editor_paths = (
         ("git-commit", ["save-buffer", "save-buffers-kill-terminal"], "git-commit"),
-        ("interactive-rebase", ["save-buffer", "save-buffers-kill-terminal"], "git-rebase -i"),
-        ("crontab", ["save-buffer", "save-buffers-kill-terminal"], "crontab-style editor"),
-        ("xargs-non-tty", [], "xargs with non-TTY stdin"),
-        ("plus-n", [], "+N FILE"),
+        (
+            "interactive-rebase",
+            ["save-buffer", "save-buffers-kill-terminal"],
+            "git-rebase -i",
+        ),
+        (
+            "crontab",
+            ["save-buffer", "save-buffers-kill-terminal"],
+            "crontab-style editor",
+        ),
+        ("xargs-non-tty", ["save-buffer"], "xargs with non-TTY stdin"),
+        ("plus-n", ["save-buffers-kill-terminal"], "+N FILE"),
         ("new-file", ["save-buffer"], "new file"),
         ("interruption", ["keyboard-quit"], "editor interruption"),
     )

@@ -90,6 +90,7 @@ class Session:
     def __init__(
         self, binary, arguments=None, columns=80, rows=24,
         profile=keys.DEFAULT_PROFILE, shell="/bin/sh",
+        supervise_job_control=False,
     ):
         self.binary = binary
         self.arguments = list(arguments or [])
@@ -97,6 +98,7 @@ class Session:
         self.shell = shell
         self.columns = columns
         self.rows = rows
+        self.supervise_job_control = supervise_job_control
         self.process = None
         self.screen = None
         self.layout = Layout(rows, columns)
@@ -158,6 +160,7 @@ class Session:
             self.process = LoomProcess(
                 self.binary, self.arguments, env=env,
                 columns=self.columns, rows=self.rows,
+                supervise_job_control=self.supervise_job_control,
             )
             budget = current_deadline()
             if budget is not None:
@@ -268,6 +271,7 @@ class Session:
         self.process = LoomProcess(
             self.binary, self.arguments, env=env,
             columns=self.columns, rows=self.rows,
+            supervise_job_control=self.supervise_job_control,
         )
         budget = current_deadline()
         if budget is not None:

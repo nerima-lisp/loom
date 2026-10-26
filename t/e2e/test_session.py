@@ -1,7 +1,9 @@
 import json
 import os
+import signal
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -10,6 +12,103 @@ from loom_e2e.deadline import current_deadline, scenario_deadline
 from loom_e2e.process import LoomProcess
 from loom_e2e.results import ScenarioResult, capture_scenario
 from loom_e2e.session import Session
+
+
+class JobControlSupervisorTests(unittest.TestCase):
+    def test_stopped_application_resumes_and_exits_under_pty(self):
+        script = "\n".join(
+            (
+                "import os, signal",
+                "print('ready', flush=True)",
+                "os.kill(os.getpid(), signal.SIGTSTP)",
+                "print('resumed', flush=True)",
+            )
+        )
+        with LoomProcess(
+            sys.executable, ["-c", script], supervise_job_control=True
+        ) as process:
+            self.assertNotEqual(process._pid, process.application_pid)
+            self.assertEqual(os.tcgetpgrp(process._fd), process.application_pid)
+            self.assertEqual(
+                os.getpgid(process.application_pid), process.application_pid
+            )
+            self.assertEqual(
+                os.getsid(process.application_pid), os.getsid(process._pid)
+            )
+            deadline = time.monotonic() + 2.0
+            stopped = None
+            while time.monotonic() < deadline:
+                waited_pid, status = os.waitpid(
+                    process._pid, os.WNOHANG | os.WUNTRACED
+                )
+                if waited_pid == process._pid:
+                    stopped = status
+                    break
+                time.sleep(0.01)
+            self.assertIsNotNone(stopped)
+            self.assertTrue(os.WIFSTOPPED(stopped))
+
+            os.kill(process._pid, signal.SIGCONT)
+            output, exit_code = process.wait(timeout=2.0)
+            self.assertIn(b"ready", output)
+            self.assertIn(b"resumed", output)
+            self.assertEqual(exit_code, 0)
+
+    def test_force_kill_reaps_a_stopped_application(self):
+        script = "\n".join(
+            (
+                "import os, signal, time",
+                "print('ready', flush=True)",
+                "os.kill(os.getpid(), signal.SIGTSTP)",
+                "time.sleep(60)",
+            )
+        )
+        with LoomProcess(
+            sys.executable, ["-c", script], supervise_job_control=True
+        ) as process:
+            deadline = time.monotonic() + 2.0
+            stopped = False
+            while time.monotonic() < deadline:
+                waited_pid, status = os.waitpid(
+                    process._pid, os.WNOHANG | os.WUNTRACED
+                )
+                if waited_pid == process._pid:
+                    stopped = os.WIFSTOPPED(status)
+                    break
+                time.sleep(0.01)
+            self.assertTrue(stopped)
+
+            process.force_kill()
+            output, exit_code = process.wait(timeout=2.0)
+            self.assertIn(b"ready", output)
+            self.assertEqual(exit_code, 128 + signal.SIGKILL)
+
+    def test_close_resumes_and_reaps_a_stopped_application(self):
+        script = "\n".join(
+            (
+                "import os, signal, time",
+                "print('ready', flush=True)",
+                "os.kill(os.getpid(), signal.SIGTSTP)",
+                "time.sleep(60)",
+            )
+        )
+        with LoomProcess(
+            sys.executable, ["-c", script], supervise_job_control=True
+        ) as process:
+            deadline = time.monotonic() + 2.0
+            stopped = False
+            while time.monotonic() < deadline:
+                waited_pid, status = os.waitpid(
+                    process._pid, os.WNOHANG | os.WUNTRACED
+                )
+                if waited_pid == process._pid:
+                    stopped = os.WIFSTOPPED(status)
+                    break
+                time.sleep(0.01)
+            self.assertTrue(stopped)
+
+            process.close()
+            self.assertEqual(process._status, 128 + signal.SIGHUP)
 
 
 class SessionRestartTests(unittest.TestCase):
