@@ -167,5 +167,4 @@
                         :to-equalp
                         #(111 108 100))
                 (expect (loom:minibuffer-message-string minibuffer)
-                        :to-equal
-                        "")))))))))
+                        :to-be nil)))))))))
