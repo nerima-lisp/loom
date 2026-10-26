@@ -415,16 +415,17 @@ def _run_prompt_path(binary, command, outcome):
                 "minibuffer", prompt, timeout=_WAIT
             )
             if outcome == "cancel":
-                session.key("C-g")
+                session.send(keys.ctrl("g"))
                 _assert_exact_message(session, "Quit")
             elif outcome == "empty":
                 session.key("RET")
                 _assert_exact_message(session, f"Git {verb} cancelled")
             else:
                 if outcome == "tab":
-                    session.type("track")
+                    session.type(selected_path)
                     session.key("TAB")
                 elif outcome == "history":
+                    session.key("UP")
                     session.key("UP")
                 else:
                     session.type(selected_path)
