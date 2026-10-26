@@ -49,7 +49,7 @@ def _server_exit_fixture():
     write_buffer(directory.name, "lsp-server", script.encode("utf-8"))
     os.chmod(command, 0o755)
     with open(os.path.join(directory.name, ".loom-lsp"), "w", encoding="utf-8") as handle:
-        handle.write(command + "\n")
+        handle.write("exec " + shlex.quote(command) + "\n")
     path = write_buffer(directory.name, "notes.txt", b"still usable\n")
     return directory, path, status_path
 

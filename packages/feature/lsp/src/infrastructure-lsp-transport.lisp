@@ -17,7 +17,8 @@
   (:documentation "Close an LSP transport and release its resources."))
 
 (defstruct (lsp-process
-            (:constructor %make-lsp-process
+            (:constructor
+                %make-lsp-process
                 (process input output error-output executor result-channel)))
   process
   input
@@ -25,6 +26,7 @@
   error-output
   executor
   result-channel
+  (exit-code nil)
   (closed-p nil))
 
 (defun %lsp-process-readers (process channel)
