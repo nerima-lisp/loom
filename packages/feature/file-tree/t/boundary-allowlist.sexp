@@ -1,0 +1,18 @@
+(
+  ("feature/file-tree"
+   (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-INVALIDATE-PATH (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" "APPLICATION call to FILE-TREE-RENAME (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-commands-file-tree.lisp" "APPLICATION call to FILE-TREE-DELETE (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/file-tree/src/infrastructure-buffer-filesystem.lisp" "feature/file-tree -> root (LOOM:BUFFER-READ-ONLY-ERROR)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/file-tree/src/package.lisp" "feature/file-tree -> root (package-use LOOM/FEATURE/FILE-TREE -> LOOM)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/file-tree/src/package.lisp" "feature/file-tree -> root (package-use LOOM/FEATURE/FILE-TREE -> LOOM/APPLICATION)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:domain-io "packages/feature/file-tree/src/domain-file-tree-navigation.lisp" "HOST-KIT" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:domain-io "packages/feature/file-tree/src/domain-file-tree-navigation.lisp" "HOST-KIT" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to MAKE-LOOM-CONCURRENT-RUNTIME (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-PRIME-DIRECTORY (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-DIRECTORY-ENTRIES (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-SHUTDOWN (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-DRAIN (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:layer-direction "packages/feature/file-tree/src/application-file-tree-runtime.lisp" "APPLICATION call to LOOM-CONCURRENT-RUNTIME-PREFETCH (INFRASTRUCTURE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+  )
+)

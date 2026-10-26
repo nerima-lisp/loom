@@ -1,0 +1,17 @@
+(
+  ("feature/keyboard-macro"
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:KEYMAP-STATE-SEQUENCE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:PREFIX-ARGUMENT-ACTION)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:RECORD-UNDO-BOUNDARY-FOR-COMMAND)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:*CURRENT-PREFIX-ARGUMENT*)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:PREFIX-ARGUMENT-VALUE-FOR-EDITOR)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:PREFIX-ARGUMENT-FOR-EDITOR)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:APPLY-PREFIX-ARGUMENT-ACTION)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:RECORD-UNDO-BOUNDARY-FOR-COMMAND)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:*CURRENT-PREFIX-ARGUMENT*)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:CONSUME-PREFIX-ARGUMENT-FOR-EDITOR)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/application-commands-keyboard-macro.lisp" "feature/keyboard-macro -> root (LOOM:SELF-INSERT-COMMAND)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/package.lisp" "feature/keyboard-macro -> root (package-use LOOM/FEATURE/KEYBOARD-MACRO -> LOOM)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/keyboard-macro/src/package.lisp" "feature/keyboard-macro -> root (package-use LOOM/FEATURE/KEYBOARD-MACRO -> LOOM/APPLICATION)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+  )
+)

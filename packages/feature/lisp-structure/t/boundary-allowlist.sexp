@@ -1,0 +1,16 @@
+(
+  ("feature/lisp-structure"
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-sexp.lisp" "feature/lisp-structure -> root (LOOM:FORWARD-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-sexp.lisp" "feature/lisp-structure -> root (LOOM:BACKWARD-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-sexp.lisp" "feature/lisp-structure -> root (LOOM:BACKWARD-UP-LIST)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-sexp.lisp" "feature/lisp-structure -> root (LOOM:DOWN-LIST)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-sexp.lisp" "feature/lisp-structure -> root (LOOM:KILL-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:FORWARD-SLURP-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:FORWARD-BARF-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:BACKWARD-SLURP-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:BACKWARD-BARF-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:WRAP-ROUND)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:SPLICE-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/lisp-structure/src/command-specs-structural-editing.lisp" "feature/lisp-structure -> root (LOOM:RAISE-SEXP)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+  )
+)

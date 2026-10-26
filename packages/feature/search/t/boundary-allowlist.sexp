@@ -1,0 +1,16 @@
+(
+  ("feature/search"
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:*EDITOR-STATE*)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:EDITOR-STATE-ISEARCH)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:MINIBUFFER-SET-PROMPT)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:*EDITOR-STATE*)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:EDITOR-STATE-ISEARCH)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:%KEY-EVENT->DESCRIPTOR)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:MINIBUFFER-ACTIVATE)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM/APPLICATION:%SELECTED-BUFFER)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:*EDITOR-STATE*)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/application-commands-isearch.lisp" "feature/search -> root (LOOM:EDITOR-STATE-MINIBUFFER)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/package.lisp" "feature/search -> root (package-use LOOM/FEATURE/SEARCH -> LOOM)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+   (:package-direction "packages/feature/search/src/package.lisp" "feature/search -> root (package-use LOOM/FEATURE/SEARCH -> LOOM/APPLICATION)" "The active W3 lane owns this slice; source is left unchanged in W2d.")
+  )
+)
