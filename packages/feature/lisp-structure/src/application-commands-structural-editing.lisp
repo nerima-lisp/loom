@@ -4,6 +4,9 @@
   (multiple-value-bind (edits application-order)
       (funcall edit-function text (%sexp-syntax-classes text) offset)
     (when edits
+      (when (loom/core/buffer:buffer-read-only-p buffer)
+        (error "Buffer is read-only: #<buffer ~A>"
+               (loom/core/buffer:buffer-name buffer)))
       (%apply-structural-edits buffer start edits application-order)
       (%move-point-to-offset
        buffer (+ start (%structural-adjusted-offset edits offset))))))

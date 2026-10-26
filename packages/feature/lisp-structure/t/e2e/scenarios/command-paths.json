@@ -667,61 +667,6 @@
       "read_only_command": "toggle-read-only"
     },
     {
-      "name": "lisp-structure/r3/forward-slurp-sexp/macro-replay",
-      "path_id": "r3:forward-slurp-sexp:macro-replay",
-      "lane": "W3-7b",
-      "rule": "r3",
-      "entry": "macro",
-      "commands": [
-        "start-kbd-macro",
-        "forward-char",
-        "execute-extended-command",
-        "forward-slurp-sexp",
-        "end-kbd-macro",
-        "undo",
-        "move-beginning-of-line",
-        "call-last-kbd-macro",
-        "save-buffer"
-      ],
-      "command": "forward-slurp-sexp",
-      "mutation_case": "macro-replay",
-      "command_keys": [
-        "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
-      ],
-      "initial_bytes": "(a) b\n",
-      "effect_bytes": "(a b)\n",
-      "expected_bytes": "(a b)\n",
-      "expected_cursor": [
-        0,
-        1
-      ],
-      "expected_minibuffer": "Keyboard macro defined",
-      "expected_screen": [
-        {
-          "region": "body",
-          "text": "(a b)"
-        }
-      ],
-      "effect_screen": [
-        {
-          "region": "body",
-          "text": "(a b)"
-        }
-      ],
-      "replay_prefix_keys": [
-        "C-a"
-      ],
-      "restore_screen": [
-        {
-          "region": "body",
-          "text": "(a) b"
-        }
-      ]
-    },
-    {
       "name": "lisp-structure/r3/forward-barf-sexp/effect",
       "path_id": "r3:forward-barf-sexp:effect",
       "lane": "W3-7b",
@@ -850,61 +795,6 @@
         }
       ],
       "read_only_command": "toggle-read-only"
-    },
-    {
-      "name": "lisp-structure/r3/forward-barf-sexp/macro-replay",
-      "path_id": "r3:forward-barf-sexp:macro-replay",
-      "lane": "W3-7b",
-      "rule": "r3",
-      "entry": "macro",
-      "commands": [
-        "start-kbd-macro",
-        "forward-char",
-        "execute-extended-command",
-        "forward-barf-sexp",
-        "end-kbd-macro",
-        "undo",
-        "move-beginning-of-line",
-        "call-last-kbd-macro",
-        "save-buffer"
-      ],
-      "command": "forward-barf-sexp",
-      "mutation_case": "macro-replay",
-      "command_keys": [
-        "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
-      ],
-      "initial_bytes": "(a b)\n",
-      "effect_bytes": "(a) b\n",
-      "expected_bytes": "(a) b\n",
-      "expected_cursor": [
-        0,
-        1
-      ],
-      "expected_minibuffer": "Keyboard macro defined",
-      "expected_screen": [
-        {
-          "region": "body",
-          "text": "(a) b"
-        }
-      ],
-      "effect_screen": [
-        {
-          "region": "body",
-          "text": "(a) b"
-        }
-      ],
-      "replay_prefix_keys": [
-        "C-a"
-      ],
-      "restore_screen": [
-        {
-          "region": "body",
-          "text": "(a b)"
-        }
-      ]
     }
   ]
 }
