@@ -153,6 +153,9 @@ class FakeSession:
     def wait_for_file(self, path, expected):
         self.calls.append(("wait_file", expected))
 
+    def wait_for_region_cursor(self, region, col, index=0):
+        self.calls.append(("wait_region_cursor", region, col, index))
+
     def quit(self):
         self.calls.append(("quit",))
         return b"", 0
@@ -433,6 +436,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertIn(("send", b"\x1bx"), calls)
         self.assertIn(("type", "capitalize-word"), calls)
         self.assertIn(("key", "RET"), calls)
+        self.assertIn(("wait_region_cursor", "body", 3, 0), calls)
         self.assertIn(("observe_cursor", (0, 3), {"region": "body"}), calls)
         self.assertIn(("assert_file_bytes", b"One two\n"), calls)
         self.assertTrue(
@@ -459,6 +463,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             ("observe_cursor", (0, 4), {"region": "minibuffer"}),
             calls,
         )
+        self.assertIn(("wait_region_cursor", "minibuffer", 4, 0), calls)
         self.assertLess(
             calls.index(
                 ("wait_exact_text", "minibuffer", "M-x", {"strip_right": True})
@@ -481,6 +486,48 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertLess(cursor_check, cancel_prompt)
         self.assertLess(cancel_prompt, wait_for_quit)
+
+    def test_r1_cancels_a_prompt_after_asserting_its_state(self):
+        case = {
+            "name": "test/describe-command-prompt",
+            "path_id": "r1:describe-command:key:test",
+            "lane": "W3-5",
+            "rule": "r1",
+            "entry": "key:test",
+            "commands": ["describe-command"],
+            "command": "describe-command",
+            "entry_mode": "key",
+            "entry_keys": ["C-h", "x"],
+            "initial_bytes": "abc\n",
+            "expected_bytes": "abc\n",
+            "expected_cursor": [0, 18],
+            "expected_cursor_region": "minibuffer",
+            "expected_minibuffer": "Describe command: ",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+            "cancel_prompt_after_assert": True,
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        cursor_wait = calls.index(("wait_region_cursor", "minibuffer", 18, 0))
+        cursor_check = calls.index(
+            ("observe_cursor", (0, 18), {"region": "minibuffer"})
+        )
+        cancel_prompt = calls.index(("send", b"\x07"))
+        wait_for_quit = calls.index(
+            ("wait_exact_text", "minibuffer", "Quit", {"strip_right": True})
+        )
+        self.assertLess(cursor_wait, cursor_check)
+        self.assertLess(cursor_check, cancel_prompt)
+        self.assertLess(cancel_prompt, wait_for_quit)
+        self.assertEqual(calls[-1], ("quit",))
 
     def test_remaining_completion_flows_send_the_declared_terminal_keys(self):
         cases = [

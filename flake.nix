@@ -234,6 +234,7 @@
               patches = [
                 ./patches/cl-tty-kit-wide-character-rendering.patch
                 ./patches/cl-tty-kit-prolog-test-dependency.patch
+                ./patches/cl-tty-kit-control-h-key.patch
               ];
             };
             dependencies = [

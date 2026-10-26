@@ -38,14 +38,14 @@ def describe_commands(binary):
             session.wait_for_text("Help:")
             session.assert_screen_text("Help:", match="contains", region="body")
 
-            session.send(keys.ctrl("h") + b"m")
-            session.wait_for_text("Mode: Python")
-
             session.send(keys.ctrl("x") + b"b")
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("start.py")
             session.key("RET")
             session.wait_for_region_text("body", "print('help')")
+
+            session.send(keys.ctrl("h") + b"m")
+            session.wait_for_text("Mode: Python")
 
             session.send(keys.ctrl("h") + b"b")
             session.wait_for_text("Global bindings")

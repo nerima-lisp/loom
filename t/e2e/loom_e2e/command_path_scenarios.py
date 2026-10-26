@@ -71,6 +71,10 @@ def _validate_screen_expectations(value, location):
             )
         if not isinstance(expectation.get("text"), str):
             raise CommandPathScenarioError(f"{where}.text must be a string")
+        if expectation.get("match", "exact") not in {"exact", "contains"}:
+            raise CommandPathScenarioError(
+                f"{where}.match must be exact or contains"
+            )
         if "index" in expectation and (
             type(expectation["index"]) is not int or expectation["index"] < 0
         ):
@@ -118,6 +122,12 @@ def _validate_case(case, index):
         if case.get("entry_mode") not in {"key", "mx", "open-mx"}:
             raise CommandPathScenarioError(
                 f"{location}.entry_mode must be key, mx, or open-mx"
+            )
+        if "cancel_prompt_after_assert" in case and not isinstance(
+            case["cancel_prompt_after_assert"], bool
+        ):
+            raise CommandPathScenarioError(
+                f"{location}.cancel_prompt_after_assert must be a boolean"
             )
         if case["entry_mode"] == "key":
             _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
@@ -328,6 +338,7 @@ def _assert_screen(session, expectations):
     for expectation in expectations:
         session.assert_screen_text(
             expectation["text"],
+            match=expectation.get("match", "exact"),
             region=expectation["region"],
             index=expectation.get("index", 0),
             strip_right=True,
@@ -336,6 +347,7 @@ def _assert_screen(session, expectations):
 
 def _assert_cursor(session, expected, region):
     expected = tuple(expected)
+    session.wait_for_region_cursor(region, expected[1], index=expected[0])
     if session.observe_cursor(expected=expected, region=region) is not True:
         row, column = session.screen.cursor
         row_origin = session.layout.row(region, 0)
@@ -385,12 +397,19 @@ def _assert_final_state(
             _assert_minibuffer(session, case["expected_minibuffer"])
     for expectation in case["expected_screen"]:
         with stage(f"{expectation['region']} screen"):
-            session.wait_for_region_exact_text(
-                expectation["region"],
-                expectation["text"],
-                index=expectation.get("index", 0),
-                strip_right=True,
-            )
+            if expectation.get("match", "exact") == "contains":
+                session.wait_for_region_text(
+                    expectation["region"],
+                    expectation["text"],
+                    index=expectation.get("index", 0),
+                )
+            else:
+                session.wait_for_region_exact_text(
+                    expectation["region"],
+                    expectation["text"],
+                    index=expectation.get("index", 0),
+                    strip_right=True,
+                )
     _assert_screen(session, case["expected_screen"])
     with stage("cursor"):
         _assert_cursor(
@@ -423,7 +442,7 @@ def _run_r1(session, case, path):
         case["expected_bytes"],
         save=case.get("save_after_effect", False),
     )
-    if entry_mode == "open-mx":
+    if entry_mode == "open-mx" or case.get("cancel_prompt_after_assert", False):
         _send_key(session, "C-g")
         session.wait_for_region_exact_text(
             "minibuffer", "Quit", strip_right=True

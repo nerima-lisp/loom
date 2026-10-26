@@ -37,35 +37,56 @@ def describe_key_prompt_paths(binary):
             session.type("C-f")
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)",
+                region="body",
+                index=1,
+                strip_right=True,
+            )
 
             _open_prompt(session, "k", "Describe key: ")
             session.type("C-f")
             session.send(keys.ctrl("g"))
             session.wait_for_region_exact_text("minibuffer", "Quit")
-            session.assert_screen_text("Quit", region="minibuffer")
+            session.assert_screen_text("Quit", region="minibuffer", strip_right=True)
 
             _open_prompt(session, "k", "Describe key: ")
             session.key("RET")
             session.wait_for_text("Could not parse key sequence:")
-            session.assert_screen_text("Could not parse key sequence:", region="body")
+            session.assert_screen_text(
+                "Could not parse key sequence:", region="body", strip_right=True
+            )
 
             _open_prompt(session, "k", "Describe key: ")
             session.type("C-f")
             session.key("TAB")
             session.wait_for_region_exact_text("minibuffer", "Describe key: C-f")
-            session.assert_screen_text("Describe key: C-f", region="minibuffer")
+            session.assert_screen_text(
+                "Describe key: C-f", region="minibuffer", strip_right=True
+            )
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)",
+                region="body",
+                index=1,
+                strip_right=True,
+            )
 
             _open_prompt(session, "k", "Describe key: ")
             session.send(keys.meta("p"))
             session.wait_for_region_exact_text("minibuffer", "Describe key: C-f")
-            session.assert_screen_text("Describe key: C-f", region="minibuffer")
+            session.assert_screen_text(
+                "Describe key: C-f", region="minibuffer", strip_right=True
+            )
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)",
+                region="body",
+                index=1,
+                strip_right=True,
+            )
 
             _quit(session, "help/prompt-paths/describe-key")
 
@@ -89,18 +110,22 @@ def describe_command_prompt_paths(binary):
             session.type("forward-char")
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)", region="body", strip_right=True
+            )
 
             _open_prompt(session, "x", "Describe command: ")
             session.type("forward-char")
             session.send(keys.ctrl("g"))
             session.wait_for_region_exact_text("minibuffer", "Quit")
-            session.assert_screen_text("Quit", region="minibuffer")
+            session.assert_screen_text("Quit", region="minibuffer", strip_right=True)
 
             _open_prompt(session, "x", "Describe command: ")
             session.key("RET")
             session.wait_for_text("No command named .")
-            session.assert_screen_text("No command named .", region="body")
+            session.assert_screen_text(
+                "No command named .", region="body", strip_right=True
+            )
 
             _open_prompt(session, "x", "Describe command: ")
             session.type("forward-cha")
@@ -109,11 +134,15 @@ def describe_command_prompt_paths(binary):
                 "minibuffer", "Describe command: forward-char"
             )
             session.assert_screen_text(
-                "Describe command: forward-char", region="minibuffer"
+                "Describe command: forward-char",
+                region="minibuffer",
+                strip_right=True,
             )
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)", region="body", strip_right=True
+            )
 
             _open_prompt(session, "x", "Describe command: ")
             session.send(keys.meta("p"))
@@ -121,16 +150,24 @@ def describe_command_prompt_paths(binary):
                 "minibuffer", "Describe command: forward-char"
             )
             session.assert_screen_text(
-                "Describe command: forward-char", region="minibuffer"
+                "Describe command: forward-char",
+                region="minibuffer",
+                strip_right=True,
             )
             session.key("RET")
             session.wait_for_text("forward-char (forward-char)")
-            session.assert_screen_text("forward-char (forward-char)", region="body")
+            session.assert_screen_text(
+                "forward-char (forward-char)", region="body", strip_right=True
+            )
 
             _open_prompt(session, "x", "Describe command: ")
             session.type("missing-command")
             session.key("RET")
             session.wait_for_text("No command named missing-command.")
-            session.assert_screen_text("No command named missing-command.", region="body")
+            session.assert_screen_text(
+                "No command named missing-command.",
+                region="body",
+                strip_right=True,
+            )
 
             _quit(session, "help/prompt-paths/describe-command")

@@ -14,7 +14,7 @@
       "expected_bytes": "abc\n",
       "expected_cursor": [0, 0],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "Help:"}]
+      "expected_screen": [{"region": "body", "text": "Help:", "match": "contains"}]
     },
     {
       "name": "command-path/r1/describe-key/key",
@@ -31,6 +31,7 @@
       "expected_cursor": [0, 14],
       "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "Describe key: ",
+      "cancel_prompt_after_assert": true,
       "expected_screen": [{"region": "body", "text": "abc"}]
     },
     {
@@ -47,6 +48,7 @@
       "expected_cursor": [0, 14],
       "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "Describe key: ",
+      "cancel_prompt_after_assert": true,
       "expected_screen": [{"region": "body", "text": "abc"}]
     },
     {
@@ -64,6 +66,7 @@
       "expected_cursor": [0, 18],
       "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "Describe command: ",
+      "cancel_prompt_after_assert": true,
       "expected_screen": [{"region": "body", "text": "abc"}]
     },
     {
@@ -80,6 +83,7 @@
       "expected_cursor": [0, 18],
       "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "Describe command: ",
+      "cancel_prompt_after_assert": true,
       "expected_screen": [{"region": "body", "text": "abc"}]
     },
     {
@@ -127,7 +131,7 @@
       "expected_bytes": "abc\n",
       "expected_cursor": [0, 0],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "Mode:"}]
+      "expected_screen": [{"region": "body", "text": "Mode: Text (TEXT)"}]
     },
     {
       "name": "command-path/r1/describe-mode/mx",
@@ -142,7 +146,7 @@
       "expected_bytes": "abc\n",
       "expected_cursor": [0, 0],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "Mode:"}]
+      "expected_screen": [{"region": "body", "text": "Mode: Text (TEXT)"}]
     }
   ]
 }

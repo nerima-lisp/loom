@@ -1,0 +1,19 @@
+diff --git a/src/key-tables.lisp b/src/key-tables.lisp
+--- a/src/key-tables.lisp
++++ b/src/key-tables.lisp
+@@ -148,7 +148,6 @@
+ (defparameter +control-key-codes+
+   '((0 . :null)
+-    (8 . :backspace)
+     (9 . :tab)
+     (10 . :enter)
+     (13 . :enter)
+     (127 . :backspace)))
+@@ -161,6 +160,7 @@
+     (5 . :control-e)
+     (6 . :control-f)
+     (7 . :control-g)
++    (8 . :control-h)
+     (11 . :control-k)
+     (12 . :control-l)
+     (14 . :control-n)
