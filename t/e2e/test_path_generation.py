@@ -1,7 +1,12 @@
 import copy
 import unittest
 
-from loom_e2e.path_generation import CatalogError, generate_required_paths
+from loom_e2e.path_generation import (
+    LANE_REGISTRY,
+    CatalogError,
+    _normalize_catalog,
+    generate_required_paths,
+)
 
 
 _PATH_FIELDS = {
@@ -28,7 +33,7 @@ def _row(command_id, **overrides):
     row = {
         "id": command_id,
         "name": command_id,
-        "owner": "feature/test",
+        "owner": "core/command",
         "keymap": "global",
         "keys": [],
         "group": "test",
@@ -47,6 +52,7 @@ def _catalog():
     rows = [
         _row(
             "forward-char",
+            owner="core/buffer",
             keys=[_key("f", ("control",)), _key("n", ("alt", "control"))],
         ),
         _row(
@@ -58,12 +64,19 @@ def _catalog():
         ),
         _row(
             "replace-string",
+            owner="feature/search",
             keys=[_key("%", ("alt",))],
             prompts=["free-string", "free-string", "completion", "yes-no", "numeric"],
         ),
-        _row("delete-char", keys=[_key("delete")], mutates=True),
-        _row("kill-region", keys=[_key("w", ("control",))], mutates=True, **{"needs-region": True}),
-        _row("pipe-command", external=["shell", "sample-tool"]),
+        _row("delete-char", owner="core/buffer", keys=[_key("delete")], mutates=True),
+        _row(
+            "kill-region",
+            owner="feature/kill-ring",
+            keys=[_key("w", ("control",))],
+            mutates=True,
+            **{"needs-region": True},
+        ),
+        _row("pipe-command", owner="feature/shell", external=["shell", "sample-tool"]),
     ]
     fixed_names = {
         "save-buffer",
@@ -123,6 +136,77 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(self.paths_by_id["r7:git-commit"]["lane"], "W3-2")
         self.assertEqual(self.paths_by_id["r8:session"]["lane"], "W3-10")
 
+    def test_lane_registry_covers_every_w3_owner_slice_and_lane(self):
+        self.assertEqual(
+            LANE_REGISTRY,
+            {
+                "core/command": "W3-1",
+                "feature/lifecycle": "W3-2",
+                "feature/user-init": "W3-2",
+                "feature/files": "W3-3",
+                "feature/buffers": "W3-3",
+                "core/buffer": "W3-4",
+                "renderer": "W3-4",
+                "src/presentation/": "W3-4",
+                "core/minibuffer": "W3-5",
+                "feature/minibuffer-ui": "W3-5",
+                "feature/completion": "W3-5",
+                "feature/help": "W3-5",
+                "feature/search": "W3-6",
+                "feature/project": "W3-6",
+                "feature/mode": "W3-7a",
+                "feature/syntax-highlighting": "W3-7a",
+                "feature/lang-lisp": "W3-7b",
+                "feature/lisp-structure": "W3-7b",
+                "feature/evaluation": "W3-7b",
+                "feature/lang-nix": "W3-7c",
+                "feature/lang-web": "W3-7d",
+                "feature/lang-markup": "W3-7e",
+                "feature/kill-ring": "W3-8",
+                "feature/clipboard": "W3-8",
+                "feature/mouse": "W3-8",
+                "feature/lsp": "W3-9",
+                "feature/file-tree": "W3-10",
+                "feature/window": "W3-10",
+                "feature/workspace": "W3-10",
+                "feature/session": "W3-10",
+                "feature/bookmark": "W3-10",
+                "feature/register": "W3-10",
+                "feature/keyboard-macro": "W3-10",
+                "feature/shell": "W3-11",
+                "feature/format": "W3-11",
+                "feature/git": "W3-11",
+                "feature/terminal": "W3-11",
+                "feature/auto-save": "W3-11",
+            },
+        )
+        self.assertEqual(
+            set(LANE_REGISTRY.values()),
+            {
+                "W3-1",
+                "W3-2",
+                "W3-3",
+                "W3-4",
+                "W3-5",
+                "W3-6",
+                "W3-7a",
+                "W3-7b",
+                "W3-7c",
+                "W3-7d",
+                "W3-7e",
+                "W3-8",
+                "W3-9",
+                "W3-10",
+                "W3-11",
+            },
+        )
+        normalized = next(
+            row for row in _normalize_catalog(self.catalog)
+            if row["id"] == "forward-char"
+        )
+        self.assertEqual(normalized["owner"], "core/buffer")
+        self.assertEqual(normalized["lane"], "W3-4")
+
     def test_r1_generates_every_key_and_respects_mx_eligibility(self):
         key_paths = [path for path in self.paths if path["rule"] == "r1" and path["entry"].startswith("key:")]
         mx_paths = [path for path in self.paths if path["rule"] == "r1" and path["entry"] == "mx"]
@@ -153,20 +237,14 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(paths["r1:forward-char:mx"]["lane"], "W3-4")
         self.assertNotIn("r1:legacy-forward:mx", paths)
 
-    def test_w3_1_lane_includes_fill_and_indentation_commands_only(self):
+    def test_command_ids_do_not_override_owner_lane(self):
         catalog = _catalog()
-        catalog.extend(
-            _row(command_id)
-            for command_id in ("fill-paragraph", "delete-indentation")
-        )
+        catalog[2]["id"] = "git-status"
+        catalog.append(_row("future-command", owner="feature/files"))
 
         paths = _by_id(generate_required_paths(catalog))
-        for command_id in ("fill-paragraph", "delete-indentation"):
-            self.assertEqual(paths[f"r1:{command_id}:mx"]["lane"], "W3-1")
-
-        catalog.append(_row("future-command"))
-        with self.assertRaisesRegex(CatalogError, "no lane mapping"):
-            generate_required_paths(catalog)
+        self.assertEqual(paths["r1:git-status:mx"]["lane"], "W3-6")
+        self.assertEqual(paths["r1:future-command:mx"]["lane"], "W3-3")
 
     def test_r2_generates_all_prompt_cases_once_per_kind(self):
         ids = set(self.paths_by_id)
@@ -288,8 +366,8 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             generate_required_paths(catalog)
 
         catalog = _catalog()
-        catalog.append(_row("future-command"))
-        with self.assertRaisesRegex(CatalogError, "no lane mapping"):
+        catalog[0]["owner"] = "future/slice"
+        with self.assertRaisesRegex(CatalogError, "unknown owner slice"):
             generate_required_paths(catalog)
 
     def test_duplicate_ids_and_malformed_key_sequences_are_rejected(self):

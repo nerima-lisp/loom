@@ -35,93 +35,48 @@ _MUTATION_CASES = (
     ("prefix-u4", "prefix-C-u-4", "specified prefix behavior is observed", ["file_bytes"]),
 )
 
-_W3_1 = {
-    "universal-argument",
-    "execute-extended-command",
-    "delete-indentation",
-    "fill-paragraph",
-    "capitalize-word",
-    "downcase-word",
-    "recenter-top-bottom",
-    "transpose-chars",
-    "upcase-word",
+LANE_REGISTRY = {
+    "core/command": "W3-1",
+    "feature/lifecycle": "W3-2",
+    "feature/user-init": "W3-2",
+    "feature/files": "W3-3",
+    "feature/buffers": "W3-3",
+    "core/buffer": "W3-4",
+    "renderer": "W3-4",
+    "src/presentation/": "W3-4",
+    "core/minibuffer": "W3-5",
+    "feature/minibuffer-ui": "W3-5",
+    "feature/completion": "W3-5",
+    "feature/help": "W3-5",
+    "feature/search": "W3-6",
+    "feature/project": "W3-6",
+    "feature/mode": "W3-7a",
+    "feature/syntax-highlighting": "W3-7a",
+    "feature/lang-lisp": "W3-7b",
+    "feature/lisp-structure": "W3-7b",
+    "feature/evaluation": "W3-7b",
+    "feature/lang-nix": "W3-7c",
+    "feature/lang-web": "W3-7d",
+    "feature/lang-markup": "W3-7e",
+    "feature/kill-ring": "W3-8",
+    "feature/clipboard": "W3-8",
+    "feature/mouse": "W3-8",
+    "feature/lsp": "W3-9",
+    "feature/file-tree": "W3-10",
+    "feature/window": "W3-10",
+    "feature/workspace": "W3-10",
+    "feature/session": "W3-10",
+    "feature/bookmark": "W3-10",
+    "feature/register": "W3-10",
+    "feature/keyboard-macro": "W3-10",
+    "feature/shell": "W3-11",
+    "feature/format": "W3-11",
+    "feature/git": "W3-11",
+    "feature/terminal": "W3-11",
+    "feature/auto-save": "W3-11",
 }
-_W3_2 = {"keyboard-quit", "save-buffers-kill-terminal"}
-_W3_3 = {"find-file", "save-buffer", "write-file", "recent-file", "toggle-read-only"}
-_W3_7A = {"set-major-mode", "indent-for-tab-command", "comment-line"}
-_W3_8 = {
-    "kill-line",
-    "kill-word",
-    "backward-kill-word",
-    "kill-region",
-    "kill-ring-save",
-    "yank",
-    "yank-pop",
-}
-_W3_10 = {
-    "other-window",
-    "delete-window",
-    "delete-other-windows",
-    "switch-to-buffer",
-    "kill-buffer",
-    "new-workspace",
-    "switch-workspace",
-    "kill-workspace",
-    "next-workspace",
-    "previous-workspace",
-    "save-session",
-    "load-session",
-    "set-bookmark",
-    "jump-to-bookmark",
-    "delete-bookmark",
-    "list-bookmarks",
-    "copy-to-register",
-    "insert-register",
-    "point-to-register",
-    "jump-to-register",
-    "start-kbd-macro",
-    "end-kbd-macro",
-    "call-last-kbd-macro",
-    "toggle-file-tree",
-}
-_W3_11 = {
-    "pipe-command",
-    "terminal",
-    "terminal-stop",
-    "format-current-buffer",
-    "format-on-save-mode",
-    "set-format-command",
-    "auto-save-mode",
-    "toggle-auto-save",
-    "auto-save-current-buffer",
-}
-_W3_4 = {
-    "forward-char",
-    "backward-char",
-    "next-line",
-    "previous-line",
-    "forward-word",
-    "backward-word",
-    "move-beginning-of-line",
-    "move-end-of-line",
-    "beginning-of-buffer",
-    "end-of-buffer",
-    "scroll-up-command",
-    "scroll-down-command",
-    "goto-line",
-    "delete-char",
-    "delete-backward-char",
-    "newline",
-    "open-line",
-    "toggle-truncate-lines",
-    "set-mark-command",
-    "exchange-point-and-mark",
-    "mark-whole-buffer",
-    "narrow-to-region",
-    "widen",
-    "undo",
-    "redo",
-}
+
+
 _FIXED_COMMANDS = {
     "forward-char",
     "delete-char",
@@ -198,7 +153,12 @@ def _normalize_catalog(catalog):
         name = row["name"]
         if name is not None:
             _nonempty_string(name, f"catalog[{command_id}].name")
-        _nonempty_string(row["owner"], f"catalog[{command_id}].owner")
+        owner = _nonempty_string(row["owner"], f"catalog[{command_id}].owner")
+        lane = LANE_REGISTRY.get(owner)
+        if lane is None:
+            raise CatalogError(
+                f"catalog[{command_id}] has unknown owner slice: {owner}"
+            )
         _nonempty_string(row["keymap"], f"catalog[{command_id}].keymap")
 
         if row["group"] is not None:
@@ -234,6 +194,8 @@ def _normalize_catalog(catalog):
         rows.append(
             {
                 "id": command_id,
+                "owner": owner,
+                "lane": lane,
                 "keys": normalized_keys,
                 "mutates": row["mutates"],
                 "prompts": prompts,
@@ -245,7 +207,6 @@ def _normalize_catalog(catalog):
 
     rows.sort(key=lambda row: row["id"])
     for row in rows:
-        row["lane"] = _command_lane(row["id"])
         if not row["keys"] and not row["mx-eligible"]:
             raise CatalogError(
                 f"catalog[{row['id']}] has no key or M-x entry"
@@ -257,42 +218,6 @@ def _normalize_catalog(catalog):
             + ", ".join(sorted(missing_fixed_commands))
         )
     return rows
-
-
-def _command_lane(command_id):
-    if command_id in _W3_1:
-        return "W3-1"
-    if command_id in _W3_2 or command_id.startswith("lifecycle-"):
-        return "W3-2"
-    if command_id in _W3_3:
-        return "W3-3"
-    if command_id == "help":
-        return "W3-5"
-    if command_id.startswith(("isearch-", "search-", "project-")) or command_id == "replace-string":
-        return "W3-6"
-    if command_id in _W3_7A:
-        return "W3-7a"
-    if (
-        command_id.startswith("eval-")
-        or command_id.endswith(("-sexp", "-list"))
-        or command_id in {"wrap-round", "splice-sexp", "raise-sexp"}
-    ):
-        return "W3-7b"
-    if command_id in _W3_8:
-        return "W3-8"
-    if command_id.startswith("lsp-"):
-        return "W3-9"
-    if command_id in _W3_10 or command_id.startswith("file-tree-") or command_id.startswith("split-window-"):
-        return "W3-10"
-    if (
-        command_id in _W3_11
-        or command_id.startswith(("git-", "terminal-", "format-", "auto-save-"))
-        or command_id == "terminal"
-    ):
-        return "W3-11"
-    if command_id in _W3_4:
-        return "W3-4"
-    raise CatalogError(f"no lane mapping for catalog command ID: {command_id}")
 
 
 def _path(path_id, commands, rule, lane, entry, state, outcome, observe):
