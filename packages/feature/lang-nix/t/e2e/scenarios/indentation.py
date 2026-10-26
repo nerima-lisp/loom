@@ -18,9 +18,12 @@ def _write(path, content):
         handle.write(content)
 
 
-def _save(session, path, expected):
+def _save(session, path, expected, *, timeout=None):
     session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected)
+    if timeout is None:
+        session.wait_for_file(path, expected)
+    else:
+        session.wait_for_file(path, expected, timeout=timeout)
     session.assert_file_bytes(path, expected)
 
 
@@ -133,5 +136,5 @@ def lang_nix_indentation_control_meta_backslash(binary):
                 b"with pkgs;\n"
                 b"  value\n"
             )
-            _save(session, path, expected)
+            _save(session, path, expected, timeout=4.0)
             _close(session, "lang-nix-indentation-control-meta-backslash")
