@@ -37,6 +37,23 @@
                 :to-be-truthy)
         (expect (member new-buffer (%test-registered-buffers *editor-state*))
                 :to-be-truthy)))))
+(it
+  "refuses to overwrite an existing file from an unregistered raw buffer"
+  (host-kit:with-temporary-directory (dir)
+    (let* ((path (merge-pathnames "raw.txt" dir))
+           (backup-dir (merge-pathnames "backups/" dir)))
+      (%write-test-file-octets path #(111 108 100))
+      (%with-minibuffer-state (minibuffer "")
+        (let ((buffer (make-buffer :name "raw.txt"
+                                   :path path
+                                   :initial-content "new")))
+          (expect (member buffer (%test-registered-buffers *editor-state*))
+                  :to-be nil)
+          (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+            (signals error (buffer-save buffer))
+            (expect (%read-test-file-octets path)
+                    :to-equalp
+                    #(111 108 100))))))))
 
 (describe
   "save-buffer path-less first save"
@@ -301,11 +318,12 @@
             (expect (window-buffer (window-tree-selected-window tree))
                     :to-be target)
             (expect (buffer-text target) :to-equal "disk")
+            (host-kit:write-file-string "later" path)
             (window-set-buffer (window-tree-selected-window tree) source)
             (loom/feature/buffers:switch-to-buffer)
             (%confirm-minibuffer minibuffer (buffer-name target))
             (%confirm-minibuffer minibuffer "r")
-            (expect (buffer-text target) :to-equal "external")
+            (expect (buffer-text target) :to-equal "later")
             (expect (window-buffer (window-tree-selected-window tree))
                     :to-be target))))))
   (it
@@ -313,8 +331,7 @@
     (host-kit:with-temporary-directory (dir)
       (let ((matching-path (merge-pathnames "matching.txt" dir))
             (stale-path (merge-pathnames "stale.txt" dir))
-            (missing-path (merge-pathnames "missing.txt" dir))
-            (tree (editor-state-window-tree *editor-state*)))
+            (missing-path (merge-pathnames "missing.txt" dir)))
         (host-kit:write-file-string "same" matching-path)
         (host-kit:write-file-string "disk" stale-path)
         (%with-minibuffer-state (minibuffer "source"
@@ -327,7 +344,8 @@
                                                      :initial-content "stale"))
                                  (missing (make-buffer :name "missing.txt"
                                                        :path missing-path
-                                                       :initial-content "recoverable")))
+                                                       :initial-content "recoverable"))
+                                 (tree (editor-state-window-tree *editor-state*)))
           (%register-test-buffer *editor-state* matching)
           (%register-test-buffer *editor-state* stale)
           (%register-test-buffer *editor-state* missing)

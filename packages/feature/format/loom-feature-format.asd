@@ -22,7 +22,8 @@
                "cl-host-kit"
                "loom-core-editor-session"
                "loom-core-minibuffer"
-               "loom-feature-shell")
+               "loom-feature-shell"
+               "loom-feature-files")
   :serial t
   :components
   ((:file "t/unit/format-test")))

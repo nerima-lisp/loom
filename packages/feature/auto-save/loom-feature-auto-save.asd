@@ -23,7 +23,8 @@
                "cl-weave"
                "cl-host-kit"
                "loom-core-editor-session"
-               "loom-core-window-tree")
+               "loom-core-window-tree"
+               "loom-feature-files")
   :serial t
   :components
   ((:file "t/unit/auto-save-test")))

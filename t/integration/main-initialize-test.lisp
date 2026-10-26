@@ -127,6 +127,7 @@
                                                      (loom/core/editor-session:*editor-session*
                                                       session)
                                                      (events nil))
+                                                (loom/feature/files::%remember-file-snapshot buffer nil)
                                                 (buffer-mark-modified buffer)
                                                 (loom/core/editor-session:register-session-hook
                                                  :before-save
@@ -244,6 +245,7 @@
                                                                           #'eq))
                                                         (loom/core/editor-session:*editor-session*
                                                          session))
+                                                   (loom/feature/files::%remember-file-snapshot buffer nil)
                                                    (buffer-mark-modified buffer)
                                                    (loom/core/editor-session:register-session-hook
                                                     :after-save

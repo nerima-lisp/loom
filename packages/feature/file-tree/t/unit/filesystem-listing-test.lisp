@@ -94,10 +94,10 @@
                                                           nil
                                                           old-path))
                                                 (let ((buffer
-                                                       (make-buffer :path
-                                                                    old-path
-                                                                    :initial-content
-                                                                    "日本語の内容")))
+                                                       (let ((buffer (buffer-load old-path)))
+                                                         (buffer-set-point buffer 0 0)
+                                                         (buffer-insert-string buffer "日本語の内容")
+                                                         buffer)))
                                                   (let ((loom/core/editor-session:*editor-session*
                                                          (%make-test-editor-session)))
                                                     (buffer-save buffer))

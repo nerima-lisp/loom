@@ -287,6 +287,7 @@
                                                           (%make-test-editor-session (list buffer) :window-tree tree)
                                                           :kill-ring
                                                           nil)))
+                                                   (loom/feature/files::%remember-file-snapshot buffer nil)
                                                    (buffer-mark-modified buffer)
                                                    (let ((*editor-state* state)
                                                          (loom/core/editor-session:*editor-session*
