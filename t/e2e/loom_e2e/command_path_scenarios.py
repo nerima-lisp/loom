@@ -12,7 +12,22 @@ from .session import Session
 
 _DEFAULT_NAME = object()
 _PROMPT_CASES = {"accept", "cancel", "empty", "tab", "history", "invalid"}
-_MUTATION_CASES = {"effect", "undo", "read-only", "macro-replay"}
+_MUTATION_CASES = {
+    "effect",
+    "undo",
+    "read-only",
+    "narrow",
+    "split-window",
+    "macro-replay",
+    "prefix-u4",
+}
+_EFFECT_MUTATION_CASES = {
+    "effect",
+    "narrow",
+    "split-window",
+    "macro-replay",
+    "prefix-u4",
+}
 
 
 class CommandPathScenarioError(ValueError):
@@ -164,9 +179,39 @@ def _validate_case(case, index):
             _nonempty_string(
                 case.get("read_only_command"), f"{location}.read_only_command"
             )
+        if "major_mode" in case:
+            _nonempty_string(case["major_mode"], f"{location}.major_mode")
+        for field in ("prepare_keys", "post_setup_keys"):
+            if field in case:
+                _validate_key_list(case[field], f"{location}.{field}")
+        prepare_commands = case.get("prepare_commands", [])
+        if not isinstance(prepare_commands, list):
+            raise CommandPathScenarioError(
+                f"{location}.prepare_commands must be a list"
+            )
+        for command_index, command in enumerate(prepare_commands):
+            _nonempty_string(
+                command, f"{location}.prepare_commands[{command_index}]"
+            )
+        if case["mutation_case"] == "narrow" and (
+            "narrow-to-region" not in prepare_commands
+        ):
+            raise CommandPathScenarioError(
+                f"{location}.prepare_commands must include narrow-to-region"
+            )
+        if case["mutation_case"] == "split-window" and (
+            "split-window-below" not in prepare_commands
+        ):
+            raise CommandPathScenarioError(
+                f"{location}.prepare_commands must include split-window-below"
+            )
+        if case["mutation_case"] == "prefix-u4" and case["command_keys"][0] != "C-u":
+            raise CommandPathScenarioError(
+                f"{location}.command_keys must start with C-u for prefix-u4"
+            )
         expected_bytes_source = (
             "effect_bytes"
-            if case["mutation_case"] in {"effect", "macro-replay"}
+            if case["mutation_case"] in _EFFECT_MUTATION_CASES
             else "initial_bytes"
         )
         if case["expected_bytes"] != case[expected_bytes_source]:
@@ -253,6 +298,14 @@ def _send_mx(session, command):
     if command is not None:
         session.type(command)
         session.key("RET")
+
+
+def _select_major_mode(session, mode):
+    _send_mx(session, "set-major-mode")
+    session.wait_for_region_text("minibuffer", "Major mode: ")
+    session.type(mode)
+    session.key("RET")
+    session.wait_for_region_text("minibuffer", f"Mode: {mode}")
 
 
 def _assert_minibuffer(session, expected):
@@ -429,6 +482,13 @@ def _run_r3(session, case, path):
     operation = case["mutation_case"]
     initial = case["initial_bytes"].encode("utf-8")
     effect = case["effect_bytes"].encode("utf-8")
+
+    if "major_mode" in case:
+        _select_major_mode(session, case["major_mode"])
+    _send_keys(session, case.get("prepare_keys", []))
+    for command in case.get("prepare_commands", []):
+        _send_mx(session, command)
+    _send_keys(session, case.get("post_setup_keys", []))
 
     if operation == "read-only":
         _send_mx(session, case["read_only_command"])

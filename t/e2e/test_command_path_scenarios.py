@@ -51,6 +51,18 @@ def _catalog_row(
 
 
 _CORE_COMMAND_CATALOG = [
+    _catalog_row(
+        "comment-line",
+        "feature/mode",
+        keys=[_key(";", ("alt",))],
+        mutates=True,
+    ),
+    _catalog_row(
+        "indent-for-tab-command",
+        "feature/mode",
+        keys=[_key("tab")],
+        mutates=True,
+    ),
     _catalog_row("keyboard-quit", "core/command", keys=[_key("g", ("control",))]),
     _catalog_row(
         "universal-argument", "core/command", keys=[_key("u", ("control",))]
@@ -195,6 +207,43 @@ class CommandPathScenarioTests(unittest.TestCase):
             with self.subTest(path_id=path_id):
                 self.assertEqual(case["lane"], generated_by_id[path_id]["lane"])
                 self.assertEqual(case["entry"], generated_by_id[path_id]["entry"])
+
+    def test_sidecar_declares_all_w37a_r3_mutation_paths(self):
+        generated = generate_required_paths(_CORE_COMMAND_CATALOG)
+        generated_by_id = {path["id"]: path for path in generated}
+        scenarios = load_command_path_scenarios(SCENARIO_DATA)
+        cases_by_path_id = {case["path_id"]: case for case in scenarios}
+        mutation_cases = {
+            "effect",
+            "undo",
+            "read-only",
+            "narrow",
+            "split-window",
+            "macro-replay",
+            "prefix-u4",
+        }
+        expected_path_ids = {
+            f"r3:{command}:{mutation_case}"
+            for command in ("comment-line", "indent-for-tab-command")
+            for mutation_case in mutation_cases
+        }
+        actual_path_ids = {
+            path_id
+            for path_id, case in cases_by_path_id.items()
+            if case["lane"] == "W3-7a" and case["rule"] == "r3"
+        }
+
+        self.assertEqual(len(actual_path_ids), 14)
+        self.assertEqual(actual_path_ids, expected_path_ids)
+        for path_id in expected_path_ids:
+            with self.subTest(path_id=path_id):
+                case = cases_by_path_id[path_id]
+                self.assertEqual(case["lane"], "W3-7a")
+                self.assertEqual(case["entry"], generated_by_id[path_id]["entry"])
+                self.assertEqual(case["mutation_case"], path_id.rsplit(":", 1)[1])
+                command = path_id.split(":", 2)[1]
+                self.assertEqual(case["command"], command)
+                self.assertIn(command, case["commands"])
 
     def test_sidecar_declares_all_prompt_results_and_exact_expectations(self):
         scenarios = load_command_path_scenarios(SCENARIO_DATA)

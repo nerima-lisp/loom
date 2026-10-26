@@ -340,6 +340,702 @@
       "expected_screen": [{"region": "body", "text": "bc"}],
       "effect_screen": [{"region": "body", "text": "bc"}],
       "restore_screen": [{"region": "body", "text": "abc"}]
+    },
+    {
+      "name": "command-path/r3/comment-line/effect",
+      "path_id": "r3:comment-line:effect",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer"
+      ],
+      "command": "comment-line",
+      "mutation_case": "effect",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value #\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value #"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/comment-line/undo",
+      "path_id": "r3:comment-line:undo",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "undo"
+      ],
+      "command": "comment-line",
+      "mutation_case": "undo",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/comment-line/read-only",
+      "path_id": "r3:comment-line:read-only",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "toggle-read-only"
+      ],
+      "command": "comment-line",
+      "mutation_case": "read-only",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value\n",
+      "expected_bytes": "value\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/r3/comment-line/narrow",
+      "path_id": "r3:comment-line:narrow",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "narrow-to-region",
+        "move-beginning-of-line"
+      ],
+      "command": "comment-line",
+      "mutation_case": "narrow",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "before\nvalue\nafter\n",
+      "effect_bytes": "before\nvalue #\nafter\n",
+      "expected_bytes": "before\nvalue #\nafter\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a",
+        "C-space"
+      ]
+    },
+    {
+      "name": "command-path/r3/comment-line/split-window",
+      "path_id": "r3:comment-line:split-window",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "split-window-below"
+      ],
+      "command": "comment-line",
+      "mutation_case": "split-window",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value #\n",
+      "expected_cursor": [
+        4,
+        7
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value #"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "value #"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value #"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "value #"
+        }
+      ],
+      "rows": 9,
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/comment-line/macro-replay",
+      "path_id": "r3:comment-line:macro-replay",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro"
+      ],
+      "command": "comment-line",
+      "mutation_case": "macro-replay",
+      "major_mode": "Python",
+      "command_keys": [
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value #\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value #"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/comment-line/prefix-u4",
+      "path_id": "r3:comment-line:prefix-u4",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\";\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "comment-line",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "comment-line",
+      "mutation_case": "prefix-u4",
+      "major_mode": "Python",
+      "command_keys": [
+        "C-u",
+        "M-;"
+      ],
+      "initial_bytes": "value\n",
+      "effect_bytes": "value #\n",
+      "expected_bytes": "value #\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value #"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "value #"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/effect",
+      "path_id": "r3:indent-for-tab-command:effect",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "next-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "effect",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\n    value\n",
+      "expected_bytes": "    root\n    value\n",
+      "expected_cursor": [
+        1,
+        4
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "    value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "    value"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN"
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/undo",
+      "path_id": "r3:indent-for-tab-command:undo",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "undo",
+        "next-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "undo",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\n    value\n",
+      "expected_bytes": "    root\nvalue\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "    value"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN"
+      ],
+      "expected_undo_cursor": [
+        1,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/read-only",
+      "path_id": "r3:indent-for-tab-command:read-only",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "toggle-read-only",
+        "next-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "read-only",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\nvalue\n",
+      "expected_bytes": "    root\nvalue\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "value"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "prepare_keys": [
+        "DOWN"
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/narrow",
+      "path_id": "r3:indent-for-tab-command:narrow",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "next-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "narrow-to-region",
+        "move-beginning-of-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "narrow",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\nend\n",
+      "effect_bytes": "    root\n    value\nend\n",
+      "expected_bytes": "    root\n    value\nend\n",
+      "expected_cursor": [
+        1,
+        4
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "    value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "    value"
+        }
+      ],
+      "prepare_keys": [
+        "C-space",
+        "DOWN",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a",
+        "C-space"
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/split-window",
+      "path_id": "r3:indent-for-tab-command:split-window",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "split-window-below"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "split-window",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    value\n",
+      "effect_bytes": "value\n",
+      "expected_bytes": "value\n",
+      "expected_cursor": [
+        4,
+        0
+      ],
+      "expected_minibuffer": "Mode: Python",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "value"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "value"
+        }
+      ],
+      "rows": 9,
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/macro-replay",
+      "path_id": "r3:indent-for-tab-command:macro-replay",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "next-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "macro-replay",
+      "major_mode": "Python",
+      "command_keys": [
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\n    value\n",
+      "expected_bytes": "    root\n    value\n",
+      "expected_cursor": [
+        1,
+        4
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "    value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "    value"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN"
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "value"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/indent-for-tab-command/prefix-u4",
+      "path_id": "r3:indent-for-tab-command:prefix-u4",
+      "lane": "W3-7a",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "indent-for-tab-command",
+        "save-buffer",
+        "universal-argument",
+        "next-line"
+      ],
+      "command": "indent-for-tab-command",
+      "mutation_case": "prefix-u4",
+      "major_mode": "Python",
+      "command_keys": [
+        "C-u",
+        "TAB"
+      ],
+      "initial_bytes": "    root\nvalue\n",
+      "effect_bytes": "    root\n    value\n",
+      "expected_bytes": "    root\n    value\n",
+      "expected_cursor": [
+        1,
+        4
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 1,
+          "text": "    value"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "    value"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN"
+      ]
     }
   ]
 }
