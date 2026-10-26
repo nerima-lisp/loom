@@ -263,7 +263,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
-            "value #\n",
+            "# value\n",
         )
         self.assertIn(
             "move-end-of-line",
@@ -275,7 +275,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["command_keys"],
-            ["TAB"],
+            ["C-u", "TAB"],
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["replay_prefix_keys"],
