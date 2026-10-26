@@ -2,6 +2,13 @@
 
 (defgeneric lsp-transport-send (transport json)
   (:documentation "Send one JSON message over an LSP transport."))
+(define-condition lsp-transport-send-exit-error (error)
+  ((exit-status :initarg :exit-status
+                :reader lsp-transport-send-exit-status))
+  (:report (lambda (condition stream)
+             (format stream
+                     "LSP transport write failed after server exited with status ~D"
+                     (lsp-transport-send-exit-status condition)))))
 
 (defgeneric lsp-transport-receive (transport)
   (:documentation "Return one received JSON message without blocking, or NIL."))
@@ -101,9 +108,18 @@ the same trust boundary as the user-init and Lisp evaluation features."
 (defmethod lsp-transport-send ((transport lsp-process) json)
   (when (lsp-process-closed-p transport)
     (error "LSP process transport is closed"))
-  (write-sequence (loom-lsp-frame-encode json) (lsp-process-input transport))
-  (finish-output (lsp-process-input transport))
-  json)
+  (handler-case
+      (progn
+        (write-sequence (loom-lsp-frame-encode json)
+                        (lsp-process-input transport))
+        (finish-output (lsp-process-input transport))
+        json)
+    (error (condition)
+      (let ((exit-status (%lsp-process-exit-status transport)))
+        (if (integerp exit-status)
+            (error 'lsp-transport-send-exit-error
+                   :exit-status exit-status)
+            (error condition))))))
 
 (defmethod lsp-transport-receive ((transport lsp-process))
   (multiple-value-bind (result ready closed)
