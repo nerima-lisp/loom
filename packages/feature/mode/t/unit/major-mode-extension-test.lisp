@@ -219,11 +219,11 @@
     (expect
      (mapcar #'major-mode-comment-start modes)
      :to-equal
-     '(";" ";" "#" "//" "//" "<!--" "#" nil))
+     '(";" ";" "#" "//" "//" "<!-- " "#" nil))
     (expect
      (mapcar #'major-mode-comment-end modes)
      :to-equal
-     '(nil nil nil nil nil "-->" nil nil))
+     '(nil nil nil nil nil " -->" nil nil))
     (expect
      (mapcar #'major-mode-skip-closing-delimiter-p modes)
      :to-equal
