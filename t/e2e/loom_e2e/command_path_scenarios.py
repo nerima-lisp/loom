@@ -225,6 +225,10 @@ def load_command_path_scenarios(path):
 
 
 def _key_bytes(name):
+    if name == "C-/":
+        return b"\x1b[47;5u"
+    if name == "C-M-_":
+        return b"\x1b[95;7u"
     if name.startswith("C-") and len(name) == 3:
         return keys.ctrl(name[2])
     if name.startswith("M-") and len(name) == 3:
@@ -429,6 +433,9 @@ def _run_r3(session, case, path):
     operation = case["mutation_case"]
     initial = case["initial_bytes"].encode("utf-8")
     effect = case["effect_bytes"].encode("utf-8")
+
+    if "pre_command_keys" in case:
+        _send_keys(session, case["pre_command_keys"])
 
     if operation == "read-only":
         _send_mx(session, case["read_only_command"])
