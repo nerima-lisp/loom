@@ -4,34 +4,55 @@
   "Return an existing or creatable startup file and its file-tree root.
 
 An existing regular file opens in the selected window while its containing
-directory becomes the file-tree root. A missing file is accepted when its
-parent directory exists. A directory (or no argument) retains the scratch
-buffer and is itself the root."
+directory becomes the file-tree root. A missing file is accepted below the
+nearest existing parent directory, which becomes the file-tree root. A
+directory (or no argument) retains the scratch buffer and is itself the root."
   (let* ((root (or argument "."))
          (resolved (probe-file root)))
-    (cond
-      ((and argument (null resolved))
-       (let* ((path (pathname argument))
-              (parent-path
-                (merge-pathnames
-                 (make-pathname :name nil :type nil :defaults path)
-                 *default-pathname-defaults*))
-              (parent (probe-file parent-path)))
-         (if (and parent (host-kit:directory-pathname-p parent))
-             (values (merge-pathnames (file-namestring path) parent)
-                     parent)
-             (error (quote cl-cli:cli-invalid-positional-value)
-                    :message
-                    (format nil "PATH does not exist: ~A" argument)
-                    :name
-                    "PATH"
-                    :value
-                    argument
-                    :cause
-                    nil))))
-      ((and resolved (not (host-kit:directory-pathname-p resolved)))
-       (values resolved (make-pathname :name nil :type nil :defaults resolved)))
-      (t (values nil root)))))
+    (labels ((nearest-existing-directory (directory missing-components)
+               (let ((existing (probe-file directory)))
+                 (if (and existing (host-kit:directory-pathname-p existing))
+                     (values existing missing-components)
+                     (let ((components (pathname-directory directory)))
+                       (when (> (length components) 1)
+                         (nearest-existing-directory
+                          (make-pathname :directory (butlast components)
+                                         :name nil
+                                         :type nil
+                                         :defaults directory)
+                          (cons (car (last components))
+                                missing-components)))))))
+      (cond
+        ((and argument (null resolved))
+         (let* ((target-path
+                  (merge-pathnames (pathname argument)
+                                   *default-pathname-defaults*))
+                (parent-path
+                  (host-kit:pathname-directory-pathname target-path)))
+           (multiple-value-bind (parent missing-components)
+               (nearest-existing-directory parent-path nil)
+             (if parent
+                 (values
+                  (make-pathname :directory
+                                 (append (pathname-directory parent)
+                                         missing-components)
+                                 :name (pathname-name target-path)
+                                 :type (pathname-type target-path)
+                                 :version (pathname-version target-path)
+                                 :defaults parent)
+                  parent)
+                 (error (quote cl-cli:cli-invalid-positional-value)
+                        :message
+                        (format nil "PATH does not exist: ~A" argument)
+                        :name
+                        "PATH"
+                        :value
+                        argument
+                        :cause
+                        nil)))))
+        ((and resolved (not (host-kit:directory-pathname-p resolved)))
+         (values resolved (make-pathname :name nil :type nil :defaults resolved)))
+        (t (values nil root)))))))
 
 (defun %make-startup-buffer (startup-file)
   "Build the initial buffer for STARTUP-FILE or the default scratch buffer.
