@@ -62,6 +62,8 @@ def _send_path_keys(session, names):
             session.send(keys.ctrl(name[2]))
         elif name.startswith("M-") and len(name) == 3:
             session.send(keys.meta(name[2]))
+        elif name == "ESC":
+            session.key("ESC")
         elif name == "RET":
             session.key("RET")
         else:

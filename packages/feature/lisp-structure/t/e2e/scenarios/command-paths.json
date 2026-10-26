@@ -795,6 +795,549 @@
         }
       ],
       "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/effect",
+      "path_id": "r3:backward-slurp-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "backward-slurp-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-slurp-sexp/read-only",
+      "path_id": "r3:backward-slurp-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "backward-slurp-sexp"
+      ],
+      "command": "backward-slurp-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
+      ],
+      "initial_bytes": "a (b)\n",
+      "effect_bytes": "a (b)\n",
+      "expected_bytes": "a (b)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/effect",
+      "path_id": "r3:backward-barf-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "backward-barf-sexp",
+        "save-buffer"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "a (b)\n",
+      "expected_bytes": "a (b)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a (b)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a (b)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/backward-barf-sexp/read-only",
+      "path_id": "r3:backward-barf-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "backward-barf-sexp"
+      ],
+      "command": "backward-barf-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a b)\n",
+      "effect_bytes": "(a b)\n",
+      "expected_bytes": "(a b)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b)"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/effect",
+      "path_id": "r3:kill-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "kill-sexp",
+        "save-buffer"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": " b\n",
+      "expected_bytes": " b\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": " b\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": " b"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/kill-sexp/read-only",
+      "path_id": "r3:kill-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "kill-sexp"
+      ],
+      "command": "kill-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "ESC",
+        "C-k"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/effect",
+      "path_id": "r3:raise-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "raise-sexp",
+        "save-buffer"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "raise-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/raise-sexp/read-only",
+      "path_id": "r3:raise-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "raise-sexp"
+      ],
+      "command": "raise-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "raise-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a (b) c)\n",
+      "expected_bytes": "(a (b) c)\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/effect",
+      "path_id": "r3:splice-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "splice-sexp",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "effect",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "splice-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a b c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/undo",
+      "path_id": "r3:splice-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "splice-sexp",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "splice-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a b c)\n",
+      "expected_bytes": "(a (b) c)\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a b c)"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        6
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/splice-sexp/read-only",
+      "path_id": "r3:splice-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "splice-sexp"
+      ],
+      "command": "splice-sexp",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "M-x",
+        "splice-sexp",
+        "RET"
+      ],
+      "initial_bytes": "(a (b) c)\n",
+      "effect_bytes": "(a (b) c)\n",
+      "expected_bytes": "(a (b) c)\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a (b) c)"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/effect",
+      "path_id": "r3:wrap-round:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "wrap-round",
+        "save-buffer"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-x",
+        "wrap-round",
+        "RET"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "(a) b\n",
+      "expected_bytes": "(a) b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(a) b\n"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(a) b"
+        }
+      ]
+    },
+    {
+      "name": "lisp-structure/r3/wrap-round/read-only",
+      "path_id": "r3:wrap-round:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "wrap-round"
+      ],
+      "command": "wrap-round",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-x",
+        "wrap-round",
+        "RET"
+      ],
+      "initial_bytes": "a b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a b"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
     }
   ]
 }
