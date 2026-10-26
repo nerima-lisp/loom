@@ -20,6 +20,7 @@ def file_format_preservation(binary):
 
         with Session(binary, [path]) as session:
             session.wait_ready()
+            session.wait_for_region_exact_text("body", "alpha", index=0)
             session.type("!")
             session.wait_for_region_text("body", "!alpha", index=0)
             session.extended_command("save-buffer")
