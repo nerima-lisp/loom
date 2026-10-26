@@ -46,7 +46,7 @@ def dump_catalog(binary):
 
     _assert_exit_zero("--dump-catalog", output, code)
     catalog = json.loads(output.decode("utf-8"))
-    if len(catalog) != 125:
+    if len(catalog) != 127:
         raise AssertionError(f"--dump-catalog returned {len(catalog)} commands")
     dispatcher = [
         command
