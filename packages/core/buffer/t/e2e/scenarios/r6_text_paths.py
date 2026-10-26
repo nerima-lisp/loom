@@ -33,10 +33,10 @@ _DIMENSIONS = {
 
 _OPERATION_COMMANDS = {
     "move": ["forward-char"],
-    "insert": ["forward-char", "self-insert-command", "save-buffer"],
+    "insert": ["forward-char", "core/self-insert", "save-buffer"],
     "delete": ["forward-char", "delete-char", "save-buffer"],
-    "undo": ["forward-char", "self-insert-command", "undo", "save-buffer"],
-    "save": ["forward-char", "self-insert-command", "save-buffer"],
+    "undo": ["forward-char", "core/self-insert", "undo", "save-buffer"],
+    "save": ["forward-char", "core/self-insert", "save-buffer"],
 }
 
 
