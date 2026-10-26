@@ -551,6 +551,20 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                         "pair": ["self-insert-command"],
                         "close-skip": ["self-insert-command"],
                     }.get(behavior)
+                    if language == "nix" and behavior == "comment":
+                        expected_commands = ["set-mark-command", "save-buffer"]
+                    elif language == "nix" and behavior == "pair":
+                        expected_commands = ["save-buffer"]
+                    elif language in {
+                        "typescript",
+                        "javascript",
+                        "jsx",
+                        "json",
+                        "html",
+                        "css",
+                        "yaml",
+                    } and behavior in {"comment", "pair"}:
+                        expected_commands = ["find-file", "save-buffer"]
                     if expected_commands is not None:
                         self.assertEqual(paths_by_id[path_id]["commands"], expected_commands)
 

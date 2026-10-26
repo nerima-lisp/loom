@@ -445,7 +445,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:comment-dwim",
             nix_owner,
-            ["comment-line"],
+            ["set-mark-command", "save-buffer"],
             "key: M-;",
             "Nix code line and a whole-line comment",
             "M-; appends an inline comment marker and toggles the selected comment off",
@@ -454,7 +454,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:pair-completion",
             nix_owner,
-            ["self-insert-command"],
+            ["save-buffer"],
             "keys: { [ ( then ) ] }",
             "Nix mode with registered {}, [], and () pairs",
             "openers insert closers and existing closers are skipped",
@@ -519,7 +519,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:comments:meta-semicolon",
             web_owner,
-            ["comment-line"],
+            ["find-file", "save-buffer"],
             "key:M-;",
             "TypeScript, JavaScript, JSX, HTML, CSS, or YAML line or active region",
             "M-; toggles the active language comment syntax for the line or region",
@@ -528,7 +528,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:pair-completion:delimiter-pairs",
             web_owner,
-            ["self-insert-command"],
+            ["find-file", "save-buffer"],
             "key:open-delimiter",
             "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML mode at an opening delimiter",
             "inserts registered delimiter pairs and skips existing closers when enabled",

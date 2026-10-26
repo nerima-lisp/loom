@@ -150,6 +150,26 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
+    def test_language_ret_trace_matches_newline_and_indent_without_mode(self):
+        self.required["commands"] = ["newline"]
+        self.ledger["commands"] = ["newline"]
+        self.required["entry"] = "key: RET"
+        self.ledger["entry"] = "key: RET"
+        trace_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"enter","modifiers":[]}]} '
+        ).strip()
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("newline-and-indent",),
+            trace_route="key",
+            trace_entry=trace_entry,
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
     def test_trace_from_the_wrong_entry_route_does_not_satisfy_path(self):
         self._write_scenario(
             [self._matching_observation()], trace_route="key"
@@ -337,6 +357,10 @@ class PathReportTests(unittest.TestCase):
             (
                 "key: C-M-backslash",
                 'key:{"keymap":"org","sequence":[{"key":"\\\\","modifiers":["alt","control"]}]}',
+            ),
+            (
+                "key: C-M-backslash",
+                'key:{"keymap":"nix","sequence":[{"key":"control-backslash","modifiers":["alt"]}]}',
             ),
             (
                 "key: M-;",

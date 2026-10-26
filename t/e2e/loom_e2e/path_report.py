@@ -207,6 +207,22 @@ def _entry_trace_identity(entry):
         if not isinstance(sequence, list):
             return route_entry
 
+    sequence = [
+        {
+            **descriptor,
+            "key": "\\",
+            "modifiers": ["alt", "control"]
+            if descriptor.get("modifiers") == ["alt"]
+            else descriptor.get("modifiers"),
+        }
+        if isinstance(descriptor, Mapping)
+        and descriptor.get("key") == "control-backslash"
+        and descriptor.get("modifiers")
+        in (["alt"], ["alt", "control"], ["control", "alt"])
+        else descriptor
+        for descriptor in sequence
+    ]
+
     return "key:" + json.dumps(sequence, sort_keys=True, separators=(",", ":"))
 
 

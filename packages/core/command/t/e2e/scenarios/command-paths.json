@@ -296,7 +296,7 @@
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 1],
+      "expected_cursor": [0, 0],
       "expected_undo_cursor": [0, 0],
       "expected_minibuffer": "",
       "expected_screen": [{"region": "body", "text": "abc"}],
