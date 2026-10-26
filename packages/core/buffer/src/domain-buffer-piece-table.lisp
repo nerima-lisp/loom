@@ -26,10 +26,14 @@
 (defun %record-delete (buffer line column text clear-redo)
   (when clear-redo
     (setf (%buffer-redo-list buffer) nil))
-  (push (list :insert line column text
-              (%buffer-point-line buffer)
-              (%buffer-point-column buffer))
-        (%buffer-undo-list buffer)))
+  (multiple-value-bind (end-line end-column)
+      (%advance-position line column text)
+    (push (list :insert line column text
+                (%buffer-point-line buffer)
+                (%buffer-point-column buffer)
+                (and (= (%buffer-point-line buffer) end-line)
+                     (= (%buffer-point-column buffer) end-column)))
+          (%buffer-undo-list buffer))))
 
 (defun %do-insert (buffer line column text &key (clear-redo t))
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo

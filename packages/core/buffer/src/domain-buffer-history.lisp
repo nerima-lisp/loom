@@ -45,19 +45,8 @@ available to BUFFER-REDO. Returns BUFFER."
       (dolist (entry group)
         (push (%apply-undo-entry buffer entry
                                  (not (eq (first entry) :insert)))
-              (%buffer-redo-list buffer)))
-      ;; A same-position insert/delete pair is a replacement. Keep its saved point.
-      (when (and (= (length group) 2)
-                 (not (eq (first (first group))
-                          (first (second group))))
-                 (= (second (first group))
-                    (second (second group)))
-                 (= (third (first group))
-                    (third (second group))))
-        (buffer-set-point buffer
-                          (fifth (second group))
-                          (sixth (second group)))))
-  buffer))
+              (%buffer-redo-list buffer)))))
+  buffer)
 
 (defun buffer-redo (buffer)
   "Redo the most recently undone change group in BUFFER.
