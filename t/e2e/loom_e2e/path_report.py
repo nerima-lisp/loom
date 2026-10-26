@@ -142,6 +142,9 @@ def _read_trace(result_path, result, artifacts_dir):
                     # RET routes use "newline"; traces record its bound command.
                     if command == "newline-and-indent":
                         command = "newline"
+                    elif command == "mode/comment-dwim":
+                        # Comment-aware mode keymaps use DWIM for the M-; route.
+                        command = "comment-line"
                     route = record.get("route")
                     if route is not None and not isinstance(route, str):
                         return None, f"trace line {line_number} has an invalid route"

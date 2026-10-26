@@ -30,9 +30,23 @@
                          :external 'nil
                          :modes '(:common-lisp :python :rust :shell :emacs-lisp :nix :typescript :typescript-react :markdown :org)))
 
-(register-internal-command
- :feature/mode "mode/comment-dwim" (function loom/feature/mode:comment-dwim)
- :mutates t :prompts nil :needs-region nil :external nil :modes (list :all))
+(%register-command-spec
+ :feature/mode
+ "mode/comment-dwim"
+ nil
+ (function loom/feature/mode:comment-dwim)
+ :keys nil
+ :keymap :global
+ :group nil
+ :help nil
+ :help-order nil
+ :mutates t
+ :prompts nil
+ :needs-region nil
+ :external nil
+ :modes (list :all)
+ :catalog-visible-p nil
+ :trace-visible-p t)
 (%register-command-spec
  :feature/mode
  "mode/newline-and-indent"
