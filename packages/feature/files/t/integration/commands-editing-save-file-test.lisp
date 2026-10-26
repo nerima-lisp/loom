@@ -1,4 +1,18 @@
 (in-package #:loom/test)
+(defun %write-test-file-octets (path octets)
+  (with-open-file (stream path :direction :output
+                          :element-type (quote (unsigned-byte 8))
+                          :if-exists :supersede
+                          :if-does-not-exist :create)
+    (write-sequence octets stream))
+  path)
+(defun %read-test-file-octets (path)
+  (with-open-file (stream path :direction :input
+                          :element-type (quote (unsigned-byte 8)))
+    (let ((octets (make-array (file-length stream)
+                              :element-type (quote (unsigned-byte 8)))))
+      (read-sequence octets stream)
+      octets)))
 
 (it
   "writes the selected buffer to a new path and registers the new buffer"
@@ -95,3 +109,63 @@
           (expect (buffer-path right) :to-equal right-path)
           (expect (buffer-text left) :to-equal "left")
           (expect (buffer-text right) :to-equal "right"))))))
+(describe
+  "file overwrite backups and notifications"
+  (it
+    "preserves the exact bytes before every save and reports the written path"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "note.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (buffer-set-point buffer 0 (length (buffer-text buffer)))
+              (buffer-insert-string buffer " first")
+              (buffer-save buffer)
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal
+                      (format nil "Wrote ~A" path))
+              (buffer-set-point buffer 0 (length (buffer-text buffer)))
+              (buffer-insert-string buffer " second")
+              (buffer-save buffer)
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal
+                      (format nil "Wrote ~A" path))
+              (expect (%read-test-file-octets path)
+                      :to-equal
+                      #(111 108 100 32 102 105 114 115 116 32 115 101 99 111 110 100))
+              (expect (%read-test-file-octets
+                       (merge-pathnames "note.txt.1~" backup-dir))
+                      :to-equal
+                      #(111 108 100))
+              (expect (%read-test-file-octets
+                       (merge-pathnames "note.txt.2~" backup-dir))
+                      :to-equal
+                      #(111 108 100 32 102 105 114 115 116))))))))
+  (it
+    "leaves the original file untouched when its backup cannot be created"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "note.txt" dir))
+             (blocked (merge-pathnames "blocked" dir))
+             (backup-dir (merge-pathnames "blocked/backups/" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%write-test-file-octets blocked #(110 111 116 32 97 32 100 105 114 101 99 116 111 114 121))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (buffer-set-point buffer 0 (length (buffer-text buffer)))
+              (buffer-insert-string buffer " changed")
+              (let ((failed
+                      (handler-case
+                          (progn (buffer-save buffer) nil)
+                        (file-error () t))))
+                (expect failed :to-be-truthy)
+                (expect (loom/core/buffer:buffer-modified-p buffer)
+                        :to-be-truthy)
+                (expect (%read-test-file-octets path)
+                        :to-equal
+                        #(111 108 100))
+                (expect (loom:minibuffer-message-string minibuffer)
+                        :to-equal
+                        "")))))))))

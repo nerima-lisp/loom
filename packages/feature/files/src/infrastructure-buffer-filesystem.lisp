@@ -26,6 +26,50 @@
 (defmethod buffer-load (path)
   (%load-file-buffer path))
 
+(defvar *loom-backup-directory* nil)
+(defun %loom-backup-directory ()
+  (uiop:ensure-directory-pathname
+   (or *loom-backup-directory*
+       (merge-pathnames
+        ".loom/backups/"
+        (uiop:ensure-directory-pathname
+         (or (uiop:getenv "HOME")
+             (user-homedir-pathname)))))))
+(defun %copy-file-octets (source destination)
+  (let ((created nil)
+        (complete nil))
+    (unwind-protect
+         (progn
+           (with-open-file (output destination
+                                   :direction :output
+                                   :element-type (quote (unsigned-byte 8))
+                                   :if-exists :error
+                                   :if-does-not-exist :create)
+             (setf created t)
+             (with-open-file (input source
+                                    :direction :input
+                                    :element-type (quote (unsigned-byte 8)))
+               (let ((chunk
+                       (make-array 8192
+                                   :element-type (quote (unsigned-byte 8)))))
+                 (loop for count = (read-sequence chunk input)
+                       while (plusp count)
+                       do (write-sequence chunk output :end count)))))
+           (setf complete t)
+           destination)
+      (when (and created (not complete))
+        (ignore-errors (delete-file destination))))))
+(defun %backup-existing-file (path)
+  (let* ((directory (%loom-backup-directory))
+         (file-name (file-namestring (pathname path))))
+    (ensure-directories-exist
+     (merge-pathnames (format nil "~A.1~~" file-name) directory))
+    (loop for index from 1
+          for backup-path = (merge-pathnames
+                             (format nil "~A.~D~~" file-name index)
+                             directory)
+          unless (probe-file backup-path)
+            do (return (%copy-file-octets path backup-path)))))
 (defmethod buffer-save (buffer)
   (let ((path (buffer-path buffer)))
     (unless path
@@ -34,11 +78,20 @@
     (when (buffer-read-only-p buffer)
       (error 'buffer-read-only-error :buffer buffer))
     (run-session-hooks :before-save *editor-session* buffer)
+    (when (and (eq *loom-filesystem* *loom-real-filesystem*)
+               (probe-file path))
+      (%backup-existing-file path))
     (if (%native-path-operation-p path)
         (%native-write-file path (buffer-text buffer))
         (cl-boundary-kit:filesystem-store-file *loom-filesystem*
                                                path
                                                (buffer-text buffer)))
     (buffer-mark-saved buffer)
-    (run-session-hooks :after-save *editor-session* buffer))
+    (run-session-hooks :after-save *editor-session* buffer)
+    (let ((minibuffer
+            (and *editor-state*
+                 (editor-state-minibuffer *editor-state*))))
+      (when minibuffer
+        (minibuffer-message minibuffer
+                            (format nil "Wrote ~A" path)))))
   buffer)

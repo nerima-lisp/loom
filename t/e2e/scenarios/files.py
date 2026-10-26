@@ -56,6 +56,7 @@ def file_and_buffer_commands(binary):
         _write(beta_path, b"beta\n")
 
         with Session(binary, [alpha_path]) as session:
+            backup_directory = os.path.join(session.home_dir, ".loom", "backups")
             session.wait_ready()
             session.assert_external_state(
                 "scratch HOME differs from real HOME",
@@ -78,12 +79,54 @@ def file_and_buffer_commands(binary):
             session.key("RET")
             session.wait_for_file(copy_path, b"beta\n")
             _assert_body_text(session, 0, "beta")
+            session.wait_for_region_exact_text(
+                "minibuffer", f"Wrote {copy_path}", strip_right=True
+            )
+            session.assert_screen_text(
+                f"Wrote {copy_path}",
+                match="exact",
+                region="minibuffer",
+                strip_right=True,
+            )
 
             session.type("!")
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(copy_path, b"!beta\n")
             _wait_for_body_row(session, 0, "!beta")
             _assert_body_text(session, 0, "!beta")
+            session.wait_for_region_exact_text(
+                "minibuffer", f"Wrote {copy_path}", strip_right=True
+            )
+            session.assert_screen_text(
+                f"Wrote {copy_path}",
+                match="exact",
+                region="minibuffer",
+                strip_right=True,
+            )
+            session.assert_file_bytes(
+                os.path.join(backup_directory, "copy.txt.1~"), b"beta\n"
+            )
+
+            session.type("!")
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(copy_path, b"!!beta\n")
+            _wait_for_body_row(session, 0, "!!beta")
+            _assert_body_text(session, 0, "!!beta")
+            session.wait_for_region_exact_text(
+                "minibuffer", f"Wrote {copy_path}", strip_right=True
+            )
+            session.assert_screen_text(
+                f"Wrote {copy_path}",
+                match="exact",
+                region="minibuffer",
+                strip_right=True,
+            )
+            session.assert_file_bytes(
+                os.path.join(backup_directory, "copy.txt.1~"), b"beta\n"
+            )
+            session.assert_file_bytes(
+                os.path.join(backup_directory, "copy.txt.2~"), b"!beta\n"
+            )
 
             session.send(keys.ctrl("x") + b"rf")
             session.wait_for_region_text("minibuffer", "Recent file: ")
@@ -96,9 +139,9 @@ def file_and_buffer_commands(binary):
             session.wait_for_region_text("minibuffer", "Switch to buffer: ")
             session.type("copy.txt")
             session.key("RET")
-            _wait_for_body_row(session, 0, "!beta")
-            _assert_body_text(session, 0, "!beta")
-            session.wait_for_region_text("mode-line", "Ln 1, Col 2")
+            _wait_for_body_row(session, 0, "!!beta")
+            _assert_body_text(session, 0, "!!beta")
+            session.wait_for_region_text("mode-line", "Ln 1, Col 3")
 
             session.send(keys.ctrl("x") + b"k")
             session.wait_for_region_text("minibuffer", "Kill buffer: ")
