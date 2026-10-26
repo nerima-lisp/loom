@@ -269,4 +269,120 @@
                    (expect (minibuffer-active-p minibuffer) :to-be nil)
                    (expect (minibuffer-message-string minibuffer) :to-equal "LSP started."))
               (when new-session
-                (lsp-session-stop new-session)))))))))
+                (lsp-session-stop new-session))))))))
+  (it "reports the exit status only for an initialize send failure"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (original-make-session
+               (fdefinition (find-symbol "MAKE-LSP-SESSION"
+                                          "LOOM/FEATURE/LSP")))
+             (original-transport-send
+               (fdefinition (find-symbol "LSP-TRANSPORT-SEND"
+                                          "LOOM/FEATURE/LSP")))
+             (new-session nil)
+             (initialize-method nil)
+             (initialize-send-attempted nil)
+             (process-exited-before-send nil)
+             (initialize-send-error nil))
+        (%with-minibuffer-state (minibuffer "")
+          (unwind-protect
+               (progn
+                 (with-replaced-function
+                     (loom/feature/lsp::lsp-transport-send
+                      (lambda (transport json)
+                        (let* ((message (%parse-lsp-json json))
+                               (method (gethash "method" message)))
+                          (when (equal method "initialize")
+                            (setf initialize-method method
+                                  initialize-send-attempted t)
+                            (let ((process
+                                    (loom/feature/lsp::lsp-process-process
+                                     transport)))
+                              (loop repeat 200
+                                    until (not (uiop:process-alive-p process))
+                                    do (sleep 0.01))
+                              (setf process-exited-before-send
+                                    (not (uiop:process-alive-p process)))))
+                          (handler-case
+                              (funcall original-transport-send transport json)
+                            (error (condition)
+                              (when (equal method "initialize")
+                                (setf initialize-send-error condition))
+                              (error condition))))))
+                   (with-replaced-function
+                       (loom/feature/lsp::make-lsp-session
+                        (lambda (&rest arguments)
+                          (setf new-session
+                                (apply original-make-session arguments))))
+                     (multiple-value-bind (session condition)
+                         (loom/feature/lsp::%lsp-start-session
+                          (list "sh" "-c" "exit 17")
+                          directory)
+                       (declare (ignore session))
+                       (loom/feature/lsp::%lsp-report-start-result
+                        minibuffer new-session condition)
+                       (expect initialize-method :to-equal "initialize")
+                       (expect initialize-send-attempted :to-be t)
+                       (expect process-exited-before-send :to-be t)
+                       (expect initialize-send-error :to-be-truthy)
+                       (expect
+                        (typep
+                         (loom/feature/lsp::lsp-session-transport-error
+                          new-session)
+                         (quote loom/feature/lsp::lsp-transport-send-exit-error))
+                        :to-be t)
+                       (expect
+                        (loom/feature/lsp::lsp-transport-send-exit-status
+                         (loom/feature/lsp::lsp-session-transport-error
+                          new-session))
+                        :to-equal 17)
+                       (expect
+                        (loom:minibuffer-message-string minibuffer)
+                        :to-equal
+                        "LSP start failed: server exited with status 17")
+                       (expect
+                        (loom/feature/lsp::lsp-session-closed-p new-session)
+                        :to-be t)))
+                 (let* ((unrelated-condition
+                          (make-condition 'simple-error
+                                           :format-control
+                                           "unrelated initialization failure"
+                                           :format-arguments nil))
+                        (unrelated-session nil)
+                        (returned-condition nil))
+                   (unwind-protect
+                        (with-replaced-function
+                            (loom/feature/lsp::make-lsp-session
+                             (lambda (&rest arguments)
+                               (setf unrelated-session
+                                     (apply original-make-session
+                                            arguments))))
+                          (with-replaced-function
+                              (loom/feature/lsp::lsp-session-start
+                               (lambda (session)
+                                 (let* ((transport
+                                          (loom/feature/lsp::lsp-session-transport
+                                           session))
+                                        (process
+                                          (loom/feature/lsp::lsp-process-process
+                                           transport)))
+                                   (loop repeat 200
+                                         until
+                                         (not (uiop:process-alive-p process))
+                                         do (sleep 0.01)))
+                                 (error unrelated-condition)))
+                            (multiple-value-bind (session condition)
+                                (loom/feature/lsp::%lsp-start-session
+                                 (list "sh" "-c" "exit 17")
+                                 directory)
+                              (declare (ignore session))
+                              (setf returned-condition condition)))
+                     (when unrelated-session
+                       (lsp-session-stop unrelated-session)))
+                   (expect (eq returned-condition unrelated-condition)
+                           :to-be t)
+                   (expect
+                    (loom/feature/lsp::lsp-session-closed-p unrelated-session)
+                    :to-be t))))
+            (when new-session
+              (lsp-session-stop new-session)))))))))

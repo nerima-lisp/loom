@@ -1,6 +1,7 @@
 """PTY scenarios using the real nixd language server."""
 
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -34,6 +35,23 @@ def _fixture(contents=b"# no definition here\nlet\n  value = 1;\nin\n  value\n")
         handle.write("exec " + _nixd_command() + "\n")
     path = write_buffer(directory.name, "main.nix", contents)
     return directory, path
+
+
+def _server_exit_fixture():
+    directory = tempfile.TemporaryDirectory(prefix="loom-e2e-lsp-")
+    command = os.path.join(directory.name, "lsp-server")
+    status_path = os.path.join(directory.name, "lsp-server-exit-status")
+    script = (
+        "#!/bin/sh\n"
+        "printf '17\\n' > " + shlex.quote(status_path) + "\n"
+        "exit 17\n"
+    )
+    write_buffer(directory.name, "lsp-server", script.encode("utf-8"))
+    os.chmod(command, 0o755)
+    with open(os.path.join(directory.name, ".loom-lsp"), "w", encoding="utf-8") as handle:
+        handle.write(command + "\n")
+    path = write_buffer(directory.name, "notes.txt", b"still usable\n")
+    return directory, path, status_path
 
 
 def _start(session):
@@ -455,3 +473,35 @@ def lsp_find_definition_unicode(binary):
 @scenario("lsp/pop-definition", commands=["lsp-pop-definition"])
 def lsp_pop_definition(binary):
     _run_lsp_command(binary, "lsp-pop-definition", "No jump to return from")
+
+
+@scenario("lsp/server-nonzero-exit", commands=["lsp-start", "save-buffer"])
+def lsp_server_nonzero_exit(binary):
+    directory, path, status_path = _server_exit_fixture()
+    message = "LSP start failed: server exited with status 17"
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("lsp-start")
+            session.wait_for_text("LSP command [RET for")
+            session.key("RET")
+            session.wait_for_text("Run discovered LSP command? Type yes: ")
+            session.type("yes")
+            session.key("RET")
+            session.wait_for_text(message)
+            session.assert_screen_text(
+                message,
+                region="minibuffer",
+                strip_right=True,
+            )
+            with open(status_path, encoding="utf-8") as handle:
+                status = handle.read().strip()
+            session.assert_external_state("lsp-server exit status", status, "17")
+            session.send(keys.ctrl("e"))
+            session.type(" updated")
+            session.extended_command("save-buffer")
+            session.wait_for_file(path, b"still usable updated\n")
+            output, code = session.quit()
+        assert_exit_zero("lsp-server-nonzero-exit", output, code)
+    finally:
+        directory.cleanup()

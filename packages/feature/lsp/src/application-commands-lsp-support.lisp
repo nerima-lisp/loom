@@ -77,26 +77,35 @@
 (defun %lsp-start-session (command directory)
   (let ((new-session nil)
         (root-uri (and directory (lsp-path-uri directory))))
-    (handler-case (progn
-                    (setf new-session (make-lsp-session :command
-                                                        command
-                                                        :directory
-                                                        directory
-                                                        :root-uri
-                                                        root-uri))
-                    (lsp-session-start new-session)
-                    (%install-lsp-session new-session)
-                    (values new-session nil))
+    (handler-case
+        (progn
+          (setf new-session
+                (make-lsp-session
+                 :command command
+                 :directory directory
+                 :root-uri root-uri))
+          (lsp-session-start new-session)
+          (%install-lsp-session new-session)
+          (values new-session nil))
       (error (condition)
-        (when new-session
-          (lsp-session-stop new-session))
-        (values nil condition)))))
+        (let ((failure
+                (or (and new-session
+                         (lsp-session-transport-error new-session))
+                    condition)))
+          (when new-session
+            (lsp-session-stop new-session))
+          (values nil failure))))))
 
 (defun %lsp-report-start-result (minibuffer session condition)
   (declare (ignore session))
   (if condition
-      (loom/core/minibuffer:minibuffer-message minibuffer
-                                               (format nil
-                                                       "LSP start failed: ~A"
-                                                       condition))
+      (loom/core/minibuffer:minibuffer-message
+       minibuffer
+       (format nil
+               "LSP start failed: ~A"
+               (if (typep condition (quote lsp-transport-send-exit-error))
+                   (format nil
+                           "server exited with status ~D"
+                           (lsp-transport-send-exit-status condition))
+                   condition)))
       (loom/core/minibuffer:minibuffer-message minibuffer "LSP started.")))
