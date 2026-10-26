@@ -287,6 +287,8 @@ def _send_key(session, name):
         session.key(name)
     else:
         session.send(payload)
+        if name == "M-x":
+            session.wait_for_region_text("minibuffer", "M-x ")
 
 
 def _send_keys(session, names):

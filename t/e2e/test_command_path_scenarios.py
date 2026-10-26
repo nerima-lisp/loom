@@ -11,6 +11,7 @@ from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
     _deadline_stage,
     _key_bytes,
+    _send_key,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -178,6 +179,19 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
+    def test_extended_command_key_waits_for_prompt(self):
+        session = FakeSession()
+
+        _send_key(session, "M-x")
+
+        self.assertEqual(
+            session.calls,
+            [
+                ("send", _key_bytes("M-x")),
+                ("wait_text", "minibuffer", "M-x ", {}),
+            ],
+        )
+
     def test_c_space_encodes_as_control_at(self):
         self.assertEqual(_key_bytes("C-space"), b"\x00")
 
