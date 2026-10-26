@@ -1,4 +1,4 @@
-"""Command-line argument handling: no editor session is ever entered."""
+"""Command-line handling for accepted and rejected startup inputs."""
 
 import json
 import os
@@ -6,6 +6,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from loom_e2e import keys
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
@@ -140,12 +141,20 @@ def invalid_option(binary):
     _assert_exit_code("invalid option", output, code, 64)
 
 
-@scenario("missing path", commands=[])
+@scenario("missing path", commands=["save-buffer", "save-buffers-kill-terminal"])
 def missing_path(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = os.path.join(directory, "missing.txt")
         with Session(binary, [path]) as session:
-            output, code = session.process.wait()
-            session.observe_exit_code(code, expected=64)
-            session.assert_pty_output(output, b"PATH does not exist")
-    _assert_exit_code("missing path", output, code, 64)
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "", index=0)
+            session.type("created")
+            session.wait_for_region_exact_text("body", "created", index=0)
+
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.wait_for_file(path, b"created")
+            session.assert_file_bytes(path, b"created")
+            session.wait_for_region_exact_text("minibuffer", f"Wrote {path}")
+
+            output, code = session.quit()
+    _assert_exit_zero("missing path", output, code)
