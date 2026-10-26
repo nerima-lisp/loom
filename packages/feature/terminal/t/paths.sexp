@@ -69,4 +69,17 @@
   :outcome "interrupted"
   :observe (:screen_text :external_state)
   :scenario "tooling/terminal-stop-interrupted"
-  :lane "W3-11"))
+  :lane "W3-11")
+ (:id "r5:terminal:shell:missing"
+  :commands (:terminal)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "missing"
+  :observe (:screen_text :external_state)
+  :scenario "tooling/terminal-missing"
+  :lane "W3-11")
+ (:exclude
+  :id "r5:terminal-stop:shell:missing"
+  :reason "terminal-stop closes an existing PTY session and does not spawn the configured shell, so a missing executable can only occur when terminal creates the session"
+  :evidence "packages/feature/terminal/src/infrastructure-terminal-session-runtime.lisp:92"))

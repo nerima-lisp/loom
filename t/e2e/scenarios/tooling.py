@@ -357,3 +357,26 @@ def terminal_stop_interrupted(binary):
             )
             output, code = session.quit(timeout=2)
         assert_exit_zero("terminal-stop", output, code)
+
+
+@scenario("tooling/terminal-missing", commands=["terminal"])
+def terminal_missing(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = write_buffer(directory, contents=b"terminal fixture\n")
+        missing_shell = os.path.join(directory, "missing-shell")
+        assert not os.path.exists(missing_shell)
+        with Session(binary, [path], shell=missing_shell) as session:
+            session.wait_ready(timeout=2)
+            session.extended_command("terminal", timeout=2)
+            session.wait_for_text("Terminal failed:", timeout=2)
+            session.assert_screen_text(
+                "Terminal failed:", match="contains", region="screen"
+            )
+            session.assert_external_state(
+                "missing shell executable",
+                os.path.exists(missing_shell),
+                False,
+            )
+            session.assert_file_bytes(path, b"terminal fixture\n")
+            output, code = session.quit(timeout=2)
+        assert_exit_zero("terminal", output, code)
