@@ -41,4 +41,51 @@
    :skip-closing-delimiter t
    :indentation-width 2 :tab-width 8
    :truncate-lines t :language-id "json"
-   :keywords nil))
+   :keywords nil)
+  (loom/feature/mode:register-major-mode
+   :javascript
+   :name "JavaScript"
+   :aliases '("js" "javascript")
+   :extensions '("js" "mjs" "cjs")
+   :language-id "javascript"
+   :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
+               "continue" "debugger" "default" "delete" "do" "else" "export"
+               "extends" "false" "finally" "for" "from" "function" "get" "if"
+               "import" "in" "instanceof" "let" "new" "null" "of" "return"
+               "set" "static" "super" "switch" "this" "throw" "true" "try"
+               "typeof" "var" "void" "while" "with" "yield"))
+  (loom/feature/mode:register-major-mode
+   :javascript-react
+   :name "JavaScript React"
+   :aliases '("jsx")
+   :extensions '("jsx")
+   :language-id "javascriptreact"
+   :keywords '("as" "async" "await" "break" "case" "catch" "class" "const"
+               "continue" "debugger" "default" "delete" "do" "else" "export"
+               "extends" "false" "finally" "for" "from" "function" "get" "if"
+               "import" "in" "instanceof" "let" "new" "null" "of" "return"
+               "set" "static" "super" "switch" "this" "throw" "true" "try"
+               "typeof" "var" "void" "while" "with" "yield"))
+  (loom/feature/mode:register-major-mode
+   :html
+   :name "HTML"
+   :extensions '("html" "htm")
+   :language-id "html"
+   :keywords '("article" "body" "button" "div" "doctype" "footer" "form"
+               "head" "header" "html" "img" "input" "li" "link" "main" "meta"
+               "nav" "ol" "p" "script" "section" "span" "style" "table" "td"
+               "th" "title" "tr" "ul"))
+  (loom/feature/mode:register-major-mode
+   :css
+   :name "CSS"
+   :extensions '("css")
+   :language-id "css"
+   :keywords '("absolute" "auto" "block" "currentColor" "flex" "fixed" "grid"
+               "inherit" "initial" "inline" "important" "none" "relative"
+               "revert" "static" "sticky" "transparent" "unset" "var"))
+  (loom/feature/mode:register-major-mode
+   :yaml
+   :name "YAML"
+   :extensions '("yaml" "yml")
+   :language-id "yaml"
+   :keywords '("false" "no" "null" "off" "on" "true" "yes")))
