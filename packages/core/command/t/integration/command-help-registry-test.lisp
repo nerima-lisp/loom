@@ -87,13 +87,13 @@
              (help-specs
                (remove-if-not
                 (lambda (spec)
-                  (and spec (loom/core/command::command-spec-help spec)))
+                  (and spec (loom/core/command::%command-spec-help spec)))
                 specs))
              (expected
                (format nil
                        "Help: ~{~A~^  ~}"
                        (mapcar
-                        #'loom/core/command::command-spec-help
+                        #'loom/core/command::%command-spec-help
                         (stable-sort (copy-list help-specs)
                                      #'loom/core/command::%help-spec<)))))
         (expect (plusp (length manifest-paths)) :to-be t)
