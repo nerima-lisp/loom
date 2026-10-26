@@ -263,7 +263,17 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
-            "# value\n",
+            "value #\n",
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["expected_cursor"],
+            [0, 7],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["effect_screen"][0][
+                "text"
+            ],
+            "value #",
         )
         self.assertIn(
             "comment-line",
@@ -639,6 +649,32 @@ class CommandPathScenarioTests(unittest.TestCase):
                 for call in calls
             ),
             2,
+        )
+
+    def test_r3_macro_replay_waits_for_the_declared_restore_screen_row(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(SCENARIO_DATA)
+            if case["path_id"] == "r3:indent-for-tab-command:macro-replay"
+        )
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        restore = case["restore_screen"][0]
+        self.assertIn(
+            (
+                "wait_exact_text",
+                restore["region"],
+                restore["text"],
+                {"index": restore.get("index", 0), "strip_right": True},
+            ),
+            sessions[0].calls,
         )
 
 
