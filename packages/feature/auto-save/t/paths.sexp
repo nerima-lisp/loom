@@ -1,1 +1,3 @@
-()
+((:id "r1:toggle-auto-save:mx" :commands (:toggle-auto-save) :rule :r1 :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text) :scenario "auto-save/toggle-auto-save" :lane "W3-11")
+ (:id "r1:auto-save-mode:mx" :commands (:auto-save-mode) :rule :r1 :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text :file_bytes) :scenario "auto-save/mode-sidecar-write" :lane "W3-11")
+ (:id "r1:auto-save-current-buffer:mx" :commands (:auto-save-current-buffer) :rule :r1 :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text :file_bytes) :scenario "auto-save/current-buffer-write-failure" :lane "W3-11"))
