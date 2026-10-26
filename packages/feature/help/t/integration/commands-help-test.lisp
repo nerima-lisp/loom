@@ -53,7 +53,7 @@
     (it "shows a help summary in the *Help* result buffer"
       (%with-minibuffer-state (minibuffer "")
         (%install-help-test-keybindings)
-        (loom::help-command)
+        (loom/feature/help:help-command)
         (let* ((help-buffer (%help-test-buffer))
                (window
                  (loom/core/window-tree:window-tree-selected-window
@@ -73,21 +73,21 @@
     ;; GNU Emacs Manual: C-h k displays the command bound to a key sequence.
     ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Key-Help.html
     (it "describes a key through the active keymap"
-      (expect (loom::%help-parse-key-chord "M-DEL")
+      (expect (loom/feature/help::%help-parse-key-chord "M-DEL")
               :to-equal
               (cons '(:alt) :backspace))
-      (expect (loom::%help-parse-key-chord "F1")
+      (expect (loom/feature/help::%help-parse-key-chord "F1")
               :to-equal
               (cons nil :f1))
-      (expect (loom::%help-parse-key-chord "C-M-UP")
+      (expect (loom/feature/help::%help-parse-key-chord "C-M-UP")
               :to-equal
               (cons '(:control :alt) :up))
-      (expect (loom::%help-parse-key-sequence "C-h k")
+      (expect (loom/feature/help::%help-parse-key-sequence "C-h k")
               :to-equal
               (list (cons '(:control) #\h) #\k))
       (%with-minibuffer-state (minibuffer "")
         (%install-help-test-keybindings)
-        (loom::describe-key)
+        (loom/feature/help:describe-key)
         (%expect-minibuffer-prompt minibuffer "Describe key: ")
         (%confirm-minibuffer minibuffer "C-f")
         (expect (search "forward-char" (%help-test-buffer-text))
@@ -96,7 +96,7 @@
     (it "describes a named command"
       (%with-minibuffer-state (minibuffer "")
         (%install-help-test-keybindings)
-        (loom::describe-command)
+        (loom/feature/help:describe-command)
         (%expect-minibuffer-prompt minibuffer "Describe command: ")
         (expect
          (funcall
@@ -118,7 +118,7 @@
           (%install-help-test-keybindings)
           (loom/core/buffer:buffer-set-major-mode
            (%selected-test-buffer) :loom-help-test-mode)
-          (loom::describe-bindings)
+          (loom/feature/help:describe-bindings)
           (expect (search "Global bindings" (%help-test-buffer-text))
                   :to-be-truthy)
           (expect (search "C-f" (%help-test-buffer-text))
@@ -134,7 +134,7 @@
           (%install-help-test-keybindings)
           (let ((buffer (%selected-test-buffer)))
             (loom/core/buffer:buffer-set-major-mode buffer :python))
-          (loom::describe-mode)
+          (loom/feature/help:describe-mode)
           (expect (search "Python" (%help-test-buffer-text))
                   :to-be-truthy)))
       (it "includes the active mode description"
@@ -147,7 +147,7 @@
             (%install-help-test-keybindings)
             (loom/core/buffer:buffer-set-major-mode
              (%selected-test-buffer) :loom-help-test-mode)
-            (loom::describe-mode)
+            (loom/feature/help:describe-mode)
             (expect (search "Help Test Mode" (%help-test-buffer-text))
                     :to-be-truthy)
             (expect

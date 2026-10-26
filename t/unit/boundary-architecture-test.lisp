@@ -75,6 +75,7 @@
     ("LOOM/FEATURE/LSP" ("feature/lsp") (:domain :application :infrastructure)
      "packages/feature/lsp/src/package.lisp")
     ("LOOM/FEATURE/LIFECYCLE" ("feature/lifecycle") (:application) "packages/feature/lifecycle/src/package.lisp")
+    ("LOOM/FEATURE/HELP" ("feature/help") (:application) "packages/feature/help/src/package.lisp")
     ("LOOM-USER" ("root") (:composition-root) "src/package-user.lisp")))
 
 (defparameter *boundary-report-vs-fail* :report)
@@ -1522,4 +1523,16 @@
                  (search "src/application/command-definitions"
                          (boundary-record-path record)))
                records)
-              :to-equal t))))
+              :to-equal t)))
+  (it "keeps help package dependencies out of root"
+    (let* ((records (boundary-source-records))
+           (edges (boundary-unique-edges
+                   (append (boundary-introspected-edges records)
+                           (boundary-token-edges records))))
+           (help-to-root
+             (remove-if-not
+              (lambda (finding)
+                (and (string= (boundary-finding-slice finding) "feature/help")
+                     (search "-> root" (boundary-finding-reference finding))))
+              (boundary-edge-findings edges))))
+      (expect help-to-root :to-equal nil))))

@@ -1,7 +1,7 @@
 (in-package #:loom/core/command)
 (progn
   (register-command-spec
-   :feature/help "help" "help" #'loom::help-command
+   :feature/help "help" "help" #'loom/feature/help:help-command
    :keys '(:f1)
    :keymap :global
    :group "help"
@@ -13,7 +13,7 @@
    :external '()
    :modes '(:all))
   (register-command-spec
-   :feature/help "describe-key" "describe-key" #'loom::describe-key
+   :feature/help "describe-key" "describe-key" #'loom/feature/help:describe-key
    :keys '((( :control #\h) #\k))
    :keymap :global
    :group "help"
@@ -25,7 +25,7 @@
    :external '()
    :modes '(:all))
   (register-command-spec
-   :feature/help "describe-command" "describe-command" #'loom::describe-command
+   :feature/help "describe-command" "describe-command" #'loom/feature/help:describe-command
    :keys '((( :control #\h) #\x))
    :keymap :global
    :group "help"
@@ -37,7 +37,7 @@
    :external '()
    :modes '(:all))
   (register-command-spec
-   :feature/help "describe-bindings" "describe-bindings" #'loom::describe-bindings
+   :feature/help "describe-bindings" "describe-bindings" #'loom/feature/help:describe-bindings
    :keys '((( :control #\h) #\b))
    :keymap :global
    :group "help"
@@ -49,7 +49,7 @@
    :external '()
    :modes '(:all))
   (register-command-spec
-   :feature/help "describe-mode" "describe-mode" #'loom::describe-mode
+   :feature/help "describe-mode" "describe-mode" #'loom/feature/help:describe-mode
    :keys '((( :control #\h) #\m))
    :keymap :global
    :group "help"

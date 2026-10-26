@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/help)
 
 (progn
   (defun %help-selected-buffer ()
@@ -307,18 +307,18 @@
 
   (defun describe-key ()
     "Describe the command bound to a key sequence."
-    (with-prompts
-        (minibuffer (editor-state-minibuffer *editor-state*)
-                    :on-cancel (minibuffer-message minibuffer "Quit"))
+    (loom/core/minibuffer:with-prompts
+        (minibuffer (loom/core/editor-session:editor-state-minibuffer loom/core/editor-session:*editor-state*)
+                    :on-cancel (loom/core/minibuffer:minibuffer-message minibuffer "Quit"))
         ((input "Describe key: "))
       (let* ((buffer (%help-selected-buffer))
              (sequence (%help-parse-key-sequence input)))
         (if sequence
             (let* ((keymap
                      (loom/core/command:keymap-for-buffer
-                      (editor-state-session *editor-state*)
+                      (loom/core/editor-session:editor-state-session loom/core/editor-session:*editor-state*)
                       buffer
-                      (editor-state-keymap *editor-state*)))
+                      (loom/core/editor-session:editor-state-keymap loom/core/editor-session:*editor-state*)))
                    (binding (loom/core/command:keymap-lookup keymap sequence))
                    (entry (and (stringp binding)
                                (%help-catalog-entry binding))))
@@ -335,9 +335,9 @@
 
   (defun describe-command ()
     "Describe a named command."
-    (with-prompts
-        (minibuffer (editor-state-minibuffer *editor-state*)
-                    :on-cancel (minibuffer-message minibuffer "Quit"))
+    (loom/core/minibuffer:with-prompts
+        (minibuffer (loom/core/editor-session:editor-state-minibuffer loom/core/editor-session:*editor-state*)
+                    :on-cancel (loom/core/minibuffer:minibuffer-message minibuffer "Quit"))
         ((input "Describe command: "
                 :completion-function
                 (lambda (prefix)
