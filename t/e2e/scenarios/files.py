@@ -260,8 +260,8 @@ def help_command(binary):
             session.wait_ready()
             _assert_body_text(session, 0, "help body")
             session.extended_command("help")
-            session.wait_for_region_text("minibuffer", "Help: M-x Command")
-            session.wait_for_region_text("body", "help body")
+            session.wait_for_region_text("body", "Help:")
+            session.wait_for_region_text("mode-line", "*Help*")
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
 
             output, code = session.quit()

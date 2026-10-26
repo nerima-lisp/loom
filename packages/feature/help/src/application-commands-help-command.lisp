@@ -28,7 +28,9 @@
         (loom/core/buffer:buffer-insert-string buffer text))
       (loom/core/buffer:buffer-set-point buffer 0 0)
       (loom/core/window-tree:window-set-buffer window buffer)
-      buffer))
+      (progn
+        (loom/core/buffer:buffer-mark-saved buffer)
+        buffer)))
 
   (defun %help-catalog ()
     (json-kit:parse
