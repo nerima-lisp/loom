@@ -259,23 +259,27 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["command_keys"],
-            ["C-e", "M-;"],
+            ["M-;"],
         )
-        self.assertIn(
-            "move-end-of-line",
-            cases_by_path_id["r3:comment-line:macro-replay"]["commands"],
+        self.assertEqual(
+            cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
+            "# value\n",
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:undo"]["expected_undo_cursor"],
-            [1, 4],
+            [1, 0],
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["command_keys"],
-            ["DOWN", "TAB"],
+            ["TAB"],
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["replay_prefix_keys"],
-            ["UP", "C-a"],
+            ["C-a"],
+        )
+        self.assertEqual(
+            cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["prepare_keys"],
+            ["DOWN"],
         )
         for mutation_case in {"effect", "undo", "macro-replay", "prefix-u4"}:
             case = cases_by_path_id[
