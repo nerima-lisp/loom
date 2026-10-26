@@ -1,1 +1,12 @@
-((:id "r1:set-major-mode:mx" :commands ("set-major-mode") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "applies the selected major mode through M-x" :observe (:screen_text) :scenario "mode/pair-completion"))
+(
+  (:id "r1:comment-line:mx" :commands ("comment-line") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text) :scenario "mode/comment-line-mx")
+  (:id "r1:indent-for-tab-command:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22tab%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D" :commands ("indent-for-tab-command") :rule :r1 :lane "W3-7a" :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"tab\",\"modifiers\":[]}]}" :state "default" :outcome "command runs from its key sequence" :observe (:screen_text) :scenario "mode/indent-key")
+  (:id "r1:indent-for-tab-command:mx" :commands ("indent-for-tab-command") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "command runs from M-x" :observe (:screen_text) :scenario "mode/indent-mx")
+  (:id "r1:set-major-mode:mx" :commands ("set-major-mode") :rule :r1 :lane "W3-7a" :entry "mx" :state "default" :outcome "applies the selected major mode through M-x" :observe (:screen_text) :scenario "mode/pair-completion")
+  (:id "r2:set-major-mode:prompt-1:completion:accept" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "accept" :observe (:screen_text) :scenario "mode/pair-completion")
+  (:id "r2:set-major-mode:prompt-1:completion:cancel" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "cancel" :observe (:screen_text) :scenario "mode/set-major-mode-cancel")
+  (:id "r2:set-major-mode:prompt-1:completion:empty" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "empty" :observe (:screen_text) :scenario "mode/set-major-mode-empty")
+  (:id "r2:set-major-mode:prompt-1:completion:tab" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "tab" :observe (:screen_text) :scenario "mode/set-major-mode-tab")
+  (:id "r2:set-major-mode:prompt-1:completion:history" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "history" :observe (:screen_text) :scenario "mode/set-major-mode-history")
+  (:id "r2:set-major-mode:prompt-1:completion:invalid" :commands ("set-major-mode") :rule :r2 :lane "W3-7a" :entry "mx;prompt:1:completion" :state "prompt:completion" :outcome "invalid" :observe (:screen_text) :scenario "mode/set-major-mode-invalid")
+)
