@@ -20,11 +20,19 @@ class CommandPathScenarioError(ValueError):
 
 
 @contextmanager
-def _deadline_stage(name, stage):
+def _deadline_stage(name, stage, session=None):
     try:
         yield
     except ScenarioDeadlineExceeded as error:
-        raise ScenarioDeadlineExceeded(f"{name} [{stage}]: {error}") from error
+        screen = ""
+        if session is not None:
+            screen = (
+                f"; cursor={session.screen.cursor!r}\n"
+                f"--- screen ---\n{session.screen.dump()}"
+            )
+        raise ScenarioDeadlineExceeded(
+            f"{name} [{stage}]: {error}{screen}"
+        ) from error
 
 
 def _nonempty_string(value, location):
@@ -282,7 +290,9 @@ def _assert_final_state(
     def stage(label):
         if stage_prefix is None:
             return nullcontext()
-        return _deadline_stage(case["name"], f"{stage_prefix} {label}")
+        return _deadline_stage(
+            case["name"], f"{stage_prefix} {label}", session=session
+        )
 
     with stage("minibuffer"):
         _assert_minibuffer(session, case["expected_minibuffer"])
@@ -367,7 +377,7 @@ def _run_r2(session, case, path):
 
 
 def _assert_effect_state(session, case):
-    with _deadline_stage(case["name"], "effect screen"):
+    with _deadline_stage(case["name"], "effect screen", session=session):
         for expectation in case["effect_screen"]:
             session.wait_for_region_exact_text(
                 expectation["region"],
@@ -375,10 +385,10 @@ def _assert_effect_state(session, case):
                 index=expectation.get("index", 0),
                 strip_right=True,
             )
-    with _deadline_stage(case["name"], "effect minibuffer"):
+    with _deadline_stage(case["name"], "effect minibuffer", session=session):
         _assert_minibuffer(session, case["expected_minibuffer"])
     _assert_screen(session, case["effect_screen"])
-    with _deadline_stage(case["name"], "effect cursor"):
+    with _deadline_stage(case["name"], "effect cursor", session=session):
         _assert_cursor(
             session,
             case["expected_cursor"],
@@ -399,7 +409,7 @@ def _run_r3(session, case, path):
         return
 
     if operation == "macro-replay":
-        with _deadline_stage(case["name"], "record and undo macro"):
+        with _deadline_stage(case["name"], "record and undo macro", session=session):
             _send_keys(session, ["C-x", "("])
             _send_keys(session, case["command_keys"])
             session.wait_for_region_exact_text(
@@ -415,16 +425,22 @@ def _run_r3(session, case, path):
         replay_results = []
         for replay_index in range(2):
             replay_name = f"replay {replay_index + 1}"
-            with _deadline_stage(case["name"], f"{replay_name} command"):
+            with _deadline_stage(
+                case["name"], f"{replay_name} command", session=session
+            ):
                 _send_keys(session, ["C-x", "e"])
             _assert_effect_state(session, case)
-            with _deadline_stage(case["name"], f"{replay_name} save"):
+            with _deadline_stage(
+                case["name"], f"{replay_name} save", session=session
+            ):
                 replay_result = _save_and_assert(
                     session, path, case["expected_bytes"].encode("utf-8")
                 )
             replay_results.append(replay_result)
             if replay_index == 0:
-                with _deadline_stage(case["name"], "undo replay"):
+                with _deadline_stage(
+                    case["name"], "undo replay", session=session
+                ):
                     session.send(keys.ctrl("x") + keys.text("u"))
                     session.wait_for_region_exact_text(
                         "body", case["restore_screen"][0]["text"], strip_right=True
@@ -435,16 +451,16 @@ def _run_r3(session, case, path):
         _assert_effect_state(session, case)
         return
 
-    with _deadline_stage(case["name"], "effect"):
+    with _deadline_stage(case["name"], "effect", session=session):
         _send_keys(session, case["command_keys"])
         _assert_effect_state(session, case)
     expected_effect = (
         effect if operation == "undo" else case["expected_bytes"].encode("utf-8")
     )
-    with _deadline_stage(case["name"], "save effect"):
+    with _deadline_stage(case["name"], "save effect", session=session):
         _save_and_assert(session, path, expected_effect)
     if operation == "undo":
-        with _deadline_stage(case["name"], "undo command"):
+        with _deadline_stage(case["name"], "undo command", session=session):
             session.send(keys.ctrl("x") + keys.text("u"))
         _assert_final_state(
             session,
@@ -454,7 +470,7 @@ def _run_r3(session, case, path):
             save=False,
             stage_prefix="undo result",
         )
-        with _deadline_stage(case["name"], "undo save"):
+        with _deadline_stage(case["name"], "undo save", session=session):
             _save_and_assert(session, path, case["expected_bytes"].encode("utf-8"))
 
 
