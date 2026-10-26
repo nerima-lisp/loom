@@ -18,15 +18,31 @@ def file_format_preservation(binary):
         with open(path, "wb") as handle:
             handle.write(_SOURCE)
 
-        with Session(binary, [path]) as session:
-            session.wait_ready()
-            session.wait_for_region_exact_text("body", "alpha", index=0)
-            session.type("!")
-            session.wait_for_region_text("body", "!alpha", index=0)
-            session.extended_command("save-buffer")
-            session.wait_for_file(path, _EDITED)
-            session.assert_file_bytes(path, _EDITED)
-            output, code = session.quit()
+        stage = "session startup"
+        try:
+            with Session(binary, [path]) as session:
+                stage = "initial frame"
+                session.wait_ready()
+                stage = "initial file content"
+                session.wait_for_region_exact_text("body", "alpha", index=0)
+                stage = "typing edit"
+                session.type("!")
+                stage = "edited body"
+                session.wait_for_region_text("body", "!alpha", index=0)
+                stage = "M-x save-buffer"
+                session.extended_command("save-buffer")
+                stage = "saved file bytes"
+                session.wait_for_file(path, _EDITED)
+                stage = "file byte assertion"
+                session.assert_file_bytes(path, _EDITED)
+                stage = "quit"
+                output, code = session.quit()
+        except TimeoutError as error:
+            print(
+                f"file-format-preservation timed out at {stage}: {error}",
+                flush=True,
+            )
+            raise
         if code != 0:
             raise AssertionError(
                 f"file-format-preservation exited with {code}: {output!r}"
