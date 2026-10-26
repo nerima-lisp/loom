@@ -27,7 +27,11 @@ def _close(session, name):
 
 @scenario(
     "lang-nix-comment-dwim",
-    commands=["set-mark-command", "save-buffer"],
+    commands=[
+        "comment-line",
+        "set-mark-command",
+        "save-buffer",
+    ],
 )
 def lang_nix_comment_dwim(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:

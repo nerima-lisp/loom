@@ -373,3 +373,37 @@
                               (expect (keyboard-macro-events macro) :to-be nil)
                               (expect (keyboard-macro-recording-p macro)
                                       :to-be-truthy))))
+
+(it
+ "replays a bound key through the selected buffer keymap"
+ (%with-minibuffer-state (minibuffer "")
+  (let* ((local-invocations 0)
+         (global-invocations 0)
+         (global-keymap (make-keymap))
+         (mode-keymap (make-keymap))
+         (macro (make-keyboard-macro))
+         (buffer (%selected-test-buffer))
+         (descriptor (cons '(:control) #\q))
+         (keymap-state (make-keymap-state global-keymap))
+         (event
+          (cl-tty-kit:make-key-event :type :character :code #\q :modifiers '(:control))))
+   (let ((global-command (lambda () (incf global-invocations)))
+         (mode-command (lambda () (incf local-invocations))))
+    (%register-test-command global-command)
+    (%register-test-command mode-command)
+    (keymap-define-key global-keymap (list descriptor) global-command)
+    (keymap-define-key mode-keymap (list descriptor) mode-command))
+   (setf (editor-state-keymap *editor-state*) global-keymap
+         (editor-state-keyboard-macro *editor-state*) macro)
+   (with-replaced-function
+    (loom/core/command:keymap-for-buffer
+     (lambda (session selected-buffer fallback)
+      (declare (ignore session))
+      (if (eq selected-buffer buffer) mode-keymap fallback)))
+    (keyboard-macro-start-recording macro)
+    (loom::%dispatch-key-event event keymap-state)
+    (keyboard-macro-stop-recording macro)
+    (expect local-invocations :to-equal 1)
+    (call-last-kbd-macro)
+    (expect local-invocations :to-equal 2)
+    (expect global-invocations :to-equal 0)))))

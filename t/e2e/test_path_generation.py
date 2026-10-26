@@ -552,7 +552,7 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                         "close-skip": ["self-insert-command"],
                     }.get(behavior)
                     if language == "nix" and behavior == "comment":
-                        expected_commands = ["set-mark-command", "save-buffer"]
+                        expected_commands = ["comment-line"]
                     elif language == "nix" and behavior == "pair":
                         expected_commands = ["save-buffer"]
                     elif language in {
