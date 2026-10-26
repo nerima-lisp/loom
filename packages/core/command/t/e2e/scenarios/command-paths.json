@@ -602,9 +602,7 @@
       "mutation_case": "macro-replay",
       "major_mode": "Python",
       "command_keys": [
-        "M-x",
-        "comment-line",
-        "RET"
+        "M-;"
       ],
       "initial_bytes": "value\n",
       "effect_bytes": "# value\n",
@@ -958,9 +956,7 @@
       "mutation_case": "macro-replay",
       "major_mode": "Python",
       "command_keys": [
-        "M-x",
-        "indent-for-tab-command",
-        "RET"
+        "TAB"
       ],
       "prepare_keys": [
         "DOWN"

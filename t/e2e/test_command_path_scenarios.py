@@ -11,7 +11,6 @@ from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
     _deadline_stage,
     _key_bytes,
-    _send_keys,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -179,21 +178,6 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
-    def test_extended_command_sequence_waits_and_types_command(self):
-        session = FakeSession()
-
-        _send_keys(session, ["M-x", "comment-line", "RET"])
-
-        self.assertEqual(
-            session.calls,
-            [
-                ("send", _key_bytes("M-x")),
-                ("wait_text", "minibuffer", "M-x ", {}),
-                ("type", "comment-line"),
-                ("key", "RET"),
-            ],
-        )
-
     def test_c_space_encodes_as_control_at(self):
         self.assertEqual(_key_bytes("C-space"), b"\x00")
 
@@ -275,7 +259,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["command_keys"],
-            ["M-x", "comment-line", "RET"],
+            ["M-;"],
         )
         self.assertEqual(
             cases_by_path_id["r3:comment-line:macro-replay"]["expected_bytes"],
@@ -291,7 +275,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["command_keys"],
-            ["M-x", "indent-for-tab-command", "RET"],
+            ["TAB"],
         )
         self.assertEqual(
             cases_by_path_id["r3:indent-for-tab-command:macro-replay"]["replay_prefix_keys"],

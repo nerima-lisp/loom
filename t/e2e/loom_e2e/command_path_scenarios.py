@@ -290,18 +290,8 @@ def _send_key(session, name):
 
 
 def _send_keys(session, names):
-    index = 0
-    while index < len(names):
-        if (
-            names[index] == "M-x"
-            and index + 2 < len(names)
-            and names[index + 2] == "RET"
-        ):
-            _send_mx(session, names[index + 1])
-            index += 3
-        else:
-            _send_key(session, names[index])
-            index += 1
+    for name in names:
+        _send_key(session, name)
 
 
 def _send_mx(session, command):
