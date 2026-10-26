@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      e2e_scenario:
+        description: Run one PTY E2E scenario
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -17,6 +23,7 @@ concurrency:
 jobs:
   check:
     name: nix flake check
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -79,10 +86,18 @@ jobs:
         run: nix build .#default --print-build-logs
 
       - name: Run PTY E2E
-        run: timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+        env:
+          E2E_SCENARIO: ${{ inputs.e2e_scenario || '' }}
+        run: |
+          if [[ -n "$E2E_SCENARIO" ]]; then
+            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e -- --only "$E2E_SCENARIO"
+          else
+            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+          fi
 
   release-archive:
     name: Offline release archive
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
