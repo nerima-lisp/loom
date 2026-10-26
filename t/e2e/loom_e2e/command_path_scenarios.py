@@ -2,9 +2,11 @@
 
 import json
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 from . import keys
+from .deadline import ScenarioDeadlineExceeded
 from .session import Session
 
 
@@ -15,6 +17,14 @@ _MUTATION_CASES = {"effect", "undo", "read-only", "macro-replay"}
 
 class CommandPathScenarioError(ValueError):
     """A command-path sidecar is missing a strict scenario expectation."""
+
+
+@contextmanager
+def _deadline_stage(name, stage):
+    try:
+        yield
+    except ScenarioDeadlineExceeded as error:
+        raise ScenarioDeadlineExceeded(f"{name} [{stage}]: {error}") from error
 
 
 def _nonempty_string(value, location):
@@ -305,6 +315,11 @@ def _run_r1(session, case, path):
         case["expected_bytes"],
         save=case.get("save_after_effect", False),
     )
+    if entry_mode == "open-mx":
+        _send_key(session, "C-g")
+        session.wait_for_region_exact_text(
+            "minibuffer", "Quit", strip_right=True
+        )
 
 
 def _run_r2(session, case, path):
@@ -370,48 +385,54 @@ def _run_r3(session, case, path):
         return
 
     if operation == "macro-replay":
-        _send_keys(session, ["C-x", "("])
-        _send_keys(session, case["command_keys"])
-        session.wait_for_region_exact_text(
-            "body", case["effect_screen"][0]["text"], strip_right=True
-        )
-        _send_keys(session, ["C-x", ")"])
-        session.send(keys.ctrl("x") + keys.text("u"))
-        session.wait_for_region_exact_text(
-            "body", case["restore_screen"][0]["text"], strip_right=True
-        )
-        _save_and_assert_precondition(session, path, initial)
+        with _deadline_stage(case["name"], "record and undo macro"):
+            _send_keys(session, ["C-x", "("])
+            _send_keys(session, case["command_keys"])
+            session.wait_for_region_exact_text(
+                "body", case["effect_screen"][0]["text"], strip_right=True
+            )
+            _send_keys(session, ["C-x", ")"])
+            session.send(keys.ctrl("x") + keys.text("u"))
+            session.wait_for_region_exact_text(
+                "body", case["restore_screen"][0]["text"], strip_right=True
+            )
+            _save_and_assert_precondition(session, path, initial)
 
         replay_results = []
         for replay_index in range(2):
-            _send_keys(session, ["C-x", "e"])
-            _assert_effect_state(session, case)
-            replay_result = _save_and_assert(
-                session, path, case["expected_bytes"].encode("utf-8")
-            )
+            with _deadline_stage(case["name"], f"replay {replay_index + 1}"):
+                _send_keys(session, ["C-x", "e"])
+                _assert_effect_state(session, case)
+                replay_result = _save_and_assert(
+                    session, path, case["expected_bytes"].encode("utf-8")
+                )
             replay_results.append(replay_result)
             if replay_index == 0:
-                session.send(keys.ctrl("x") + keys.text("u"))
-                session.wait_for_region_exact_text(
-                    "body", case["restore_screen"][0]["text"], strip_right=True
-                )
-                _save_and_assert_precondition(session, path, initial)
+                with _deadline_stage(case["name"], "undo replay"):
+                    session.send(keys.ctrl("x") + keys.text("u"))
+                    session.wait_for_region_exact_text(
+                        "body", case["restore_screen"][0]["text"], strip_right=True
+                    )
+                    _save_and_assert_precondition(session, path, initial)
         if replay_results[0] != replay_results[1]:
             raise AssertionError("second macro replay did not match the first bytes")
         _assert_effect_state(session, case)
         return
 
-    _send_keys(session, case["command_keys"])
-    _assert_effect_state(session, case)
+    with _deadline_stage(case["name"], "effect"):
+        _send_keys(session, case["command_keys"])
+        _assert_effect_state(session, case)
     expected_effect = (
         effect if operation == "undo" else case["expected_bytes"].encode("utf-8")
     )
-    _save_and_assert(session, path, expected_effect)
+    with _deadline_stage(case["name"], "save effect"):
+        _save_and_assert(session, path, expected_effect)
     if operation == "undo":
-        session.send(keys.ctrl("x") + keys.text("u"))
-        _assert_final_state(
-            session, case, path, case["expected_bytes"], save=True
-        )
+        with _deadline_stage(case["name"], "undo and restore"):
+            session.send(keys.ctrl("x") + keys.text("u"))
+            _assert_final_state(
+                session, case, path, case["expected_bytes"], save=True
+            )
 
 
 def run_command_path_scenario(binary, case, *, session_factory=Session):

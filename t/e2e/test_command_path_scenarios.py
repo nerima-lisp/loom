@@ -6,8 +6,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from loom_e2e import registry
+from loom_e2e.deadline import ScenarioDeadlineExceeded
 from loom_e2e.command_path_scenarios import (
     CommandPathScenarioError,
+    _deadline_stage,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -163,6 +165,13 @@ class FakeSession:
 
 
 class CommandPathScenarioTests(unittest.TestCase):
+    def test_deadline_error_identifies_the_command_path_stage(self):
+        with self.assertRaisesRegex(
+            ScenarioDeadlineExceeded, r"test/undo \[undo and restore\]: expired"
+        ):
+            with _deadline_stage("test/undo", "undo and restore"):
+                raise ScenarioDeadlineExceeded("expired")
+
     def test_sidecar_covers_current_w31_catalog_paths_without_relabeling_owners(self):
         generated = generate_required_paths(_CORE_COMMAND_CATALOG)
         w31_ids = {
@@ -351,6 +360,15 @@ class CommandPathScenarioTests(unittest.TestCase):
                 )
             ),
         )
+        cursor_check = calls.index(
+            ("observe_cursor", (0, 4), {"region": "minibuffer"})
+        )
+        cancel_prompt = calls.index(("send", b"\x07"))
+        wait_for_quit = calls.index(
+            ("wait_exact_text", "minibuffer", "Quit", {"strip_right": True})
+        )
+        self.assertLess(cursor_check, cancel_prompt)
+        self.assertLess(cancel_prompt, wait_for_quit)
 
     def test_remaining_completion_flows_send_the_declared_terminal_keys(self):
         cases = [
@@ -465,6 +483,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             if case.get("mutation_case") == "macro-replay"
         )
         sessions = []
+        self.assertEqual(case["expected_minibuffer"], "Keyboard macro defined")
 
         def session_factory(*args, **kwargs):
             session = FakeSession(*args, **kwargs)
@@ -487,6 +506,14 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertEqual(
             sum(call == ("send", b"\x18u") for call in calls),
             2,
+        )
+        self.assertGreaterEqual(
+            sum(
+                call[:3]
+                == ("wait_exact_text", "minibuffer", "Keyboard macro defined")
+                for call in calls
+            ),
+            3,
         )
         self.assertGreaterEqual(
             sum(

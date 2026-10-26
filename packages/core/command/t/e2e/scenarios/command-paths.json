@@ -334,7 +334,7 @@
       "effect_bytes": "bc\n",
       "expected_bytes": "bc\n",
       "expected_cursor": [0, 0],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Keyboard macro defined",
       "expected_screen": [{"region": "body", "text": "bc"}],
       "effect_screen": [{"region": "body", "text": "bc"}],
       "restore_screen": [{"region": "body", "text": "abc"}]
