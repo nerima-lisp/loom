@@ -1,4 +1,4 @@
-"""Exercise Markdown and Org list continuation through RET in a PTY session."""
+"""Exercise Markdown and Org list continuation and indentation in PTY sessions."""
 
 import os
 import tempfile
@@ -142,14 +142,20 @@ def markdown_indent_ret(binary):
             handle.write(initial)
 
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            session.wait_for_region_exact_text("body", "- item", index=0)
+            session.wait_ready(timeout=2.0)
+            session.wait_for_region_exact_text(
+                "body", "- item", index=0, timeout=2.0
+            )
             session.send(keys.ctrl("e"))
             session.key("RET")
-            session.wait_for_region_exact_text("body", "-", index=1)
-            session.wait_for_region_cursor("body", 2, index=1)
+            session.wait_for_region_exact_text(
+                "body", "-", index=1, timeout=2.0
+            )
+            session.wait_for_region_cursor(
+                "body", 2, index=1, timeout=2.0
+            )
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.wait_for_file(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -232,21 +238,26 @@ def markdown_indent_region(binary):
             handle.write(initial)
 
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            session.wait_for_region_exact_text("body", "# Heading", index=0)
+            session.wait_ready(timeout=2.0)
+            session.wait_for_region_exact_text(
+                "body", "# Heading", index=0, timeout=2.0
+            )
             session.send(
                 keys.ctrl("a")
                 + keys.ctrl("n") * 3
                 + keys.ctrl("@")
                 + keys.ctrl("n")
                 + keys.ctrl("e")
-                + b"\x1b"
-                + keys.ctrl("\\")
             )
-            session.wait_for_region_exact_text("body", "  deeper", index=4)
-            session.wait_for_region_cursor("body", 8, index=4)
+            session.key(b"\x1b[92;7u")
+            session.wait_for_region_exact_text(
+                "body", "  deeper", index=4, timeout=2.0
+            )
+            session.wait_for_region_cursor(
+                "body", 8, index=4, timeout=2.0
+            )
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.wait_for_file(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -271,14 +282,20 @@ def org_indent_ret(binary):
             handle.write(initial)
 
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            session.wait_for_region_exact_text("body", "- item", index=0)
+            session.wait_ready(timeout=2.0)
+            session.wait_for_region_exact_text(
+                "body", "- item", index=0, timeout=2.0
+            )
             session.send(keys.ctrl("e"))
             session.key("RET")
-            session.wait_for_region_exact_text("body", "-", index=1)
-            session.wait_for_region_cursor("body", 2, index=1)
+            session.wait_for_region_exact_text(
+                "body", "-", index=1, timeout=2.0
+            )
+            session.wait_for_region_cursor(
+                "body", 2, index=1, timeout=2.0
+            )
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.wait_for_file(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -361,21 +378,26 @@ def org_indent_region(binary):
             handle.write(initial)
 
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            session.wait_for_region_exact_text("body", "* Heading", index=0)
+            session.wait_ready(timeout=2.0)
+            session.wait_for_region_exact_text(
+                "body", "* Heading", index=0, timeout=2.0
+            )
             session.send(
                 keys.ctrl("a")
                 + keys.ctrl("n") * 3
                 + keys.ctrl("@")
                 + keys.ctrl("n")
                 + keys.ctrl("e")
-                + b"\x1b"
-                + keys.ctrl("\\")
             )
-            session.wait_for_region_exact_text("body", "  deeper", index=4)
-            session.wait_for_region_cursor("body", 8, index=4)
+            session.key(b"\x1b[92;7u")
+            session.wait_for_region_exact_text(
+                "body", "  deeper", index=4, timeout=2.0
+            )
+            session.wait_for_region_cursor(
+                "body", 8, index=4, timeout=2.0
+            )
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.wait_for_file(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
