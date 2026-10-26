@@ -35,6 +35,7 @@
     (cons '(:alt :control-backslash)
           #'loom/feature/mode:indent-for-tab-command))
   )
+  (loom/feature/mode:register-major-mode-pair-completion :common-lisp #\( #\))
   (loom/feature/mode:register-major-mode
    :emacs-lisp
    :name "Emacs Lisp"
@@ -64,4 +65,5 @@
     (cons '(:alt #\r) #'loom::raise-sexp)
     (cons '(:alt :control-backslash)
           #'loom/feature/mode:indent-for-tab-command))
-  ))
+  )
+  (loom/feature/mode:register-major-mode-pair-completion :emacs-lisp #\( #\)))
