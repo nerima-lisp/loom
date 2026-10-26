@@ -1,6 +1,7 @@
 (defpackage #:loom/feature/lang-markup
   (:use #:cl)
   (:export #:markup-display-lines))
+(in-package #:loom/feature/lang-markup)
 
 (progn
   (defun %markup-source-lines (source)
