@@ -3,14 +3,14 @@
                "loom-core-editor-session"
                "loom-core-minibuffer"
                "loom-core-window-tree"
-               "loom-core-command")
+               "loom-core-command"
+               "loom-core-package-bootstrap")
   :serial t
   :components
   ((:module "src"
     :serial t
     :components
-    ((:file "package")
-     (:file "domain-buffer-registry")
+    ((:file "domain-buffer-registry")
      (:file "application-commands-quit-buffer-list")
      (:file "application-window-buffer-support")
      (:file "application-commands-buffer")

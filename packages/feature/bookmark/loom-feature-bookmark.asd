@@ -4,6 +4,7 @@
                "loom-core-minibuffer"
                "loom-core-window-tree"
                "loom-core-command"
+               "loom-core-package-bootstrap"
                "loom-feature-buffers"
                "loom-feature-files"
                "cl-host-kit")
@@ -12,8 +13,7 @@
   ((:module "src"
     :serial t
     :components
-    ((:file "package")
-     (:file "domain-editor-bookmark")
+    ((:file "domain-editor-bookmark")
      (:file "application-commands-bookmark-support")
      (:file "application-commands-bookmark")
      (:file "command-specs-bookmark")))))

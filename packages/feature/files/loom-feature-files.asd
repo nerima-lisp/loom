@@ -14,8 +14,7 @@
   ((:module "src"
     :serial t
     :components
-    ((:file "package")
-     (:file "application-editor-state-recent-files")
+    ((:file "application-editor-state-recent-files")
      (:file "infrastructure-filesystem-native-paths")
      (:file "infrastructure-filesystem-native-io")
      (:file "infrastructure-buffer-filesystem")
