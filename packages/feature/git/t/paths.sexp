@@ -47,8 +47,8 @@
   :commands (:git-status)
   :rule :r1
   :entry "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"g\",\"modifiers\":[]}]}"
-  :state "temporary Git repository with a tracked file"
-  :outcome "C-x g displays the real Git status"
+  :state "temporary Git repository with a newly created untracked file"
+  :outcome "C-x g refreshes status to display the new file"
   :observe (:screen_text)
   :scenario "git/real-git-status-success"
   :lane "W3-11")
