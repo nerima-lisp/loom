@@ -157,7 +157,6 @@
       "binds ~A in both Lisp mode-local maps, but not the global map"
       (label key-sequence command)
     (declare (ignore label))
-    (asdf:load-system "loom-feature-lang-lisp")
     (let* ((global-keymap (make-keymap))
            (command-id
              (loom/core/command:command-id-for-function command)))
