@@ -2,6 +2,748 @@
   "schema_version": 1,
   "scenarios": [
     {
+      "name": "command-path/buffer/r1/delete-backward-char/key",
+      "path_id": "r1:delete-backward-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22backspace%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "delete-backward-char",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "entry_keys": [
+        ""
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/delete-char/key",
+      "path_id": "r1:delete-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "delete-char",
+        "save-buffer"
+      ],
+      "command": "delete-char",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "entry_keys": [
+        "C-d"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/exchange-point-and-mark/key",
+      "path_id": "r1:exchange-point-and-mark:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"x\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-mark-command",
+        "forward-char",
+        "exchange-point-and-mark"
+      ],
+      "command": "exchange-point-and-mark",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "C-x"
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-mark-command"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "C-f",
+          "repeat": 3
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/delete-backward-char/mx",
+      "path_id": "r1:delete-backward-char:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "delete-backward-char",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/delete-char/mx",
+      "path_id": "r1:delete-char:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "delete-char",
+        "save-buffer"
+      ],
+      "command": "delete-char",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/exchange-point-and-mark/mx",
+      "path_id": "r1:exchange-point-and-mark:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "set-mark-command",
+        "forward-char",
+        "exchange-point-and-mark"
+      ],
+      "command": "exchange-point-and-mark",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-mark-command"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "C-f",
+          "repeat": 3
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/goto-line/key-meta-g-meta-g",
+      "path_id": "r1:goto-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%2C%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "entry_mode": "key",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_keys": [
+        "M-g",
+        "M-g",
+        "2",
+        "RET"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/goto-line/key-meta-g-g",
+      "path_id": "r1:goto-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%2C%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[]}]}",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "entry_mode": "key",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_keys": [
+        "M-g",
+        "g",
+        "2",
+        "RET"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/mark-whole-buffer/key",
+      "path_id": "r1:mark-whole-buffer:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22h%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"h\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "mark-whole-buffer"
+      ],
+      "command": "mark-whole-buffer",
+      "entry_mode": "key",
+      "initial_bytes": "abc",
+      "expected_bytes": "abc",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "h"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/mark-whole-buffer/mx",
+      "path_id": "r1:mark-whole-buffer:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "mark-whole-buffer"
+      ],
+      "command": "mark-whole-buffer",
+      "entry_mode": "mx",
+      "initial_bytes": "abc",
+      "expected_bytes": "abc",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/open-line/key",
+      "path_id": "r1:open-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22o%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "forward-char",
+        "open-line",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "entry_keys": [
+        "C-o"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/set-mark-command/key",
+      "path_id": "r1:set-mark-command:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%20%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "forward-char",
+        "set-mark-command"
+      ],
+      "command": "set-mark-command",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_keys": [
+        "C-@"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/open-line/mx",
+      "path_id": "r1:open-line:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "open-line",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "a\nbc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/set-mark-command/mx",
+      "path_id": "r1:set-mark-command:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "set-mark-command"
+      ],
+      "command": "set-mark-command",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/goto-line/mx",
+      "path_id": "r1:goto-line:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "entry_mode": "mx",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Moved",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one\ntwo\nthree"
+        }
+      ],
+      "followup_input": "2"
+    },
+    {
+      "name": "command-path/buffer/r1/narrow-to-region/key",
+      "path_id": "r1:narrow-to-region:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "set-mark-command",
+        "narrow-to-region"
+      ],
+      "command": "narrow-to-region",
+      "entry_mode": "key",
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "target"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "n",
+        "n"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f",
+          "repeat": 7
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-f",
+          "repeat": 6
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/narrow-to-region/mx",
+      "path_id": "r1:narrow-to-region:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "set-mark-command",
+        "execute-extended-command",
+        "narrow-to-region"
+      ],
+      "command": "narrow-to-region",
+      "entry_mode": "mx",
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "target"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f",
+          "repeat": 7
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-f",
+          "repeat": 6
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/newline/mx",
+      "path_id": "r1:newline:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "\nabc\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        },
+        {
+          "region": "body",
+          "text": "abc",
+          "index": 1
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/redo/key",
+      "path_id": "r1:redo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22_%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "delete-char",
+        "undo",
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "entry_mode": "key",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "entry_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-d"
+        },
+        {
+          "key": "C-_"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/redo/mx",
+      "path_id": "r1:redo:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "delete-char",
+        "undo",
+        "execute-extended-command",
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "bc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-d"
+        },
+        {
+          "key": "C-_"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
       "name": "command-path/buffer/r1/backward-char/key",
       "path_id": "r1:backward-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22b%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
       "lane": "W3-4",
