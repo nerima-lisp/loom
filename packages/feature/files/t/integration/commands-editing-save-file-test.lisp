@@ -409,12 +409,13 @@
                     :to-be missing)
             (expect (probe-file missing-path) :to-be nil)
             (loom/feature/files:save-buffer)
-            (expect (minibuffer-prompt-string minibuffer)
+            (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+            (expect (host-kit:read-file-string missing-path)
                     :to-equal
-                    (format nil "File changed on disk. Overwrite? (y/n): ~A"
-                            missing-path))
-            (%confirm-minibuffer minibuffer "n")
-            (expect (probe-file missing-path) :to-be nil))))))
+                    "recoverable")
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal
+                    (format nil "Wrote ~A" missing-path)))))))
 
   (it
     "reverts only after reading the file and confirming modified contents"

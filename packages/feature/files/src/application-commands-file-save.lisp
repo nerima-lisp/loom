@@ -239,8 +239,7 @@ buffer. Undo history is not transferred."
                  (funcall continuation))
                 (t (%prompt-buffer-switch buffer current continuation)))))
            ((string-equal answer "k")
-            (when snapshot
-              (%remember-file-snapshot buffer snapshot))
+            (%remember-file-snapshot buffer snapshot)
             (funcall continuation))
            ((string-equal answer "c")
             (minibuffer-message minibuffer "Switch cancelled"))
