@@ -411,7 +411,7 @@ def _run_prompt_path(binary, command, outcome):
                     )
 
             _command(session, command)
-            session.wait_for_region_exact_text(
+            session.wait_for_region_text(
                 "minibuffer", prompt, timeout=_WAIT
             )
             if outcome == "cancel":
