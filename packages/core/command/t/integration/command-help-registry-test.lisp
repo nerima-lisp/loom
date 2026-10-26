@@ -87,8 +87,10 @@
              (help-specs
                (remove-if-not
                 (lambda (spec)
-                  (and spec (loom/core/command::%command-spec-help spec)))
-                specs))
+                  (and
+                   (member (loom/core/command:command-spec-id spec) ids :test #'equal)
+                   (loom/core/command::%command-spec-help spec)))
+                (loom/core/command:command-specs)))
              (expected
                (format nil
                        "Help: ~{~A~^  ~}"
