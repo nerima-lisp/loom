@@ -89,7 +89,8 @@
                                                         (namestring dir)))))
           (it "opens startup files below missing directories as empty registered buffers"
               (host-kit:with-temporary-directory (directory)
-                (let* ((first-path (merge-pathnames "missing/deep/first.txt" directory))
+                (let* ((first-path
+                         (merge-pathnames "missing/deep/first.txt" directory))
                        (second-path (merge-pathnames "second.txt" directory))
                        (*editor-state* nil))
                   (with-replaced-function
@@ -101,11 +102,15 @@
                     (list (namestring second-path))))
                   (let* ((state *editor-state*)
                          (session (editor-state-session state))
-                         (buffers (loom/feature/buffers:registered-buffers session))
+                         (buffers
+                          (loom/feature/buffers:registered-buffers session))
                          (file-tree-root
                           (first
                            (loom/feature/file-tree:file-tree-prefetch-paths
-                            (editor-state-file-tree state)))))
+                            (editor-state-file-tree state))))
+                         (expected-file-tree-root (probe-file directory))
+                         (root-exists-p
+                          (host-kit:directory-exists-p file-tree-root)))
                     (expect (length buffers) :to-equal 2)
                     (expect (mapcar (function loom/core/buffer:buffer-text) buffers)
                             :to-equal
@@ -125,8 +130,15 @@
                              (host-kit:pathname-directory-pathname first-path))
                             :to-be
                             nil)
-                    (expect (host-kit:directory-exists-p file-tree-root) :to-be t)
-                    (expect file-tree-root :to-equal (probe-file directory))))))
+                    (unless (equal file-tree-root expected-file-tree-root)
+                      (error "Startup file-tree root ~S differs from the nearest existing directory ~S"
+                             file-tree-root
+                             expected-file-tree-root))
+                    (unless root-exists-p
+                      (error "Startup file-tree root ~S is not an existing directory"
+                             file-tree-root))
+                    (expect root-exists-p :to-be t)
+                    (expect file-tree-root :to-equal expected-file-tree-root)))))
           (it
            "saves a missing startup file directly without an external-change prompt"
            (host-kit:with-temporary-directory (directory)
