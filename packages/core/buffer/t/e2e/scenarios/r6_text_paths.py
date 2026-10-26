@@ -65,12 +65,23 @@ def _prepare_session(session, name, dimension):
     session.wait_for_region_text("body", dimension["prefix"][:1], index=0)
 
     if name == "wrap":
-        session.wait_for_region_text("mode-line", "Truncate")
-        session.extended_command("toggle-truncate-lines")
-        session.wait_for_region_text("minibuffer", "Wrap long lines")
-        session.wait_for_region_text("body", dimension["prefix"][:4], index=0)
+        session.wait_for_region_text("body", dimension["suffix"], index=1)
     elif name == "truncate":
-        session.wait_for_region_text("mode-line", "Truncate")
+        session.extended_command("toggle-truncate-lines")
+        session.wait_for_region_text("minibuffer", "Truncate long lines")
+        width = session.columns - session.layout.body_x
+        visible = (
+            dimension["prefix"] + dimension["glyph"] + dimension["suffix"]
+        )[:width]
+        session.wait_for_region_text("body", visible, index=0)
+        session.assert_screen_text(
+            visible, match="exact", region="body", index=0
+        )
+        session.assert_screen_text(
+            " " * width, match="exact", region="body", index=1
+        )
+        _assert_cursor(session, (0, 0), "cursor before truncation operation")
+
 
 def _at_glyph(session, dimension):
     session.wait_for_region_cursor("body", 0, index=0)
@@ -216,7 +227,7 @@ def _run_text_operation_in_session(session, path, name, operation, dimension, or
 
 def _register_text_scenario(name, operation):
     commands = list(_OPERATION_COMMANDS[operation])
-    if name == "wrap":
+    if name == "truncate":
         commands.extend(["execute-extended-command", "toggle-truncate-lines"])
     if name in {"wrap", "truncate"} and operation != "move":
         commands.append("move-beginning-of-line")
@@ -235,7 +246,7 @@ for _name in _DIMENSIONS:
 
 @scenario(
     "r6/resize",
-    commands=["execute-extended-command", "toggle-truncate-lines", "forward-char"],
+    commands=["forward-char"],
 )
 def r6_resize(binary):
     line = "a" * 30
@@ -243,9 +254,7 @@ def r6_resize(binary):
         path = _write_buffer(directory, line + "\n")
         with Session(binary, [path], columns=40, rows=12) as session:
             session.wait_ready()
-            session.wait_for_region_text("mode-line", "Truncate")
-            session.extended_command("toggle-truncate-lines")
-            session.wait_for_region_text("minibuffer", "Wrap long lines")
+            session.wait_for_region_text("body", line, index=0)
             session.assert_screen_text(
                 line, match="exact", region="body", index=0, strip_right=True
             )
