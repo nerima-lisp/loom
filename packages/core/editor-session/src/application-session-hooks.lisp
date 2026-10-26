@@ -2,7 +2,7 @@
 
 (defparameter +session-hook-kinds+
   (quote
-   (:tick :key-input
+   (:tick :resize :key-input
           :input-event
           :render
           :terminal-modes

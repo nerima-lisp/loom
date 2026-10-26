@@ -29,4 +29,5 @@
        (:file "editor-state-test")
        (:file "editor-session-api-test")
        (:file "frame-snapshot-test")
-       (:file "session-hook-test")))))))
+       (:file "session-hook-test")
+       (:file "session-hook-resize-test")))))))
