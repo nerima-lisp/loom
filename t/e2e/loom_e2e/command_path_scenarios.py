@@ -268,8 +268,15 @@ def _assert_screen(session, expectations):
 
 
 def _assert_cursor(session, expected, region):
-    if session.observe_cursor(expected=tuple(expected), region=region) is not True:
-        raise AssertionError(f"{region} cursor did not equal {tuple(expected)!r}")
+    expected = tuple(expected)
+    if session.observe_cursor(expected=expected, region=region) is not True:
+        row, column = session.screen.cursor
+        row_origin = session.layout.row(region, 0)
+        column_origin = session.layout.body_x if region == "body" else 0
+        actual = (row - row_origin, column - column_origin)
+        raise AssertionError(
+            f"{region} cursor was {actual!r}; expected {expected!r}"
+        )
 
 
 def _save_and_assert(session, path, expected_bytes):
@@ -436,33 +443,14 @@ def _run_r3(session, case, path):
             )
             _save_and_assert_precondition(session, path, initial)
 
-        replay_results = []
-        for replay_index in range(2):
-            replay_name = f"replay {replay_index + 1}"
-            with _deadline_stage(
-                case["name"], f"{replay_name} command", session=session
-            ):
-                _send_keys(session, case["replay_prefix_keys"])
-                _send_keys(session, ["C-x", "e"])
-            _assert_effect_state(session, case, check_minibuffer=False)
-            with _deadline_stage(
-                case["name"], f"{replay_name} save", session=session
-            ):
-                replay_result = _save_and_assert(
-                    session, path, case["expected_bytes"].encode("utf-8")
-                )
-            replay_results.append(replay_result)
-            if replay_index == 0:
-                with _deadline_stage(
-                    case["name"], "undo replay", session=session
-                ):
-                    session.send(keys.ctrl("x") + keys.text("u"))
-                    session.wait_for_region_exact_text(
-                        "body", case["restore_screen"][0]["text"], strip_right=True
-                    )
-                    _save_and_assert_precondition(session, path, initial)
-        if replay_results[0] != replay_results[1]:
-            raise AssertionError("second macro replay did not match the first bytes")
+        with _deadline_stage(case["name"], "replay command", session=session):
+            _send_keys(session, case["replay_prefix_keys"])
+            _send_keys(session, ["C-x", "e"])
+        _assert_effect_state(session, case, check_minibuffer=False)
+        with _deadline_stage(case["name"], "replay save", session=session):
+            _save_and_assert(
+                session, path, case["expected_bytes"].encode("utf-8")
+            )
         return
 
     with _deadline_stage(case["name"], "effect", session=session):

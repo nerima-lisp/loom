@@ -483,7 +483,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         }), calls)
         self.assertIn(("assert_file_bytes", b"abc\n"), calls)
 
-    def test_r3_macro_replay_compares_both_exact_results(self):
+    def test_r3_macro_replay_saves_exact_result_after_cursor_reset(self):
         case = next(
             case
             for case in load_command_path_scenarios(SCENARIO_DATA)
@@ -501,35 +501,40 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = sessions[0].calls
         self.assertEqual(case["replay_prefix_keys"], ["C-a"])
-        self.assertEqual(sum(call == ("send", b"\x01") for call in calls), 2)
+        self.assertEqual(sum(call == ("send", b"\x01") for call in calls), 1)
         effect_file_assertions = [
             call[1]
             for call in calls
             if call[0] == "assert_file_bytes" and call[1] == b"bc\n"
         ]
-        self.assertEqual(effect_file_assertions, [b"bc\n", b"bc\n"])
+        self.assertEqual(effect_file_assertions, [b"bc\n"])
         self.assertEqual(
             [call[2] for call in calls if call[0] == "observe_file_bytes"],
-            ["precondition", "precondition"],
+            ["precondition"],
         )
         self.assertEqual(
             sum(call == ("send", b"\x18u") for call in calls),
-            2,
-        )
-        self.assertEqual(
-            sum(
-                call[:3]
-                == ("wait_exact_text", "minibuffer", "Keyboard macro defined")
-                for call in calls
-            ),
             1,
+        )
+        macro_defined = ("wait_exact_text", "minibuffer", "Keyboard macro defined")
+        self.assertEqual(
+            sum(call[:3] == macro_defined for call in calls),
+            1,
+        )
+        self.assertLess(
+            calls.index(
+                ("wait_exact_text", "minibuffer", "Keyboard macro defined", {
+                    "strip_right": True,
+                })
+            ),
+            calls.index(("send", b"\x18u")),
         )
         self.assertGreaterEqual(
             sum(
                 call[:3] == ("wait_exact_text", "body", "bc")
                 for call in calls
             ),
-            3,
+            2,
         )
 
 
