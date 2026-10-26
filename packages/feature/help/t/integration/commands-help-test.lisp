@@ -25,7 +25,7 @@
       (let ((keymap (make-keymap)))
         (loom/core/command:install-default-keybindings keymap)
         (expect (keymap-lookup keymap
-                               (list (cons (list :control) #\\h)))
+                               (list (cons (list :control) #\h)))
                 :to-equal
                 :prefix)
         (expect (keymap-lookup keymap (list (cons nil :f1)))
@@ -34,17 +34,17 @@
         (dolist
             (binding
              (list
-              (list (list (cons (list :control) #\\h)
-                          (cons nil #\\k))
+              (list (list (cons (list :control) #\h)
+                          (cons nil #\k))
                     "describe-key")
-              (list (list (cons (list :control) #\\h)
-                          (cons nil #\\x))
+              (list (list (cons (list :control) #\h)
+                          (cons nil #\x))
                     "describe-command")
-              (list (list (cons (list :control) #\\h)
-                          (cons nil #\\b))
+              (list (list (cons (list :control) #\h)
+                          (cons nil #\b))
                     "describe-bindings")
-              (list (list (cons (list :control) #\\h)
-                          (cons nil #\\m))
+              (list (list (cons (list :control) #\h)
+                          (cons nil #\m))
                     "describe-mode")))
           (expect (keymap-lookup keymap (first binding))
                   :to-equal
