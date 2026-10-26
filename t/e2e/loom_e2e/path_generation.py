@@ -288,7 +288,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:mode-assignment",
             lisp_owner,
-            ["find-file", "save-buffer"],
+            ["find-file"],
             "path extension",
             ".asd and .el files opened",
             ".asd selects Common Lisp mode and .el selects Emacs Lisp mode",
@@ -351,7 +351,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:comment-cl",
             lisp_owner,
-            ["comment-line", "save-buffer"],
+            ["comment-line"],
             "key:M-;",
             "Common Lisp code line or active region",
             "M-; toggles Lisp line comments for the current line or region",
@@ -360,7 +360,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:comment-elisp",
             lisp_owner,
-            ["comment-line", "save-buffer"],
+            ["comment-line"],
             "key:M-;",
             "Emacs Lisp code line or active region",
             "M-; toggles Lisp line comments for the current line or region",
@@ -369,7 +369,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:pair-completion-cl",
             lisp_owner,
-            ["save-buffer"],
+            ["self-insert-command"],
             "keys: registered Lisp delimiters",
             "Common Lisp mode at an opening delimiter or existing closer",
             "opening delimiters insert their pair and existing closers are skipped",
@@ -378,7 +378,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:pair-completion-elisp",
             lisp_owner,
-            ["save-buffer"],
+            ["self-insert-command"],
             "keys: registered Lisp delimiters",
             "Emacs Lisp mode at an opening delimiter or existing closer",
             "opening delimiters insert their pair and existing closers are skipped",
@@ -387,7 +387,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:close-skip-cl",
             lisp_owner,
-            ["self-insert-command", "save-buffer"],
+            ["self-insert-command"],
             "key:)",
             "Common Lisp point is before an existing closing parenthesis",
             "typing ) skips the existing closer without inserting another one",
@@ -396,7 +396,7 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:close-skip-elisp",
             lisp_owner,
-            ["self-insert-command", "save-buffer"],
+            ["self-insert-command"],
             "key:)",
             "Emacs Lisp point is before an existing closing parenthesis",
             "typing ) skips the existing closer without inserting another one",
@@ -409,7 +409,7 @@ def _language_paths():
         _language_path(
             "r1:lang-nix:mode-assignment",
             nix_owner,
-            ["find-file", "save-buffer"],
+            ["find-file"],
             "path extension",
             ".nix file opened",
             ".nix selects Nix mode",
@@ -418,7 +418,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:indentation-ret",
             nix_owner,
-            ["newline", "save-buffer"],
+            ["newline"],
             "key: RET",
             "Nix buffer with a brace opener",
             "RET inserts the next line with two-space indentation",
@@ -427,7 +427,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:indentation-tab",
             nix_owner,
-            ["indent-for-tab-command", "save-buffer"],
+            ["indent-for-tab-command"],
             "key: TAB",
             "Nix attrsets with } inside strings and comments, plus a with assignment",
             "TAB indents a with body from its assignment and ignores later binding semicolons",
@@ -436,7 +436,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:indentation-control-meta-backslash",
             nix_owner,
-            ["set-mark-command", "indent-for-tab-command", "save-buffer"],
+            ["indent-for-tab-command"],
             "key: C-M-backslash",
             "Nix region with let/in, list, parenthesis, and with expressions",
             "C-M-backslash applies Nix indentation and aligns matching clauses",
@@ -445,7 +445,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:comment-dwim",
             nix_owner,
-            ["set-mark-command", "save-buffer"],
+            ["comment-line"],
             "key: M-;",
             "Nix code line and a whole-line comment",
             "M-; appends an inline comment marker and toggles the selected comment off",
@@ -454,7 +454,7 @@ def _language_paths():
         _language_path(
             "w3-7c:lang-nix:pair-completion",
             nix_owner,
-            ["save-buffer"],
+            ["self-insert-command"],
             "keys: { [ ( then ) ] }",
             "Nix mode with registered {}, [], and () pairs",
             "openers insert closers and existing closers are skipped",
@@ -467,7 +467,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:extension-modes:find-file",
             web_owner,
-            ["find-file", "save-buffer"],
+            ["find-file"],
             "path extension",
             (
                 "files with .ts/.mts/.cts/.tsx, .js/.mjs/.cjs/.jsx, .json, "
@@ -483,7 +483,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:indentation-ret",
             web_owner,
-            ["newline", "save-buffer"],
+            ["newline"],
             "key:RET",
             "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML buffer after an opener",
             "RET inserts a newline at the indentation required by the active language mode",
@@ -492,7 +492,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:syntax-indentation:tab",
             web_owner,
-            ["find-file", "indent-for-tab-command", "save-buffer"],
+            ["indent-for-tab-command"],
             "key:tab",
             "TypeScript, JavaScript, JSX, or JSON file opened",
             "TAB indents nested brackets by mode width and ignores string and comment brackets",
@@ -501,7 +501,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:default-indentation:tab",
             web_owner,
-            ["find-file", "indent-for-tab-command", "save-buffer"],
+            ["indent-for-tab-command"],
             "key:tab",
             "HTML, CSS, or YAML file opened",
             "TAB aligns to the previous line using the active language mode",
@@ -510,7 +510,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:indentation-region",
             web_owner,
-            ["find-file", "set-mark-command", "indent-for-tab-command", "save-buffer"],
+            ["indent-for-tab-command"],
             "key:C-M-backslash",
             "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML buffer with an active region",
             "C-M-backslash indents the selected region using the active language mode",
@@ -519,7 +519,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:comments:meta-semicolon",
             web_owner,
-            ["find-file", "save-buffer"],
+            ["comment-line"],
             "key:M-;",
             "TypeScript, JavaScript, JSX, HTML, CSS, or YAML line or active region",
             "M-; toggles the active language comment syntax for the line or region",
@@ -528,7 +528,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:pair-completion:delimiter-pairs",
             web_owner,
-            ["find-file", "save-buffer"],
+            ["self-insert-command"],
             "key:open-delimiter",
             "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML mode at an opening delimiter",
             "inserts registered delimiter pairs and skips existing closers when enabled",
@@ -544,7 +544,7 @@ def _language_paths():
                 _language_path(
                     f"r1:lang-markup:{language}:indent-ret",
                     markup_owner,
-                    ["newline", "save-buffer"],
+                    ["newline"],
                     "key: RET",
                     f"{label} list item with a continuation line",
                     "RET continues the list item with indentation from the list syntax tree",
@@ -553,7 +553,7 @@ def _language_paths():
                 _language_path(
                     f"r1:lang-markup:{language}:indent-tab",
                     markup_owner,
-                    ["indent-for-tab-command", "save-buffer"],
+                    ["indent-for-tab-command"],
                     "key: TAB",
                     f"{label} list item with a nested continuation line",
                     "TAB reindents the current line from the list syntax tree",
@@ -562,7 +562,7 @@ def _language_paths():
                 _language_path(
                     f"r1:lang-markup:{language}:indent-region",
                     markup_owner,
-                    ["set-mark-command", "indent-for-tab-command", "save-buffer"],
+                    ["indent-for-tab-command"],
                     "key: C-M-backslash",
                     f"{label} list region with nested items",
                     "C-M-backslash reindents the selected list region from the syntax tree",

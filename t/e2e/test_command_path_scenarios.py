@@ -512,7 +512,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             for call in calls
             if call[0] == "assert_file_bytes" and call[1] == b"bc\n"
         ]
-        self.assertEqual(effect_file_assertions, [b"bc\n"])
+        self.assertEqual(effect_file_assertions, [b"bc\n", b"bc\n"])
         self.assertEqual(
             [call[2] for call in calls if call[0] == "observe_file_bytes"],
             ["precondition"],

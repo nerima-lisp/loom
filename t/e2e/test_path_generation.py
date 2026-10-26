@@ -542,6 +542,17 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                 with self.subTest(language=language, behavior=behavior):
                     self.assertEqual(paths_by_id[path_id]["lane"], expected_lanes[language])
                     self.assertEqual(paths_by_id[path_id]["rule"], "r1")
+                    expected_commands = {
+                        "mode": ["find-file"],
+                        "ret": ["newline"],
+                        "tab": ["indent-for-tab-command"],
+                        "region": ["indent-for-tab-command"],
+                        "comment": ["comment-line"],
+                        "pair": ["self-insert-command"],
+                        "close-skip": ["self-insert-command"],
+                    }.get(behavior)
+                    if expected_commands is not None:
+                        self.assertEqual(paths_by_id[path_id]["commands"], expected_commands)
 
         # FR-G01 and FR-G04 exclude Markdown and Org in requirements-modern-editor.md:498.
         # JSON M-; routes are launch-scope exclusions; see

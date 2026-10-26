@@ -139,6 +139,9 @@ def _read_trace(result_path, result, artifacts_dir):
                     return None, f"trace line {line_number} is not a JSON object"
                 command = record.get("command")
                 if isinstance(command, str) and command:
+                    # RET routes use "newline"; traces record its bound command.
+                    if command == "newline-and-indent":
+                        command = "newline"
                     route = record.get("route")
                     if route is not None and not isinstance(route, str):
                         return None, f"trace line {line_number} has an invalid route"
@@ -177,9 +180,34 @@ def _entry_trace_identity(entry):
         return None
     route_entry = entry.strip().split(";prompt:", 1)[0]
     prefix, separator, payload = route_entry.partition(":")
-    if prefix.lower() == "key" and separator and payload:
-        return route_entry
-    return None
+    if prefix.lower() != "key" or not separator or not payload:
+        return None
+
+    # Language route labels omit keymap, which varies across modes.
+    key_sequences = {
+        "ret": [{"key": "enter", "modifiers": []}],
+        "tab": [{"key": "tab", "modifiers": []}],
+        "c-m-backslash": [
+            {"key": "\\", "modifiers": ["alt", "control"]}
+        ],
+        "m-;": [{"key": ";", "modifiers": ["alt"]}],
+    }
+    try:
+        encoded_entry = json.loads(payload)
+    except json.JSONDecodeError:
+        sequence = key_sequences.get(payload.strip().casefold())
+        if sequence is None:
+            return route_entry
+    else:
+        sequence = (
+            encoded_entry.get("sequence")
+            if isinstance(encoded_entry, Mapping)
+            else None
+        )
+        if not isinstance(sequence, list):
+            return route_entry
+
+    return "key:" + json.dumps(sequence, sort_keys=True, separators=(",", ":"))
 
 
 def _observe_types(path):
@@ -541,7 +569,7 @@ def _classify_path(
         for command, route, _line_number, entry in trace_commands
         if command in target_commands
         and (expected_route is None or route == expected_route)
-        and (expected_entry is None or entry == expected_entry)
+        and (expected_entry is None or _entry_trace_identity(entry) == expected_entry)
     }
     if expected_entry is not None and target_commands <= route_commands:
         if not target_commands <= exact_commands:
@@ -549,7 +577,7 @@ def _classify_path(
             item["reason"] = (
                 "target command trace rows do not identify the generated key sequence"
             )
-            item["missing_entry"] = expected_entry
+            item["missing_entry"] = generated_entry
             item["missing_commands"] = []
             return item
     if not target_commands <= exact_commands:
@@ -565,7 +593,7 @@ def _classify_path(
         if command in target_commands
         and line_number <= observation["trace_lines"]
         and (expected_route is None or route == expected_route)
-        and (expected_entry is None or entry == expected_entry)
+        and (expected_entry is None or _entry_trace_identity(entry) == expected_entry)
     }
     if not target_commands <= prior_commands:
         item["status"] = "no-trace"
@@ -584,7 +612,10 @@ def _classify_path(
             if command[2] <= observation["trace_lines"]
             and command[0] in target_commands
             and (expected_route is None or command[1] == expected_route)
-            and (expected_entry is None or command[3] == expected_entry)
+            and (
+                expected_entry is None
+                or _entry_trace_identity(command[3]) == expected_entry
+            )
         ]
         if not visible_targets:
             continue

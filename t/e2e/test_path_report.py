@@ -139,6 +139,17 @@ class PathReportTests(unittest.TestCase):
         self.assertEqual(report["paths"][0]["status"], "no-trace")
         self.assertEqual(report["paths"][0]["missing_commands"], ["save-buffer"])
 
+    def test_newline_path_matches_newline_and_indent_trace_command(self):
+        self.required["commands"] = ["newline"]
+        self.ledger["commands"] = ["newline"]
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("newline-and-indent", "save-buffer"),
+            trace_route="mx",
+        )
+        report = self._report(ledger=self.ledger)
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
     def test_trace_from_the_wrong_entry_route_does_not_satisfy_path(self):
         self._write_scenario(
             [self._matching_observation()], trace_route="key"
@@ -308,6 +319,50 @@ class PathReportTests(unittest.TestCase):
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_language_key_labels_match_serialized_sequences_without_mode(self):
+        cases = (
+            (
+                "key: RET",
+                'key:{"keymap":"markdown","sequence":[{"key":"enter","modifiers":[]}]}',
+            ),
+            (
+                "key:RET",
+                'key:{"keymap":"org","sequence":[{"key":"enter","modifiers":[]}]}',
+            ),
+            (
+                "key: TAB",
+                'key:{"keymap":"markdown","sequence":[{"key":"tab","modifiers":[]}]}',
+            ),
+            (
+                "key: C-M-backslash",
+                'key:{"keymap":"org","sequence":[{"key":"\\\\","modifiers":["alt","control"]}]}',
+            ),
+            (
+                "key: M-;",
+                'key:{"keymap":"markdown","sequence":[{"key":";","modifiers":["alt"]}]}',
+            ),
+        )
+        for entry, trace_entry in cases:
+            with self.subTest(entry=entry):
+                self.required["commands"] = {
+                    "key: RET": ["newline"],
+                    "key:RET": ["newline"],
+                    "key: TAB": ["indent-for-tab-command"],
+                    "key: C-M-backslash": ["indent-for-tab-command"],
+                    "key: M-;": ["comment-line"],
+                }[entry]
+                self.ledger["commands"] = self.required["commands"]
+                self.required["entry"] = entry
+                self.ledger["entry"] = entry
+                self._write_scenario(
+                    [self._matching_observation()],
+                    trace_commands=self.required["commands"],
+                    trace_route="key",
+                    trace_entry=trace_entry,
+                )
+                report = self._report(ledger=self.ledger)
+                self.assertEqual(report["paths"][0]["status"], "pass")
 
     def test_current_trace_shape_without_entry_cannot_verify_key_sequence(self):
         key_entry = (
