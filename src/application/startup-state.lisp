@@ -47,7 +47,9 @@ the scratch buffer and is itself the root."
           (make-editor-session
            '(:core/window-tree :feature/buffers
                                :feature/workspace
-                               :feature/keyboard-macro)
+                               :feature/keyboard-macro
+                               :feature/search
+                               :feature/project)
            :initial-slices
            (list (cons :core/window-tree window-tree)))))
     (loom/feature/buffers:register-buffer session initial-buffer)

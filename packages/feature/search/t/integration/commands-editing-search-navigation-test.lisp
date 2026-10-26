@@ -150,3 +150,104 @@
       (loom/feature/search::search-forward)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "four")
       (expect buffer :to-have-point (cons 3 0)))))
+(describe
+  "occur"
+  ;; GNU Emacs Manual, "Other Repeating Commands", describes occur as listing matching lines.
+  ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Other-Repeating.html
+  (it "returns each matching line once with zero-based match coordinates"
+    (multiple-value-bind (matches cancelled-p)
+        (loom/feature/search::%occur-scan-text
+         (format nil "zero alpha~%beta alpha~%last") "alpha" 0 0 t
+         (lambda () nil))
+      (expect matches :to-equal
+              (list (list 0 5 "zero alpha")
+                    (list 1 5 "beta alpha")))
+      (expect cancelled-p :to-be nil)))
+  (it "stops scanning when its cancellation predicate becomes true"
+    (multiple-value-bind (matches cancelled-p)
+        (loom/feature/search::%occur-scan-text
+         (format nil "alpha~%beta") "alpha" 0 0 t
+         (lambda () t))
+      (expect matches :to-be nil)
+      (expect cancelled-p :to-be-truthy)))
+  (it "handles C-g through the active occur session hook"
+    (let* ((session
+             (loom/core/editor-session:make-editor-session
+              (list :feature/search)))
+           (state
+             (loom/core/editor-session:editor-session-slice
+              session :feature/search))
+           (cancelled-p nil)
+           (token
+             (loom/core/editor-session:register-background-work
+              session :feature/search
+              (lambda (session token)
+                (declare (ignore session token))
+                (values nil t))
+              (lambda (session token)
+                (declare (ignore session token))
+                (setf cancelled-p t))))
+           (event
+             (cl-tty-kit:make-key-event
+              :type :character :code #\g :modifiers (list :control))))
+      (setf (loom/feature/search::search-result-state-active-occur state)
+            (loom/feature/search::%make-occur-operation :token token))
+      (expect
+       (loom/core/editor-session:run-session-hooks
+        :key-input session event :key)
+       :to-equal :handled)
+      (expect cancelled-p :to-be-truthy)))
+  (it "discards queued matches when C-g is pending before the UI poller"
+    (let* ((session
+             (loom/core/editor-session:make-editor-session
+              (list :feature/buffers :feature/search)))
+           (state
+             (loom/core/editor-session:editor-session-slice
+              session :feature/search))
+           (buffer (make-buffer :name "*scratch*" :initial-content "alpha"))
+           (result-channel (cl-concurrent-kit:make-channel :buffer-size 1))
+           (cancellation-channel
+             (cl-concurrent-kit:make-channel :buffer-size 1))
+           (cancellation-counter (cl-concurrent-kit:make-atomic-counter))
+           (executor
+             (cl-concurrent-kit:make-executor
+              :size 1 :name "occur race test" :queue-capacity 1))
+           (token
+             (loom/core/editor-session:register-background-work
+              session :feature/search
+              (lambda (session token)
+                (declare (ignore session token))
+                (values nil nil))
+              (lambda (session token)
+                (declare (ignore session token))
+                (cl-concurrent-kit:atomic-counter-incf cancellation-counter)
+                (cl-concurrent-kit:send cancellation-channel :cancel))))
+           (operation
+             (loom/feature/search::%make-occur-operation
+              :token token
+              :executor executor
+              :result-channel result-channel
+              :cancellation-channel cancellation-channel
+              :cancellation-counter cancellation-counter
+              :buffer buffer
+              :result-name "*Occur*"))
+           (event
+             (cl-tty-kit:make-key-event
+              :type :character :code #\g :modifiers (list :control))))
+      (setf (loom/feature/search::search-result-state-active-occur state)
+            operation)
+      (cl-concurrent-kit:send
+       result-channel (list :matches (list (list 0 0 "alpha"))))
+      (expect
+       (loom/core/editor-session:run-session-hooks
+        :key-input session event :key)
+       :to-equal :handled)
+      (multiple-value-bind (dirty-p done-p)
+          (loom/feature/search::%poll-occur-operation session operation)
+        (expect dirty-p :to-be nil)
+        (expect done-p :to-be-truthy))
+      (expect (loom/feature/search::search-result-state-active-occur state)
+              :to-be nil)
+      (expect (loom/feature/buffers:find-buffer-by-name
+               session "*Occur*")
+              :to-be nil))))

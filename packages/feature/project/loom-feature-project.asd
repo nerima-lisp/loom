@@ -6,7 +6,9 @@
                "loom-core-command"
                "loom-feature-buffers"
                "loom-feature-files"
-               "loom-feature-file-tree")
+               "loom-feature-file-tree"
+               "loom-feature-search"
+               "cl-concurrent-kit")
   :serial t
   :components
   ((:module "src"
@@ -15,6 +17,7 @@
     ((:file "package")
      (:file "domain-project")
      (:file "infrastructure-project-filesystem")
+     (:file "application-project-search")
      (:file "application-commands-project")
      (:file "command-specs-project")))))
 
@@ -26,5 +29,6 @@
   :serial t
   :components
   ((:file "t/unit/project-test")
+   (:file "t/integration/project-test-support")
    (:file "t/integration/project-test")
    (:file "t/integration/project-missing-root-test")))

@@ -1510,7 +1510,7 @@
               (lambda (record)
                 (search "/command-specs-" (boundary-record-path record)))
               records)))
-      (expect (length spec-records) :to-equal 37)
+      (expect (length spec-records) :to-equal 38)
       (expect (every
                (lambda (record)
                  (uiop:string-prefix-p "packages/"

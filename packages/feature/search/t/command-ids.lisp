@@ -7,6 +7,7 @@
   "search-backward"
   "search-forward"
   "search-next-error"
+  "search-occur"
   "search-previous-error"
   "search-query-replace"
   "search-query-replace-regexp"

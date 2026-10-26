@@ -42,10 +42,12 @@
    #:isearch-forward-regexp
    #:isearch-backward
    #:isearch-backward-regexp
+   #:occur
    #:result-item
    #:result-item-p
    #:make-result-item
    #:result-item-file-path
+   #:result-item-buffer
    #:result-item-line
    #:result-item-column
    #:result-item-display-text

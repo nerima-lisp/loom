@@ -119,7 +119,23 @@
               (multiple-value-bind (file root)
                   (loom::%startup-file-and-root nil)
                 (expect file :to-be nil)
-                (expect root :to-equal "."))))
+                (expect root :to-equal ".")))
+          (it
+           "includes search and project states in the normal startup session"
+           (host-kit:with-temporary-directory (directory)
+             (let* ((state
+                      (loom::%make-startup-editor-state
+                       nil (namestring directory) 80 24))
+                    (session (editor-state-session state))
+                    (slice-names
+                      (loom/core/editor-session:editor-session-slice-names
+                       session)))
+               (expect (not (null (member :feature/search slice-names)))
+                       :to-be
+                       t)
+               (expect (not (null (member :feature/project slice-names)))
+                       :to-be
+                       t)))))
 
 (describe "%call-with-started-editor-state"
           (it

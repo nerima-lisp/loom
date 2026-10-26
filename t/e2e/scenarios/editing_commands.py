@@ -355,6 +355,37 @@ def query_replace_regexp(binary):
             _close(session, "editing/query-replace-regexp")
 
 
+@scenario(
+    "editing/occur",
+    commands=["execute-extended-command", "search-occur", "search-result-visit"],
+)
+def occur(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+        path = os.path.join(directory, "occur.txt")
+        _write(path, b"first needle\nsecond needle\n")
+
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("occur")
+            print("DEBUG occur prompt", repr(session.region_text("minibuffer")), flush=True)
+            session.wait_for_region_text(
+                "minibuffer", "List lines matching regexp: "
+            )
+            session.type("needle")
+            session.key("RET")
+            print("DEBUG occur submitted", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.wait_for_region_text(
+                "minibuffer", "Found 2 matching line(s)"
+            )
+            session.wait_for_text("1:7: first needle")
+            session.wait_for_text("2:7: second needle")
+            print("DEBUG occur result", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.key("RET")
+            print("DEBUG occur visit", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.wait_for_region_cursor("body", 6, index=0)
+            _close(session, "editing/occur")
+
+
 @scenario("editing/set-mark-command", commands=["set-mark-command", "kill-region", "save-buffer"])
 def set_mark_command(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:

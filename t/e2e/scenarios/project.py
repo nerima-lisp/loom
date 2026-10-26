@@ -41,9 +41,12 @@ def project_find_file(binary):
         _assert_exit_zero("project find file", output, code)
 
 
-@scenario("project search", commands=["project-search", "previous-line"])
+@scenario(
+    "project search",
+    commands=["project-search", "search-result-visit", "search-next-error"],
+)
 def project_search(binary):
-    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
+    with tempfile.TemporaryDirectory(prefix="p-", dir="/tmp") as directory:
         source_directory = os.path.join(directory, "src")
         ignored_directory = os.path.join(directory, "target")
         os.mkdir(source_directory)
@@ -52,19 +55,26 @@ def project_search(binary):
             handle.write(b"{}\n")
         source_path = os.path.join(source_directory, "main.py")
         with open(source_path, "wb") as handle:
-            handle.write(b"needle\n")
+            handle.write(b"first needle\nsecond needle\n")
         with open(os.path.join(ignored_directory, "generated.py"), "wb") as handle:
             handle.write(b"needle\n")
 
         with Session(binary, [source_path]) as session:
             session.wait_ready()
             session.send(keys.ctrl("x") + b"ps")
+            print("DEBUG project search prompt", repr(session.region_text("minibuffer")), flush=True)
             session.wait_for_text("Project search: ")
             session.type("needle")
             session.key("RET")
-            # Rendering occurs in the same event-loop turn as RET.
+            print("DEBUG project search submitted", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_text("Matches:")
             session.wait_for_text("src/main.py:1")
+            print("DEBUG project search result", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.key("RET")
+            print("DEBUG project search visit", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.wait_for_region_cursor("body", 6, index=0)
+            session.send(keys.meta("g") + b"n")
+            session.wait_for_region_cursor("body", 7, index=1)
 
             output, code = session.quit()
         _assert_exit_zero("project search", output, code)

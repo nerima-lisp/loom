@@ -7,7 +7,8 @@
                "loom-feature-buffers"
                "loom-feature-files"
                "loom-feature-mode"
-               "cl-regex-kit")
+               "cl-regex-kit"
+               "cl-concurrent-kit")
   :serial t
   :components
   ((:file "src/package")
@@ -15,9 +16,11 @@
    (:file "src/domain-isearch")
    (:file "src/domain-result-list")
    (:file "src/application-result-list")
+   (:file "src/application-occur")
    (:file "src/application-commands-search")
    (:file "src/application-commands-isearch")
    (:file "src/command-specs-search")
+   (:file "src/command-specs-occur")
    (:file "src/command-specs-isearch")))
 
 (asdf:defsystem "loom-feature-search/test"

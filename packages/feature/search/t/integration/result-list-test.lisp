@@ -134,3 +134,46 @@
            (loom/core/command:defkeys-key-sequence :enter))
         (expect command-id :to-equal "search-result-visit")
         (expect owner :to-be result-keymap)))))
+(describe
+  "result items targeting unsaved buffers"
+  (it "keeps path-based callers compatible and visits an unsaved buffer target"
+    (let* ((source (make-buffer :name "*scratch*"
+                               :initial-content "alpha beta"))
+           (tree (make-window-tree source 80 24))
+           (session
+             (loom/core/editor-session:make-editor-session
+              (list :core/window-tree :feature/buffers :feature/search
+                    :feature/workspace :feature/keyboard-macro)
+              :initial-slices (list (cons :core/window-tree tree))))
+           (*editor-state*
+             (make-editor-state
+              :session session
+              :window-tree tree
+              :minibuffer (make-minibuffer)
+              :keymap (make-keymap)
+              :file-tree nil
+              :renderer nil
+              :kill-ring nil))
+           (loom/core/editor-session:*editor-session* session)
+           (legacy-item
+             (loom/feature/search:make-result-item
+              "source.lisp" 0 0 "legacy"))
+           (item
+             (loom/feature/search:make-result-item
+              nil 0 6 "beta" :buffer source))
+           (result-buffer
+             (loom/feature/search:publish-result-list
+              session "*Search Results*" (list item)))
+           (window
+             (loom/core/window-tree:window-tree-selected-window tree)))
+      (expect (loom/feature/search:result-item-file-path legacy-item)
+              :to-equal "source.lisp")
+      (expect (loom/feature/search:result-item-buffer legacy-item)
+              :to-be nil)
+      (expect (loom/feature/search:result-item-buffer item) :to-be source)
+      (expect (buffer-text result-buffer)
+              :to-equal "*scratch*:1:7: beta")
+      (loom/core/window-tree:window-set-buffer window result-buffer)
+      (loom/feature/search:search-result-visit)
+      (expect (loom/core/window-tree:window-buffer window) :to-be source)
+      (expect source :to-have-point (cons 0 6)))))

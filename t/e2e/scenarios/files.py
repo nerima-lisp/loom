@@ -209,6 +209,7 @@ def project_file_commands(binary):
         with Session(binary, [source_path]) as session:
             session.wait_ready()
             session.send(keys.ctrl("x") + b"pr")
+            print("DEBUG project root key", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_region_text("minibuffer", f"Project root: {root}/")
             message = session.region_text("minibuffer").rstrip()
             visible_root = message.removeprefix("Project root: ").rstrip("/\\")
@@ -225,17 +226,21 @@ def project_file_commands(binary):
             )
 
             session.send(keys.ctrl("x") + b"pf")
+            print("DEBUG project find file key", repr(session.region_text("minibuffer")), flush=True)
             session.wait_for_region_text("minibuffer", "Project file: ")
             session.type("src/other.py")
             session.key("RET")
+            print("DEBUG project file opened", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             _wait_for_body_text(session, "other")
             _assert_body_text(session, 0, "other")
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
 
             session.send(keys.ctrl("x") + b"ps")
+            print("DEBUG project search key", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_region_text("minibuffer", "Project search: ")
             session.type("needle")
             session.key("RET")
+            print("DEBUG project search submitted", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
             session.wait_for_region_text("minibuffer", "Matches:")
             session.assert_screen_text(
                 "src/main.py:1", match="contains", region="minibuffer"
@@ -243,7 +248,8 @@ def project_file_commands(binary):
             session.assert_screen_text(
                 "generated.py", match="not_contains", region="minibuffer"
             )
-            _assert_body_text(session, 0, "other")
+            print("DEBUG project search result", repr(session.region_text("minibuffer")), repr(session.region_text("body")), flush=True)
+            session.wait_for_region_text("body", "src/main.py:1:1: needle")
             session.assert_file_bytes(other_path, b"other\n")
 
             output, code = session.quit()

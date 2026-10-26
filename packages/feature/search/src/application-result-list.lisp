@@ -1,13 +1,18 @@
 (in-package #:loom/feature/search)
 (progn
-  (defun %result-item-path-text (path)
-    (typecase path
-      (pathname (namestring path))
-      (string path)))
+  (defun %result-item-path-text (item)
+    (let ((path (result-item-file-path item)))
+      (or (typecase path
+            (pathname (namestring path))
+            (string path))
+          (and (result-item-buffer item)
+               (loom/core/buffer:buffer-name
+                (result-item-buffer item)))
+          "<buffer>")))
 
   (defun %result-item-display-line (item)
     (format nil "~A:~D:~D: ~A"
-            (%result-item-path-text (result-item-file-path item))
+            (%result-item-path-text item)
             (1+ (result-item-line item))
             (1+ (result-item-column item))
             (with-output-to-string (output)
@@ -66,15 +71,19 @@
         (when window
           (let* ((path (result-item-file-path item))
                  (buffer
-                   (or (loom/feature/buffers:find-buffer-by-path session path)
-                       (loom/feature/files:visit-file path))))
+                   (or (result-item-buffer item)
+                       (and path
+                            (loom/feature/buffers:find-buffer-by-path
+                             session path))
+                       (and path
+                            (loom/feature/files:visit-file path)))))
             (when buffer
               (unless (eq (loom/core/window-tree:window-buffer window) buffer)
                 (loom/core/window-tree:window-set-buffer window buffer))
               (buffer-set-point buffer
                                 (result-item-line item)
-                                (result-item-column item)))
-            buffer))))))
+                                (result-item-column item))
+              buffer)))))))
 (progn
   (defun publish-result-list (session name items)
     "Publish ITEMS to a named result buffer owned by SESSION."

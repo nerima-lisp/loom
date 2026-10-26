@@ -7,8 +7,11 @@
   (:import-from #:loom/core/editor-session
                 #:*editor-session*
                 #:*editor-state*
+                #:editor-session-slice
                 #:editor-state-minibuffer
-                #:editor-state-window-tree)
+                #:editor-state-window-tree
+                #:register-session-hook
+                #:register-slice-state)
   (:import-from #:loom/core/minibuffer
                 #:minibuffer-message
                 #:with-prompts)

@@ -1,11 +1,21 @@
 (in-package #:loom/feature/project)
 
 (defun %project-start-path ()
-  (let ((buffer
-         (loom/core/window-tree:window-buffer
-          (loom/core/window-tree:window-tree-selected-window
-           (editor-state-window-tree *editor-state*)))))
-    (or (and buffer (buffer-path buffer)) (truename "."))))
+  (let* ((buffer
+           (loom/core/window-tree:window-buffer
+            (loom/core/window-tree:window-tree-selected-window
+             (editor-state-window-tree *editor-state*))))
+         (state
+           (and *editor-session*
+                (editor-session-slice *editor-session* :feature/project)))
+         (result-root
+           (and buffer
+                state
+                (eq buffer (project-search-state-result-buffer state))
+                (project-search-state-last-root state))))
+    (or (and buffer (buffer-path buffer))
+        result-root
+        (truename "."))))
 
 (defun %project-completion-candidates (input candidates)
   (let ((needle (string-downcase input)))
@@ -51,32 +61,12 @@
         (minibuffer-message (editor-state-minibuffer *editor-state*)
                             "No project root found"))))
 
-(defun %project-search-summary (root result)
-  (let* ((path (getf result :path))
-         (matches (getf result :matches))
-         (first-match (first matches)))
-    (format nil
-            "~A:~D"
-            (project-relative-path root path)
-            (getf first-match :line))))
-
-(defun %project-search-message (root results)
-  (if results
-      (format nil
-              "Matches: ~{~A~^, ~}"
-              (mapcar
-               (lambda (result)
-                 (%project-search-summary root result))
-               results))
-      "No matches"))
-
 (defun %project-search-with-query (root minibuffer query)
-  (let ((results (project-search-files root query)))
-    (minibuffer-message minibuffer (%project-search-message root results))
-    results))
+  (%project-search-start *editor-session* *editor-state* root minibuffer query))
 
 (defun project-search ()
   "Search every readable project file for a case-sensitive query."
+  (%project-search-supersede-active-work *editor-session*)
   (let ((root (project-find-root (%project-start-path))))
     (if root
         (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
