@@ -56,68 +56,124 @@
       (expect (keymap-lookup keymap (list :page-down))
               :to-equal "scroll-up-command")))
   (it "matches the effective global bindings in the Emacs keymap reference"
-      (load (asdf:system-relative-pathname
-             "loom-core-command" "t/emacs-keymap-reference.lisp"))
-      (let* ((reference
-              (symbol-value (find-symbol "*EMACS-KEYMAP-REFERENCE*" "LOOM/TEST")))
-             (ids (mapcar (lambda (row) (getf row :id)) reference))
-             (expected-ids
-              (list
-               "undo-control-slash" "undo-control-underscore" "undo-control-x-u"
-               "redo-control-meta-underscore" "backward-char-left" "forward-char-right"
-               "previous-line-up" "next-line-down" "beginning-of-line-home" "end-of-line-end"
-               "scroll-down-page-up" "scroll-up-page-down" "delete-char-delete"
-               "undo-legacy-control-x-control-u" "redo-legacy-control-x-control-y"
-               "recenter-control-l" "transpose-control-t" "upcase-word-meta-u"
-               "downcase-word-meta-l" "capitalize-word-meta-c" "fill-paragraph-meta-q"
-               "indent-region-control-meta-backslash" "delete-indentation-meta-caret"
-               "goto-line-meta-g-meta-g"
-               "goto-line-meta-g-plain-g" "list-buffers-control-x-control-b"
-               "save-some-buffers-control-x-s" "eval-last-sexp-control-x-control-e"
-               "eval-buffer-m-x" "file-tree-legacy-control-x-control-t" "file-tree-control-x-d"
-               "list-bookmarks-control-x-r-l" "load-session-m-x" "file-tree-next-local"
-               "file-tree-previous-local" "file-tree-open-local" "file-tree-create-file-local"
-               "file-tree-create-directory-local" "paredit-forward-slurp-local"
-               "paredit-forward-barf-local" "paredit-backward-slurp-local"
-               "paredit-backward-barf-local" "paredit-wrap-meta-open" "paredit-splice-meta-s"
-               "paredit-raise-meta-r" "suspend-frame-control-z")))
-        (expect (sort (copy-list ids) (lambda (a b) (string< a b)))
-                :to-equal
-                (sort (copy-list expected-ids) (lambda (a b) (string< a b))))
-        (let ((keymap (make-keymap)))
-          (loom/core/command:install-default-keybindings keymap)
-          (dolist (row reference)
-            (let* ((effective (getf row :effective))
-                   (status (getf row :status))
-                   (owner (getf row :owner))
-                   (target (getf row :target))
-                   (target-map (getf row :target-map))
-                   (sequence (or (getf row :target-keys)
-                                 (getf row :keys))))
-              (expect target :to-be-truthy)
-              (expect target-map :to-be-truthy)
-              (cond
-                ((equal target-map :mode-provider)
-                 (expect (equal owner :w3-7a) :to-be-truthy)
-                 (expect (equal status :implemented) :to-be-truthy)
-                 (expect (equal target "indent-for-tab-command")
+    (load (asdf:system-relative-pathname
+           "loom-core-command" "t/emacs-keymap-reference.lisp"))
+    (let* ((reference
+            (symbol-value (find-symbol "*EMACS-KEYMAP-REFERENCE*" "LOOM/TEST")))
+           (ids (mapcar (lambda (row) (getf row :id)) reference))
+           (expected-ids
+            (list
+             "undo-control-slash" "undo-control-underscore" "undo-control-x-u"
+             "redo-control-meta-underscore" "backward-char-left" "forward-char-right"
+             "previous-line-up" "next-line-down" "beginning-of-line-home" "end-of-line-end"
+             "scroll-down-page-up" "scroll-up-page-down" "delete-char-delete"
+             "undo-legacy-control-x-control-u" "redo-legacy-control-x-control-y"
+             "recenter-control-l" "transpose-control-t" "upcase-word-meta-u"
+             "downcase-word-meta-l" "capitalize-word-meta-c" "fill-paragraph-meta-q"
+             "indent-region-control-meta-backslash" "delete-indentation-meta-caret"
+             "goto-line-meta-g-meta-g"
+             "goto-line-meta-g-plain-g" "list-buffers-control-x-control-b"
+             "save-some-buffers-control-x-s" "eval-last-sexp-control-x-control-e"
+             "eval-buffer-m-x" "file-tree-legacy-control-x-control-t" "file-tree-control-x-d"
+             "list-bookmarks-control-x-r-l" "load-session-m-x" "file-tree-next-local"
+             "file-tree-previous-local" "file-tree-open-local" "file-tree-create-file-local"
+             "file-tree-create-directory-local" "paredit-forward-slurp-local"
+             "paredit-forward-barf-local" "paredit-backward-slurp-local"
+             "paredit-backward-barf-local" "paredit-wrap-meta-open" "paredit-splice-meta-s"
+             "paredit-raise-meta-r" "suspend-frame-control-z")))
+      (expect (sort (copy-list ids) (lambda (a b) (string< a b)))
+              :to-equal
+              (sort (copy-list expected-ids) (lambda (a b) (string< a b))))
+      (let ((keymap (make-keymap)))
+        (loom/core/command:install-default-keybindings keymap)
+        (dolist (row reference)
+          (let* ((effective (getf row :effective))
+                 (status (getf row :status))
+                 (owner (getf row :owner))
+                 (target (getf row :target))
+                 (target-map (getf row :target-map))
+                 (sequence (or (getf row :target-keys)
+                               (getf row :keys))))
+            (expect target :to-be-truthy)
+            (expect target-map :to-be-truthy)
+            (cond
+              ((equal target-map :mode-provider)
+               (expect (equal owner :w3-7a) :to-be-truthy)
+               (expect (equal status :implemented) :to-be-truthy)
+               (expect (equal target "indent-for-tab-command")
+                       :to-be-truthy)
+               (expect (equal effective "indent-for-tab-command")
+                       :to-be-truthy))
+              ((equal target-map :extended-command)
+               (let* ((spec (loom/core/command:find-command-spec target))
+                      (name (and spec
+                                 (loom/core/command:command-spec-name spec))))
+                 (expect sequence :to-be nil)
+                 (expect spec :to-be-truthy)
+                 (expect (equal (loom/core/command:command-spec-id spec) target)
                          :to-be-truthy)
-                 (expect (equal effective "indent-for-tab-command")
-                         :to-be-truthy))
-                ((equal effective :not-asserted)
-                 (progn
-                   (expect (equal status :pending) :to-be-truthy)
-                   (expect owner :to-be-truthy)
-                   (expect (or sequence (equal target-map :extended-command))
-                           :to-be-truthy)))
-                (t
-                 (progn
-                   (expect (equal owner :w3-1) :to-be-truthy)
-                   (expect (equal target-map :global) :to-be-truthy)
-                   (expect (or (equal status :implemented)
-                               (equal status :removed))
-                           :to-be-truthy)
-                   (expect (if (equal target :unbound) nil target)
-                           :to-equal effective)
-                   (expect (keymap-lookup keymap sequence)
-                           :to-equal effective))))))))))
+                 (expect name :to-be-truthy)
+                 (expect (eq (loom/core/command:find-extended-command-spec name)
+                             spec)
+                         :to-be-truthy)
+                 (expect (member name
+                                 (loom/core/command:command-completion-names "")
+                                 :test #'string-equal)
+                         :to-be-truthy)
+                 (if (equal effective :not-asserted)
+                     (progn
+                       (expect (equal status :pending) :to-be-truthy)
+                       (expect owner :to-be-truthy))
+                     (progn
+                       (expect (equal status :implemented) :to-be-truthy)
+                       (expect (equal target effective) :to-be-truthy)))))
+              ((and (keywordp target-map)
+                    (let ((name (symbol-name target-map)))
+                      (and (>= (length name) 6)
+                           (string-equal "-local"
+                                         name
+                                         :start2 (- (length name) 6)))))
+               (expect sequence :to-be-truthy)
+               (if (equal effective :not-asserted)
+                   (progn
+                     (expect (equal status :pending) :to-be-truthy)
+                     (expect owner :to-be-truthy))
+                   (let* ((spec (loom/core/command:find-command-spec target))
+                          (registered-map
+                            (and spec
+                                 (loom/core/command::%command-spec-keymap spec)))
+                          (modes
+                            (and spec
+                                 (remove :all
+                                         (loom/core/command::%command-spec-modes
+                                          spec)))))
+                     (expect (equal status :implemented) :to-be-truthy)
+                     (expect (equal target effective) :to-be-truthy)
+                     (expect spec :to-be-truthy)
+                     (expect registered-map :to-equal target-map)
+                     (expect modes :to-be-truthy)
+                     (dolist (mode modes)
+                       (expect (major-mode-definition mode) :to-be-truthy)
+                       (let ((mode-keymap
+                               (major-mode-keymap mode keymap)))
+                         (multiple-value-bind (binding keymap-owner)
+                             (keymap-lookup mode-keymap sequence)
+                           (expect binding :to-equal effective)
+                           (expect keymap-owner :to-be mode-keymap))))))
+              ((equal effective :not-asserted)
+               (progn
+                 (expect (equal status :pending) :to-be-truthy)
+                 (expect owner :to-be-truthy)
+                 (expect (or sequence (equal target-map :extended-command))
+                         :to-be-truthy)))
+              (t
+               (progn
+                 (expect (equal owner :w3-1) :to-be-truthy)
+                 (expect (equal target-map :global) :to-be-truthy)
+                 (expect (or (equal status :implemented)
+                             (equal status :removed))
+                         :to-be-truthy)
+                 (expect (if (equal target :unbound) nil target)
+                         :to-equal effective)
+                 (expect (keymap-lookup keymap sequence)
+                         :to-equal effective)))))))))))

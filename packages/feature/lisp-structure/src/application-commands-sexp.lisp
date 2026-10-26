@@ -37,8 +37,7 @@ rather than guessing."
   "Move point past the next S-expression (C-M-f).
 
 The scanner ignores delimiters in strings and #\\ character literals and
-skips line comments and block comments. A block comment ends at the first
-|#; nested block comments are not tracked."
+skips line comments and nested block comments."
   %forward-sexp-offset)
 
 (define-sexp-motion-command backward-sexp

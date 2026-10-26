@@ -22,7 +22,19 @@
                "progn" "progv" "quote" "return" "return-from" "setf"
                "tagbody" "the" "throw" "typecase" "unless" "unwind-protect"
                "when" "with-open-file" "with-output-to-string" "with-slots"
-               "with-standard-io-syntax" "write" "t"))
+               "with-standard-io-syntax" "write" "t")
+   :keybindings
+   (list
+    (cons '(:control :right) #'loom::forward-slurp-sexp)
+    (cons '(:control :left) #'loom::forward-barf-sexp)
+    (cons '(:control :alt :left) #'loom::backward-slurp-sexp)
+    (cons '(:control :alt :right) #'loom::backward-barf-sexp)
+    (cons '(:alt #\() #'loom::wrap-round)
+    (cons '(:alt #\s) #'loom::splice-sexp)
+    (cons '(:alt #\r) #'loom::raise-sexp)
+    (cons '(:alt :control-backslash)
+          #'loom/feature/mode:indent-for-tab-command))
+  )
   (loom/feature/mode:register-major-mode
    :emacs-lisp
    :name "Emacs Lisp"
@@ -40,4 +52,16 @@
                "provide" "require" "save-excursion" "save-restriction"
                "setq" "setq-default" "t" "throw" "unless"
                "unwind-protect" "when" "while" "with-current-buffer"
-               "with-temp-buffer")))
+               "with-temp-buffer")
+   :keybindings
+   (list
+    (cons '(:control :right) #'loom::forward-slurp-sexp)
+    (cons '(:control :left) #'loom::forward-barf-sexp)
+    (cons '(:control :alt :left) #'loom::backward-slurp-sexp)
+    (cons '(:control :alt :right) #'loom::backward-barf-sexp)
+    (cons '(:alt #\() #'loom::wrap-round)
+    (cons '(:alt #\s) #'loom::splice-sexp)
+    (cons '(:alt #\r) #'loom::raise-sexp)
+    (cons '(:alt :control-backslash)
+          #'loom/feature/mode:indent-for-tab-command))
+  ))

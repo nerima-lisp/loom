@@ -158,31 +158,31 @@
     (:id "paredit-forward-slurp-local"
      :keys (((:control) . :right)) :emacs "forward-word"
      :target "forward-slurp-sexp" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "forward-slurp-sexp" :owner :w3-7b :status :implemented)
     (:id "paredit-forward-barf-local"
      :keys (((:control) . :left)) :emacs "backward-word"
      :target "forward-barf-sexp" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "forward-barf-sexp" :owner :w3-7b :status :implemented)
     (:id "paredit-backward-slurp-local"
      :keys (((:alt :control) . :left)) :emacs "backward-sexp"
      :target "backward-slurp-sexp" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "backward-slurp-sexp" :owner :w3-7b :status :implemented)
     (:id "paredit-backward-barf-local"
      :keys (((:alt :control) . :right)) :emacs "forward-sexp"
      :target "backward-barf-sexp" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "backward-barf-sexp" :owner :w3-7b :status :implemented)
     (:id "paredit-wrap-meta-open"
      :keys (((:alt) . #\()) :emacs "insert-parentheses"
      :target "wrap-round" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "wrap-round" :owner :w3-7b :status :implemented)
     (:id "paredit-splice-meta-s"
      :keys (((:alt) . #\s)) :emacs :prefix :target "splice-sexp"
-     :target-map :lisp-mode-local :effective :not-asserted
-     :owner :w3-7b :status :pending)
+     :target-map :lisp-mode-local :effective "splice-sexp"
+     :owner :w3-7b :status :implemented)
     (:id "paredit-raise-meta-r"
      :keys (((:alt) . #\r)) :emacs "move-to-window-line"
      :target "raise-sexp" :target-map :lisp-mode-local
-     :effective :not-asserted :owner :w3-7b :status :pending)
+     :effective "raise-sexp" :owner :w3-7b :status :implemented)
     (:id "suspend-frame-control-z"
      :keys (((:control) . #\z)) :emacs "suspend-frame on text terminal"
      :target "suspend-frame" :target-map :global

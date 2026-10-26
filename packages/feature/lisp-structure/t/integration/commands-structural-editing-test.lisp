@@ -154,11 +154,19 @@
        ("M-(" (((:alt) . #\()) loom::wrap-round)
        ("M-s" (((:alt) . #\s)) loom::splice-sexp)
        ("M-r" (((:alt) . #\r)) loom::raise-sexp))
-      "binds ~A to its default command" (label key-sequence command)
+      "binds ~A in both Lisp mode-local maps, but not the global map"
+      (label key-sequence command)
     (declare (ignore label))
-    (let ((keymap (make-keymap)))
-      (loom/application:install-default-keybindings keymap)
-      (expect
- (keymap-lookup keymap key-sequence)
- :to-equal
- (loom/core/command:command-id-for-function command)))))
+    (asdf:load-system "loom-feature-lang-lisp")
+    (let* ((global-keymap (make-keymap))
+           (command-id
+             (loom/core/command:command-id-for-function command)))
+      (loom/application:install-default-keybindings global-keymap)
+      (expect (keymap-lookup global-keymap key-sequence) :to-be nil)
+      (dolist (mode (list :common-lisp :emacs-lisp))
+        (let ((mode-keymap
+                (loom/feature/mode:major-mode-keymap mode global-keymap)))
+          (multiple-value-bind (binding owner)
+              (keymap-lookup mode-keymap key-sequence)
+            (expect binding :to-equal command-id)
+            (expect owner :to-be mode-keymap)))))))

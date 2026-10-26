@@ -49,8 +49,25 @@
     (char text (1+ index))))
 
 (defun %sexp-reader-block-comment-end (text index length)
-  (let ((close (search "|#" text :start2 (+ index 2))))
-    (if close (+ close 2) length)))
+  (let ((position (+ index 2))
+        (depth 1))
+    (loop while (< position length)
+          do (cond
+               ((and (< (1+ position) length)
+                     (char= (char text position) #\#)
+                     (char= (char text (1+ position)) #\|))
+                (incf depth)
+                (incf position 2))
+               ((and (< (1+ position) length)
+                     (char= (char text position) #\|)
+                     (char= (char text (1+ position)) #\#))
+                (decf depth)
+                (incf position 2)
+                (when (zerop depth)
+                  (return)))
+               (t
+                (incf position))))
+    position))
 
 (defun %sexp-reader-range (text index length)
   (case (%sexp-reader-dispatch-character text index length)
