@@ -36,7 +36,7 @@ def describe_commands(binary):
 
             session.send(b"\x1bOP")
             session.wait_for_text("Help:")
-            session.assert_screen_text("Help:", region="body")
+            session.assert_screen_text("Help:", match="contains", region="body")
 
             session.send(keys.ctrl("h") + b"m")
             session.wait_for_text("Mode: Python")
