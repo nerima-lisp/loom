@@ -1,6 +1,6 @@
 (in-package #:loom/feature/session)
 
-(defconstant +loom-session-version+ 5)
+(defconstant +loom-session-version+ 6)
 
 (defun %session-plist-value (plist key)
   (loop for tail on plist by #'cddr
@@ -27,8 +27,11 @@
   value)
 
 (defparameter +loom-session-top-level-keys+
-  '(:loom-session :buffers :recent-files :bookmarks :command-history
-    :workspaces :current-workspace-index))
+  (quote (:loom-session :buffers :recent-files :bookmarks :command-history
+           :workspaces :current-workspace-index :file-tree)))
+(defparameter +loom-session-v5-top-level-keys+
+  (quote (:loom-session :buffers :recent-files :bookmarks :command-history
+           :workspaces :current-workspace-index)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %session-codec-field-p (field)
@@ -103,3 +106,8 @@ the writer and reader from drifting apart as fields are added."
   (:name session-workspace-snapshot-name)
   (:layout session-workspace-snapshot-layout)
   (:selected-window-index session-workspace-snapshot-selected-window-index))
+(define-session-plist-codec file-tree make-session-file-tree-snapshot
+  (:root-path session-file-tree-snapshot-root-path)
+  (:visible-p session-file-tree-snapshot-visible-p)
+  (:expanded-paths session-file-tree-snapshot-expanded-paths)
+  (:selected-path session-file-tree-snapshot-selected-path))

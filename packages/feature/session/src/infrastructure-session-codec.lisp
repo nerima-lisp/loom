@@ -12,7 +12,10 @@
         :workspaces (mapcar #'%session-sexp-workspace
                             (session-snapshot-workspaces snapshot))
         :current-workspace-index
-        (session-snapshot-current-workspace-index snapshot)))
+        (session-snapshot-current-workspace-index snapshot)
+        :file-tree (and (session-snapshot-file-tree snapshot)
+                        (%session-sexp-file-tree
+                         (session-snapshot-file-tree snapshot)))))
 
 (defun %session-required-list (value message)
   (unless (%session-proper-list-p value)
@@ -27,7 +30,7 @@
 
 (defun %session-snapshot-from-sexp-fields
     (serialized-buffers recent-files serialized-bookmarks command-history
-     serialized-workspaces current-index)
+     serialized-workspaces current-index serialized-file-tree)
   (%session-required-list serialized-buffers ":buffers")
   (%session-required-string-list recent-files ":recent-files")
   (%session-required-list serialized-bookmarks ":bookmarks")
@@ -40,20 +43,27 @@
     :bookmarks (mapcar #'%session-bookmark-from-sexp serialized-bookmarks)
     :command-history command-history
     :workspaces (mapcar #'%session-workspace-from-sexp serialized-workspaces)
-    :current-workspace-index current-index)))
+    :current-workspace-index current-index
+    :file-tree (and serialized-file-tree
+                    (%session-file-tree-from-sexp serialized-file-tree)))))
 
 (defun %session-from-sexp (value)
-  (%validate-session-plist value +loom-session-top-level-keys+ "session")
-  (let ((version (%session-plist-value value :loom-session)))
-    (unless (eql version +loom-session-version+)
-      (%session-error "session: unsupported version ~S" version))
-    (let ((serialized-buffers (%session-plist-value value :buffers))
-          (recent-files (%session-plist-value value :recent-files))
-          (serialized-bookmarks (%session-plist-value value :bookmarks))
-          (command-history (%session-plist-value value :command-history))
-          (serialized-workspaces (%session-plist-value value :workspaces))
-          (current-index
-            (%session-plist-value value :current-workspace-index)))
-      (%session-snapshot-from-sexp-fields
-       serialized-buffers recent-files serialized-bookmarks command-history
-       serialized-workspaces current-index))))
+  (unless (%session-keyword-plist-p value)
+    (%session-error "session: expected a keyword plist, got ~S" value))
+  (let* ((version (%session-plist-value value :loom-session))
+         (expected-keys
+           (cond
+             ((eql version 5) +loom-session-v5-top-level-keys+)
+             ((eql version +loom-session-version+)
+              +loom-session-top-level-keys+)
+             (t (%session-error "session: unsupported version ~S" version)))))
+    (%validate-session-plist value expected-keys "session")
+    (%session-snapshot-from-sexp-fields
+     (%session-plist-value value :buffers)
+     (%session-plist-value value :recent-files)
+     (%session-plist-value value :bookmarks)
+     (%session-plist-value value :command-history)
+     (%session-plist-value value :workspaces)
+     (%session-plist-value value :current-workspace-index)
+     (when (eql version +loom-session-version+)
+       (%session-plist-value value :file-tree)))))

@@ -26,18 +26,23 @@ LAYOUT uses the indexes of SESSION-SNAPSHOT-BUFFERS."
   name
   layout
   selected-window-index)
+(defstruct session-file-tree-snapshot
+  "Serializable file-tree state independent of the startup root."
+  root-path
+  visible-p
+  expanded-paths
+  selected-path)
 
 (defstruct session-snapshot
-  "Validated, serializable state for one Loom editing session.
+  "Validated serializable state for one Loom editing session.
 
-WORKSPACES contains the named workspace views. Each workspace's LAYOUT is a
-nested (:LEAF BUFFER-INDEX SCROLL-LINE) / (:SPLIT DIRECTION CHILD-1 CHILD-2)
-description. Buffer indexes refer to the order of SESSION-SNAPSHOT-BUFFERS,
-and each workspace's SELECTED-WINDOW-INDEX refers to the depth-first order of
-leaves in its LAYOUT."
+WORKSPACES contains named views whose layouts refer to buffer indexes in
+SESSION-SNAPSHOT-BUFFERS. Selected-window indexes refer to each layout leaf
+order."
   buffers
   recent-files
   bookmarks
   command-history
   workspaces
-  current-workspace-index)
+  current-workspace-index
+  file-tree)

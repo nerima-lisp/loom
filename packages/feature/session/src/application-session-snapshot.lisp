@@ -37,6 +37,16 @@
 (defun %session-command-history ()
   (and (editor-state-minibuffer *editor-state*)
        (minibuffer-history-entries (editor-state-minibuffer *editor-state*))))
+(defun %session-file-tree-snapshot-from-tree (tree)
+  (when tree
+    (let ((paths (loom/feature/file-tree:file-tree-prefetch-paths tree)))
+      (make-session-file-tree-snapshot
+       :root-path (%session-path-string (first paths))
+       :visible-p (loom/feature/file-tree:file-tree-visible-p tree)
+       :expanded-paths (mapcar #'%session-path-string (rest paths))
+       :selected-path
+       (%session-path-string
+        (loom/feature/file-tree:file-tree-selected-path tree))))))
 
 (defun %session-snapshot-data (manager buffers)
   (make-session-snapshot :buffers
@@ -51,7 +61,11 @@
                          (%session-workspace-snapshots manager buffers)
                          :current-workspace-index
                          (loom/feature/workspace:workspace-manager-current-index
-                          manager)))
+                          manager)
+                         :file-tree
+                         (%session-file-tree-snapshot-from-tree
+                          (loom/core/editor-session:editor-state-file-tree
+                           *editor-state*))))
 
 (defun %session-snapshot-from-state ()
   "Return a validated snapshot of the current editor state."

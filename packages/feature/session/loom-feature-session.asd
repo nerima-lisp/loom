@@ -7,6 +7,7 @@
                "loom-feature-bookmark"
                "loom-feature-buffers"
                "loom-feature-workspace"
+               "loom-feature-file-tree"
                "cl-host-kit")
   :serial t
   :components
@@ -33,8 +34,7 @@
   :depends-on ("loom-feature-session"
                "loom/test-support"
                "cl-weave"
-               "cl-host-kit"
-               "cl-history-kit")
+               "cl-host-kit")
   :serial t
   :components
   ((:file "t/integration/session-test-support")

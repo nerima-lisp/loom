@@ -13,6 +13,15 @@
                     :to-be t)
             (expect (loom/feature/session::%session-path-present-p path)
                     :to-be-falsy)))))
+  (it
+    "keeps load-session available through M-x"
+    (let ((spec (loom/core/command:find-command-spec "load-session")))
+      (expect (loom/core/command:command-spec-name spec)
+              :to-equal "load-session")
+      (expect (member "load-session"
+                      (loom/core/command:command-completion-names "")
+                      :test (function string-equal))
+              :to-be-truthy)))
 
   (it
     "reject empty save and load paths through the minibuffer"
@@ -70,4 +79,35 @@
         (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
         (load-session)
         (minibuffer-handle-key minibuffer (%special-key :control-g))
-        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")))))
+        (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit"))))
+  (it
+    "reports when a loaded session has a missing file-tree root"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((path (namestring (merge-pathnames "session.sexp" directory)))
+             (stale-root (merge-pathnames "missing/" directory))
+             (snapshot (%session-test-snapshot)))
+        (setf (session-snapshot-file-tree snapshot)
+              (make-session-file-tree-snapshot
+               :root-path (namestring stale-root)
+               :visible-p t
+               :expanded-paths
+               (list (namestring (merge-pathnames "src/" stale-root)))
+               :selected-path
+               (namestring (merge-pathnames "src/main.lisp" stale-root))))
+        (with-replaced-function
+            (loom/feature/session:session-store-read
+             (lambda (stored-path)
+               (declare (ignore stored-path))
+               snapshot))
+          (%with-minibuffer-state (minibuffer "")
+            (load-session)
+            (funcall
+             (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
+             path)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "Session loaded with warning: File-tree root not found: ~A"
+                            (namestring stale-root)))
+            (expect (length (%test-registered-buffers *editor-state*))
+                    :to-equal 1)))))))

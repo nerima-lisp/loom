@@ -73,7 +73,8 @@
   "Validate the session collections that do not describe window trees."
   (let ((recent-files (session-snapshot-recent-files snapshot))
         (bookmarks (session-snapshot-bookmarks snapshot))
-        (command-history (session-snapshot-command-history snapshot)))
+        (command-history (session-snapshot-command-history snapshot))
+        (file-tree (session-snapshot-file-tree snapshot)))
     (%validate-session-list
      recent-files #'%session-nonempty-string-p
      "recent files must be a list of non-empty strings")
@@ -85,5 +86,28 @@
      "bookmark names must be unique")
     (%validate-session-list
      command-history #'stringp
-     "command history must be a list of strings"))
+     "command history must be a list of strings")
+    (when file-tree
+      (unless (typep file-tree 'session-file-tree-snapshot)
+        (%session-error "validate-session-snapshot: invalid file-tree snapshot ~S"
+                        file-tree))
+      (unless (%session-nonempty-string-p
+               (session-file-tree-snapshot-root-path file-tree))
+        (%session-error "validate-session-snapshot: file-tree root must be a non-empty string"))
+      (unless (member (session-file-tree-snapshot-visible-p file-tree)
+                      '(nil t)
+                      :test #'eq)
+        (%session-error "validate-session-snapshot: file-tree visibility must be boolean"))
+      (%validate-session-list
+       (session-file-tree-snapshot-expanded-paths file-tree)
+       #'%session-nonempty-string-p
+       "file-tree expanded paths must be non-empty strings")
+      (%validate-session-unique-names
+       (session-file-tree-snapshot-expanded-paths file-tree)
+       #'identity
+       "file-tree expanded paths must be unique")
+      (unless (or (null (session-file-tree-snapshot-selected-path file-tree))
+                  (%session-nonempty-string-p
+                   (session-file-tree-snapshot-selected-path file-tree)))
+        (%session-error "validate-session-snapshot: file-tree selection must be nil or a non-empty string"))))
   snapshot)

@@ -60,6 +60,12 @@
            #:session-workspace-snapshot-name
            #:session-workspace-snapshot-layout
            #:session-workspace-snapshot-selected-window-index
+           #:session-file-tree-snapshot
+           #:make-session-file-tree-snapshot
+           #:session-file-tree-snapshot-root-path
+           #:session-file-tree-snapshot-visible-p
+           #:session-file-tree-snapshot-expanded-paths
+           #:session-file-tree-snapshot-selected-path
            #:session-snapshot
            #:make-session-snapshot
            #:session-snapshot-buffers
@@ -68,6 +74,7 @@
            #:session-snapshot-command-history
            #:session-snapshot-workspaces
            #:session-snapshot-current-workspace-index
+           #:session-snapshot-file-tree
            #:validate-session-snapshot
            #:session-store-read
            #:session-store-write

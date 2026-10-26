@@ -5,7 +5,8 @@
        (not (string= (string-trim '(#\Space #\Tab) path) ""))))
 
 (defmacro %define-session-command
-    (name documentation prompt success-format error-format &body body)
+    (name documentation prompt success-format error-format warning-format
+     &body body)
   "Define a session command with the standard path prompt and diagnostics."
   `(defun ,name ()
      ,documentation
@@ -14,11 +15,14 @@
          ((path ,prompt))
        (if (%session-path-present-p path)
            (handler-case
-               (progn
-                 ,@body
+               (multiple-value-bind (result warning)
+                   (progn ,@body)
+                 (declare (ignore result))
                  (minibuffer-message
                   minibuffer
-                  (format nil ,success-format path)))
+                  (if (and warning ,warning-format)
+                      (format nil ,warning-format warning)
+                      (format nil ,success-format path))))
              (error (condition)
                (minibuffer-message
                 minibuffer
@@ -31,6 +35,7 @@
  "Save session to: "
  "Session saved: ~A"
  "Could not save session: ~A"
+ nil
  (session-store-write path (%session-snapshot-from-state)))
 
 (%define-session-command
@@ -39,4 +44,5 @@
  "Load session: "
  "Session loaded: ~A"
  "Could not load session: ~A"
+ "Session loaded with warning: ~A"
  (%restore-session-snapshot (session-store-read path)))

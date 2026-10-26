@@ -194,4 +194,232 @@
             (editor-state-bookmarks *editor-state*) bookmarks)
       (expect (mapcar #'session-bookmark-snapshot-name
                       (loom/feature/session::%session-bookmark-snapshots))
-              :to-equal '("Alpha" "alpha" "zebra")))))
+              :to-equal '("Alpha" "alpha" "zebra"))))
+  (it
+    "restores session state when the saved file-tree root is stale"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((stale-root (merge-pathnames "missing/" directory))
+             (stale-root-string (namestring stale-root))
+             (old-file-tree (loom/feature/file-tree:make-file-tree directory))
+             (state (%fresh-editor-state "before" :with-minibuffer t))
+             (*editor-state* state)
+             (loom/core/editor-session:*editor-session*
+               (editor-state-session state))
+             (snapshot (%session-test-snapshot))
+             (original-lister
+               (symbol-function
+                (find-symbol "LOOM-FS-LIST-DIRECTORY"
+                             "LOOM/FEATURE/FILE-TREE")))
+             (stale-root-list-calls 0))
+        (setf (editor-state-file-tree state) old-file-tree
+              (editor-state-recent-files state) (list "before.txt")
+              (editor-state-bookmarks state)
+              (make-hash-table :test (function equal)))
+        (progn
+          (setf (editor-state-minibuffer state)
+                (make-minibuffer :history (history-kit:make-history)))
+          (minibuffer-set-history-entries
+           (editor-state-minibuffer state)
+           (list "before")))
+        (setf (session-snapshot-file-tree snapshot)
+              (make-session-file-tree-snapshot
+               :root-path stale-root-string
+               :visible-p t
+               :expanded-paths
+               (list (namestring (merge-pathnames "src/" stale-root)))
+               :selected-path
+               (namestring (merge-pathnames "src/main.lisp" stale-root))))
+        (expect (host-kit:directory-exists-p stale-root) :to-be-falsy)
+        (with-replaced-function
+            (loom/feature/file-tree:loom-fs-list-directory
+             (lambda (path)
+               (if (string= (namestring (pathname path)) stale-root-string)
+                   (progn
+                     (incf stale-root-list-calls)
+                     (error "stale file-tree root cannot be listed"))
+                   (funcall original-lister path))))
+          (multiple-value-bind (restored-tree warning)
+              (loom/feature/session::%restore-session-snapshot snapshot)
+            (declare (ignore restored-tree))
+            (expect warning :to-be-truthy)
+            (expect warning :to-contain "File-tree root not found")
+            (expect stale-root-list-calls :to-equal 0)
+            (expect (editor-state-file-tree *editor-state*)
+                    :to-be old-file-tree)
+            (expect (length (%test-registered-buffers *editor-state*))
+                    :to-equal 1)
+            (expect (buffer-text
+                     (first (%test-registered-buffers *editor-state*)))
+                    :to-equal (format nil "one~%two"))
+            (expect (editor-state-recent-files *editor-state*)
+                    :to-equal (list "one.lisp" "two.lisp"))
+            (expect (minibuffer-history-entries
+                     (editor-state-minibuffer *editor-state*))
+                    :to-equal (list "M-x find-file" "M-x"))
+            (expect
+             (loom/feature/workspace:workspace-name
+              (loom/feature/workspace:workspace-manager-current
+               (editor-state-workspaces *editor-state*)))
+             :to-equal "main")
+            (expect (gethash "spot" (editor-state-bookmarks *editor-state*))
+                    :to-be-truthy))))))
+  (it
+    "leaves the current editor state installed when file-tree refresh fails"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((state (%fresh-editor-state "before" :with-minibuffer t))
+             (*editor-state* state)
+             (loom/core/editor-session:*editor-session*
+               (editor-state-session state))
+             (old-window-tree (editor-state-window-tree state))
+             (old-file-tree
+               (loom/feature/file-tree:make-file-tree "/old-root/"))
+             (old-buffer (first (%test-registered-buffers state)))
+             (old-bookmarks (make-hash-table :test (function equal)))
+             (snapshot (%session-test-snapshot))
+             (refresh-candidate nil))
+        (setf (editor-state-file-tree state) old-file-tree
+              (editor-state-recent-files state) (list "before.txt")
+              (editor-state-bookmarks state) old-bookmarks)
+        (progn
+          (setf (editor-state-minibuffer state)
+                (make-minibuffer :history (history-kit:make-history)))
+          (minibuffer-set-history-entries
+           (editor-state-minibuffer state)
+           (list "before")))
+        (setf (session-snapshot-file-tree snapshot)
+              (make-session-file-tree-snapshot
+               :root-path (namestring directory)
+               :visible-p t
+               :expanded-paths nil
+               :selected-path nil))
+        (with-replaced-function
+            (loom/feature/file-tree:refresh-file-tree-runtime
+             (lambda (candidate)
+               (setf refresh-candidate candidate)
+               (error "injected file-tree refresh failure")))
+          (signals error
+            (loom/feature/session::%restore-session-snapshot snapshot)))
+        (expect refresh-candidate :to-be-truthy)
+        (expect (eq (editor-state-window-tree refresh-candidate)
+                    old-window-tree)
+                :to-be t)
+        (expect (eq (editor-state-window-tree *editor-state*)
+                    old-window-tree)
+                :to-be t)
+        (expect (eq (editor-state-file-tree *editor-state*)
+                    old-file-tree)
+                :to-be t)
+        (expect (first (%test-registered-buffers *editor-state*))
+                :to-be old-buffer)
+        (expect (editor-state-recent-files *editor-state*)
+                :to-equal (list "before.txt"))
+        (expect (minibuffer-history-entries
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal (list "before"))
+        (expect (eq (editor-state-bookmarks *editor-state*)
+                    old-bookmarks)
+                :to-be t))))
+  (it
+    "rejects persisted file-tree paths outside the saved root before listing"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((state (%fresh-editor-state "before"))
+             (*editor-state* state)
+             (loom/core/editor-session:*editor-session*
+               (editor-state-session state))
+             (old-buffer (first (%test-registered-buffers state)))
+             (old-file-tree (loom/feature/file-tree:make-file-tree directory))
+             (snapshot (%session-test-snapshot))
+             (outside-directory (merge-pathnames "../outside/" directory))
+             (original-lister
+               (symbol-function
+                (find-symbol "LOOM-FS-LIST-DIRECTORY"
+                             "LOOM/FEATURE/FILE-TREE")))
+             (listing-calls 0))
+        (setf (editor-state-file-tree state) old-file-tree
+              (editor-state-recent-files state) (list "before.txt")
+              (session-snapshot-file-tree snapshot)
+              (make-session-file-tree-snapshot
+               :root-path (namestring directory)
+               :visible-p t
+               :expanded-paths (list (namestring outside-directory))
+               :selected-path
+               (namestring (merge-pathnames "secret.txt" outside-directory))))
+        (with-replaced-function
+            (loom/feature/file-tree:loom-fs-list-directory
+             (lambda (path)
+               (incf listing-calls)
+               (funcall original-lister path)))
+          (signals error
+            (loom/feature/session::%restore-session-snapshot snapshot)))
+        (expect listing-calls :to-equal 0)
+        (expect (eq (editor-state-file-tree *editor-state*) old-file-tree)
+                :to-be t)
+        (expect (first (%test-registered-buffers *editor-state*))
+                :to-be old-buffer)
+        (expect (editor-state-recent-files *editor-state*)
+                :to-equal (list "before.txt"))))))
+(describe
+  "session file-tree path normalization"
+  (it
+    "restores an existing root and saved paths reached through parent segments"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((canonical-root (truename directory))
+             (*default-pathname-defaults*
+               (progn
+                 (ensure-directories-exist
+                  (merge-pathnames "nested/selected.txt" canonical-root))
+                 (truename (merge-pathnames "nested/" canonical-root))))
+             (relative-root "../")
+             (relative-expanded
+               "../nested/")
+             (relative-selected "../nested")
+             (nested-directory (merge-pathnames "nested/" canonical-root))
+             (selected-file
+               (merge-pathnames "nested/selected.txt" canonical-root))
+             (state (%fresh-editor-state "before" :with-minibuffer t))
+             (*editor-state* state)
+             (loom/core/editor-session:*editor-session*
+               (editor-state-session state))
+             (snapshot (%session-test-snapshot)))
+        (ensure-directories-exist selected-file)
+        (with-open-file
+            (stream selected-file
+                    :direction :output
+                    :if-exists :supersede
+                    :if-does-not-exist :create)
+          (write-line "selected" stream))
+        (setf (editor-state-file-tree state)
+              (loom/feature/file-tree:make-file-tree canonical-root)
+              (session-snapshot-file-tree snapshot)
+              (make-session-file-tree-snapshot
+               :root-path relative-root
+               :visible-p t
+               :expanded-paths (list (namestring relative-expanded))
+               :selected-path relative-selected))
+        (expect (search ".." relative-root) :to-be-truthy)
+        (expect (search ".." (namestring relative-expanded)) :to-be-truthy)
+        (expect (search ".." relative-selected) :to-be-truthy)
+        (loom/feature/session::%restore-session-snapshot snapshot)
+        (let* ((restored-tree (editor-state-file-tree *editor-state*))
+               (restored-paths
+                 (loom/feature/file-tree:file-tree-prefetch-paths
+                  restored-tree))
+               (expected-root (namestring (truename canonical-root)))
+               (expected-expanded (namestring (truename nested-directory)))
+               (expected-selected
+ (namestring
+  (host-kit:ensure-directory-pathname
+   (truename nested-directory)))))
+          (expect (namestring (first restored-paths)) :to-equal expected-root)
+          (expect
+           (find expected-expanded (rest restored-paths)
+                 :test (function string=) :key (function namestring))
+           :to-be-truthy)
+          (expect
+           (namestring
+ (host-kit:ensure-directory-pathname
+  (loom/feature/file-tree:file-tree-selected-path restored-tree)))
+           :to-equal expected-selected)
+          (expect
+           (loom/feature/file-tree:file-tree-visible-p restored-tree)
+           :to-be t))))))

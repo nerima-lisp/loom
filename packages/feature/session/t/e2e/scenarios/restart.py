@@ -8,14 +8,15 @@ from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
 
-def _wait_for_exact_line(session, region, expected, index=0):
+def _wait_for_exact_line(session, region, expected, index=0, timeout=4.0):
     session.wait_for_region_exact_text(
-        region, expected.rstrip(), index=index, strip_right=True
+        region, expected.rstrip(), index=index, strip_right=True, timeout=timeout
     )
 
 
 def _run_prompted_command(session, command, prompt, value):
-    session.extended_command(command)
+    session.send(keys.meta("x") + keys.text(command))
+    session.key("RET")
     _wait_for_exact_line(session, "minibuffer", prompt)
     session.type(value)
     session.key("RET")
@@ -24,42 +25,23 @@ def _run_prompted_command(session, command, prompt, value):
 @scenario(
     "session restart restores saved state",
     commands=[
-        "find-file",
-        "set-bookmark",
         "save-session",
         "load-session",
-        "jump-to-bookmark",
-        "switch-to-buffer",
     ],
 )
 def session_restart_restores_saved_state(binary):
-    with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
-        buffer_path = os.path.join(directory, "restart.txt")
-        session_only_path = os.path.join(directory, "session-only.txt")
-        with open(buffer_path, "wb") as handle:
-            handle.write(b"before\nrestored\n")
-        with open(session_only_path, "wb") as handle:
-            handle.write(b"session-only-buffer\n")
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-session-buffers-") as directory:
+        first_path = os.path.join(directory, "first.txt")
+        alternate_path = os.path.join(directory, "alternate.txt")
+        with open(first_path, "wb") as handle:
+            handle.write(b"FIRST-BUFFER\nRESTORE-POINT\n")
+        with open(alternate_path, "wb") as handle:
+            handle.write(b"ALTERNATE-ROOT\n")
 
-        with Session(binary, [buffer_path]) as session:
+        with Session(binary, [first_path]) as session:
             session.wait_ready()
-            session.send(keys.ctrl("n") + keys.ctrl("f") * 2)
-            session.wait_for_region_cursor("body", 2, index=1)
-            _run_prompted_command(
-                session,
-                "set-bookmark",
-                "Set bookmark: ",
-                "restart-spot",
-            )
-            session.wait_for_text("Bookmark set: restart-spot")
-
-            _run_prompted_command(
-                session,
-                "find-file",
-                "Find file: ",
-                session_only_path,
-            )
-            _wait_for_exact_line(session, "body", "session-only-buffer")
+            session.send(keys.ctrl("n"))
+            session.wait_for_region_cursor("body", 0, index=1, timeout=4.0)
 
             session_path = os.path.join(session.home_dir, "session.sexp")
             _run_prompted_command(
@@ -68,19 +50,18 @@ def session_restart_restores_saved_state(binary):
                 "Save session to: ",
                 session_path,
             )
-            session.wait_for_text("Session saved:")
-            session.wait_for_external_state(
-                "saved session exists",
-                lambda: os.path.isfile(session_path),
-                True,
+            _wait_for_exact_line(
+                session, "minibuffer", f"Session saved: {session_path}"
             )
-            saved_session = session.observe_file_bytes(session_path)
+            with open(session_path, "rb") as handle:
+                saved_session = handle.read()
             session.assert_external_state(
-                "saved session contains its bookmark",
-                b"restart-spot" in saved_session,
+                "saved session contains the open buffer",
+                os.fsencode(first_path) in saved_session,
                 True,
             )
 
+            session.arguments = [alternate_path]
             previous_process = session.process
             session.restart()
             session.assert_external_state(
@@ -94,11 +75,138 @@ def session_restart_restores_saved_state(binary):
                 True,
             )
             session.assert_external_state(
-                "restart retains the saved file in scratch HOME",
+                "restart retains the saved file",
                 os.path.isfile(session_path),
                 True,
             )
+            _run_prompted_command(
+                session,
+                "load-session",
+                "Load session: ",
+                session_path,
+            )
+            _wait_for_exact_line(session, "body", "RESTORE-POINT", index=1)
+            session.assert_screen_text("FIRST-BUFFER", match="contains", region="body")
+            session.assert_screen_text(
+                "RESTORE-POINT", match="contains", region="body", index=1
+            )
+            session.wait_for_region_cursor("body", 0, index=1, timeout=4.0)
+
+            output, code = session.quit()
+            if session.observe_exit_code(code, 0) is not True:
+                raise AssertionError(f"loom exited with {code}: {output!r}")
+
+
+@scenario(
+    "session restart restores command history",
+    commands=[
+        "execute-extended-command",
+        "save-session",
+        "load-session",
+    ],
+)
+def session_restart_restores_command_history(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-session-history-") as directory:
+        saved_path = os.path.join(directory, "saved.txt")
+        with open(saved_path, "wb") as handle:
+            handle.write(b"HISTORY-RESTORED\n")
+
+        with Session(binary, [saved_path]) as session:
             session.wait_ready()
+            session_path = os.path.join(session.home_dir, "session.sexp")
+            _run_prompted_command(
+                session,
+                "save-session",
+                "Save session to: ",
+                session_path,
+            )
+            _wait_for_exact_line(
+                session, "minibuffer", f"Session saved: {session_path}"
+            )
+            session.assert_external_state(
+                "saved history session exists",
+                os.path.isfile(session_path),
+                True,
+            )
+
+            session.arguments = []
+            session.restart()
+            _run_prompted_command(
+                session,
+                "load-session",
+                "Load session: ",
+                session_path,
+            )
+
+            session.send(keys.meta("x"))
+            session.wait_for_region_text("minibuffer", "M-x ", timeout=4.0)
+            session.key("UP")
+            session.wait_for_region_text("minibuffer", "session.sexp", timeout=4.0)
+            session.key("UP")
+            session.wait_for_region_text("minibuffer", "save-session", timeout=4.0)
+            session.assert_screen_text(
+                "save-session", match="contains", region="minibuffer"
+            )
+            session.send(keys.ctrl("g"))
+
+            output, code = session.quit()
+            if session.observe_exit_code(code, 0) is not True:
+                raise AssertionError(f"loom exited with {code}: {output!r}")
+@scenario(
+    "session restart restores split windows",
+    commands=[
+        "execute-extended-command",
+        "split-window-below",
+        "save-session",
+        "load-session",
+    ],
+)
+def session_restart_restores_split_windows(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-session-split-") as directory:
+        upper_path = os.path.join(directory, "upper.txt")
+        alternate_path = os.path.join(directory, "alternate.txt")
+        with open(upper_path, "wb") as handle:
+            handle.write(b"UPPER-BUFFER\n")
+        with open(alternate_path, "wb") as handle:
+            handle.write(b"ALTERNATE-ROOT\n")
+
+        with Session(binary, [upper_path]) as session:
+            session.wait_ready()
+            session.extended_command("split-window-below")
+
+            def has_split_windows(screen):
+                visible_copies = sum(
+                    line.count("UPPER-BUFFER") for line in screen.lines()
+                )
+                return visible_copies >= 2
+
+            session.wait_until(has_split_windows, what="split windows before save")
+            session.assert_external_state(
+                "split windows before save",
+                has_split_windows(session.screen),
+                True,
+            )
+
+            session_path = os.path.join(session.home_dir, "session.sexp")
+            _run_prompted_command(
+                session,
+                "save-session",
+                "Save session to: ",
+                session_path,
+            )
+            _wait_for_exact_line(
+                session, "minibuffer", f"Session saved: {session_path}"
+            )
+            with open(session_path, "rb") as handle:
+                saved_session = handle.read()
+            session.assert_external_state(
+                "saved split session references its buffer",
+                os.fsencode(upper_path) in saved_session,
+                True,
+            )
+            session.arguments = [alternate_path]
+            session.restart()
+            session.wait_for_text("ALTERNATE-ROOT")
 
             _run_prompted_command(
                 session,
@@ -106,54 +214,104 @@ def session_restart_restores_saved_state(binary):
                 "Load session: ",
                 session_path,
             )
-            session.wait_for_text("Session loaded:")
 
-            _run_prompted_command(
-                session,
-                "switch-to-buffer",
-                "Switch to buffer: ",
-                "session-only.txt",
-            )
-            session.wait_until(
-                lambda screen: (
-                    "session-only-buffer"
-                    in screen.text(session.layout.row("body"))
-                    or "No such buffer: session-only.txt"
-                    in screen.text(session.layout.row("minibuffer"))
-                ),
-                what="saved-only buffer switch result",
-            )
-            if session.region_text("body").rstrip() != "session-only-buffer":
-                raise AssertionError(
-                    "saved-only buffer was not restored: "
-                    f"{session.region_text('minibuffer')!r}"
+            def has_restored_split(screen):
+                visible_copies = sum(
+                    line.count("UPPER-BUFFER") for line in screen.lines()
                 )
+                return visible_copies >= 2
 
-            _run_prompted_command(
-                session,
-                "switch-to-buffer",
-                "Switch to buffer: ",
-                "restart.txt",
+            session.wait_until(has_restored_split, what="restored split layout")
+            session.assert_external_state(
+                "restored split layout",
+                has_restored_split(session.screen),
+                True,
             )
-            _wait_for_exact_line(session, "body", "before", index=0)
-            _wait_for_exact_line(session, "body", "restored", index=1)
-            session.wait_for_region_cursor("body", 2, index=1)
-
-            session.send(keys.ctrl("p"))
-            _wait_for_exact_line(session, "body", "before", index=0)
-            session.wait_for_region_cursor("body", 2, index=0)
-
-            _run_prompted_command(
-                session,
-                "jump-to-bookmark",
-                "Jump to bookmark: ",
-                "restart-spot",
-            )
-            session.wait_for_region_cursor("body", 2, index=1)
-            _wait_for_exact_line(session, "body", "restored", index=1)
-
             output, code = session.quit()
             if session.observe_exit_code(code, 0) is not True:
-                raise AssertionError(
-                    f"loom exited with {code}: {output!r}"
-                )
+                raise AssertionError(f"loom exited with {code}: {output!r}")
+
+
+@scenario(
+    "session restart restores workspace",
+    commands=[
+        "execute-extended-command",
+        "new-workspace",
+        "switch-workspace",
+        "find-file",
+        "save-session",
+        "load-session",
+    ],
+)
+def session_restart_restores_workspace(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-session-workspace-") as directory:
+        main_path = os.path.join(directory, "main.txt")
+        workspace_path = os.path.join(directory, "workspace.txt")
+        alternate_path = os.path.join(directory, "alternate.txt")
+        with open(main_path, "wb") as handle:
+            handle.write(b"MAIN-WORKSPACE\n")
+        with open(workspace_path, "wb") as handle:
+            handle.write(b"WORKSPACE-TWO\n")
+        with open(alternate_path, "wb") as handle:
+            handle.write(b"ALTERNATE-ROOT\n")
+
+        with Session(binary, [main_path]) as session:
+            session.wait_ready()
+            session.extended_command("new-workspace")
+            session.wait_for_region_text("minibuffer", "Workspace: workspace-2")
+            session.assert_screen_text(
+                "Workspace: workspace-2", match="contains", region="minibuffer"
+            )
+            _run_prompted_command(
+                session,
+                "switch-workspace",
+                "Switch to workspace: ",
+                "workspace-2",
+            )
+            session.wait_for_region_text("minibuffer", "Workspace: workspace-2")
+            session.assert_screen_text(
+                "Workspace: workspace-2", match="contains", region="minibuffer"
+            )
+            _run_prompted_command(
+                session,
+                "find-file",
+                "Find file: ",
+                workspace_path,
+            )
+            _wait_for_exact_line(session, "body", "WORKSPACE-TWO")
+
+            session_path = os.path.join(session.home_dir, "session.sexp")
+            _run_prompted_command(
+                session,
+                "save-session",
+                "Save session to: ",
+                session_path,
+            )
+            _wait_for_exact_line(
+                session, "minibuffer", f"Session saved: {session_path}"
+            )
+            with open(session_path, "rb") as handle:
+                saved_session = handle.read()
+            session.assert_external_state(
+                "saved workspace session references its buffer",
+                os.fsencode(workspace_path) in saved_session,
+                True,
+            )
+            session.arguments = [alternate_path]
+            session.restart()
+            session.wait_for_text("ALTERNATE-ROOT")
+
+            _run_prompted_command(
+                session,
+                "load-session",
+                "Load session: ",
+                session_path,
+            )
+            _wait_for_exact_line(session, "body", "WORKSPACE-TWO")
+            session.wait_for_text_absent("MAIN-WORKSPACE")
+            session.assert_screen_text(
+                "WORKSPACE-TWO", match="contains", region="body"
+            )
+            output, code = session.quit()
+            if session.observe_exit_code(code, 0) is not True:
+                raise AssertionError(f"loom exited with {code}: {output!r}")

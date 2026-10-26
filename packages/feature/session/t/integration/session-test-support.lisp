@@ -9,7 +9,7 @@
    :selected-window-index selected-window-index))
 
 (defun %session-test-snapshot ()
-  "Return a small snapshot with every persisted buffer field populated."
+  "Return a small snapshot with every persisted session field populated."
   (make-session-snapshot
    :buffers (list
              (make-session-buffer-snapshot
@@ -31,4 +31,10 @@
                 :column 2))
    :command-history (list "M-x find-file" "M-x")
    :workspaces (list (%session-test-workspace :layout '(:leaf 0 4)))
-   :current-workspace-index 0))
+   :current-workspace-index 0
+   :file-tree
+   (make-session-file-tree-snapshot
+    :root-path "/workspace/"
+    :visible-p t
+    :expanded-paths '("/workspace/src/")
+    :selected-path "/workspace/src/main.lisp")))
