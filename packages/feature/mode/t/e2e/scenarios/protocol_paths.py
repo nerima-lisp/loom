@@ -32,9 +32,18 @@ def _python_path(directory, name, contents):
 
 
 def _assert_body(session, expected, index=0):
+    session.wait_for_region_text("body", expected, index=index)
     session.assert_screen_text(
         expected, match="contains", region="body", index=index
     )
+
+
+def _select_python_mode(session):
+    session.extended_command("set-major-mode")
+    session.wait_for_region_text("minibuffer", "Major mode: ")
+    session.type("Python")
+    session.key("RET")
+    session.wait_for_region_text("minibuffer", "Mode: Python")
 
 
 def _indent_key(session, index=1):
@@ -53,13 +62,14 @@ def _comment_key(session):
 
 @scenario(
     "mode/indent-key",
-    commands=["indent-for-tab-command", "save-buffer"],
+    commands=["set-major-mode", "indent-for-tab-command", "save-buffer"],
 )
 def indent_key(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-key-") as directory:
         path = _python_path(directory, "indent.py", b"    root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
             _indent_key(session)
             _save(session, path, b"    root\n    value\n")
@@ -68,13 +78,14 @@ def indent_key(binary):
 
 @scenario(
     "mode/indent-mx",
-    commands=["indent-for-tab-command", "save-buffer"],
+    commands=["set-major-mode", "indent-for-tab-command", "save-buffer"],
 )
 def indent_mx(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-mx-") as directory:
         path = _python_path(directory, "indent.py", b"    root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
             session.extended_command("indent-for-tab-command")
             _assert_body(session, "    value", 1)
@@ -84,7 +95,7 @@ def indent_mx(binary):
 
 @scenario(
     "mode/indent-undo",
-    commands=["indent-for-tab-command", "undo", "save-buffer"],
+    commands=["set-major-mode", "indent-for-tab-command", "undo", "save-buffer"],
 )
 def indent_undo(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-undo-") as directory:
@@ -92,6 +103,7 @@ def indent_undo(binary):
         path = _python_path(directory, "indent.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
             _indent_key(session)
             session.send(keys.ctrl("x") + keys.text("u"))
@@ -102,7 +114,7 @@ def indent_undo(binary):
 
 @scenario(
     "mode/indent-read-only",
-    commands=["toggle-read-only", "indent-for-tab-command"],
+    commands=["set-major-mode", "toggle-read-only", "indent-for-tab-command"],
 )
 def indent_read_only(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-read-only-") as directory:
@@ -110,6 +122,7 @@ def indent_read_only(binary):
         path = _python_path(directory, "indent.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
             session.extended_command("toggle-read-only")
             session.wait_for_region_text("minibuffer", "Buffer is read-only")
@@ -122,6 +135,7 @@ def indent_read_only(binary):
 @scenario(
     "mode/indent-narrow",
     commands=[
+        "set-major-mode",
         "set-mark-command",
         "narrow-to-region",
         "indent-for-tab-command",
@@ -136,6 +150,7 @@ def indent_narrow(binary):
         path = _python_path(directory, "indent.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.send(keys.ctrl("f") * len("before\n    root\n"))
             session.extended_command("set-mark-command")
             session.send(keys.ctrl("f") * len("value"))
@@ -148,13 +163,19 @@ def indent_narrow(binary):
 
 @scenario(
     "mode/indent-split-window",
-    commands=["split-window-below", "indent-for-tab-command", "save-buffer"],
+    commands=[
+        "set-major-mode",
+        "split-window-below",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
 )
 def indent_split_window(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-split-") as directory:
         path = _python_path(directory, "indent.py", b"    root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.extended_command("split-window-below")
             lower_window = session.layout.body_height // 2 + 1
             session.key("DOWN")
@@ -168,6 +189,7 @@ def indent_split_window(binary):
 @scenario(
     "mode/indent-macro",
     commands=[
+        "set-major-mode",
         "start-kbd-macro",
         "indent-for-tab-command",
         "end-kbd-macro",
@@ -181,6 +203,7 @@ def indent_macro(binary):
         path = _python_path(directory, "indent.py", b"    root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.send(keys.ctrl("x") + b"(")
             session.key("DOWN")
             _indent_key(session)
@@ -195,13 +218,19 @@ def indent_macro(binary):
 
 @scenario(
     "mode/indent-prefix",
-    commands=["universal-argument", "indent-for-tab-command", "save-buffer"],
+    commands=[
+        "set-major-mode",
+        "universal-argument",
+        "indent-for-tab-command",
+        "save-buffer",
+    ],
 )
 def indent_prefix(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-indent-prefix-") as directory:
         path = _python_path(directory, "indent.py", b"    root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.key("DOWN")
             session.send(keys.ctrl("u"))
             session.type("4")
@@ -212,13 +241,14 @@ def indent_prefix(binary):
 
 @scenario(
     "mode/comment-line-key",
-    commands=["comment-line", "save-buffer"],
+    commands=["set-major-mode", "comment-line", "save-buffer"],
 )
 def comment_line_key(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-key-") as directory:
         path = _python_path(directory, "comment.py", b"value\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             _comment_key(session)
             _assert_body(session, "value #")
             _save(session, path, b"value #\n")
@@ -227,13 +257,14 @@ def comment_line_key(binary):
 
 @scenario(
     "mode/comment-line-mx",
-    commands=["comment-line", "save-buffer"],
+    commands=["set-major-mode", "comment-line", "save-buffer"],
 )
 def comment_line_mx(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-mx-") as directory:
         path = _python_path(directory, "comment.py", b"value\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             _comment_mx(session)
             _save(session, path, b"# value\n")
             _close(session, "mode/comment-line-mx")
@@ -241,7 +272,7 @@ def comment_line_mx(binary):
 
 @scenario(
     "mode/comment-line-undo",
-    commands=["comment-line", "undo", "save-buffer"],
+    commands=["set-major-mode", "comment-line", "undo", "save-buffer"],
 )
 def comment_line_undo(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-undo-") as directory:
@@ -249,6 +280,7 @@ def comment_line_undo(binary):
         path = _python_path(directory, "comment.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             _comment_key(session)
             _assert_body(session, "value #")
             session.send(keys.ctrl("x") + keys.text("u"))
@@ -259,7 +291,7 @@ def comment_line_undo(binary):
 
 @scenario(
     "mode/comment-line-read-only",
-    commands=["toggle-read-only", "comment-line"],
+    commands=["set-major-mode", "toggle-read-only", "comment-line"],
 )
 def comment_line_read_only(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-read-only-") as directory:
@@ -267,6 +299,7 @@ def comment_line_read_only(binary):
         path = _python_path(directory, "comment.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.extended_command("toggle-read-only")
             session.wait_for_region_text("minibuffer", "Buffer is read-only")
             _comment_key(session)
@@ -278,6 +311,7 @@ def comment_line_read_only(binary):
 @scenario(
     "mode/comment-line-narrow",
     commands=[
+        "set-major-mode",
         "set-mark-command",
         "narrow-to-region",
         "comment-line",
@@ -292,6 +326,7 @@ def comment_line_narrow(binary):
         path = _python_path(directory, "comment.py", original)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.send(keys.ctrl("f") * len("before\n"))
             session.extended_command("set-mark-command")
             session.send(keys.ctrl("f") * len("value"))
@@ -305,13 +340,19 @@ def comment_line_narrow(binary):
 
 @scenario(
     "mode/comment-line-split-window",
-    commands=["split-window-below", "comment-line", "save-buffer"],
+    commands=[
+        "set-major-mode",
+        "split-window-below",
+        "comment-line",
+        "save-buffer",
+    ],
 )
 def comment_line_split_window(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-split-") as directory:
         path = _python_path(directory, "comment.py", b"root\nvalue\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.extended_command("split-window-below")
             lower_window = session.layout.body_height // 2 + 1
             session.key("DOWN")
@@ -325,6 +366,7 @@ def comment_line_split_window(binary):
 @scenario(
     "mode/comment-line-macro",
     commands=[
+        "set-major-mode",
         "start-kbd-macro",
         "comment-line",
         "end-kbd-macro",
@@ -338,6 +380,7 @@ def comment_line_macro(binary):
         path = _python_path(directory, "comment.py", b"value\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.send(keys.ctrl("x") + b"(")
             _comment_key(session)
             _assert_body(session, "value #")
@@ -352,13 +395,19 @@ def comment_line_macro(binary):
 
 @scenario(
     "mode/comment-line-prefix",
-    commands=["universal-argument", "comment-line", "save-buffer"],
+    commands=[
+        "set-major-mode",
+        "universal-argument",
+        "comment-line",
+        "save-buffer",
+    ],
 )
 def comment_line_prefix(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-mode-comment-prefix-") as directory:
         path = _python_path(directory, "comment.py", b"value\n")
         with Session(binary, [path]) as session:
             session.wait_ready()
+            _select_python_mode(session)
             session.send(keys.ctrl("u"))
             session.type("4")
             _comment_key(session)
@@ -381,6 +430,7 @@ def set_major_mode_cancel(binary):
             session.wait_ready()
             _major_mode_prompt(session)
             session.send(keys.ctrl("g"))
+            session.wait_for_region_text("minibuffer", "Quit")
             session.assert_screen_text(
                 "Quit", match="contains", region="minibuffer"
             )
@@ -396,6 +446,7 @@ def set_major_mode_empty(binary):
             session.wait_ready()
             _major_mode_prompt(session)
             session.key("RET")
+            session.wait_for_region_text("minibuffer", "Unknown major mode:")
             session.assert_screen_text(
                 "Unknown major mode:", match="contains", region="minibuffer"
             )
@@ -413,6 +464,7 @@ def set_major_mode_tab(binary):
             session.type("Pyth")
             session.key("TAB")
             session.key("RET")
+            session.wait_for_region_text("minibuffer", "Mode: Python")
             session.assert_screen_text(
                 "Mode: Python", match="contains", region="minibuffer"
             )
@@ -434,6 +486,7 @@ def set_major_mode_history(binary):
             _major_mode_prompt(session)
             session.key("UP")
             session.key("RET")
+            session.wait_for_region_text("minibuffer", "Mode: Python")
             session.assert_screen_text(
                 "Mode: Python", match="contains", region="minibuffer"
             )
@@ -450,6 +503,7 @@ def set_major_mode_invalid(binary):
             _major_mode_prompt(session)
             session.type("not-a-mode")
             session.key("RET")
+            session.wait_for_region_text("minibuffer", "Unknown major mode: not-a-mode")
             session.assert_screen_text(
                 "Unknown major mode: not-a-mode",
                 match="contains",
