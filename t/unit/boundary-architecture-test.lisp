@@ -1249,14 +1249,40 @@
 
 (defun boundary-finding-key (finding)
   (list (boundary-finding-category finding) (boundary-finding-file finding)
-        (boundary-finding-line finding) (boundary-finding-reference finding)))
+        (boundary-finding-reference finding)))
 
 (defun boundary-allowlisted-p (finding allowlist)
-  (let ((slice-entry (assoc (boundary-finding-slice finding) allowlist :test #'string=)))
-    (and slice-entry (member (boundary-finding-key finding) (cdr slice-entry) :test #'equal))))
+  (cdar (nth-value 1 (boundary-unallowlisted (list finding) allowlist))))
 
 (defun boundary-unallowlisted (findings allowlist)
-  (remove-if (lambda (finding) (boundary-allowlisted-p finding allowlist)) findings))
+  (let ((remaining
+          (loop for slice-entry in allowlist
+                append (loop for entry in (cdr slice-entry)
+                             collect (cons (first slice-entry) entry))))
+        (new nil)
+        (statuses nil))
+    (dolist (finding findings)
+      (let* ((entry-key
+               (list (boundary-finding-slice finding)
+                     (boundary-finding-category finding)
+                     (boundary-finding-file finding)
+                     (boundary-finding-reference finding)))
+             (match
+               (find-if (lambda (entry)
+                          (equal entry-key
+                                 (list (car entry)
+                                       (first (cdr entry))
+                                       (second (cdr entry))
+                                       (fourth (cdr entry)))))
+                        remaining)))
+        (if match
+            (progn
+              (push (cons finding t) statuses)
+              (setf remaining (delete match remaining :test #'eq :count 1)))
+            (progn
+              (push (cons finding nil) statuses)
+              (push finding new)))))
+    (values (nreverse new) (nreverse statuses) remaining)))
 
 (defun boundary-sorted-findings (findings)
   (sort (copy-list findings)
@@ -1269,39 +1295,58 @@
                                  (boundary-finding-line right) (boundary-finding-reference right))))
             (string< (prin1-to-string left-key) (prin1-to-string right-key))))))
 
-(defun boundary-report (findings edges internal-refs)
-  (let ((counts (make-hash-table :test #'eq))
-        (new (boundary-unallowlisted findings *boundary-allowlist*)))
-    (format t "~&Boundary architecture report (~A mode):~%" *boundary-report-vs-fail*)
-    (dolist (finding (boundary-sorted-findings findings))
-      (incf (gethash (boundary-finding-category finding) counts 0))
-      (format t "  ~A ~A ~A ~A:~D ~A~%"
-              (if (boundary-allowlisted-p finding *boundary-allowlist*) "KNOWN" "*** NEW ***")
-              (boundary-finding-slice finding) (boundary-finding-category finding)
-              (boundary-finding-file finding) (boundary-finding-line finding)
-              (boundary-finding-reference finding)))
-    (format t "Violation totals by category:~%")
-    (dolist (category (sort (loop for key being the hash-keys of counts collect key)
-                            #'string< :key #'string))
-      (format t "  ~A: ~D~%" category (gethash category counts)))
-    (format t "  total: ~D~%" (length findings))
-    (format t "  unallowlisted: ~D~%" (length new))
-    (format t "Current inter-slice edges (informational; compare with per-slice ASDF DAGs later):~%")
-    (dolist (edge (sort (copy-list (boundary-inter-slice-edges edges))
-                        #'string< :key (lambda (item)
-                                         (format nil "~A ~A" (boundary-edge-source-slice item)
-                                                 (boundary-edge-target-slice item)))))
-      (format t "  ~A -> ~A ~A:~D ~A~%"
-              (boundary-edge-source-slice edge) (boundary-edge-target-slice edge)
-              (boundary-edge-file edge) (boundary-edge-line edge)
-              (boundary-edge-reference edge)))
-    (format t "Internal symbol references using :: (~D):~%" (length internal-refs))
-    (dolist (reference (sort (copy-list internal-refs)
-                             #'string< :key #'prin1-to-string))
-      (format t "  ~A:~D ~A~%" (second reference) (third reference) (fourth reference)))
-    (format t "Limits: package-qualified references and :: locations are scanned lexically, including both reader-conditional branches. Direct FIND-PACKAGE, FIND-SYMBOL, and INTERN calls with literal package designators are resolved only in forms read in the active host branch. Layer checks match list-head tokens to top-level defun/defgeneric/defmethod/defmacro definitions, including definitions under eval-when/progn; macro expansion, local bindings, computed package names, function-designator references such as #'foo, and indirect calls are unresolved.~%")
-    (when (and (eq *boundary-report-vs-fail* :fail) new)
-      (error "Boundary architecture has ~D unallowlisted findings" (length new)))))
+(defun boundary-report (findings edges internal-refs
+                         &optional (allowlist *boundary-allowlist*))
+  (let* ((sorted-findings (boundary-sorted-findings findings))
+         (counts (make-hash-table :test #'eq))
+         (allowlist-counts (make-hash-table :test #'eq)))
+    (multiple-value-bind (new statuses stale)
+        (boundary-unallowlisted sorted-findings allowlist)
+      (format t "~&Boundary architecture report (~A mode):~%" *boundary-report-vs-fail*)
+      (dolist (status statuses)
+        (let ((finding (car status)))
+          (incf (gethash (boundary-finding-category finding) counts 0))
+          (format t "  ~A ~A ~A ~A:~D ~A~%"
+                  (if (cdr status) "KNOWN" "*** NEW ***")
+                  (boundary-finding-slice finding) (boundary-finding-category finding)
+                  (boundary-finding-file finding) (boundary-finding-line finding)
+                  (boundary-finding-reference finding))))
+      (format t "Violation totals by category:~%")
+      (dolist (category (sort (loop for key being the hash-keys of counts collect key)
+                              #'string< :key #'string))
+        (format t "  ~A: ~D~%" category (gethash category counts)))
+      (format t "  total: ~D~%" (length findings))
+      (format t "  unallowlisted: ~D~%" (length new))
+      (dolist (slice-entry allowlist)
+        (dolist (entry (cdr slice-entry))
+          (incf (gethash (first entry) allowlist-counts 0))))
+      (format t "Allowlist entries by kind:~%")
+      (dolist (kind (sort (loop for key being the hash-keys of allowlist-counts collect key)
+                          #'string< :key #'string))
+        (format t "  ~A: ~D~%" kind (gethash kind allowlist-counts)))
+      (format t "  total: ~D~%"
+              (loop for count being the hash-values of allowlist-counts sum count))
+      (format t "Stale allowlist entries (removable): ~D~%" (length stale))
+      (dolist (item stale)
+        (let ((entry (cdr item)))
+          (format t "  REMOVABLE ~A ~A ~A [old line ~D] ~A~%"
+                  (car item) (first entry) (second entry) (third entry) (fourth entry))))
+      (format t "Current inter-slice edges (informational; compare with per-slice ASDF DAGs later):~%")
+      (dolist (edge (sort (copy-list (boundary-inter-slice-edges edges))
+                          #'string< :key (lambda (item)
+                                           (format nil "~A ~A" (boundary-edge-source-slice item)
+                                                   (boundary-edge-target-slice item)))))
+        (format t "  ~A -> ~A ~A:~D ~A~%"
+                (boundary-edge-source-slice edge) (boundary-edge-target-slice edge)
+                (boundary-edge-file edge) (boundary-edge-line edge)
+                (boundary-edge-reference edge)))
+      (format t "Internal symbol references using :: (~D):~%" (length internal-refs))
+      (dolist (reference (sort (copy-list internal-refs)
+                               #'string< :key #'prin1-to-string))
+        (format t "  ~A:~D ~A~%" (second reference) (third reference) (fourth reference)))
+      (format t "Limits: package-qualified references and :: locations are scanned lexically, including both reader-conditional branches. Direct FIND-PACKAGE, FIND-SYMBOL, and INTERN calls with literal package designators are resolved only in forms read in the active host branch. Layer checks match list-head tokens to top-level defun/defgeneric/defmethod/defmacro definitions, including definitions under eval-when/progn; macro expansion, local bindings, computed package names, function-designator references such as #'foo, and indirect calls are unresolved.~%")
+      (when (and (eq *boundary-report-vs-fail* :fail) new)
+        (error "Boundary architecture has ~D unallowlisted findings" (length new))))))
 
 (defun boundary-current-report ()
   (let* ((records (boundary-source-records))
@@ -1332,8 +1377,11 @@
      (remove-duplicates
       findings
       :key (lambda (finding)
-             (cons (boundary-finding-slice finding)
-                   (boundary-finding-key finding)))
+             (list (boundary-finding-slice finding)
+                   (boundary-finding-category finding)
+                   (boundary-finding-file finding)
+                   (boundary-finding-line finding)
+                   (boundary-finding-reference finding)))
       :test #'equal)
      edges internal-refs)))
 
@@ -1366,8 +1414,16 @@
                           :text "(find-package \"LOOM-USER\")"))
          (dynamic-edge (first (boundary-token-edges (list dynamic-record))))
          (dynamic-finding (first (boundary-edge-findings (list dynamic-edge))))
-         (allowed (list (list (boundary-finding-slice dynamic-finding)
-                              (boundary-finding-key dynamic-finding))))
+         (allowed
+  (list (list (boundary-finding-slice dynamic-finding)
+              (list (boundary-finding-category dynamic-finding)
+                    (boundary-finding-file dynamic-finding)
+                    (+ (boundary-finding-line dynamic-finding) 1)
+                    (boundary-finding-reference dynamic-finding))
+              (list (boundary-finding-category dynamic-finding)
+                    (boundary-finding-file dynamic-finding)
+                    (+ (boundary-finding-line dynamic-finding) 2)
+                    (boundary-finding-reference dynamic-finding)))))
          (scanner-record (make-boundary-record
                           :path "synthetic/scanner.lisp" :slice "root" :layer :application
                           :package (find-package "LOOM")
@@ -1394,7 +1450,16 @@
     (expect (boundary-finding-reference dynamic-finding)
             :to-equal "feature/evaluation -> root (FIND-PACKAGE LOOM-USER)")
     (expect (length (boundary-unallowlisted (list dynamic-finding) nil)) :to-equal 1)
-    (expect (boundary-unallowlisted (list dynamic-finding) allowed) :to-equal nil)
+    (progn
+  (expect (boundary-unallowlisted (list dynamic-finding) allowed) :to-equal nil)
+  (expect (length (boundary-unallowlisted
+                   (list dynamic-finding dynamic-finding dynamic-finding)
+                   allowed))
+          :to-equal 1)
+  (expect (length (nth-value 2
+                             (boundary-unallowlisted
+                              (list dynamic-finding) allowed)))
+          :to-equal 1))
     (expect (handler-case
                 (progn
                   (let ((*boundary-report-vs-fail* :fail)
