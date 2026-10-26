@@ -158,3 +158,31 @@ def missing_path(binary):
 
             output, code = session.quit()
     _assert_exit_zero("missing path", output, code)
+
+
+@scenario("startup file positions and multiple paths", commands=["switch-to-buffer"])
+def startup_file_positions_and_multiple_paths(binary):
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-startup-") as directory:
+        first_path = os.path.join(directory, "first.txt")
+        second_path = os.path.join(directory, "second.txt")
+        with open(first_path, "wb") as handle:
+            handle.write(b"first top\nfirst middle\nfirst bottom\n")
+        with open(second_path, "wb") as handle:
+            handle.write(b"second buffer\nsecond end\n")
+
+        with Session(binary, ["+2:3", first_path, second_path]) as session:
+            session.wait_ready()
+            session.wait_for_region_exact_text("body", "first top", index=0)
+            session.wait_for_region_exact_text("body", "first middle", index=1)
+            session.wait_for_region_exact_text("body", "first bottom", index=2)
+            session.wait_for_region_cursor("body", 2, index=1)
+
+            session.extended_command("switch-to-buffer")
+            session.wait_for_region_text("minibuffer", "Switch to buffer: ")
+            session.type("second.txt")
+            session.key("RET")
+            session.wait_for_region_exact_text("body", "second buffer", index=0)
+            session.wait_for_region_exact_text("body", "second end", index=1)
+
+            output, code = session.quit()
+    _assert_exit_zero("startup file positions and multiple paths", output, code)
