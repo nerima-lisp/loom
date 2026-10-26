@@ -13,7 +13,7 @@
   :entry "mx"
   :state "tool:shell"
   :outcome "success"
-  :observe (:external_state)
+  :observe (:screen_text)
   :scenario "tooling/terminal"
   :lane "W3-11")
  (:id "r1:terminal-stop:mx"
@@ -31,6 +31,42 @@
   :entry "mx"
   :state "tool:shell"
   :outcome "success"
-  :observe (:external_state)
+  :observe (:screen_text)
   :scenario "tooling/terminal-stop"
+  :lane "W3-11")
+ (:id "r5:terminal:shell:nonzero"
+  :commands (:terminal)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "nonzero"
+  :observe (:screen_text)
+  :scenario "tooling/terminal-nonzero"
+  :lane "W3-11")
+ (:id "r5:terminal:shell:interrupted"
+  :commands (:terminal)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "interrupted"
+  :observe (:screen_text)
+  :scenario "tooling/terminal-interrupted"
+  :lane "W3-11")
+ (:id "r5:terminal-stop:shell:nonzero"
+  :commands (:terminal-stop)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "nonzero"
+  :observe (:screen_text :external_state)
+  :scenario "tooling/terminal-stop-nonzero"
+  :lane "W3-11")
+ (:id "r5:terminal-stop:shell:interrupted"
+  :commands (:terminal-stop)
+  :rule :r5
+  :entry "mx"
+  :state "tool:shell"
+  :outcome "interrupted"
+  :observe (:screen_text :external_state)
+  :scenario "tooling/terminal-stop-interrupted"
   :lane "W3-11"))
