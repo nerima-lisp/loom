@@ -17,7 +17,7 @@ def _write(path, content):
 def _discard_and_close(session, name):
     session.send(keys.ctrl("x") + keys.ctrl("c"))
     session.wait_for_region_text("minibuffer", "Save ", timeout=2)
-    session.key("d")
+    session.type("d")
     output, code = session.process.wait()
     session.observe_exit_code(code, expected=0)
     if code != 0:
