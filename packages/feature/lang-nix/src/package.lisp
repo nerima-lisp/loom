@@ -15,7 +15,10 @@
    :keywords '("abort" "assert" "baseNameOf" "builtins" "derivation"
                "dirOf" "else" "false" "fetchTarball" "fetchurl" "if"
                "import" "in" "inherit" "isNull" "let" "map" "null" "or"
-               "rec" "removeAttrs" "then" "throw" "toString" "true" "with")))
+               "rec" "removeAttrs" "then" "throw" "toString" "true" "with"))
+  (loom/feature/mode:register-major-mode-pair-completion :nix #\{ #\})
+  (loom/feature/mode:register-major-mode-pair-completion :nix #\[ #\])
+  (loom/feature/mode:register-major-mode-pair-completion :nix #\( #\)))
 (progn
   (defun loom/feature/lang-nix::%nix-whitespace-p (character)
     (member character '(#\Space #\Tab #\Return) :test #'char=))

@@ -24,4 +24,13 @@
   :outcome "C-M-backslash applies Nix indentation and aligns matching clauses"
   :observe (:file_bytes)
   :scenario "lang-nix-indentation-control-meta-backslash"
+  :lane "W3-7c")
+ (:id "w3-7c:lang-nix:pair-completion"
+  :commands (:save-buffer)
+  :rule :r1
+  :entry "keys: { [ ( then ) ] }"
+  :state "Nix mode with registered {}, [], and () pairs"
+  :outcome "Openers insert closers and existing closers are skipped"
+  :observe (:file_bytes)
+  :scenario "lang-nix-pair-completion"
   :lane "W3-7c"))
