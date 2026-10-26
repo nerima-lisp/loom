@@ -215,15 +215,44 @@ non-negative column, or NIL to use the preceding line's indentation."
           (indent-region)
           (%indent-major-mode-line buffer (buffer-point-line buffer)))))
   nil)
+(defun %major-mode-newline-continuation-values (buffer line-number)
+  (let* ((line-length (length (buffer-line buffer line-number)))
+         (function
+           (gethash (buffer-major-mode buffer)
+                    *major-mode-newline-continuations*)))
+    (if (null function)
+        (values nil nil nil)
+        (multiple-value-bind (continuation delete-start delete-end)
+            (funcall function buffer line-number)
+          (unless (or (null continuation) (stringp continuation))
+            (error "Major-mode newline continuation must return a string or NIL: ~S"
+                   continuation))
+          (unless (eq (null delete-start) (null delete-end))
+            (error "Major-mode newline deletion range must provide both columns"))
+          (when (and delete-start
+                     (not (and (integerp delete-start)
+                               (integerp delete-end)
+                               (<= 0 delete-start delete-end line-length))))
+            (error "Major-mode newline deletion range is invalid: ~S to ~S"
+                   delete-start delete-end))
+          (values continuation delete-start delete-end)))))
 (defun newline-and-indent ()
-  "Insert a newline and indent the new line using the major-mode protocol."
+  "Insert a newline, then apply the mode continuation and indentation rules."
   (let ((buffer
          (window-buffer
           (window-tree-selected-window
            (editor-state-window-tree *editor-state*)))))
     (when buffer
-      (buffer-insert-string buffer (string #\Newline))
-      (%indent-major-mode-line buffer (buffer-point-line buffer))))
+      (let ((line-number (buffer-point-line buffer)))
+        (multiple-value-bind (continuation delete-start delete-end)
+            (%major-mode-newline-continuation-values buffer line-number)
+          (when delete-start
+            (buffer-delete-region buffer line-number delete-start
+                                  line-number delete-end))
+          (buffer-insert-string buffer (string #\Newline))
+          (%indent-major-mode-line buffer (buffer-point-line buffer))
+          (when continuation
+            (buffer-insert-string buffer continuation))))))
   nil)
 
 (defun %comment-line-removal-end (line indentation prefix-end)

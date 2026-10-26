@@ -295,3 +295,69 @@ run" (buffer (%selected-test-buffer)))
         (expect (buffer-text buffer) :to-equal "))")
         (expect (buffer-point-line buffer) :to-equal 0)
         (expect (buffer-point-column buffer) :to-equal 1)))))
+(describe
+  "major-mode newline continuation protocol"
+  (it
+    "combines indentation and a mode-provided continuation prefix"
+    (%with-registered-major-modes (:loom-test-newline-continuation)
+      (register-major-mode :loom-test-newline-continuation)
+      (signals error
+        (loom/feature/mode:register-major-mode-newline-continuation
+         :loom-unknown-mode (function identity)))
+      (let ((received-line nil))
+        (expect
+         (loom/feature/mode:register-major-mode-newline-continuation
+          :loom-test-newline-continuation
+          (lambda (buffer line-number)
+            (declare (ignore buffer))
+            (setf received-line line-number)
+            "- "))
+         :to-be
+         :loom-test-newline-continuation)
+        (loom/feature/mode:register-major-mode-indentation-rule
+         :loom-test-newline-continuation
+         (lambda (buffer line-number)
+           (declare (ignore buffer))
+           (if (= line-number 1) 2 0)))
+        (%with-minibuffer-state
+            (minibuffer "- item" (buffer (%selected-test-buffer)))
+          (buffer-set-major-mode buffer :loom-test-newline-continuation)
+          (buffer-set-point buffer 0 6)
+          (loom/feature/mode:newline-and-indent)
+          (expect (buffer-text buffer) :to-equal (format nil "- item~%  - ")))
+        (expect received-line :to-equal 0))))
+  (it
+    "removes a mode-selected range when an empty item ends"
+    (%with-registered-major-modes (:loom-test-empty-item)
+      (register-major-mode :loom-test-empty-item)
+      (loom/feature/mode:register-major-mode-newline-continuation
+       :loom-test-empty-item
+       (lambda (buffer line-number)
+         (when (and (zerop line-number)
+                    (string= (buffer-line buffer line-number) "- "))
+           (values nil 0 2))))
+      (%with-minibuffer-state
+          (minibuffer "- " (buffer (%selected-test-buffer)))
+        (buffer-set-major-mode buffer :loom-test-empty-item)
+        (buffer-set-point buffer 0 2)
+        (loom/feature/mode:newline-and-indent)
+        (expect (buffer-line buffer 0) :to-equal "")
+        (expect (buffer-line buffer 1) :to-equal "")
+        (expect (buffer-point-line buffer) :to-equal 1)
+        (expect (buffer-point-column buffer) :to-equal 0))))
+  (it
+    "rejects an invalid deletion range before changing the buffer"
+    (%with-registered-major-modes (:loom-test-invalid-newline-range)
+      (register-major-mode :loom-test-invalid-newline-range)
+      (loom/feature/mode:register-major-mode-newline-continuation
+       :loom-test-invalid-newline-range
+       (lambda (buffer line-number)
+         (declare (ignore buffer line-number))
+         (values nil 0 2)))
+      (%with-minibuffer-state
+          (minibuffer "x" (buffer (%selected-test-buffer)))
+        (buffer-set-major-mode buffer :loom-test-invalid-newline-range)
+        (buffer-set-point buffer 0 1)
+        (signals error
+          (loom/feature/mode:newline-and-indent))
+        (expect (buffer-text buffer) :to-equal "x")))))

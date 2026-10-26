@@ -107,6 +107,22 @@ Register extension-defined modes with REGISTER-MAJOR-MODE first."
     (check-type function function)
     (setf (gethash key *major-mode-indentation-rules*) function)
     key))
+(defun register-major-mode-newline-continuation (mode function)
+  "Register a newline-continuation callback for MODE and return its canonical key.
+
+FUNCTION receives BUFFER and the zero-based LINE-NUMBER of the line being
+split, before the newline is inserted. It returns CONTINUATION (a string or
+NIL), followed by DELETE-START and DELETE-END. A string is inserted at point
+after the new line is indented; NIL inserts nothing. DELETE-START and
+DELETE-END must both be NIL or both be integer columns delimiting a half-open
+range within the original line. The range is removed before the newline is
+inserted. FUNCTION must not modify BUFFER. Register extension-defined modes
+with REGISTER-MAJOR-MODE first."
+  (let ((key (or (major-mode-from-name mode)
+                 (error "Unknown major mode for newline continuation: ~S" mode))))
+    (check-type function function)
+    (setf (gethash key *major-mode-newline-continuations*) function)
+    key))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.
@@ -117,9 +133,10 @@ Built-in modes cannot be removed; unknown modes return NIL."
       ((gethash key *registered-major-modes*)
        (remhash key *registered-major-modes*)
        (remhash key *major-mode-indentation-rules*)
+       (remhash key *major-mode-newline-continuations*)
        (remhash key *major-mode-pair-completion-rules*)
        (setf *registered-major-mode-order*
-             (delete key *registered-major-mode-order* :test #'eq))
+             (delete key *registered-major-mode-order* :test (function eq)))
        (incf *major-mode-registry-version*)
        key)
       ((%static-major-mode-definition key)

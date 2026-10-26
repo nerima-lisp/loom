@@ -69,6 +69,7 @@
    #:indent-region
    #:newline-and-indent
    #:register-major-mode-indentation-rule
+   #:register-major-mode-newline-continuation
    #:major-mode-indentation-column
    #:comment-line
    #:toggle-truncate-lines
