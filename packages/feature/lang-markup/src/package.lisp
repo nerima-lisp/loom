@@ -124,3 +124,9 @@
    :keywords '("CANCELLED" "CLOSED" "DEADLINE" "DONE" "NEXT"
                "SCHEDULED" "TODO" "WAITING")
    :keybindings '(((:alt #\;) . loom/feature/lang-markup::org-comment-dwim))))
+
+(loom/feature/mode:register-major-mode-display-lines-provider
+ :markdown #'loom/feature/lang-markup:markup-display-lines)
+
+(loom/feature/mode:register-major-mode-display-lines-provider
+ :org #'loom/feature/lang-markup:markup-display-lines)

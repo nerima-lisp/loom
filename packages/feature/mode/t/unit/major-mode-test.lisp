@@ -196,3 +196,39 @@
     "keeps hidden files and trailing dots without inventing extensions"
     (expect (major-mode-for-path ".profile") :to-be :fundamental)
     (expect (major-mode-for-path "README.") :to-be :fundamental)))
+
+(describe
+  "major-mode-display-lines"
+  (it
+    "dispatches the complete source and falls back to plain text runs"
+    (let ((mode :display-lines-test)
+          (source (format nil "whole~%source"))
+          (calls 0))
+      (register-major-mode mode :name "Display Lines Test")
+      (unwind-protect
+           (progn
+             (expect
+              (major-mode-display-lines
+               (format nil "alpha~%~%omega~%")
+               :fundamental)
+              :to-equal
+              '(((:plain "alpha"))
+                ((:plain ""))
+                ((:plain "omega"))
+                ((:plain ""))))
+             (expect (major-mode-display-lines "" :unknown)
+                     :to-equal '(((:plain ""))))
+             (register-major-mode-display-lines-provider
+              mode
+              (lambda (text canonical-mode)
+                (incf calls)
+                (list (list (list canonical-mode text)))))
+             (expect (major-mode-display-lines source mode)
+                     :to-equal
+                     (list (list (list :display-lines-test source))))
+             (expect calls :to-equal 1))
+        (unregister-major-mode mode))
+      (expect (major-mode-display-lines source mode)
+              :to-equal
+              '(((:plain "whole"))
+                ((:plain "source")))))))

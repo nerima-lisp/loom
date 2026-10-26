@@ -102,3 +102,30 @@ An absent setting or an unknown mode defaults to T; an explicit NIL wraps."
                 collect (getf (cdr entry) :name))
           (loop for key in *registered-major-mode-order*
                 collect (getf (%dynamic-major-mode-definition key) :name))))
+
+(defun %plain-major-mode-display-lines (source)
+  (let ((start 0)
+        (length (length source))
+        (lines nil))
+    (loop for newline = (position #\Newline source :start start)
+          do (progn
+               (let ((end (or newline length)))
+                 (when (and (> end start)
+                            (char= (char source (1- end)) #\Return))
+                   (decf end))
+                 (push (list (list :plain (subseq source start end)))
+                       lines))
+               (unless newline
+                 (return (nreverse lines)))
+               (setf start (1+ newline))))))
+
+(defun major-mode-display-lines (source mode)
+  "Return display runs per source line through MODE's provider or plain text."
+  (check-type source string)
+  (let* ((key (major-mode-from-name mode))
+         (provider
+           (and key
+                (gethash key *major-mode-display-lines-providers*))))
+    (if provider
+        (funcall provider source key)
+        (%plain-major-mode-display-lines source))))

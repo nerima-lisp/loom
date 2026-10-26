@@ -7,6 +7,11 @@
 
 (defparameter +layout-isearch-current-style+ '((:bg 6) (:fg 0))
   "Style for the match point currently sits on, so it reads apart from the rest.")
+(defparameter +layout-markup-display-styles+
+  (quote ((:heading . (:bold (:fg 6)))
+          (:comment . (:fg 8))
+          (:code . (:fg 2))))
+  "Terminal styles for markup display-run kinds.")
 
 (defun %layout-truncated-line-position (renderer window text line start)
   (let* ((scroll-column (loom/core/window-tree:window-scroll-column window)))
@@ -115,7 +120,24 @@ draws nothing rather than clipping to the wrong row."
            renderer window x y text line width start end style)
           (%layout-draw-wrapped-line-run
            renderer window x y text width height line start end style)))))
-
+(defun %layout-draw-mode-display-lines (renderer window x-offset display-lines)
+  "Apply mode display-run styles to rendered source lines."
+  (let ((buffer (loom/core/window-tree:window-buffer window)))
+    (loop for line from 0
+          for line-runs in display-lines
+          while (< line (%layout-buffer-visible-line-count buffer))
+          do (let ((start 0))
+               (dolist (run line-runs)
+                 (let* ((kind (first run))
+                        (text (second run))
+                        (end (+ start (length text)))
+                        (style
+                          (cdr (assoc kind +layout-markup-display-styles+
+                                      :test (function eq)))))
+                   (when (and style (< start end))
+                     (%layout-draw-line-run
+                      renderer window x-offset line start end style))
+                   (setf start end)))))))
 (defun %layout-span-line-bounds (buffer span)
   (let ((start (buffer-visible-offset-position buffer
                                                 (buffer-span-start span)))

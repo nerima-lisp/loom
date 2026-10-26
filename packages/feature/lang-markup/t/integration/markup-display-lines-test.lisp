@@ -48,3 +48,14 @@ literal
        ((:code "literal"))
        ((:code "#+END_SRC")))))
 )
+
+(describe
+  "mode display-lines providers"
+  (it
+    "uses markup kinds through the mode query for Markdown and Org"
+    (expect
+     (loom/feature/mode:major-mode-display-lines "# Heading" :markdown)
+     :to-equal '(((:heading "# Heading"))))
+    (expect
+     (loom/feature/mode:major-mode-display-lines "* Heading" :org)
+     :to-equal '(((:heading "* Heading"))))))

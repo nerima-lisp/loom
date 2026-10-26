@@ -126,6 +126,15 @@ with REGISTER-MAJOR-MODE first."
     (check-type function function)
     (setf (gethash key *major-mode-newline-continuations*) function)
     key))
+(defun register-major-mode-display-lines-provider (mode function)
+  "Register the display-lines provider for MODE and return its canonical key.
+
+FUNCTION receives the complete source and canonical mode key and returns display runs per source line."
+  (let ((key (or (major-mode-from-name mode)
+                 (error "Unknown major mode for display-lines provider: ~S" mode))))
+    (check-type function function)
+    (setf (gethash key *major-mode-display-lines-providers*) function)
+    key))
 
 (defun unregister-major-mode (mode)
   "Remove a dynamically registered MODE and return its canonical key.
@@ -137,6 +146,7 @@ Built-in modes cannot be removed; unknown modes return NIL."
        (remhash key *registered-major-modes*)
        (remhash key *major-mode-indentation-rules*)
        (remhash key *major-mode-newline-continuations*)
+       (remhash key *major-mode-display-lines-providers*)
        (remhash key *major-mode-pair-completion-rules*)
        (setf *registered-major-mode-order*
              (delete key *registered-major-mode-order* :test (function eq)))

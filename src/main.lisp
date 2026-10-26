@@ -690,6 +690,10 @@ the mode line or another footer in the remaining window rows."
     (renderer leaf x-offset selected-p buffer-cell-function)
   (%layout-draw-window-buffer
    renderer leaf x-offset (%layout-window-content-height leaf) selected-p)
+  (%layout-draw-mode-display-lines
+   renderer leaf x-offset
+   (%layout-buffer-mode-display-lines
+    (loom/core/window-tree:window-buffer leaf)))
   (%layout-draw-diagnostics renderer leaf x-offset)
   (%layout-draw-region renderer leaf x-offset)
   (%layout-draw-matching-paren renderer leaf x-offset)

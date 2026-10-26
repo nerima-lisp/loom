@@ -75,3 +75,7 @@
   *major-mode-pair-completion-rules*
   (make-hash-table :test (function eq))
   "Explicit opener/closer pair lists, keyed by canonical major mode.")
+
+(defparameter *major-mode-display-lines-providers*
+  (make-hash-table :test #'eq)
+  "Display-line callbacks keyed by canonical major mode.")

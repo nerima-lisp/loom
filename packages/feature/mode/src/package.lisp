@@ -78,4 +78,6 @@
    #:major-mode-comment-end
    #:major-mode-skip-closing-delimiter-p
    #:comment-dwim
-   #:register-major-mode-pair-completion))
+   #:register-major-mode-pair-completion
+   #:major-mode-display-lines
+   #:register-major-mode-display-lines-provider))

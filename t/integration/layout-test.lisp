@@ -30,7 +30,33 @@
       (expect (cl-tty-kit:screen-row-string (%layout-screen wrapped) 0)
               :to-equal "abc")
       (expect (cl-tty-kit:screen-row-string (%layout-screen wrapped) 1)
-              :to-equal "def"))))
+              :to-equal "def")))
+  (it
+    "renders Markdown display runs through the major-mode query"
+    (let* ((state (%fresh-layout-state
+                   :name "README.md"
+                   :content "# Heading
+<!-- comment -->
+```text
+code
+```"
+                   :height 7))
+           (buffer (window-buffer (%layout-window state)))
+           (screen (%layout-screen state)))
+      (buffer-set-major-mode buffer :markdown)
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 9)
+              :to-equal "# Heading")
+      (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 16)
+              :to-equal "<!-- comment -->")
+      (expect (cl-tty-kit:screen-row-string screen 3 :start 0 :end 4)
+              :to-equal "code")
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+              :to-equal (quote (:bold (:fg 6))))
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 1))
+              :to-equal (quote ((:fg 8))))
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 3))
+              :to-equal (quote ((:fg 2)))))))
 
 (describe
   "syntax-highlighted layout drawing"
