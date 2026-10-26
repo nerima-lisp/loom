@@ -709,6 +709,42 @@
         }
       ],
       "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/effect",
+      "path_id": "r3:upcase-word:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "upcase-word",
+        "save-buffer"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-u"
+      ],
+      "initial_bytes": "one two\n",
+      "effect_bytes": "ONE two\n",
+      "expected_bytes": "ONE two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ]
     }
   ]
 }
