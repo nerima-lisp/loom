@@ -157,12 +157,14 @@
                  (external-dependencies production-forms local-system-names))
                (test-dependencies
                  (external-dependencies test-forms local-system-names)))
-          (ecase selection
-            (:all (remove-duplicates
-                   (append production-dependencies test-dependencies)
-                   :test #'string=))
-            (:production production-dependencies)
-            (:test test-dependencies)))))))
+          (values
+            (ecase selection
+              (:all (remove-duplicates
+                     (append production-dependencies test-dependencies)
+                     :test #'string=))
+              (:production production-dependencies)
+              (:test test-dependencies))
+            local-system-names))))))
 
 (describe
   "dependency declaration contracts"
@@ -230,4 +232,13 @@
     "keeps runner dependencies declared by an ASDF system"
     (let ((declared-dependencies (all-asdf-dependencies)))
       (dolist (dependency (script-sibling-names "run-tests.lisp"))
-        (expect declared-dependencies :to-contain dependency)))))
+        (expect declared-dependencies :to-contain dependency))))
+  (it
+    "keeps root system as the production aggregate"
+    (let ((root-dependencies (system-dependencies "loom"))
+          (local-system-names (nth-value 1 (all-asdf-dependencies))))
+      (dolist (system-name local-system-names)
+        (unless (or (string= system-name "loom")
+                    (uiop:string-suffix-p "/test" system-name)
+                    (uiop:string-suffix-p "/test-support" system-name))
+          (expect root-dependencies :to-contain system-name))))))

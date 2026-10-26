@@ -23,36 +23,6 @@ root source tree responsible for every feature."
   :serial t
   :components
   (
-   (:module "feature-project-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-search-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-shell-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-auto-save-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-git-package"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
    (:module "bootstrap-2"
     :pathname "."
     :serial t
@@ -60,36 +30,6 @@ root source tree responsible for every feature."
     (
      (:file "src/package-user")
     ))
-   (:module "feature-project-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-search-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-auto-save-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-shell-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-git-domain"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
    (:module "root-infrastructure"
     :pathname "."
     :serial t
@@ -100,71 +40,11 @@ root source tree responsible for every feature."
      (:file "src/infrastructure/terminal-renderer-text")
      (:file "src/infrastructure/terminal-renderer-text-wrapping")
     ))
-   (:module "feature-project-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-shell-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-git-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
    (:module "root-application"
   :pathname "."
   :serial t
   :components
   ((:file "src/application/commands-internal")))
-   (:module "feature-auto-save-infrastructure"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-project-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-search-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-shell-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-auto-save-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "feature-git-application"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
-   (:module "root-application-2"
-    :pathname "."
-    :serial t
-    :components
-    (
-     ))
    (:module "root-presentation"
     :pathname "."
     :serial t
