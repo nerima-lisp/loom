@@ -39,4 +39,15 @@
    #:search-forward
    #:search-backward
    #:isearch-forward
-   #:isearch-backward))
+   #:isearch-backward
+   #:result-item
+   #:result-item-p
+   #:make-result-item
+   #:result-item-file-path
+   #:result-item-line
+   #:result-item-column
+   #:result-item-display-text
+   #:publish-result-list
+   #:next-error
+   #:previous-error
+   #:search-result-visit))
