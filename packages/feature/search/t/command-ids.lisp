@@ -1,0 +1,12 @@
+(
+  "isearch-backward"
+  "isearch-backward-regexp"
+  "isearch-forward"
+  "isearch-forward-regexp"
+  "replace-string"
+  "search-backward"
+  "search-forward"
+  "search-next-error"
+  "search-previous-error"
+  "search-result-visit"
+)

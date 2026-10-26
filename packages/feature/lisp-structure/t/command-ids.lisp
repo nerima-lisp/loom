@@ -1,0 +1,14 @@
+(
+  "backward-barf-sexp"
+  "backward-sexp"
+  "backward-slurp-sexp"
+  "backward-up-list"
+  "down-list"
+  "forward-barf-sexp"
+  "forward-sexp"
+  "forward-slurp-sexp"
+  "kill-sexp"
+  "raise-sexp"
+  "splice-sexp"
+  "wrap-round"
+)

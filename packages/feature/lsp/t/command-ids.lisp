@@ -1,0 +1,8 @@
+(
+  "lsp-completion-at-point"
+  "lsp-diagnostics"
+  "lsp-find-definition"
+  "lsp-pop-definition"
+  "lsp-start"
+  "lsp-stop"
+)

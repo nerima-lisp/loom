@@ -120,37 +120,111 @@
       (expect (length (loom/core/command:command-specs)) :to-equal 2)))
 
   (it
-  "exposes the full catalog by ID and preserves the legacy name fallback"
-  (let* ((catalog
+  "exposes catalog ID-to-owner entries from slice manifests"
+  (let* ((root (asdf:system-source-directory (asdf:find-system "loom")))
+         (manifest-paths
+           (directory
+            (merge-pathnames "packages/*/*/t/command-ids.lisp" root)))
+         (catalog
            (json-kit:parse (loom/core/command:command-catalog-json)
                            :array-type :list
                            :object-type :hash-table))
          (required-fields
            '("id" "owner" "name" "mx-eligible" "group" "keymap" "keys"
              "mutates" "prompts" "needs-region" "external" "modes"))
-         (ids (mapcar (lambda (entry) (gethash "id" entry)) catalog))
          (extended
            (loom/core/command:find-command-spec "execute-extended-command")))
-    (expect (length catalog) :to-equal 133)
-    (expect (length (remove-duplicates ids :test #'equal)) :to-equal 133)
-    (expect (loop for entry in catalog
-                  always (loop for field in required-fields
-                               always (nth-value 1 (gethash field entry))))
-            :to-be t)
-    (expect (loom/core/command:command-spec-name extended) :to-be nil)
-    (expect (loom/core/command:find-extended-command-spec
-             "execute-extended-command")
-            :to-be nil)
-    (expect (some
-             (lambda (entry)
-               (and (equal (gethash "id" entry) "execute-extended-command")
-                    (equal (gethash "name" entry) "execute-extended-command")
-                    (json-kit:json-false-p (gethash "mx-eligible" entry))))
-             catalog)
-            :to-be t)
-    (expect (member "execute-extended-command"
-                    (loom/core/command:command-completion-names ""))
-            :to-be nil)))
+    (labels
+        ((read-manifest (path)
+           (with-open-file (stream path)
+             (let* ((*read-eval* nil)
+                    (eof (list :eof))
+                    (ids (read stream nil eof)))
+               (unless (and (listp ids)
+                            (every #'stringp ids)
+                            (eq (read stream nil eof) eof))
+                 (error "Invalid command ID manifest: ~A" path))
+               ids)))
+         (manifest-owner (path)
+           (let ((parts (pathname-directory path)))
+             (format nil "~a/~a"
+                     (nth (- (length parts) 3) parts)
+                     (nth (- (length parts) 2) parts))))
+         (real-owner-p (owner)
+           (let* ((slash (position #\/ owner))
+                  (category (and slash (subseq owner 0 slash)))
+                  (slice (and slash (subseq owner (1+ slash))))
+                  (valid-slice
+                    (and slice
+                         (plusp (length slice))
+                         (every (lambda (char)
+                                  (or (alphanumericp char)
+                                      (char= char #\-)))
+                                slice)))
+                  (owner-directory
+                    (and slash
+                         (not (position #\/ owner :start (1+ slash)))
+                         (or (equal category "core")
+                             (equal category "feature"))
+                         valid-slice
+                         (merge-pathnames
+                          (format nil "packages/~a/~a/" category slice)
+                          root)))
+                  (system-file
+                    (and owner-directory
+                         (merge-pathnames
+                          (format nil "loom-~a-~a.asd" category slice)
+                          owner-directory))))
+             (and system-file (probe-file system-file)))))
+      (let* ((manifest-entries
+               (loop for path in manifest-paths
+                     for owner = (manifest-owner path)
+                     append (loop for id in (read-manifest path)
+                                  collect (list id owner))))
+             (catalog-entries
+               (mapcar (lambda (entry)
+                         (list (gethash "id" entry)
+                               (gethash "owner" entry)))
+                       catalog))
+             (manifest-ids (mapcar #'first manifest-entries))
+             (catalog-ids (mapcar #'first catalog-entries)))
+        (expect (plusp (length manifest-paths)) :to-be t)
+        (expect (length catalog-ids)
+                :to-equal
+                (length (remove-duplicates catalog-ids :test #'equal)))
+        (expect (length manifest-ids)
+                :to-equal
+                (length (remove-duplicates manifest-ids :test #'equal)))
+        (expect (every (lambda (path)
+                         (real-owner-p (manifest-owner path)))
+                       manifest-paths)
+                :to-be t)
+        (expect (every (lambda (entry)
+                         (real-owner-p (second entry)))
+                       catalog-entries)
+                :to-be t)
+        (expect (loop for entry in catalog
+                      always (loop for field in required-fields
+                                   always (nth-value 1 (gethash field entry))))
+                :to-be t)
+        (expect (set-exclusive-or (copy-list catalog-entries)
+                                  (copy-list manifest-entries)
+                                  :test #'equal)
+                :to-equal nil)
+        (expect (loom/core/command:command-spec-name extended) :to-be nil)
+        (expect (loom/core/command:find-extended-command-spec
+                 "execute-extended-command")
+                :to-be nil)
+        (expect (some
+                 (lambda (entry)
+                   (and (equal (gethash "id" entry) "execute-extended-command")
+                        (equal (gethash "name" entry) "execute-extended-command")
+                        (json-kit:json-false-p (gethash "mx-eligible" entry))))
+                 catalog)
+                :to-be t)
+        (expect (member "execute-extended-command"
+                        (loom/core/command:command-completion-names ""))
+                :to-be nil)))))
 
   (it
   "serializes owner, keymap, key sequence, and classification metadata"

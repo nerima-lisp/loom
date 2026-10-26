@@ -64,10 +64,41 @@
         (expect (mapcar #'loom/core/command:command-spec-id
                         (loom/core/command:command-specs))
                 :to-equal before))))
-  (it "builds the help text from registry metadata"
-    (expect (loom/core/command:help-summary-message)
-            :to-equal
-            "Help: M-x Command  M-: Eval  C-x C-e Eval last sexp  M-! Pipe command  C-x g Git status  M-x git-diff  M-x git-diff-staged  M-x git-stage-file  M-x git-unstage-file  M-x format-current-buffer  M-x lsp-start  M-x lsp-stop  M-x lsp-diagnostics  C-x C-s Save  C-x C-f Open  C-x r S Save session  C-x r l Load session  C-x r f Recent file  C-x r m Set bookmark  C-x r b Jump bookmark  C-x r d Delete bookmark  C-x r s Copy region to register  C-x r i Insert register  C-x r SPC Point to register  C-x r j Jump to register  C-x ( Start macro  C-x ) End macro  C-x e Replay macro  C-s Find  C-M-s Find by Regexp  C-k Cut  C-M-r Find by Regexp  M-w Copy  C-y Paste  C-/ Undo  C-M-_ Redo  M-y Yank previous  C-x C-c Exit"))
+  (it "builds production help text from manifest-listed command specs"
+  (let* ((root (asdf:system-source-directory (asdf:find-system "loom")))
+         (manifest-paths
+           (directory
+            (merge-pathnames "packages/*/*/t/command-ids.lisp" root)))
+         (actual (loom/core/command:help-summary-message)))
+    (labels
+        ((read-manifest (path)
+           (with-open-file (stream path)
+             (let* ((*read-eval* nil)
+                    (eof (list :eof))
+                    (ids (read stream nil eof)))
+               (unless (and (listp ids)
+                            (every #'stringp ids)
+                            (eq (read stream nil eof) eof))
+                 (error "Invalid command ID manifest: ~A" path))
+               ids))))
+      (let* ((ids (loop for path in manifest-paths
+                        append (read-manifest path)))
+             (specs (mapcar #'loom/core/command:find-command-spec ids))
+             (help-specs
+               (remove-if-not
+                (lambda (spec)
+                  (and spec (loom/core/command::%command-spec-help spec)))
+                specs))
+             (expected
+               (format nil
+                       "Help: ~{~A~^  ~}"
+                       (mapcar
+                        #'loom/core/command::%command-spec-help
+                        (stable-sort (copy-list help-specs)
+                                     #'loom/core/command::%help-spec<)))))
+        (expect (plusp (length manifest-paths)) :to-be t)
+        (expect (every #'identity specs) :to-be t)
+        (expect actual :to-equal expected)))))
   (it "preserves registry order for equally ordered help entries"
     (let ((loom/core/command::*registered-command-specs* nil))
       (loom/core/command:register-command-spec
