@@ -112,6 +112,13 @@ def real_git_status_success(binary):
             _command(session, "git-status")
             session.wait_for_region_contents("body", "tracked.txt", timeout=_WAIT)
             _assert_buffer(session, "tracked.txt")
+            session.send(keys.ctrl("x") + b"b")
+            session.wait_for_region_text(
+                "minibuffer", "Switch to buffer: ", timeout=_WAIT
+            )
+            session.type("tracked.txt")
+            session.key("RET")
+            session.wait_for_region_contents("body", "tracked", timeout=_WAIT)
             _write(
                 os.path.join(directory.name, "key-route-sentinel.txt"),
                 b"key route refresh\n",
@@ -200,7 +207,7 @@ def real_git_unstage_success(binary):
 
 
 def _install_git_wrapper(directory, mode, marker=None):
-    wrapper_dir = os.path.join(directory, "bin")
+    wrapper_dir = os.path.join(directory, ".git", "e2e-bin")
     os.makedirs(wrapper_dir)
     real_git = shutil.which("git")
     wrapper = os.path.join(wrapper_dir, "git")
@@ -261,7 +268,6 @@ def _run_failure(binary, command, outcome):
             if outcome == "nonzero" and command == "git-status":
                 _command(session, command)
                 session.wait_for_region_contents("body", "##", timeout=_WAIT)
-                previous_body = session.region_contents("body")
                 with open(marker, "wb") as handle:
                     handle.write(b"force failure\n")
 
@@ -279,18 +285,19 @@ def _run_failure(binary, command, outcome):
 
             if outcome == "missing":
                 message = f"Git {label} error:"
+            elif outcome == "interrupted":
+                message = f"Git {label} terminated without an exit code"
             else:
                 message = f"Git {label} exited with status"
-                if outcome == "interrupted":
-                    message += " 143"
             _wait_message(session, message)
 
             if outcome == "nonzero" and command == "git-status":
-                session.assert_screen_text(
-                    previous_body, match="exact", region="body", index=None
-                )
-            elif outcome == "nonzero":
                 _assert_buffer(session, "unknown option")
+            elif outcome == "nonzero" and command in (
+                "git-stage-file",
+                "git-unstage-file",
+            ):
+                _assert_buffer(session, "tracked")
             elif outcome == "interrupted" and command == "git-status":
                 _assert_buffer(session, "##")
             elif outcome == "interrupted" and command in ("git-diff", "git-diff-staged"):

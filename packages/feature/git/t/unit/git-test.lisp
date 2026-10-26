@@ -108,20 +108,24 @@
           (expect (minibuffer-message-string minibuffer)
                   :to-equal
                   "Git status refreshed"))))))
-  (it "reports a failed status command"
+  (it "reports failed and interrupted status commands"
     (%with-minibuffer-state (minibuffer "")
-      (let ((result (make-test-git-result
-                     :stdout ""
-                     :stderr "not a repository"
-                     :status 128)))
+      (let* ((failed-result
+               (make-test-git-result :stderr "not a repository" :status 128))
+             (interrupted-result
+               (make-test-git-result :status nil))
+             (results (list failed-result interrupted-result)))
         (with-replaced-function
             (loom/feature/git:run-git-status
              (lambda (&key directory)
                (declare (ignore directory))
-               result))
-          (expect (git-status) :to-be result)
+               (pop results)))
+          (expect (git-status) :to-be failed-result)
           (expect (minibuffer-message-string minibuffer)
-                  :to-equal "Git status exited with status 128")))))
+                  :to-equal "Git status exited with status 128")
+          (expect (git-status) :to-be interrupted-result)
+          (expect (minibuffer-message-string minibuffer)
+                  :to-equal "Git status terminated without an exit code")))))
   (it "reuses the existing status result buffer"
     (%with-minibuffer-state (minibuffer "")
       (let ((first-result (make-test-git-result

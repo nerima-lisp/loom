@@ -41,7 +41,11 @@
         (buffer-mark-saved buffer)
         buffer)
     (buffer-set-read-only buffer t)))
-
+(defun %git-failure-message (label result)
+  (let ((exit-code (vcs-kit:process-result-exit-code result)))
+    (if (integerp exit-code)
+        (format nil "Git ~A exited with status ~D" label exit-code)
+        (format nil "Git ~A terminated without an exit code" label))))
 (defun %display-git-result (buffer-name run success-message failure-label)
   "Run RUN, display its result, and report the outcome to the minibuffer."
   (handler-case (let* ((result (funcall run))
@@ -53,14 +57,11 @@
                    (loom/core/window-tree:window-tree-selected-window
                     (editor-state-window-tree *editor-state*))
                    buffer)
-                  (minibuffer-message (editor-state-minibuffer *editor-state*)
-                                      (if (vcs-kit:process-success-p result)
-                                          success-message
-                                          (format nil
-                                                  "Git ~A exited with status ~D"
-                                                  failure-label
-                                                  (vcs-kit:process-result-exit-code
-                                                   result))))
+                  (minibuffer-message
+                   (editor-state-minibuffer *editor-state*)
+                   (if (vcs-kit:process-success-p result)
+                       success-message
+                       (%git-failure-message failure-label result)))
                   result)
     (error (condition)
       (minibuffer-message (editor-state-minibuffer *editor-state*)
@@ -88,10 +89,7 @@
   (multiple-value-bind (verb past-tense) (%git-operation-labels operation)
     (if (vcs-kit:process-success-p result)
         (format nil "Git ~A ~A" past-tense path)
-        (format nil
-                "Git ~A exited with status ~D"
-                verb
-                (vcs-kit:process-result-exit-code result)))))
+        (%git-failure-message verb result))))
 
 (defun %git-operation-error-message (operation condition)
   (format nil
