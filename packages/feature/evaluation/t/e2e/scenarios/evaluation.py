@@ -89,7 +89,7 @@ def eval_buffer_mx(binary):
                 "loom-eval> (+ 1 2)", match="contains", region="body"
             )
             session.assert_screen_text(
-                "=> 3", match="contains", region="body"
+                "=> 3", match="contains", region="body", index=1
             )
             session.assert_file_bytes(path, _SOURCE)
             output, code = session.quit(timeout=1.0)
