@@ -101,7 +101,7 @@
   :commands (:git-status)
   :rule :r5
   :entry "M-x git-status"
-  :state "temporary Git repository with a corrupt index"
+  :state "temporary Git repository with a wrapper forcing a real Git error"
   :outcome "nonzero"
   :observe (:screen_text :file_bytes :external_state)
   :scenario "git/real-git-nonzero-preserves-result"
