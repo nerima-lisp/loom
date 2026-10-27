@@ -71,7 +71,7 @@
 
 (defun %launch-lsp-process (command directory)
   (let* ((info (uiop:launch-program
-                command :shell t :directory directory
+                command :shell nil :directory directory
                 :input :stream :output :stream :error-output :stream
                 :element-type '(unsigned-byte 8)))
          (channel (cl-concurrent-kit:make-channel :buffer-size 128))
@@ -87,10 +87,7 @@
     (values process info executor channel)))
 
 (defun make-lsp-process (command &key directory)
-  "Launch COMMAND as an LSP server using binary streams.
-
-COMMAND is passed to UIOP's shell launcher, so this boundary intentionally has
-the same trust boundary as the user-init and Lisp evaluation features."
+  "COMMAND is an argv list passed directly to UIOP, without a shell."
   (let ((info nil)
         (process nil)
         (channel nil)

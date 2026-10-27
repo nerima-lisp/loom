@@ -169,7 +169,7 @@ def lsp_trust_reject(binary):
         review_lines = (
             "Config: " + configuration,
             "Directory: " + directory,
-            "Command: " + command,
+            "Command: " + server,
         )
         # Screen.find searches individual rows; retain the complete provenance
         # assertions even when the platform's temporary pathname exceeds 80 cells.

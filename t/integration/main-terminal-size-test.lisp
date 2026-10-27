@@ -79,8 +79,19 @@
                 (expect (loom::%event-loop-background-work-p) :to-be t)))
           (it "reports background work when an LSP session is present"
               (let ((loom::*editor-state*
-                     (make-editor-state :session (%make-test-editor-session))))
-                (setf (editor-state-lsp-session loom::*editor-state*) :session)
+                     (make-editor-state :session (%make-test-editor-session nil
+                      :additional-slices (list :feature/lsp)))))
+                (progn
+                  (loom/feature/lsp::%lsp-register-session
+                   (editor-state-session loom::*editor-state*)
+                   (loom/feature/lsp:make-lsp-session
+                    :transport (make-instance (quote %fake-lsp-transport))
+                    :root-path #P"/tmp/"
+                    :language-id "common-lisp"))
+                  (expect
+                   (loom/feature/lsp:lsp-editor-session-background-work-p
+                    (editor-state-session loom::*editor-state*))
+                   :to-be t))
                 (expect (loom::%event-loop-background-work-p) :to-be t)))
           (it "polls while a file-tree listing is pending"
               (let* ((runtime

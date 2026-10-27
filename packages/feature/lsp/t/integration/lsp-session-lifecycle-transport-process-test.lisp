@@ -31,7 +31,7 @@
   (it "round-trips a framed message through a child process"
     (when (%sandboxed-check-p)
       (skip "spawns a real \"cat\" child process; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
-    (let ((process (loom/feature/lsp::make-lsp-process "cat"))
+    (let ((process (loom/feature/lsp::make-lsp-process (list "cat")))
           (received nil))
       (unwind-protect
            (progn
@@ -48,4 +48,18 @@
       (expect (loom/feature/lsp::lsp-transport-receive process)
               :to-be nil)
       (expect (loom/feature/lsp::lsp-transport-close process)
-              :to-be process))))
+              :to-be process)))
+  (it "launches parsed argv without a shell"
+  (let ((captured-command nil)
+        (captured-shell :not-called))
+    (with-replaced-function
+        (uiop:launch-program
+         (lambda (command &rest arguments)
+           (setf captured-command command
+                 captured-shell (getf arguments :shell))
+           (error "captured launch")))
+      (signals error
+        (loom/feature/lsp::%launch-lsp-process
+         (list "fake-server" "--stdio") nil)))
+    (expect captured-command :to-equal (list "fake-server" "--stdio"))
+    (expect captured-shell :to-be nil))))

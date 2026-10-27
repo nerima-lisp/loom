@@ -40,7 +40,8 @@ or auto-save buffers, the loop keeps its original blocking read behavior.")
     (or
      (loom/feature/file-tree:file-tree-runtime-background-work-p *editor-state*)
      (loom/feature/terminal:terminal-event-loop-background-work-p *editor-state*)
-     (editor-state-lsp-session *editor-state*)
+     (loom/feature/lsp:lsp-editor-session-background-work-p
+      (loom/core/editor-session:editor-state-session *editor-state*))
      (editor-state-auto-save-mode-p *editor-state*)
      (editor-state-auto-save-buffers *editor-state*)))))
 

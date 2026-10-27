@@ -84,7 +84,9 @@
   "LSP diagnostic layout drawing"
   (it
     "draws a diagnostic range and lets the region remain visible over overlap"
-    (let* ((state (%fresh-layout-state :content "hello" :width 8 :height 4))
+    (let* ((state (%fresh-layout-state :content "hello"
+                                        :width 8 :height 4
+                                        :additional-slices (list :feature/lsp)))
            (window (%layout-window state))
            (buffer (make-buffer :name "main.nix"
                                 :path "/tmp/main.nix"
@@ -143,7 +145,9 @@
 
   (it
     "clips diagnostics to the visible range and follows horizontal scroll"
-    (let* ((state (%fresh-layout-state :content "0123456789" :width 5 :height 3))
+    (let* ((state (%fresh-layout-state :content "0123456789"
+                                        :width 5 :height 3
+                                        :additional-slices (list :feature/lsp)))
            (window (%layout-window state))
            (buffer (make-buffer :name "main.nix"
                                 :path "/tmp/main.nix"
@@ -172,7 +176,8 @@
   (it
     "does not draw diagnostics outside a narrowed buffer"
     (let* ((state (%fresh-layout-state :content (format nil "first~%second")
-                                       :width 12 :height 4))
+                                        :width 12 :height 4
+                                        :additional-slices (list :feature/lsp)))
            (window (%layout-window state))
            (buffer (make-buffer :name "main.nix"
                                 :path "/tmp/main.nix"

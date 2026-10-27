@@ -10,7 +10,7 @@
         (ensure-directories-exist path)
         (host-kit:write-file-string "(+ 1 2)" path)
         (host-kit:write-file-string
-         (format nil "# project LSP~%~% fake-server --stdio ~%")
+         (format nil "# project LSP~%~% exec fake-server --stdio ~%")
          configuration)
         (%with-lsp-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp"
@@ -29,10 +29,11 @@
                  (progn
                    (window-set-buffer window buffer)
                    (%register-test-buffer *editor-state* buffer)
-                   (setf (editor-state-lsp-session *editor-state*) old-session
-                         (window-scroll-line window) 2
+                   (progn
+      (%lsp-test-register-session-for-buffer buffer old-session)
+      (setf (window-scroll-line window) 2
                          (window-scroll-column window) 3
-                         (window-scroll-sub-row window) 1)
+                         (window-scroll-sub-row window) 1))
                    (with-replaced-function
                        (loom/feature/lsp::make-lsp-session
                         (lambda (&rest arguments)
@@ -58,7 +59,9 @@
                      (expect (buffer-read-only-p (window-buffer window)) :to-be t)
                      (expect (buffer-truncate-lines (window-buffer window)) :to-be nil)
                      (expect constructor-count :to-equal 0)
-                     (expect (editor-state-lsp-session *editor-state*) :to-be old-session)
+                     (expect (loom/feature/lsp::lsp-session-for-buffer
+              (editor-state-session *editor-state*) buffer)
+            :to-be old-session)
                      (expect (%fake-closed-p old-transport) :to-be nil)
                      (%type-string minibuffer "yes")
                      (expect constructor-count :to-equal 0)
@@ -68,11 +71,11 @@
                    (expect (window-scroll-line window) :to-equal 2)
                    (expect (window-scroll-column window) :to-equal 3)
                    (expect (window-scroll-sub-row window) :to-equal 1)
-                   (expect (editor-state-lsp-session *editor-state*) :to-be new-session)
+                   (expect (loom/feature/lsp::lsp-session-for-buffer
+              (editor-state-session *editor-state*) buffer)
+            :to-be new-session)
                    (expect (%fake-closed-p old-transport) :to-be t)
-                   (expect (getf captured-arguments :command)
-                           :to-equal
-                           "fake-server --stdio")
+                   (expect (getf captured-arguments :command) :to-equal (list "fake-server" "--stdio"))
                    (expect (getf captured-arguments :directory)
                            :to-equal
                            directory)
@@ -111,10 +114,11 @@
             (unwind-protect
                  (progn
                    (window-set-buffer window buffer)
-                   (setf (editor-state-lsp-session *editor-state*) session
-                         (window-scroll-line window) 2
+                   (progn
+      (%lsp-test-register-session-for-buffer buffer session)
+      (setf (window-scroll-line window) 2
                          (window-scroll-column window) 3
-                         (window-scroll-sub-row window) 1)
+                         (window-scroll-sub-row window) 1))
                    (with-replaced-function
                        (loom/feature/lsp::make-lsp-session
                         (lambda (&rest arguments)
@@ -136,7 +140,9 @@
                    (expect (minibuffer-active-p minibuffer) :to-be nil)
                    (expect (minibuffer-message-string minibuffer)
                            :to-equal (if answer "LSP start cancelled." "Quit"))
-                   (expect (editor-state-lsp-session *editor-state*) :to-be session)
+                   (expect (loom/feature/lsp::lsp-session-for-buffer
+              (editor-state-session *editor-state*) buffer)
+            :to-be session)
                    (expect (%fake-closed-p transport) :to-be nil)
                    (expect (%fake-sent transport) :to-be nil)
                    (expect (window-buffer window) :to-be buffer)
@@ -150,8 +156,8 @@
             (:modified nil) (:modified "") (:modified "yes"))
     "pages wrapped disclosure with ~S, preserving input and trust answer ~S"
     (encoding answer)
-    (%with-lsp-minibuffer-state (minibuffer "original buffer")
-      (let* ((tree (editor-state-window-tree *editor-state*))
+    (%with-lsp-file-minibuffer-state (minibuffer buffer #P"/project/main.lisp" "original buffer")
+     (let* ((tree (editor-state-window-tree *editor-state*))
              (window (window-tree-selected-window tree))
              (buffer (window-buffer window))
              (transport (make-instance '%fake-lsp-transport))
@@ -174,11 +180,12 @@
         (unwind-protect
              (progn
                (window-tree-resize tree 80 9)
-               (setf (editor-state-renderer *editor-state*) (make-loom-renderer 80 10)
-                     (editor-state-lsp-session *editor-state*) old-session
-                     (window-scroll-line window) 2
-                     (window-scroll-column window) 3
-                     (window-scroll-sub-row window) 1)
+               (progn
+      (%lsp-test-register-session-for-buffer buffer old-session)
+      (setf (editor-state-renderer *editor-state*) (make-loom-renderer 80 10)
+            (window-scroll-line window) 2
+            (window-scroll-column window) 3
+            (window-scroll-sub-row window) 1))
                (with-replaced-function
                    (loom/feature/lsp::make-lsp-session
                     (lambda (&rest arguments)
@@ -188,9 +195,10 @@
                  (progn
   (%fake-push-initialize-response transport)
   (loom/feature/lsp::%lsp-confirm-discovered-command
-   (concatenate 'string (make-string 1600 :initial-element #\x)
-                "REVIEW_END_UNIQUE")
-   #P"/project/" #P"/project/.loom-lsp" buffer minibuffer))
+     (list "fake-server"
+           (concatenate 'string (make-string 1600 :initial-element #\x)
+                        "REVIEW_END_UNIQUE"))
+     #P"/project/" #P"/project/.loom-lsp" buffer minibuffer))
                  (%type-string minibuffer input)
                  (let ((review (window-buffer window)))
                    ;; Both pages remain inside one wrapped logical Command line.
@@ -209,7 +217,9 @@
                    (expect (buffer-point-column review) :to-equal 0))
                  (expect (minibuffer-input-string minibuffer) :to-equal input)
                  (expect constructor-count :to-equal 0)
-                 (expect (editor-state-lsp-session *editor-state*) :to-be old-session)
+                 (expect (loom/feature/lsp::lsp-session-for-buffer
+              (editor-state-session *editor-state*) buffer)
+            :to-be old-session)
                  (expect (%fake-closed-p old-transport) :to-be nil)
                  (expect (%fake-sent old-transport) :to-be nil)
                  (minibuffer-handle-key minibuffer
@@ -220,8 +230,9 @@
                (expect (window-scroll-line window) :to-equal 2)
                (expect (window-scroll-column window) :to-equal 3)
                (expect (window-scroll-sub-row window) :to-equal 1)
-               (expect (editor-state-lsp-session *editor-state*)
-                       :to-be (or new-session old-session))
+               (expect (loom/feature/lsp::lsp-session-for-buffer
+              (editor-state-session *editor-state*) buffer)
+            :to-be (or new-session old-session))
                (expect (%fake-closed-p old-transport)
                        :to-be (not (null new-session)))
                (expect (minibuffer-message-string minibuffer)
@@ -231,11 +242,11 @@
           (lsp-session-stop old-session)
           (when new-session (lsp-session-stop new-session))))))
 
-  (it "preserves an explicit shell command override without the discovery trust prompt"
+  (it "parses an explicit manual command into argv without the discovery trust prompt"
     (host-kit:with-temporary-directory (directory)
       (let* ((directory (truename directory))
              (path (merge-pathnames "main.lisp" directory))
-             (command "exec manual-server --name 'a b'"))
+             (command "manual-server --name value"))
         (host-kit:write-file-string "(+ 1 2)" path)
         (host-kit:write-file-string "discovered-server"
                                     (merge-pathnames ".loom-lsp" directory))
@@ -265,7 +276,7 @@
                      (%type-string minibuffer command)
                      (minibuffer-handle-key minibuffer (%special-key :enter))
                      (expect constructor-count :to-equal 1))
-                   (expect (getf captured-arguments :command) :to-equal command)
+                   (expect (getf captured-arguments :command) :to-equal (list "manual-server" "--name" "value"))
                    (expect (getf captured-arguments :directory) :to-equal directory)
                    (expect (window-buffer window) :to-be buffer)
                    (expect (minibuffer-active-p minibuffer) :to-be nil)

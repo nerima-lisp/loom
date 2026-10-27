@@ -2,7 +2,7 @@
 
 (describe
   "LSP diagnostics command state handling"
-  (it "reports inactive and pathless diagnostic states"
+  (it "ignores a stale legacy session for a pathless buffer"
     (%with-lsp-minibuffer-state (minibuffer "")
       (let* ((transport (make-instance '%fake-lsp-transport))
              (session (make-lsp-session :transport transport)))
@@ -12,15 +12,22 @@
                (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "No LSP session.")
-               (setf (editor-state-lsp-session *editor-state*) session)
+               (progn
+                 (setf (editor-state-lsp-session *editor-state*) session)
+                 (expect
+                  (loom/feature/lsp:lsp-session-for-buffer
+                   (loom/core/editor-session:editor-state-session
+                    *editor-state*)
+                   (%selected-test-buffer))
+                  :to-be nil))
                (loom/feature/lsp:lsp-diagnostics)
                (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
-                       "LSP diagnostics need a file-backed buffer.")
+                       "No LSP session.")
                (lsp-stop)
                (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
-                       "LSP stopped.")
+                       "No LSP session.")
                (loom/feature/lsp:lsp-diagnostics)
                (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal

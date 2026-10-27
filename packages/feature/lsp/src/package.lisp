@@ -36,6 +36,8 @@
                      #:lsp-refresh-editor-state
                      #:lsp-session-sync-buffer
                      #:lsp-session-diagnostics
+                     #:lsp-session-for-buffer
+                     #:lsp-editor-session-background-work-p
                      #:lsp-session-stop
                      #:lsp-stop-editor-state-lsp-session
                      #:lsp-session-initialized-p
@@ -94,7 +96,6 @@
               #:*editor-session*
               #:*editor-state*
               #:editor-state-window-tree
-              #:editor-state-lsp-session
               #:editor-state-minibuffer
               #:editor-state-completion
               #:editor-state-jump-origins

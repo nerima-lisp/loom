@@ -1,12 +1,21 @@
 (in-package #:loom/test)
 
 (defun %layout-install-diagnostics (state buffer diagnostics)
-  (let ((session (make-lsp-session
-                  :transport (make-instance '%fake-lsp-transport))))
-    (setf (editor-state-lsp-session state) session
-          (gethash (lsp-path-uri (buffer-path buffer))
+  (let ((session
+          (make-lsp-session
+           :transport (make-instance (quote %fake-lsp-transport))
+           :root-path (loom/feature/lsp::%lsp-root-for-buffer buffer)
+           :language-id
+           (loom/feature/lsp::%lsp-language-id
+            (loom/core/buffer:buffer-major-mode buffer)))))
+    (setf (gethash (lsp-path-uri (buffer-path buffer))
                    (loom/feature/lsp::lsp-session-diagnostic-table session))
           diagnostics)
+    (loom/feature/lsp::%lsp-register-session
+     (editor-state-session state) session)
+    (expect (loom/feature/lsp:lsp-session-for-buffer
+             (editor-state-session state) buffer)
+            :to-be session)
     session))
 
 (describe
@@ -211,8 +220,10 @@ code
                                 :path "/tmp/main.nix"
                                 :initial-content "abc"))
            (state (make-editor-state
-                   :session (%make-test-editor-session)
-                   :lsp-session nil))
+                   :session
+                   (%make-test-editor-session
+                    nil
+                    :additional-slices (list :feature/lsp))))
            (session
              (%layout-install-diagnostics
               state buffer
@@ -241,8 +252,10 @@ code
     (let* ((renderer (make-loom-renderer 80 1))
            (buffer (make-buffer :name "main.nix" :path "/tmp/main.nix"))
            (state (make-editor-state
-                   :session (%make-test-editor-session)
-                   :lsp-session nil)))
+                   :session
+                   (%make-test-editor-session
+                    nil
+                    :additional-slices (list :feature/lsp)))))
       (let ((*editor-state* state))
         (expect (loom::%layout-mode-line-text renderer buffer)
                 :to-equal
@@ -261,8 +274,10 @@ code
            (buffer (make-buffer :name "これは診断件数確認用の非常に長い日本語バッファ名です.nix"
                                 :path "/tmp/main.nix"))
            (state (make-editor-state
-                   :session (%make-test-editor-session)
-                   :lsp-session nil))
+                   :session
+                   (%make-test-editor-session
+                    nil
+                    :additional-slices (list :feature/lsp))))
            (diagnostic
              (make-lsp-diagnostic
               (make-lsp-range (make-lsp-position 0 0)

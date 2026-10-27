@@ -15,14 +15,18 @@
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :session (%make-test-editor-session (list buffer) :window-tree tree)
+              :session (%make-test-editor-session
+                        (list buffer)
+                        :window-tree tree
+                        :additional-slices '(:feature/lsp))
               :kill-ring nil))))
       (unwind-protect
            (let ((*editor-state* state)
                  (loom/core/editor-session:*editor-session*
                   (loom/core/editor-session:editor-state-session state)))
-             (setf (editor-state-lsp-session state) session
-                   (lsp-session-last-error session) "broken transport")
+             (progn
+               (%lsp-test-register-session state buffer session)
+               (setf (lsp-session-last-error session) "broken transport"))
              (lsp-diagnostics)
              (expect (loom:minibuffer-message-string
                       (editor-state-minibuffer state))

@@ -62,26 +62,25 @@
                            (loom/core/editor-session:editor-session-slice-names
                             editor-session))))
              (registered
-              (and lsp-enabled-p (lsp-session-for-buffer editor-session buffer)))
-             (legacy
-              (and *editor-state*
-                   (loom/core/editor-session:editor-state-lsp-session
-                    *editor-state*)))
-             (root (%lsp-root-for-buffer buffer))
-             (language-id
-              (%lsp-language-id (loom/core/buffer:buffer-major-mode buffer)))
-             (legacy-matches-p
-              (and legacy
-                   (not (lsp-session-closed-p legacy))
-                   (or (null (lsp-session-root-path legacy))
-                       (equal (%lsp-session-key root language-id)
-                              (%lsp-session-key (lsp-session-root-path legacy)
-                                                (lsp-session-language-id legacy)))))))
+              (and lsp-enabled-p
+                   (lsp-session-for-buffer editor-session buffer))))
         (or registered
-            (and legacy-matches-p legacy)
             (and auto-start-p
                  lsp-enabled-p
-                 (%lsp-auto-start-buffer editor-session buffer))))))
+                 (%lsp-auto-start-buffer editor-session buffer)))))
+    (defun lsp-editor-session-background-work-p (editor-session)
+      (let* ((lsp-enabled-p
+              (and editor-session
+                   (member :feature/lsp
+                           (loom/core/editor-session:editor-session-slice-names
+                            editor-session))))
+             (registry
+              (and lsp-enabled-p
+                   (lsp-session-registry-state-sessions
+                    (%lsp-session-registry editor-session)))))
+        (and registry
+             (loop for session being the hash-values of registry
+                   thereis (not (lsp-session-closed-p session)))))))
   (defun %lsp-register-session (editor-session lsp-session)
     (let ((key
            (%lsp-session-key (lsp-session-root-path lsp-session)

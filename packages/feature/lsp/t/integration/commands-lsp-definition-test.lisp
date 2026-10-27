@@ -11,7 +11,7 @@
               :to-equal "No LSP session for this buffer")))
 
   (it
-    "reports the missing file path without sending a request"
+    "reports no session for a buffer without a file path"
     (%with-lsp-navigation (transport session buffer :path nil)
       (let ((before (length (%fake-sent-in-order transport))))
         (loom/feature/lsp:lsp-find-definition)

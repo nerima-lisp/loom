@@ -28,11 +28,18 @@
 )
 
 (defun %normalize-lsp-command (typed-command discovered-command)
-  (let ((trimmed (and typed-command
-                      (string-trim (list #\Space #\Tab) typed-command))))
-    (if (or (null trimmed) (string= trimmed ""))
-        (values discovered-command nil)
-        (values trimmed nil))))
+  (let* ((trimmed (and typed-command
+                       (string-trim (list #\Space #\Tab) typed-command)))
+         (argv (and trimmed
+                    (not (string= trimmed ""))
+                    (%lsp-command-argv trimmed))))
+    (cond
+     ((or (null trimmed) (string= trimmed ""))
+      (values discovered-command nil))
+     (argv
+      (values argv nil))
+     (t
+      (values nil t)))))
 
 (progn
   (defun %lsp-discovery-unchanged-p
@@ -52,7 +59,7 @@
                              (namestring current-configuration))))))))
 
   (defun %lsp-confirm-discovered-command
-      (command root configuration buffer minibuffer &optional identity display-command)
+      (command root configuration buffer minibuffer &optional identity)
     (let* ((window (loom/core/window-tree:window-tree-selected-window
                     (editor-state-window-tree *editor-state*)))
            (scroll-line (loom/core/window-tree:window-scroll-line window))
@@ -64,8 +71,7 @@
                     (format nil
                             "Discovered LSP command~%PageDown/C-v: next; PageUp/M-v: previous~%Config: ~A~%Directory: ~A~%Command: ~A~%"
                             configuration root
-                            (or display-command
-                                (%lsp-command-display command))))))
+                            (%lsp-command-display command)))))
       (buffer-set-truncate-lines review nil)
       (buffer-set-read-only review t)
       (loom/core/window-tree:window-set-buffer window review)
@@ -129,41 +135,22 @@
                                 (lsp-session-language-id new-session)))
          (registry (lsp-session-registry-state-sessions
                     (%lsp-session-registry editor-session)))
-         (registered-old (and key (gethash key registry)))
-         (legacy-old (and *editor-state*
-                          (loom/core/editor-session:editor-state-lsp-session
-                           *editor-state*)))
-         (legacy-key (and legacy-old
-                          (%lsp-session-key
-                           (lsp-session-root-path legacy-old)
-                           (lsp-session-language-id legacy-old))))
-         (legacy-matches-p
-           (and legacy-old
-                (not (lsp-session-closed-p legacy-old))
-                (or (null legacy-key)
-                    (equal key legacy-key))))
-         (old-session (or registered-old
-                          (and legacy-matches-p legacy-old))))
+         (old-session (and key (gethash key registry))))
     (when (and old-session (not (eq old-session new-session)))
       (%lsp-unregister-session editor-session old-session)
       (lsp-session-stop old-session))
     (%lsp-register-session editor-session new-session)
-    (when *editor-state*
-      (setf (loom/core/editor-session:editor-state-lsp-session
-             *editor-state*)
-            new-session))
     new-session))
 
 (defun %lsp-start-session
     (command directory language-id config-identity editor-session)
   (let ((new-session nil)
-        (root-uri (and directory (lsp-path-uri directory)))
-        (process-command (%lsp-command-display command)))
+        (root-uri (and directory (lsp-path-uri directory))))
     (handler-case
         (progn
           (setf new-session
                 (make-lsp-session
-                 :command process-command
+                 :command command
                  :directory directory
                  :root-uri root-uri
                  :root-path directory
@@ -173,8 +160,8 @@
           (%install-lsp-session editor-session new-session)
           (values new-session nil))
       (error (condition)
-        (when new-session
-          (lsp-session-stop new-session))
-        (values nil condition)))))
+             (when new-session
+               (lsp-session-stop new-session))
+             (values nil condition)))))
 
 (defun %lsp-report-start-result (minibuffer session condition) (declare (ignore session)) (if condition (loom/core/minibuffer:minibuffer-message minibuffer (format nil "LSP start failed: ~A" (if (typep condition (quote lsp-transport-send-exit-error)) (format nil "server exited with status ~D" (lsp-transport-send-exit-status condition)) condition))) (loom/core/minibuffer:minibuffer-message minibuffer "LSP started.")))

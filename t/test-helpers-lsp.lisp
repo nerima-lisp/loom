@@ -113,3 +113,34 @@
           (,minibuffer (editor-state-minibuffer *editor-state*))
           ,@extra-bindings)
      ,@body))
+(progn
+  (defmacro %with-lsp-file-minibuffer-state
+      ((minibuffer buffer path &optional (initial-content "")) &body body)
+    `(let* ((*editor-state* (%fresh-editor-state
+                            ,initial-content
+                            :with-minibuffer t
+                            :additional-slices (list :feature/mode :feature/lsp)
+                            :initial-slices (list (cons :feature/mode nil))))
+            (loom/core/editor-session:*editor-session*
+              (loom/core/editor-session:editor-state-session *editor-state*))
+            (,minibuffer (editor-state-minibuffer *editor-state*))
+            (,buffer (make-buffer :name "main.lisp"
+                                  :path ,path
+                                  :initial-content ,initial-content))
+            (window (loom/core/window-tree:window-tree-selected-window
+                     (editor-state-window-tree *editor-state*))))
+       (window-set-buffer window ,buffer)
+       (%register-test-buffer *editor-state* ,buffer)
+       ,@body))
+  (defun %lsp-test-configure-session-for-buffer (buffer session)
+    (setf (loom/feature/lsp::lsp-session-root-path session)
+          (loom/feature/lsp::%lsp-root-for-buffer buffer)
+          (loom/feature/lsp::lsp-session-language-id session)
+          (loom/feature/lsp::%lsp-language-id
+           (loom/core/buffer:buffer-major-mode buffer)))
+    session)
+  (defun %lsp-test-register-session-for-buffer (buffer session)
+    (loom/feature/lsp::%lsp-register-session
+     (editor-state-session *editor-state*)
+     (%lsp-test-configure-session-for-buffer buffer session))
+    session))

@@ -11,7 +11,7 @@
               :to-equal "No LSP session for this buffer")))
 
   (it
-    "reports the missing file path without sending a request"
+    "reports no session for a buffer without a file path"
     (%with-lsp-navigation (transport session buffer :path nil)
       (let ((before (length (%fake-sent-in-order transport))))
         (loom/feature/lsp:lsp-completion-at-point)
@@ -27,7 +27,7 @@
            (session (make-lsp-session :transport transport)))
       (unwind-protect
            (progn
-             (setf (editor-state-lsp-session *editor-state*) session)
+             (%lsp-test-register-session *editor-state* (%selected-test-buffer) session)
              (lsp-session-start session)
              (%fake-push-initialize-response
               transport

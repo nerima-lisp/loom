@@ -87,25 +87,24 @@ attempted before closing the transport; delivery is not guaranteed."
 
 (defun lsp-refresh-editor-state (state)
   (let* ((editor-session
-           (loom/core/editor-session:editor-state-session state))
+          (loom/core/editor-session:editor-state-session state))
          (buffer
-           (loom/core/window-tree:window-buffer
-            (loom/core/window-tree:window-tree-selected-window
-             (editor-state-window-tree state))))
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree state))))
          (selected-session nil)
          (registry
-           (and editor-session
-                (member :feature/lsp
-                        (loom/core/editor-session:editor-session-slice-names
-                         editor-session))
-                (lsp-session-registry-state-sessions
-                 (%lsp-session-registry editor-session)))))
+          (and editor-session
+               (member :feature/lsp
+                       (loom/core/editor-session:editor-session-slice-names
+                        editor-session))
+               (lsp-session-registry-state-sessions
+                (%lsp-session-registry editor-session)))))
     (let ((*editor-state* state)
           (*editor-session* editor-session))
       (setf selected-session
             (and buffer (buffer-path buffer)
-                 (%lsp-current-buffer-session buffer))
-            (editor-state-lsp-session state) selected-session)
+                 (%lsp-current-buffer-session buffer)))
       (when selected-session
         (lsp-session-refresh selected-session buffer))
       (when registry
@@ -116,33 +115,29 @@ attempted before closing the transport; delivery is not guaranteed."
              (handler-case
                  (lsp-session-drain session)
                (error (condition)
-                 (setf (lsp-session-last-error session)
-                       (princ-to-string condition))))))
+                      (setf (lsp-session-last-error session)
+                            (princ-to-string condition))))))
          registry)))
     state))
 
 (defun lsp-stop-editor-state-lsp-session (state)
   (let* ((editor-session
-           (loom/core/editor-session:editor-state-session state))
-         (legacy-session (editor-state-lsp-session state))
+          (loom/core/editor-session:editor-state-session state))
          (registry
-           (and editor-session
-                (member :feature/lsp
-                        (loom/core/editor-session:editor-session-slice-names
-                         editor-session))
-                (lsp-session-registry-state-sessions
-                 (%lsp-session-registry editor-session))))
+          (and editor-session
+               (member :feature/lsp
+                       (loom/core/editor-session:editor-session-slice-names
+                        editor-session))
+               (lsp-session-registry-state-sessions
+                (%lsp-session-registry editor-session))))
          (sessions nil))
     (when registry
       (maphash (lambda (key session)
                  (declare (ignore key))
                  (push session sessions))
                registry))
-    (when legacy-session
-      (push legacy-session sessions))
     (dolist (session (remove-duplicates sessions :test #'eq))
       (lsp-session-stop session))
     (when registry
       (clrhash registry))
-    (setf (editor-state-lsp-session state) nil)
     state))

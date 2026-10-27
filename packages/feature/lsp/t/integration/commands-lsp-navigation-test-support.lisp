@@ -16,7 +16,10 @@
                        :keymap (make-keymap)
                        :file-tree nil
                        :renderer nil
-                       :session (%make-test-editor-session (list buffer) :window-tree tree)
+                       :session (%make-test-editor-session
+                        (list buffer)
+                        :window-tree tree
+                        :additional-slices '(:feature/lsp))
                        :kill-ring nil)))
 
 (defmacro %with-lsp-navigation
@@ -37,7 +40,7 @@
              ((,transport ,session))
            (%fake-push-initialize-response ,transport ,capabilities)
            (lsp-session-drain ,session)
-           (setf (editor-state-lsp-session *editor-state*) ,session)
+           (%lsp-test-register-session *editor-state* ,buffer ,session)
            ,@body)))))
 
 (defun %lsp-last-request-method (transport)
@@ -47,5 +50,14 @@
 (defun %lsp-last-request-id (transport)
   (let ((messages (%fake-sent-in-order transport)))
     (gethash "id" (%parse-lsp-json (car (last messages))))))
+
+(defun %lsp-test-register-session (state buffer session)
+  (let ((*editor-state* state))
+    (%lsp-test-register-session-for-buffer buffer session))
+  (expect (loom/feature/lsp:lsp-session-for-buffer
+           (loom/core/editor-session:editor-state-session state)
+           buffer)
+          :to-be (and (buffer-path buffer) session))
+  session)
 
 

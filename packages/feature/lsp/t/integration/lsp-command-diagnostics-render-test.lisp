@@ -15,7 +15,10 @@
               :keymap (make-keymap)
               :file-tree nil
               :renderer nil
-              :session (%make-test-editor-session (list buffer) :window-tree tree)
+              :session (%make-test-editor-session
+                        (list buffer)
+                        :window-tree tree
+                        :additional-slices '(:feature/lsp))
               :kill-ring nil))))
       (unwind-protect
            (progn
@@ -25,7 +28,7 @@
               transport
               "/tmp/main.lisp"
               "[{\"range\":{\"start\":{\"line\":0,\"character\":1},\"end\":{\"line\":0,\"character\":2}},\"message\":\"bad\",\"severity\":1,\"source\":\"fake\"}]")
-             (setf (editor-state-lsp-session state) session)
+             (%lsp-test-register-session state buffer session)
              (let ((*editor-state* state)
                    (loom/core/editor-session:*editor-session*
                     (loom/core/editor-session:editor-state-session state)))

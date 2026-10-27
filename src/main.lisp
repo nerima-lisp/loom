@@ -508,9 +508,14 @@ nonnegative, and vertical placement fits; otherwise return NIL."
        (or buffer-cell-function *layout-buffer-cell-function*)))))
 
 (defun %layout-buffer-diagnostics (buffer)
-  (let ((session (and *editor-state*
-                      (editor-state-lsp-session *editor-state*))))
-    (when (and session (buffer-path buffer))
+  (let* ((editor-session
+          (and *editor-state*
+               (loom/core/editor-session:editor-state-session *editor-state*)))
+         (session
+          (and editor-session
+               (loom/feature/lsp:lsp-session-for-buffer
+                editor-session buffer))))
+    (when session
       (loom/feature/lsp:lsp-session-diagnostics session buffer))))
 
 (defun %layout-diagnostics-part (diagnostics)

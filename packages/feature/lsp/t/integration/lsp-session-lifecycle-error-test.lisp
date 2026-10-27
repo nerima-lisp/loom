@@ -5,7 +5,7 @@
   (it "spawns a real LSP session over a child process command"
     (when (%sandboxed-check-p)
       (skip "spawns a real \"cat\" child process; see checks.default's LOOM_SANDBOXED_CHECK in flake.nix"))
-    (let ((session (make-lsp-session :command "cat")))
+    (let ((session (make-lsp-session :command (list "cat"))))
       (unwind-protect
            (expect (lsp-session-p session) :to-be-truthy)
         (lsp-session-stop session))))

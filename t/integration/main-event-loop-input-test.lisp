@@ -15,10 +15,21 @@
               (loom/core/window-tree:window-tree-selected-window
                (editor-state-window-tree *editor-state*))
               buffer)
-             (setf (editor-state-concurrent-runtime *editor-state*) :runtime
-                   (editor-state-lsp-session *editor-state*)
-                   (loom/feature/lsp:make-lsp-session
-                    :transport (make-instance (quote %fake-lsp-transport))))
+             (progn
+               (setf (editor-state-session *editor-state*)
+                     (%make-test-editor-session
+                      (list buffer)
+                      :window-tree (editor-state-window-tree *editor-state*)
+                      :additional-slices (list :feature/lsp)))
+               (setf (editor-state-concurrent-runtime *editor-state*) :runtime)
+               (loom/feature/lsp::%lsp-register-session
+                (editor-state-session *editor-state*)
+                (loom/feature/lsp:make-lsp-session
+                 :transport (make-instance (quote %fake-lsp-transport))
+                 :root-path (loom/feature/lsp::%lsp-root-for-buffer buffer)
+                 :language-id
+                 (loom/feature/lsp::%lsp-language-id
+                  (loom/core/buffer:buffer-major-mode buffer)))))
              (with-replaced-function
               (loom/feature/terminal:poll-terminal-sessions
                (lambda (state)
@@ -41,7 +52,8 @@
                  (with-replaced-function
                   (loom/feature/lsp:lsp-session-refresh
                    (lambda (session selected-buffer)
-                     (expect session :to-be (editor-state-lsp-session *editor-state*))
+                     (expect session :to-be (loom/feature/lsp:lsp-session-for-buffer
+                      (editor-state-session *editor-state*) buffer))
                      (expect selected-buffer :to-be buffer)
                      (setf lsp-refreshed t)))
                   (with-replaced-function
