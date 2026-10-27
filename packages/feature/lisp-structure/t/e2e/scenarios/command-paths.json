@@ -558,9 +558,7 @@
       ],
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
@@ -600,9 +598,7 @@
       "mutation_case": "undo",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
@@ -645,9 +641,7 @@
       "mutation_case": "read-only",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a) b\n",
@@ -688,9 +682,7 @@
       "mutation_case": "effect",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a) b\n",
@@ -730,9 +722,7 @@
       "mutation_case": "undo",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a) b\n",
@@ -775,9 +765,7 @@
       "mutation_case": "read-only",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a b)\n",
@@ -818,9 +806,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -860,9 +846,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "a (b)\n",
@@ -901,9 +885,7 @@
       "mutation_case": "effect",
       "command_keys": [
         "C-f",
-        "M-x",
-        "backward-barf-sexp",
-        "RET"
+        "\u001b[1;7C"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "a (b)\n",
@@ -941,9 +923,7 @@
       "mutation_case": "read-only",
       "command_keys": [
         "C-f",
-        "M-x",
-        "backward-barf-sexp",
-        "RET"
+        "\u001b[1;7C"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a b)\n",
@@ -1062,9 +1042,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -1105,9 +1083,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a (b) c)\n",
@@ -1149,9 +1125,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -1192,9 +1166,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -1239,9 +1211,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a (b) c)\n",
@@ -1279,9 +1249,7 @@
       "command": "wrap-round",
       "mutation_case": "effect",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a) b\n",
@@ -1318,9 +1286,7 @@
       "command": "wrap-round",
       "mutation_case": "read-only",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "a b\n",
@@ -1368,9 +1334,7 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "before\n(a) b\nafter\n",
       "effect_bytes": "before\n(a b)\nafter\n",
@@ -1425,6 +1389,7 @@
       "command": "forward-slurp-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "\u001b[1;5C",
         "C-g"
       ],
       "initial_bytes": "(a) b\n",
@@ -1460,8 +1425,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "forward-slurp-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -1491,7 +1455,7 @@
       "command": "forward-slurp-sexp",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "C-Right"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
@@ -1552,9 +1516,7 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "before\n(a b)\nafter\n",
       "effect_bytes": "before\n(a) b\nafter\n",
@@ -1609,6 +1571,7 @@
       "command": "forward-barf-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "\u001b[1;5D",
         "C-g"
       ],
       "initial_bytes": "(a b)\n",
@@ -1644,8 +1607,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "forward-barf-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -1676,9 +1638,7 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a) b\n",
@@ -1741,9 +1701,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "before\na (b)\nafter\n",
       "effect_bytes": "before\n(a b)\nafter\n",
@@ -1800,6 +1758,7 @@
       "command": "backward-slurp-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "\u001b[1;7D",
         "C-g"
       ],
       "initial_bytes": "a (b)\n",
@@ -1835,8 +1794,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "backward-slurp-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -1873,9 +1831,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -1934,9 +1890,7 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "M-x",
-        "backward-barf-sexp",
-        "RET"
+        "\u001b[1;7C"
       ],
       "initial_bytes": "before\n(a b)\nafter\n",
       "effect_bytes": "before\na (b)\nafter\n",
@@ -1991,6 +1945,7 @@
       "command": "backward-barf-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "\u001b[1;7C",
         "C-g"
       ],
       "initial_bytes": "(a b)\n",
@@ -2026,8 +1981,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "backward-barf-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -2287,9 +2241,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "before\n(a (b) c)\nafter\n",
       "effect_bytes": "before\n(a b c)\nafter\n",
@@ -2347,6 +2299,7 @@
       "command": "raise-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "M-r",
         "C-g"
       ],
       "initial_bytes": "(a (b) c)\n",
@@ -2382,8 +2335,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "raise-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -2423,9 +2375,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2490,9 +2440,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "before\n(a (b) c)\nafter\n",
       "effect_bytes": "before\n(a b c)\nafter\n",
@@ -2550,6 +2498,7 @@
       "command": "splice-sexp",
       "mutation_case": "split-window",
       "command_keys": [
+        "M-s",
         "C-g"
       ],
       "initial_bytes": "(a (b) c)\n",
@@ -2585,8 +2534,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "splice-sexp"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp",
       "prepare_keys": [
@@ -2626,9 +2574,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2685,9 +2631,7 @@
       "command": "wrap-round",
       "mutation_case": "narrow",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "before\na b\nafter\n",
       "effect_bytes": "before\n(a) b\nafter\n",
@@ -2741,6 +2685,7 @@
       "command": "wrap-round",
       "mutation_case": "split-window",
       "command_keys": [
+        "M-(",
         "C-g"
       ],
       "initial_bytes": "a b\n",
@@ -2776,8 +2721,7 @@
         }
       ],
       "prepare_commands": [
-        "split-window-below",
-        "wrap-round"
+        "split-window-below"
       ],
       "major_mode": "Common Lisp"
     },
@@ -2803,9 +2747,7 @@
       "command": "wrap-round",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a) b\n",
@@ -2856,9 +2798,7 @@
       "mutation_case": "undo",
       "command_keys": [
         "C-f",
-        "M-x",
-        "backward-barf-sexp",
-        "RET"
+        "\u001b[1;7C"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "a (b)\n",
@@ -2902,9 +2842,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -2991,9 +2929,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -3034,9 +2970,7 @@
       "command": "wrap-round",
       "mutation_case": "undo",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a) b\n",
