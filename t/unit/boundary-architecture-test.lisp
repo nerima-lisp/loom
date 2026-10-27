@@ -27,6 +27,13 @@
      "packages/core/minibuffer/src/package.lisp")
     ("LOOM/FEATURE/MODE" ("feature/mode") (:domain :application)
      "packages/feature/mode/src/package.lisp")
+    ("LOOM/FEATURE/CLIPBOARD" ("feature/clipboard")
+     (:application :infrastructure)
+     "packages/feature/clipboard/src/package.lisp")
+    ("LOOM/FEATURE/KILL-RING" ("feature/kill-ring") (:application)
+     "packages/feature/kill-ring/src/package.lisp")
+    ("LOOM/FEATURE/MOUSE" ("feature/mouse") (:application)
+     "packages/feature/mouse/src/package.lisp")
     ("LOOM/FEATURE/SYNTAX-HIGHLIGHTING" ("feature/syntax-highlighting")
      (:domain :presentation) "packages/feature/syntax-highlighting/src/package.lisp")
     ("LOOM/FEATURE/PROJECT" ("feature/project") (:domain :application :infrastructure)
@@ -1527,7 +1534,7 @@
               (lambda (record)
                 (search "/command-specs-" (boundary-record-path record)))
               records)))
-      (expect (length spec-records) :to-equal 38)
+      (expect (length spec-records) :to-equal 39)
       (expect (every
                (lambda (record)
                  (uiop:string-prefix-p "packages/"

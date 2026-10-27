@@ -1,4 +1,1 @@
-(
-  ("feature/clipboard"
-  )
-)
+(("feature/clipboard"))
