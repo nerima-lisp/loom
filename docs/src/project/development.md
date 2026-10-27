@@ -149,11 +149,9 @@ through `uiop:launch-program`, while interactive terminals use
 `cl-tty-kit:make-pty`. These paths use different process APIs and are not
 covered by `run-shell-command`'s timeout.
 
-Run the formatter check separately, then build the declared Nix checks for all
-supported systems:
+Build the declared Nix checks for all supported systems:
 
 ```sh
-nix fmt -- --ci
 nix flake check --all-systems --print-build-logs
 ```
 

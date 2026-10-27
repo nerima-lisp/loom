@@ -1346,8 +1346,8 @@ Public symbols from `loom/feature/lsp`.
 
 LSP sessions are selected by canonical project root and the buffer's language
 ID from `loom/feature/mode:major-mode-language-id`. The commands and session
-APIs below cover diagnostics, completion, definition jumps, and returning from
-the most recent definition jump.
+APIs below cover diagnostics, completion, hover, definition jumps, and returning
+from the most recent definition jump.
 
 ### `lsp-column-to-character`
 
@@ -1604,6 +1604,20 @@ before requesting a definition. The request is not sent when
 the server does not advertise `definitionProvider`; the callback receives
 decoded locations or an error message.
 
+### `lsp-request-hover`
+
+```lisp
+(loom/feature/lsp:lsp-request-hover session uri line character handler)
+```
+
+Request hover information at a zero-based document position, with the character
+offset measured in UTF-16 code units. The caller must synchronize the document
+before requesting hover. The request is not sent when the server does not
+advertise `hoverProvider`; in that case the function returns `nil` and does not
+call the handler. When sent, the function returns the request ID. The handler
+receives `(content error-message)`: `content` is decoded hover text or `nil`,
+and `error-message` is a string or `nil`.
+
 ### `lsp-completion-item`
 
 The value type for one completion candidate.
@@ -1655,6 +1669,12 @@ Return a location's URI or range.
 
 Request and display completion candidates at point. `C-M-i` opens the popup;
 `C-n` / `C-p` or the arrow keys move selection, and RET or TAB inserts it.
+
+### `lsp-hover-at-point`
+
+Run `M-x lsp-hover-at-point` to request hover information at point. The command
+shows the decoded server text in the minibuffer when the server advertises
+`hoverProvider`.
 
 ### `lsp-find-definition`
 

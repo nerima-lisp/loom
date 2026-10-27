@@ -124,8 +124,9 @@ terminal-mode hooks return supported mode keywords. Signal hooks return
 
 The LSP registry is scoped to the editor session and selects a server by
 canonical project root and language ID. The language ID comes from the
-selected buffer's major mode. The supported editor operations are diagnostics,
-completion, definition navigation, and popping the most recent definition
+selected buffer's major mode. The editor supports diagnostics; completion,
+definition navigation, and hover are available when the server advertises the
+corresponding capabilities. It also supports popping the most recent definition
 jump.
 
 `lsp-discover-command` reads the first usable line from the nearest ancestor

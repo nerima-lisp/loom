@@ -13,8 +13,9 @@ nix run github:nerima-lisp/loom
 The current source includes buffer editing, Emacs-style movement, the kill
 ring, undo and numeric prefixes, window splits, file-tree operations, syntax
 highlighting, Common Lisp evaluation, user initialization, session persistence,
-named registers, and keyboard macros. LSP support covers diagnostics,
-completion, and definition navigation. Hover, references, rename, and LSP
+named registers, and keyboard macros. LSP supports diagnostics, completion,
+definition navigation, and hover. Completion, definition navigation, and hover
+depend on the server's advertised capabilities. References, rename, and LSP
 formatting are not implemented.
 
 ## Where to go next

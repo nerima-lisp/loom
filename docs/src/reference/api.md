@@ -151,8 +151,7 @@ Return `buffer`'s display name, as a string.
 ```
 
 Return the pathname/namestring `buffer` is associated with, or `nil` when no
-path is associated. `make-buffer` can associate a path without loading or
-saving a file.
+path is associated.
 
 ### `buffer-major-mode`
 
@@ -1274,6 +1273,45 @@ for their current API.
 
 Public symbols from `loom/feature/auto-save`.
 
+```lisp
+(loom/feature/auto-save:auto-save-path path)
+(loom/feature/auto-save:auto-save-eligible-p buffer)
+(loom/feature/auto-save:write-auto-save-file path text)
+(loom/feature/auto-save:auto-save-buffer-to-file buffer)
+(loom/feature/auto-save:auto-save-enabled-p &optional buffer)
+(loom/feature/auto-save:auto-save-mode &optional enabled-p)
+(loom/feature/auto-save:toggle-auto-save)
+(loom/feature/auto-save:delete-auto-save-file buffer)
+(loom/feature/auto-save:auto-save-current-buffer)
+(loom/feature/auto-save:maybe-auto-save &key force now)
+```
+
+`*auto-save-interval*` defaults to 5 seconds. `auto-save-path` returns `nil`
+for a `nil` path; otherwise it wraps the complete filename in `#` characters.
+`auto-save-eligible-p` is true for a buffer with a path that is modified and
+not read-only. `write-auto-save-file` writes UTF-8 text, replacing any existing
+sidecar, and returns its pathname. It signals a type error unless `text` is a
+string; filesystem errors propagate.
+
+`auto-save-buffer-to-file` returns `nil` for an ineligible buffer, otherwise
+the sidecar pathname. It leaves the buffer's modified state unchanged.
+`auto-save-enabled-p` is non-`nil` when global mode is enabled or the optional
+buffer is in the per-buffer enablement list; it checks the selected buffer
+when called without an argument. `auto-save-mode` toggles global mode when
+called without an argument, or sets it from `enabled-p` when supplied, and
+returns the new boolean state. `toggle-auto-save` toggles per-buffer enablement
+and returns true when enabled or `nil` when disabled. Global mode enables
+saving regardless of the per-buffer list.
+
+`delete-auto-save-file` returns the sidecar pathname for a buffer with a file
+path, deleting the file when it exists; it returns `nil` when the input is not
+a buffer or has no path. A missing sidecar is harmless. It is also run after a
+normal save. `auto-save-current-buffer` attempts an auto-save of the selected
+buffer and returns the pathname, or `nil` when skipped or when a write errors.
+`maybe-auto-save` returns the pathnames saved in this pass. It returns `nil`
+when there is no editor state or the interval has not elapsed; `:force t`
+bypasses the interval and `:now` supplies the pass timestamp.
+
 ### `auto-save-path`
 
 Return the `#file-name#` sidecar pathname for a file path.
@@ -1813,12 +1851,6 @@ The built-in feature set currently registers no lifecycle options. The CLI
 accepts `loom [+LINE[:COL]] FILE...`; the position applies to the first file
 and later files open at line 1, column 1. With no file, the editor opens `.`.
 There are no subcommands.
-
-`install-default-keybindings` installs registered command IDs into the
-top-level keymap. Core and feature command components register their command
-specs as ASDF loads them. `M-x` resolves a registered command spec and dispatches
-its stable ID through `invoke-command`. Feature command APIs are listed in the
-[feature API reference](api/features.md).
 
 ## Entry point
 

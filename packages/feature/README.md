@@ -25,7 +25,7 @@ presentation helpers in one slice:
 | `lang-web` | Web language editing support |
 | `lifecycle` | Quit prompts and shutdown handling |
 | `lisp-structure` | S-expression motion and structural editing |
-| `lsp` | Stdio client with diagnostics, completion, definition navigation, and document synchronization |
+| `lsp` | Stdio client with diagnostics, completion, definition navigation, hover, and document synchronization |
 | `minibuffer-ui` | Minibuffer cursor and completion-candidate rendering |
 | `mode` | Major-mode registry and mode-specific commands |
 | `mouse` | SGR mouse clicks, selection, scrolling, and file-tree interaction |

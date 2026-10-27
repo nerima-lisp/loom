@@ -109,15 +109,17 @@ shows a discovered command, its configuration path, and directory for review;
 type `yes` at the confirmation prompt to start it. If no command is discovered,
 enter a server command at the prompt.
 
-The current LSP commands provide diagnostics, completion, and definition
-navigation:
+The current LSP commands provide diagnostics, completion, definition
+navigation, and hover information:
 
 - Run `M-x lsp-diagnostics` to refresh and display diagnostics for the selected
   file-backed buffer.
 - Use `C-M-i` to request completion at point.
 - Use `M-.` to jump to a definition and `M-,` to return to the saved location.
+- Run `M-x lsp-hover-at-point` to show hover information in the minibuffer when
+  the server advertises hover support.
 
-Hover, references, rename, and LSP formatting are not implemented.
+References, rename, and LSP formatting are not implemented.
 
 ## Git status, staging, and diff
 

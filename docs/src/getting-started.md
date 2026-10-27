@@ -83,7 +83,8 @@ discovered command, enter the server command at the prompt.
 
 After starting a server, run `M-x lsp-diagnostics` to refresh and display
 diagnostics. Use `C-M-i` for completion, `M-.` to jump to a definition, and
-`M-,` to return to the previous location. Hover, references, rename, and LSP
+`M-,` to return to the previous location. Run `M-x lsp-hover-at-point` to show
+hover information when the server supports it. References, rename, and LSP
 formatting are not implemented. The [core concepts guide](guide/core-concepts.md)
 describes these workflows and the separate external formatter command.
 
