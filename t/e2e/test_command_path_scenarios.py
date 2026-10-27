@@ -237,6 +237,44 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertEqual(_r2_prompt_display(case, ""), "Register name:")
         self.assertEqual(_r2_prompt_display(case, "a"), "Register name: a")
 
+    def test_r2_command_prompts_send_pre_keys_before_opening_the_prompt(self):
+        case = {
+            "name": "test/r2-pre-keys",
+            "path_id": "r2:isearch-backward:prompt-1:free-string:accept",
+            "lane": "W3-6",
+            "rule": "r2",
+            "entry": "key:C-r;prompt:1:free-string",
+            "commands": ["isearch-backward"],
+            "command": "isearch-backward",
+            "entry_mode": "key",
+            "entry_keys": ["C-r"],
+            "prompt_labels": ["I-search backward: "],
+            "prompt_index": 1,
+            "prompt_label": "I-search backward: ",
+            "prompt_kind": "free-string",
+            "prompt_case": "accept",
+            "input_text": "needle",
+            "pre_keys": [{"key": "C-e"}],
+            "initial_bytes": "needle needle\n",
+            "expected_bytes": "needle needle\n",
+            "expected_cursor": [0, 7],
+            "expected_minibuffer": "",
+            "expected_screen": [{"region": "body", "text": "needle needle"}],
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        pre_key = calls.index(("send", b"\x05"))
+        entry_key = calls.index(("send", b"\x12"))
+        self.assertLess(pre_key, entry_key)
+
     def test_c_space_encodes_as_control_at(self):
         self.assertEqual(_key_bytes("C-space"), b"\x00")
 
@@ -1601,6 +1639,277 @@ class CommandPathScenarioTests(unittest.TestCase):
                 {"index": restore.get("index", 0), "strip_right": True},
             ),
             sessions[0].calls,
+        )
+
+    def test_control_meta_keys_use_kitty_modifier_encoding(self):
+        for name, codepoint in (("C-M-s", 115), ("C-M-%", 37), ("C-M-_", 95)):
+            with self.subTest(name=name):
+                self.assertEqual(
+                    _key_bytes(name), f"\x1b[{codepoint};7u".encode("ascii")
+                )
+
+    def test_loader_requires_every_r2_continuation_input(self):
+        case = {
+            "name": "test/multi-prompt",
+            "path_id": "r2:test-command:prompt-1:free-string:tab",
+            "lane": "W3-6",
+            "rule": "r2",
+            "entry": "key:test",
+            "commands": ["test-command"],
+            "command": "test-command",
+            "entry_mode": "key",
+            "entry_keys": ["C-x"],
+            "prompt_case": "tab",
+            "prompt_kind": "free-string",
+            "prompt_index": 1,
+            "prompt_label": "Find: ",
+            "prompt_labels": ["Find: ", "Replace with: "],
+            "prior_prompt_inputs": [],
+            "input_text": "needle",
+            "initial_bytes": "needle\n",
+            "expected_bytes": "needle\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Done",
+            "expected_screen": [{"region": "body", "text": "needle"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                "continuation_inputs must cover prompts after prompt_index",
+            ):
+                load_command_path_scenarios(path)
+
+    def test_r1_uses_declared_m_x_name_and_cleanup_keys(self):
+        case = {
+            "name": "test/search-occur-prompt",
+            "path_id": "r1:search-occur:mx",
+            "lane": "W3-6",
+            "rule": "r1",
+            "entry": "mx",
+            "commands": ["search-occur"],
+            "command": "search-occur",
+            "invoke_name": "occur",
+            "entry_mode": "mx",
+            "initial_bytes": "abc\n",
+            "expected_bytes": "abc\n",
+            "expected_cursor": [0, len("List lines matching regexp: ")],
+            "expected_cursor_region": "minibuffer",
+            "expected_minibuffer": "List lines matching regexp: ",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+            "cleanup_keys": ["C-g"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded = load_command_path_scenarios(scenario_path)[0]
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", loaded, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertIn(("type", "occur"), calls)
+        self.assertNotIn(("type", "search-occur"), calls)
+        cursor_check = calls.index(
+            (
+                "observe_cursor",
+                (0, len("List lines matching regexp: ")),
+                {"region": "minibuffer"},
+            )
+        )
+        self.assertLess(cursor_check, calls.index(("send", b"\x07")))
+
+    def test_r2_runs_the_target_prompt_then_each_continuation_prompt(self):
+        case = {
+            "name": "test/multi-prompt",
+            "path_id": "r2:test-command:prompt-1:free-string:accept",
+            "lane": "W3-6",
+            "rule": "r2",
+            "entry": "key:test",
+            "commands": ["test-command"],
+            "command": "test-command",
+            "entry_mode": "key",
+            "entry_keys": ["C-x"],
+            "prompt_open": "Find: ",
+            "prompt_case": "accept",
+            "prompt_kind": "free-string",
+            "prompt_index": 1,
+            "prompt_label": "Find: ",
+            "prompt_labels": ["Find: ", "Replace with: "],
+            "prior_prompt_inputs": [],
+            "continuation_inputs": ["token"],
+            "input_text": "needle",
+            "initial_bytes": "needle\\n",
+            "expected_bytes": "needle\\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Done",
+            "expected_screen": [{"region": "body", "text": "needle"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded = load_command_path_scenarios(scenario_path)[0]
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", loaded, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertEqual(
+            [call[1] for call in calls if call[0] == "type"],
+            ["needle", "token"],
+        )
+        second_prompt = calls.index(
+            ("wait_text", "minibuffer", "Replace with: ", {})
+        )
+        second_input = calls.index(("type", "token"))
+        self.assertLess(second_prompt, second_input)
+
+    def test_r3_runs_a_declared_prompt_command_before_effect_assertions(self):
+        case = {
+            "name": "test/prompted-replace",
+            "path_id": "r3:replace-string:effect",
+            "lane": "W3-6",
+            "rule": "r3",
+            "entry": "mx",
+            "commands": ["replace-string", "save-buffer"],
+            "command": "replace-string",
+            "mutation_case": "effect",
+            "entry_mode": "mx",
+            "prompt_labels": ["Find: ", "Replace with: "],
+            "prompt_inputs": ["needle", "token"],
+            "initial_bytes": "needle\n",
+            "effect_bytes": "token\n",
+            "expected_bytes": "token\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Replaced 1 occurrence(s)",
+            "expected_screen": [{"region": "body", "text": "token"}],
+            "effect_screen": [{"region": "body", "text": "token"}],
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", case, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        self.assertEqual(
+            [call[1] for call in calls if call[0] == "type"],
+            ["replace-string", "needle", "token"],
+        )
+        self.assertIn(("assert_file_bytes", b"token\n"), calls)
+
+    def test_project_files_create_a_temporary_project_and_expand_expectations(self):
+        case = {
+            "name": "test/project-tree",
+            "path_id": "r2:execute-extended-command:accept",
+            "lane": "W3-6",
+            "rule": "r2",
+            "entry": "mx;prompt:1:completion",
+            "commands": ["execute-extended-command", "find-file"],
+            "command": "execute-extended-command",
+            "entry_mode": "open-mx",
+            "prompt_case": "accept",
+            "prompt_kind": "completion",
+            "input_text": "find-file",
+            "accepted_command": "find-file",
+            "project_files": {
+                "buffer.txt": "needle\n",
+                "nested/other.txt": "other\n",
+            },
+            "initial_bytes": "needle\n",
+            "expected_bytes": "needle\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "",
+            "expected_screen": [
+                {"region": "body", "text": "project {project_root}"}
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenarios = Path(directory) / "scenarios.json"
+            invalid = dict(case)
+            invalid["project_files"] = {
+                **case["project_files"],
+                "buffer.txt": "different\n",
+            }
+            scenarios.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [invalid]}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                "project_files.buffer.txt must match initial_bytes",
+            ):
+                load_command_path_scenarios(scenarios)
+
+            invalid["project_files"] = {
+                **case["project_files"],
+                "../escape.txt": "outside\n",
+            }
+            scenarios.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [invalid]}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                "paths must stay inside the project",
+            ):
+                load_command_path_scenarios(scenarios)
+
+            scenarios.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded = load_command_path_scenarios(scenarios)[0]
+
+        observed = {}
+
+        def session_factory(binary, files, **kwargs):
+            buffer_path = Path(files[0])
+            observed["buffer_path"] = buffer_path
+            observed["git_exists"] = (buffer_path.parent / ".git").is_dir()
+            observed["other_contents"] = (
+                buffer_path.parent / "nested/other.txt"
+            ).read_text(encoding="utf-8")
+            session = FakeSession(binary, files, **kwargs)
+            observed["calls"] = session.calls
+            return session
+
+        run_command_path_scenario("unused", loaded, session_factory=session_factory)
+
+        self.assertTrue(observed["git_exists"])
+        self.assertEqual(observed["other_contents"], "other\n")
+        expected_screen_text = f"project {observed['buffer_path'].parent}"
+        self.assertIn(
+            (
+                "assert_screen",
+                expected_screen_text,
+                "exact",
+                {"region": "body", "index": 0, "strip_right": True},
+            ),
+            observed["calls"],
         )
 
 

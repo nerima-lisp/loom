@@ -122,6 +122,31 @@ def _validate_r1_followup_input(case, location):
         )
 
 
+
+def _nonempty_prompt_label(value, location):
+    if not isinstance(value, str) or not value.strip():
+        raise CommandPathScenarioError(f"{location} must be a nonblank prompt label")
+    return value
+
+
+def _validate_project_files(value, location):
+    if not isinstance(value, dict) or "buffer.txt" not in value:
+        raise CommandPathScenarioError(
+            f"{location} must map relative paths and include buffer.txt"
+        )
+    for relative_path, contents in value.items():
+        _nonempty_string(relative_path, f"{location} path")
+        path = Path(relative_path)
+        if path.is_absolute() or ".." in path.parts:
+            raise CommandPathScenarioError(
+                f"{location} paths must stay inside the project"
+            )
+        if not isinstance(contents, str):
+            raise CommandPathScenarioError(
+                f"{location}[{relative_path!r}] must be a string"
+            )
+
+
 def _validate_case(case, index):
     location = f"scenarios[{index}]"
     if not isinstance(case, dict):
@@ -168,6 +193,13 @@ def _validate_case(case, index):
         )
     _validate_screen_expectations(case.get("expected_screen"), f"{location}.expected_screen")
 
+    if "project_files" in case:
+        _validate_project_files(case["project_files"], f"{location}.project_files")
+        if case["project_files"]["buffer.txt"] != case["initial_bytes"]:
+            raise CommandPathScenarioError(
+                f"{location}.project_files.buffer.txt must match initial_bytes"
+            )
+
     if case["rule"] == "r1":
         if case.get("entry_mode") not in {"key", "mx", "open-mx"}:
             raise CommandPathScenarioError(
@@ -181,6 +213,10 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.cancel_prompt_after_assert must be a boolean"
             )
+        if "invoke_name" in case:
+            _nonempty_string(case["invoke_name"], f"{location}.invoke_name")
+        if "cleanup_keys" in case:
+            _validate_key_list(case["cleanup_keys"], f"{location}.cleanup_keys")
         if case["entry_mode"] == "key":
             _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
         _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
@@ -189,6 +225,9 @@ def _validate_case(case, index):
             "entry_mode",
             "open-mx" if case["command"] == "execute-extended-command" else None,
         )
+        has_prompt_labels = isinstance(case.get("prompt_labels"), list) and bool(
+            case["prompt_labels"]
+        )
         if entry_mode not in {"key", "mx", "open-mx"}:
             raise CommandPathScenarioError(
                 f"{location}.entry_mode must be key, mx, or open-mx"
@@ -196,7 +235,9 @@ def _validate_case(case, index):
         if entry_mode == "key":
             _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
             prompt_open = case.get("prompt_open")
-            if not isinstance(prompt_open, str) or not prompt_open.strip():
+            if (
+                not isinstance(prompt_open, str) or not prompt_open.strip()
+            ) and not has_prompt_labels:
                 raise CommandPathScenarioError(
                     f"{location}.prompt_open must be non-empty text"
                 )
@@ -210,7 +251,9 @@ def _validate_case(case, index):
                     f"{location}.entry must be the generated M-x prompt entry"
                 )
             prompt_open = case.get("prompt_open")
-            if not isinstance(prompt_open, str) or not prompt_open.strip():
+            if (
+                not isinstance(prompt_open, str) or not prompt_open.strip()
+            ) and not has_prompt_labels:
                 raise CommandPathScenarioError(
                     f"{location}.prompt_open must be non-empty text"
                 )
@@ -243,23 +286,28 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.accepted_command is required for accepted completion"
             )
-        if case["prompt_case"] == "tab":
+        if case["prompt_case"] == "tab" and prompt_kind == "completion":
             _nonempty_string(case.get("tab_expected"), f"{location}.tab_expected")
+        elif case["prompt_case"] == "tab" and "tab_expected" in case:
+            _nonempty_string(case["tab_expected"], f"{location}.tab_expected")
         if case["prompt_case"] == "history":
-            history_value_field = (
-                "history_seed_command"
-                if entry_mode == "open-mx"
-                else "history_seed_input"
-            )
-            _nonempty_string(
-                case.get(history_value_field),
-                f"{location}.{history_value_field}",
-            )
+            if entry_mode == "open-mx":
+                _nonempty_string(
+                    case.get("history_seed_command"),
+                    f"{location}.history_seed_command",
+                )
+            elif "prompt_labels" not in case:
+                _nonempty_string(
+                    case.get("history_seed_input"),
+                    f"{location}.history_seed_input",
+                )
             _nonempty_string(
                 case.get("history_expected"), f"{location}.history_expected"
             )
-            if entry_mode != "open-mx" and not isinstance(
-                case.get("history_next_expected"), str
+            if (
+                entry_mode != "open-mx"
+                and "prompt_labels" not in case
+                and not isinstance(case.get("history_next_expected"), str)
             ):
                 raise CommandPathScenarioError(
                     f"{location}.history_next_expected must be text for target prompts"
@@ -272,6 +320,99 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.history_cancel is only valid for history prompts"
             )
+        if case["command"] != "execute-extended-command" and "prompt_labels" in case:
+            if "invoke_name" in case:
+                _nonempty_string(case["invoke_name"], f"{location}.invoke_name")
+            _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
+            prompt_index = case.get("prompt_index")
+            if type(prompt_index) is not int or prompt_index < 1:
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_index must be a positive integer"
+                )
+            prompt_label = _nonempty_prompt_label(
+                case.get("prompt_label"), f"{location}.prompt_label"
+            )
+            prompt_labels = case.get("prompt_labels")
+            if not isinstance(prompt_labels, list) or not prompt_labels:
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_labels must list every prompt label"
+                )
+            for label_index, label in enumerate(prompt_labels):
+                _nonempty_prompt_label(
+                    label, f"{location}.prompt_labels[{label_index}]"
+                )
+            if (
+                prompt_index > len(prompt_labels)
+                or prompt_label != prompt_labels[prompt_index - 1]
+            ):
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_label must match prompt_labels[prompt_index - 1]"
+                )
+            for field in (
+                "prior_prompt_inputs",
+                "continuation_inputs",
+                "history_seed_inputs",
+            ):
+                values = case.get(field, [])
+                if not isinstance(values, list) or any(
+                    not isinstance(value, str) for value in values
+                ):
+                    raise CommandPathScenarioError(
+                        f"{location}.{field} must be a list of strings"
+                    )
+            if len(case.get("prior_prompt_inputs", [])) != prompt_index - 1:
+                raise CommandPathScenarioError(
+                    f"{location}.prior_prompt_inputs must cover prompts before prompt_index"
+                )
+            continuation_inputs = case.get("continuation_inputs", [])
+            if continuation_inputs and len(continuation_inputs) != len(prompt_labels) - prompt_index:
+                raise CommandPathScenarioError(
+                    f"{location}.continuation_inputs must cover prompts after prompt_index"
+                )
+            if (
+                case["prompt_case"] in {"accept", "empty", "tab", "history"}
+                and not case.get("history_cancel", False)
+                and len(continuation_inputs) != len(prompt_labels) - prompt_index
+            ):
+                raise CommandPathScenarioError(
+                    f"{location}.continuation_inputs must cover prompts after prompt_index"
+                )
+            if case.get("history_seed_inputs") and len(
+                case["history_seed_inputs"]
+            ) != len(prompt_labels):
+                raise CommandPathScenarioError(
+                    f"{location}.history_seed_inputs must cover every command prompt"
+                )
+            if case["prompt_case"] == "history":
+                _nonempty_string(
+                    case.get("history_expected"), f"{location}.history_expected"
+                )
+                if len(case.get("history_seed_inputs", [])) != len(prompt_labels):
+                    raise CommandPathScenarioError(
+                        f"{location}.history_seed_inputs must cover every command prompt"
+                    )
+                history_steps = case.get("history_steps", 1)
+                if type(history_steps) is not int or history_steps < 1:
+                    raise CommandPathScenarioError(
+                        f"{location}.history_steps must be a positive integer"
+                    )
+            for field in (
+                "history_seed_interaction_keys",
+                "interaction_keys",
+            ):
+                if field in case:
+                    _validate_key_list(case[field], f"{location}.{field}")
+            if case.get("history_seed_interaction_keys") or case.get(
+                "interaction_keys"
+            ):
+                _nonempty_prompt_label(
+                    case.get("interaction_prompt_label"),
+                    f"{location}.interaction_prompt_label",
+                )
+        elif case["command"] != "execute-extended-command":
+            if "invoke_name" in case:
+                _nonempty_string(case["invoke_name"], f"{location}.invoke_name")
+            _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
     else:
         if case.get("mutation_case") not in _MUTATION_CASES:
             raise CommandPathScenarioError(
@@ -282,7 +423,42 @@ def _validate_case(case, index):
                 case.get("expected_undo_cursor"),
                 f"{location}.expected_undo_cursor",
             )
-        _validate_key_list(case.get("command_keys"), f"{location}.command_keys")
+        routed_command = "entry_mode" in case
+        if routed_command:
+            if case["entry_mode"] not in {"key", "mx"}:
+                raise CommandPathScenarioError(
+                    f"{location}.entry_mode must be key or mx"
+                )
+            if case["entry_mode"] == "key":
+                _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
+            elif "invoke_name" in case:
+                _nonempty_string(case["invoke_name"], f"{location}.invoke_name")
+            labels = case.get("prompt_labels")
+            inputs = case.get("prompt_inputs")
+            if not isinstance(labels, list) or not labels:
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_labels must list every command prompt"
+                )
+            for prompt_index, label in enumerate(labels):
+                _nonempty_prompt_label(
+                    label, f"{location}.prompt_labels[{prompt_index}]"
+                )
+            if not isinstance(inputs, list) or len(inputs) != len(labels) or any(
+                not isinstance(value, str) for value in inputs
+            ):
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_inputs must match prompt_labels"
+                )
+            if case.get("interaction_keys"):
+                _validate_key_list(
+                    case["interaction_keys"], f"{location}.interaction_keys"
+                )
+                _nonempty_prompt_label(
+                    case.get("interaction_prompt_label"),
+                    f"{location}.interaction_prompt_label",
+                )
+        else:
+            _validate_key_list(case.get("command_keys"), f"{location}.command_keys")
         if not isinstance(case.get("effect_bytes"), str):
             raise CommandPathScenarioError(f"{location}.effect_bytes must be a string")
         _validate_screen_expectations(
@@ -319,22 +495,38 @@ def _validate_case(case, index):
             _nonempty_string(
                 command, f"{location}.prepare_commands[{command_index}]"
             )
-        if case["mutation_case"] == "narrow" and (
+        if case["mutation_case"] == "narrow" and "setup_keys" not in case and (
             "narrow-to-region" not in prepare_commands
         ):
             raise CommandPathScenarioError(
                 f"{location}.prepare_commands must include narrow-to-region"
             )
-        if case["mutation_case"] == "split-window" and (
+        if case["mutation_case"] == "split-window" and "setup_keys" not in case and (
             "split-window-below" not in prepare_commands
         ):
             raise CommandPathScenarioError(
                 f"{location}.prepare_commands must include split-window-below"
             )
-        if case["mutation_case"] == "prefix-u4" and case["command_keys"][0] != "C-u":
-            raise CommandPathScenarioError(
-                f"{location}.command_keys must start with C-u for prefix-u4"
-            )
+        if "setup_keys" in case:
+            _validate_key_list(case["setup_keys"], f"{location}.setup_keys")
+        if case["mutation_case"] == "prefix-u4":
+            prefix_keys = case.get("prefix_keys")
+            if prefix_keys is not None:
+                _validate_key_list(prefix_keys, f"{location}.prefix_keys")
+                if prefix_keys != ["C-u", "4"]:
+                    raise CommandPathScenarioError(
+                        f"{location}.prefix_keys must be C-u followed by 4"
+                    )
+            elif not routed_command:
+                command_keys = case.get("command_keys")
+                if not command_keys or command_keys[0] != "C-u":
+                    raise CommandPathScenarioError(
+                        f"{location}.command_keys must start with C-u for prefix-u4"
+                    )
+            else:
+                raise CommandPathScenarioError(
+                    f"{location}.prefix_keys is required for prompt-routed prefix-u4"
+                )
         expected_bytes_source = (
             "effect_bytes"
             if case["mutation_case"] in _EFFECT_MUTATION_CASES
@@ -490,10 +682,10 @@ def load_command_path_scenarios(path):
 
 
 def _key_bytes(name):
+    if name.startswith("C-M-") and len(name) == 5:
+        return f"\x1b[{ord(name[4])};7u".encode("ascii")
     if name == "C-/":
         return b"\x1b[47;5u"
-    if name == "C-M-_":
-        return b"\x1b[95;7u"
     if name == "C-space":
         return keys.ctrl("@")
     if name in {"SPC", "SPACE"}:
@@ -675,14 +867,18 @@ def _assert_final_state(
             session.assert_file_bytes(path, expected_bytes)
 
 
-def _run_r1(session, case, path):
+def _send_pre_keys(session, case):
     for action in case.get("pre_keys", []):
         _send_keys(session, [action["key"]] * action.get("repeat", 1))
+
+
+def _run_r1(session, case, path):
+    _send_pre_keys(session, case)
     entry_mode = case["entry_mode"]
     if entry_mode == "key":
         _send_keys(session, case["entry_keys"])
     elif entry_mode == "mx":
-        _send_mx(session, case["command"])
+        _send_mx(session, case.get("invoke_name", case["command"]))
     else:
         _send_mx(session, None)
     if "followup_input" in case:
@@ -698,7 +894,10 @@ def _run_r1(session, case, path):
         save=case.get("save_after_effect", False),
         stage_prefix="final state",
     )
-    if entry_mode == "open-mx" or case.get("cancel_prompt_after_assert", False):
+    cleanup_keys = case.get("cleanup_keys")
+    if cleanup_keys:
+        _send_keys(session, cleanup_keys)
+    elif entry_mode == "open-mx" or case.get("cancel_prompt_after_assert", False):
         _send_key(session, "C-g")
         session.wait_for_region_exact_text(
             "minibuffer", "Quit", strip_right=True
@@ -723,9 +922,100 @@ def _open_r2_prompt(session, case):
 
 
 def _r2_prompt_display(case, value):
+    if "prompt_labels" in case:
+        return (case["prompt_label"] + value).rstrip()
     if case.get("entry_mode") in {None, "open-mx"}:
         return value
     return (case["prompt_open"] + value).rstrip()
+
+
+def _enter_command_prompt(session, case, prompt_label):
+    if case["entry_mode"] == "key":
+        _send_keys(session, case["entry_keys"])
+    else:
+        _send_mx(session, case.get("invoke_name", case["command"]))
+    session.wait_for_region_text("minibuffer", prompt_label)
+
+
+def _answer_command_prompt(session, case):
+    prompt_case = case["prompt_case"]
+    if prompt_case == "history":
+        for _ in range(case.get("history_steps", 1)):
+            session.key("UP")
+        session.wait_for_region_exact_text(
+            "minibuffer",
+            case["prompt_label"] + case["history_expected"],
+            strip_right=True,
+        )
+    else:
+        if case["input_text"]:
+            session.type(case["input_text"])
+        if prompt_case == "tab":
+            session.key("TAB")
+            if "tab_expected" in case:
+                session.wait_for_region_exact_text(
+                    "minibuffer",
+                    _r2_prompt_display(case, case["tab_expected"]),
+                    strip_right=True,
+                )
+
+    if prompt_case == "cancel":
+        _send_key(session, "C-g")
+        return False
+    session.key("RET")
+    return True
+
+
+def _run_r2_command_prompts(session, case, path):
+    prompt_labels = case["prompt_labels"]
+    if case["prompt_case"] == "history":
+        _enter_command_prompt(session, case, prompt_labels[0])
+        for index, value in enumerate(case["history_seed_inputs"]):
+            if index:
+                session.wait_for_region_text("minibuffer", prompt_labels[index])
+            if value:
+                session.type(value)
+            session.key("RET")
+        if case.get("history_seed_interaction_keys"):
+            session.wait_for_region_text(
+                "minibuffer", case["interaction_prompt_label"]
+            )
+            _send_keys(session, case["history_seed_interaction_keys"])
+
+    _enter_command_prompt(session, case, prompt_labels[0])
+    for index, value in enumerate(case.get("prior_prompt_inputs", [])):
+        if value:
+            session.type(value)
+        session.key("RET")
+        session.wait_for_region_text("minibuffer", prompt_labels[index + 1])
+
+    if _answer_command_prompt(session, case):
+        for index, value in enumerate(case.get("continuation_inputs", [])):
+            prompt_index = case["prompt_index"] + index
+            session.wait_for_region_text("minibuffer", prompt_labels[prompt_index])
+            if value:
+                session.type(value)
+            session.key("RET")
+        if case.get("interaction_keys"):
+            session.wait_for_region_text(
+                "minibuffer", case["interaction_prompt_label"]
+            )
+            _send_keys(session, case["interaction_keys"])
+
+    _assert_minibuffer(
+        session,
+        case["expected_minibuffer"],
+        case.get("expected_minibuffer_match", "exact"),
+    )
+    _assert_final_state(
+        session,
+        case,
+        path,
+        case["expected_bytes"],
+        save=case.get("save_after_effect", False),
+        stage_prefix="final state",
+        check_minibuffer=False,
+    )
 
 
 def _run_r2(session, case, path):
@@ -738,6 +1028,9 @@ def _run_r2(session, case, path):
     def stage(label):
         return _deadline_stage(case["name"], label, session=session)
 
+    if case.get("pre_keys"):
+        with stage("pre-keys"):
+            _send_pre_keys(session, case)
     if case.get("fixture_keys"):
         with stage("fixture keys"):
             _send_keys(session, case["fixture_keys"])
@@ -752,6 +1045,10 @@ def _run_r2(session, case, path):
     if case.get("fixture_keys_after_wait"):
         with stage("fixture keys after wait"):
             _send_keys(session, case["fixture_keys_after_wait"])
+    if case["command"] != "execute-extended-command" and "prompt_labels" in case:
+        with stage("command prompts"):
+            _run_r2_command_prompts(session, case, path)
+        return
     if prompt_case == "history":
         if entry_mode == "open-mx":
             with stage("history seed command"):
@@ -808,22 +1105,23 @@ def _run_r2(session, case, path):
         if prompt_case == "tab":
             with stage("TAB completion"):
                 session.key("TAB")
-                session.wait_for_region_exact_text(
-                    "minibuffer",
-                    _r2_prompt_display(case, case["tab_expected"]),
-                    strip_right=True,
-                )
-                if case["command"] in {
-                    "copy-to-register",
-                    "insert-register",
-                    "jump-to-register",
-                    "point-to-register",
-                }:
-                    session.assert_screen_text(
+                if "tab_expected" in case:
+                    session.wait_for_region_exact_text(
+                        "minibuffer",
                         _r2_prompt_display(case, case["tab_expected"]),
-                        region="minibuffer",
                         strip_right=True,
                     )
+                    if case["command"] in {
+                        "copy-to-register",
+                        "insert-register",
+                        "jump-to-register",
+                        "point-to-register",
+                    }:
+                        session.assert_screen_text(
+                            _r2_prompt_display(case, case["tab_expected"]),
+                            region="minibuffer",
+                            strip_right=True,
+                        )
     if prompt_case == "cancel" or (
         prompt_case == "history" and case.get("history_cancel", False)
     ):
@@ -871,10 +1169,31 @@ def _assert_effect_state(session, case, *, check_minibuffer=True):
         )
 
 
+def _invoke_prompted_command(session, case):
+    prompt_labels = case["prompt_labels"]
+    if case["entry_mode"] == "key":
+        _send_keys(session, case["entry_keys"])
+    else:
+        _send_mx(session, case.get("invoke_name", case["command"]))
+    session.wait_for_region_text("minibuffer", prompt_labels[0])
+    for index, value in enumerate(case["prompt_inputs"]):
+        if index:
+            session.wait_for_region_text("minibuffer", prompt_labels[index])
+        if value:
+            session.type(value)
+        session.key("RET")
+    if case.get("interaction_keys"):
+        session.wait_for_region_text(
+            "minibuffer", case["interaction_prompt_label"]
+        )
+        _send_keys(session, case["interaction_keys"])
+
+
 def _run_r3(session, case, path):
     operation = case["mutation_case"]
     initial = case["initial_bytes"].encode("utf-8")
     effect = case["effect_bytes"].encode("utf-8")
+    routed_command = "entry_mode" in case
     if case.get("fixture_keys"):
         _send_keys(session, case["fixture_keys"])
 
@@ -887,6 +1206,9 @@ def _run_r3(session, case, path):
     for command in case.get("prepare_commands", []):
         _send_mx(session, command)
     _send_keys(session, case.get("post_setup_keys", []))
+    if operation in {"narrow", "split-window"} and "setup_keys" in case:
+        with _deadline_stage(case["name"], f"{operation} setup", session=session):
+            _send_keys(session, case["setup_keys"])
 
     if operation == "read-only":
         _send_mx(session, case["read_only_command"])
@@ -895,7 +1217,13 @@ def _run_r3(session, case, path):
             case.get("expected_read_only_status", case["expected_minibuffer"]),
             strip_right=True,
         )
-        _send_keys(session, case["command_keys"])
+        if routed_command:
+            with _deadline_stage(
+                case["name"], "invoke prompted command", session=session
+            ):
+                _invoke_prompted_command(session, case)
+        else:
+            _send_keys(session, case["command_keys"])
         _assert_final_state(session, case, path, case["expected_bytes"])
         return
 
@@ -927,8 +1255,15 @@ def _run_r3(session, case, path):
             )
         return
 
+    if operation == "prefix-u4" and "prefix_keys" in case:
+        with _deadline_stage(case["name"], "prefix argument", session=session):
+            _send_keys(session, case["prefix_keys"])
+
     with _deadline_stage(case["name"], "effect", session=session):
-        _send_keys(session, case["command_keys"])
+        if routed_command:
+            _invoke_prompted_command(session, case)
+        else:
+            _send_keys(session, case["command_keys"])
         _assert_effect_state(session, case)
     expected_effect = (
         effect if operation == "undo" else case["expected_bytes"].encode("utf-8")
@@ -986,18 +1321,48 @@ def _resolve_path_tokens(value, buffer_path, session_path, fixture_files=()):
     return value
 
 
+def _expand_project_root(case, project_root):
+    root = str(Path(project_root).resolve(strict=False))
+    expanded = dict(case)
+    expanded["expected_minibuffer"] = case["expected_minibuffer"].replace(
+        "{project_root}", root
+    )
+    expanded["expected_screen"] = [
+        {
+            **expectation,
+            "text": expectation["text"].replace("{project_root}", root),
+        }
+        for expectation in case["expected_screen"]
+    ]
+    return expanded
+
+
 def run_command_path_scenario(binary, case, *, session_factory=Session):
     """Execute one strict R1, R2, or R3 example against a loom binary."""
     initial = case["initial_bytes"].encode("utf-8")
     with tempfile.TemporaryDirectory(prefix="loom-e2e-command-path-") as directory:
         path = Path(directory) / "buffer.txt"
         session_path = path.with_name("session.sexp")
-        path.write_bytes(initial)
+        project_root = None
+        if case.get("project_files"):
+            project_root = Path(directory).resolve() / "project"
+            (project_root / ".git").mkdir(parents=True)
+            for relative_path, contents in case["project_files"].items():
+                target = project_root / relative_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(contents, encoding="utf-8")
+            path = project_root / "buffer.txt"
+            if path.read_bytes() != initial:
+                raise CommandPathScenarioError(
+                    f"{case['name']} project_files.buffer.txt must match initial_bytes"
+                )
+        else:
+            path.write_bytes(initial)
         case = _resolve_path_tokens(
             case, path, session_path, case.get("fixture_files", [])
         )
         for fixture in case.get("fixture_files", []):
-            (Path(directory) / fixture["path"]).write_text(
+            path.with_name(fixture["path"]).write_text(
                 fixture["contents"], encoding="utf-8"
             )
         fixture = case.get("session_fixture")
@@ -1008,6 +1373,8 @@ def run_command_path_scenario(binary, case, *, session_factory=Session):
                     f"{case['name']}.session_fixture.path must resolve inside its scenario directory"
                 )
             session_path.write_text(fixture["contents"], encoding="utf-8")
+        if project_root is not None:
+            case = _expand_project_root(case, project_root)
 
         with ExitStack() as stack:
             session_context = session_factory(
