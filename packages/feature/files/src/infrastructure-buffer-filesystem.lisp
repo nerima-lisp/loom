@@ -150,6 +150,7 @@
                :format format)))
           (%make-file-snapshot
            :text (cl-boundary-kit:filesystem-read-file *loom-filesystem* path)))))
+  (setf *file-snapshot-reader* (function %read-file-snapshot))
   (defun %file-snapshot-equal-p (left right)
     (cond
       ((and (null left) (null right)) t)

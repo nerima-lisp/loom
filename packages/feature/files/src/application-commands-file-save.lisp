@@ -1,4 +1,8 @@
 (in-package #:loom/feature/files)
+(defun read-file-snapshot (path)
+  "Return the opaque on-disk snapshot for PATH, or NIL when absent.
+The snapshot supports safe save and reload checks."
+  (funcall *file-snapshot-reader* path))
 
 (defun %transfer-point-and-mark (old-buffer new-buffer)
   "Carry OLD-BUFFER's point and mark (when set) onto NEW-BUFFER.
@@ -26,7 +30,7 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
        (lambda (answer)
          (cond
            ((string-equal answer "y")
-            (let ((current (%read-file-snapshot path)))
+            (let ((current (read-file-snapshot path)))
               (if (%file-snapshot-equal-p snapshot current)
                   (handler-case
                       (let ((*confirmed-file-overwrite*
@@ -95,7 +99,7 @@ an existing file. BUFFER is already installed in its window with PATH attached,
 so a second C-x C-s takes SAVE-BUFFER's existing-path branch and overwrites it."
     (if (%file-path-exists-p path)
         (progn
-          (%remember-file-snapshot buffer (%read-file-snapshot path))
+          (%remember-file-snapshot buffer (read-file-snapshot path))
           (minibuffer-message (editor-state-minibuffer *editor-state*)
                               (format nil
                                       "File exists: ~A (press C-x C-s again to overwrite)"
@@ -207,7 +211,7 @@ buffer. Undo history is not transferred."
        (lambda (answer)
          (cond
            ((string-equal answer "y")
-            (let ((current (%read-file-snapshot path)))
+            (let ((current (read-file-snapshot path)))
               (cond
                 ((null current)
                  (minibuffer-message
@@ -230,7 +234,7 @@ buffer. Undo history is not transferred."
            (buffer (loom/core/window-tree:window-buffer window))
            (path (buffer-path buffer)))
       (if path
-          (let ((snapshot (%read-file-snapshot path))
+          (let ((snapshot (read-file-snapshot path))
                 (minibuffer (editor-state-minibuffer *editor-state*)))
             (cond
               ((null snapshot)
@@ -255,7 +259,7 @@ buffer. Undo history is not transferred."
        (lambda (answer)
          (cond
            ((string-equal answer "r")
-            (let ((current (%read-file-snapshot path)))
+            (let ((current (read-file-snapshot path)))
               (cond
                 ((null current)
                  (minibuffer-message
@@ -276,7 +280,7 @@ buffer. Undo history is not transferred."
   (defun %guard-file-buffer-switch (buffer continuation)
     (let ((path (buffer-path buffer)))
       (if path
-          (let ((current (%read-file-snapshot path)))
+          (let ((current (read-file-snapshot path)))
             (multiple-value-bind (baseline baseline-known-p)
                 (%file-buffer-snapshot buffer)
               (cond

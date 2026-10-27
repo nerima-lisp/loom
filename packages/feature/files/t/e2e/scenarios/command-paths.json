@@ -1,0 +1,2468 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/find-file/mx",
+      "path_id": "r1:find-file:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "find-file"
+      ],
+      "command": "find-file",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Find file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/find-file/key",
+      "path_id": "r1:find-file:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22f%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "find-file"
+      ],
+      "command": "find-file",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Find file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/revert-buffer/mx",
+      "path_id": "r1:revert-buffer:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Reverted $buffer_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/save-buffer/key",
+      "path_id": "r1:save-buffer:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Wrote $buffer_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/save-buffer/mx",
+      "path_id": "r1:save-buffer:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Wrote $buffer_file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/recent-file/key",
+      "path_id": "r1:recent-file:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22f%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]}",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "recent-file",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Recent file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/recent-file/mx",
+      "path_id": "r1:recent-file:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "recent-file"
+      ],
+      "command": "recent-file",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Recent file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/write-file/key",
+      "path_id": "r1:write-file:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22w%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "write-file"
+      ],
+      "command": "write-file",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        12
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Write file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/write-file/mx",
+      "path_id": "r1:write-file:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "write-file"
+      ],
+      "command": "write-file",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        12
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Write file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r3/save-buffer/effect",
+      "path_id": "r3:save-buffer:effect",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "self-insert-command",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "effect",
+      "pre_command_keys": [
+        "X"
+      ],
+      "command_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-buffer/undo",
+      "path_id": "r3:save-buffer:undo",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "self-insert-command",
+        "save-buffer",
+        "undo"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
+      "setup": [
+        {
+          "keys": [
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-buffer/read-only",
+      "path_id": "r3:save-buffer:read-only",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/r3/save-buffer/narrow",
+      "path_id": "r3:save-buffer:narrow",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "set-mark-command",
+        "narrow-to-region",
+        "self-insert-command",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "hidden-target-tail\n",
+      "effect_bytes": "hidden-Xtarget-tail\n",
+      "expected_bytes": "hidden-Xtarget-tail\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xtarget"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xtarget"
+        }
+      ],
+      "setup": [
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "set-mark-command"
+        },
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "narrow-to-region"
+        },
+        {
+          "assert_screen": {
+            "region": "body",
+            "text": "target"
+          }
+        },
+        {
+          "keys": [
+            "C-a",
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-buffer/split-window",
+      "path_id": "r3:save-buffer:split-window",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "split-window-below",
+        "beginning-of-line",
+        "self-insert-command",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "screen",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "screen",
+          "text": "Xalpha beta"
+        }
+      ],
+      "expected_view_count": 2,
+      "setup": [
+        {
+          "keys": [
+            "C-x",
+            "2"
+          ]
+        },
+        {
+          "assert_screen": {
+            "region": "screen",
+            "text": "alpha beta",
+            "count": 2
+          }
+        },
+        {
+          "keys": [
+            "C-a",
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-buffer/macro-replay",
+      "path_id": "r3:save-buffer:macro-replay",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "beginning-of-line",
+        "self-insert-command",
+        "save-buffer",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-a",
+        "X",
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "replay_minibuffer": "Wrote {file_path}",
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_minibuffer": "Wrote {file_path}",
+      "restore_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/save-buffer/prefix-u4",
+      "path_id": "r3:save-buffer:prefix-u4",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "self-insert-command",
+        "universal-argument",
+        "save-buffer"
+      ],
+      "command": "save-buffer",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-x",
+        "C-s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "setup": [
+        {
+          "keys": [
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/revert-buffer/effect",
+      "path_id": "r3:revert-buffer:effect",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "self-insert-command",
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "external replacement\n",
+      "expected_bytes": "external replacement\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Reverted {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "external_bytes": "external replacement\n",
+      "setup": [
+        {
+          "keys": [
+            "!"
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r3/revert-buffer/undo",
+      "path_id": "r3:revert-buffer:undo",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "self-insert-command",
+        "delete-backward-char",
+        "execute-extended-command",
+        "revert-buffer",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Wrote {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "external_bytes": "",
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
+      "undo_keys": [
+        "C-x",
+        "u"
+      ],
+      "restore_command_keys": [
+        "C-x",
+        "C-s",
+        "y",
+        "RET"
+      ],
+      "overwrite_prompt": "File changed on disk. Overwrite? (y/n): {file_path}",
+      "setup": [
+        {
+          "keys": [
+            "!",
+            ""
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r3/revert-buffer/read-only",
+      "path_id": "r3:revert-buffer:read-only",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "revert-buffer",
+        "self-insert-command"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-x",
+        "revert-buffer",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "external_bytes": "alpha beta\n",
+      "effect_minibuffer": "Reverted {file_path}",
+      "read_only_probe": "!"
+    },
+    {
+      "name": "command-path/r3/revert-buffer/narrow",
+      "path_id": "r3:revert-buffer:narrow",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "set-mark-command",
+        "narrow-to-region",
+        "self-insert-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "hidden-target-tail\n",
+      "effect_bytes": "external-data\n",
+      "expected_bytes": "external-data\n",
+      "expected_cursor": [
+        0,
+        8
+      ],
+      "expected_minibuffer": "Reverted {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "external-data"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "external-data"
+        }
+      ],
+      "external_bytes": "external-data\n",
+      "setup": [
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "set-mark-command"
+        },
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "narrow-to-region"
+        },
+        {
+          "assert_screen": {
+            "region": "body",
+            "text": "target"
+          }
+        },
+        {
+          "keys": [
+            "C-a",
+            "!"
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r3/revert-buffer/split-window",
+      "path_id": "r3:revert-buffer:split-window",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "split-window-below",
+        "self-insert-command",
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "external replacement\n",
+      "expected_bytes": "external replacement\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Reverted {file_path}",
+      "expected_screen": [
+        {
+          "region": "screen",
+          "text": "external replacement"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "screen",
+          "text": "external replacement"
+        }
+      ],
+      "external_bytes": "external replacement\n",
+      "expected_view_count": 2,
+      "setup": [
+        {
+          "keys": [
+            "C-x",
+            "2"
+          ]
+        },
+        {
+          "assert_screen": {
+            "region": "screen",
+            "text": "alpha beta",
+            "count": 2
+          }
+        },
+        {
+          "keys": [
+            "!"
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r3/revert-buffer/macro-replay",
+      "path_id": "r3:revert-buffer:macro-replay",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "self-insert-command",
+        "beginning-of-line",
+        "start-kbd-macro",
+        "execute-extended-command",
+        "revert-buffer",
+        "end-kbd-macro",
+        "call-last-kbd-macro"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-a",
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "external replacement\n",
+      "expected_bytes": "external replacement\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "external_bytes": "external replacement\n",
+      "replay_setup": [
+        {
+          "keys": [
+            "!"
+          ]
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "replay_minibuffer": "Reverted {file_path}",
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "setup": [
+        {
+          "keys": [
+            "!"
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r3/revert-buffer/prefix-u4",
+      "path_id": "r3:revert-buffer:prefix-u4",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "self-insert-command",
+        "universal-argument",
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-x",
+        "revert-buffer",
+        "RET",
+        "y",
+        "RET"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "external replacement\n",
+      "expected_bytes": "external replacement\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Reverted {file_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "external replacement"
+        }
+      ],
+      "external_bytes": "external replacement\n",
+      "setup": [
+        {
+          "keys": [
+            "!"
+          ]
+        }
+      ],
+      "effect_minibuffer": "Reverted {file_path}",
+      "revert_prompt": "Discard local changes and revert {file_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/find-file/prompt-1/free-string/accept",
+      "path_id": "r2:find-file:prompt-1:free-string:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "find-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "find-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "accept",
+      "prompt_text": "Find file: ",
+      "input_text": "{source_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "accepted_command": "find-file",
+      "prompt_open": "Find file: "
+    },
+    {
+      "name": "command-path/r2/find-file/prompt-1/free-string/cancel",
+      "path_id": "r2:find-file:prompt-1:free-string:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "find-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "find-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "cancel",
+      "prompt_text": "Find file: ",
+      "input_text": "{source_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "prompt_open": "Find file: "
+    },
+    {
+      "name": "command-path/r2/find-file/prompt-1/free-string/empty",
+      "path_id": "r2:find-file:prompt-1:free-string:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "find-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "find-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "empty",
+      "prompt_text": "Find file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Cannot open directory: ",
+      "prompt_result_minibuffer": "Cannot open directory: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "expected_target_exists": false,
+      "prompt_open": "Find file: "
+    },
+    {
+      "name": "command-path/r2/find-file/prompt-1/free-string/tab",
+      "path_id": "r2:find-file:prompt-1:free-string:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "find-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "find-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "tab",
+      "prompt_text": "Find file: ",
+      "input_text": "{source_prefix}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "accepted_command": "find-file",
+      "tab_expected": "Find file: {source_path}",
+      "prompt_open": "Find file: "
+    },
+    {
+      "name": "command-path/r2/find-file/prompt-1/free-string/history",
+      "path_id": "r2:find-file:prompt-1:free-string:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"f\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "find-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "find-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "history",
+      "prompt_text": "Find file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-f"
+      ],
+      "accepted_command": "find-file",
+      "history_seed_command": "find-file",
+      "history_seed_input": "{source_path}",
+      "history_seed_result": "",
+      "history_expected": "Find file: {source_path}",
+      "prompt_open": "Find file: ",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/accept",
+      "path_id": "r2:recent-file:prompt-1:completion:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "accept",
+      "prompt_text": "Recent file: ",
+      "input_text": "{source_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "accepted_command": "recent-file",
+      "prompt_open": "Recent file: "
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/cancel",
+      "path_id": "r2:recent-file:prompt-1:completion:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "cancel",
+      "prompt_text": "Recent file: ",
+      "input_text": "{source_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "prompt_open": "Recent file: "
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/empty",
+      "path_id": "r2:recent-file:prompt-1:completion:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "empty",
+      "prompt_text": "Recent file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Recent file is unavailable: ",
+      "prompt_result_minibuffer": "Recent file is unavailable: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "prompt_open": "Recent file: "
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/tab",
+      "path_id": "r2:recent-file:prompt-1:completion:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "tab",
+      "prompt_text": "Recent file: ",
+      "input_text": "{source_prefix}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "accepted_command": "recent-file",
+      "tab_expected": "Recent file: {source_path}",
+      "prompt_open": "Recent file: "
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/history",
+      "path_id": "r2:recent-file:prompt-1:completion:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "history",
+      "prompt_text": "Recent file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "prompt_result_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "accepted_command": "recent-file",
+      "history_seed_command": "recent-file",
+      "history_seed_input": "{source_path}",
+      "history_seed_result": "",
+      "history_expected": "Recent file: {source_path}",
+      "prompt_open": "Recent file: ",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/recent-file/prompt-1/completion/invalid",
+      "path_id": "r2:recent-file:prompt-1:completion:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"r\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "recent-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "recent-file",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "prompt_case": "invalid",
+      "prompt_text": "Recent file: ",
+      "input_text": "missing-file",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Recent file is unavailable: missing-file",
+      "prompt_result_minibuffer": "Recent file is unavailable: missing-file",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "r",
+        "f"
+      ],
+      "prompt_open": "Recent file: "
+    },
+    {
+      "name": "command-path/r2/write-file/prompt-1/free-string/accept",
+      "path_id": "r2:write-file:prompt-1:free-string:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "write-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "accept",
+      "prompt_text": "Write file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {target_path}",
+      "prompt_result_minibuffer": "Wrote {target_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "accepted_command": "write-file",
+      "expected_target_exists": true,
+      "prompt_open": "Write file: "
+    },
+    {
+      "name": "command-path/r2/write-file/prompt-1/free-string/cancel",
+      "path_id": "r2:write-file:prompt-1:free-string:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "write-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "cancel",
+      "prompt_text": "Write file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "expected_target_exists": false,
+      "prompt_open": "Write file: "
+    },
+    {
+      "name": "command-path/r2/write-file/prompt-1/free-string/empty",
+      "path_id": "r2:write-file:prompt-1:free-string:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "write-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "empty",
+      "prompt_text": "Write file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "File name cannot be empty",
+      "prompt_result_minibuffer": "File name cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "expected_target_exists": false,
+      "prompt_open": "Write file: "
+    },
+    {
+      "name": "command-path/r2/write-file/prompt-1/free-string/tab",
+      "path_id": "r2:write-file:prompt-1:free-string:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "write-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "tab",
+      "prompt_text": "Write file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {target_path}",
+      "prompt_result_minibuffer": "Wrote {target_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "accepted_command": "write-file",
+      "expected_target_exists": true,
+      "tab_expected": "Write file: {target_path}",
+      "prompt_open": "Write file: "
+    },
+    {
+      "name": "command-path/r2/write-file/prompt-1/free-string/history",
+      "path_id": "r2:write-file:prompt-1:free-string:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"w\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "write-file",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "history",
+      "prompt_text": "Write file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "File exists: {target_path} (press C-x C-s again to overwrite)",
+      "prompt_result_minibuffer": "File exists: {target_path} (press C-x C-s again to overwrite)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-w"
+      ],
+      "accepted_command": "write-file",
+      "expected_target_exists": true,
+      "history_seed_command": "write-file",
+      "history_seed_input": "{target_path}",
+      "history_seed_result": "Wrote {target_path}",
+      "history_expected": "Write file: {target_path}",
+      "prompt_open": "Write file: ",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-1/free-string/accept",
+      "path_id": "r2:save-buffer:prompt-1:free-string:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "accept",
+      "prompt_text": "Save file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta",
+      "expected_bytes": "alpha beta",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {target_path}",
+      "prompt_result_minibuffer": "Wrote {target_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "pre_command_text": "alpha beta",
+      "expected_target_exists": true,
+      "prompt_open": "Save file: "
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-1/free-string/cancel",
+      "path_id": "r2:save-buffer:prompt-1:free-string:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffer",
+        "write-file"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "cancel",
+      "prompt_text": "Save file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta",
+      "expected_bytes": "alpha beta",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {target_path}",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "pre_command_text": "alpha beta",
+      "expected_target_exists": true,
+      "verify_pathless_after_result": true,
+      "prompt_open": "Save file: "
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-1/free-string/empty",
+      "path_id": "r2:save-buffer:prompt-1:free-string:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "empty",
+      "prompt_text": "Save file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta",
+      "expected_bytes": "alpha beta",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "File name cannot be empty",
+      "prompt_result_minibuffer": "File name cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "pre_command_text": "alpha beta",
+      "expected_target_exists": false,
+      "prompt_open": "Save file: "
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-1/free-string/tab",
+      "path_id": "r2:save-buffer:prompt-1:free-string:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "tab",
+      "prompt_text": "Save file: ",
+      "input_text": "{target_path}",
+      "initial_bytes": "alpha beta",
+      "expected_bytes": "alpha beta",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {target_path}",
+      "prompt_result_minibuffer": "Wrote {target_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "pre_command_text": "alpha beta",
+      "expected_target_exists": true,
+      "tab_expected": "Save file: {target_path}",
+      "prompt_open": "Save file: "
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-1/free-string/history",
+      "path_id": "r2:save-buffer:prompt-1:free-string:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "write-file",
+        "switch-to-buffer",
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "prompt_case": "history",
+      "prompt_text": "Save file: ",
+      "input_text": "",
+      "initial_bytes": "alpha beta",
+      "expected_bytes": "alpha beta",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "File exists: {target_path} (press C-x C-s again to overwrite)",
+      "prompt_result_minibuffer": "File exists: {target_path} (press C-x C-s again to overwrite)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "expected_file": "target",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "pre_command_text": "alpha beta",
+      "expected_target_exists": true,
+      "history_seed_command": "write-file",
+      "history_seed_input": "{target_path}",
+      "history_seed_result": "Wrote {target_path}",
+      "history_expected": "Save file: {target_path}",
+      "prompt_open": "Save file: ",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/accept",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "accept",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "y",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Reverted {source_path}",
+      "prompt_result_minibuffer": "Reverted {source_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "external"
+        }
+      ],
+      "expected_file": "source",
+      "accepted_command": "revert-buffer",
+      "external_bytes": "external\n",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/cancel",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "cancel",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "y",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "external_bytes": "external\n",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/empty",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "empty",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Discard local changes and revert {source_path}? (y/n): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "external_bytes": "external\n",
+      "reprompt_after_response": true,
+      "reprompt_expected": "Discard local changes and revert {source_path}? (y/n): ",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/tab",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "tab",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "n",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Revert cancelled",
+      "prompt_result_minibuffer": "Revert cancelled",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "accepted_command": "revert-buffer",
+      "external_bytes": "external\n",
+      "tab_expected": "Discard local changes and revert {source_path}? (y/n): n",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/history",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "history",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Revert cancelled",
+      "prompt_result_minibuffer": "Revert cancelled",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "accepted_command": "revert-buffer",
+      "external_bytes": "external\n",
+      "history_seed_command": "revert-buffer",
+      "history_seed_input": "n",
+      "history_seed_result": "Revert cancelled",
+      "history_expected": "Discard local changes and revert {source_path}? (y/n): n",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): ",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/revert-buffer/prompt-1/yes-no/invalid",
+      "path_id": "r2:revert-buffer:prompt-1:yes-no:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "mx;prompt:1:yes-no",
+      "commands": [
+        "execute-extended-command",
+        "revert-buffer"
+      ],
+      "command": "revert-buffer",
+      "target_command": "revert-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "yes-no",
+      "entry_mode": "mx",
+      "prompt_case": "invalid",
+      "prompt_text": "Discard local changes and revert {source_path}? (y/n): ",
+      "input_text": "x",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Discard local changes and revert {source_path}? (y/n): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "external_bytes": "external\n",
+      "reprompt_after_response": true,
+      "reprompt_expected": "Discard local changes and revert {source_path}? (y/n): ",
+      "save_after_effect": true,
+      "prompt_open": "Discard local changes and revert {source_path}? (y/n): "
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/accept",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "accept",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "y",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "!alpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Wrote {source_path}",
+      "prompt_result_minibuffer": "Wrote {source_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "external_bytes": "external\n",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/cancel",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "cancel",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "y",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "external_bytes": "external\n",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/empty",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "empty",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "external_bytes": "external\n",
+      "reprompt_after_response": true,
+      "reprompt_expected": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/tab",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "tab",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "n",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Save cancelled",
+      "prompt_result_minibuffer": "Save cancelled",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "external_bytes": "external\n",
+      "tab_expected": "File changed on disk. Overwrite? (y/n): {source_path}n",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/history",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "history",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Save cancelled",
+      "prompt_result_minibuffer": "Save cancelled",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "accepted_command": "save-buffer",
+      "external_bytes": "external\n",
+      "history_seed_command": "save-buffer",
+      "history_seed_input": "n",
+      "history_seed_result": "Save cancelled",
+      "history_expected": "File changed on disk. Overwrite? (y/n): {source_path}n",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "history_next_expected": ""
+    },
+    {
+      "name": "command-path/r2/save-buffer/prompt-2/yes-no/invalid",
+      "path_id": "r2:save-buffer:prompt-2:yes-no:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:2:yes-no",
+      "commands": [
+        "save-buffer"
+      ],
+      "command": "execute-extended-command",
+      "target_command": "save-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "yes-no",
+      "entry_mode": "key",
+      "prompt_case": "invalid",
+      "prompt_text": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "input_text": "x",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "external\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "prompt_result_minibuffer": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha beta"
+        }
+      ],
+      "expected_file": "source",
+      "entry_keys": [
+        "C-x",
+        "C-s"
+      ],
+      "external_bytes": "external\n",
+      "reprompt_after_response": true,
+      "reprompt_expected": "File changed on disk. Overwrite? (y/n): {source_path}",
+      "save_after_effect": true,
+      "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    }
+  ]
+}

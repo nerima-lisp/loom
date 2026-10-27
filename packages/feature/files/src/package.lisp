@@ -50,6 +50,7 @@
            #:write-file
            #:revert-buffer
            #:file-format-indicator
+           #:read-file-snapshot
            #:register-recent-file-recorder
            #:*loom-filesystem*
            #:*loom-real-filesystem*
