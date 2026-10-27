@@ -25,6 +25,10 @@ SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/core/command/t/e2e/scenarios/command-paths.json"
 )
+BUFFER_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/core/buffer/t/e2e/scenarios/command-paths.json"
+)
 FILE_TREE_SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/feature/file-tree/t/e2e/scenarios/command-paths.json"
@@ -863,6 +867,80 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertLess(cursor_check, cancel_prompt)
         self.assertLess(cancel_prompt, wait_for_quit)
+
+    def test_r1_goto_line_mx_sends_its_numeric_followup_after_prompt_opens(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["path_id"] == "r1:goto-line:mx"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        calls = session.calls
+        command_input = calls.index(("type", "goto-line"))
+        command_accept = calls.index(("key", "RET"), command_input)
+        prompt_open = calls.index(
+            ("wait_text", "minibuffer", "Go to line: ", {})
+        )
+        line_input = calls.index(("type", case["followup_input"]))
+        line_accept = calls.index(("key", "RET"), line_input)
+        self.assertLess(command_accept, prompt_open)
+        self.assertLess(prompt_open, line_input)
+        self.assertLess(line_input, line_accept)
+        self.assertIn(("observe_cursor", (1, 0), {"region": "body"}), calls)
+        self.assertIn(
+            ("wait_exact_text", "minibuffer", "Moved", {"strip_right": True}),
+            calls,
+        )
+
+    def test_r1_mx_without_followup_keeps_the_direct_command_flow(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["path_id"] == "r1:newline:mx"
+        )
+        self.assertNotIn("followup_input", case)
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        self.assertIn(("type", "newline"), session.calls)
+        self.assertNotIn(
+            ("wait_text", "minibuffer", "Go to line: ", {}), session.calls
+        )
+
+    def test_r1_followup_input_is_only_a_positive_ascii_line_number_for_goto_line(self):
+        valid_case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["path_id"] == "r1:goto-line:mx"
+        )
+        malformed = (
+            ("other path", {"path_id": "r1:newline:mx"}, "only valid for"),
+            ("other entry mode", {"entry_mode": "key"}, "only valid for"),
+            ("other rule", {"rule": "r2"}, "only valid for R1"),
+            ("zero", {"followup_input": "0"}, "positive ASCII decimal"),
+            ("unicode digits", {"followup_input": "２"}, "positive ASCII decimal"),
+            ("non-string", {"followup_input": 2}, "positive ASCII decimal"),
+        )
+        for name, updates, message in malformed:
+            with self.subTest(case=name):
+                case = dict(valid_case)
+                case.update(updates)
+                with tempfile.TemporaryDirectory() as directory:
+                    scenario_path = Path(directory) / "scenarios.json"
+                    scenario_path.write_text(
+                        json.dumps({"schema_version": 1, "scenarios": [case]}),
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(CommandPathScenarioError, message):
+                        load_command_path_scenarios(scenario_path)
 
     def test_r1_cancels_a_prompt_after_asserting_its_state(self):
         case = {

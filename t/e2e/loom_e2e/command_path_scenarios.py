@@ -99,6 +99,29 @@ def _validate_cursor(value, location):
         )
 
 
+def _validate_r1_followup_input(case, location):
+    if (
+        case.get("path_id") != "r1:goto-line:mx"
+        or case.get("command") != "goto-line"
+        or case.get("commands") != ["execute-extended-command", "goto-line"]
+        or case.get("entry") != "mx"
+        or case.get("entry_mode") != "mx"
+    ):
+        raise CommandPathScenarioError(
+            f"{location}.followup_input is only valid for r1:goto-line:mx"
+        )
+    value = case["followup_input"]
+    if (
+        not isinstance(value, str)
+        or not value.isascii()
+        or not value.isdigit()
+        or not any(digit != "0" for digit in value)
+    ):
+        raise CommandPathScenarioError(
+            f"{location}.followup_input must be a positive ASCII decimal line number"
+        )
+
+
 def _validate_case(case, index):
     location = f"scenarios[{index}]"
     if not isinstance(case, dict):
@@ -115,6 +138,10 @@ def _validate_case(case, index):
         _nonempty_string(case.get(field), f"{location}.{field}")
     if case["rule"] not in {"r1", "r2", "r3"}:
         raise CommandPathScenarioError(f"{location}.rule must be r1, r2, or r3")
+    if "followup_input" in case and case["rule"] != "r1":
+        raise CommandPathScenarioError(
+            f"{location}.followup_input is only valid for R1 M-x goto-line"
+        )
     if not isinstance(case.get("commands"), list) or not case["commands"]:
         raise CommandPathScenarioError(f"{location}.commands must be non-empty")
     for command_index, command in enumerate(case["commands"]):
@@ -146,6 +173,8 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.entry_mode must be key, mx, or open-mx"
             )
+        if "followup_input" in case:
+            _validate_r1_followup_input(case, location)
         if "cancel_prompt_after_assert" in case and not isinstance(
             case["cancel_prompt_after_assert"], bool
         ):
@@ -656,6 +685,11 @@ def _run_r1(session, case, path):
         _send_mx(session, case["command"])
     else:
         _send_mx(session, None)
+    if "followup_input" in case:
+        with _deadline_stage(case["name"], "follow-up input", session=session):
+            session.wait_for_region_text("minibuffer", "Go to line: ")
+            session.type(case["followup_input"])
+            session.key("RET")
     _assert_final_state(
         session,
         case,
