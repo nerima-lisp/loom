@@ -88,7 +88,12 @@
     (let ((loom/core/command:*current-prefix-argument* 4))
       (expect (%structural-result (function loom::%forward-barf-edits)
                                   "(a b c d e)" 1)
-              :to-equal "(a) b c d e"))))
+              :to-equal "(a) b c d e")))
+  (it
+    "defaults the structural prefix count without an editor state"
+    (let ((loom/core/command:*current-prefix-argument* nil)
+          (loom/core/editor-session:*editor-state* nil))
+      (expect (loom::%structural-prefix-count) :to-equal 1))))
 
 (describe
   "structural editing boundary predicates"
