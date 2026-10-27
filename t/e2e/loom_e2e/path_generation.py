@@ -270,7 +270,9 @@ def _primary_entry(row):
     return "mx"
 
 
-def _language_path(path_id, owner, commands, entry, state, outcome, observe):
+def _language_path(
+    path_id, owner, commands, entry, state, outcome, observe, event_targets=()
+):
     return _path(
         path_id,
         commands,
@@ -280,6 +282,7 @@ def _language_path(path_id, owner, commands, entry, state, outcome, observe):
         state,
         outcome,
         observe,
+        event_targets,
     )
 
 
@@ -529,7 +532,7 @@ def _language_paths():
         _language_path(
             "r1:lang-web:comments:meta-semicolon",
             web_owner,
-            ["find-file", "save-buffer"],
+            ["comment-line"],
             "key:M-;",
             "TypeScript, JavaScript, JSX, HTML, CSS, or YAML line or active region",
             "M-; toggles the active language comment syntax for the line or region",
@@ -538,11 +541,15 @@ def _language_paths():
         _language_path(
             "r1:lang-web:pair-completion:delimiter-pairs",
             web_owner,
-            ["find-file", "save-buffer"],
-            "key:open-delimiter",
+            ["save-buffer"],
+            "keys: registered web delimiters",
             "TypeScript, JavaScript, JSX, JSON, HTML, CSS, or YAML mode at an opening delimiter",
             "inserts registered delimiter pairs and skips existing closers when enabled",
             ["screen_text", "file_bytes", "cursor"],
+            event_targets=tuple(
+                {"type": "text_input", "text": delimiter}
+                for delimiter in ("(", ")", "[", "]", "{", "}", "<", ">")
+            ),
         ),
     ]
 

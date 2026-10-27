@@ -28,6 +28,35 @@ _EFFECT_TYPES = frozenset(
     }
 )
 _EVENT_TARGETS = frozenset({"text_input", "terminal_resize"})
+
+
+def _valid_event_target(target):
+    if isinstance(target, str):
+        return target in _EVENT_TARGETS
+    return (
+        isinstance(target, Mapping)
+        and set(target) == {"type", "text"}
+        and target.get("type") == "text_input"
+        and isinstance(target.get("text"), str)
+        and bool(target["text"])
+    )
+
+
+def _event_target_identity(target):
+    if isinstance(target, str):
+        return ("type", target)
+    return ("text_input", target["text"])
+
+
+def _event_matches_target(event, target):
+    if isinstance(target, str):
+        return event.get("type") == target
+    return (
+        event.get("type") == target["type"]
+        and event.get("text") == target["text"]
+    )
+
+
 _OBSERVATION_CLASSES = (
     "none",
     "effect-verified",
@@ -141,7 +170,7 @@ def _read_trace(result_path, result, artifacts_dir):
                 command = record.get("command")
                 if isinstance(command, str) and command:
                     # RET routes use "newline"; traces record its bound command.
-                    if command == "newline-and-indent":
+                    if command in {"newline-and-indent", "mode/newline-and-indent"}:
                         command = "newline"
                     elif command == "mode/comment-dwim":
                         # Comment-aware mode keymaps use DWIM for the M-; route.
@@ -464,11 +493,9 @@ def _classify_path(
     event_targets = required.get("event_targets", [])
     if (
         not isinstance(event_targets, list)
-        or any(
-            not isinstance(target, str) or target not in _EVENT_TARGETS
-            for target in event_targets
-        )
-        or len(set(event_targets)) != len(event_targets)
+        or any(not _valid_event_target(target) for target in event_targets)
+        or len({_event_target_identity(target) for target in event_targets})
+        != len(event_targets)
     ):
         item["status"] = "mismatch"
         item["reason"] = "generated path has invalid event targets"
@@ -616,7 +643,7 @@ def _classify_path(
             target
             for target in event_targets
             if not any(
-                event["type"] == target
+                _event_matches_target(event, target)
                 and event["timeline_sequence"] < observation_sequence
                 for event in events
                 for observation_sequence in observation_sequences

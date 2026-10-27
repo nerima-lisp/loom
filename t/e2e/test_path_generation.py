@@ -367,7 +367,13 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                     "fullwidth", "combining", "emoji", "wrap", "truncate"
                 )
             }
-            | {"r6:resize": ["terminal_resize"]},
+            | {"r6:resize": ["terminal_resize"]}
+            | {
+                "r1:lang-web:pair-completion:delimiter-pairs": [
+                    {"type": "text_input", "text": delimiter}
+                    for delimiter in ("(", ")", "[", "]", "{", "}", "<", ">")
+                ]
+            },
         )
         self.assertEqual(
             self.paths_by_id["r6:suspend:c-z"]["commands"], ["suspend-frame"]
@@ -645,7 +651,10 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                         "css",
                         "yaml",
                     } and behavior in {"comment", "pair"}:
-                        expected_commands = ["find-file", "save-buffer"]
+                        expected_commands = {
+                            "comment": ["comment-line"],
+                            "pair": ["save-buffer"],
+                        }[behavior]
                     if expected_commands is not None:
                         self.assertEqual(paths_by_id[path_id]["commands"], expected_commands)
 
@@ -670,6 +679,18 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
         web_comment_path = paths_by_id["r1:lang-web:comments:meta-semicolon"]
         self.assertNotIn("JSON", web_comment_path["state"] + web_comment_path["outcome"])
+        self.assertEqual(web_comment_path["entry"], "key:M-;")
+        self.assertEqual(web_comment_path["commands"], ["comment-line"])
+        web_pair_path = paths_by_id["r1:lang-web:pair-completion:delimiter-pairs"]
+        self.assertEqual(web_pair_path["commands"], ["save-buffer"])
+        self.assertEqual(web_pair_path["entry"], "keys: registered web delimiters")
+        self.assertEqual(
+            web_pair_path["event_targets"],
+            [
+                {"type": "text_input", "text": delimiter}
+                for delimiter in ("(", ")", "[", "]", "{", "}", "<", ">")
+            ],
+        )
         lisp_mode_path = paths_by_id["r1:lang-lisp:mode-assignment"]
         self.assertIn(".asd", lisp_mode_path["state"])
         self.assertIn(".el", lisp_mode_path["state"])

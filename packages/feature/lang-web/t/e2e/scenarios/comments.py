@@ -95,7 +95,7 @@ def _toggle_region(
 
 @scenario(
     "lang-web/comments",
-    commands=["find-file", "save-buffer"],
+    commands=["find-file", "comment-line", "save-buffer"],
 )
 def comments(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-lang-web-comments-") as directory:

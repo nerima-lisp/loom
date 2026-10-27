@@ -255,6 +255,42 @@ class PathReportTests(unittest.TestCase):
 
         self.assertEqual(report["paths"][0]["status"], "mismatch")
 
+    def test_exact_text_input_event_target_precedes_effect_observation(self):
+        self._use_event_target({"type": "text_input", "text": "("})
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=(),
+            events=[
+                {"timeline_sequence": 0, "type": "text_input", "text": "("}
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+        self.assertEqual(
+            report["paths"][0]["event_targets"],
+            [{"type": "text_input", "text": "("}],
+        )
+
+    def test_exact_text_input_event_target_rejects_other_text(self):
+        self._use_event_target({"type": "text_input", "text": "("})
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=(),
+            events=[
+                {"timeline_sequence": 0, "type": "text_input", "text": "["}
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+        self.assertEqual(
+            report["paths"][0]["missing_events"],
+            [{"type": "text_input", "text": "("}],
+        )
+
     def test_newline_path_matches_newline_and_indent_trace_command(self):
         self.required["commands"] = ["newline"]
         self.ledger["commands"] = ["newline"]
@@ -303,6 +339,68 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
 
         self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_language_ret_trace_matches_mode_newline_and_indent_command(self):
+        self.required["commands"] = ["newline"]
+        self.ledger["commands"] = ["newline"]
+        self.required["entry"] = "key: RET"
+        self.ledger["entry"] = "key: RET"
+        trace_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"enter","modifiers":[]}]} '
+        ).strip()
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("mode/newline-and-indent",),
+            trace_route="key",
+            trace_entry=trace_entry,
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_language_ret_trace_does_not_match_nearby_mode_command(self):
+        self.required["commands"] = ["newline"]
+        self.ledger["commands"] = ["newline"]
+        self.required["entry"] = "key: RET"
+        self.ledger["entry"] = "key: RET"
+        trace_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"enter","modifiers":[]}]} '
+        ).strip()
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("mode/newline-and-indent-extra",),
+            trace_route="key",
+            trace_entry=trace_entry,
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+        self.assertEqual(report["paths"][0]["missing_commands"], ["newline"])
+
+    def test_language_ret_trace_does_not_match_same_command_under_another_owner(self):
+        self.required["commands"] = ["newline"]
+        self.ledger["commands"] = ["newline"]
+        self.required["entry"] = "key: RET"
+        self.ledger["entry"] = "key: RET"
+        trace_entry = (
+            'key:{"keymap":"global","sequence":'
+            '[{"key":"enter","modifiers":[]}]} '
+        ).strip()
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=("other/mode/newline-and-indent",),
+            trace_route="key",
+            trace_entry=trace_entry,
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+        self.assertEqual(report["paths"][0]["missing_commands"], ["newline"])
 
     def test_trace_from_the_wrong_entry_route_does_not_satisfy_path(self):
         self._write_scenario(

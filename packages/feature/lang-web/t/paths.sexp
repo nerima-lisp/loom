@@ -44,7 +44,7 @@
   :scenario "lang-web/indentation-region"
   :lane "W3-7d")
  (:id "r1:lang-web:comments:meta-semicolon"
-  :commands ("find-file" "save-buffer")
+  :commands ("comment-line")
   :rule :r1
   :entry "key:M-;"
   :state "language mode buffer with current line or active region"
@@ -53,9 +53,9 @@
   :scenario "lang-web/comments"
   :lane "W3-7d")
  (:id "r1:lang-web:pair-completion:delimiter-pairs"
-  :commands ("find-file" "save-buffer")
+  :commands ("save-buffer")
   :rule :r1
-  :entry "key:open-delimiter"
+  :entry "keys: registered web delimiters"
   :state "language mode buffer at an opening delimiter"
   :outcome "inserts registered delimiter pairs and skips existing closers only when the mode enables it"
   :observe (:screen_text :file_bytes :cursor)
