@@ -1364,4 +1364,5 @@
       :observe
       (:file_bytes :screen_text)
       :scenario
-      "kill-ring/r4/kill-ring-save/region-absent"))
+      "kill-ring/r4/kill-ring-save/region-absent")
+ (:exclude :id "r3:yank-pop:read-only" :reason "M-x toggle-read-only clears the previous yank context before M-y, so this path cannot reach the yank-pop read-only guard" :evidence "src/application/input-routing-effects.lisp:4"))
