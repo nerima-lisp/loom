@@ -36,6 +36,110 @@
                                     (gethash "params" plain-open)))
                   :to-equal
                   "plaintext")))))
+  (it "closes and reopens a document when its language changes"
+    (%with-initialized-fake-lsp-session
+        ((python-transport python-session)
+         :root-path #P"/tmp/"
+         :language-id "python")
+      (%with-initialized-fake-lsp-session
+          ((plain-transport plain-session)
+           :root-path #P"/tmp/"
+           :language-id "plaintext")
+        (let* ((buffer (make-buffer :name "main.txt"
+                                    :path "/tmp/main.txt"
+                                    :initial-content "same"))
+               (tree
+                 (loom/core/window-tree:make-window-tree buffer 80 24))
+               (editor-session
+                 (%make-test-editor-session
+                  nil
+                  :window-tree tree
+                  :additional-slices (list :feature/lsp)))
+               (state
+                 (loom/core/editor-session:make-editor-state
+                  :window-tree tree
+                  :session editor-session))
+               (*editor-state* state)
+               (loom/core/editor-session:*editor-session* editor-session))
+          (loom/feature/lsp::%lsp-register-session
+           editor-session python-session)
+          (loom/feature/lsp::%lsp-register-session
+           editor-session plain-session)
+          (loom/feature/buffers:register-buffer editor-session buffer)
+          (buffer-set-major-mode buffer :python)
+          (lsp-session-sync-buffer python-session buffer)
+          (buffer-set-major-mode buffer :fundamental)
+          (lsp-refresh-editor-state state)
+          (expect (gethash "method"
+                           (%fake-sent-message python-transport 3))
+                  :to-equal
+                  "textDocument/didClose")
+          (expect (gethash (lsp-path-uri "/tmp/main.txt")
+                           (loom/feature/lsp::lsp-session-documents
+                            python-session))
+                  :to-be
+                  nil)
+          (let ((open (%fake-sent-message plain-transport 2)))
+            (expect (gethash "method" open)
+                    :to-equal
+                    "textDocument/didOpen")
+            (expect (gethash "languageId"
+                             (gethash "textDocument"
+                                      (gethash "params" open)))
+                    :to-equal
+                    "plaintext"))
+          (buffer-set-major-mode buffer :python)
+          (lsp-session-sync-buffer python-session buffer)
+          (expect (gethash "method"
+                           (%fake-sent-message plain-transport 3))
+                  :to-equal
+                  "textDocument/didClose")
+          (let ((open (%fake-sent-message python-transport 4)))
+            (expect (gethash "method" open)
+                    :to-equal
+                    "textDocument/didOpen")
+            (progn
+              (expect (gethash "languageId"
+                               (gethash "textDocument"
+                                        (gethash "params" open)))
+                      :to-equal
+                      "python")
+              (buffer-set-major-mode buffer :fundamental)
+              (loom/core/editor-session:run-session-hooks
+               :after-save editor-session buffer)
+              (expect (gethash "method"
+                               (%fake-sent-message python-transport 5))
+                      :to-equal
+                      "textDocument/didClose")
+              (expect (gethash (lsp-path-uri "/tmp/main.txt")
+                               (loom/feature/lsp::lsp-session-documents
+                                python-session))
+                      :to-be
+                      nil)
+              (let ((plain-open (%fake-sent-message plain-transport 4)))
+                (expect (gethash "method" plain-open)
+                        :to-equal
+                        "textDocument/didOpen")
+                (expect (gethash "languageId"
+                                 (gethash "textDocument"
+                                          (gethash "params" plain-open)))
+                        :to-equal
+                        "plaintext"))
+              (expect (gethash "method"
+                               (%fake-sent-message plain-transport 5))
+                      :to-equal
+                      "textDocument/didSave")))
+          (loom/feature/buffers:unregister-buffer
+           editor-session buffer :reason :test)
+          (expect (gethash "method"
+                           (%fake-sent-message plain-transport 6))
+                  :to-equal
+                  "textDocument/didClose")
+          (expect (gethash (lsp-path-uri "/tmp/main.txt")
+                           (loom/feature/lsp::lsp-session-documents
+                            plain-session))
+                  :to-be
+                  nil)))))
 
   (it "refreshes through the render-loop boundary"
     (%with-started-fake-lsp-session ((transport session))

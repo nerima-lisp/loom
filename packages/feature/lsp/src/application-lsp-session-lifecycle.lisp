@@ -105,6 +105,9 @@ attempted before closing the transport; delivery is not guaranteed."
       (setf selected-session
             (and buffer (buffer-path buffer)
                  (%lsp-current-buffer-session buffer)))
+      (when (and buffer (buffer-path buffer))
+        (%lsp-close-buffer-in-other-sessions
+         editor-session selected-session buffer))
       (when selected-session
         (lsp-session-refresh selected-session buffer))
       (when registry

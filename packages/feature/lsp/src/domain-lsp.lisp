@@ -74,9 +74,10 @@ only `foo'. LSP-COMPLETION-ITEM-TEXT resolves which to use."
 
 (defstruct (lsp-document
             (:constructor make-lsp-document
-                (uri language-id version text)))
+                (uri language-id version text &optional buffer)))
   "The document identity and version synchronized with a language server."
   uri
   language-id
   (version 1 :type integer)
-  text)
+  text
+  (buffers (and buffer (list buffer))))
