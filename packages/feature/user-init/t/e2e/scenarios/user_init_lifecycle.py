@@ -76,8 +76,11 @@ def _init_git_repo(directory, commits):
         _git(directory, "commit", "--quiet", "-m", message)
 
 
-def _save_and_exit_editor(session):
+def _save_and_exit_editor(session, file_path=None, expected_bytes=None):
     session.send(keys.ctrl("x") + keys.ctrl("s"))
+    if file_path is not None:
+        session.wait_for_file(file_path, expected_bytes, timeout=1)
+        session.assert_file_bytes(file_path, expected_bytes)
     session.send(keys.ctrl("x") + keys.ctrl("c"))
 
 
@@ -225,8 +228,14 @@ def git_commit_uses_editor_contract(binary):
                 session.wait_for_region_text(
                     "body", "Please enter", index=1, timeout=1
                 )
+                edit_message_path = repo / ".git" / "COMMIT_EDITMSG"
+                initial_edit_message = edit_message_path.read_bytes()
                 session.type("R7 commit subject\n")
-                _save_and_exit_editor(session)
+                _save_and_exit_editor(
+                    session,
+                    os.fspath(edit_message_path),
+                    b"R7 commit subject\n" + initial_edit_message,
+                )
                 _wait_editor_parent(session, "git commit editor")
                 actual_subject = _git(
                     os.fspath(repo), "log", "-1", "--format=%s"
@@ -267,7 +276,13 @@ def interactive_rebase_uses_editor_contract(binary):
             with Session(launcher) as session:
                 session.wait_ready(timeout=1.5)
                 session.wait_for_region_text("body", "pick", timeout=1)
-                _save_and_exit_editor(session)
+                todo_path = repo / ".git" / "rebase-merge" / "git-rebase-todo"
+                initial_todo = todo_path.read_bytes()
+                _save_and_exit_editor(
+                    session,
+                    os.fspath(todo_path),
+                    initial_todo,
+                )
                 _wait_editor_parent(session, "git rebase -i editor")
                 actual_history = _git(
                     os.fspath(repo), "log", "--reverse", "--format=%s"
@@ -319,9 +334,12 @@ def crontab_style_uses_editor_contract(binary):
                 session.send(keys.ctrl("e"))
                 session.key("RET")
                 session.type("5 * * * * /bin/true")
-                _save_and_exit_editor(session)
+                _save_and_exit_editor(
+                    session,
+                    os.fspath(cron_file),
+                    appended,
+                )
                 _wait_editor_parent(session, "crontab-style editor")
-                session.assert_file_bytes(os.fspath(cron_file), appended)
 
 
 @scenario(
