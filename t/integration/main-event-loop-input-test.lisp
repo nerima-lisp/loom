@@ -398,6 +398,29 @@
    (expect key-input-count :to-be 0)
    (expect default-action-ran :to-be-truthy)))
 
+(it
+ "decodes SGR mouse reports while bracketed-paste collection is enabled"
+ (let* ((decoder
+          (cl-tty-kit:make-input-decoder :collect-bracketed-paste t))
+        (mouse-events
+          (cl-tty-kit:decode-input-chunk
+           decoder
+           (format nil "~C[<0;3;2M" #\Esc)))
+        (paste-events
+          (cl-tty-kit:decode-input-chunk
+           decoder
+           (format nil "~C[200~~~A~C[201~~" #\Esc "paste" #\Esc))))
+   (expect (length mouse-events) :to-equal 1)
+   (expect
+    (eq (type-of (first mouse-events))
+        (find-symbol "MOUSE-EVENT" "CL-TTY-KIT"))
+    :to-be-truthy)
+   (expect (cl-tty-kit:mouse-event-x (first mouse-events)) :to-equal 2)
+   (expect (cl-tty-kit:mouse-event-y (first mouse-events)) :to-equal 1)
+   (expect (length paste-events) :to-equal 1)
+   (expect (cl-tty-kit:key-event-type (first paste-events)) :to-be :paste)
+   (expect (cl-tty-kit:key-event-code (first paste-events)) :to-equal "paste")))
+
 (describe "%event-loop wake and render hooks"
           (it "terminates before reading input when a signal wake is ready"
               (let* ((*editor-state* (%fresh-full-editor-state ""))

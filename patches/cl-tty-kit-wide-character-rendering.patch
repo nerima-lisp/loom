@@ -230,3 +230,11 @@
            (incf length
                  (%diff-cursor-length (mod start width)
                                       (floor start width)))
+--- a/src/input-decode-internals.lisp
++++ b/src/input-decode-internals.lisp
+@@ -30,3 +30,4 @@
+ (defmacro %paste-marker-event-p (event marker)
+   `(let ((event ,event) (marker ,marker))
+-     (and (eq :special (key-event-type event)) (eq marker (key-event-code event)))))
++     (and (typep event 'key-event)
++          (eq :special (key-event-type event)) (eq marker (key-event-code event)))))
