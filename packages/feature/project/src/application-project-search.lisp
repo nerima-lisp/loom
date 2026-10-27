@@ -6,10 +6,12 @@
 
 (progn
   (defstruct (project-search-state
-              (:constructor %make-project-search-state ()))
-    active-work
-    last-root
-    result-buffer)
+            (:constructor %make-project-search-state ()))
+  (prompt-histories (make-hash-table :test (function equal))
+                    :type hash-table :read-only t)
+  active-work
+  last-root
+  result-buffer)
 
   (defstruct (project-search-work
               (:constructor %make-project-search-work
