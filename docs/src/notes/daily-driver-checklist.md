@@ -1,51 +1,36 @@
-# Daily-driver manual verification
+# Daily-driver manual checklist
 
-Use this checklist to record the author's experience in a real terminal. PTY
-tests establish reproducible input and screen behavior, but do not establish
-Japanese IME usability or comfort during daily editing. No author-run results
-have been supplied for this checklist.
+Use this checklist to record the author's observations in a real terminal
+emulator. PTY E2E scenarios exercise protocol handling, but they do not
+establish interaction with a specific terminal emulator, IME conversion, or
+day-to-day comfort.
 
 ## Preparation
 
-Use a disposable directory, copies of files, and a disposable Git repository.
-Do not run staging commands in a shared checkout or open files containing
-credentials. Keep session snapshots private: they can contain buffer text.
+Use a disposable directory and non-sensitive test text. Start Loom in the
+terminal emulator used for daily work, following [Getting Started](../getting-started.md).
+Record the source revision, OS, terminal emulator and version, terminal size,
+and input method. Do not put private paths, file contents, or clipboard data in
+the result.
 
-Build and start the executable using [Getting Started](../getting-started.md).
-Record the source revision, whether it has local edits, OS, terminal application,
-terminal dimensions, and IME used. Redact private paths, hostnames, and file
-contents from evidence. Record the LSP server and version for LSP checks.
+For each row, record `Pass` or `Fail` with a brief observation in `Author
+result`. Include any terminal permission prompt or setting that affected the
+result. Leave the cell blank until the check has been performed.
 
-For each row, replace `Not run` with `Pass` or `Fail` and a brief observation.
-A failure needs reproduction steps and the observed behavior. A missing external
-tool leaves the affected row `Not run`; it is not a pass. These are manual
-results, separate from automated tests.
+## Manual checks
 
-## Editing checks
-
-| Check | Actions and expected observation | Author result |
+| Procedure | Expected result | Author result |
 | --- | --- | --- |
-| Common Lisp | Open a `.lisp` file with `C-x C-f`. Edit a nested form, move by sexp, and try `M-x forward-slurp-sexp`, `forward-barf-sexp`, `wrap-round`, `splice-sexp`, and `raise-sexp` on suitable forms. Check balanced structure and undo each edit. Save with `C-x C-s` and reopen to check the saved text. SWANK evaluation is deferred, not a passing criterion. | Not run |
-| Nix | Open a `.nix` file. Check the selected mode, indentation, movement, undo, saving, and reopening. Keep long lines visible by moving point beyond the right edge; the view should follow point without changing file text. | Not run |
-| TypeScript | Open a `.ts` file and check mode selection, indentation, movement, undo, saving, and reopening. This does not establish TypeScript LSP support without a separately configured server. | Not run |
-| Markdown | Open a `.md` file containing a paragraph wider than the window. Check wrapping, next/previous visual-row movement, and saving without inserted wrap newlines. Run `M-x toggle-truncate-lines` and check the same text in truncated mode. | Not run |
-| Japanese input | Use the real IME to enter and convert Japanese beside ASCII. Move across full-width characters, delete, undo, save, and reopen. Resize the window and check that text and cursor remain aligned. Record any key interception or composition problem. | Not run |
-| Search | Use `C-s` on text with multiple occurrences. Accept with `RET`, then search again and cancel with `C-g`. Check the accepted and restored point positions. | Not run |
+| **IME conversion.** In a text buffer, enter mixed ASCII and Japanese text with the real IME. Compose and accept a candidate, cancel a second composition, move through the accepted text, delete and undo, then save and reopen the file. | The accepted candidate appears once. Cancelling composition adds no unintended text. Movement and deletion follow the inserted text, undo restores it, and the saved text is unchanged after reopening. |  |
+| **OSC 52 clipboard.** Put point at the start of a short, non-sensitive string. Run `M-x set-mark-command`, move point past the string, then run `M-w`. Paste into a separate plain-text application. If the terminal emulator asks for clipboard access, record the prompt and response. | The other application receives exactly the selected text through the terminal emulator's clipboard integration. |  |
+| **Mouse.** Open a text file and the file-tree sidebar. Click a known position in the text, drag across a region, scroll over the text window, then click a file-tree entry. | The click moves point and selects its window. Dragging extends the region, the wheel scrolls the target window, and the file-tree click opens the selected file. |  |
+| **Bracketed paste.** Copy text containing a tab and newline from another application. Paste it into a buffer, save the file, then undo once. | Loom inserts the pasted text literally without auto-indenting it. The saved file retains the pasted characters, and one undo removes the complete paste from the buffer. |  |
+| **Daily editing comfort.** Complete a representative editing task in Loom using the terminal emulator and input method you normally use. Note interruptions from input, navigation, redraw, prompts, or selection. | You can complete the task without lost or duplicated input, lost edits, or persistent display problems. Record subjective friction even when no functional failure occurs. |  |
 
-## Tooling and restoration checks
+## Acceptance
 
-| Check | Actions and expected observation | Author result |
-| --- | --- | --- |
-| LSP | In a disposable Nix project, provide the intended server command at the `lsp-start` prompt or in a project-local `.loom-lsp` file. For a discovered command, press `RET`, review the configuration path, directory, and command, then type exactly `yes` to start it. With a command that wraps beyond the visible review area, use PageDown/C-v and PageUp/M-v to scroll to its end and back to the start without changing the trust answer. Check that `C-g` or any other answer cancels without stopping an existing session and restores the original buffer and viewport. With nixd, enter `let completionValue = 1; in comp`, place point after `comp`, and check that `lsp-completion-at-point` offers `completionValue`. Use a local binding and reference to check `lsp-find-definition` and `lsp-pop-definition`, including the return location. Check `lsp-diagnostics` with invalid syntax, then `lsp-stop`. Record the actual candidates, locations, and diagnostics. | Not run |
-| Terminal | Run `M-x terminal`, enter `printf 'terminal-check\n'`, and check the child output. Resize the editor, then run `M-x terminal-stop` and confirm editor input still works. Repeat opening and stopping to check cleanup. | Not run |
-| Git | In the disposable repository, change one file. Run `C-x g`, `M-x git-diff`, `git-stage-file`, `git-diff-staged`, and `git-unstage-file`. Check the reported exit status and compare the index and file contents with an external Git inspection. Do not commit or push as part of this check. | Not run |
-| Session | Open two disposable files, split a window, move point, and create a bookmark. Run `M-x save-session` with a private snapshot path. Change the buffers and layout, then `M-x load-session` using that path. Check restored text, point, layout, and bookmark. Display-mode persistence is deferred; do not expect a changed truncate/wrap setting to survive restoration. | Not run |
-| Exit and restart | Save intended changes, exit with `C-x C-c`, and restart. Check that the terminal's echo, cursor, and normal screen are restored and that saved file bytes match the edits. | Not run |
-
-## Acceptance boundary
-
-All rows need author observations before the manual criterion FR-V08 in the
-[verification plan](verification-plan.md) can be considered complete. Failures
-and unrun rows remain release-verification gaps. See the
-[daily-driver requirements](requirements-daily-driver.md) for deferred features;
-this checklist does not convert them into implemented functionality.
+The FR-V07 manual scope is exactly the five checks above: real-IME text entry,
+terminal clipboard access, mouse input, bracketed paste, and daily editing
+comfort. The criterion is complete only after the author records an outcome
+for every row. A blank result means the check has not been performed; see the
+[FR-V07 requirement](requirements-modern-editor.md) for its release context.

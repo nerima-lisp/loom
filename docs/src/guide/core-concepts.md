@@ -20,9 +20,11 @@ coordinate systems.
 ## Windows and rendering
 
 A window tree describes which buffers are visible and how the screen is split.
-Window commands change that tree; the renderer turns the selected layout and
-buffer contents into terminal output. This separation lets window operations
-remain testable without a live terminal.
+Use `C-x 2` to split below, `C-x 3` to split right, and `C-x o` to select the
+next window. `C-x 0` deletes the selected window; `C-x 1` keeps only that
+window. Window commands change the tree; the renderer turns the selected layout
+and buffer contents into terminal output. This separation lets window
+operations remain testable without a live terminal.
 
 The editor state holds the selected window, buffers, minibuffer, keymap,
 renderer, and feature state. Commands receive that shared state through the
@@ -31,15 +33,42 @@ application layer rather than reaching into presentation code directly.
 ## Keymaps and commands
 
 Keymaps resolve single chords and multi-key sequences. A command specification
-records the command name, callable action, and completion metadata. The command
-catalogue is defined in
-[`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp),
-while the registry provides lookup and M-x completion.
+records the command name, callable action, and completion metadata. Feature-
+owned command specification files register commands through the shared
+registry. The registration code is in
+`packages/core/command/src/command-registry-registration.lisp`; a file-tree
+command specification is in
+`packages/feature/file-tree/src/command-specs-file-tree.lisp`. The registry
+provides lookup and M-x completion.
 
-Default bindings are installed by
-[`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp).
-Feature commands can therefore share the same dispatch path whether they are
-invoked by a key sequence, M-x, or a user initialization file.
+Default bindings are declared in
+`packages/core/command/src/application-commands-emacs-defaults.lisp`.
+Feature commands share the same dispatch path whether they are invoked by a key
+sequence, M-x, or a user initialization file.
+
+## Search, kill ring, and clipboard
+
+Use `C-s` and `C-r` for forward and backward search. `C-M-s` and `C-M-r` search
+with regular expressions.
+
+After setting a region, `C-w` removes it and adds it to the kill ring; `M-w`
+copies it to the kill ring without changing the buffer. `C-y` inserts the most
+recent entry, and `M-y` cycles through earlier entries after a yank. Run
+`M-x clipboard-yank` to insert text from the system clipboard when a local
+clipboard provider is available. If reading the clipboard fails or no provider
+is available, the command falls back to the kill ring.
+
+## Language modes
+
+When a file is opened, loom selects a registered major mode from its path when
+one matches. The mode controls language-specific behavior such as syntax
+highlighting and local keybindings. Run `M-x set-major-mode` to choose a
+registered mode for the selected buffer.
+
+## Sessions
+
+Run `C-x r S` to save the current editor session to a chosen path. Run
+`M-x load-session` and choose a saved path to restore a session.
 
 ## Feature slices
 
@@ -67,6 +96,28 @@ to, so successive commands remain available for inspection.
 sends the complete buffer through its standard input. Successful output replaces
 the buffer as one undoable edit; failed commands, read-only buffers, and
 narrowed buffers leave the original text unchanged.
+
+This command runs an external formatter. It is separate from LSP formatting,
+which is not implemented.
+
+## Language server support
+
+Run `M-x lsp-start` in a file-backed buffer to start a language server. loom
+searches the current path's ancestor directories for the nearest `.loom-lsp`
+file. Its first non-empty, non-comment line supplies the server command. loom
+shows a discovered command, its configuration path, and directory for review;
+type `yes` at the confirmation prompt to start it. If no command is discovered,
+enter a server command at the prompt.
+
+The current LSP commands provide diagnostics, completion, and definition
+navigation:
+
+- Run `M-x lsp-diagnostics` to refresh and display diagnostics for the selected
+  file-backed buffer.
+- Use `C-M-i` to request completion at point.
+- Use `M-.` to jump to a definition and `M-,` to return to the saved location.
+
+Hover, references, rename, and LSP formatting are not implemented.
 
 ## Git status, staging, and diff
 

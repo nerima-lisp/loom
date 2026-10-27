@@ -1,6 +1,6 @@
 # Feature APIs
 
-This page documents the public APIs for optional editor features.
+This page documents selected APIs exported by optional editor-feature packages.
 
 ## Major mode feature
 
@@ -8,31 +8,39 @@ Public symbols from `loom/feature/mode`.
 
 ### `major-mode-known-p`
 
-Return true when a mode name is registered.
+`(major-mode-known-p mode)` accepts a keyword, symbol, or registered mode name
+string. Strings also match registered aliases. Return true when the mode is
+known.
 
 ### `major-mode-from-name`
 
+`(major-mode-from-name name)` accepts a keyword, symbol, mode name, or alias.
 Return the registered mode's canonical keyword, or `nil` for an unknown name.
 
 ### `major-mode-name`
 
-Return a major mode's display name.
+`(major-mode-name mode)` returns a major mode's display name, or `nil` when the
+mode is unknown.
 
 ### `major-mode-comment-prefix`
 
-Return the comment prefix used by a major mode.
+`(major-mode-comment-prefix mode)` returns the comment prefix used by a major
+mode, or `nil` when it has none.
 
 ### `major-mode-indentation-width`
 
-Return a major mode's indentation width.
+`(major-mode-indentation-width mode)` returns a major mode's indentation width.
+Unknown modes default to 2.
 
 ### `major-mode-language-id`
 
-Return the language identifier associated with a major mode.
+`(major-mode-language-id mode)` returns the language identifier associated
+with a major mode, or `nil` when it has none.
 
 ### `major-mode-keywords`
 
-Return the syntax keyword table for a major mode.
+`(major-mode-keywords mode)` returns a copy of the syntax keyword table for a
+major mode.
 
 ### `major-mode-truncate-lines-p`
 
@@ -47,42 +55,47 @@ Return true when a buffer's long lines should be truncated. Only a buffer whose
 
 ### `major-mode-parent`
 
-Return a mode's parent mode, or `nil` for an unknown mode. Built-in and
-extension-defined modes without an explicit parent use `:fundamental`.
+`(major-mode-parent mode)` returns a mode's parent mode, or `nil` for an
+unknown mode. Built-in and extension-defined modes without an explicit parent
+use `:fundamental`.
 
 ### `major-mode-keybindings`
 
-Return a copy of a mode's local keybinding specifications. Each specification
-is a `(key-form . command)` pair; the command is a function designator or a
-fbound, non-macro symbol.
+`(major-mode-keybindings mode)` returns a copy of a mode's local keybinding
+specifications. Each specification is a `(key-form . command)` pair; the
+command is a function designator or a fbound, non-macro symbol.
 
 ### `major-mode-definition`
 
-Return a copy of a mode's complete metadata definition, including its parent,
-file associations, syntax metadata, and local keybindings.
+`(major-mode-definition mode)` returns a copy of a mode's complete metadata
+definition, including its parent, file associations, syntax metadata, and
+local keybindings.
 
 ### `major-mode-names`
 
-Return the registered major-mode names.
+`(major-mode-names)` returns the registered major-mode names.
 
 ### `major-mode-for-path`
 
-Infer and return a major mode for a pathname.
+`(major-mode-for-path path)` infers and returns a major mode for a pathname.
 
 ### `register-major-mode`
 
 ```lisp
 (loom/feature/mode:register-major-mode
- mode &key name aliases (parent :fundamental) extensions filenames
- comment-prefix (indentation-width 2) language-id keywords
- keybindings (truncate-lines t))
+ mode &key name description aliases (parent :fundamental) extensions filenames
+ comment-prefix (comment-start comment-prefix) comment-end
+ skip-closing-delimiter (indentation-width 2) (tab-width 8) language-id
+ keywords keybindings (truncate-lines t))
 ```
 
 Register an extension-defined major mode and return its canonical keyword.
 `aliases`, `extensions`, and `filenames` participate in name and pathname
-inference; extensions may be written with or without a leading dot. The
-optional `parent` supplies inherited mode-local bindings and defaults to
-`:fundamental`.
+inference; extensions may be written with or without a leading dot. `parent`
+supplies inherited mode-local bindings and defaults to `:fundamental`.
+`comment-start` and `comment-end` define comment delimiters,
+`skip-closing-delimiter` controls paired closer skipping, and `description`
+provides a summary for mode help.
 
 ### `unregister-major-mode`
 
@@ -126,6 +139,34 @@ Indent the current line according to the selected buffer's major mode.
 ### `comment-line`
 
 Comment or uncomment the current line according to its major mode.
+
+### Additional mode metadata and commands
+
+`major-mode-tab-width` returns a mode's tab-stop width.
+`major-mode-comment-start`, `major-mode-comment-end`, and
+`major-mode-skip-closing-delimiter-p` return the corresponding mode metadata.
+`mode-description-for-buffer(buffer)` returns a plist with the active mode,
+display name, optional description, and local keybindings.
+`major-mode-indentation-column(buffer line-number)` returns the desired
+indentation column for a zero-based line. `indent-region` reindents the active
+region, or the current line when no region is active. `newline-and-indent`
+inserts a newline and applies the mode's continuation and indentation rules.
+`comment-dwim` comments the active region when available, otherwise the current
+line.
+
+### Mode extension callbacks
+
+`register-major-mode-indentation-rule(mode function)` installs a callback that
+receives a buffer and zero-based line number and returns a non-negative column,
+or `nil` to use the preceding line's indentation.
+`register-major-mode-newline-continuation(mode function)` installs a callback
+that receives the buffer and line being split and returns continuation text
+and an optional half-open range to remove from the original line.
+`register-major-mode-pair-completion(mode opener closer)` configures a
+character pair for a known mode. `major-mode-display-lines(source mode)` uses a
+registered provider or returns plain-text display runs;
+`register-major-mode-display-lines-provider(mode function)` installs a
+provider that receives the complete source and canonical mode key.
 
 ## Syntax-highlighting feature
 
@@ -178,7 +219,7 @@ Draw the visible portion of `buffer` with line-local syntax styles.
 
 Public symbols from `loom/feature/file-tree`.
 
-Manage the file sidebar, directory listings, and file commands. See the
+Manage the file sidebar, directory listings, and tree operations. See the
 [File tree API](../api.md#file-tree) for signatures and detailed contracts.
 
 ### Tree navigation
@@ -224,9 +265,137 @@ Interactive commands for sidebar navigation and filesystem changes.
 
 ### File commands
 
-`find-file`, `visit-file`, `recent-file`, `save-buffer`, `write-file`
+`find-file`, `visit-file`, `recent-file`, `save-buffer`, and `write-file` are
+re-exported by this package. Their canonical owner is `loom/feature/files`;
+see [Files feature](#files-feature).
 
-Visit files, select recent files, and save buffers.
+## Buffers feature
+
+Public symbols from `loom/feature/buffers`. This feature owns the session's
+buffer registry and buffer-switch lifecycle.
+
+### Registry operations
+
+```lisp
+(loom/feature/buffers:register-buffer session buffer)
+(loom/feature/buffers:unregister-buffer session buffer &key reason)
+(loom/feature/buffers:registered-buffers session)
+(loom/feature/buffers:find-buffer-by-name session name)
+(loom/feature/buffers:find-buffer-by-path session path)
+(loom/feature/buffers:ensure-result-buffer session name)
+```
+
+Register a buffer once by object identity and return it. `unregister-buffer`
+runs the buffer-close hook before removal and returns the buffer. The registry
+query returns a copy in registry order. Name and path lookups return the first
+match or `nil`; existing paths are compared by truename and paths that do not
+exist by namestring. `ensure-result-buffer` returns a same-named buffer or
+creates and registers one.
+
+### Buffer commands and switch guards
+
+`register-buffer-switch-guard`, `run-buffer-switch-guard`, `switch-to-buffer`,
+`kill-buffer`, and `quit-buffer-list`
+
+The interactive commands switch to a registered buffer, kill a selected buffer
+with the required modified-buffer prompt, and operate on the buffer list.
+Switch guards let features run logic before a buffer change.
+
+## Files feature
+
+Public symbols from `loom/feature/files`. This package is the canonical owner
+of file visits, recent-file tracking, save operations, file snapshots, and file
+format indicators. The file-tree package re-exports selected command names.
+
+### File-buffer operations
+
+```lisp
+(loom/feature/files:make-file-buffer path &key name initial-content)
+(loom/feature/files:visit-file path)
+(loom/feature/files:read-file-snapshot path)
+(loom/feature/files:file-format-indicator buffer)
+```
+
+`make-file-buffer` creates a file-associated buffer and infers its major mode
+from `path`. `visit-file` displays an existing file and returns its buffer, or
+`nil` when the path does not exist. `read-file-snapshot` returns the stored
+snapshot for a file or `nil` when there is none. `file-format-indicator`
+returns a display string containing newline style and encoding, with a BOM
+marker when present, or `nil` for an unvisited buffer.
+
+### File commands and recent paths
+
+`editor-path-string`, `remember-recent-file`, `find-file`, `recent-file`,
+`save-buffer`, `write-file`, `revert-buffer`, and `register-recent-file-recorder`
+
+`find-file` visits an existing path or creates an empty associated buffer for
+a new path. `recent-file` prompts from recorded paths. `save-buffer` writes to
+the associated path or prompts for one. `write-file` creates a fresh buffer
+for the prompted path with the current text, point, and mark; the original buffer
+remains registered and its undo history is not copied. `revert-buffer` reloads
+the current file and asks before discarding local edits.
+`editor-path-string` produces the path key used by recent-file state, and
+`remember-recent-file` records a path.
+
+## Bookmark feature
+
+The `loom/feature/bookmark` package exports the bookmark value type and
+accessors. The root `loom` facade re-exports these symbols.
+
+```lisp
+(loom:make-editor-bookmark &key name buffer path buffer-name line column)
+```
+
+`editor-bookmark-p` tests the value type. `editor-bookmark-name`,
+`editor-bookmark-buffer`, `editor-bookmark-path`,
+`editor-bookmark-buffer-name`, `editor-bookmark-line`, and
+`editor-bookmark-column` read its fields.
+
+The registered commands `set-bookmark`, `jump-to-bookmark`,
+`delete-bookmark`, and `list-bookmarks` create, visit, delete, and list named
+bookmarks in the current editor state.
+
+## Kill-ring feature
+
+Public symbols from `loom/feature/kill-ring`.
+
+### Editing and copy commands
+
+`backward-kill-word`, `kill-line`, `kill-region`, `kill-between-offsets`,
+`kill-ring-save`, `kill-word`, `yank`, and `yank-pop`
+
+`kill-between-offsets(buffer start-offset end-offset &key prepend coalesce)`
+deletes the selected offset range and adds it to the kill ring. The other
+commands provide word/line/region kills, region copy, yank, and cycling the
+most recent yank through the ring.
+
+## Clipboard feature
+
+Public symbols from `loom/feature/clipboard`.
+
+`clipboard-copy-text`, `clipboard-read-text`, and `clipboard-yank` provide
+clipboard access. `clipboard-read-text` returns three values: text, provider,
+and failure information. `clipboard-yank` uses the kill ring when no clipboard
+provider supplies text.
+
+## Completion feature
+
+The `loom/feature/completion` package has no exported symbols. The completion
+value type and its accessors are exported by the root `loom` facade.
+
+```lisp
+(loom:make-editor-completion buffer line column items)
+(loom:editor-completion-selected completion)
+(loom:editor-completion-move completion delta)
+```
+
+`make-editor-completion` creates completion state anchored at a buffer
+position. The selected accessor returns the selected item pair or `nil`; moving the
+selection wraps and returns the completion state. `editor-completion-buffer`,
+`editor-completion-line`, `editor-completion-column`,
+`editor-completion-items`, `editor-completion-index`,
+`editor-completion-item-label`, and `editor-completion-item-text` expose the
+completion anchor and item data.
 
 ## Project feature
 
@@ -882,9 +1051,11 @@ signatures and contracts.
 ### Window commands
 
 `split-window-below`, `split-window-right`, `other-window`,
-`delete-window`, `delete-other-windows`, `switch-to-buffer`, `kill-buffer`
+`delete-window`, `delete-other-windows`, `scroll-up-command`,
+`scroll-down-command`
 
-Interactive commands for managing windows and their buffers.
+Interactive commands for splitting, selecting, deleting, and scrolling windows.
+Buffer switching and killing belong to `loom/feature/buffers`.
 
 ## Workspace feature
 
@@ -1096,9 +1267,9 @@ Validate a session snapshot and return it or signal an invalid snapshot.
 
 ### `session-store-read`
 
-Read a serialized session snapshot from the session store. The current format
-is version 5; the reader accepts only the v5 envelope and signals an error for
-any other version, including pre-v5 session files.
+Read a serialized session snapshot from the session store. The writer emits
+version 6. The reader accepts version 6 and the legacy version 5 envelope;
+session files older than version 5 are unsupported.
 
 ### `session-store-write`
 
@@ -1128,9 +1299,55 @@ Add a user key binding to the initialization configuration.
 
 Load the user's initialization file and apply its configuration.
 
+## Help feature
+
+Public symbols from `loom/feature/help`.
+
+`help-command`, `describe-key`, `describe-command`, `describe-bindings`, and
+`describe-mode` provide interactive help for keys, registered commands,
+bindings, and the active major mode.
+
+## Lifecycle feature
+
+Public symbols from `loom/feature/lifecycle`.
+
+`loom-quit`, `loom-quit-abort`, `save-buffers-kill-terminal`,
+`kill-loom-abort`, and `suspend-frame` implement quit, save-and-quit, abort,
+and suspend commands. This feature owns the `:startup`, `:signal`, `:suspend`,
+`:resume`, `:shutdown`, and `:exit-status` session hooks.
+
+## Language slices
+
+The `loom/feature/lang-lisp`, `loom/feature/lang-nix`, and
+`loom/feature/lang-web` packages export no symbols. Loading them registers their
+major-mode definitions and mode-specific behavior through
+`loom/feature/mode`.
+
+### Lisp structural commands
+
+The root `loom` facade exports these commands implemented by
+`loom/feature/lisp-structure`: `forward-slurp-sexp`, `forward-barf-sexp`,
+`backward-slurp-sexp`, `backward-barf-sexp`, `wrap-round`, `splice-sexp`, and
+`raise-sexp`.
+
+### Markup language feature
+
+Public symbols from `loom/feature/lang-markup`.
+
+```lisp
+(loom/feature/lang-markup:markup-display-lines source mode)
+```
+
+Return display runs for each source line in `:markdown` or `:org` mode.
+
 ## LSP feature
 
 Public symbols from `loom/feature/lsp`.
+
+LSP sessions are selected by canonical project root and the buffer's language
+ID from `loom/feature/mode:major-mode-language-id`. The commands and session
+APIs below cover diagnostics, completion, definition jumps, and returning from
+the most recent definition jump.
 
 ### `lsp-column-to-character`
 
@@ -1313,6 +1530,17 @@ not advertise it or explicitly disabled it.
 Return the optional server information object received during initialization,
 or `nil`.
 
+### Session integration helpers
+
+`lsp-session-for-buffer(editor-session buffer)` returns the open session
+selected by that buffer's project root and language ID, or `nil`.
+`lsp-editor-session-background-work-p(editor-session)` reports whether the
+registry has an open session. `lsp-refresh-editor-state(state)` refreshes the
+selected file buffer and drains other sessions;
+`lsp-stop-editor-state-lsp-session(state)` stops and removes all sessions for
+the editor state. `register-client-version-provider(owner function)` installs
+the version callback used in the LSP client identity.
+
 ### `lsp-path-uri`
 
 Convert a pathname to an LSP file URI, percent-encoding non-URI-safe path
@@ -1325,21 +1553,26 @@ with another scheme or an unusable path.
 
 ### `lsp-discover-command`
 
-Find the nearest ancestor `.loom-lsp` for a pathname and return its first
-non-empty, non-comment command line, the project root, and the configuration
-pathname as three values. Return three `nil` values when no usable
-configuration exists.
+Find the nearest ancestor `.loom-lsp` for a pathname. When its first
+non-empty, non-comment line is usable, return five values: an argv list, the
+project root, the configuration pathname, an identity containing the
+configuration's canonical pathname and contents, and the original line for
+review. Return exactly three `nil` values when no usable configuration exists.
+The line is split into arguments; shell operators and quoting syntax are
+rejected, and a leading `exec` is removed.
 
 ### `lsp-start`
 
 Start LSP support for the current editor context.
-RET at the command prompt selects the discovered `.loom-lsp` command for review,
-showing its configuration pathname, execution directory, and unchanged shell
-command. Use PageDown/C-v and PageUp/M-v to navigate wrapped review rows without
-changing the trust answer. Type exactly `yes` at the trust prompt to start it; any other answer or
-C-g cancels without constructing a process or replacing the existing session.
-An explicitly typed command overrides discovery and starts without the extra
-trust prompt. Confirmation is required on each discovered-command start.
+RET selects the discovered `.loom-lsp` command for review. The review displays
+the configuration path, execution directory, and source command line. Type
+exactly `yes` at the trust prompt to start it; any other answer or C-g cancels
+without constructing a process or replacing the existing session. The
+configuration identity is checked again before process creation. An explicitly
+typed command overrides discovery and is parsed into argv without the extra
+discovery trust prompt. Typed commands use the same parser as discovered
+commands, so shell operators and quoting syntax are rejected. Confirmation is
+required for each discovered-command start.
 
 ### `lsp-stop`
 

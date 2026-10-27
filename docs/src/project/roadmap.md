@@ -9,34 +9,36 @@ work. Deferred items are not production-readiness claims.
   prefix arguments, multi-level undo grouped by command boundary, and
   restriction-aware narrowing/widening (`C-x n n` / `C-x n w`), plus
   read-only buffers with an interactive toggle (`C-x C-q`).
-- **Movement** -- character/line motion, beginning/end of line.
+- **Movement** -- character/line motion, beginning/end of line, and go-to-line
+  (`M-g g`).
 - **Emacs-style keybindings** -- `install-default-keybindings` installs the
   command registry's movement, editing, search, file, window, file-tree,
   session, register, recent-file, bookmark, shell, help, keyboard-quit, and quit
-  bindings, including the `C-x`/`C-c` prefix sequences. The bindings live in
-  [`src/application/commands-keybindings.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/commands-keybindings.lisp),
-  and the declarative catalogue lives in
-  [`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp).
+  bindings, including the `C-x`/`C-c` prefix sequences. Feature bindings are
+  declared in their `command-specs-*.lisp` files and installed by
+  `packages/core/command/src/commands-keybindings.lisp`.
 - **Window management** -- horizontal/vertical splits (`C-x 2` / `C-x 3`),
   window selection (`C-x o`), per-window buffer switching (`C-x b`).
 - **Named workspaces** -- create, switch, cycle, and kill independent window
   trees with `C-x t 2`, `C-x t o`, `C-x t n`, `C-x t p`, and `C-x t k`; the
   active workspace is shown in the shortcut line and persisted by sessions.
-- **File-tree sidebar** (`C-x C-t`) -- navigate, and create/rename/delete
+- **File-tree sidebar** (`C-x d`) -- navigate, and create/rename/delete
   files and directories on disk, using `cl-boundary-kit` for normal and
   testable operations. The direct native path is limited to the real
   filesystem with wild pathnames; `cl-host-kit` covers host-level filesystem
   paths that require it.
 - **File I/O** -- `find-file` (`C-x C-f`), `save-buffer` (`C-x C-s`).
-- **Regular-expression search and replacement** -- `C-s`, `M-%`, and
-  `M-g g`, using `cl-regex-kit` patterns with a bounded search operation.
+- **Search and replacement** -- `C-s` / `C-r` search literal text
+  incrementally; `C-M-s` / `C-M-r` search regular expressions incrementally.
+  `M-%` starts literal query replacement and `C-M-%` starts regular-expression
+  query replacement. `M-x search-forward` and `M-x search-backward` perform
+  non-incremental regular-expression searches with bounded operations.
 - **M-x command registry and prompts** -- extended commands resolve through
-  the declarative catalogue in
-  [`src/application/command-definitions.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-definitions.lisp)
-  and the lookup implementation in
-  [`src/application/command-registry.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/command-registry.lisp);
-  quit confirmation uses `cl-prolog-kit`, and minibuffer history uses
-  `cl-history-kit` directly.
+  registered command specs. `packages/core/command/src/command-registry-build.lisp`
+  validates declarative specs, and
+  `packages/core/command/src/application-commands-extended-command.lisp` handles
+  M-x lookup. Quit confirmation uses `cl-prolog-kit`, and minibuffer history
+  uses `cl-history-kit` directly.
 - **Raw-mode terminal event loop** -- built on `cl-tty-kit`, with a
   double-buffered renderer.
 - **Interactive PTY terminals** -- `M-x terminal` starts a child process,
@@ -110,56 +112,40 @@ work. Deferred items are not production-readiness claims.
   commands and keybindings before the terminal loop starts.
 - **Session and buffer lifecycle** -- explicit session save/load persists
   buffers, named workspace layouts, recent files, named bookmarks, and
-  M-x/minibuffer command history in the canonical v5 format; the reader
-  accepts only the v5 envelope and has no compatibility path for pre-v5
-  session files.
+  M-x/minibuffer command history in the canonical v6 format. The reader accepts
+  legacy v5 and current v6 sessions; session files older than v5 are unsupported.
   `switch-to-buffer`, `kill-buffer`, and case-insensitive minibuffer prefix
   completion manage the buffer registry.
 - **Recent files and named bookmarks** -- `C-x r f` opens the bounded,
-  canonical recent-file list; `C-x r m`, `C-x r b`, `C-x r d`, and M-x
-  `list-bookmarks` set, jump to, delete, and list named bookmarks.
+  canonical recent-file list; `C-x r m`, `C-x r b`, `C-x r d`, and `C-x r l`
+  set, jump to, delete, and list named bookmarks.
 - **Registers and keyboard macros** -- named text/point registers and
   record/replay keyboard macros are available through the `C-x r` and `C-x`
   bindings.
-- **CLI** -- built on `cl-cli`; `--help`/`-h`, `--version`/`-V`, and one
-  optional positional path are supported. A file opens in the first window,
-  a directory becomes the file-tree root, and no path defaults to `.`. See
+- **CLI** -- built on `cl-cli`; `--help`/`-h`, `--version`/`-V`, and zero or
+  more positional paths are supported. `+LINE[:COL]` sets the starting
+  position in the first file; later files open at line 1, column 1. A directory
+  becomes the file-tree root, and no path defaults to `.`. Features can register
+  additional long options, but the current feature set registers none. See
   `*loom-app*` in
   [`src/application/startup-cli.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/application/startup-cli.lisp).
-- **Integrated test, coverage, and benchmark paths** -- the `loom/test` ASDF
-  component order is declared in [`loom.asd`](https://github.com/nerima-lisp/loom/blob/main/loom.asd)
-  and loads unit and integration coverage in serial order. It includes
-  dedicated coverage for major modes and project navigation. The
-  [development guide](development.md) documents the test runner, PTY checks,
-  coverage, and benchmark commands.
 
 ## Verification scope
 
-The source tree uses explicit domain/application/infrastructure/presentation
-boundaries, release-pinned dependencies, and an ASDF-integrated test and
-coverage workflow. The Nix gate runs formatting, paredit syntax, tests,
-coverage, and documentation for the selected host system. Results for other
-declared systems require separate execution. Deferred work remains
-listed below.
-
-The Nix check is the in-process gate. Sandbox3 may skip PTY-dependent checks
-when no usable PTY is available. `nix run .#e2e` is the separate PTY gate and
-must be assessed independently.
+The Nix checks expose the package build, in-process tests, coverage, and
+paredit syntax lint as separate checks. `checks.default` and `checks.coverage`
+set `LOOM_SANDBOXED_CHECK=1`; child-process tests that require a usable PTY or
+pipe skip in that sandbox. `nix run .#e2e` is a separate PTY app and runs
+outside the Nix build sandbox. Assess both gates independently.
 
 ## Not yet implemented
 
-- **Richer LSP protocol surface.** Command confirmation is not a sandbox;
-  approved discovered commands and explicit overrides run with the user's
-  permissions. Dynamic registration and requests beyond the current
-  completion, definition, diagnostics, and document-sync slice remain future
-  work.
-- **Broader editing surface.** A richer package/extension distribution story
-  and editing commands beyond the current region-aware kill/yank slice remain
-  future work.
-- **Full VT terminal emulation and desktop/editor integrations.** Complete
-  terminal compatibility beyond the bounded common-ANSI screen model,
-  interactive terminal application integrations, richer Git staging and diff
-  UI, and additional language modes remain future work.
+- **LSP server-initiated capability registration.** The client advertises
+  dynamic registration, but it does not handle `client/registerCapability` or
+  `client/unregisterCapability` requests. Add and verify those routes before
+  claiming support for server-initiated registration.
+- **Full VT terminal emulation.** The interactive PTY terminal uses a bounded
+  ANSI screen model. Emulation beyond that model remains future work.
 
 ## Release status
 

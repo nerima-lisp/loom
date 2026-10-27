@@ -1,5 +1,11 @@
 # Core packages
 
-Core packages provide vocabulary shared by multiple editor features. They are
-kept separate from `packages/feature/` so feature packages can depend on the
-editor model without owning it.
+Shared editor behavior lives in the core packages under `packages/core/`.
+
+| Package | Responsibility |
+| --- | --- |
+| `buffer` | Buffer text, storage, edits, undo, and region operations |
+| `command` | Command registry, keymaps, dispatch, and core editing commands |
+| `editor-session` | Editor state and session hooks shared across features |
+| `minibuffer` | Prompt input, completion candidates, and input history |
+| `window-tree` | Window layout, selection, and tree operations |

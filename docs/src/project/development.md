@@ -36,9 +36,9 @@ test; this keeps upgrades reproducible and prevents an unstable package from
 entering the build through a transitive dependency.
 
 It also provides `cl-weave` for the test DSL and `paredit` for structural
-Common Lisp inspection and editing. The flake's `paredit-lint` check parses the
-Lisp source set before packaging, so the same structural syntax gate is
-available locally and in CI.
+Common Lisp inspection and editing. `checks.paredit-lint` lints the source
+tree as an independent check with no dependency on `checks.build` or the test
+derivation.
 
 The test system declares every package used directly by its tests, including
 the `cl-weave` generators and package-specific integration helpers. Keep these
@@ -65,30 +65,19 @@ coverage report does not justify adding tests for unreachable macroexpansion
 forms or `defstruct` default initializers: report those SB-COVER limitations
 separately and maximize executable expression and branch coverage.
 
-## Worktree workflow
+## Jujutsu workflow
 
-The `main` branch is the integration point for completed work. Before
-integrating a worktree, inspect its staged, unstaged, and untracked files and
-compare its commits with `main`. Integrate only a complete work unit, then
-remove the worktree after confirming that `main` contains it. Empty or
-duplicate worktrees should be removed without creating an additional branch.
+This repository uses jj workspaces for parallel work. Use `jj status` and
+`jj diff --git` to inspect the working copy. jj has no staging area: file edits
+are recorded in the working-copy change `@`, so review the complete diff and
+keep each task limited to its assigned files before describing or committing
+the change.
 
-For a detached worktree containing unstaged changes, first run the focused or
-full test command, review the diff, and commit the complete work unit in that
-worktree. Then fast-forward `main` to that commit, verify the commit and clean
-status from a main checkout, and remove the worktree with `git worktree
-remove`. Do not delete a worktree until its commit is reachable from `main`.
-
-When a named branch already contains the complete work unit, keep its existing
-commits and commit any remaining unstaged changes separately. Verify that the
-current remote `main` is an ancestor of the branch tip, then push the branch
-tip to `main` as a fast-forward. If the branch tip is already in `main`, do not
-create a duplicate commit. After confirming the remote tip, remove the worktree
-and delete both the finished local branch and its remote branch. Worktrees
-outside the repository's active worktree root may be inspected but must be
-removed by the process that owns that location. Treat a finished branch that
-is still checked out there as an owner-managed cleanup item and report it
-without deleting the worktree or branch from this workflow.
+Use `jj new` to start a local change and `jj describe` or `jj commit` to record
+it. Use Git only for read-only inspection; make local history and branch
+changes through jj. Do not move or remove another session's workspace. Push
+with `jj git push` only after the change owner approves the remote update; use
+`gh` for GitHub operations.
 
 ## Verification
 
@@ -149,20 +138,22 @@ against that total budget; the current failures are recorded in the
 [verification ledger](../notes/verification-ledger.md). These limits are part
 of the development contract and should be changed only with a measured reason.
 
-Feature code that invokes an external command uses `run-shell-command`, which
-has a 30-second default timeout. Callers can pass `:timeout-seconds` when a
-command needs a different bounded duration; a timeout is returned as a
-structured result with exit code 124.
+Shell commands and buffer formatting use `run-shell-command`, which has a
+30-second default timeout. Callers can pass `:timeout-seconds` for a different
+bounded duration; a timeout is returned as a structured result with exit code
+124.
 
-Git commands use `cl-vcs-kit` directly with an argv list and structured
-process results; `cl-resilience-kit` adds a cooperative deadline around each
-operation. Git paths are not assembled into shell command strings.
+Git uses `cl-vcs-kit` with an argv list and structured process results, with a
+cooperative deadline from `cl-resilience-kit`. LSP starts its stdio server
+through `uiop:launch-program`, while interactive terminals use
+`cl-tty-kit:make-pty`. These paths use different process APIs and are not
+covered by `run-shell-command`'s timeout.
 
-Run the full CI-equivalent check, including the test suite, package build,
-formatter, paredit structural syntax check, coverage, and the strict MkDocs
-build, with:
+Run the formatter check separately, then build the declared Nix checks for all
+supported systems:
 
 ```sh
+nix fmt -- --ci
 nix flake check --all-systems --print-build-logs
 ```
 
@@ -173,12 +164,10 @@ configuration explicitly:
 nix develop -c mkdocs build --strict -f docs/mkdocs.yml
 ```
 
-`checks.default` and `checks.coverage` both build inside the same PTY-less Nix
-sandbox, so both set `LOOM_SANDBOXED_CHECK`; tests that spawn a real child
-process over a PTY or a pipe skip visibly (in cl-weave's "N skipped" count)
-rather than hanging inside that sandbox. `apps.test` and the development
-shell's `test` alias do not set it, so the same tests run for real outside Nix
-builds.
+`checks.default` and `checks.coverage` build inside the PTY-less Nix sandbox
+and set `LOOM_SANDBOXED_CHECK`; child-process tests that need a PTY or pipe skip
+there. Run the suite outside that sandbox with `nix develop -c loom-test` or
+the development shell's `test` alias. Neither command sets the skip variable.
 
 ## Coverage
 

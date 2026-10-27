@@ -19,7 +19,9 @@ nix run github:nerima-lisp/loom -- path/to/file.lisp
 
 Omit the path to start with the current directory as the file-tree root.
 Use `M-x terminal` for a PTY-backed child process and `M-x auto-save-mode` to
-enable sidecar auto-save for modified file-backed buffers.
+enable sidecar auto-save for modified file-backed buffers. The
+[core concepts guide](docs/src/guide/core-concepts.md) covers search, the
+kill ring and clipboard, windows, language modes, sessions, and LSP.
 
 ## Install
 
@@ -47,59 +49,27 @@ executables.
 - [Roadmap](https://nerima-lisp.github.io/loom/project/roadmap/)
 - [Development](https://nerima-lisp.github.io/loom/project/development/)
 
-The authoritative public export declarations are maintained in
+The public export declarations are maintained in
 [`src/package-exports.lisp`](src/package-exports.lisp). The current command catalogue is in
-[`src/application/command-definitions.lisp`](src/application/command-definitions.lisp),
-and M-x lookup is implemented by
-[`src/application/command-registry.lisp`](src/application/command-registry.lisp).
+feature-owned command specification files, registered through
+[`packages/core/command/src/command-registry-registration.lisp`](packages/core/command/src/command-registry-registration.lisp).
+Default Emacs-style bindings are declared in
+[`packages/core/command/src/application-commands-emacs-defaults.lisp`](packages/core/command/src/application-commands-emacs-defaults.lisp).
 
 ## Development
 
 ```sh
-nix develop
 nix build
+nix develop
 nix develop -c loom-test
-nix flake check --print-build-logs
 nix fmt -- --ci
-
-# Reproducible, bounded test run
-nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-test
-
-# Verification gates
-LOOM_COVERAGE_DIR=/tmp/loom-coverage nix develop -c loom-coverage
 nix run .#e2e
+nix build .#docs
+nix flake check --print-build-logs
 ```
 
-`nix flake check --print-build-logs` also runs the repository-wide `paredit`
-syntax check, formatting check, build, documentation, test, and coverage
-checks. Use the `paredit` command in the development shell for structural
-inspection and edits when changing Lisp source.
-
-The Nix check is the in-process gate. Sandbox3 may skip PTY-dependent checks
-when no usable PTY is available; those skips do not cover PTY behavior.
-`nix run .#e2e` is a separate PTY gate and must be run on a PTY-capable
-environment.
-
-Coverage can be promoted to a quality gate with optional percentage thresholds:
-
-```sh
-LOOM_COVERAGE_MIN_EXPRESSIONS=95 \
-LOOM_COVERAGE_MIN_BRANCHES=92 \
-LOOM_COVERAGE_DIR=/tmp/loom-coverage \
-nix develop -c timeout --signal=TERM --kill-after=15s 1200 loom-coverage
-```
-
-Thresholds accept values from 0 to 100. The command fails when a configured
-threshold is not met, so the gate can be raised incrementally toward 100%.
-
-The Nix coverage output is a report directory, not an executable. Build it
-with `nix build .#coverage` (or run `nix flake check`); use the development
-command above when the report should be written to a local directory. Inside
-an interactive shell, `test` and `coverage` remain available as convenience
-aliases; `loom-test` and `loom-coverage` are the portable executable commands.
-
-The [development guide](docs/src/project/development.md) covers the unit and
-integration suite, PTY checks, coverage, and the concurrency benchmark.
+See the [development guide](docs/src/project/development.md) for check details,
+PTY sandbox limits, coverage, and benchmarking.
 
 ## Contributing
 

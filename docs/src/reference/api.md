@@ -1,100 +1,120 @@
 # API reference
 
-This page documents selected APIs from the root `loom` package and the core
-and feature packages used in the examples. It is not an exhaustive export
-listing. Feature-package APIs are documented in `reference/api/features.md`.
-Root package exports are declared in
-[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp);
-core and feature package exports are declared beside their package sources.
+This page documents selected APIs exported by the root `loom` facade and the
+core packages. Feature-package APIs are documented in
+[`api/features.md`](api/features.md). The root `loom` and `loom/application`
+packages provide convenience exports; the `loom/core/*` and
+`loom/feature/*` packages are the canonical owners of their APIs. Root exports
+are declared in
+[`src/package-exports.lisp`](https://github.com/nerima-lisp/loom/blob/main/src/package-exports.lisp),
+and package exports are declared in each package's `src/package.lisp`.
 Line and column numbers throughout are zero-based; a
 `(line . column)` pair denotes a position *between* characters, exactly like
 Emacs point, so end positions in a region are exclusive.
 
-## Application
+## Application package
 
-These symbols from `loom/application` expose the command-specification and
-keybinding layer used by the editor's interactive commands.
-
-### `%selected-window`
-
-Return the currently selected window for application-level command code.
-
-### `%selected-buffer`
-
-Return the buffer displayed by the selected window.
-
-### `%editor-buffers`
-
-Return the buffers registered with the current editor state.
-
-### `%register-buffer`
-
-Register a buffer with the current editor state.
-
-### `%unregister-buffer`
-
-Remove a buffer from the current editor state's registry.
-
-### `%order-region`
-
-Normalize two buffer positions into start and end order for a region.
+`loom/application` re-exports selected command, prompt, and keybinding helpers.
+It does not own buffer lookup or selected-window helpers. Use
+`loom/feature/buffers` for the buffer registry and
+`loom/core/window-tree` with the current editor state for window selection.
 
 ### `with-prompts`
 
-Execute a command body with the editor's prompt helpers bound for interactive
-input.
+Run a command body with the prompt helpers provided by
+`loom/core/minibuffer:with-prompts`.
 
 ### `command-spec`
 
-The command specification type used by the command registry.
+```lisp
+(loom/application:command-spec
+ name command &key keys help help-order mutates prompts needs-region external modes)
+```
 
-### `define-command-specs`
+This macro produces declarative command-specification data. The five metadata
+keys `mutates`, `prompts`, `needs-region`, `external`, and `modes` are required.
+The resulting data form is distinct from a registered command spec.
 
-Define or replace command specifications in the declarative command catalogue.
+### `define-command-specs`, `define-command-spec-catalog`
 
-### `define-command-spec-catalog`
-
-Compose command specifications from predeclared grouped catalog variables.
-
-### `*command-specs*`
-
-The variable holding the currently registered command specifications.
+Build declarative command data from `command-spec` forms or grouped data. These
+forms remain available to callers that compose a catalogue; feature commands
+currently populate the runtime registry with `register-command-spec` while
+their ASDF components load.
 
 ### `command-completion-candidates`
 
-Return command names available for extended-command completion.
+```lisp
+(loom/application:command-completion-candidates input)
+```
 
-### `find-extended-command`
+Return registered command-spec objects whose names match `input`, sorted by
+name. Matching normalizes surrounding spaces and tabs and supports the
+registry's command-name completion styles.
 
-Return the registered command for its interactive name, or `NIL` if none matches.
-Lookup trims spaces and tabs and ignores case; it does not return the command
-specification.
+### `find-extended-command-spec`
 
-### `defkeys-single-chord-p`
+```lisp
+(loom/application:find-extended-command-spec input)
+```
 
-Return true when a key definition describes one chord rather than a sequence.
+Return the matching registered command spec, or `nil`. Lookup trims spaces and
+tabs and ignores case.
 
-### `defkeys-chord`
+### `defkeys-chord`, `defkeys-key-sequence`
 
 ```lisp
 (loom/application:defkeys-chord spec)
-```
-
-Convert one command-spec chord to a runtime key descriptor, a
-`(modifiers . code)` cons. Supported modifiers are `:control` and `:alt`.
-
-### `defkeys-key-sequence`
-
-```lisp
 (loom/application:defkeys-key-sequence key-form)
 ```
 
-Convert a single chord or a sequence of chords to a list of runtime key
-descriptors. Neither converter installs keymap bindings.
+Convert command key forms to normalized key-event descriptors. These
+converters do not install keymap bindings.
 
 ### `install-default-keybindings`
 
-Install loom's default command bindings into the supplied editor keymap.
+```lisp
+(loom/application:install-default-keybindings keymap &key (keymap-name :global))
+```
+
+Install registered command IDs for the selected keymap name into `keymap` and
+return it.
+
+## Command registration and dispatch
+
+The canonical registry and keymap APIs are exported by `loom/core/command`.
+Keymaps store stable command IDs. Dispatch resolves an ID through the registry
+and calls the command gateway, which records the invocation route before
+applying any supplied arguments.
+
+### `register-command-spec`
+
+```lisp
+(loom/core/command:register-command-spec
+ owner id name command &key keys (keymap :global) group help help-order
+      mutates prompts needs-region external modes
+      (catalog-visible-p t) (trace-visible-p t))
+```
+
+Register a command and return its spec. All five classification metadata keys
+are required. Registering the same ID, name, or key sequence with a conflicting
+definition signals an error.
+
+### `invoke-command`
+
+```lisp
+(loom:invoke-command id route &rest arguments)
+```
+
+Resolve `id`, record `route`, call the registered command with `arguments`, and
+return the command's values. Supported routes are `:key`, `:mx`, `:macro`,
+`:paste`, and `:mouse`.
+
+### `command-specs`, `find-command-spec`
+
+`command-specs` returns a copy of the registered spec list. `find-command-spec`
+looks up a spec by its stable ID. `find-extended-command-spec` looks up a spec
+by its interactive name.
 
 ## Buffer
 
@@ -605,10 +625,10 @@ the rest of the global bindings remain available.
 (loom:keymap-define-key keymap key-sequence command)
 ```
 
-Bind `key-sequence` (a list of key-event descriptors) to `command`, a
-zero-argument function designator invoked against `*editor-state*`. A
-sequence that is a strict prefix of another bound sequence implicitly
-becomes a prefix key. Returns `keymap`.
+Bind `key-sequence` (a list of key-event descriptors) to a registered command
+ID or function designator. Function designators are resolved to their
+registered IDs. Keymaps store IDs, not callable values. A sequence that is a
+strict prefix of another binding becomes a prefix key. Returns `keymap`.
 
 ### `keymap-lookup`
 
@@ -616,9 +636,9 @@ becomes a prefix key. Returns `keymap`.
 (loom:keymap-lookup keymap key-sequence)
 ```
 
-Look up `key-sequence` in `keymap`. Returns the bound command, the keyword
-`:prefix` if `key-sequence` is a strict prefix of one or more bindings, or
-`nil`.
+Look up `key-sequence` in `keymap`. Returns the command ID and the map that
+owns the binding as two values, `:prefix` and the owning map for a prefix, or
+`nil` when there is no match.
 
 ### `make-keymap-state`
 
@@ -640,12 +660,12 @@ Return the key-event sequence currently accumulated by `state`.
 ### `keymap-state-dispatch`
 
 ```lisp
-(loom:keymap-state-dispatch state key-event)
+(loom/core/command:keymap-state-dispatch state key-event command-invoker)
 ```
 
-Feed one `key-event` into `state`: returns `:pending` while accumulating a
-prefix key, invokes and returns the bound command's value once a complete
-sequence resolves, or returns `nil` and resets on an unbound sequence.
+Feed one `key-event` into `state`. A complete binding is passed to
+`command-invoker` with its command ID, normalized key sequence, and keymap
+name. Prefixes remain pending; an unbound sequence resets the state.
 
 The input dispatcher layers the selected buffer's major-mode keymap over the
 editor's top-level keymap before dispatching each event. This keeps global
@@ -1019,24 +1039,6 @@ is the only window, leave it unchanged.
 
 Keep only the selected window and return it.
 
-### `switch-to-buffer`
-
-```lisp
-(loom/feature/window:switch-to-buffer)
-```
-
-Prompt for a registered buffer's name and display it in the selected window.
-
-### `kill-buffer`
-
-```lisp
-(loom/feature/window:kill-buffer)
-```
-
-Prompt for a buffer's name and remove it from the editor's registry, replacing
-it in windows displaying it. A modified buffer prompts for discard or
-cancellation, and for saving when it has an associated path.
-
 ## File tree
 
 ### `make-file-tree`
@@ -1048,6 +1050,10 @@ cancellation, and for saving when it has an associated path.
 Create and return a new file tree rooted at `root-path`; initially not
 visible, every directory starts collapsed. Its default child lister performs
 no filesystem access and returns no children; install a lister to populate it.
+The editor composition wires in the cached runtime from
+`packages/feature/file-tree/src/application-file-tree-runtime.lisp`; callers
+using the lower-level APIs must connect the runtime cache to the lister and
+schedule prefetch and result draining themselves.
 
 ### `file-tree-child-lister`
 
@@ -1258,34 +1264,11 @@ Prompt for a new path and rename the selected file-tree entry.
 
 Delete the selected file-tree entry.
 
-### `find-file`
-
-```lisp
-(loom/feature/file-tree:find-file)
-```
-
-Prompt for a path and load its file into a new buffer. If the file does not
-exist, create an empty buffer associated with that path without writing it.
-
-### `save-buffer`
-
-```lisp
-(loom/feature/file-tree:save-buffer)
-```
-
-Save the selected buffer to its associated path, prompting for a path if it
-has none.
-
-### `write-file`
-
-```lisp
-(loom/feature/file-tree:write-file)
-```
-
-Prompt for a path and display a new buffer carrying the selected buffer's
-text, point, and mark under that path. Save it unless the target already
-exists; an existing target produces an overwrite warning, and `C-x C-s`
-confirms the overwrite. The original buffer remains registered.
+File commands such as `find-file`, `visit-file`, `recent-file`, `save-buffer`,
+`write-file`, and `revert-buffer` are owned by `loom/feature/files`. The
+`loom/feature/file-tree` package re-exports several of these names for
+compatibility. See the [feature API reference](api/features.md#files-feature)
+for their current API.
 
 ## Auto-save feature
 
@@ -1322,6 +1305,33 @@ ignored.
 Run an explicit auto-save pass or run the interval-gated pass used by the event
 loop.
 
+## Editor session and slice state
+
+### `make-editor-session`, `register-slice-state`
+
+```lisp
+(loom/core/editor-session:make-editor-session slice-names &key initial-slices)
+(loom/core/editor-session:register-slice-state name constructor)
+```
+
+Register a slice-state constructor when its package loads, then create a
+session for the requested slice names. Initial state entries are installed
+before constructors run. Constructors run in the caller's `slice-names` order;
+a constructor can read only an initial state or a state constructed earlier.
+Registering the same constructor again is idempotent, while a different
+constructor for the same name signals an error.
+
+### `editor-session-slice`, `editor-session-slice-names`
+
+```lisp
+(loom/core/editor-session:editor-session-slice session name)
+(loom/core/editor-session:editor-session-slice-names session)
+```
+
+Return a slice's state or a copy of the requested slice names. Looking up a
+slice that is not part of the session signals an error. An explicit initial
+state may be `nil`; lookup still distinguishes it from a missing slice.
+
 ## Editor state
 
 ### `*editor-state*`
@@ -1330,15 +1340,15 @@ loop.
 loom:*editor-state*
 ```
 
-The single, dynamically-bound `editor-state` struct that every command
-reads and mutates. Bound by loom's entry point before any command runs, and
-`nil` otherwise.
+The dynamically bound `editor-state` used by interactive commands. The
+application binds it while dispatching editor input; it is `nil` outside that
+binding.
 
 ### `editor-state`
 
 The root state struct for one running Loom session. It holds application
-services and references; slice-owned state is grouped in the `editor-session`
-returned by `editor-state-session`.
+services and state slots, and references the `editor-session` envelope returned
+by `editor-state-session` for registered slice state.
 
 ### `make-editor-state`
 
@@ -1346,8 +1356,8 @@ returned by `editor-state-session`.
 (loom:make-editor-state &rest initargs)
 ```
 
-Construct an `editor-state` from keyword arguments. `:session` is required and
-must contain the slices needed by omitted state values. `:window-tree` must be
+Construct an `editor-state` from keyword arguments. `:session` is required.
+`:window-tree` must be
 the same object as the session's `:core/window-tree` slice. If `:workspaces` is
 `nil`, it defaults to the session's `:feature/workspace` slice; if
 `:keyboard-macro` is omitted, that value defaults to the session's
@@ -1368,8 +1378,7 @@ receive this value so slices can access their own state.
 (loom:editor-state-window-tree state)
 ```
 
-Return `state`'s `window-tree-*` protocol object laying out every visible
-buffer.
+Return `state`'s current `window-tree-*` protocol object.
 
 ### `editor-state-workspaces`
 
@@ -1427,14 +1436,16 @@ Return `state`'s `loom-renderer-*` protocol object used to draw each frame.
 (loom/core/editor-session:run-session-hooks kind session &rest arguments)
 ```
 
-Register and dispatch session hooks. The supported kinds include `:tick`,
+Register and dispatch hooks. The supported kinds are `:tick`, `:resize`,
 `:key-input`, `:input-event`, `:render`, `:terminal-modes`, `:before-save`,
-`:after-save`, and `:buffer-close`, along with the root lifecycle events
-`:startup`, `:signal`, `:suspend`, `:resume`, `:shutdown`, and `:exit-status`.
-Hooks run in slice-owner order and preserve registration order within an owner.
-Lifecycle hooks must use the `:feature/lifecycle` owner. Save hooks receive the
-`editor-session` value from `editor-state-session` and the saved buffer; key and
-input-event hooks return `:pass` or `:handled`.
+`:after-save`, `:buffer-close`, `:startup`, `:signal`, `:suspend`, `:resume`,
+`:shutdown`, and `:exit-status`. Hooks run in the registered owner order and
+preserve registration order within an owner. The lifecycle kinds
+`:startup`, `:signal`, `:suspend`, `:resume`, `:shutdown`, and `:exit-status`
+require owner `:feature/lifecycle`. `:key-input` and `:input-event` hooks
+return `:pass` or `:handled`; `:render` hooks return render operations;
+`:signal` hooks return `:continue` or `:terminate`; `:exit-status` hooks return
+an integer from 0 through 255.
 
 ### `editor-state-terminal-sessions`
 
@@ -1448,14 +1459,6 @@ Return the PTY-backed terminal sessions owned by `state`.
 
 Return `state`'s Emacs-style kill ring: a list of killed strings, most
 recent first, that `C-y`/`M-y` consume.
-
-### `editor-state-buffers`
-
-```lisp
-(loom:editor-state-buffers state)
-```
-
-Return the buffers currently owned by `state`.
 
 ### `editor-state-recent-files`
 
@@ -1498,7 +1501,9 @@ Record `path` at the front of the current state's bounded recent-file list.
 (loom:editor-state-lsp-session state)
 ```
 
-Return the active LSP session attached to `state`, or `nil`.
+Return the value stored in the editor state's `lsp-session` slot. Current LSP
+routing is managed by the `:feature/lsp` slice and selects sessions by project
+root and language ID.
 
 ### `editor-state-registers`
 
@@ -1799,29 +1804,21 @@ Stop the worker pool, close the result channel, and return `runtime`.
 Shutdown is idempotent.
 
 
-## Feature APIs
-
-Feature-specific public interfaces are documented in the [Feature APIs reference](api/features.md).
-
 ## CLI and commands
 
 `loom:main` uses application name `loom` and the package version declared in
 `loom.asd`. `--help`/`-h` and `--version`/`-V` are handled by `cl-cli`; registered
 lifecycle options and file requests are parsed into an opaque startup context.
-The CLI accepts `loom [+LINE[:COL]] FILE...`; the position applies to the first
-file and later files open at line 1, column 1. With no file, the editor opens
-`.`. There are no subcommands.
+The built-in feature set currently registers no lifecycle options. The CLI
+accepts `loom [+LINE[:COL]] FILE...`; the position applies to the first file
+and later files open at line 1, column 1. With no file, the editor opens `.`.
+There are no subcommands.
 
-`install-default-keybindings` installs the command registry's bindings into
-the top-level keymap. The declarative catalogue is maintained in
-`src/application/command-definitions.lisp`, while
-`src/application/command-registry.lisp` stores specifications, completion
-candidates, and M-x lookup. The registry includes movement, editing,
-search/replace, file, window, file-tree, help, keyboard-quit, and quit
-commands. `M-x` invokes `execute-extended-command`, which prompts for a
-command name and dispatches a registered command. The window and file-tree
-command entry points above are exported by their feature packages. Use the
-keymap or `M-x` for interactive invocation.
+`install-default-keybindings` installs registered command IDs into the
+top-level keymap. Core and feature command components register their command
+specs as ASDF loads them. `M-x` resolves a registered command spec and dispatches
+its stable ID through `invoke-command`. Feature command APIs are listed in the
+[feature API reference](api/features.md).
 
 ## Entry point
 
