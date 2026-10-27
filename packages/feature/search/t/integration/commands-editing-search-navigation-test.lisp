@@ -111,20 +111,34 @@
       (expect (buffer-text buffer) :to-equal "alpha")))
 
   (it
-    "reports not found for an empty search string without moving point"
+    "accepts empty forward and backward searches at point without moving it"
     (%with-selected-minibuffer-buffer (minibuffer buffer "alpha")
       (buffer-set-point buffer 0 2)
       (loom/feature/search::search-forward)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
-      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
+      (expect buffer :to-have-point (cons 0 2))
+      (loom/feature/search::search-backward)
+      (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
+      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Found")
       (expect buffer :to-have-point (cons 0 2))))
 
   (it
-    "returns no spans for an empty search pattern at the domain boundary"
-    (let ((buffer (make-buffer :initial-content "alpha")))
-      (expect (buffer-search-forward buffer "") :to-be nil)
-      (expect (buffer-search-backward buffer "") :to-be nil)
-      (expect (buffer-search-spans buffer "" 0) :to-be nil)))
+    "returns zero-width spans at the visible point but no all-match spans"
+    (let ((buffer (make-buffer :initial-content "zero one two one")))
+      (buffer-narrow-to-region buffer 0 5 0 16)
+      (buffer-set-point buffer 0 7)
+      (let ((span (buffer-search-forward buffer "")))
+        (expect span :to-be-truthy)
+        (expect (buffer-span-start span) :to-equal 7)
+        (expect (buffer-span-end span) :to-equal 7))
+      (expect (buffer-point-offset buffer) :to-equal 7)
+      (let ((span (buffer-search-backward buffer "")))
+        (expect span :to-be-truthy)
+        (expect (buffer-span-start span) :to-equal 7)
+        (expect (buffer-span-end span) :to-equal 7))
+      (expect (buffer-point-offset buffer) :to-equal 7)
+      (expect (buffer-search-spans buffer "" 5) :to-be nil)))
 
   (it
     "clamps search starts and preserves absolute coordinates inside a narrowing"

@@ -27,9 +27,11 @@
     (cursor -1 :type integer))
 
   (defstruct (search-result-state (:constructor %make-search-result-state))
-    (lists (make-hash-table :test (function eq)) :type hash-table :read-only t)
-    active-buffer
-    active-occur)
+  (lists (make-hash-table :test (function eq)) :type hash-table :read-only t)
+  (prompt-histories (make-hash-table :test (function equal))
+                    :type hash-table :read-only t)
+  active-buffer
+  active-occur)
 
   (defun %make-search-result-state-for-session (session)
     (declare (ignore session))

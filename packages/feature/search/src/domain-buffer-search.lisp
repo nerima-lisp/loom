@@ -59,15 +59,18 @@ search command.")
          (offset (buffer-narrow-start-offset buffer))
          (point (%search-visible-point buffer text))
          (match (%scan-next-occurrence text pattern point
-                                      (%search-pattern-case-fold-p pattern))))
-    (if match
-        (funcall on-match
-                 (make-buffer-span (+ offset (cl-regex-kit:match-start match))
-                                   (+ offset (cl-regex-kit:match-end match))))
-        (funcall on-miss))))
+                                       (%search-pattern-case-fold-p pattern))))
+    (if (string= pattern "")
+        (funcall on-match (make-buffer-span (+ offset point) (+ offset point)))
+        (if match
+            (funcall on-match
+                     (make-buffer-span (+ offset (cl-regex-kit:match-start match))
+                                       (+ offset (cl-regex-kit:match-end match))))
+            (funcall on-miss)))))
 
 (defun buffer-search-forward (buffer pattern)
-  "Return the next BUFFER-SPAN for PATTERN from point, wrapping once, or NIL."
+  "Return the next BUFFER-SPAN for PATTERN from point, wrapping once, or NIL.
+An empty PATTERN returns a zero-width span at point."
   (%search-forward-cps buffer pattern #'identity (constantly nil)))
 
 (defun %search-backward-cps (buffer pattern on-match on-miss)
@@ -78,12 +81,16 @@ search command.")
                   (%search-spans-in-text text pattern 0
                                          (%search-pattern-case-fold-p pattern))))
          (span (%search-backward-span spans point)))
-    (if span
-        (funcall on-match (%visible-buffer-span buffer span))
-        (funcall on-miss))))
+    (if (string= pattern "")
+        (funcall on-match
+                 (%visible-buffer-span buffer (make-buffer-span point point)))
+        (if span
+            (funcall on-match (%visible-buffer-span buffer span))
+            (funcall on-miss)))))
 
 (defun buffer-search-backward (buffer pattern)
-  "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once."
+  "Return the previous BUFFER-SPAN for PATTERN from point, wrapping once.
+An empty PATTERN returns a zero-width span at point."
   (%search-backward-cps buffer pattern #'identity (constantly nil)))
 
 (defun buffer-search-spans (buffer pattern start &key (case-fold nil case-fold-supplied-p))

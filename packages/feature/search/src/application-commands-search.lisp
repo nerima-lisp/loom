@@ -327,12 +327,17 @@ retaining replacements already made."
       (minibuffer-message minibuffer "Not found")))
 
 (defun %run-search-command (prompt search-fn)
-  (with-prompts (minibuffer (editor-state-minibuffer *editor-state*)
-                 :on-cancel (minibuffer-message minibuffer "Quit"))
-      ((pattern prompt))
-    (let* ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*))))
-           (span (funcall search-fn buffer pattern)))
-      (%report-search-result minibuffer buffer span))))
+  (let ((minibuffer (editor-state-minibuffer *editor-state*)))
+    (%activate-search-prompt
+     minibuffer prompt :search-pattern
+     (lambda (pattern)
+       (let* ((buffer
+                (loom/core/window-tree:window-buffer
+                 (loom/core/window-tree:window-tree-selected-window
+                  (editor-state-window-tree *editor-state*))))
+              (span (funcall search-fn buffer pattern)))
+         (%report-search-result minibuffer buffer span)))
+     :on-cancel (lambda () (minibuffer-message minibuffer "Quit")))))
 
 (defmacro %define-search-command (name docstring prompt search-fn)
   `(defun ,name ()
@@ -348,8 +353,49 @@ case-insensitive matching."
  "Search (regex): "
  buffer-search-forward)
 
-(%define-search-command
- search-backward
- "Prompt for a regular expression and move point to its previous match."
- "Search backward (regex): "
- buffer-search-backward)
+(progn
+  (%define-search-command
+   search-backward
+   "Prompt for a regular expression and move point to its previous match."
+   "Search backward (regex): "
+   buffer-search-backward)
+
+  (defun %activate-search-prompt
+      (minibuffer prompt history-key on-confirm &key on-cancel completion-function)
+    (let* ((session loom/core/editor-session:*editor-session*)
+           (state
+            (and session
+                 (member :feature/search
+                         (loom/core/editor-session:editor-session-slice-names session))
+                 (loom/core/editor-session:editor-session-slice
+                  session :feature/search))))
+      (if (null state)
+          (loom/core/minibuffer:minibuffer-activate
+           minibuffer prompt
+           :on-confirm on-confirm
+           :on-cancel on-cancel
+           :completion-function completion-function)
+        (let ((shared-history
+               (loom/core/minibuffer:minibuffer-history-entries minibuffer))
+              (histories (search-result-state-prompt-histories state)))
+          (loom/core/minibuffer:minibuffer-set-history-entries
+           minibuffer (gethash history-key histories))
+          (loom/core/minibuffer:minibuffer-activate
+           minibuffer prompt
+           :on-confirm
+           (lambda (input)
+             (setf (gethash history-key histories)
+                   (loom/core/minibuffer:minibuffer-history-entries
+                    minibuffer))
+             (loom/core/minibuffer:minibuffer-set-history-entries
+              minibuffer shared-history)
+             (when on-confirm
+               (funcall on-confirm input)))
+           :on-cancel
+           (lambda ()
+             (loom/core/minibuffer:minibuffer-set-history-entries
+              minibuffer shared-history)
+             (when on-cancel
+               (funcall on-cancel)))
+           :completion-function completion-function)))))
+)
