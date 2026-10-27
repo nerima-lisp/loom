@@ -1478,8 +1478,8 @@
         "execute-extended-command",
         "set-major-mode",
         "beginning-of-buffer",
-        "start-kbd-macro",
         "forward-char",
+        "start-kbd-macro",
         "execute-extended-command",
         "forward-slurp-sexp",
         "end-kbd-macro",
@@ -1491,7 +1491,6 @@
       "command": "forward-slurp-sexp",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "C-f",
         "M-x",
         "forward-slurp-sexp",
         "RET"
@@ -1523,11 +1522,13 @@
         }
       ],
       "replay_prefix_keys": [
-        "C-a"
+        "C-a",
+        "C-f"
       ],
       "major_mode": "Common Lisp",
       "prepare_commands": [
-        "beginning-of-buffer"
+        "beginning-of-buffer",
+        "forward-char"
       ]
     },
     {
