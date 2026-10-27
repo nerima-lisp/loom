@@ -14,9 +14,11 @@
     ((:file "package")
      (:file "infrastructure-clipboard")
      (:file "application-clipboard")
+     (:file "application-paste")
      (:file "command-specs-clipboard")))))
 
 (asdf:defsystem "loom-feature-clipboard/test"
   :depends-on ("loom-feature-clipboard" "loom/test-support" "cl-weave")
   :components
-  ((:file "t/unit/clipboard-test")))
+  ((:file "t/unit/clipboard-test")
+   (:file "t/unit/paste-test")))

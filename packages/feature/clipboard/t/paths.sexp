@@ -201,4 +201,21 @@
       :observe
       (:external_state)
       :scenario
-      "r5/clipboard/clipboard-yank/interrupted"))
+      "r5/clipboard/clipboard-yank/interrupted")
+ (:id "r6:paste"
+      :commands
+      ()
+      :rule
+      :r6
+      :lane
+      "W3-8"
+      :entry
+      "paste"
+      :state
+      "bracketed-paste"
+      :outcome
+      "pasted bytes are preserved"
+      :observe
+      (:file_bytes)
+      :scenario
+      "r6/paste/save"))

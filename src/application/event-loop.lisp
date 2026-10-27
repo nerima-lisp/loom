@@ -84,7 +84,7 @@ Return status, reason, exit status, frame-dirty-p, and more-ready-p."
                                            &optional terminal-session
                                            render-frame-function)
   "Run input, background wake, lifecycle and render turns until shutdown."
-  (let ((decoder (cl-tty-kit:make-input-decoder))
+  (let ((decoder (cl-tty-kit:make-input-decoder :collect-bracketed-paste t))
         (buffer (make-array 4096 :element-type '(unsigned-byte 8)))
         (keymap-state (make-keymap-state (editor-state-keymap *editor-state*)))
         (poll-ready-p nil))

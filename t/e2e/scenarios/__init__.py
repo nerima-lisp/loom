@@ -21,3 +21,4 @@ from . import ui  # noqa: F401
 from . import remaining  # noqa: F401
 from . import trace  # noqa: F401
 from . import clipboard_mouse  # noqa: F401
+from . import d6_bracketed_paste  # noqa: F401
