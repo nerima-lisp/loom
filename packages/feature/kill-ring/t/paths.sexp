@@ -787,23 +787,7 @@
       (:file_bytes)
       :scenario
       "command-path/kill-ring/r3/yank-pop/prefix-u4")
- (:id "r3:yank-pop:read-only"
-      :commands
-      ("yank-pop")
-      :rule
-      :r3
-      :lane
-      "W3-8"
-      :entry
-      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}"
-      :state
-      "read-only-buffer"
-      :outcome
-      "rejected without byte changes"
-      :observe
-      (:file_bytes)
-      :scenario
-      "command-path/kill-ring/r3/yank-pop/read-only")
+ (:exclude :id "r3:yank-pop:read-only" :reason "M-x toggle-read-only clears the previous yank context before M-y, so this path cannot reach the yank-pop read-only guard" :evidence "src/application/input-routing-effects.lisp:4")
  (:id "r3:yank-pop:split-window"
       :commands
       ("yank-pop")
@@ -1364,5 +1348,4 @@
       :observe
       (:file_bytes :screen_text)
       :scenario
-      "kill-ring/r4/kill-ring-save/region-absent")
- (:exclude :id "r3:yank-pop:read-only" :reason "M-x toggle-read-only clears the previous yank context before M-y, so this path cannot reach the yank-pop read-only guard" :evidence "src/application/input-routing-effects.lisp:4"))
+      "kill-ring/r4/kill-ring-save/region-absent"))
