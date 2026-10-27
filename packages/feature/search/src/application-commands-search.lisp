@@ -439,4 +439,6 @@ case-insensitive matching."
              (when on-cancel
                (funcall on-cancel)))
            :completion-function completion-function)))))
+  (defun %boundary-internal-reference-probe ()
+    #'loom/core/minibuffer::%minibuffer-deactivate)
 )
