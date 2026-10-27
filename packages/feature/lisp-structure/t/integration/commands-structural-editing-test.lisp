@@ -35,13 +35,30 @@
       (expect (buffer-point-column buffer) :to-equal expected-column))))
 (describe
   "structural prefix argument from editor state"
-  (it
-    "uses the active universal argument for commands invoked through M-x"
+  (it-each
+    ((loom::forward-slurp-sexp "(a) b" 1)
+     (loom::wrap-round "a b" 0)
+     (loom::kill-sexp "a b" 0))
+    "consumes the active universal argument after ~S"
+    (command content offset)
     (let ((loom/core/command:*current-prefix-argument* nil))
-      (%with-selected-buffer-state (buffer "(a) b")
-        (loom/core/command:apply-prefix-argument-action :universal nil)
-        (expect (loom::%structural-prefix-p) :to-be t)
-        (expect (loom::%structural-prefix-count) :to-equal 4))))
+      (%with-selected-buffer-state (buffer content)
+        (buffer-set-major-mode buffer :common-lisp)
+        (buffer-set-point buffer 0 offset)
+        (loom::universal-argument)
+        (let ((minibuffer
+                (loom/core/editor-session:editor-state-minibuffer
+                 loom/core/editor-session:*editor-state*)))
+          (expect (loom::%structural-prefix-p) :to-be t)
+          (expect (loom::%structural-prefix-count) :to-equal 4)
+          (expect (loom:minibuffer-message-string minibuffer)
+                  :to-equal "Prefix argument: 4")
+          (funcall command)
+          (expect (buffer-text buffer) :not :to-equal content)
+          (expect (loom/core/command:prefix-argument-value-for-editor)
+                  :to-equal 1)
+          (expect (loom:minibuffer-message-string minibuffer)
+                  :to-be nil)))))
   (it
     "defaults to one when no editor state is bound"
     (let ((loom/core/command:*current-prefix-argument* nil)

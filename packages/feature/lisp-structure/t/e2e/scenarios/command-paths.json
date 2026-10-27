@@ -1471,6 +1471,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "forward-char",
         "execute-extended-command",
@@ -1518,7 +1519,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/forward-barf-sexp/narrow",
@@ -1652,6 +1656,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "forward-char",
         "execute-extended-command",
@@ -1699,7 +1704,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/backward-slurp-sexp/narrow",
@@ -1841,6 +1849,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "forward-char",
         "forward-char",
@@ -1892,7 +1901,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/backward-barf-sexp/narrow",
@@ -2385,6 +2397,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "forward-char",
         "forward-char",
@@ -2438,7 +2451,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/splice-sexp/narrow",
@@ -2584,6 +2600,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "forward-char",
         "forward-char",
@@ -2637,7 +2654,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/wrap-round/narrow",
@@ -2765,6 +2785,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
+        "beginning-of-buffer",
         "start-kbd-macro",
         "execute-extended-command",
         "wrap-round",
@@ -2810,7 +2831,10 @@
       "replay_prefix_keys": [
         "C-a"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prepare_keys": [
+        "M-<"
+      ]
     },
     {
       "name": "lisp-structure/r3/backward-barf-sexp/undo",
@@ -3212,13 +3236,25 @@
       "expected_screen": [
         {
           "region": "body",
-          "text": "(a b\n   )"
+          "text": "(a b",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "   )",
+          "index": 1
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "(a b\n   )"
+          "text": "(a b",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "   )",
+          "index": 1
         }
       ],
       "major_mode": "Common Lisp",

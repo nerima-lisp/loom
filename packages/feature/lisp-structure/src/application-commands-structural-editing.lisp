@@ -70,6 +70,7 @@ found by the depth scanner. NIL leaves the buffer untouched."
      (multiple-value-call #'%run-structural-command #',edit-function
        (%sexp-motion-context)
        ,undo-anchor)
+     (%consume-structural-prefix)
      nil))
 
 (define-structural-command forward-slurp-sexp
@@ -129,5 +130,6 @@ typed belongs."
           (%record-structural-undo-anchor
            buffer (+ start (length text)))
           (%apply-structural-edits buffer start edits application-order)
-          (%move-point-to-offset buffer (+ start opening 1))))))
+          (%move-point-to-offset buffer (+ start opening 1))
+          (%consume-structural-prefix)))))
   nil)

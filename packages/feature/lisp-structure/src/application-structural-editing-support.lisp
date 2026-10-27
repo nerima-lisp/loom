@@ -53,3 +53,13 @@ Append a space when the character at TARGET requires separation."
            (not (%sexp-whitespace-p (char text (1- target)))))
       (concatenate 'string " " delimiter)
       delimiter))
+
+(defun %consume-structural-prefix ()
+  (let ((state loom/core/editor-session:*editor-state*))
+    (when (and state
+               (loom/core/command:prefix-argument-active-p
+                (loom/core/command:prefix-argument-for-editor)))
+      (loom/core/command:consume-prefix-argument-for-editor)
+      (loom/core/command:minibuffer-message
+       (loom/core/editor-session:editor-state-minibuffer state)
+       nil))))

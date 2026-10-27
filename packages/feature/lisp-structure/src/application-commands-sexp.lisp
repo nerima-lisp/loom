@@ -81,4 +81,5 @@ skips line comments and nested block comments."
                                :coalesce (editor-state-last-command-kill-p
                                           *editor-state*))))
     (setf (editor-state-last-command-kill-p *editor-state*) t))
+  (%consume-structural-prefix)
   nil)
