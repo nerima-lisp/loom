@@ -4048,8 +4048,7 @@
         "narrow-to-region"
       ],
       "post_setup_keys": [
-        "M-<",
-        "C-f"
+        "M-<"
       ]
     },
     {
