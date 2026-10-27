@@ -759,45 +759,50 @@
            (char= (char slice (length ancestor-slice)) #\/))))
 (defun boundary-internal-reference-findings (records &optional owners)
   (loop for record in records
-        append
-        (loop for token in (boundary-scan-source (boundary-record-text record) record)
-              when (boundary-token-internal-p token)
-                append
-                (let* ((package-name (boundary-token-package token))
-                       (symbol-name (boundary-token-symbol token))
-                       (package-row (and package-name
-                                         (boundary-package-row package-name)))
-                       (target-package (and package-name
-                                            (find-package package-name)))
-                       (owner (and owners
-                                   (find-if
-                                    (lambda (candidate)
-                                      (and (string-equal package-name (first candidate))
-                                           (string-equal symbol-name (second candidate))))
-                                    owners))))
-                  (when (and package-row target-package)
-                    (multiple-value-bind (symbol status)
-                        (find-symbol symbol-name target-package)
-                      (declare (ignore symbol))
-                      ;; Reading PKG::NAME interns a missing name as internal.
-                      (when (and (not (eq status :external))
-                                 (if owner
-                                     (not (string-equal
-                                           (third owner)
-                                           (boundary-record-slice record)))
-                                     (not (some (lambda (target-slice)
-                                                  (boundary-slice-contains-p
-                                                   target-slice
-                                                   (boundary-record-slice record)))
-                                                (second package-row))))
-                        (list
-                         (make-boundary-finding
-                          :category :package-internal-reference
-                          :slice (boundary-record-slice record)
-                          :file (boundary-record-path record)
-                          :line (boundary-token-line token)
-                          :reference
-                          (format nil "~A::~A" package-name symbol-name)))))))))))
+        for path = (boundary-record-path record)
+        when (or (uiop:string-prefix-p "src/" path)
+                 (and (or (uiop:string-prefix-p "packages/core/" path)
+                          (uiop:string-prefix-p "packages/feature/" path))
+                      (search "/src/" path)))
+          append
+          (loop for token in (boundary-scan-source (boundary-record-text record) record)
+                when (boundary-token-internal-p token)
+                  append
+                  (let* ((package-name (boundary-token-package token))
+                         (symbol-name (boundary-token-symbol token))
+                         (package-row (and package-name
+                                           (boundary-package-row package-name)))
+                         (target-package (and package-name
+                                              (find-package package-name)))
+                         (owner (and owners
+                                     (find-if
+                                      (lambda (candidate)
+                                        (and (string-equal package-name (first candidate))
+                                             (string-equal symbol-name (second candidate))))
+                                      owners))))
+                    (when (and package-row target-package)
+                      (multiple-value-bind (symbol status)
+                          (find-symbol symbol-name target-package)
+                        (declare (ignore symbol))
+                        ;; Reading PKG::NAME interns a missing name as internal.
+                        (when (and (not (eq status :external))
+                                   (if owner
+                                       (not (string-equal
+                                             (third owner)
+                                             (boundary-record-slice record)))
+                                       (not (some (lambda (target-slice)
+                                                    (boundary-slice-contains-p
+                                                     target-slice
+                                                     (boundary-record-slice record)))
+                                                  (second package-row))))
+                          (list
+                           (make-boundary-finding
+                            :category :package-internal-reference
+                            :slice (boundary-record-slice record)
+                            :file (boundary-record-path record)
+                            :line (boundary-token-line token)
+                            :reference
+                            (format nil "~A::~A" package-name symbol-name)))))))))))
 
 (defun boundary-d1-cycle-findings (edges)
   ;; Cycle pairs: C1 root/feature; C2 LOOM/LOOM-APPLICATION;
