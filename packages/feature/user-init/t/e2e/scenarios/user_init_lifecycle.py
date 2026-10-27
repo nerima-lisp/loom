@@ -340,6 +340,7 @@ def crontab_style_uses_editor_contract(binary):
                     appended,
                 )
                 _wait_editor_parent(session, "crontab-style editor")
+                session.assert_file_bytes(os.fspath(cron_file), appended)
 
 
 @scenario(
