@@ -83,5 +83,7 @@
        (:file "commands-keybindings-test")
        (:file "key-event-descriptor-test")
        (:file "prefix-argument-dispatch-test")
+       (:file "prefix-argument-command-semantics-test")
+       (:file "prefix-argument-line-edit-test")
        (:file "prefix-argument-macro-test")
        (:file "prefix-argument-action-test")))))))
