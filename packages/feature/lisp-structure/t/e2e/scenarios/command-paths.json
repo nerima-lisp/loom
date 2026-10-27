@@ -543,6 +543,8 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "set-major-mode",
+        "beginning-of-buffer",
         "forward-char",
         "execute-extended-command",
         "forward-slurp-sexp",
@@ -550,6 +552,10 @@
       ],
       "command": "forward-slurp-sexp",
       "mutation_case": "effect",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "command_keys": [
         "C-f",
         "M-x",
