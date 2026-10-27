@@ -267,7 +267,6 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -307,7 +306,6 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        
         "save-buffer",
         "undo"
       ],
@@ -399,7 +397,6 @@
         "execute-extended-command",
         "set-mark-command",
         "narrow-to-region",
-        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -478,8 +475,6 @@
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "split-window-below",
-        
-        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -539,8 +534,6 @@
       "entry": "macro",
       "commands": [
         "start-kbd-macro",
-        
-        
         "save-buffer",
         "end-kbd-macro",
         "undo",
@@ -597,7 +590,6 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        
         "universal-argument",
         "save-buffer"
       ],
@@ -644,7 +636,6 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        
         "execute-extended-command",
         "revert-buffer"
       ],
@@ -695,7 +686,6 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        
         "delete-backward-char",
         "execute-extended-command",
         "revert-buffer",
@@ -809,7 +799,6 @@
         "execute-extended-command",
         "set-mark-command",
         "narrow-to-region",
-        
         "revert-buffer"
       ],
       "command": "revert-buffer",
@@ -894,7 +883,6 @@
       "entry": "mx",
       "commands": [
         "split-window-below",
-        
         "execute-extended-command",
         "revert-buffer"
       ],
@@ -959,8 +947,6 @@
       "rule": "r3",
       "entry": "macro",
       "commands": [
-        
-        
         "start-kbd-macro",
         "execute-extended-command",
         "revert-buffer",
@@ -1032,7 +1018,6 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        
         "universal-argument",
         "execute-extended-command",
         "revert-buffer"
