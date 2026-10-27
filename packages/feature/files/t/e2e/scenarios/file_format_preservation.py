@@ -23,6 +23,8 @@ def file_format_preservation(binary):
             with Session(binary, [path]) as session:
                 stage = "initial frame"
                 session.wait_ready()
+                stage = "initial file format mode line"
+                session.wait_for_region_text("mode-line", "Mixed Latin-1 BOM")
                 stage = "initial file content"
                 session.wait_for_region_exact_text(
                     "body", "alpha", index=0, timeout=2.0

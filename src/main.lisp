@@ -548,7 +548,9 @@ nonnegative, and vertical placement fits; otherwise return NIL."
                 (format nil "  ~A"
                         (if (loom/core/editor-session:buffer-truncate-lines-p *editor-state* buffer)
                             "Truncate"
-                            "Wrap")))))
+                            "Wrap"))
+                (format nil "~@[  ~A~]"
+                        (loom/feature/files:file-format-indicator buffer)))))
     (let ((diagnostics-part
             (%layout-diagnostics-part (%layout-buffer-diagnostics buffer))))
       (if diagnostics-part
@@ -580,9 +582,12 @@ nonnegative, and vertical placement fits; otherwise return NIL."
          (mode (second parts))
          (position (third parts))
          (wrap (fourth parts))
-         (diagnostics (fifth parts))
+         (format-indicator (fifth parts))
+         (diagnostics (sixth parts))
          (selected nil)
-         (candidates (remove nil (list diagnostics wrap name mode position))))
+         (candidates
+           (remove nil
+                   (list diagnostics format-indicator wrap name mode position))))
     (dolist (part candidates)
       (let ((part-width (loom-renderer-string-width renderer part)))
         (when (<= part-width remaining)
