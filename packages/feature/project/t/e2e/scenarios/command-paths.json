@@ -244,7 +244,7 @@
       "prompt_kind": "completion",
       "prompt_case": "tab",
       "input_text": "other",
-      "tab_expected": "Project file: other.txt"
+      "tab_expected": "other.txt"
     },
     {
       "name": "command-path/w3-6-project/project-find-file/r2/history",
