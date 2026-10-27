@@ -267,7 +267,7 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        "self-insert-command",
+        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -307,7 +307,7 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        "self-insert-command",
+        
         "save-buffer",
         "undo"
       ],
@@ -399,7 +399,7 @@
         "execute-extended-command",
         "set-mark-command",
         "narrow-to-region",
-        "self-insert-command",
+        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -478,8 +478,8 @@
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "split-window-below",
-        "beginning-of-line",
-        "self-insert-command",
+        
+        
         "save-buffer"
       ],
       "command": "save-buffer",
@@ -539,8 +539,8 @@
       "entry": "macro",
       "commands": [
         "start-kbd-macro",
-        "beginning-of-line",
-        "self-insert-command",
+        
+        
         "save-buffer",
         "end-kbd-macro",
         "undo",
@@ -597,7 +597,7 @@
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
       "commands": [
-        "self-insert-command",
+        
         "universal-argument",
         "save-buffer"
       ],
@@ -644,7 +644,7 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        "self-insert-command",
+        
         "execute-extended-command",
         "revert-buffer"
       ],
@@ -695,7 +695,7 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        "self-insert-command",
+        
         "delete-backward-char",
         "execute-extended-command",
         "revert-buffer",
@@ -764,8 +764,7 @@
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
-        "revert-buffer",
-        "self-insert-command"
+        "revert-buffer"
       ],
       "command": "revert-buffer",
       "mutation_case": "read-only",
@@ -810,7 +809,7 @@
         "execute-extended-command",
         "set-mark-command",
         "narrow-to-region",
-        "self-insert-command",
+        
         "revert-buffer"
       ],
       "command": "revert-buffer",
@@ -895,7 +894,7 @@
       "entry": "mx",
       "commands": [
         "split-window-below",
-        "self-insert-command",
+        
         "execute-extended-command",
         "revert-buffer"
       ],
@@ -960,8 +959,8 @@
       "rule": "r3",
       "entry": "macro",
       "commands": [
-        "self-insert-command",
-        "beginning-of-line",
+        
+        
         "start-kbd-macro",
         "execute-extended-command",
         "revert-buffer",
@@ -1033,7 +1032,7 @@
       "rule": "r3",
       "entry": "mx",
       "commands": [
-        "self-insert-command",
+        
         "universal-argument",
         "execute-extended-command",
         "revert-buffer"
