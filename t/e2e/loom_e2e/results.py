@@ -50,9 +50,16 @@ class ScenarioResult:
         self.status = "running"
         self.error = None
         self.observations = []
+        self.events = []
         self.sessions = []
         self.pty_output = bytearray()
         self.trace_output = bytearray()
+        self._timeline_sequence = 0
+
+    def _next_timeline_sequence(self):
+        sequence = self._timeline_sequence
+        self._timeline_sequence += 1
+        return sequence
 
     def observe(
         self,
@@ -66,6 +73,7 @@ class ScenarioResult:
     ):
         observation = {
             "sequence": len(self.observations),
+            "timeline_sequence": self._next_timeline_sequence(),
             "type": kind,
             "actual": _json_value(actual),
             "trace_lines": trace_lines,
@@ -80,6 +88,16 @@ class ScenarioResult:
             observation[key] = _json_value(value)
         self.observations.append(observation)
         return observation
+
+    def record_event(self, kind, **details):
+        event = {
+            "timeline_sequence": self._next_timeline_sequence(),
+            "type": kind,
+        }
+        for key, value in details.items():
+            event[key] = _json_value(value)
+        self.events.append(event)
+        return event
 
     def add_session(self, pty_output, trace_output):
         pty_start = len(self.pty_output)
@@ -128,6 +146,7 @@ class ScenarioResult:
             "observation_class": classification,
             "binary_realpath": self.binary_realpath,
             "declared_commands": self.declared_commands,
+            "events": self.events,
             "observed_types": sorted({item["type"] for item in self.observations}),
             "observations": self.observations,
             "sessions": self.sessions,
@@ -202,3 +221,10 @@ def record_observation(
     return result.observe(
         kind, actual, expected, passed, trace_lines=trace_lines, **details
     )
+
+
+def record_event(kind, **details):
+    result = current_result()
+    if result is None:
+        return None
+    return result.record_event(kind, **details)

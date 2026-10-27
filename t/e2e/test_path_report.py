@@ -47,6 +47,7 @@ class PathReportTests(unittest.TestCase):
         trace_name="trace.jsonl",
         observation_class="effect-verified",
         trace_entry=None,
+        events=(),
     ):
         scenario_dir = self.artifacts_dir / "files-save-buffer"
         scenario_dir.mkdir(exist_ok=True)
@@ -54,6 +55,7 @@ class PathReportTests(unittest.TestCase):
             "scenario": self.ledger["scenario"],
             "binary_realpath": self.binary_realpath,
             "declared_commands": list(self.ledger["commands"]),
+            "events": list(events),
             "observation_class": observation_class,
             "observations": observations,
             "artifacts": {"trace": trace_name},
@@ -98,6 +100,7 @@ class PathReportTests(unittest.TestCase):
             "passed": True,
             "sequence": 0,
             "trace_lines": 1,
+            "timeline_sequence": 1,
             "purpose": "scenario",
             **overrides,
         }
@@ -138,6 +141,94 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "no-trace")
         self.assertEqual(report["paths"][0]["missing_commands"], ["save-buffer"])
+
+    def _use_event_target(self, target):
+        self.required["commands"] = []
+        self.required["event_targets"] = [target]
+        self.ledger["commands"] = []
+
+    def test_declared_event_target_precedes_effect_observation(self):
+        self._use_event_target("text_input")
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=(),
+            events=[
+                {"timeline_sequence": 0, "type": "text_input", "text": "漢"}
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
+    def test_terminal_resize_target_precedes_effect_observation(self):
+        self._use_event_target("terminal_resize")
+        self._write_scenario(
+            [self._matching_observation()],
+            trace_commands=(),
+            events=[
+                {
+                    "timeline_sequence": 0,
+                    "type": "terminal_resize",
+                    "columns": 20,
+                    "rows": 12,
+                }
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+        self.assertEqual(
+            report["paths"][0]["event_targets"], ["terminal_resize"]
+        )
+
+    def test_declared_event_target_without_event_is_not_pass(self):
+        self._use_event_target("text_input")
+        self._write_scenario(
+            [self._matching_observation()], trace_commands=(), events=()
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+        self.assertEqual(report["paths"][0]["missing_events"], ["text_input"])
+
+    def test_event_after_effect_observation_does_not_satisfy_target(self):
+        self._use_event_target("terminal_resize")
+        self._write_scenario(
+            [self._matching_observation(timeline_sequence=1)],
+            trace_commands=(),
+            events=[
+                {
+                    "timeline_sequence": 2,
+                    "type": "terminal_resize",
+                    "columns": 20,
+                    "rows": 12,
+                }
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "no-trace")
+        self.assertEqual(
+            report["paths"][0]["missing_events"], ["terminal_resize"]
+        )
+
+    def test_event_evidence_does_not_bypass_effect_mismatch(self):
+        self._use_event_target("text_input")
+        self._write_scenario(
+            [self._matching_observation(actual="wrong")],
+            trace_commands=(),
+            events=[
+                {"timeline_sequence": 0, "type": "text_input", "text": "漢"}
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "mismatch")
 
     def test_newline_path_matches_newline_and_indent_trace_command(self):
         self.required["commands"] = ["newline"]

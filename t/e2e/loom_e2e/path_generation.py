@@ -241,10 +241,14 @@ def _normalize_catalog(catalog):
     return rows
 
 
-def _path(path_id, commands, rule, lane, entry, state, outcome, observe):
+def _path(
+    path_id, commands, rule, lane, entry, state, outcome, observe,
+    event_targets=(),
+):
     return {
         "id": path_id,
         "commands": list(commands),
+        "event_targets": list(event_targets),
         "rule": rule,
         "lane": lane,
         "entry": entry,
@@ -632,12 +636,23 @@ def _fixed_paths():
                     f"text:{dimension}",
                     f"{operation} {dimension} text",
                     observe,
+                    event_targets=("text_input",) if operation == "insert" else (),
                 )
             )
 
     paths.extend(
         [
-            _path("r6:resize", [], "r6", "W3-4", "terminal-resize", "resized-terminal", "screen redraws", ["screen_text", "cursor"]),
+            _path(
+                "r6:resize",
+                [],
+                "r6",
+                "W3-4",
+                "terminal-resize",
+                "resized-terminal",
+                "screen redraws",
+                ["screen_text", "cursor"],
+                event_targets=("terminal_resize",),
+            ),
             _path("r6:mouse", [], "r6", "W3-8", "mouse", "mouse-event", "event is handled", ["screen_text", "cursor"]),
             _path("r6:paste", [], "r6", "W3-8", "paste", "bracketed-paste", "pasted bytes are preserved", ["file_bytes"]),
             _path("r6:suspend:c-z", [], "r6", "W3-2", "C-z", "running-process", "process suspends and resumes", ["external_state"]),

@@ -22,6 +22,7 @@ from .results import (
     UNSET,
     count_trace_lines,
     current_result,
+    record_event,
     record_observation,
     reset_trace_line_counter,
     set_trace_line_counter,
@@ -369,6 +370,9 @@ class Session:
         self.columns = columns
         self.rows = rows
         self.layout = Layout(rows, columns)
+        record_event(
+            "terminal_resize", columns=columns, rows=rows
+        )
         self.observe_external_state(
             "PTY window size",
             self.process.window_size,
@@ -1004,6 +1008,7 @@ class Session:
 
     def type(self, text):
         self.send(keys.text(text))
+        record_event("text_input", text=text)
 
     def key(self, *names):
         payload = bytearray()

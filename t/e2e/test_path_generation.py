@@ -13,6 +13,7 @@ from loom_e2e.path_generation import (
 _PATH_FIELDS = {
     "id",
     "commands",
+    "event_targets",
     "rule",
     "lane",
     "entry",
@@ -353,6 +354,20 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         ):
             self.assertIn(path_id, self.paths_by_id)
         self.assertEqual(self.paths_by_id["r6:text:emoji:insert"]["commands"], [])
+        self.assertEqual(
+            {
+                path_id: path["event_targets"]
+                for path_id, path in self.paths_by_id.items()
+                if path["event_targets"]
+            },
+            {
+                f"r6:text:{dimension}:insert": ["text_input"]
+                for dimension in (
+                    "fullwidth", "combining", "emoji", "wrap", "truncate"
+                )
+            }
+            | {"r6:resize": ["terminal_resize"]},
+        )
 
     def test_r7_generates_all_editor_invocation_paths(self):
         for path_id in (

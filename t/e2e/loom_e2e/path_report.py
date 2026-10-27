@@ -27,6 +27,7 @@ _EFFECT_TYPES = frozenset(
         "pty_output",
     }
 )
+_EVENT_TARGETS = frozenset({"text_input", "terminal_resize"})
 _OBSERVATION_CLASSES = (
     "none",
     "effect-verified",
@@ -391,6 +392,7 @@ def _classify_path(
         "rule": required.get("rule") or "unassigned",
         "lane": required.get("lane") or "unassigned",
         "commands": _as_list(required.get("commands")),
+        "event_targets": _as_list(required.get("event_targets")),
         "scenario": ledger.get("scenario") if ledger else "",
         "status": "not-in-ledger",
         "failed": True,
@@ -459,6 +461,18 @@ def _classify_path(
         for command in item["commands"]
         if isinstance(command, str) and command.strip()
     ]
+    event_targets = required.get("event_targets", [])
+    if (
+        not isinstance(event_targets, list)
+        or any(
+            not isinstance(target, str) or target not in _EVENT_TARGETS
+            for target in event_targets
+        )
+        or len(set(event_targets)) != len(event_targets)
+    ):
+        item["status"] = "mismatch"
+        item["reason"] = "generated path has invalid event targets"
+        return item
     actual_binary_realpath = result.get("binary_realpath")
     if (
         not isinstance(actual_binary_realpath, str)
@@ -548,9 +562,77 @@ def _classify_path(
         )
         return item
 
-    if not targets:
+    if event_targets:
+        events = result.get("events")
+        if not isinstance(events, list):
+            item["status"] = "no-trace"
+            item["reason"] = "scenario result has no typed event trace"
+            item["missing_events"] = event_targets
+            return item
+
+        event_sequences = []
+        valid_events = True
+        for event in events:
+            if not isinstance(event, Mapping):
+                valid_events = False
+                break
+            event_type = event.get("type")
+            sequence = event.get("timeline_sequence")
+            if (
+                not isinstance(event_type, str)
+                or event_type not in _EVENT_TARGETS
+                or isinstance(sequence, bool)
+                or not isinstance(sequence, int)
+                or sequence < 0
+            ):
+                valid_events = False
+                break
+            event_sequences.append(sequence)
+        if (
+            not valid_events
+            or event_sequences != sorted(set(event_sequences))
+        ):
+            item["status"] = "no-trace"
+            item["reason"] = "scenario result has an invalid typed event trace"
+            item["missing_events"] = event_targets
+            return item
+
+        observation_sequences = [
+            observation.get("timeline_sequence")
+            for observation in expected_effects
+        ]
+        if any(
+            isinstance(sequence, bool)
+            or not isinstance(sequence, int)
+            or sequence < 0
+            for sequence in observation_sequences
+        ):
+            item["status"] = "no-trace"
+            item["reason"] = "effect observation has an invalid timeline sequence"
+            item["missing_events"] = event_targets
+            return item
+
+        missing_events = [
+            target
+            for target in event_targets
+            if not any(
+                event["type"] == target
+                and event["timeline_sequence"] < observation_sequence
+                for event in events
+                for observation_sequence in observation_sequences
+            )
+        ]
+        if missing_events:
+            item["status"] = "no-trace"
+            item["reason"] = (
+                "generated event targets do not precede a matching effect observation"
+            )
+            item["missing_events"] = missing_events
+            return item
+
+    if not targets and not event_targets:
         item["status"] = "no-trace"
-        item["reason"] = "generated path has no traceable target command"
+        item["reason"] = "generated path has no traceable target"
         return item
 
     trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)
@@ -642,6 +724,16 @@ def _classify_path(
         attributed_effects.append(observation)
         effects_by_command[command].append(observation)
 
+    if event_targets:
+        for observation in expected_effects:
+            if any(
+                event["type"] in event_targets
+                and event["timeline_sequence"]
+                < observation["timeline_sequence"]
+                for event in events
+            ) and observation not in attributed_effects:
+                attributed_effects.append(observation)
+
     missing_effect_commands = target_commands - effects_by_command.keys()
     if missing_effect_commands:
         item["status"] = "no-observation"
@@ -671,8 +763,8 @@ def _classify_path(
     item["status"] = "pass"
     item["failed"] = False
     item["reason"] = (
-        "the expected binary, declared commands, prior trace rows, and effect "
-        "observation are verified"
+        "the expected binary, declared commands, prior trace rows, event "
+        "targets, and effect observation are verified"
     )
     if exclusion_error is not None:
         item["failed"] = True
@@ -735,6 +827,7 @@ def build_report(
             "rule": item["rule"],
             "lane": item["lane"],
             "commands": item["commands"],
+            "event_targets": item["event_targets"],
             "scenario": item["scenario"],
             "scenario_observation_class": item.get("scenario_observation_class"),
             "status": item["status"],

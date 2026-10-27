@@ -20,6 +20,7 @@ from loom_e2e.results import (
     ScenarioResult,
     capture_scenario,
     record_observation,
+    record_event,
     reset_trace_line_counter,
     set_trace_line_counter,
 )
@@ -145,6 +146,7 @@ class ScenarioResultTests(unittest.TestCase):
             set(observation),
             {
                 "sequence",
+                "timeline_sequence",
                 "type",
                 "actual",
                 "trace_lines",
@@ -220,6 +222,7 @@ class ScenarioResultTests(unittest.TestCase):
             result.add_session(b"\x1b[?25lraw\xff", b"")
             with capture_scenario(result):
                 record_observation("file_bytes", b"saved\x00", expected=b"saved\x00", passed=True)
+                record_event("text_input", text="saved")
                 record_observation("external_state", True, expected=True, passed=True, name="marker")
             result_path = result.save(directory)
             scenario_dir = os.path.dirname(result_path)
@@ -233,6 +236,14 @@ class ScenarioResultTests(unittest.TestCase):
             self.assertEqual(payload["binary_realpath"], None)
             self.assertEqual(payload["declared_commands"], [])
             self.assertEqual(
+                payload["events"],
+                [{
+                    "timeline_sequence": 1,
+                    "type": "text_input",
+                    "text": "saved",
+                }],
+            )
+            self.assertEqual(
                 payload["observations"][0]["actual"],
                 {"encoding": "base64", "data": "c2F2ZWQA", "length": 6},
             )
@@ -240,6 +251,47 @@ class ScenarioResultTests(unittest.TestCase):
 
 
 class SessionObservationTests(unittest.TestCase):
+    def test_session_type_records_typed_input_before_later_observations(self):
+        session = Session("unused")
+        session.send = Mock()
+        result = ScenarioResult("typed input event")
+        with capture_scenario(result):
+            session.type("漢")
+            encoded = "漢".encode("utf-8")
+            record_observation(
+                "file_bytes", encoded, expected=encoded, passed=True
+            )
+
+        session.send.assert_called_once_with(keys.text("漢"))
+        self.assertEqual(
+            result.events,
+            [{"timeline_sequence": 0, "type": "text_input", "text": "漢"}],
+        )
+        self.assertEqual(result.observations[0]["timeline_sequence"], 1)
+
+    def test_session_resize_records_dimensions_before_effect_observation(self):
+        session = Session("unused", columns=40, rows=12)
+        session.process = Mock()
+        session.process.window_size = (12, 20)
+        session.screen = Screen(columns=40, rows=12)
+        session.pump = Mock(return_value=False)
+        result = ScenarioResult("terminal resize event")
+        with capture_scenario(result):
+            session.resize(columns=20, rows=12)
+            record_observation("screen_text", "wrapped", "wrapped", True)
+
+        session.process.resize.assert_called_once_with(20, 12)
+        self.assertEqual(
+            result.events,
+            [{
+                "timeline_sequence": 0,
+                "type": "terminal_resize",
+                "columns": 20,
+                "rows": 12,
+            }],
+        )
+        self.assertEqual(result.observations[-1]["timeline_sequence"], 2)
+
     def test_session_captures_nonempty_command_trace_bytes(self):
         trace = b'{"command":"save-buffer","route":"key","seq":1,"pid":1234}\n'
         result = ScenarioResult("trace capture")
