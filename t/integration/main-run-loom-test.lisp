@@ -379,6 +379,9 @@
          (startup-context (loom::%parse-startup-context (list "--no-init"))))
     (progn
       (load (asdf:system-relative-pathname :loom "src/application/startup.lisp"))
+      (expect (loom/core/editor-session:cli-option-value-kind "--no-init")
+              :to-equal
+              :switch)
       (loom/core/minibuffer:register-message-sink
        :loom-startup-integration
        (lambda (text)
