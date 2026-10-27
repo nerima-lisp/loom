@@ -394,9 +394,16 @@
                        ((string= operator-name "PROGN")
                         (mapcan #'definitions (cdr form)))
                        ((member operator-name
-                                '("DEFUN" "DEFMETHOD" "DEFGENERIC" "DEFMACRO")
+                                '("DEFUN" "DEFMETHOD" "DEFGENERIC" "DEFMACRO"
+                                  "DEFINE-REPEATING-COMMAND"
+                                  "DEFINE-SELECTED-BUFFER-COMMAND"
+                                  "DEFINE-CURRENT-LINE-BOUNDARY-COMMAND"
+                                  "DEFINE-BUFFER-BOUNDARY-COMMAND"
+                                  "DEFINE-WORD-KILL-COMMAND"
+                                  "DEFINE-SEXP-MOTION-COMMAND"
+                                  "DEFINE-STRUCTURAL-COMMAND")
                                 :test #'string=)
-                        (list form)))))))
+                        (list form))))))
     (loop for record in records
           unless (or (eq (boundary-record-layer record) :declaration)
                      (null (boundary-record-package record)))
@@ -409,7 +416,7 @@
                   when (symbolp name)
                     collect (list (package-name (boundary-record-package record))
                                   (symbol-name name) (boundary-record-slice record)
-                                  (boundary-record-layer record))))))
+                                  (boundary-record-layer record)))))))
 
 (defun boundary-edge-from-package (source-package target-package file line reference)
   (loop for source-slice in (boundary-package-slices source-package)
@@ -750,28 +757,39 @@
       (and (< (length ancestor-slice) (length slice))
            (string-equal ancestor-slice slice :end2 (length ancestor-slice))
            (char= (char slice (length ancestor-slice)) #\/))))
-(defun boundary-internal-reference-findings (records)
+(defun boundary-internal-reference-findings (records &optional owners)
   (loop for record in records
         append
         (loop for token in (boundary-scan-source (boundary-record-text record) record)
               when (boundary-token-internal-p token)
                 append
                 (let* ((package-name (boundary-token-package token))
+                       (symbol-name (boundary-token-symbol token))
                        (package-row (and package-name
                                          (boundary-package-row package-name)))
                        (target-package (and package-name
-                                            (find-package package-name))))
+                                            (find-package package-name)))
+                       (owner (and owners
+                                   (find-if
+                                    (lambda (candidate)
+                                      (and (string-equal package-name (first candidate))
+                                           (string-equal symbol-name (second candidate))))
+                                    owners))))
                   (when (and package-row target-package)
                     (multiple-value-bind (symbol status)
-                        (find-symbol (boundary-token-symbol token) target-package)
+                        (find-symbol symbol-name target-package)
                       (declare (ignore symbol))
                       ;; Reading PKG::NAME interns a missing name as internal.
                       (when (and (not (eq status :external))
-                                 (not (some (lambda (target-slice)
-                                              (boundary-slice-contains-p
-                                               target-slice
-                                               (boundary-record-slice record)))
-                                            (second package-row))))
+                                 (if owner
+                                     (not (string-equal
+                                           (third owner)
+                                           (boundary-record-slice record)))
+                                     (not (some (lambda (target-slice)
+                                                  (boundary-slice-contains-p
+                                                   target-slice
+                                                   (boundary-record-slice record)))
+                                                (second package-row))))
                         (list
                          (make-boundary-finding
                           :category :package-internal-reference
@@ -779,8 +797,7 @@
                           :file (boundary-record-path record)
                           :line (boundary-token-line token)
                           :reference
-                          (format nil "~A::~A" package-name
-                                  (boundary-token-symbol token)))))))))))
+                          (format nil "~A::~A" package-name symbol-name)))))))))))
 
 (defun boundary-d1-cycle-findings (edges)
   ;; Cycle pairs: C1 root/feature; C2 LOOM/LOOM-APPLICATION;
@@ -1048,7 +1065,7 @@
                              (boundary-domain-package-findings records)
                              (boundary-infrastructure-findings records)
                              (boundary-d1-cycle-findings edges)
-                             (boundary-internal-reference-findings records)))
+                             (boundary-internal-reference-findings records owners)))
            (internal-refs (boundary-internal-references records))
            (allowlist (boundary-load-allowlists records)))
       (unless records (error "No Lisp components found in ASDF system loom"))
