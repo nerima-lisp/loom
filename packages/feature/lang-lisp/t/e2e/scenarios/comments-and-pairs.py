@@ -35,6 +35,12 @@ def _comment_lisp_region(binary, mode, extension):
             session.wait_for_region_exact_text(
                 "body", "; world", index=1, timeout=2.0
             )
+            session.assert_screen_text(
+                "; hello", region="body", index=0, strip_right=True
+            )
+            session.assert_screen_text(
+                "; world", region="body", index=1, strip_right=True
+            )
             session.wait_for_region_cursor("body", 7, index=1, timeout=2.0)
             if session.observe_cursor(
                 expected=(1, 7), region="body", index=1
@@ -91,6 +97,7 @@ def _skip_lisp_closer(binary, mode, extension):
 @scenario(
     "lang-lisp/comment-dwim-cl",
     commands=[
+        "comment-line",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
@@ -105,6 +112,7 @@ def common_lisp_comment_dwim(binary):
 @scenario(
     "lang-lisp/comment-dwim-el",
     commands=[
+        "comment-line",
         "move-beginning-of-line",
         "move-end-of-line",
         "next-line",
