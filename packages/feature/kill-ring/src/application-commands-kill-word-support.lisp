@@ -32,7 +32,7 @@
 
 (defun %apply-word-kill (buffer start-offset start end prepend)
   (when start
-    (%kill-between-offsets buffer
+    (kill-between-offsets buffer
                            (+ start-offset start)
                            (+ start-offset end)
                            :prepend

@@ -37,6 +37,7 @@
             (:export #:backward-kill-word
                      #:kill-line
                      #:kill-region
+                     #:kill-between-offsets
                      #:kill-ring-save
                      #:kill-word
                      #:yank

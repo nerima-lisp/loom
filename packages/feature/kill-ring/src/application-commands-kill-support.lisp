@@ -77,7 +77,7 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
             (buffer-position-line end)
             (buffer-position-column end))))
 
-(defun %kill-between-offsets (buffer start-offset end-offset &key prepend coalesce)
+(defun kill-between-offsets (buffer start-offset end-offset &key prepend coalesce)
   (unless (= start-offset end-offset)
     (multiple-value-bind (start-line start-column end-line end-column)
         (%buffer-range-at-offsets buffer start-offset end-offset)
