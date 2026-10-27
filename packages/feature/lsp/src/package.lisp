@@ -52,12 +52,14 @@
                      #:lsp-diagnostics
                      #:lsp-completion-at-point
                      #:lsp-find-definition
+                     #:lsp-find-references
                      #:lsp-hover-at-point
                      #:lsp-pop-definition
                      #:lsp-session-capability
                      #:lsp-request-completion
                      #:lsp-request-hover
                      #:lsp-request-definition
+                     #:lsp-request-references
                      #:lsp-uri-path
                      #:lsp-completion-item
                      #:make-lsp-completion-item

@@ -2,7 +2,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter +lsp-navigation-capabilities+
-    "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true,\"hoverProvider\":true}}"))
+    "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true,\"hoverProvider\":true,\"referencesProvider\":true}}"))
 
 (defun %lsp-navigation-state (&key (content "foo") (path "/tmp/main.lisp"))
   "An editor state whose selected buffer is file-backed, as a request needs."
@@ -19,7 +19,7 @@
                        :session (%make-test-editor-session
                         (list buffer)
                         :window-tree tree
-                        :additional-slices '(:feature/lsp))
+                        :additional-slices '(:feature/lsp :feature/search))
                        :kill-ring nil)))
 
 (defmacro %with-lsp-navigation

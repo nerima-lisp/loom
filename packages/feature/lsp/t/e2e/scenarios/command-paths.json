@@ -718,6 +718,32 @@
           "text": "lsp route"
         }
       ]
+    },
+    {
+      "name": "command-path/r1/lsp-find-references/mx",
+      "path_id": "r1:lsp-find-references:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-find-references"
+      ],
+      "command": "lsp-find-references",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
     }
   ]
 }

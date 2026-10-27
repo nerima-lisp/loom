@@ -227,3 +227,99 @@
                (editor-state-minibuffer *editor-state*))
               :to-equal "Completion failed: boom")
       (expect (editor-state-completion *editor-state*) :to-be nil))))
+(describe
+  "LSP references at point"
+  (it "reports the missing session without sending a request"
+    (let ((*editor-state* (%lsp-navigation-state)))
+      (loom/feature/lsp::lsp-find-references)
+      (expect (minibuffer-message-string
+               (editor-state-minibuffer *editor-state*))
+              :to-equal "No LSP session for this buffer")))
+  (it "does not request references when the server lacks the capability"
+    (%with-lsp-navigation (transport session buffer :capabilities "{}")
+      (let ((before (length (%fake-sent-in-order transport))))
+        (loom/feature/lsp::lsp-find-references)
+        (expect (minibuffer-message-string
+                 (editor-state-minibuffer *editor-state*))
+                :to-equal "Server does not provide references")
+        (expect (length (%fake-sent-in-order transport))
+                :to-equal before))))
+  (it "sends UTF-16 position and declaration context, syncs dirty text, lists every result, and visits the selected row"
+  (%with-lsp-navigation
+      (transport session buffer
+       :content (format nil "~C foo~%bar foo"
+                        (code-char #x1f600)))
+    (lsp-session-sync-buffer session buffer)
+    (buffer-set-point buffer 1 7)
+    (buffer-insert-string buffer "!")
+    (buffer-set-point buffer 0 2)
+    (loom/feature/lsp::lsp-find-references)
+    (let* ((messages (%fake-sent-in-order transport))
+           (methods
+             (loop for json in messages
+                   for method = (gethash "method" (%parse-lsp-json json))
+                   when method collect method))
+           (change-index (position "textDocument/didChange" methods
+                                   :test #'equal))
+           (references-index (position "textDocument/references" methods
+                                       :test #'equal)))
+      (expect (and change-index references-index
+                   (< change-index references-index))
+              :to-be-truthy)
+      (expect (%lsp-last-request-method transport)
+              :to-equal "textDocument/references"))
+    (let* ((request (%parse-lsp-json
+                     (car (last (%fake-sent-in-order transport)))))
+           (params (gethash "params" request))
+           (document (gethash "textDocument" params))
+           (position (gethash "position" params))
+           (context (gethash "context" params)))
+      (expect (gethash "uri" document)
+              :to-equal (lsp-path-uri (buffer-path buffer)))
+      (expect (gethash "line" position) :to-equal 0)
+      (expect (gethash "character" position) :to-equal 3)
+      (expect (gethash "includeDeclaration" context) :to-be t))
+    (%fake-push-and-drain
+     transport session
+     (format nil
+             "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":[{\"uri\":\"~A\",\"range\":{\"start\":{\"line\":0,\"character\":3},\"end\":{\"line\":0,\"character\":6}}},{\"uri\":\"~A\",\"range\":{\"start\":{\"line\":1,\"character\":4},\"end\":{\"line\":1,\"character\":7}}}]}"
+             (%lsp-last-request-id transport)
+             (lsp-path-uri (buffer-path buffer))
+             (lsp-path-uri (buffer-path buffer))))
+    (let* ((window
+             (loom/core/window-tree:window-tree-selected-window
+              (editor-state-window-tree *editor-state*)))
+           (references (loom/core/window-tree:window-buffer window)))
+      (expect (lsp-session-last-error session) :to-be nil)
+      (expect (minibuffer-message-string
+               (editor-state-minibuffer *editor-state*))
+              :to-equal "References found: 2")
+      (expect (buffer-name references) :to-equal "*Loom-References*")
+      (expect (buffer-text references)
+              :to-equal
+              (format nil
+                      "/tmp/main.lisp:1:3: ~C foo~%/tmp/main.lisp:2:5: bar foo!"
+                      (code-char #x1f600)))
+      (expect references :to-have-point (cons 0 0))
+      (expect (loom/core/buffer:buffer-read-only-p references) :to-be t)
+      (buffer-set-point references 1 0)
+      (loom/feature/search:search-result-visit)
+      (expect (loom/core/window-tree:window-buffer window) :to-be buffer)
+      (expect buffer :to-have-point (cons 1 4)))))
+  (it "reports an empty result"
+    (%with-lsp-navigation (transport session buffer)
+      (loom/feature/lsp::lsp-find-references)
+      (%fake-push-and-drain
+       transport session
+       (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
+               (%lsp-last-request-id transport)))
+      (expect (minibuffer-message-string
+               (editor-state-minibuffer *editor-state*))
+              :to-equal "No references found"))))
+(describe
+  "LSP references command availability"
+  (it "registers a references command"
+    (expect
+     (fboundp
+      (find-symbol "LSP-FIND-REFERENCES" "LOOM/FEATURE/LSP"))
+     :to-be-truthy)))

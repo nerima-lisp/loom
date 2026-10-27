@@ -104,3 +104,72 @@ back even when the jump crossed into another file."
           (buffer-set-point buffer line column))
         (%lsp-navigation-message "No jump to return from")))
   nil)
+(defun %lsp-reference-line-text (editor-session path line)
+  (let ((buffer (loom/feature/buffers:find-buffer-by-path
+                 editor-session path)))
+    (if buffer
+        (if (< line (buffer-line-count buffer))
+            (buffer-line buffer line)
+            "")
+        (handler-case
+            (with-open-file (stream path :direction :input)
+              (loop repeat line do (read-line stream nil nil))
+              (or (read-line stream nil nil) ""))
+          (file-error () "")))))
+(defun %lsp-reference-result-item (editor-session location)
+  (let* ((path (lsp-uri-path (lsp-location-uri location)))
+         (position (lsp-range-start (lsp-location-range location)))
+         (line (lsp-position-line position))
+         (character (lsp-position-character position)))
+    (when (and path (<= 0 line) (<= 0 character))
+      (let ((text (%lsp-reference-line-text editor-session path line)))
+        (loom/feature/search:make-result-item
+         path line
+         (lsp-character-to-column text character)
+         text)))))
+(defun %lsp-reference-result-items (editor-session locations)
+  (loop for location in locations
+        for item = (%lsp-reference-result-item editor-session location)
+        when item
+          collect item))
+(defun %lsp-references-response (editor-session locations error-message)
+  (cond
+    (error-message
+     (%lsp-navigation-message
+      (format nil "References failed: ~A" error-message)))
+    ((null locations)
+     (%lsp-navigation-message "No references found"))
+    (t
+     (let ((items (%lsp-reference-result-items editor-session locations)))
+       (if (null items)
+           (%lsp-navigation-message "No local references found")
+           (let* ((buffer
+                    (loom/feature/search:publish-result-list
+                     editor-session "*Loom-References*" items))
+                  (window
+                    (loom/core/window-tree:window-tree-selected-window
+                     (editor-state-window-tree *editor-state*))))
+             (loom/core/window-tree:window-set-buffer window buffer)
+             (%lsp-navigation-message
+              (format nil "References found: ~D" (length items)))
+             buffer))))))
+(defun lsp-find-references ()
+  "Show references for the symbol at point in a result list."
+  (multiple-value-bind (session buffer uri line column)
+      (%lsp-navigation-context)
+    (cond
+      ((null session)
+       (%lsp-navigation-message "No LSP session for this buffer"))
+      ((not (lsp-session-capability session "referencesProvider"))
+       (%lsp-navigation-message "Server does not provide references"))
+      (t
+       (let ((editor-session
+               (loom/core/editor-session:editor-state-session *editor-state*)))
+         (lsp-session-sync-buffer session buffer)
+         (lsp-request-references
+          session uri line
+          (lsp-column-to-character (buffer-line buffer line) column)
+          (lambda (locations error-message)
+            (%lsp-references-response
+             editor-session locations error-message)))
+         nil)))))

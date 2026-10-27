@@ -184,3 +184,39 @@
       (expect (lsp-session-capability session "renameProvider") :to-be nil)
       (expect (lsp-session-capability session "referencesProvider")
               :to-be nil))))
+(describe
+  "LSP references response decoding"
+  (it "accepts Locations and drops malformed references"
+    (let ((locations
+            (loom/feature/lsp::%lsp-parse-reference-result
+             (%parse-lsp-json "[{\"uri\":\"file:///tmp/a.lisp\",\"range\":{\"start\":{\"line\":1,\"character\":4},\"end\":{\"line\":1,\"character\":7}}},42]"))))
+      (expect (length locations) :to-equal 1)
+      (expect (lsp-location-uri (first locations))
+              :to-equal "file:///tmp/a.lisp")
+      (expect (lsp-position-line
+               (lsp-range-start
+                (lsp-location-range (first locations))))
+              :to-equal 1)
+      (expect (lsp-position-character
+               (lsp-range-start
+                (lsp-location-range (first locations))))
+              :to-equal 4)))
+  (it "rejects LocationLink shapes from a references response"
+    (expect
+     (loom/feature/lsp::%lsp-parse-reference-result
+      (%parse-lsp-json "[{\"targetUri\":\"file:///tmp/a.lisp\",\"targetSelectionRange\":{\"start\":{\"line\":1,\"character\":4},\"end\":{\"line\":1,\"character\":7}}}]"))
+     :to-equal nil))
+  (it "treats null and empty results as no references"
+    (expect (loom/feature/lsp::%lsp-parse-reference-result
+             (%parse-lsp-json "null"))
+            :to-equal nil)
+    (expect (loom/feature/lsp::%lsp-parse-reference-result
+             (%parse-lsp-json "[]"))
+            :to-equal nil)))
+(describe
+  "LSP reference parser availability"
+  (it "defines a parser for reference responses"
+    (expect
+     (fboundp
+      (find-symbol "%LSP-PARSE-REFERENCE-RESULT" "LOOM/FEATURE/LSP"))
+     :to-be-truthy)))

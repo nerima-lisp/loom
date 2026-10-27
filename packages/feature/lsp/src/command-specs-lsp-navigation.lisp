@@ -8,3 +8,6 @@
 (register-command-spec :feature/lsp "lsp-hover-at-point" "lsp-hover-at-point" #'loom/feature/lsp:lsp-hover-at-point
   :keys '() :keymap :global :group "tooling" :help nil :help-order nil
   :mutates nil :prompts '() :needs-region nil :external '("lsp-server") :modes '(:all))
+(register-command-spec :feature/lsp "lsp-find-references" "lsp-find-references" #'loom/feature/lsp:lsp-find-references
+  :keys '() :keymap :global :group "tooling" :help nil :help-order nil
+  :mutates nil :prompts '() :needs-region nil :external '("lsp-server") :modes '(:all))

@@ -42,13 +42,15 @@ its own entry behind to be delivered a second time."
             (funcall handler nil (%lsp-json-error-message error-value))
             (funcall handler (gethash "result" message) nil))))))
 
-(defun %lsp-text-document-position-params (uri line character)
+(defun %lsp-text-document-position-params (uri line character &optional context)
   (json-kit:make-json-object
-   (list (cons "textDocument"
-               (json-kit:make-json-object (list (cons "uri" uri))))
-         (cons "position"
-               (json-kit:make-json-object
-                (list (cons "line" line) (cons "character" character)))))))
+   (append
+    (list (cons "textDocument"
+                (json-kit:make-json-object (list (cons "uri" uri))))
+          (cons "position"
+                (json-kit:make-json-object
+                 (list (cons "line" line) (cons "character" character)))))
+    (when context (list (cons "context" context))))))
 
 (defmacro define-lsp-position-request (name documentation capability method parser)
   "Define a position request whose reply is decoded before HANDLER runs.
@@ -93,3 +95,18 @@ hoverProvider."
   "hoverProvider"
   "textDocument/hover"
   %lsp-parse-hover-result)
+(defun lsp-request-references (session uri line character handler)
+  "Ask SESSION for references at LINE/CHARACTER in URI.
+The request includes declarations in the returned locations."
+  (when (lsp-session-capability session "referencesProvider")
+    (%lsp-request
+     session "textDocument/references"
+     (%lsp-text-document-position-params
+      uri line character
+      (json-kit:make-json-object
+       (list (cons "includeDeclaration" t))))
+     (lambda (result error-message)
+       (funcall handler
+                (and (null error-message)
+                     (%lsp-parse-reference-result result))
+                error-message)))))

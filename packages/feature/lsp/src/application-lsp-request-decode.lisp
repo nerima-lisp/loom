@@ -108,3 +108,12 @@ either naming, and a null result means the server knows of no definition."
 (defun %lsp-parse-hover-result (result)
   (when (hash-table-p result)
     (%lsp-hover-contents-text (gethash "contents" result))))
+(defun %lsp-parse-reference-result (result)
+  "Return the LSP locations in a textDocument/references RESULT."
+  (loop for object in (if (listp result) result (list))
+        for location = (and (hash-table-p object)
+                            (stringp (gethash "uri" object))
+                            (%lsp-range-p (gethash "range" object))
+                            (%lsp-parse-location object))
+        when location
+          collect location))

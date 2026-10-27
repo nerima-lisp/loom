@@ -238,4 +238,13 @@
       :observe (:screen_text)
       :scenario "command-path/r1/lsp-hover-at-point/mx"
       :lane "W3-9")
+ (:id "r1:lsp-find-references:mx"
+      :commands ("lsp-find-references")
+      :rule :r1
+      :entry "mx"
+      :state "default"
+      :outcome "command runs from M-x"
+      :observe (:screen_text)
+      :scenario "command-path/r1/lsp-find-references/mx"
+      :lane "W3-9")
 )

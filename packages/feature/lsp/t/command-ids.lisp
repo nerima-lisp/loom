@@ -6,4 +6,5 @@
   "lsp-start"
   "lsp-stop"
   "lsp-hover-at-point"
+  "lsp-find-references"
 )
