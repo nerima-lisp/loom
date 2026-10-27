@@ -67,6 +67,28 @@
         (expect (loom/core/command:invoke-command "test/reload" :mx)
                 :to-equal :new)
         (expect (length (loom/core/command:command-specs)) :to-equal 1))))
+  (it
+   "reports the preceding command ID during invocation"
+   (let ((*editor-state* nil)
+         (loom/core/command::*registered-command-specs* nil)
+         (loom/core/command::*last-command-editor-state* nil)
+         (loom/core/command::*last-command-id* nil)
+         (previous nil))
+     (loom/core/command:register-command-spec
+      :test "test/previous/first" "previous-first" (lambda () :first)
+      :keys nil :keymap :global :group nil
+      :mutates nil :prompts nil :needs-region nil
+      :external nil :modes (list :all))
+     (loom/core/command:register-command-spec
+      :test "test/previous/second" "previous-second"
+      (lambda ()
+        (setf previous (loom/core/command:previous-command-id)))
+      :keys nil :keymap :global :group nil
+      :mutates nil :prompts nil :needs-region nil
+      :external nil :modes (list :all))
+     (loom/core/command:invoke-command "test/previous/first" :mx)
+     (loom/core/command:invoke-command "test/previous/second" :mx)
+     (expect previous :to-equal "test/previous/first")))
 
   (it "rejects case-insensitive command name collisions across IDs"
     (let ((loom/core/command::*registered-command-specs* nil))

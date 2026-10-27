@@ -55,6 +55,7 @@
    #:consume-prefix-argument-for-editor
    #:*current-prefix-argument*
    #:repeat-command
+   #:previous-command-id
    #:record-undo-boundary-for-command
    #:self-insert-command
    #:invoke-command

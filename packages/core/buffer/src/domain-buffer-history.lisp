@@ -29,25 +29,29 @@ invariant without manufacturing an undo entry or changing point."
   (setf (%buffer-modified-p buffer) t)
   buffer)
 
-(defun buffer-undo (buffer)
-  "Undo the most recent change group in BUFFER, Emacs ring-style.
-Repeated calls keep walking through inverse history. The inverse group remains
-available to BUFFER-REDO. Returns BUFFER."
+(defun buffer-undo (buffer &key continue-p)
+  "Undo the latest change group in BUFFER. CONTINUE-P skips the inverse group recorded by the prior undo."
   (%ensure-buffer-writable buffer)
-  ;; Command dispatch can leave a transition boundary before the latest group.
+  (when (and continue-p
+             (plusp (%buffer-undo-continuation-count buffer)))
+    (loop repeat (%buffer-undo-continuation-count buffer)
+          do (pop (%buffer-undo-list buffer)))
+    (pop (%buffer-undo-list buffer)))
   (when (eq (car (%buffer-undo-list buffer)) :boundary)
     (pop (%buffer-undo-list buffer)))
   (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
                      until (or (null entry) (eq entry :boundary))
                      collect entry)))
-    (when group
-      (progn
-        (push :boundary (%buffer-undo-list buffer))
-        (push :boundary (%buffer-redo-list buffer)))
-      (dolist (entry group)
-        (push (%apply-undo-entry buffer entry
-                                 (not (eq (first entry) :insert)))
-              (%buffer-redo-list buffer)))))
+    (if group
+        (progn
+          (push :boundary (%buffer-undo-list buffer))
+          (push :boundary (%buffer-redo-list buffer))
+          (dolist (entry group)
+            (push (%apply-undo-entry buffer entry
+                                     (not (eq (first entry) :insert)))
+                  (%buffer-redo-list buffer)))
+          (setf (%buffer-undo-continuation-count buffer) (length group)))
+        (setf (%buffer-undo-continuation-count buffer) 0)))
   buffer)
 
 (defun buffer-redo (buffer)
@@ -56,6 +60,7 @@ available to BUFFER-REDO. Returns BUFFER."
 Redo is a no-op when no explicit redo history remains. A subsequent normal
 edit clears the redo history. Returns BUFFER."
   (%ensure-buffer-writable buffer)
+  (setf (%buffer-undo-continuation-count buffer) 0)
   (let ((group (loop for entry = (pop (%buffer-redo-list buffer))
                      until (or (null entry) (eq entry :boundary))
                      collect entry)))

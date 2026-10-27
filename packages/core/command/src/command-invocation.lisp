@@ -53,6 +53,7 @@
         (when (and trace-error minibuffer)
           (minibuffer-message minibuffer trace-error)))
       (let ((*current-command-route* route)) (apply (%command-spec-command spec) arguments)))))
+(defun previous-command-id () "Return the command ID immediately preceding the current invocation, or NIL." *previous-command-id*)
 (defun invoke-key-command (id route sequence keymap-name &rest arguments)
   (unless (member route (list :key :macro))
     (error "Key command route must be :KEY or :MACRO: ~S" route))

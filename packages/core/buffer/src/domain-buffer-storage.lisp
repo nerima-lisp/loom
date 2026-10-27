@@ -33,6 +33,7 @@ mark position and activity, modified-p, read-only state, and undo/redo state."
   (read-only-p nil :type boolean)
   (modified-p nil)
   (undo-list nil :type list)
+  (undo-continuation-count 0 :type integer)
   (redo-list nil :type list))
 
 (define-condition buffer-read-only-error (error)
