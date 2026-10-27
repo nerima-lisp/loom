@@ -39,6 +39,7 @@
                          (:file "application-lsp-diagnostics-view")
                          (:file "application-commands-lsp-support")
                          (:file "application-commands-lsp-context")
+                         (:file "application-lsp-workspace-edit")
                          (:file "application-commands-lsp")
                          (:file "application-commands-lsp-completion")
                          (:file "application-commands-lsp-navigation")

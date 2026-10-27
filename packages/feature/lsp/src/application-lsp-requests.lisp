@@ -110,3 +110,18 @@ The request includes declarations in the returned locations."
                 (and (null error-message)
                      (%lsp-parse-reference-result result))
                 error-message)))))
+(defun lsp-request-rename (session uri line character new-name handler)
+  "Ask SESSION to rename the symbol at LINE/CHARACTER in URI to NEW-NAME."
+  (when (lsp-session-capability session "renameProvider")
+    (%lsp-request
+     session "textDocument/rename"
+     (json-kit:make-json-object
+      (list (cons "textDocument"
+                  (json-kit:make-json-object (list (cons "uri" uri))))
+            (cons "position"
+                  (json-kit:make-json-object
+                   (list (cons "line" line) (cons "character" character))))
+            (cons "newName" new-name)))
+     (lambda (result error-message)
+       (funcall handler result error-message)))))
+

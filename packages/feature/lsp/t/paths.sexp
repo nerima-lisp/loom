@@ -247,4 +247,13 @@
       :observe (:screen_text)
       :scenario "command-path/r1/lsp-find-references/mx"
       :lane "W3-9")
+ (:id "r1:lsp-rename:mx"
+      :commands ("lsp-rename")
+      :rule :r1
+      :entry "mx"
+      :state "default"
+      :outcome "command runs from M-x"
+      :observe (:screen_text)
+      :scenario "command-path/r1/lsp-rename/mx"
+      :lane "W3-9")
 )

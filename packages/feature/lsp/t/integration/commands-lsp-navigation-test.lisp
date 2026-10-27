@@ -323,3 +323,265 @@
      (fboundp
       (find-symbol "LSP-FIND-REFERENCES" "LOOM/FEATURE/LSP"))
      :to-be-truthy)))
+(describe
+  "LSP rename"
+  (it "registers M-x command and reports a missing session before prompting"
+    (let ((rename (find-symbol "LSP-RENAME" "LOOM/FEATURE/LSP")))
+      (expect (and rename (fboundp rename)) :to-be-truthy)
+      (when (and rename (fboundp rename))
+        (let ((*editor-state* (%lsp-navigation-state)))
+          (funcall rename)
+          (expect (minibuffer-message-string
+                   (editor-state-minibuffer *editor-state*))
+                  :to-equal "No LSP session for this buffer")
+          (expect (minibuffer-active-p
+                   (editor-state-minibuffer *editor-state*))
+                  :to-be nil)))))
+
+  (it "requires renameProvider and sends the UTF-16 request with newName"
+    (let ((rename (find-symbol "LSP-RENAME" "LOOM/FEATURE/LSP")))
+      (expect (and rename (fboundp rename)) :to-be-truthy)
+      (when (and rename (fboundp rename))
+        (%with-lsp-navigation
+            (transport session buffer :content (format nil "~C foo" (code-char #x1f600))
+             :capabilities "{\"capabilities\":{\"renameProvider\":true}}")
+          (progn (buffer-set-point buffer 0 4) (funcall rename))
+          (expect (minibuffer-prompt-string
+                   (editor-state-minibuffer *editor-state*))
+                  :to-equal "Rename to: ")
+          (%lsp-type-prompt-string (editor-state-minibuffer *editor-state*) "renamed")
+          (minibuffer-handle-key
+           (editor-state-minibuffer *editor-state*) (%lsp-confirm-prompt (editor-state-minibuffer *editor-state*)))
+          (expect (%lsp-last-request-method transport)
+                  :to-equal "textDocument/rename")
+          (let* ((request (%parse-lsp-json
+                           (car (last (%fake-sent-in-order transport)))))
+                 (params (gethash "params" request))
+                 (document (gethash "textDocument" params))
+                 (position (gethash "position" params)))
+            (expect (gethash "uri" document)
+                    :to-equal (lsp-path-uri (buffer-path buffer)))
+            (expect (gethash "line" position) :to-equal 0)
+            (expect (gethash "character" position) :to-equal 5)
+            (expect (gethash "newName" params) :to-equal "renamed"))
+          (%fake-push-and-drain
+           transport session
+           (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
+                   (%lsp-last-request-id transport)))))))
+
+  (it "does not prompt or send a request without renameProvider"
+    (let ((rename (find-symbol "LSP-RENAME" "LOOM/FEATURE/LSP")))
+      (expect (and rename (fboundp rename)) :to-be-truthy)
+      (when (and rename (fboundp rename))
+        (%with-lsp-navigation (transport session buffer :capabilities "{}")
+          (let ((before (length (%fake-sent-in-order transport))))
+            (funcall rename)
+            (expect (minibuffer-message-string
+                     (editor-state-minibuffer *editor-state*))
+                    :to-equal "Server does not provide rename")
+            (expect (minibuffer-active-p
+                     (editor-state-minibuffer *editor-state*))
+                    :to-be nil)
+            (expect (length (%fake-sent-in-order transport))
+                    :to-equal before))))))
+
+  (it "applies multiple edits in descending document order, groups undo, and resyncs after undo"
+    (let ((rename (find-symbol "LSP-RENAME" "LOOM/FEATURE/LSP")))
+      (expect (and rename (fboundp rename)) :to-be-truthy)
+      (when (and rename (fboundp rename))
+        (%with-lsp-navigation
+            (transport session buffer :content "one two three"
+             :capabilities "{\"capabilities\":{\"hoverProvider\":true,\"renameProvider\":true}}")
+          (funcall rename)
+          (%lsp-type-prompt-string (editor-state-minibuffer *editor-state*) "renamed")
+          (minibuffer-handle-key
+           (editor-state-minibuffer *editor-state*) (%lsp-confirm-prompt (editor-state-minibuffer *editor-state*)))
+          (%fake-push-and-drain
+           transport session
+           (format nil
+                   "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":8},\"end\":{\"line\":0,\"character\":13}},\"newText\":\"3\"},{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"ONE!\"}]}}}"
+                   (%lsp-last-request-id transport)
+                   (lsp-path-uri (buffer-path buffer))))
+          (expect (buffer-text buffer) :to-equal "ONE! two 3")
+          (expect (lsp-document-text
+                   (gethash (lsp-path-uri (buffer-path buffer))
+                            (loom/feature/lsp::lsp-session-documents session)))
+                  :to-equal "ONE! two 3")
+          (loom/core/buffer:buffer-undo buffer)
+          (expect (buffer-text buffer) :to-equal "one two three")
+          (funcall (find-symbol "LSP-HOVER-AT-POINT" "LOOM/FEATURE/LSP"))
+          (let* ((messages (%fake-sent-in-order transport))
+                 (methods (mapcar (lambda (json)
+                                    (gethash "method" (%parse-lsp-json json)))
+                                  messages))
+                 (change-index (position "textDocument/didChange" methods
+                                         :from-end t :test #'equal))
+                 (hover-index (position "textDocument/hover" methods
+                                        :from-end t :test #'equal))
+                 (change (and change-index
+                              (%parse-lsp-json (nth change-index messages)))))
+            (expect (and change-index hover-index (< change-index hover-index))
+                    :to-be-truthy)
+            (expect (gethash "text"
+                             (first (gethash "contentChanges"
+                                             (gethash "params" change))))
+                    :to-equal "one two three"))
+          (%fake-push-and-drain
+           transport session
+           (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
+                   (%lsp-last-request-id transport)))))))
+
+  (it "rejects typed invalid edits without opening a server URI"
+    (%with-lsp-navigation (transport session buffer)
+      (lsp-session-sync-buffer session buffer)
+      (let ((apply-edit
+              (find-symbol "%LSP-APPLY-WORKSPACE-EDIT" "LOOM/FEATURE/LSP")))
+        (expect (and apply-edit (fboundp apply-edit)) :to-be-truthy)
+        (when (and apply-edit (fboundp apply-edit))
+          (labels ((refusal-reason (workspace-edit)
+                     (let ((condition-value nil))
+                       (handler-case
+                           (funcall apply-edit
+                                    session
+                                    (loom/core/editor-session:editor-state-session
+                                     *editor-state*)
+                                    (%parse-lsp-json workspace-edit))
+                         (error (condition)
+                           (setf condition-value condition)))
+                       (expect (typep condition-value
+                                      'loom/feature/lsp::lsp-workspace-edit-error)
+                               :to-be-truthy)
+                       (and (typep condition-value
+                                   'loom/feature/lsp::lsp-workspace-edit-error)
+                            (loom/feature/lsp::lsp-workspace-edit-error-reason
+                             condition-value)))))
+            (expect (refusal-reason
+                     "{\"changes\":{\"file:///tmp/not-open.lisp\":[]}}")
+                    :to-equal :unsupported-uri)
+            (expect (refusal-reason
+                     "{\"documentChanges\":[{\"kind\":\"create\",\"uri\":\"file:///tmp/new.lisp\"}]}")
+                    :to-equal :resource-operation)
+            (expect (refusal-reason
+                     (format nil
+                             "{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"a\"},{\"range\":{\"start\":{\"line\":0,\"character\":2},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"b\"}]}}"
+                             (lsp-path-uri (buffer-path buffer))))
+                    :to-equal :overlapping-edits)
+            (expect (buffer-text buffer) :to-equal "foo"))))))
+
+  (it "validates every document before applying any WorkspaceEdit text"
+    (let ((apply-edit
+            (find-symbol "%LSP-APPLY-WORKSPACE-EDIT" "LOOM/FEATURE/LSP")))
+      (expect (and apply-edit (fboundp apply-edit)) :to-be-truthy)
+      (when (and apply-edit (fboundp apply-edit))
+        (%with-lsp-navigation (transport session buffer :content "main")
+          (let* ((editor-session
+                   (loom/core/editor-session:editor-state-session *editor-state*))
+                 (other (make-buffer :name "other.lisp"
+                                     :path "/tmp/other.lisp"
+                                     :initial-content "other"))
+                 (condition-value nil))
+            (loom/feature/buffers:register-buffer editor-session other)
+            (lsp-session-sync-buffer session buffer)
+            (lsp-session-sync-buffer session other)
+            (handler-case
+                (funcall
+                 apply-edit session editor-session
+                 (%parse-lsp-json
+                  (format nil
+                          "{\"documentChanges\":[{\"textDocument\":{\"uri\":\"~A\",\"version\":1},\"edits\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":1}},\"newText\":\"M\"}]},{\"textDocument\":{\"uri\":\"~A\",\"version\":1},\"edits\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":99}},\"newText\":\"X\"}]}]}"
+                          (lsp-path-uri (buffer-path buffer))
+                          (lsp-path-uri (buffer-path other)))))
+              (error (condition)
+                (setf condition-value condition)))
+            (expect (typep condition-value
+                           'loom/feature/lsp::lsp-workspace-edit-error)
+                    :to-be-truthy)
+            (when (typep condition-value
+                         'loom/feature/lsp::lsp-workspace-edit-error)
+              (expect (loom/feature/lsp::lsp-workspace-edit-error-reason
+                       condition-value)
+                      :to-equal :invalid-position))
+            (expect (buffer-text buffer) :to-equal "main")
+            (expect (buffer-text other) :to-equal "other")))))))
+(describe "LSP rename UTF-16 edits"
+  (it "converts UTF-16 edit positions exactly and rejects a split surrogate pair"
+    (let ((apply-edit
+            (find-symbol "%LSP-APPLY-WORKSPACE-EDIT" "LOOM/FEATURE/LSP")))
+      (expect (and apply-edit (fboundp apply-edit)) :to-be-truthy)
+      (when (and apply-edit (fboundp apply-edit))
+        (%with-lsp-navigation
+            (transport session buffer
+             :content (format nil "a~Cb" (code-char #x1f600)))
+          (let* ((editor-session
+                   (loom/core/editor-session:editor-state-session *editor-state*))
+                 (uri (lsp-path-uri (buffer-path buffer)))
+                 (before (buffer-text buffer)))
+            (expect transport :to-be-truthy)
+            (lsp-session-sync-buffer session buffer)
+            (handler-case
+                (funcall
+                 apply-edit session editor-session
+                 (%parse-lsp-json
+                  (format nil
+                          "{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":2},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"X\"}]}}"
+                          uri)))
+              (loom/feature/lsp::lsp-workspace-edit-error (condition)
+                (expect
+                 (loom/feature/lsp::lsp-workspace-edit-error-reason condition)
+                 :to-equal :invalid-position)))
+            (expect (buffer-text buffer) :to-equal before)
+            (funcall
+             apply-edit session editor-session
+             (%parse-lsp-json
+              (format nil
+                      "{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":1},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"X\"}]}}"
+                      uri)))
+            (expect (buffer-text buffer) :to-equal "aXb")))))))
+(describe "LSP rename safety refusals"
+  (it "rejects version mismatch, read-only buffers, and edits outside narrowing"
+    (let ((apply-edit
+            (find-symbol "%LSP-APPLY-WORKSPACE-EDIT" "LOOM/FEATURE/LSP")))
+      (expect (and apply-edit (fboundp apply-edit)) :to-be-truthy)
+      (when (and apply-edit (fboundp apply-edit))
+        (%with-lsp-navigation (transport session buffer :content "foo bar")
+          (let* ((editor-session
+                   (loom/core/editor-session:editor-state-session *editor-state*))
+                 (uri (lsp-path-uri (buffer-path buffer))))
+            (expect transport :to-be-truthy)
+            (lsp-session-sync-buffer session buffer)
+            (labels ((expect-refusal (workspace-edit expected-reason)
+                       (let ((condition-value nil)
+                             (before (buffer-text buffer)))
+                         (handler-case
+                             (funcall apply-edit session editor-session
+                                      (%parse-lsp-json workspace-edit))
+                           (error (condition)
+                             (setf condition-value condition)))
+                         (expect (typep condition-value
+                                        'loom/feature/lsp::lsp-workspace-edit-error)
+                                 :to-be-truthy)
+                         (when (typep condition-value
+                                      'loom/feature/lsp::lsp-workspace-edit-error)
+                           (expect (loom/feature/lsp::lsp-workspace-edit-error-reason
+                                    condition-value)
+                                   :to-equal expected-reason))
+                         (expect (buffer-text buffer) :to-equal before))))
+              (expect-refusal
+               (format nil
+                       "{\"documentChanges\":[{\"textDocument\":{\"uri\":\"~A\",\"version\":0},\"edits\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"bar\"}]}]}"
+                       uri)
+               :version-mismatch)
+              (loom/core/buffer:buffer-set-read-only buffer t)
+              (expect-refusal
+               (format nil
+                       "{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"bar\"}]}}"
+                       uri)
+               :read-only)
+              (loom/core/buffer:buffer-set-read-only buffer nil)
+              (loom/core/buffer:buffer-narrow-to-region buffer 0 4 0 7)
+              (expect-refusal
+               (format nil
+                       "{\"changes\":{\"~A\":[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},\"newText\":\"bar\"}]}}"
+                       uri)
+               :narrowing))))))))
+

@@ -173,3 +173,33 @@ back even when the jump crossed into another file."
             (%lsp-references-response
              editor-session locations error-message)))
          nil)))))
+(defun lsp-rename ()
+  "Prompt for a new name and apply the server's WorkspaceEdit."
+  (multiple-value-bind (session buffer uri line column)
+      (%lsp-navigation-context)
+    (let* ((minibuffer (editor-state-minibuffer *editor-state*))
+           (editor-session
+            (loom/core/editor-session:editor-state-session *editor-state*)))
+      (cond
+       ((null session)
+        (%lsp-navigation-message "No LSP session for this buffer"))
+       ((not (lsp-session-capability session "renameProvider"))
+        (%lsp-navigation-message "Server does not provide rename"))
+       (t
+        (with-prompts
+         (minibuffer minibuffer
+                     :on-cancel
+                     (%lsp-navigation-message "Rename cancelled"))
+         ((new-name "Rename to: "))
+         (if (string= new-name "")
+             (minibuffer-message minibuffer "Rename name cannot be empty")
+           (progn
+             (lsp-session-sync-buffer session buffer editor-session)
+             (lsp-request-rename
+              session uri line
+              (lsp-column-to-character (buffer-line buffer line) column)
+              new-name
+              (lambda (result error-message)
+                (%lsp-rename-response
+                 session editor-session result error-message))))))))))
+  )

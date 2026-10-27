@@ -59,5 +59,17 @@
            buffer)
           :to-be (and (buffer-path buffer) session))
   session)
+(defun %lsp-type-prompt-string (minibuffer string)
+  (loop for character across string
+        do (minibuffer-handle-key
+            minibuffer
+            (cl-tty-kit:make-key-event :type :character :code character)))
+  minibuffer)
+(defun %lsp-confirm-prompt (minibuffer)
+  (minibuffer-handle-key
+   minibuffer
+   (cl-tty-kit:make-key-event :type :special :code :enter)))
+
+
 
 
