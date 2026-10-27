@@ -1,20 +1,25 @@
 (in-package #:loom/feature/search)
 
-(defun %replace-span (buffer span new)
+(defun %replace-span (buffer span new &optional undo-point)
   (let ((start-position
           (buffer-offset-position buffer (buffer-span-start span)))
         (end-position
           (buffer-offset-position buffer (buffer-span-end span))))
-    (buffer-set-point
-     buffer
-     (buffer-position-line start-position)
-     (buffer-position-column start-position))
+    (when undo-point
+      (buffer-set-point
+       buffer
+       (buffer-position-line undo-point)
+       (buffer-position-column undo-point)))
     (buffer-delete-region
      buffer
      (buffer-position-line start-position)
      (buffer-position-column start-position)
      (buffer-position-line end-position)
      (buffer-position-column end-position))
+    (buffer-set-point
+     buffer
+     (buffer-position-line start-position)
+     (buffer-position-column start-position))
     (buffer-insert-string buffer new)))
 
 (defun %replacement-match-records (buffer pattern start regexp-p)
@@ -120,38 +125,40 @@
          (t expanded)))))
 
   (defun %perform-replacement (buffer records pattern replacement regexp-p)
-    (let* ((record-texts
-            (loop for record in records
-                  for replacement-count from 0
-                  collect
-                  (list record
-                        (%replacement-record-text
-                         record pattern replacement regexp-p replacement-count))))
-           (final-offset
-            (when records
-              (+ (buffer-span-end (first (car (last records))))
-                 (loop for record-text in record-texts
-                       for record = (first record-text)
-                       for span = (first record)
-                       for new-text = (second record-text)
-                       sum (- (length new-text)
-                              (- (buffer-span-end span)
-                                 (buffer-span-start span))))))))
-      (dolist (record-text
-               (sort (copy-list record-texts)
-                     #'>
-                     :key (lambda (item)
-                            (buffer-span-start (first (first item))))))
-        (let ((record (first record-text)))
-          (%replace-span buffer
-                         (first record)
-                         (second record-text))))
-      (when final-offset
-        (let ((position (buffer-offset-position buffer final-offset)))
-          (buffer-set-point buffer
-                            (buffer-position-line position)
-                            (buffer-position-column position))))
-      (length records)))
+  (let* ((record-texts
+          (loop for record in records
+                for replacement-count from 0
+                collect
+                (list record
+                      (%replacement-record-text
+                       record pattern replacement regexp-p replacement-count))))
+         (final-offset
+          (when records
+            (+ (buffer-span-end (first (car (last records))))
+               (loop for record-text in record-texts
+                     for record = (first record-text)
+                     for span = (first record)
+                     for new-text = (second record-text)
+                     sum (- (length new-text)
+                            (- (buffer-span-end span)
+                               (buffer-span-start span))))))))
+    (let ((delta 0))
+      (dolist (record-text record-texts)
+        (let* ((record (first record-text))
+               (span (first record))
+               (shifted-span (%shift-replacement-record-span record delta))
+               (new-text (second record-text)))
+          (%replace-span buffer shifted-span new-text)
+          (incf delta
+                (- (length new-text)
+                   (- (buffer-span-end span)
+                      (buffer-span-start span)))))))
+    (when final-offset
+      (let ((position (buffer-offset-position buffer final-offset)))
+        (buffer-set-point buffer
+                          (buffer-position-line position)
+                          (buffer-position-column position))))
+    (length records)))
 
   (defun %selected-search-buffer ()
     (let ((window-tree (editor-state-window-tree *editor-state*)))
@@ -261,7 +268,12 @@ verbatim."
                                     (- (length new-text)
                                        (- (buffer-span-end span)
                                           (buffer-span-start span)))))
-                             (%replace-span buffer span new-text)
+                             (%replace-span buffer
+               span
+               new-text
+               (buffer-offset-position
+                buffer
+                (buffer-span-end span)))
                              (incf count)
                              (setf records
                                    (%shift-query-replacement-records
