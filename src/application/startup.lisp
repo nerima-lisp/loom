@@ -13,9 +13,10 @@ from it."
                                                      (function loom-version)))
 
 (eval-when (:load-toplevel :execute)
-  (loom/core/editor-session:register-cli-option :feature/user-init
-                                                "--no-init"
-                                                :switch))
+  (unless (eq (loom/core/editor-session:cli-option-value-kind "--no-init") :switch)
+    (loom/core/editor-session:register-cli-option :feature/user-init
+                                                  "--no-init"
+                                                  :switch)))
 
 (defun %call-with-started-editor-state (path thunk
                                              &optional
