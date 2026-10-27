@@ -130,9 +130,11 @@ The replacement retains text, point, and mark, but not undo history."
                :on-cancel
                (minibuffer-message minibuffer "Quit"))
    ((path "Save file: "))
-   (let ((new-buffer
-          (%install-file-buffer window buffer path :name (buffer-name buffer))))
-     (%save-buffer-or-warn-overwrite new-buffer path))))
+   (if (and (stringp path) (zerop (length path)))
+       (minibuffer-message minibuffer "File name cannot be empty")
+       (let ((new-buffer
+              (%install-file-buffer window buffer path :name (buffer-name buffer))))
+         (%save-buffer-or-warn-overwrite new-buffer path)))))
 
 (defun save-buffer ()
   "Save the selected buffer, prompting for a path first if it has none."
@@ -162,8 +164,10 @@ buffer. Undo history is not transferred."
                    :on-cancel
                    (minibuffer-message minibuffer "Quit"))
        ((path "Write file: "))
-       (let ((new-buffer (%install-file-buffer window buffer path)))
-         (%save-buffer-or-warn-overwrite new-buffer path)))))
+       (if (and (stringp path) (zerop (length path)))
+           (minibuffer-message minibuffer "File name cannot be empty")
+           (let ((new-buffer (%install-file-buffer window buffer path)))
+             (%save-buffer-or-warn-overwrite new-buffer path))))))
   (defun %text-end-position (text)
   (let ((last-newline (position #\Newline text :from-end t)))
     (if last-newline

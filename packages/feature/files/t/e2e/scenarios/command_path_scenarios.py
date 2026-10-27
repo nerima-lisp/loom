@@ -409,8 +409,13 @@ def _run_files_prompt_scenario(binary, case):
                 session.key("RET")
                 _wait_exact(session, "minibuffer", runtime_case["history_seed_result"])
                 _invoke_prompt_target(session, runtime_case)
-                _send_key(session, "UP")
-                _wait_exact(session, "minibuffer", "revert-buffer")
+                if runtime_case["entry_mode"] == "mx":
+                    _send_key(session, "UP")
+                    _wait_exact(
+                        session,
+                        "minibuffer",
+                        runtime_case["prompt_text"] + runtime_case["accepted_command"],
+                    )
                 _send_key(session, "UP")
                 _wait_exact(session, "minibuffer", runtime_case["history_expected"])
                 session.key("RET")

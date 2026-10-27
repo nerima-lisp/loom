@@ -37,55 +37,94 @@
                 :to-be-truthy)
         (expect (member new-buffer (%test-registered-buffers *editor-state*))
                 :to-be-truthy)))))
-(it
-  "refuses to overwrite an existing file from an unregistered raw buffer"
-  (host-kit:with-temporary-directory (dir)
-    (let* ((path (merge-pathnames "raw.txt" dir))
-           (backup-dir (merge-pathnames "backups/" dir)))
-      (%write-test-file-octets path #(111 108 100))
-      (%with-minibuffer-state (minibuffer "")
-        (let ((buffer (make-buffer :name "raw.txt"
-                                   :path path
-                                   :initial-content "new")))
-          (expect (member buffer (%test-registered-buffers *editor-state*))
-                  :to-be nil)
-          (let ((loom/feature/files::*loom-backup-directory* backup-dir))
-            (signals error (buffer-save buffer))
-            (expect (%read-test-file-octets path)
-                    :to-equalp
-                    #(111 108 100))))))))
-
-(describe
-  "save-buffer path-less first save"
+(progn
   (it
-    "carries the old buffer's point onto the newly-swapped-in buffer"
+    "refuses to overwrite an existing file from an unregistered raw buffer"
     (host-kit:with-temporary-directory (dir)
-      (%with-minibuffer-state (minibuffer "hello world"
-                               (tree (editor-state-window-tree *editor-state*))
-                               (buffer (%selected-test-buffer)))
-        (buffer-set-point buffer 0 5)
-        (buffer-set-mark buffer 0 2)
-        (loom/feature/files:save-buffer)
-        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
-                 (merge-pathnames "new-save.txt" dir))
-        (let ((new-buffer (window-buffer (window-tree-selected-window tree))))
-          (expect new-buffer :to-have-point (cons 0 5))
-          (multiple-value-bind (mark-line mark-column) (buffer-mark new-buffer)
-            (expect mark-line :to-equal 0)
-            (expect mark-column :to-equal 2))))))
-
+      (let* ((path (merge-pathnames "raw.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (make-buffer :name "raw.txt"
+                                     :path path
+                                     :initial-content "new")))
+            (expect (member buffer (%test-registered-buffers *editor-state*))
+                    :to-be nil)
+            (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+              (signals error (buffer-save buffer))
+              (expect (%read-test-file-octets path)
+                      :to-equalp
+                      #(111 108 100))))))))
   (it
-    "warns instead of overwriting when the typed path already names an existing file"
+    "rejects an empty path from write-file without changing its buffer or files"
     (host-kit:with-temporary-directory (dir)
-      (let ((existing-path (merge-pathnames "already-here.txt" dir)))
-        (host-kit:write-file-string "old content" existing-path)
-        (%with-minibuffer-state (minibuffer "hello")
+      (let ((*default-pathname-defaults* dir))
+        (%with-minibuffer-state (minibuffer "draft")
+          (let* ((original (%selected-test-buffer))
+                 (buffers-before (%test-registered-buffers *editor-state*)))
+            (loom/feature/files:write-file)
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
+            (expect (%selected-test-buffer) :to-be original)
+            (expect (buffer-path original) :to-be nil)
+            (expect (buffer-text original) :to-equal "draft")
+            (expect (%test-registered-buffers *editor-state*)
+                    :to-equal buffers-before)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "File name cannot be empty")
+            (expect (uiop:directory-files dir) :to-equal nil)
+            (expect (uiop:subdirectories dir) :to-equal nil)))))))
+
+(progn
+  (describe
+    "save-buffer path-less first save"
+    (it
+      "carries the old buffer's point onto the newly-swapped-in buffer"
+      (host-kit:with-temporary-directory (dir)
+        (%with-minibuffer-state (minibuffer "hello world"
+                                 (tree (editor-state-window-tree *editor-state*))
+                                 (buffer (%selected-test-buffer)))
+          (buffer-set-point buffer 0 5)
+          (buffer-set-mark buffer 0 2)
           (loom/feature/files:save-buffer)
-          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) existing-path)
-          (expect (loom:minibuffer-message-string minibuffer)
-                  :to-equal
-                  (format nil "File exists: ~A (press C-x C-s again to overwrite)" existing-path))
-          (expect (host-kit:read-file-string existing-path) :to-equal "old content"))))))
+          (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
+                   (merge-pathnames "new-save.txt" dir))
+          (let ((new-buffer (window-buffer (window-tree-selected-window tree))))
+            (expect new-buffer :to-have-point (cons 0 5))
+            (multiple-value-bind (mark-line mark-column) (buffer-mark new-buffer)
+              (expect mark-line :to-equal 0)
+              (expect mark-column :to-equal 2))))))
+
+    (it
+      "warns instead of overwriting when the typed path already names an existing file"
+      (host-kit:with-temporary-directory (dir)
+        (let ((existing-path (merge-pathnames "already-here.txt" dir)))
+          (host-kit:write-file-string "old content" existing-path)
+          (%with-minibuffer-state (minibuffer "hello")
+            (loom/feature/files:save-buffer)
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) existing-path)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal
+                    (format nil "File exists: ~A (press C-x C-s again to overwrite)" existing-path))
+            (expect (host-kit:read-file-string existing-path) :to-equal "old content"))))))
+
+  (it
+    "rejects an empty path from save-buffer without changing its buffer or files"
+    (host-kit:with-temporary-directory (dir)
+      (let ((*default-pathname-defaults* dir))
+        (%with-minibuffer-state (minibuffer "draft")
+          (let* ((original (%selected-test-buffer))
+                 (buffers-before (%test-registered-buffers *editor-state*)))
+            (loom/feature/files:save-buffer)
+            (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
+            (expect (%selected-test-buffer) :to-be original)
+            (expect (buffer-path original) :to-be nil)
+            (expect (buffer-text original) :to-equal "draft")
+            (expect (%test-registered-buffers *editor-state*)
+                    :to-equal buffers-before)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "File name cannot be empty")
+            (expect (uiop:directory-files dir) :to-equal nil)
+            (expect (uiop:subdirectories dir) :to-equal nil)))))))
 
 (describe
   "find-file buffer identity"

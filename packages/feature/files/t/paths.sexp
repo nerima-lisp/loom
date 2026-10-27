@@ -16,13 +16,5 @@
   :observe (:screen_text :buffer_name :buffer_path :file_bytes)
   :scenario "find-file buffer reuse and names"
   :lane "W3-3")
- (:id "r1:save-buffer:mx"
-  :commands (:save-buffer)
-  :rule :r1
-  :entry "mx"
-  :state "BOM, mixed CRLF/LF, and invalid-byte file at point zero"
-  :outcome "Opening the file displays the exact Mixed Latin-1 BOM mode-line indicator; M-x save-buffer preserves the BOM, invalid byte, and each original line ending after a leading ASCII insertion"
-  :observe (:screen_text :file_bytes)
-  :scenario "files/file-format-preservation"
-  :lane "W3-3")
+ (:id "r1:save-buffer:mx" :commands (:save-buffer) :rule :r1 :entry "mx" :state "BOM, mixed CRLF/LF, and invalid-byte file at point zero" :outcome "M-x save-buffer preserves the BOM, invalid byte, and each original line ending after a leading ASCII insertion" :observe (:screen_text :file_bytes) :scenario "files/file-format-preservation" :lane "W3-3")
  (:id "r1:revert-buffer:mx" :commands (:revert-buffer) :rule :r1 :entry "mx" :state "locally modified file differs from an external replacement" :outcome "M-x revert-buffer confirms discard and displays the exact external file contents" :observe (:screen_text :file_bytes) :scenario "files/external-file-change-revert" :lane "W3-3"))
