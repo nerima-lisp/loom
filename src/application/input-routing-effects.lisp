@@ -9,6 +9,7 @@
 
 (defun %dispatch-self-insert-event (event)
   "Execute EVENT as a self-insert command in the current editor state."
+  (minibuffer-message (editor-state-minibuffer *editor-state*) nil)
   (record-undo-boundary-for-command t)
   (editor-state-clear-last-yank *editor-state*)
   (setf (editor-state-last-command-kill-p *editor-state*) nil)
@@ -23,6 +24,8 @@
 (defun %dispatch-keymap-command
     (keymap-state descriptor prefix-argument command)
   "Dispatch DESCRIPTOR through KEYMAP-STATE and update transient command state."
+  (unless (eq command :prefix)
+    (minibuffer-message (editor-state-minibuffer *editor-state*) nil))
   (%prepare-dispatched-command-state command)
   (record-undo-boundary-for-command nil)
   (let ((dispatch-result nil))
@@ -42,7 +45,7 @@
         (prefix-argument-reset prefix-argument)))
     (unless (eq dispatch-result :pending)
       (setf (editor-state-last-command-kill-p *editor-state*)
-            (and (member command +kill-command-names+ :test #'equal) t)))
+            (and (member command +kill-command-names+ :test (function equal)) t)))
     dispatch-result))
 
 (defun %record-keyboard-macro-event

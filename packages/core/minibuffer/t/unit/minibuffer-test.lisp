@@ -132,4 +132,16 @@
          (declare (ignore text))
          (error "sink failed")))
       (signals error (minibuffer-message minibuffer "Saved."))
-      (expect (minibuffer-message-string minibuffer) :to-equal "Saved."))))
+      (expect (minibuffer-message-string minibuffer) :to-equal "Saved.")))
+  (it
+  "clears the message without notifying sinks"
+  (let* ((loom/core/minibuffer::*message-sinks* nil)
+         (minibuffer (make-minibuffer))
+         (received nil))
+    (loom/core/minibuffer:register-message-sink
+     :test/clear
+     (lambda (text) (push text received)))
+    (minibuffer-message minibuffer "Prefix argument: 4")
+    (minibuffer-message minibuffer nil)
+    (expect (minibuffer-message-string minibuffer) :to-be nil)
+    (expect received :to-equal (list "Prefix argument: 4")))))

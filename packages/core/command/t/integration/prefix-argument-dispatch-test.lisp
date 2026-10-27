@@ -96,4 +96,31 @@
           (loom/core/command::%prefix-argument-descriptor-action
            (cons '(:control) #\u) inactive)
         (expect kind :to-equal :universal)
-        (expect value :to-be nil)))))
+        (expect value :to-be nil))))
+  (it
+  "clears a previous transient message before the next command"
+  (let* ((*editor-state* (%fresh-editor-state "abcdefgh" :with-minibuffer t))
+         (loom/core/minibuffer::*message-sinks* nil)
+         (keymap (loom/application:install-default-keybindings (make-keymap)))
+         (keymap-state (make-keymap-state keymap))
+         (buffer (%selected-test-buffer))
+         (minibuffer (loom/core/editor-session:editor-state-minibuffer *editor-state*)))
+    (setf (editor-state-keymap *editor-state*) keymap)
+    (flet ((dispatch (code &optional modifiers)
+             (loom::%dispatch-key-event
+              (%prefix-event code modifiers)
+              keymap-state)))
+      (dispatch (code-char 117) (list :control))
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Prefix argument: 4")
+      (dispatch (code-char 100) (list :control))
+      (expect (buffer-text buffer) :to-equal "efgh")
+      (expect (loom:minibuffer-message-string minibuffer) :to-be nil)
+      (loom/core/minibuffer:minibuffer-message
+       minibuffer "Narrowed to the active region")
+      (dispatch (code-char 117) (list :alt)))
+    (expect (buffer-text buffer) :to-equal "EFGH")
+    (expect (prefix-argument-active-p
+             (editor-state-prefix-argument *editor-state*))
+            :to-be nil)
+    (expect (loom:minibuffer-message-string minibuffer) :to-be nil))))

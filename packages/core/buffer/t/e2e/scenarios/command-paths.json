@@ -2409,21 +2409,46 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
-      "commands": ["fill-paragraph", "undo", "save-buffer"],
+      "commands": [
+        "fill-paragraph",
+        "undo",
+        "save-buffer"
+      ],
       "command": "fill-paragraph",
       "mutation_case": "undo",
-      "command_keys": ["M-q"],
+      "command_keys": [
+        "M-q"
+      ],
       "initial_bytes": "alpha beta\ngamma delta\n",
       "effect_bytes": "alpha beta gamma delta\n",
       "expected_bytes": "alpha beta\ngamma delta\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "",
       "expected_screen": [
-        {"region": "body", "index": 0, "text": "alpha beta"},
-        {"region": "body", "index": 1, "text": "gamma delta"}
+        {
+          "region": "body",
+          "index": 0,
+          "text": "alpha beta"
+        },
+        {
+          "region": "body",
+          "index": 1,
+          "text": "gamma delta"
+        }
       ],
-      "effect_screen": [{"region": "body", "text": "alpha beta gamma delta"}],
-      "expected_undo_cursor": [0, 0]
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
     },
     {
       "name": "command-path/buffer/r3/transpose-chars/undo",
@@ -2431,19 +2456,43 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["transpose-chars", "undo", "save-buffer"],
+      "commands": [
+        "transpose-chars",
+        "undo",
+        "save-buffer"
+      ],
       "command": "transpose-chars",
       "mutation_case": "undo",
-      "command_keys": ["C-t"],
-      "pre_command_keys": ["C-f"],
+      "command_keys": [
+        "C-t"
+      ],
+      "pre_command_keys": [
+        "C-f"
+      ],
       "initial_bytes": "abcd\n",
       "effect_bytes": "bacd\n",
       "expected_bytes": "abcd\n",
-      "expected_cursor": [0, 2],
+      "expected_cursor": [
+        0,
+        2
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "abcd"}],
-      "effect_screen": [{"region": "body", "text": "bacd"}],
-      "expected_undo_cursor": [0, 1]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
     },
     {
       "name": "command-path/buffer/r3/newline/undo",
@@ -2451,21 +2500,48 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
-      "commands": ["forward-char", "newline", "undo", "save-buffer"],
+      "commands": [
+        "forward-char",
+        "newline",
+        "undo",
+        "save-buffer"
+      ],
       "command": "newline",
       "mutation_case": "undo",
-      "command_keys": ["C-f", "RET"],
+      "command_keys": [
+        "C-f",
+        "RET"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "a\nbc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [1, 0],
-      "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "abc"}],
-      "effect_screen": [
-        {"region": "body", "index": 0, "text": "a"},
-        {"region": "body", "index": 1, "text": "bc"}
+      "expected_cursor": [
+        1,
+        0
       ],
-      "expected_undo_cursor": [0, 1]
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a"
+        },
+        {
+          "region": "body",
+          "index": 1,
+          "text": "bc"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
     },
     {
       "name": "command-path/buffer/r3/open-line/undo",
@@ -2473,21 +2549,48 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["forward-char", "open-line", "undo", "save-buffer"],
+      "commands": [
+        "forward-char",
+        "open-line",
+        "undo",
+        "save-buffer"
+      ],
       "command": "open-line",
       "mutation_case": "undo",
-      "command_keys": ["C-f", "C-o"],
+      "command_keys": [
+        "C-f",
+        "C-o"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "a\nbc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 1],
-      "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "abc"}],
-      "effect_screen": [
-        {"region": "body", "index": 0, "text": "a"},
-        {"region": "body", "index": 1, "text": "bc"}
+      "expected_cursor": [
+        0,
+        1
       ],
-      "expected_undo_cursor": [0, 1]
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a"
+        },
+        {
+          "region": "body",
+          "index": 1,
+          "text": "bc"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        1
+      ]
     },
     {
       "name": "command-path/buffer/r3/capitalize-word/macro-replay",
@@ -2879,7 +2982,7 @@
       ],
       "pre_command_keys": [
         "x",
-        "\u007f"
+        ""
       ],
       "restore_screen": [
         {
@@ -2969,7 +3072,7 @@
         0,
         3
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -3019,7 +3122,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -3891,6 +3994,1068 @@
         "C-x",
         "u"
       ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/narrow",
+      "path_id": "r3:delete-backward-char:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "delete-backward-char",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-f",
+        "DEL"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "bc\noutside\n",
+      "expected_bytes": "bc\noutside\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-char/narrow",
+      "path_id": "r3:delete-char:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "delete-char",
+        "save-buffer"
+      ],
+      "command": "delete-char",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-d"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "bc\noutside\n",
+      "expected_bytes": "bc\noutside\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/narrow",
+      "path_id": "r3:delete-indentation:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "next-line",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "delete-indentation",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-^"
+      ],
+      "initial_bytes": "one\n  two\noutside\n",
+      "effect_bytes": "one two\noutside\n",
+      "expected_bytes": "one two\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-n",
+        "C-n"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-n"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/narrow",
+      "path_id": "r3:downcase-word:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"l\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "downcase-word",
+        "save-buffer"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-l"
+      ],
+      "initial_bytes": "ONE two\noutside\n",
+      "effect_bytes": "one two\noutside\n",
+      "expected_bytes": "one two\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/narrow",
+      "path_id": "r3:fill-paragraph:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "next-line",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "fill-paragraph",
+        "save-buffer"
+      ],
+      "command": "fill-paragraph",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-q"
+      ],
+      "initial_bytes": "alpha beta\ngamma delta\n\noutside\n",
+      "effect_bytes": "alpha beta gamma delta\n\noutside\n",
+      "expected_bytes": "alpha beta gamma delta\n\noutside\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-n",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/narrow",
+      "path_id": "r3:newline:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "RET"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "a\nbc\noutside\n",
+      "expected_bytes": "a\nbc\noutside\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/narrow",
+      "path_id": "r3:open-line:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "open-line",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-o"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "a\nbc\noutside\n",
+      "expected_bytes": "a\nbc\noutside\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 1
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/narrow",
+      "path_id": "r3:transpose-chars:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "transpose-chars",
+        "save-buffer"
+      ],
+      "command": "transpose-chars",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-t"
+      ],
+      "initial_bytes": "abcd\noutside\n",
+      "effect_bytes": "bacd\noutside\n",
+      "expected_bytes": "bacd\noutside\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/narrow",
+      "path_id": "r3:upcase-word:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "upcase-word",
+        "save-buffer"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-u"
+      ],
+      "initial_bytes": "one two\noutside\n",
+      "effect_bytes": "ONE two\noutside\n",
+      "expected_bytes": "ONE two\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE two"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/narrow",
+      "path_id": "r3:undo:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "beginning-of-buffer",
+        "move-end-of-line",
+        "set-mark-command",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-/"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "abc\noutside\n",
+      "expected_bytes": "abc\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-e",
+        "x",
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/capitalize-word/prefix-u4",
+      "path_id": "r3:capitalize-word:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"c\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "universal-argument",
+        "capitalize-word",
+        "save-buffer"
+      ],
+      "command": "capitalize-word",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-c"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "One Two Three Four five\n",
+      "expected_bytes": "One Two Three Four five\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One Two Three Four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "One Two Three Four five"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/prefix-u4",
+      "path_id": "r3:delete-backward-char:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "move-end-of-line",
+        "universal-argument",
+        "delete-backward-char",
+        "save-buffer"
+      ],
+      "command": "delete-backward-char",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "DEL"
+      ],
+      "initial_bytes": "abcdefgh\n",
+      "effect_bytes": "abcd\n",
+      "expected_bytes": "abcd\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/prefix-u4",
+      "path_id": "r3:delete-indentation:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "universal-argument",
+        "delete-indentation",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-^"
+      ],
+      "initial_bytes": "one\ntwo\noutside\n",
+      "effect_bytes": "one two\noutside\n",
+      "expected_bytes": "one two\noutside\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/downcase-word/prefix-u4",
+      "path_id": "r3:downcase-word:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"l\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "universal-argument",
+        "downcase-word",
+        "save-buffer"
+      ],
+      "command": "downcase-word",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-l"
+      ],
+      "initial_bytes": "ONE TWO THREE FOUR five\n",
+      "effect_bytes": "one two three four five\n",
+      "expected_bytes": "one two three four five\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two three four five"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/fill-paragraph/prefix-u4",
+      "path_id": "r3:fill-paragraph:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "universal-argument",
+        "fill-paragraph",
+        "save-buffer"
+      ],
+      "command": "fill-paragraph",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-q"
+      ],
+      "initial_bytes": "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon\n",
+      "effect_bytes": "alpha beta gamma delta epsilon zeta  eta theta iota kappa lambda mu nu\nxi omicron pi rho sigma tau upsilon\n",
+      "expected_bytes": "alpha beta gamma delta epsilon zeta  eta theta iota kappa lambda mu nu\nxi omicron pi rho sigma tau upsilon\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta epsilon zeta  eta theta iota kappa lambda mu nu",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xi omicron pi rho sigma tau upsilon",
+          "index": 1
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma delta epsilon zeta  eta theta iota kappa lambda mu nu",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xi omicron pi rho sigma tau upsilon",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/prefix-u4",
+      "path_id": "r3:newline:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "universal-argument",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "RET"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\n\n\n\nbc\n",
+      "expected_bytes": "a\n\n\n\nbc\n",
+      "expected_cursor": [
+        4,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/prefix-u4",
+      "path_id": "r3:open-line:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "universal-argument",
+        "open-line",
+        "save-buffer"
+      ],
+      "command": "open-line",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "C-o"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\n\n\n\nbc\n",
+      "expected_bytes": "a\n\n\n\nbc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/transpose-chars/prefix-u4",
+      "path_id": "r3:transpose-chars:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "universal-argument",
+        "transpose-chars",
+        "save-buffer"
+      ],
+      "command": "transpose-chars",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "C-t"
+      ],
+      "initial_bytes": "abcdef\n",
+      "effect_bytes": "bcdeaf\n",
+      "expected_bytes": "bcdeaf\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bcdeaf"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bcdeaf"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/upcase-word/prefix-u4",
+      "path_id": "r3:upcase-word:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "universal-argument",
+        "upcase-word",
+        "save-buffer"
+      ],
+      "command": "upcase-word",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-u"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "ONE TWO THREE FOUR five\n",
+      "expected_bytes": "ONE TWO THREE FOUR five\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE TWO THREE FOUR five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "ONE TWO THREE FOUR five"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/undo/key:c-x-u",
+      "path_id": "r1:undo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22u%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"u\",\"modifiers\":[]}]}",
+      "commands": [
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "u"
+      ],
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "x"
+        }
+      ],
+      "save_after_effect": true
     }
   ]
 }

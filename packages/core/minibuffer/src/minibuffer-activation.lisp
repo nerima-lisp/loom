@@ -88,14 +88,15 @@ ignore this. Returns MINIBUFFER."
   minibuffer)
 
 (defun minibuffer-message (minibuffer text)
-  "Display TEXT in MINIBUFFER and notify registered message sinks.
+  "Display TEXT in MINIBUFFER, or clear its message when TEXT is NIL.
 
-This does not solicit input or affect MINIBUFFER-ACTIVE-P. Sink callbacks run
-synchronously in registration order after the message is stored. Callback
-errors propagate and stop dispatch. Returns MINIBUFFER."
+Non-NIL messages notify registered sinks synchronously in registration order.
+Clearing the stored message does not notify sinks. Sink callback errors propagate
+and stop dispatch. Returns MINIBUFFER."
   (setf (%minibuffer-message minibuffer) text)
-  (dolist (sink
-           (mapcar (lambda (entry) (cons (car entry) (cdr entry)))
-                   *message-sinks*))
-    (funcall (cdr sink) text))
+  (when text
+    (dolist (sink
+             (mapcar (lambda (entry) (cons (car entry) (cdr entry)))
+                     *message-sinks*))
+      (funcall (cdr sink) text)))
   minibuffer)
