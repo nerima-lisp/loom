@@ -72,10 +72,11 @@
       :serial t
       :components
       ((:file "keymap-test-support")
- (:file "keymap-lookup-test")
- (:file "keymap-state-test")
- (:file "prefix-argument-test")
- (:file "command-internal-registration-test")))
+       (:file "keymap-lookup-test")
+       (:file "keymap-state-test")
+       (:file "prefix-argument-test")
+       (:file "command-internal-registration-test")
+       (:file "buffer-replacement-test")))
      (:module "integration"
       :serial t
       :components

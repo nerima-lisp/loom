@@ -73,6 +73,20 @@
       (expect (buffer-line buffer 0) :to-equal "ONE two")
       (expect (buffer-point-column buffer) :to-equal 3)))
   (it
+    "undoes a marked one-word replacement and restores point"
+    (let ((buffer (make-buffer :initial-content "one two")))
+      (buffer-set-point buffer 0 0)
+      (buffer-delete-region buffer 0 0 0 3 :undo-replacement-p t)
+      (buffer-insert-string buffer "ONE")
+      (expect (buffer-line buffer 0) :to-equal "ONE two")
+      (expect (buffer-point-column buffer) :to-equal 3)
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "one two")
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "ONE two")
+      (expect (buffer-point-column buffer) :to-equal 3)))
+  (it
     "restores deletion point like Emacs when undoing"
     ;; GNU Emacs 31.1 records point at the start, except when point is exactly
     ;; at the deletion end, where undo restores it after the inserted text.
