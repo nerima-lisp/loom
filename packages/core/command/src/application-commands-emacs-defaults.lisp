@@ -74,7 +74,7 @@
                          :undo-replacement-p undo-replacement-p))
                     (let ((position
                            (buffer-offset-position buffer changed-start)))
-                      (buffer-set-point
+                      (loom/core/buffer:buffer-set-point
                        buffer
                        (buffer-position-line position)
                        (buffer-position-column position))))
@@ -85,7 +85,7 @@
                 (let ((position
                        (buffer-offset-position
                         buffer (+ start (length replacement)))))
-                  (buffer-set-point
+                  (loom/core/buffer:buffer-set-point
                    buffer
                    (buffer-position-line position)
                    (buffer-position-column position)))))))
@@ -102,35 +102,43 @@
 
 
   (defun transpose-chars ()
-    "Transpose the characters before and at point."
-    (let* ((window
-             (loom/core/window-tree:window-tree-selected-window
-              (editor-state-window-tree *editor-state*)))
-           (buffer (loom/core/window-tree:window-buffer window))
-           (visible-start (buffer-narrow-start-offset buffer))
-           (text (buffer-visible-text buffer))
-           (point (- (buffer-point-offset buffer) visible-start))
-           (line-end-p
-             (= (buffer-point-column buffer)
-                (length (buffer-line buffer (buffer-point-line buffer)))))
-           (start (if line-end-p (- point 2) (1- point)))
-           (end (if line-end-p point (1+ point)))
-           (start-offset (+ visible-start start))
-           (end-offset (+ visible-start end)))
-      (unless (and (>= start 0) (<= end (length text)))
-        (error "transpose-chars: point has fewer than two adjacent characters"))
-      (if line-end-p
-          (%replace-buffer-offset-range
-           buffer (1+ start-offset) end-offset "")
-          (%replace-buffer-offset-range
-           buffer start-offset (1+ start-offset) ""))
-      (%replace-buffer-offset-range
-       buffer start-offset (1+ start-offset) "")
-      (buffer-insert-string
-       buffer
-       (concatenate 'string
-                    (string (char text (1+ start)))
-                    (string (char text start))))))
+  "Transpose the characters before and at point."
+  (let* ((window
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree *editor-state*)))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (visible-start (buffer-narrow-start-offset buffer))
+         (text (buffer-visible-text buffer))
+         (point (- (buffer-point-offset buffer) visible-start))
+         (prefix-count (loom::%command-prefix-count))
+         (line-end-p
+          (= (buffer-point-column buffer)
+             (length (buffer-line buffer (buffer-point-line buffer)))))
+         (start
+          (if line-end-p
+              (- point prefix-count 1)
+              (1- point)))
+         (end
+          (if line-end-p
+              point
+              (+ point prefix-count))))
+    (unless
+        (and (plusp prefix-count)
+             (>= start 0)
+             (< start end)
+             (<= end (length text)))
+      (error "transpose-chars: point has fewer than two adjacent characters"))
+    (let* ((replacement
+            (concatenate (quote string)
+                         (subseq text (1+ start) end)
+                         (subseq text start (1+ start)))))
+      (%replace-buffer-offset-range buffer
+                                    (+ visible-start start)
+                                    (+ visible-start end)
+                                    replacement
+                                    :undo-replacement-p
+                                    t)
+      (%command-set-point-at-offset buffer (+ visible-start end)))))
 
   (defun %command-word-character-p (character)
     (or (alphanumericp character)
@@ -145,26 +153,53 @@
                        (%command-word-character-p (char text offset)))
             do (incf offset))
       offset))
+  (defun %command-transform-word-range (text start end transform)
+  (with-output-to-string (output)
+    (loop with offset = start
+          while (< offset end)
+          do (let ((word-start
+                     (position-if (function %command-word-character-p)
+                                  text
+                                  :start offset
+                                  :end end)))
+               (write-string (subseq text offset (or word-start end)) output)
+               (if word-start
+                   (let ((word-end
+                           (min end
+                                (%command-forward-word-offset
+                                 text word-start))))
+                     (write-string
+                      (funcall transform (subseq text word-start word-end))
+                      output)
+                     (setf offset word-end))
+                   (return))))))
 
   (defun %transform-word-at-point (transform)
-    (let* ((window
-             (loom/core/window-tree:window-tree-selected-window
-              (editor-state-window-tree *editor-state*)))
-           (buffer (loom/core/window-tree:window-buffer window))
-           (visible-start (buffer-narrow-start-offset buffer))
-           (text (buffer-visible-text buffer))
-           (point (- (buffer-point-offset buffer) visible-start))
-           (word-start
-             (or (position-if #'%command-word-character-p text :start point)
-                 (length text))))
-      (when (< word-start (length text))
-        (let* ((word-end (%command-forward-word-offset text word-start))
-               (word (subseq text word-start word-end)))
+  (let* ((window
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree *editor-state*)))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (visible-start (buffer-narrow-start-offset buffer))
+         (text (buffer-visible-text buffer))
+         (point (- (buffer-point-offset buffer) visible-start))
+         (word-start
+          (or
+           (position-if (function %command-word-character-p) text :start point)
+           (length text))))
+    (when (< word-start (length text))
+      (let* ((word-end
+              (loop with offset = word-start
+                    repeat (max 0 (loom::%command-prefix-count))
+                    do (setf offset (%command-forward-word-offset text offset))
+                    finally (return offset))))
+        (when (< word-start word-end)
           (%replace-buffer-offset-range
            buffer
            (+ visible-start word-start)
            (+ visible-start word-end)
-           (funcall transform word))))))
+           (%command-transform-word-range text word-start word-end transform)
+           :undo-replacement-p
+           t))))))
 
   (defun upcase-word ()
     "Uppercase the following word and move point to its end."
@@ -194,47 +229,50 @@
        (buffer-position-column position))))
 
   (defun delete-indentation ()
-    "Join the current line to the previous line."
-    (let* ((window
-             (loom/core/window-tree:window-tree-selected-window
-              (editor-state-window-tree *editor-state*)))
-           (buffer (loom/core/window-tree:window-buffer window))
-           (visible-start (buffer-narrow-start-offset buffer))
-           (text (buffer-visible-text buffer))
-           (point (- (buffer-point-offset buffer) visible-start))
-           (newline (position #\Newline text :end point :from-end t)))
-      (when newline
-        (let ((left-end newline)
-              (right-start (1+ newline)))
-          (loop while (and (> left-end 0)
-                           (%command-horizontal-space-p
-                            (char text (1- left-end))))
-                do (decf left-end))
-          (loop while (and (< right-start (length text))
-                           (%command-horizontal-space-p
-                            (char text right-start)))
-                do (incf right-start))
-          (let* ((left-character
-                   (when (> left-end 0) (char text (1- left-end))))
-                 (right-character
-                   (when (< right-start (length text))
-                     (char text right-start)))
-                 (separator
-                   (if (and left-character right-character
-                            (not (char= left-character #\Newline))
-                            (not (and (char= left-character #\()
-                                      (char= right-character #\)))))
-                       " "
-                       "")))
-            (%replace-buffer-offset-range
-             buffer
-             (+ visible-start left-end)
-             (+ visible-start right-start)
-             separator
-             :undo-replacement-p t)
-            (%command-set-point-at-offset
-             buffer
-             (+ visible-start left-end)))))))
+  "Join the current line to the previous line."
+  (let* ((window
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree *editor-state*)))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (visible-start (buffer-narrow-start-offset buffer))
+         (text (buffer-visible-text buffer))
+         (point (- (buffer-point-offset buffer) visible-start))
+         (prefix-p (not (null loom/core/command:*current-prefix-argument*)))
+         (newline
+          (if prefix-p
+              (position #\Newline text :start point)
+              (position #\Newline text :end point :from-end t))))
+    (when newline
+      (let ((left-end newline)
+            (right-start (1+ newline)))
+        (loop while (and (> left-end 0)
+                         (%command-horizontal-space-p (char text (1- left-end))))
+              do (decf left-end))
+        (loop while (and (< right-start (length text))
+                         (%command-horizontal-space-p (char text right-start)))
+              do (incf right-start))
+        (let* ((left-character
+                (when (> left-end 0)
+                  (char text (1- left-end))))
+               (right-character
+                (when (< right-start (length text))
+                  (char text right-start)))
+               (separator
+                (if (and left-character
+                         right-character
+                         (not (char= left-character #\Newline))
+                         (not
+                          (and (char= left-character #\()
+                               (char= right-character #\)))))
+                    " "
+                    "")))
+          (%replace-buffer-offset-range buffer
+                                        (+ visible-start left-end)
+                                        (+ visible-start right-start)
+                                        separator
+                                        :undo-replacement-p
+                                        t)
+          (%command-set-point-at-offset buffer (+ visible-start left-end)))))))
 
   (defun %command-line-ranges (text)
     (loop with start = 0
@@ -265,77 +303,134 @@
                       (push (subseq text word-start end) words)))
       (nreverse words)))
 
-  (defun %command-wrap-words (words width)
+  (defun %command-wrap-words (words width &optional justify-p)
+  (let ((lines nil)
+        (current-line nil)
+        (current-width 0))
+    (dolist (word words)
+      (when (and current-line (> (+ current-width 1 (length word)) width))
+        (push (nreverse current-line) lines)
+        (setf current-line nil
+              current-width 0))
+      (when current-line
+        (incf current-width))
+      (push word current-line)
+      (incf current-width (length word)))
+    (when current-line
+      (push (nreverse current-line) lines))
+    (setf lines (nreverse lines))
     (with-output-to-string (output)
-      (let ((column 0))
-        (dolist (word words)
-          (if (zerop column)
-              (progn
-                (write-string word output)
-                (setf column (length word)))
-              (if (> (+ column 1 (length word)) width)
-                  (progn
-                    (write-char #\Newline output)
-                    (write-string word output)
-                    (setf column (length word)))
-                  (progn
-                    (write-char #\Space output)
-                    (write-string word output)
-                    (incf column (1+ (length word))))))))))
+      (loop for line in lines
+            for line-index from 0
+            for last-line-p = (= line-index (1- (length lines)))
+            do (let* ((gap-count (1- (length line)))
+                      (word-width
+                       (loop for word in line
+                             sum (length word)))
+                      (space-count
+                       (if (and justify-p (not last-line-p) (plusp gap-count))
+                           (max gap-count (- width word-width))
+                           gap-count))
+                      (spaces-per-gap
+                       (if (plusp gap-count)
+                           (floor space-count gap-count)
+                           0))
+                      (extra-count
+                       (if (plusp gap-count)
+                           (mod space-count gap-count)
+                           0))
+                      (gap-order
+                       (stable-sort
+                        (loop for index below gap-count
+                              collect index)
+                        (function <)
+                        :key
+                        (lambda (index)
+                          (abs (- (* 2 index) (1- gap-count))))))
+                      (extra-gaps
+                       (loop for gap in gap-order
+                             repeat extra-count
+                             collect gap)))
+                 (loop for word in line
+                       for word-index from 0
+                       do (when (plusp word-index)
+                            (let ((spaces
+                                   (+ spaces-per-gap
+                                      (if (member (1- word-index) extra-gaps)
+                                          1
+                                          0))))
+                              (dotimes (space spaces)
+                                (write-char #\Space output)))) (write-string
+                                                                word
+                                                                output))
+                 (unless last-line-p
+                   (write-char #\Newline output)))))))
 
   (defun fill-paragraph ()
-    "Fill the paragraph containing point to the default fill column."
-    (let* ((window
-             (loom/core/window-tree:window-tree-selected-window
-              (editor-state-window-tree *editor-state*)))
-           (buffer (loom/core/window-tree:window-buffer window))
-           (visible-start (buffer-narrow-start-offset buffer))
-           (text (buffer-visible-text buffer))
-           (point (- (buffer-point-offset buffer) visible-start))
-           (lines (%command-line-ranges text))
-           (line-index
-             (or (position-if
-                  (lambda (range)
-                    (<= (car range) point (cdr range)))
-                  lines)
-                 (1- (length lines)))))
-      (when (%command-blank-line-p text (nth line-index lines))
-        (setf line-index
-              (or (position-if
-                   (lambda (range)
-                     (not (%command-blank-line-p text range)))
-                   lines
-                   :start (1+ line-index))
-                  (position-if
-                   (lambda (range)
-                     (not (%command-blank-line-p text range)))
-                   lines
-                   :end line-index))))
-      (when line-index
-        (let ((first-line line-index)
-              (last-line line-index))
-          (loop while (and (> first-line 0)
-                           (not (%command-blank-line-p
-                                 text (nth (1- first-line) lines))))
-                do (decf first-line))
-          (loop while (and (< last-line (1- (length lines)))
-                           (not (%command-blank-line-p
-                                 text (nth (1+ last-line) lines))))
-                do (incf last-line))
-          (let* ((start (car (nth first-line lines)))
-                 (end (cdr (nth last-line lines)))
-                 (words (%command-paragraph-words text start end))
-                 (replacement (%command-wrap-words words 70))
-                 (point-offset (buffer-point-offset buffer)))
-            (when words
-              (%replace-buffer-offset-range
-               buffer
-               (+ visible-start start)
-               (+ visible-start end)
-               replacement
-               :minimal-change-p t
-               :undo-replacement-p t)
-              (%command-set-point-at-offset
-               buffer
-               (min point-offset
-                    (+ visible-start (length (buffer-visible-text buffer))))))))))))
+  "Fill the paragraph containing point to the default fill column."
+  (let* ((window
+          (loom/core/window-tree:window-tree-selected-window
+           (editor-state-window-tree *editor-state*)))
+         (buffer (loom/core/window-tree:window-buffer window))
+         (visible-start (buffer-narrow-start-offset buffer))
+         (text (buffer-visible-text buffer))
+         (point (- (buffer-point-offset buffer) visible-start))
+         (lines (%command-line-ranges text))
+         (line-index
+          (or
+           (position-if
+            (lambda (range)
+              (<= (car range) point (cdr range)))
+            lines)
+           (1- (length lines)))))
+    (when (%command-blank-line-p text (nth line-index lines))
+      (setf line-index (or
+                        (position-if
+                         (lambda (range)
+                           (not (%command-blank-line-p text range)))
+                         lines
+                         :start
+                         (1+ line-index))
+                        (position-if
+                         (lambda (range)
+                           (not (%command-blank-line-p text range)))
+                         lines
+                         :end
+                         line-index))))
+    (when line-index
+      (let ((first-line line-index)
+            (last-line line-index))
+        (loop while (and (> first-line 0)
+                         (not
+                          (%command-blank-line-p text
+                                                 (nth (1- first-line) lines))))
+              do (decf first-line))
+        (loop while (and (< last-line (1- (length lines)))
+                         (not
+                          (%command-blank-line-p text
+                                                 (nth (1+ last-line) lines))))
+              do (incf last-line))
+        (let* ((start (car (nth first-line lines)))
+               (end (cdr (nth last-line lines)))
+               (words (%command-paragraph-words text start end))
+               (replacement
+                (%command-wrap-words words
+                                     70
+                                     (not
+                                      (null
+                                       loom/core/command:*current-prefix-argument*))))
+               (point-offset (buffer-point-offset buffer)))
+          (when words
+            (%replace-buffer-offset-range buffer
+                                          (+ visible-start start)
+                                          (+ visible-start end)
+                                          replacement
+                                          :minimal-change-p
+                                          t
+                                          :undo-replacement-p
+                                          t)
+            (%command-set-point-at-offset buffer
+                                          (min point-offset
+                                               (+ visible-start
+                                                  (length
+                                                   (buffer-visible-text buffer))))))))))))

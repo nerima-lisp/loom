@@ -29,4 +29,17 @@
         (expect buffer :to-have-point (cons 0 3))
         (loom/core/buffer:buffer-undo buffer)
         (expect (loom/core/buffer:buffer-text buffer) :to-equal original)
-        (expect buffer :to-have-point (cons 1 0))))))
+        (expect buffer :to-have-point (cons 1 0)))))
+  (it
+  "updates point in the minimal insertion and no-op paths"
+  (let ((buffer (loom/core/buffer:make-buffer :initial-content "one two")))
+    (loom/core/command::%replace-buffer-offset-range
+     buffer 0 0 "X" :minimal-change-p t)
+    (expect (loom/core/buffer:buffer-line buffer 0) :to-equal "Xone two")
+    (expect buffer :to-have-point (cons 0 1))
+    (loom/core/buffer:buffer-undo buffer)
+    (expect (loom/core/buffer:buffer-line buffer 0) :to-equal "one two")
+    (loom/core/command::%replace-buffer-offset-range
+     buffer 0 3 "one" :minimal-change-p t)
+    (expect (loom/core/buffer:buffer-line buffer 0) :to-equal "one two")
+    (expect buffer :to-have-point (cons 0 3)))))
