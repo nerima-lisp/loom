@@ -2108,5 +2108,87 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
 
 
+    def test_loader_accepts_buffer_r4_narrowing_cases(self):
+        scenarios = load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+        r4_cases = {
+            case["region_case"]: case
+            for case in scenarios
+            if case["rule"] == "r4"
+        }
+
+        self.assertEqual(set(r4_cases), {"region-present", "region-absent"})
+        self.assertEqual(
+            r4_cases["region-present"]["path_id"],
+            "r4:narrow-to-region:region-present",
+        )
+        self.assertEqual(
+            r4_cases["region-absent"]["path_id"],
+            "r4:narrow-to-region:region-absent",
+        )
+        self.assertTrue(r4_cases["region-present"]["pre_keys"])
+        self.assertFalse(r4_cases["region-absent"].get("pre_keys"))
+
+    def test_loader_rejects_r4_region_setup_that_disagrees_with_case(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case.get("region_case") == "region-present"
+        )
+        case["region_case"] = "region-absent"
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "r4.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                CommandPathScenarioError,
+                "pre_keys must establish only the region-present case",
+            ):
+                load_command_path_scenarios(path)
+
+    def test_r4_waits_for_target_completion_before_final_observation(self):
+        cases = [
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["rule"] == "r4"
+        ]
+
+        for case in cases:
+            with self.subTest(region_case=case["region_case"]):
+                sessions = []
+
+                def session_factory(*args, **kwargs):
+                    session = FakeSession(*args, **kwargs)
+                    sessions.append(session)
+                    return session
+
+                def record_final_state(session, *_args, **_kwargs):
+                    session.calls.append(("final_state",))
+
+                with patch(
+                    "loom_e2e.command_path_scenarios._assert_final_state",
+                    side_effect=record_final_state,
+                ):
+                    run_command_path_scenario(
+                        "unused", case, session_factory=session_factory
+                    )
+
+                calls = sessions[0].calls
+                completion = next(
+                    index
+                    for index, call in enumerate(calls)
+                    if call[0] == "wait_for_command_completion"
+                )
+                final_state = calls.index(("final_state",))
+                self.assertLess(completion, final_state)
+                self.assertEqual(
+                    calls[completion][1:3],
+                    ("narrow-to-region", "key"),
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

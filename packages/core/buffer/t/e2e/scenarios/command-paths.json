@@ -643,6 +643,83 @@
       ]
     },
     {
+      "name": "command-path/buffer/r4/narrow-to-region/region-present",
+      "path_id": "r4:narrow-to-region:region-present",
+      "lane": "W3-4",
+      "rule": "r4",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "set-mark-command",
+        "narrow-to-region"
+      ],
+      "command": "narrow-to-region",
+      "region_case": "region-present",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "n",
+        "n"
+      ],
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "target"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f",
+          "repeat": 7
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-f",
+          "repeat": 6
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r4/narrow-to-region/region-absent",
+      "path_id": "r4:narrow-to-region:region-absent",
+      "lane": "W3-4",
+      "rule": "r4",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "narrow-to-region"
+      ],
+      "command": "narrow-to-region",
+      "region_case": "region-absent",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "n",
+        "n"
+      ],
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "The mark is not set now, so no region is active",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "before target after"
+        }
+      ]
+    },
+    {
       "name": "command-path/buffer/r1/newline/mx",
       "path_id": "r1:newline:mx",
       "lane": "W3-4",
