@@ -41,7 +41,12 @@
       (%with-selected-buffer-state (buffer "(a) b")
         (loom/core/command:apply-prefix-argument-action :universal nil)
         (expect (loom::%structural-prefix-p) :to-be t)
-        (expect (loom::%structural-prefix-count) :to-equal 4)))))
+        (expect (loom::%structural-prefix-count) :to-equal 4))))
+  (it
+    "defaults to one when no editor state is bound"
+    (let ((loom/core/command:*current-prefix-argument* nil)
+          (loom/core/editor-session:*editor-state* nil))
+      (expect (loom::%structural-prefix-count) :to-equal 1))))
 
 (describe
   "structural command definition"
