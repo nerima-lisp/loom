@@ -408,7 +408,9 @@
                             (loom/feature/lsp::lsp-session-documents session)))
                   :to-equal "ONE! two 3")
           (loom/core/buffer:buffer-undo buffer)
-          (expect (buffer-text buffer) :to-equal "one two three")
+          (progn
+            (expect (buffer-text buffer) :to-equal "one two three")
+            (expect (loom/core/buffer:buffer-point-offset buffer) :to-equal 0))
           (funcall (find-symbol "LSP-HOVER-AT-POINT" "LOOM/FEATURE/LSP"))
           (let* ((messages (%fake-sent-in-order transport))
                  (methods (mapcar (lambda (json)
@@ -430,6 +432,54 @@
            transport session
            (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
                    (%lsp-last-request-id transport)))))))
+  (it "recalls a matching rename input with M-p through M-x"
+    (%with-lsp-navigation
+        (transport session buffer
+         :capabilities "{\"capabilities\":{\"renameProvider\":true}}")
+      (let ((minibuffer
+              (loom/core/minibuffer:make-minibuffer
+               :history (history-kit:make-history))))
+        (setf (editor-state-minibuffer *editor-state*) minibuffer)
+        (loom::execute-extended-command)
+        (%lsp-type-prompt-string minibuffer "lsp-rename")
+        (%lsp-confirm-prompt minibuffer)
+        (expect (minibuffer-prompt-string minibuffer) :to-equal "Rename to: ")
+        (%lsp-type-prompt-string minibuffer "foo")
+        (%lsp-confirm-prompt minibuffer)
+        (expect (member "foo"
+                        (loom/core/minibuffer:minibuffer-history-entries minibuffer)
+                        :test (function equal))
+                :to-be-truthy)
+        (%fake-push-and-drain
+         transport session
+         (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
+                 (%lsp-last-request-id transport)))
+        (loom::execute-extended-command)
+        (%lsp-type-prompt-string minibuffer "lsp-rename")
+        (%lsp-confirm-prompt minibuffer)
+        (%lsp-type-prompt-string minibuffer "f")
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :character :code (code-char 112)
+                                    :modifiers (list :alt)))
+        (expect (loom/core/minibuffer:minibuffer-input-string minibuffer)
+                :to-equal "foo")
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :character :code (code-char 110)
+                                    :modifiers (list :alt)))
+        (expect (loom/core/minibuffer:minibuffer-input-string minibuffer)
+                :to-equal "f")
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :character :code (code-char 112)
+                                    :modifiers (list :alt)))
+        (expect (loom/core/minibuffer:minibuffer-input-string minibuffer)
+                :to-equal "foo")
+        (minibuffer-handle-key
+         minibuffer
+         (cl-tty-kit:make-key-event :type :special :code :control-g))
+        (expect (minibuffer-message-string minibuffer) :to-equal "Rename cancelled"))))
 
   (it "rejects typed invalid edits without opening a server URI"
     (%with-lsp-navigation (transport session buffer)

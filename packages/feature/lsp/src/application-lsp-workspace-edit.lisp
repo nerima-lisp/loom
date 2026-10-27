@@ -201,16 +201,34 @@
     (+ point delta)))
 
 (defun %lsp-workspace-edit-apply-buffer (buffer edits)
-  (let ((original-point (loom/core/buffer:buffer-point-offset buffer))
-        (changed-p nil))
+  (let* ((original-point (loom/core/buffer:buffer-point-offset buffer))
+         (changed-p nil)
+         (undo-anchor-recorded-p nil))
     (loom/core/buffer:buffer-record-undo-boundary buffer)
     (handler-case
         (progn
+          (when (some (lambda (edit)
+                        (or (< (%lsp-workspace-text-edit-start edit)
+                               (%lsp-workspace-text-edit-end edit))
+                            (not (string= (%lsp-workspace-text-edit-new-text edit)
+                                          ""))))
+                      edits)
+            (let* ((position
+                     (loom/core/buffer:buffer-offset-position buffer original-point))
+                   (line (loom/core/buffer:buffer-position-line position))
+                   (column (loom/core/buffer:buffer-position-column position)))
+              (buffer-set-point buffer line column)
+              (loom/core/buffer:buffer-insert-string buffer " ")
+              (setf undo-anchor-recorded-p t)
+              (loom/core/buffer:buffer-delete-region
+               buffer line column line (1+ column))))
           (dolist (edit edits)
             (let* ((start (%lsp-workspace-text-edit-start edit))
                    (end (%lsp-workspace-text-edit-end edit))
-                   (start-position (loom/core/buffer:buffer-offset-position buffer start))
-                   (end-position (loom/core/buffer:buffer-offset-position buffer end)))
+                   (start-position
+                     (loom/core/buffer:buffer-offset-position buffer start))
+                   (end-position
+                     (loom/core/buffer:buffer-offset-position buffer end)))
               (buffer-set-point buffer
                                 (loom/core/buffer:buffer-position-line start-position)
                                 (loom/core/buffer:buffer-position-column start-position))
@@ -230,23 +248,31 @@
           (if changed-p
               (progn
                 (loom/core/buffer:buffer-record-undo-boundary buffer)
-                (let* ((target (%lsp-workspace-edit-target-offset original-point edits))
-                       (position (loom/core/buffer:buffer-offset-position buffer target)))
-                  (buffer-set-point buffer
-                                    (loom/core/buffer:buffer-position-line position)
-                                    (loom/core/buffer:buffer-position-column position))))
-            (let ((position (loom/core/buffer:buffer-offset-position buffer original-point)))
-              (buffer-set-point buffer
-                                (loom/core/buffer:buffer-position-line position)
-                                (loom/core/buffer:buffer-position-column position))))
+                (let* ((target
+                         (%lsp-workspace-edit-target-offset original-point edits))
+                       (position
+                         (loom/core/buffer:buffer-offset-position buffer target)))
+                  (buffer-set-point
+                   buffer
+                   (loom/core/buffer:buffer-position-line position)
+                   (loom/core/buffer:buffer-position-column position))))
+              (let ((position
+                      (loom/core/buffer:buffer-offset-position buffer original-point)))
+                (buffer-set-point
+                 buffer
+                 (loom/core/buffer:buffer-position-line position)
+                 (loom/core/buffer:buffer-position-column position))))
           changed-p)
       (error (condition)
-             (when changed-p (loom/core/buffer:buffer-undo buffer))
-             (let ((position (loom/core/buffer:buffer-offset-position buffer original-point)))
-               (buffer-set-point buffer
-                                 (loom/core/buffer:buffer-position-line position)
-                                 (loom/core/buffer:buffer-position-column position)))
-             (error condition)))))
+        (when (or changed-p undo-anchor-recorded-p)
+          (loom/core/buffer:buffer-undo buffer))
+        (let ((position
+                (loom/core/buffer:buffer-offset-position buffer original-point)))
+          (buffer-set-point
+           buffer
+           (loom/core/buffer:buffer-position-line position)
+           (loom/core/buffer:buffer-position-column position)))
+        (error condition)))))
 (defun %lsp-apply-workspace-edit (session editor-session workspace-edit)
   (let ((plans (make-hash-table :test (function equal)))
         (applied nil))
