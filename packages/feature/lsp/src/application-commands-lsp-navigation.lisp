@@ -69,6 +69,30 @@ back even when the jump crossed into another file."
           (%lsp-definition-response
            buffer line character locations error-message)))
        nil))))
+(defun lsp-hover-at-point ()
+  "Show the language server's hover information at point."
+  (multiple-value-bind (session buffer uri line character)
+      (%lsp-navigation-context)
+    (cond
+      ((null session)
+       (%lsp-navigation-message "No LSP session for this buffer"))
+      ((not (lsp-session-capability session "hoverProvider"))
+       (%lsp-navigation-message "Server does not provide hover"))
+      (t
+       (lsp-session-sync-buffer session buffer)
+       (lsp-request-hover
+        session uri line
+        (lsp-column-to-character (buffer-line buffer line) character)
+        (lambda (content error-message)
+          (cond
+            (error-message
+             (%lsp-navigation-message
+              (format nil "Hover failed: ~A" error-message)))
+            ((or (null content) (equal content ""))
+             (%lsp-navigation-message "No hover information"))
+            (t
+             (%lsp-navigation-message content)))))
+       nil))))
 
 (defun lsp-pop-definition ()
   "Return point to where the last definition jump started (M-,)."

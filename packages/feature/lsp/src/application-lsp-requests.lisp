@@ -85,3 +85,11 @@ definitionProvider."
   "definitionProvider"
   "textDocument/definition"
   %lsp-parse-definition-result)
+(define-lsp-position-request lsp-request-hover
+  "Ask SESSION for hover information at LINE/CHARACTER in URI.
+
+Returns NIL without sending anything when the server never advertised
+hoverProvider."
+  "hoverProvider"
+  "textDocument/hover"
+  %lsp-parse-hover-result)

@@ -85,3 +85,26 @@ either naming, and a null result means the server knows of no definition."
         for location = (%lsp-definition-location object)
         when location
           collect location))
+(defun %lsp-hover-text (value)
+  (cond
+    ((stringp value) value)
+    ((hash-table-p value)
+     (let ((text (gethash "value" value)))
+       (and (stringp text) text)))
+    (t nil)))
+
+(defun %lsp-hover-contents-text (contents)
+  (let ((texts
+          (if (listp contents)
+              (loop for value in contents
+                    for text = (%lsp-hover-text value)
+                    when text collect text)
+              (let ((text (%lsp-hover-text contents)))
+                (when text (list text))))))
+    (when texts
+      (let ((text (format nil "~{~A~^~%~}" texts)))
+        (and (plusp (length text)) text)))))
+
+(defun %lsp-parse-hover-result (result)
+  (when (hash-table-p result)
+    (%lsp-hover-contents-text (gethash "contents" result))))

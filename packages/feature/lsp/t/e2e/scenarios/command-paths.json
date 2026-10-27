@@ -2,24 +2,722 @@
   "schema_version": 1,
   "scenarios": [
     {
+      "name": "command-path/r1/lsp-completion-at-point/key",
+      "path_id": "r1:lsp-completion-at-point:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22i%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"i\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "lsp-completion-at-point"
+      ],
+      "command": "lsp-completion-at-point",
+      "entry_mode": "key",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "entry_keys": [
+        "C-M-i"
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-completion-at-point/mx",
+      "path_id": "r1:lsp-completion-at-point:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-completion-at-point"
+      ],
+      "command": "lsp-completion-at-point",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-diagnostics/mx",
+      "path_id": "r1:lsp-diagnostics:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-diagnostics"
+      ],
+      "command": "lsp-diagnostics",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-find-definition/key",
+      "path_id": "r1:lsp-find-definition:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22.%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\".\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "lsp-find-definition"
+      ],
+      "command": "lsp-find-definition",
+      "entry_mode": "key",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "entry_keys": [
+        "M-."
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-find-definition/mx",
+      "path_id": "r1:lsp-find-definition:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-find-definition"
+      ],
+      "command": "lsp-find-definition",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-pop-definition/key",
+      "path_id": "r1:lsp-pop-definition:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%2C%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\",\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "lsp-pop-definition"
+      ],
+      "command": "lsp-pop-definition",
+      "entry_mode": "key",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No jump to return from",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "entry_keys": [
+        "M-,"
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-pop-definition/mx",
+      "path_id": "r1:lsp-pop-definition:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-pop-definition"
+      ],
+      "command": "lsp-pop-definition",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No jump to return from",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-stop/mx",
+      "path_id": "r1:lsp-stop:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-stop"
+      ],
+      "command": "lsp-stop",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
       "name": "command-path/r2/lsp-start/free-string/empty",
       "path_id": "r2:lsp-start:prompt-1:free-string:empty",
       "lane": "W3-9",
       "rule": "r2",
       "entry": "mx;prompt:1:free-string",
-      "commands": ["lsp-start"],
+      "commands": [
+        "lsp-start"
+      ],
       "command": "lsp-start",
       "initial_bytes": "",
       "expected_bytes": "",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_cursor_region": "body",
       "expected_minibuffer": "LSP command cannot be empty",
-      "expected_screen": [{"region": "body", "text": ""}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
       "entry_mode": "mx",
       "prompt_open": "LSP command: ",
       "prompt_kind": "free-string",
       "prompt_case": "empty",
       "input_text": ""
+    },
+    {
+      "name": "command-path/r2/lsp-start/free-string/accept",
+      "path_id": "r2:lsp-start:prompt-1:free-string:accept",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_open": "LSP command: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "python3 $fixture_file:fake-lsp.py",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP started.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/free-string/cancel",
+      "path_id": "r2:lsp-start:prompt-1:free-string:cancel",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_open": "LSP command: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "partial command",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/free-string/tab",
+      "path_id": "r2:lsp-start:prompt-1:free-string:tab",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_open": "LSP command: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "python3 $fixture_file:fake-lsp.py",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP started.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "tab_expected": "python3 $fixture_file:fake-lsp.py",
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/free-string/history",
+      "path_id": "r2:lsp-start:prompt-1:free-string:history",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_open": "LSP command: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "history_seed_input": "python3 $fixture_file:fake-lsp.py",
+      "history_expected": "lsp-start",
+      "history_next_expected": "",
+      "history_cancel": true,
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/accept",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:accept",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "accept",
+      "input_text": "yes",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP started.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/cancel",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:cancel",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "cancel",
+      "input_text": "yes",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/empty",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:empty",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP start cancelled.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/tab",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:tab",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "tab",
+      "input_text": "n",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP start cancelled.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "tab_expected": "n",
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/history",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:history",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "history",
+      "input_text": "",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP start cancelled.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "history_seed_inputs": [
+        "",
+        "no"
+      ],
+      "history_expected": "no",
+      "history_next_expected": "lsp-start",
+      "history_steps": 3
+    },
+    {
+      "name": "command-path/r2/lsp-start/yes-no/invalid",
+      "path_id": "r2:lsp-start:prompt-2:yes-no:invalid",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:2:yes-no",
+      "commands": [
+        "lsp-start"
+      ],
+      "command": "lsp-start",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "LSP command [RET for python3 fake-lsp.py]: ",
+        "Run discovered LSP command? Type yes: "
+      ],
+      "prompt_index": 2,
+      "prompt_label": "Run discovered LSP command? Type yes: ",
+      "prior_prompt_inputs": [
+        ""
+      ],
+      "continuation_inputs": [],
+      "prompt_kind": "yes-no",
+      "prompt_case": "invalid",
+      "input_text": "definitely not yes",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP start cancelled.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "lsp route\n",
+        ".loom-lsp": "exec python3 fake-lsp.py\n"
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\n\ndef read_message():\n    content_length = None\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        if name.lower() == b\"content-length\":\n            content_length = int(value)\n    return json.loads(sys.stdin.buffer.read(content_length))\n\ndef send_message(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    frame = b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body\n    sys.stdout.buffer.write(frame)\n    sys.stdout.buffer.flush()\n\nwhile True:\n    message = read_message()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"shutdown\":\n        send_message({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/lsp-hover-at-point/mx",
+      "path_id": "r1:lsp-hover-at-point:mx",
+      "lane": "W3-9",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "lsp-hover-at-point"
+      ],
+      "command": "lsp-hover-at-point",
+      "entry_mode": "mx",
+      "initial_bytes": "lsp route\n",
+      "expected_bytes": "lsp route\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No LSP session for this buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "lsp route"
+        }
+      ]
     }
   ]
 }

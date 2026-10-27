@@ -2,7 +2,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter +lsp-navigation-capabilities+
-    "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true}}"))
+    "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true,\"hoverProvider\":true}}"))
 
 (defun %lsp-navigation-state (&key (content "foo") (path "/tmp/main.lisp"))
   "An editor state whose selected buffer is file-backed, as a request needs."

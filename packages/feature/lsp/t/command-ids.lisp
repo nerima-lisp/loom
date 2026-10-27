@@ -5,4 +5,5 @@
   "lsp-pop-definition"
   "lsp-start"
   "lsp-stop"
+  "lsp-hover-at-point"
 )

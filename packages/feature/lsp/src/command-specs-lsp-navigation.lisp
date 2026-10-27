@@ -5,3 +5,6 @@
 (register-command-spec :feature/lsp "lsp-pop-definition" "lsp-pop-definition" #'loom/feature/lsp:lsp-pop-definition
   :keys '((:alt #\,)) :keymap :global :group "tooling" :help nil :help-order nil
   :mutates nil :prompts '() :needs-region nil :external '() :modes '(:all))
+(register-command-spec :feature/lsp "lsp-hover-at-point" "lsp-hover-at-point" #'loom/feature/lsp:lsp-hover-at-point
+  :keys '() :keymap :global :group "tooling" :help nil :help-order nil
+  :mutates nil :prompts '() :needs-region nil :external '("lsp-server") :modes '(:all))
