@@ -278,7 +278,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only: #<buffer buffer.txt>",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
       "expected_screen": [
         {
           "region": "body",
