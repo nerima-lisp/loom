@@ -236,7 +236,7 @@
         1,
         0
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Moved",
       "expected_screen": [
         {
           "region": "body",
@@ -278,7 +278,7 @@
         1,
         0
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Moved",
       "expected_screen": [
         {
           "region": "body",
@@ -540,7 +540,18 @@
       "expected_screen": [
         {
           "region": "body",
-          "text": "one\ntwo\nthree"
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
         }
       ],
       "followup_input": "2"
@@ -1811,10 +1822,9 @@
       "path_id": "r3:newline:effect",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
       "commands": [
         "forward-char",
-        "execute-extended-command",
         "newline",
         "save-buffer"
       ],
@@ -1822,8 +1832,6 @@
       "mutation_case": "effect",
       "command_keys": [
         "C-f",
-        "M-x",
-        "newline",
         "RET"
       ],
       "initial_bytes": "abc\n",
@@ -2442,11 +2450,11 @@
       "path_id": "r3:newline:undo",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "mx",
-      "commands": ["forward-char", "execute-extended-command", "newline", "undo", "save-buffer"],
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+      "commands": ["forward-char", "newline", "undo", "save-buffer"],
       "command": "newline",
       "mutation_case": "undo",
-      "command_keys": ["C-f", "M-x", "newline", "RET"],
+      "command_keys": ["C-f", "RET"],
       "initial_bytes": "abc\n",
       "effect_bytes": "a\nbc\n",
       "expected_bytes": "abc\n",
