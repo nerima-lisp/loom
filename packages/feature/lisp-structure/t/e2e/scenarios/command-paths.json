@@ -1485,7 +1485,9 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        "\u001b[1;5C"
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
@@ -1664,7 +1666,9 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        "\u001b[1;5D"
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a) b\n",
@@ -1855,7 +1859,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "\u001b[1;7D"
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -2399,7 +2405,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-r"
+        "M-x",
+        "raise-sexp",
+        "RET"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2596,7 +2604,9 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-s"
+        "M-x",
+        "splice-sexp",
+        "RET"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2767,7 +2777,9 @@
       "command": "wrap-round",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "M-("
+        "M-x",
+        "wrap-round",
+        "RET"
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a) b\n",
@@ -3039,10 +3051,7 @@
       "command": "backward-barf-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "backward-barf-sexp",
-        "RET"
+        "\u001b[1;7C"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a b)\n",
@@ -3067,7 +3076,11 @@
       "prepare_keys": [
         "C-f"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r3/backward-slurp-sexp/prefix-u4",
@@ -3088,10 +3101,7 @@
       "command": "backward-slurp-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -3118,7 +3128,11 @@
         "C-f",
         "C-f"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r3/forward-barf-sexp/prefix-u4",
@@ -3137,10 +3151,7 @@
       "command": "forward-barf-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b c d e)\n",
       "effect_bytes": "(a) b c d e\n",
@@ -3165,7 +3176,11 @@
       "prepare_keys": [
         "C-f"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r3/forward-slurp-sexp/prefix-u4",
@@ -3184,10 +3199,7 @@
       "command": "forward-slurp-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b\n   )",
@@ -3212,6 +3224,10 @@
       "major_mode": "Common Lisp",
       "prepare_keys": [
         "C-f"
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
       ]
     },
     {
@@ -3228,10 +3244,8 @@
       "command": "kill-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "kill-sexp",
-        "RET"
+        "ESC",
+        "C-k"
       ],
       "initial_bytes": "(a b) c\n",
       "effect_bytes": "",
@@ -3252,6 +3266,10 @@
           "region": "body",
           "text": ""
         }
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
       ]
     },
     {
@@ -3272,10 +3290,7 @@
       "command": "raise-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "((a b c d e) z)\n",
       "effect_bytes": "(a b c d z)\n",
@@ -3301,7 +3316,11 @@
         "C-f",
         "C-f"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r3/splice-sexp/prefix-u4",
@@ -3323,10 +3342,7 @@
       "command": "splice-sexp",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b c) d)\n",
       "effect_bytes": "(a b c d)\n",
@@ -3354,7 +3370,11 @@
         "C-f",
         "C-f"
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r3/wrap-round/prefix-u4",
@@ -3372,10 +3392,7 @@
       "command": "wrap-round",
       "mutation_case": "prefix-u4",
       "command_keys": [
-        "C-u",
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a b)\n",
@@ -3397,7 +3414,11 @@
           "text": "(a b)"
         }
       ],
-      "major_mode": "Common Lisp"
+      "major_mode": "Common Lisp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     },
     {
       "name": "lisp-structure/r1/forward-slurp-sexp/key",
