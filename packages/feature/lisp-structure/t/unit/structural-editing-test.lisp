@@ -82,7 +82,13 @@
     (expect (%structural-result #'loom::%forward-slurp-edits "(a b" 1)
             :to-be nil)
     (expect (%structural-result #'loom::%splice-edits "(a b" 1) :to-be nil)
-    (expect (%structural-result #'loom::%raise-edits "(a b" 1) :to-be nil)))
+    (expect (%structural-result #'loom::%raise-edits "(a b" 1) :to-be nil))
+  (it
+    "matches Emacs C-u 4 forward-barf without space before the close"
+    (let ((loom/core/command:*current-prefix-argument* 4))
+      (expect (%structural-result (function loom::%forward-barf-edits)
+                                  "(a b c d e)" 1)
+              :to-equal "(a) b c d e"))))
 
 (describe
   "structural editing boundary predicates"
