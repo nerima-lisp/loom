@@ -744,7 +744,6 @@
         "C-x",
         "C-s"
       ],
-      "overwrite_prompt": "File changed on disk. Overwrite? (y/n): {file_path}",
       "setup": [
         {
           "keys": [
