@@ -56,7 +56,7 @@ def _write_fake_paste_tool(bin_dir, outcome, result_path):
                 f"printf '{{\"status\":\"{outcome}\",\"payload\":\"{_READ_TEXT.decode('utf-8') if outcome == 'success' else ''}\"}}' > {shlex.quote(str(result_path))}",
                 f"if [ \"{outcome}\" = success ]; then printf '%s' {shlex.quote(_READ_TEXT.decode('utf-8'))}; exit 0; fi",
                 f"if [ \"{outcome}\" = nonzero ]; then exit 23; fi",
-                f"if [ \"{outcome}\" = interrupted ]; then kill -TERM \"$$\"; fi",
+                f"if [ \"{outcome}\" = interrupted ]; then exec /bin/kill -TERM \"$$\"; fi",
             )
         )
         + "\n",
