@@ -27,6 +27,10 @@
     (buffer-set-major-mode buffer (loom/feature/mode:major-mode-for-path path))
     buffer))
 
+(defun make-file-buffer (path &key name initial-content)
+  "Create a buffer for PATH and infer its major mode from the path."
+  (%make-file-buffer path :name name :initial-content initial-content))
+
 (defvar *recent-file-recorder*
   nil)
 

@@ -57,4 +57,4 @@
            #:%native-path-exists-p
            #:%native-namestring
            #:%native-directory-prefixes
-           #:%native-directory-p))
+           #:%native-directory-p #:make-file-buffer))

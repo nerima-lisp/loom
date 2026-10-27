@@ -61,7 +61,7 @@ New files use the files feature constructor to initialize save metadata."
   (if startup-file
       (if (probe-file startup-file)
           (buffer-load startup-file)
-          (loom/feature/files::%make-file-buffer
+          (loom/feature/files:make-file-buffer
            startup-file
            :name
            (file-namestring startup-file)))

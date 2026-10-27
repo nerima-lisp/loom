@@ -137,3 +137,16 @@
                      (loom/feature/files::%encode-file-text edited-text format)
                      :to-equalp
                      #(66 13 10 65 13 10 66 10)))))))
+
+(describe "file buffer construction"
+  (it "creates a buffer with the requested metadata"
+    (let* ((path #P"startup-note.lisp")
+           (buffer (loom/feature/files:make-file-buffer
+                    path
+                    :name "startup-note.lisp"
+                    :initial-content "draft")))
+      (expect (loom/core/buffer:buffer-path buffer) :to-equal path)
+      (expect (loom/core/buffer:buffer-name buffer)
+              :to-equal
+              "startup-note.lisp")
+      (expect (loom/core/buffer:buffer-text buffer) :to-equal "draft"))))
