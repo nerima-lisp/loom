@@ -1,0 +1,813 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/switch-to-buffer/key",
+      "path_id": "r1:switch-to-buffer:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22b%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]}",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Switch to buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/switch-to-buffer/mx",
+      "path_id": "r1:switch-to-buffer:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        18
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Switch to buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/kill-buffer/key",
+      "path_id": "r1:kill-buffer:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22k%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]}",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Kill buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/kill-buffer/mx",
+      "path_id": "r1:kill-buffer:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "entry_mode": "mx",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Kill buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/accept",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "accept",
+      "input_text": "buffer.txt",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Switch to buffer: "
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/cancel",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "cancel",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Switch to buffer: "
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/empty",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No such buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Switch to buffer: "
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/tab",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "tab",
+      "input_text": "buffer.t",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "tab_expected": "buffer.txt",
+      "prompt_open": "Switch to buffer: "
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/history",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "history",
+      "input_text": "buffer.t",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "history_expected": "buffer.txt",
+      "prompt_open": "Switch to buffer: ",
+      "history_seed_input": "buffer.txt",
+      "history_next_expected": "buffer.t"
+    },
+    {
+      "name": "command-path/r2/switch-to-buffer/prompt-1/invalid",
+      "path_id": "r2:switch-to-buffer:prompt-1:completion:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "switch-to-buffer"
+      ],
+      "command": "switch-to-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "b"
+      ],
+      "prompt_case": "invalid",
+      "input_text": "missing-buffer",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No such buffer: missing-buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Switch to buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/accept",
+      "path_id": "r2:kill-buffer:prompt-1:completion:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "accept",
+      "input_text": "buffer.txt",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Killed buffer.txt",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "prompt_open": "Kill buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/cancel",
+      "path_id": "r2:kill-buffer:prompt-1:completion:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "cancel",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Kill buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/empty",
+      "path_id": "r2:kill-buffer:prompt-1:completion:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No such buffer: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Kill buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/tab",
+      "path_id": "r2:kill-buffer:prompt-1:completion:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "tab",
+      "input_text": "buffer.t",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Killed buffer.txt",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "tab_expected": "buffer.txt",
+      "prompt_open": "Kill buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/history",
+      "path_id": "r2:kill-buffer:prompt-1:completion:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "history",
+      "input_text": "missing-",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No such buffer: missing-buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "history_expected": "missing-buffer",
+      "prompt_open": "Kill buffer: ",
+      "history_seed_input": "missing-buffer",
+      "history_next_expected": "missing-"
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-1/invalid",
+      "path_id": "r2:kill-buffer:prompt-1:completion:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 1,
+      "prompt_kind": "completion",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "invalid",
+      "input_text": "missing-buffer",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No such buffer: missing-buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "prompt_open": "Kill buffer: "
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-2/accept",
+      "path_id": "r2:kill-buffer:prompt-2:free-string:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:2:free-string",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "accept",
+      "input_text": "d",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Killed buffer.txt",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "!"
+        }
+      ],
+      "prompt_labels": [
+        "Kill buffer: ",
+        "Save buffer.txt? (s/d/c): "
+      ],
+      "prompt_label": "Save buffer.txt? (s/d/c): ",
+      "prior_prompt_inputs": [
+        "buffer.txt"
+      ],
+      "continuation_inputs": []
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-2/cancel",
+      "path_id": "r2:kill-buffer:prompt-2:free-string:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:2:free-string",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "cancel",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "!"
+        }
+      ],
+      "prompt_labels": [
+        "Kill buffer: ",
+        "Save buffer.txt? (s/d/c): "
+      ],
+      "prompt_label": "Save buffer.txt? (s/d/c): ",
+      "prior_prompt_inputs": [
+        "buffer.txt"
+      ],
+      "continuation_inputs": []
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-2/empty",
+      "path_id": "r2:kill-buffer:prompt-2:free-string:empty",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:2:free-string",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        26
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Save buffer.txt? (s/d/c): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!abc"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "!"
+        }
+      ],
+      "prompt_labels": [
+        "Kill buffer: ",
+        "Save buffer.txt? (s/d/c): "
+      ],
+      "prompt_label": "Save buffer.txt? (s/d/c): ",
+      "prior_prompt_inputs": [
+        "buffer.txt"
+      ],
+      "continuation_inputs": []
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-2/tab",
+      "path_id": "r2:kill-buffer:prompt-2:free-string:tab",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:2:free-string",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "tab",
+      "input_text": "d",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Killed buffer.txt",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "tab_expected": "d",
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "!"
+        }
+      ],
+      "prompt_labels": [
+        "Kill buffer: ",
+        "Save buffer.txt? (s/d/c): "
+      ],
+      "prompt_label": "Save buffer.txt? (s/d/c): ",
+      "prior_prompt_inputs": [
+        "buffer.txt"
+      ],
+      "continuation_inputs": []
+    },
+    {
+      "name": "command-path/r2/kill-buffer/prompt-2/history",
+      "path_id": "r2:kill-buffer:prompt-2:free-string:history",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"k\",\"modifiers\":[]}]};prompt:2:free-string",
+      "commands": [
+        "kill-buffer"
+      ],
+      "command": "kill-buffer",
+      "prompt_index": 2,
+      "prompt_kind": "free-string",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "k"
+      ],
+      "prompt_case": "history",
+      "input_text": "",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!abc"
+        }
+      ],
+      "history_expected": "c",
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "!"
+        }
+      ],
+      "prompt_labels": [
+        "Kill buffer: ",
+        "Save buffer.txt? (s/d/c): "
+      ],
+      "prompt_label": "Save buffer.txt? (s/d/c): ",
+      "prior_prompt_inputs": [
+        "buffer.txt"
+      ],
+      "continuation_inputs": [],
+      "history_seed_inputs": [
+        "buffer.txt",
+        "c"
+      ],
+      "history_steps": 2
+    }
+  ]
+}
