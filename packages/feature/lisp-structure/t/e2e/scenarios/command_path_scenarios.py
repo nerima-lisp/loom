@@ -6,6 +6,8 @@ from tempfile import TemporaryDirectory
 from loom_e2e import keys
 from loom_e2e.command_path_scenarios import (
     _deadline_stage,
+    _select_major_mode,
+    _send_mx,
     load_command_path_scenarios,
     run_command_path_scenario,
 )
@@ -79,6 +81,16 @@ def _run_read_only_scenario(binary, case):
             binary, [str(path)], rows=case.get("rows", 24)
         ) as session:
             session.wait_ready()
+            if case.get("fixture_keys"):
+                _send_path_keys(session, case["fixture_keys"])
+            if "pre_command_keys" in case:
+                _send_path_keys(session, case["pre_command_keys"])
+            if "major_mode" in case:
+                _select_major_mode(session, case["major_mode"])
+            _send_path_keys(session, case.get("prepare_keys", []))
+            for command in case.get("prepare_commands", []):
+                _send_mx(session, command)
+            _send_path_keys(session, case.get("post_setup_keys", []))
             session.send(keys.meta("x"))
             session.type(case["read_only_command"])
             session.wait_for_region_exact_text(

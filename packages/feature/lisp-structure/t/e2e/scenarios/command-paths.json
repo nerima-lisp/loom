@@ -581,13 +581,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/forward-slurp-sexp/undo",
       "path_id": "r3:forward-slurp-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "forward-char",
         "execute-extended-command",
         "forward-slurp-sexp",
@@ -625,13 +633,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/forward-slurp-sexp/read-only",
       "path_id": "r3:forward-slurp-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "forward-char",
@@ -666,13 +682,21 @@
       ],
       "read_only_command": "toggle-read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/forward-barf-sexp/effect",
       "path_id": "r3:forward-barf-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "forward-char",
         "execute-extended-command",
         "forward-barf-sexp",
@@ -705,13 +729,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/forward-barf-sexp/undo",
       "path_id": "r3:forward-barf-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "forward-char",
         "execute-extended-command",
         "forward-barf-sexp",
@@ -749,13 +781,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/forward-barf-sexp/read-only",
       "path_id": "r3:forward-barf-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "forward-char",
@@ -790,13 +830,21 @@
       ],
       "read_only_command": "toggle-read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-slurp-sexp/effect",
       "path_id": "r3:backward-slurp-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "backward-slurp-sexp",
         "save-buffer"
       ],
@@ -829,13 +877,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-slurp-sexp/read-only",
       "path_id": "r3:backward-slurp-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "backward-slurp-sexp"
@@ -871,13 +927,21 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-barf-sexp/effect",
       "path_id": "r3:backward-barf-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "backward-barf-sexp",
         "save-buffer"
       ],
@@ -908,13 +972,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-barf-sexp/read-only",
       "path_id": "r3:backward-barf-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "backward-barf-sexp"
@@ -948,13 +1020,21 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/kill-sexp/effect",
       "path_id": "r3:kill-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "kill-sexp",
         "save-buffer"
       ],
@@ -985,13 +1065,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/kill-sexp/read-only",
       "path_id": "r3:kill-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "kill-sexp"
@@ -1025,13 +1113,21 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/raise-sexp/effect",
       "path_id": "r3:raise-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "raise-sexp",
         "save-buffer"
       ],
@@ -1065,13 +1161,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/raise-sexp/read-only",
       "path_id": "r3:raise-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "raise-sexp"
@@ -1108,13 +1212,21 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/splice-sexp/effect",
       "path_id": "r3:splice-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "splice-sexp",
         "save-buffer"
       ],
@@ -1148,13 +1260,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/splice-sexp/undo",
       "path_id": "r3:splice-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "splice-sexp",
         "undo",
         "save-buffer"
@@ -1193,13 +1313,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/splice-sexp/read-only",
       "path_id": "r3:splice-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "splice-sexp"
@@ -1236,13 +1364,21 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-    {
+            {
       "name": "lisp-structure/r3/wrap-round/effect",
       "path_id": "r3:wrap-round:effect",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "wrap-round",
         "save-buffer"
       ],
@@ -1272,13 +1408,21 @@
         }
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/wrap-round/read-only",
       "path_id": "r3:wrap-round:read-only",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "execute-extended-command",
         "toggle-read-only",
         "wrap-round"
@@ -1484,7 +1628,7 @@
         }
       ],
       "replay_prefix_keys": [
-        "C-a",
+        "M-<",
         "C-f"
       ],
       "major_mode": "Common Lisp",
@@ -1614,7 +1758,7 @@
         "C-f"
       ]
     },
-    {
+        {
       "name": "lisp-structure/r3/forward-barf-sexp/macro-replay",
       "path_id": "r3:forward-barf-sexp:macro-replay",
       "lane": "W3-7b",
@@ -1667,7 +1811,7 @@
         }
       ],
       "replay_prefix_keys": [
-        "C-a"
+        "M-<"
       ],
       "major_mode": "Common Lisp",
       "prepare_commands": [
@@ -2783,13 +2927,21 @@
         "beginning-of-buffer"
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-barf-sexp/undo",
       "path_id": "r3:backward-barf-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "backward-barf-sexp",
         "undo",
         "save-buffer"
@@ -2825,13 +2977,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/backward-slurp-sexp/undo",
       "path_id": "r3:backward-slurp-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "backward-slurp-sexp",
         "undo",
         "save-buffer"
@@ -2869,13 +3029,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/kill-sexp/undo",
       "path_id": "r3:kill-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "kill-sexp",
         "undo",
         "save-buffer"
@@ -2911,13 +3079,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/raise-sexp/undo",
       "path_id": "r3:raise-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "raise-sexp",
         "undo",
         "save-buffer"
@@ -2956,13 +3132,21 @@
         0
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/wrap-round/undo",
       "path_id": "r3:wrap-round:undo",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "wrap-round",
         "undo",
         "save-buffer"
@@ -3205,13 +3389,21 @@
         "4"
       ]
     },
-    {
+            {
       "name": "lisp-structure/r3/kill-sexp/prefix-u4",
       "path_id": "r3:kill-sexp:prefix-u4",
       "lane": "W3-7b",
       "rule": "r3",
+      "major_mode": "Common Lisp",
+      "prepare_commands": [
+        "beginning-of-buffer"
+      ],
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "execute-extended-command",
+        "beginning-of-buffer",
         "universal-argument",
         "kill-sexp",
         "save-buffer"
