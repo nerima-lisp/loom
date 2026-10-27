@@ -168,4 +168,40 @@
                                                 next-visual-line-once
                                                 previous-visual-line-once
                                                 buffer-position-offset
-                                                buffer-clamped-position-offset)))))
+                                                buffer-clamped-position-offset
+                                                delete-char
+                                                delete-backward-char
+                                                newline-command
+                                                open-line
+                                                forward-char
+                                                backward-char
+                                                next-line
+                                                previous-line
+                                                forward-word
+                                                backward-word
+                                                move-beginning-of-line
+                                                move-end-of-line
+                                                beginning-of-buffer
+                                                end-of-buffer
+                                                goto-line
+                                                set-mark-command
+                                                exchange-point-and-mark
+                                                mark-whole-buffer
+                                                narrow-to-region
+                                                widen
+                                                toggle-read-only
+                                                undo-command
+                                                redo-command
+                                                keyboard-quit
+                                                kill-line
+                                                kill-word
+                                                backward-kill-word
+                                                kill-region
+                                                kill-ring-save
+                                                forward-slurp-sexp
+                                                forward-barf-sexp
+                                                backward-slurp-sexp
+                                                backward-barf-sexp
+                                                wrap-round
+                                                splice-sexp
+                                                raise-sexp)))))

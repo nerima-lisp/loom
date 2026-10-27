@@ -1,7 +1,7 @@
 (in-package #:loom/core/command)
 
 (progn
-  (register-command-spec :core/buffer "set-mark-command" "set-mark-command" #'loom::set-mark-command
+  (register-command-spec :core/buffer "set-mark-command" "set-mark-command" #'loom:set-mark-command
                        :keys '((:control #\Space))
                        :keymap :global
                        :group "editing"
@@ -12,7 +12,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "exchange-point-and-mark" "exchange-point-and-mark" #'loom::exchange-point-and-mark
+  (register-command-spec :core/buffer "exchange-point-and-mark" "exchange-point-and-mark" #'loom:exchange-point-and-mark
                        :keys '(((:control #\x) (:control #\x)))
                        :keymap :global
                        :group "editing"
@@ -23,7 +23,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "mark-whole-buffer" "mark-whole-buffer" #'loom::mark-whole-buffer
+  (register-command-spec :core/buffer "mark-whole-buffer" "mark-whole-buffer" #'loom:mark-whole-buffer
                        :keys '(((:control #\x) #\h))
                        :keymap :global
                        :group "editing"
@@ -34,7 +34,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "narrow-to-region" "narrow-to-region" #'loom::narrow-to-region
+  (register-command-spec :core/buffer "narrow-to-region" "narrow-to-region" #'loom:narrow-to-region
                        :keys '(((:control #\x) #\n #\n))
                        :keymap :global
                        :group "editing"
@@ -45,7 +45,7 @@
                        :needs-region t
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "widen" "widen" #'loom::widen
+  (register-command-spec :core/buffer "widen" "widen" #'loom:widen
                        :keys '(((:control #\x) #\n #\w))
                        :keymap :global
                        :group "editing"
@@ -56,7 +56,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "toggle-read-only" "toggle-read-only" #'loom::toggle-read-only
+  (register-command-spec :core/buffer "toggle-read-only" "toggle-read-only" #'loom:toggle-read-only
                        :keys '(((:control #\x) (:control #\q)))
                        :keymap :global
                        :group "editing"
@@ -67,7 +67,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "undo" "undo" #'loom::undo-command
+  (register-command-spec :core/buffer "undo" "undo" #'loom:undo-command
                        :keys '(((:control #\/)) ((:control #\_)) ((:control #\x) #\u))
                        :keymap :global
                        :group "editing"
@@ -78,7 +78,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :core/buffer "redo" "redo" #'loom::redo-command
+  (register-command-spec :core/buffer "redo" "redo" #'loom:redo-command
                        :keys '(((:control :alt #\_)))
                        :keymap :global
                        :group "editing"
