@@ -13,6 +13,7 @@
   (completion-function nil)
   (completion-candidates nil)
   (history nil)
+  (history-origin nil)
   (message nil))
 
 (defun make-minibuffer (&key history)

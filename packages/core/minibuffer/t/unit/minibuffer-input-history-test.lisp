@@ -242,4 +242,21 @@
       (expect (minibuffer-input-string minibuffer) :to-equal "alpha")
       (expect calls :to-equal calls-before-movement)
       (expect changes :to-equal changes-before-movement)
-      (expect (loom/core/minibuffer:minibuffer-input-point minibuffer) :to-equal 0)))))
+      (expect (loom/core/minibuffer:minibuffer-input-point minibuffer) :to-equal 0))))
+  (it
+  "traverses all minibuffer history with M-p and restores the draft with M-n"
+  (let* ((history (history-kit:make-history))
+         (minibuffer (make-minibuffer :history history)))
+    (history-kit:history-add history "3")
+    (minibuffer-activate minibuffer "Go to line: ")
+    (%type-string minibuffer "1")
+    (minibuffer-handle-key
+     minibuffer
+     (cl-tty-kit:make-key-event
+      :type :character :code #\p :modifiers (list :alt)))
+    (expect (minibuffer-input-string minibuffer) :to-equal "3")
+    (minibuffer-handle-key
+     minibuffer
+     (cl-tty-kit:make-key-event
+      :type :character :code #\n :modifiers (list :alt)))
+    (expect (minibuffer-input-string minibuffer) :to-equal "1"))))
