@@ -1160,13 +1160,13 @@ def _assert_effect_state(session, case, *, check_minibuffer=True):
     if check_minibuffer:
         with _deadline_stage(case["name"], "effect minibuffer", session=session):
             _assert_minibuffer(session, case["expected_minibuffer"])
-    _assert_screen(session, case["effect_screen"])
     with _deadline_stage(case["name"], "effect cursor", session=session):
         _assert_cursor(
             session,
             case["expected_cursor"],
             case.get("expected_cursor_region", "body"),
         )
+    _assert_screen(session, case["effect_screen"])
 
 
 def _invoke_prompted_command(session, case):
