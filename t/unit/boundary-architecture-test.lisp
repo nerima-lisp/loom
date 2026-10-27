@@ -745,6 +745,11 @@
                               (boundary-token-line token)
                               (format nil "~A::~A" (boundary-token-package token)
                                       (boundary-token-symbol token))))))
+(defun boundary-slice-contains-p (ancestor-slice slice)
+  (or (string-equal ancestor-slice slice)
+      (and (< (length ancestor-slice) (length slice))
+           (string-equal ancestor-slice slice :end2 (length ancestor-slice))
+           (char= (char slice (length ancestor-slice)) #\/))))
 (defun boundary-internal-reference-findings (records)
   (loop for record in records
         append
@@ -760,10 +765,13 @@
                     (multiple-value-bind (symbol status)
                         (find-symbol (boundary-token-symbol token) target-package)
                       (declare (ignore symbol))
-                      (when (and (eq status :internal)
-                                 (not (member (boundary-record-slice record)
-                                              (second package-row)
-                                              :test #'string-equal)))
+                      ;; Reading PKG::NAME interns a missing name as internal.
+                      (when (and (not (eq status :external))
+                                 (not (some (lambda (target-slice)
+                                              (boundary-slice-contains-p
+                                               target-slice
+                                               (boundary-record-slice record)))
+                                            (second package-row))))
                         (list
                          (make-boundary-finding
                           :category :package-internal-reference
