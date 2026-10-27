@@ -22,8 +22,15 @@ def undo_one_group(binary):
             session.wait_for_region_exact_text("body", "xya")
             session.wait_for_region_cursor("body", 2)
 
+            trace_count = session.command_trace_count()
             session.send(keys.ctrl("x") + keys.text("u"))
+            session.wait_for_command_completion(
+                "undo", route="key", after=trace_count
+            )
             session.wait_for_region_exact_text("body", "a")
+            session.assert_screen_text(
+                "a", region="body", strip_right=True
+            )
             session.wait_for_region_cursor("body", 0)
 
             session.send(keys.ctrl("x") + keys.ctrl("s"))
