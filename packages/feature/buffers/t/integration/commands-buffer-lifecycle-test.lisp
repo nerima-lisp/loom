@@ -36,6 +36,26 @@
         (expect (%test-registered-buffers *editor-state*) :to-have-length 1)
         (expect (buffer-name (%selected-test-buffer)) :to-equal "*scratch*")
         (expect (%selected-test-buffer) :not :to-be original))))
+  (it
+    "uses a scratch buffer instead of Messages after killing the last file buffer"
+    (%with-minibuffer-state (minibuffer "")
+      (let* ((file (make-buffer :name "buffer.txt" :initial-content "abc"))
+             (messages (make-buffer :name "*Messages*" :initial-content "notice"))
+             (tree (editor-state-window-tree *editor-state*))
+             (selected (window-tree-selected-window tree)))
+        (%replace-test-registered-buffers *editor-state* (list file messages))
+        (window-set-buffer selected file)
+        (loom/feature/buffers:kill-buffer)
+        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "buffer.txt")
+        (expect (find file (%test-registered-buffers *editor-state*) :test (function eq))
+                :to-be nil)
+        (expect (find messages (%test-registered-buffers *editor-state*) :test (function eq))
+                :to-be messages)
+        (expect (buffer-name (%selected-test-buffer)) :to-equal "*scratch*")
+        (expect (loom/core/buffer:buffer-line-count (%selected-test-buffer)) :to-equal 1)
+        (expect (loom/core/buffer:buffer-line (%selected-test-buffer) 0) :to-equal "")
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Killed buffer.txt"))))
 
   (it
     "saves a modified file buffer before killing it"
