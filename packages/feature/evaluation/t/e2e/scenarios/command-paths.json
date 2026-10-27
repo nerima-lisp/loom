@@ -155,7 +155,8 @@
         }
       ],
       "expected_minibuffer_match": "contains",
-      "expected_cursor_region": "minibuffer"
+      "expected_cursor_region": "minibuffer",
+      "cancel_prompt_after_assert": true
     },
     {
       "name": "command-path/r2/eval-expression/prompt-1/free-string/tab",
@@ -206,7 +207,7 @@
       "prompt_open": "Eval: ",
       "prompt_kind": "free-string",
       "prompt_case": "history",
-      "input_text": "(+ 2 3)",
+      "input_text": "(+ 1",
       "initial_bytes": "(+ 1 2)\n",
       "expected_bytes": "(+ 1 2)\n",
       "expected_cursor": [
@@ -222,7 +223,7 @@
       ],
       "history_seed_input": "(+ 1 2)",
       "history_expected": "(+ 1 2)",
-      "history_next_expected": "(+ 2 3)"
+      "history_next_expected": "(+ 1"
     },
     {
       "name": "command-path/r3/eval-expression/effect",

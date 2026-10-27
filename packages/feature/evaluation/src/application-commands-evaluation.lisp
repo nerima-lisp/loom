@@ -47,6 +47,45 @@
                  (%evaluation-status-message result)))
               result))))))
 
+(defun %render-evaluation-reader-error (session snapshot)
+  (let* ((state *editor-state*)
+         (minibuffer
+           (when (and state (eq session (loom/core/editor-session:editor-state-session state)))
+             (editor-state-minibuffer state)))
+         (prompt
+           (and minibuffer
+                (loom/core/minibuffer:minibuffer-prompt-string minibuffer)))
+         (input
+           (and minibuffer
+                (loom/core/minibuffer:minibuffer-input-string minibuffer)))
+         (reader-error
+           (and minibuffer
+                (loom/core/minibuffer:minibuffer-message-string minibuffer)))
+         (prompt-width (length (or prompt "")))
+         (frame-width
+           (loom/core/editor-session:frame-snapshot-width snapshot))
+         (message-text " [End of file during parsing]"))
+    (when (and minibuffer
+               (loom/core/minibuffer:minibuffer-active-p minibuffer)
+               (equal prompt "Eval: ")
+               (equal input "")
+               (equal reader-error "[End of file during parsing]")
+               (< prompt-width frame-width))
+      (list
+       (loom/core/editor-session:make-render-operation
+        :text
+        prompt-width
+        (1- (loom/core/editor-session:frame-snapshot-height snapshot))
+        (subseq message-text
+                0
+                (min (length message-text) (- frame-width prompt-width))))))))
+
+(eval-when (:load-toplevel :execute)
+  (loom/core/editor-session:register-session-hook
+   :render
+   :feature/evaluation
+   (function %render-evaluation-reader-error)))
+
 (defun eval-expression ()
   "Prompt for Lisp forms and evaluate them in LOOM-USER."
   (let* ((minibuffer (editor-state-minibuffer *editor-state*))
@@ -69,9 +108,6 @@
                       (progn
                         (let ((reader-error "[End of file during parsing]"))
                           (prompt)
-                          (loom/core/minibuffer:minibuffer-set-prompt
-                           minibuffer
-                           (format nil "Eval: ~A" reader-error))
                           (minibuffer-message minibuffer reader-error)))
                       (%evaluate-and-display
                        source

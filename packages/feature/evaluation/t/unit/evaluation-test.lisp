@@ -118,17 +118,42 @@
                (window-tree-selected-window
                 (editor-state-window-tree *editor-state*)))
               :to-be source-buffer)))
-  (it "keeps an empty evaluation prompt active and reports the reader error"
+  (it "keeps an empty evaluation prompt active and renders the reader error"
     (%with-minibuffer-state (minibuffer "")
       (eval-expression)
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
-      (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "")
+      (expect (list 0 (+ (length (minibuffer-prompt-string minibuffer))
+                         (loom/core/minibuffer:minibuffer-input-point minibuffer)))
+              :to-equal (list 0 6))
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
-      (expect (minibuffer-prompt-string minibuffer)
-              :to-equal "Eval: [End of file during parsing]")
+      (expect (minibuffer-prompt-string minibuffer) :to-equal "Eval: ")
       (expect (loom:minibuffer-message-string minibuffer)
-              :to-equal "[End of file during parsing]")))
+              :to-equal "[End of file during parsing]")
+      (let* ((snapshot
+               (loom/core/editor-session:make-frame-snapshot
+                80
+                24
+                (make-array (* 80 24) :initial-element (list " " nil))))
+             (operations
+               (loop for result in
+                       (loom/core/editor-session:run-session-hooks
+                        :render
+                        (loom/core/editor-session:editor-state-session *editor-state*)
+                        snapshot)
+                     append result))
+             (reader-error-operation
+               (find-if
+                (lambda (operation)
+                  (and (loom/core/editor-session:render-operation-p operation)
+                       (eq (loom/core/editor-session:render-operation-kind operation) :text)
+                       (= (loom/core/editor-session:render-operation-x operation) 6)
+                       (= (loom/core/editor-session:render-operation-y operation) 23)
+                       (string=
+                        (loom/core/editor-session:render-operation-text operation)
+                        " [End of file during parsing]")))
+                operations)))
+        (expect reader-error-operation :to-be-truthy))))
 
   (it "reports evaluation errors in the minibuffer and preserves source state"
     (%with-minibuffer-state (minibuffer "source"
@@ -149,3 +174,27 @@
                     :key (function buffer-name)
                     :test (function string=))
               :to-be nil)))
+  (it "records eval-expression input in minibuffer history"
+    (%with-minibuffer-state (minibuffer ""
+                                (history (history-kit:make-history)))
+      (setf minibuffer
+            (loom/core/minibuffer:make-minibuffer :history history)
+            (editor-state-minibuffer *editor-state*) minibuffer)
+      (eval-expression)
+      (loop for character across "(+ 40 2)"
+            do (loom/core/minibuffer:minibuffer-handle-key
+                minibuffer
+                (cl-tty-kit:make-key-event
+                 :type :character :code character)))
+      (loom/core/minibuffer:minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event :type :special :code :enter))
+      (expect (loom/core/minibuffer:minibuffer-history-entries minibuffer)
+              :to-equal (list "(+ 40 2)"))
+      (eval-expression)
+      (loom/core/minibuffer:minibuffer-handle-key
+       minibuffer
+       (cl-tty-kit:make-key-event
+        :type :character :code #\p :modifiers (list :alt)))
+      (expect (loom/core/minibuffer:minibuffer-input-string minibuffer)
+              :to-equal "(+ 40 2)")))

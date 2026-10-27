@@ -221,6 +221,12 @@ def _validate_case(case, index):
             _validate_key_list(case.get("entry_keys"), f"{location}.entry_keys")
         _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
     elif case["rule"] == "r2":
+        if "cancel_prompt_after_assert" in case and not isinstance(
+            case["cancel_prompt_after_assert"], bool
+        ):
+            raise CommandPathScenarioError(
+                f"{location}.cancel_prompt_after_assert must be a boolean"
+            )
         entry_mode = case.get(
             "entry_mode",
             "open-mx" if case["command"] == "execute-extended-command" else None,
@@ -1029,8 +1035,6 @@ def _run_r2_command_prompts(session, case, path):
         stage_prefix="final state",
         check_minibuffer=False,
     )
-
-
 def _run_r2(session, case, path):
     prompt_case = case["prompt_case"]
     entry_mode = case.get(
@@ -1159,6 +1163,13 @@ def _run_r2(session, case, path):
         stage_prefix="final state",
         check_minibuffer=False,
     )
+
+    if case.get("cancel_prompt_after_assert", False):
+        with stage("prompt cleanup (C-g)"):
+            _send_key(session, "C-g")
+            session.wait_for_region_exact_text(
+                "minibuffer", "Quit", strip_right=True
+            )
 
 
 def _assert_effect_state(session, case, *, check_minibuffer=True):
