@@ -5,6 +5,10 @@
           (buffer-offset-position buffer (buffer-span-start span)))
         (end-position
           (buffer-offset-position buffer (buffer-span-end span))))
+    (buffer-set-point
+     buffer
+     (buffer-position-line start-position)
+     (buffer-position-column start-position))
     (buffer-delete-region
      buffer
      (buffer-position-line start-position)
@@ -14,39 +18,45 @@
     (buffer-insert-string buffer new)))
 
 (defun %replacement-match-records (buffer pattern start regexp-p)
-  (unless (and (not regexp-p) (string= pattern ""))
-    (let* ((text (buffer-visible-text buffer))
-           (offset (buffer-narrow-start-offset buffer))
-           (region (loom/core/buffer:buffer-active-region-span buffer))
-           (start-index
-             (max 0
-                  (min (length text)
-                       (- (if region
-                              (buffer-span-start region)
-                              start)
-                          offset))))
-           (end-index
-             (max start-index
-                  (min (length text)
-                       (- (if region
-                              (buffer-span-end region)
-                              (+ offset (length text)))
-                          offset))))
-           (source (if regexp-p
-                       pattern
-                       (cl-regex-kit:escape pattern)))
-           (case-fold-p (%search-pattern-case-fold-p pattern))
-           (regex (cl-regex-kit:compile-regex
-                   source :case-insensitive case-fold-p)))
-      (loop for match in
-              (cl-regex-kit:all-matches
-               regex text :start start-index :end end-index
-               :timeout +regex-search-timeout-seconds+)
-            collect
-            (list (make-buffer-span
-                   (+ offset (cl-regex-kit:match-start match))
-                   (+ offset (cl-regex-kit:match-end match)))
-                  (cl-regex-kit:match-captures match text))))))
+  (let* ((text (buffer-visible-text buffer))
+         (offset (buffer-narrow-start-offset buffer))
+         (region (loom/core/buffer:buffer-active-region-span buffer))
+         (start-index
+           (max 0
+                (min (length text)
+                     (- (if region
+                            (buffer-span-start region)
+                            start)
+                        offset))))
+         (end-index
+           (max start-index
+                (min (length text)
+                     (- (if region
+                            (buffer-span-end region)
+                            (+ offset (length text)))
+                        offset))))
+         (source (if regexp-p
+                     pattern
+                     (cl-regex-kit:escape pattern)))
+         (case-fold-p (%search-pattern-case-fold-p pattern)))
+    ;; An empty source matches every insertion point in this finite range.
+    (if (string= source "")
+        (loop for index from start-index below end-index
+              collect
+              (list (make-buffer-span (+ offset index)
+                                      (+ offset index))
+                    (vector "")))
+        (let ((regex (cl-regex-kit:compile-regex
+                      source :case-insensitive case-fold-p)))
+          (loop for match in
+                  (cl-regex-kit:all-matches
+                   regex text :start start-index :end end-index
+                   :timeout +regex-search-timeout-seconds+)
+                collect
+                (list (make-buffer-span
+                       (+ offset (cl-regex-kit:match-start match))
+                       (+ offset (cl-regex-kit:match-end match)))
+                      (cl-regex-kit:match-captures match text)))))))
 
 (defun %shift-replacement-record-span (record delta)
   (let ((span (first record)))
@@ -149,25 +159,31 @@
        (loom/core/window-tree:window-tree-selected-window window-tree))))
 
   (defun %run-replacement-command (prompt regexp-p)
-    (let ((minibuffer (editor-state-minibuffer *editor-state*))
-          (buffer (%selected-search-buffer)))
-      (with-prompts (minibuffer minibuffer
-                     :on-cancel (minibuffer-message minibuffer "Quit"))
-          ((pattern prompt)
-           (replacement "With: "))
-        (handler-case
-            (let* ((records (%replacement-match-records
-                             buffer pattern (buffer-point-offset buffer) regexp-p))
-                   (count (%perform-replacement
-                           buffer records pattern replacement regexp-p)))
-              (if (plusp count)
-                  (minibuffer-message
-                   minibuffer (format nil "Replaced ~D occurrence(s)" count))
-                  (minibuffer-message minibuffer "Not found")))
-          (cl-regex-kit:regex-syntax-error (condition)
-            (minibuffer-message
-             minibuffer
-             (format nil "Invalid regular expression: ~A" condition)))))))
+  (let ((minibuffer (editor-state-minibuffer *editor-state*))
+        (buffer (%selected-search-buffer)))
+    (%activate-search-prompt
+     minibuffer prompt :replacement-pattern
+     (lambda (pattern)
+       (%activate-search-prompt
+        minibuffer "With: " :replacement-value
+        (lambda (replacement)
+          (when (loom/core/buffer:buffer-read-only-p buffer)
+            (error 'loom/core/buffer:buffer-read-only-error :buffer buffer))
+          (handler-case
+              (let* ((records (%replacement-match-records
+                               buffer pattern (buffer-point-offset buffer) regexp-p))
+                     (count (%perform-replacement
+                             buffer records pattern replacement regexp-p)))
+                (if (plusp count)
+                    (minibuffer-message
+                     minibuffer (format nil "Replaced ~D occurrence(s)" count))
+                    (minibuffer-message minibuffer "Not found")))
+            (cl-regex-kit:regex-syntax-error (condition)
+              (minibuffer-message
+               minibuffer
+               (format nil "Invalid regular expression: ~A" condition)))))
+        :on-cancel (lambda () (minibuffer-message minibuffer "Quit"))))
+     :on-cancel (lambda () (minibuffer-message minibuffer "Quit")))))
 
   (defun replace-string ()
     "Prompt for literal text and a literal replacement, then replace from point
@@ -257,23 +273,29 @@ verbatim."
                                  do (replace-current))
                            (finish))
                          (handle-key (key-event)
-                           (case (%query-replacement-key-action key-event)
-                             (:replace
-                              (replace-current)
-                              (present-current)
-                              t)
-                             (:skip
-                              (incf index)
-                              (present-current)
-                              t)
-                             (:replace-rest
-                              (replace-rest)
-                              t)
-                             (:finish
-                              (finish)
-                              t)
-                             (:cancel nil)
-                             (otherwise t))))
+                           (handler-case
+    (case (%query-replacement-key-action key-event)
+      (:replace
+       (replace-current)
+       (present-current)
+       t)
+      (:skip
+       (incf index)
+       (present-current)
+       t)
+      (:replace-rest
+       (replace-rest)
+       t)
+      (:finish
+       (finish)
+       t)
+      (:cancel nil)
+      (otherwise t))
+  (loom/core/buffer:buffer-read-only-error (condition)
+    (when (loom/core/minibuffer:minibuffer-active-p minibuffer)
+      (loom/core/minibuffer::%minibuffer-deactivate minibuffer))
+    (minibuffer-message minibuffer (format nil "~A" condition))
+    t))))
                   (loom/core/minibuffer:minibuffer-activate
                    minibuffer
                    "Query replace: "
@@ -290,17 +312,24 @@ verbatim."
          (format nil "Invalid regular expression: ~A" condition)))))
 
   (defun %start-query-replace (regexp-p)
-    (let ((buffer (%selected-search-buffer))
-          (minibuffer (editor-state-minibuffer *editor-state*)))
-      (with-prompts (minibuffer minibuffer
-                     :on-cancel (minibuffer-message minibuffer "Quit"))
-          ((pattern (if regexp-p
-                        "Query replace regexp: "
-                        "Query replace: "))
-           (replacement (if regexp-p
-                            "Query replace regexp with: "
-                            "Query replace with: ")))
-        (%run-query-replace buffer minibuffer pattern replacement regexp-p))))
+  (let ((buffer (%selected-search-buffer))
+        (minibuffer (editor-state-minibuffer *editor-state*)))
+    (%activate-search-prompt
+     minibuffer
+     (if regexp-p "Query replace regexp: " "Query replace: ")
+     :replacement-pattern
+     (lambda (pattern)
+       (%activate-search-prompt
+        minibuffer
+        (if regexp-p
+            "Query replace regexp with: "
+            "Query replace with: ")
+        :replacement-value
+        (lambda (replacement)
+          (%run-query-replace
+           buffer minibuffer pattern replacement regexp-p))
+        :on-cancel (lambda () (minibuffer-message minibuffer "Quit"))))
+     :on-cancel (lambda () (minibuffer-message minibuffer "Quit")))))
 
   (defun query-replace ()
     "Interactively replace literal occurrences from point to buffer end, or only

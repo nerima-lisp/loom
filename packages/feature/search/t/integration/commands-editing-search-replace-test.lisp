@@ -59,13 +59,26 @@
       (expect (buffer-text buffer) :to-equal "alpha")))
 
   (it
-    "reports not found for an empty replacement target without searching"
-    (%with-selected-minibuffer-buffer (minibuffer buffer "alpha")
+    "inserts at every character boundary for an empty literal pattern"
+    ;; GNU Emacs replace-string treats empty FROM as a zero-width match.
+    ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Unconditional-Replace.html
+    (%with-selected-minibuffer-buffer (minibuffer buffer "abc")
       (loom/feature/search::replace-string)
       (%confirm-minibuffer minibuffer "")
-      (%confirm-minibuffer minibuffer "replacement")
-      (expect (loom:minibuffer-message-string minibuffer) :to-equal "Not found")
-      (expect (buffer-text buffer) :to-equal "alpha")))
+      (%confirm-minibuffer minibuffer "x")
+      (expect (buffer-text buffer) :to-equal "xaxbxc")
+      (expect (buffer-point-column buffer) :to-equal 5)
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Replaced 3 occurrence(s)")))
+  (it
+    "keeps an empty replacement value as deletion"
+    (%with-selected-minibuffer-buffer (minibuffer buffer "aba")
+      (loom/feature/search::replace-string)
+      (%confirm-minibuffer minibuffer "a")
+      (%confirm-minibuffer minibuffer "")
+      (expect (buffer-text buffer) :to-equal "b")
+      (expect (loom:minibuffer-message-string minibuffer)
+              :to-equal "Replaced 2 occurrence(s)")))
 
   ;; Regexp replacement references are documented at:
   ;; https://www.gnu.org/s/emacs/manual/html_node/emacs/Regexp-Replace.html
