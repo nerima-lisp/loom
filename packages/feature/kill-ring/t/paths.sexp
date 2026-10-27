@@ -949,7 +949,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -966,7 +966,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -983,7 +983,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1000,7 +1000,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1017,7 +1017,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1034,7 +1034,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1051,7 +1051,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1068,7 +1068,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1085,7 +1085,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1102,7 +1102,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1119,7 +1119,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1136,7 +1136,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1153,7 +1153,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1170,7 +1170,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1187,7 +1187,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1204,7 +1204,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1221,7 +1221,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1238,7 +1238,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1255,7 +1255,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1272,7 +1272,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "tool:clipboard"
       :outcome
@@ -1289,7 +1289,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "region-present"
       :outcome
@@ -1306,7 +1306,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}"
       :state
       "region-absent"
       :outcome
@@ -1323,13 +1323,13 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "region-present"
       :outcome
       "command operates on region"
       :observe
-      (:file_bytes :screen_text)
+      (:file_bytes :screen_text :external_state)
       :scenario
       "kill-ring/r4/kill-ring-save/region-present")
  (:id "r4:kill-ring-save:region-absent"
@@ -1340,7 +1340,7 @@
       :lane
       "W3-8"
       :entry
-      "mx"
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}"
       :state
       "region-absent"
       :outcome
