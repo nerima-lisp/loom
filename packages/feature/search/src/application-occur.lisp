@@ -248,12 +248,16 @@
            (loom/core/window-tree:window-buffer window))))
 
   (defun occur ()
-    "List the lines in the selected buffer that match a regular expression."
-    (let ((minibuffer (editor-state-minibuffer *editor-state*))
-          (buffer (%selected-occur-buffer)))
-      (when buffer
-        (with-prompts (minibuffer minibuffer
-                       :on-cancel (minibuffer-message minibuffer "Quit"))
-            ((pattern "List lines matching regexp: "))
-          (%start-occur
-           loom/core/editor-session:*editor-session* buffer pattern))))))
+  "List the lines in the selected buffer that match a regular expression."
+  (let ((minibuffer (editor-state-minibuffer *editor-state*))
+        (buffer (%selected-occur-buffer))
+        (session loom/core/editor-session:*editor-session*))
+    (when buffer
+      (%activate-search-prompt
+       minibuffer "List lines matching regexp: " :occur-pattern
+       (lambda (pattern)
+         (if (string= pattern "")
+             (minibuffer-message
+              minibuffer "Occur doesn't work with the empty regexp")
+             (%start-occur session buffer pattern)))
+       :on-cancel (lambda () (minibuffer-message minibuffer "Quit")))))))

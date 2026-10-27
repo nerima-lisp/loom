@@ -130,38 +130,42 @@
                             (aref (search-result-list-items record) row))))))
 (progn
   (defun %navigate-result-list (direction)
-    (let* ((session loom/core/editor-session:*editor-session*)
-           (selected-buffer (%selected-result-buffer))
-           (state
-             (and session
-                  (loom/core/editor-session:editor-session-slice
-                   session :feature/search)))
-           (record
-             (and state
-                  (%result-list-for-buffer state selected-buffer)))
-           (items (and record (search-result-list-items record)))
-           (count (and items (length items)))
-           (at-result-buffer-p
-             (and record
-                  (eq selected-buffer (search-result-list-buffer record))))
-           (cursor
-             (when record
-               (if at-result-buffer-p
-                   (loom/core/buffer:buffer-point-line selected-buffer)
-                   (search-result-list-cursor record))))
-           (row
-             (cond
-               ((null record) nil)
-               (at-result-buffer-p cursor)
-               ((minusp cursor)
-                (if (eq direction :next) 0 (1- count)))
-               ((eq direction :next) (1+ cursor))
-               (t (1- cursor)))))
-      (when (and row (<= 0 row) (< row count))
-        (setf (search-result-list-cursor record) row
-              (search-result-state-active-buffer state)
-              (search-result-list-buffer record))
-        (%visit-result-item session (aref items row)))))
+  (let* ((session loom/core/editor-session:*editor-session*)
+         (selected-buffer (%selected-result-buffer))
+         (state
+           (and session
+                (loom/core/editor-session:editor-session-slice
+                 session :feature/search)))
+         (record
+           (and state
+                (%result-list-for-buffer state selected-buffer)))
+         (items (and record (search-result-list-items record)))
+         (count (and items (length items)))
+         (at-result-buffer-p
+           (and record
+                (eq selected-buffer (search-result-list-buffer record))))
+         (cursor
+           (when record
+             (if at-result-buffer-p
+                 (loom/core/buffer:buffer-point-line selected-buffer)
+                 (search-result-list-cursor record))))
+         (row
+           (cond
+             ((null record) nil)
+             (at-result-buffer-p cursor)
+             ((minusp cursor)
+              (if (eq direction :next) 0 (1- count)))
+             ((eq direction :next) (1+ cursor))
+             (t (1- cursor)))))
+    (if (or (null record) (zerop count))
+        (minibuffer-message
+         (editor-state-minibuffer *editor-state*)
+         "No search results")
+        (when (and row (<= 0 row) (< row count))
+          (setf (search-result-list-cursor record) row
+                (search-result-state-active-buffer state)
+                (search-result-list-buffer record))
+          (%visit-result-item session (aref items row))))))
 
   (defun next-error ()
     "Visit the next result in the active search result list."

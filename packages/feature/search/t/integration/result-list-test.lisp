@@ -105,7 +105,8 @@
           (loom/feature/search::next-error)
           (let ((source-buffer
                   (loom/core/window-tree:window-buffer window)))
-            (expect (loom/core/buffer:buffer-path source-buffer) :to-equal path)
+            (expect (loom/core/buffer:buffer-path source-buffer)
+                    :to-equal (truename path))
             (expect source-buffer :to-have-point (cons 0 2))
             (loom/feature/search::next-error)
             (expect source-buffer :to-have-point (cons 1 3))
