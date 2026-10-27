@@ -1339,7 +1339,11 @@
                         (make-boundary-record
                          :path "packages/core/editor/src/command-owners.lisp"
                          :slice "core" :layer :application :package package
-                         :text "(defun BROAD-OWNER-REFERENCE () nil)")))
+                         :text "(defun BROAD-OWNER-REFERENCE () nil)")
+                        (make-boundary-record
+                         :path "packages/core/buffer/src/inherited-owner.lisp"
+                         :slice "core/buffer" :layer :application :package provider-package
+                         :text "(defun INHERITED-REFERENCE () nil)")))
                      (owners (boundary-function-owners owner-records))
                      (make-record
                        (lambda (path slice symbol-name)
@@ -1396,7 +1400,7 @@
                               :to-equal :internal)
                       (expect (nth-value 1 (find-symbol "PUBLIC-REFERENCE" package))
                               :to-equal :external)
-                      (expect (length owners) :to-equal 10)
+                      (expect (length owners) :to-equal 11)
                       (expect (boundary-slice-contains-p "core" "core/command")
                               :to-equal t)
                       (expect (boundary-slice-contains-p "core" "coreish")
@@ -1455,9 +1459,13 @@
                         (expect (nth-value 1
                                            (find-symbol "INHERITED-REFERENCE" package))
                                 :to-equal :inherited)
-                        (expect (length (boundary-internal-reference-findings
-                                         (list inherited-record) owners))
-                                :to-equal 1)
+                        (let ((*boundary-package-map*
+                               (list (list target-name (list "core")
+                                           (list :core)
+                                           "packages/core/src/package.lisp"))))
+                          (expect (length (boundary-internal-reference-findings
+                                           (list inherited-record) owners))
+                                  :to-equal 1))
                         (expect (nth-value 1 (find-symbol "ABSENT-REFERENCE" package))
                                 :to-equal nil)
                         (expect (length (boundary-internal-reference-findings
