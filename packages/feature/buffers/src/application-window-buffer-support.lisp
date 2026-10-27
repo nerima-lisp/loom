@@ -13,15 +13,28 @@
     (when (eq (window-buffer BUFFERS) buffer)
       (window-set-buffer BUFFERS replacement))))
 
+(defun %special-buffer-p (buffer)
+  "Return whether BUFFER uses the conventional internal-buffer name."
+  (let ((name (buffer-name buffer)))
+    (and (> (length name) 1)
+         (char= (char name 0) #\*)
+         (char= (char name (1- (length name))) #\*))))
+
+(defun %kill-buffer-replacement (survivors)
+  "Choose an ordinary survivor or a scratch buffer for a killed buffer."
+  (or (find-if (lambda (candidate) (not (%special-buffer-p candidate))) survivors)
+      (find "*scratch*" survivors :key (function buffer-name) :test (function string=))
+      (make-buffer :name "*scratch*")))
+
 (defun %kill-buffer-now (buffer)
   "Remove BUFFER and preserve the window and registry invariants."
-  (let* ((survivors
-          (remove buffer (registered-buffers *editor-session*) :test #'eq))
-         (replacement (or (first survivors) (make-buffer :name "*scratch*"))))
-    (unless survivors
-      (register-buffer *editor-session* replacement))
+  (let* ((session *editor-session*)
+         (survivors (remove buffer (registered-buffers session) :test (function eq)))
+         (replacement (%kill-buffer-replacement survivors)))
+    (unless (member replacement survivors :test (function eq))
+      (register-buffer session replacement))
     (%replace-buffer-in-windows buffer replacement)
-    (unregister-buffer *editor-session* buffer :reason :kill-buffer)
+    (unregister-buffer session buffer :reason :kill-buffer)
     (minibuffer-message (editor-state-minibuffer *editor-state*)
                         (format nil "Killed ~A" (buffer-name buffer)))))
 
