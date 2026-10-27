@@ -569,7 +569,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -620,7 +620,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -904,7 +904,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -954,7 +954,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1233,7 +1233,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1285,7 +1285,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1573,7 +1573,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1623,7 +1623,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1950,7 +1950,7 @@
         0,
         3
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2037,7 +2037,7 @@
         0,
         11
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2369,7 +2369,7 @@
         0,
         6
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2423,7 +2423,7 @@
         0,
         15
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",

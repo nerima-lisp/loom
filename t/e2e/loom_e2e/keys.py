@@ -5,7 +5,9 @@ from types import MappingProxyType
 
 
 def ctrl(ch):
-    """Encode a control-chord byte, e.g. ctrl('x') -> b'\\x18' (C-x)."""
+    """Encode a control-chord byte, including C-? as DEL."""
+    if ch == "?":
+        return b"\x7f"
     return bytes([ord(ch.upper()) - 64])
 
 

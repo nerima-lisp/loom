@@ -4112,7 +4112,7 @@
       "path_id": "r3:delete-indentation:narrow",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "macro",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "beginning-of-buffer",
@@ -4279,7 +4279,7 @@
       "path_id": "r3:newline:narrow",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
       "commands": [
         "execute-extended-command",
         "beginning-of-buffer",
@@ -4664,7 +4664,7 @@
       "path_id": "r3:delete-indentation:prefix-u4",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "macro",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "universal-argument",
         "delete-indentation",
@@ -4790,7 +4790,7 @@
       "path_id": "r3:newline:prefix-u4",
       "lane": "W3-4",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
       "commands": [
         "universal-argument",
         "newline",

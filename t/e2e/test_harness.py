@@ -29,6 +29,9 @@ from loom_e2e.session import Session, _session_environment
 
 
 class TerminalProfileTests(unittest.TestCase):
+    def test_control_question_mark_encodes_delete(self):
+        self.assertEqual(keys.ctrl("?"), b"\x7f")
+
     def test_return_and_profile_end_sequences(self):
         self.assertEqual(keys.key("RET"), b"\r")
         self.assertEqual(keys.key("LF"), b"\n")

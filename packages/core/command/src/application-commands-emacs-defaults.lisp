@@ -110,7 +110,7 @@
          (visible-start (buffer-narrow-start-offset buffer))
          (text (buffer-visible-text buffer))
          (point (- (buffer-point-offset buffer) visible-start))
-         (prefix-count (loom::%command-prefix-count))
+         (prefix-count (or loom/core/command:*current-prefix-argument* 1))
          (line-end-p
           (= (buffer-point-column buffer)
              (length (buffer-line buffer (buffer-point-line buffer)))))
@@ -189,7 +189,7 @@
     (when (< word-start (length text))
       (let* ((word-end
               (loop with offset = word-start
-                    repeat (max 0 (loom::%command-prefix-count))
+                    repeat (max 0 (or loom/core/command:*current-prefix-argument* 1))
                     do (setf offset (%command-forward-word-offset text offset))
                     finally (return offset))))
         (when (< word-start word-end)
