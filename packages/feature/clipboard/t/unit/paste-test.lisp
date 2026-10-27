@@ -21,9 +21,7 @@
               (loom/core/editor-session:run-session-hooks :input-event
                                                           session
                                                           :paste
-                                                          (format nil
-                                                                  "line1~%~Cline2"
-                                                                  #\Tab))
+                                                          (format nil "~%line1~%~Cline2" #\Tab))
               :to-equal
               :handled)
              (expect (buffer-text buffer) :to-equal text)
