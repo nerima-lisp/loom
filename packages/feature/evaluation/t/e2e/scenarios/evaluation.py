@@ -79,20 +79,17 @@ def eval_buffer_mx(binary):
         with Session(binary, [path]) as session:
             session.wait_ready(timeout=2.0)
             session.extended_command("eval-buffer")
-            session.wait_for_region_text(
-                "minibuffer", "Evaluated 1 form", timeout=0.75
+            session.wait_for_region_exact_text(
+                "minibuffer", "", strip_right=True
             )
             session.assert_screen_text(
-                "Evaluated 1 form", match="contains", region="minibuffer"
-            )
-            session.assert_screen_text(
-                "loom-eval> (+ 1 2)", match="contains", region="body"
-            )
-            session.wait_for_text("=> 3", timeout=0.75)
-            session.assert_screen_text(
-                "=> 3", match="contains", region="screen"
+                "(+ 1 2)", match="contains", region="body"
             )
             session.assert_file_bytes(path, _SOURCE)
+            if session.observe_cursor(expected=(0, 0), region="body") is not True:
+                raise AssertionError(
+                    f"cursor was {session.region_cursor('body')!r}, expected {(0, 0)!r}"
+                )
             output, code = session.quit(timeout=1.0)
 
         if code != 0:

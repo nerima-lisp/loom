@@ -1,0 +1,1286 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r1/eval-expression/key",
+      "path_id": "r1:eval-expression:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%3A%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Eval: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/eval-expression/mx",
+      "path_id": "r1:eval-expression:mx",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "mx",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Eval: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r2/eval-expression/prompt-1/free-string/accept",
+      "path_id": "r2:eval-expression:prompt-1:free-string:accept",
+      "lane": "W3-7b",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_open": "Eval: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "(+ 1 2)",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/eval-expression/prompt-1/free-string/cancel",
+      "path_id": "r2:eval-expression:prompt-1:free-string:cancel",
+      "lane": "W3-7b",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_open": "Eval: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "(+ 1 2)",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/eval-expression/prompt-1/free-string/empty",
+      "path_id": "r2:eval-expression:prompt-1:free-string:empty",
+      "lane": "W3-7b",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_open": "Eval: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "End of file during parsing",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "expected_minibuffer_match": "contains",
+      "expected_cursor_region": "minibuffer"
+    },
+    {
+      "name": "command-path/r2/eval-expression/prompt-1/free-string/tab",
+      "path_id": "r2:eval-expression:prompt-1:free-string:tab",
+      "lane": "W3-7b",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_open": "Eval: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "(+ 1 2)",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/eval-expression/prompt-1/free-string/history",
+      "path_id": "r2:eval-expression:prompt-1:free-string:history",
+      "lane": "W3-7b",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_open": "Eval: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "(+ 2 3)",
+      "initial_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "history_seed_input": "(+ 1 2)",
+      "history_expected": "(+ 1 2)",
+      "history_next_expected": "(+ 2 3)"
+    },
+    {
+      "name": "command-path/r3/eval-expression/effect",
+      "path_id": "r3:eval-expression:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "effect",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-expression/undo",
+      "path_id": "r3:eval-expression:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression",
+        "undo"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "undo",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-expression/read-only",
+      "path_id": "r3:eval-expression:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "read-only",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/r3/eval-expression/narrow",
+      "path_id": "r3:eval-expression:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression",
+        "execute-extended-command",
+        "narrow-to-region"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "narrow",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-expression/split-window",
+      "path_id": "r3:eval-expression:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "split-window",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-expression/macro-replay",
+      "path_id": "r3:eval-expression:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "M-:",
+        "(",
+        "+",
+        "SPC",
+        "1",
+        "SPC",
+        "2",
+        ")",
+        "RET"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-expression/prefix-u4",
+      "path_id": "r3:eval-expression:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\":\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "eval-expression"
+      ],
+      "command": "eval-expression",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "3(+ 1 2)\n",
+      "expected_bytes": "3(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "3(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "3(+ 1 2)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-:"
+      ],
+      "prompt_labels": [
+        "Eval: "
+      ],
+      "prompt_inputs": [
+        "(+ 1 2)"
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/effect",
+      "path_id": "r3:eval-last-sexp:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "effect",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/undo",
+      "path_id": "r3:eval-last-sexp:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp",
+        "undo"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "undo",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ],
+      "expected_undo_cursor": [
+        0,
+        7
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/read-only",
+      "path_id": "r3:eval-last-sexp:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "read-only",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/narrow",
+      "path_id": "r3:eval-last-sexp:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp",
+        "execute-extended-command",
+        "narrow-to-region"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "narrow",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/split-window",
+      "path_id": "r3:eval-last-sexp:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "split-window",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        12,
+        7
+      ],
+      "expected_minibuffer": "3 (#o3, #x3, ?\\C-c)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/macro-replay",
+      "path_id": "r3:eval-last-sexp:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "eval-last-sexp"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-last-sexp/prefix-u4",
+      "path_id": "r3:eval-last-sexp:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"e\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "eval-last-sexp"
+      ],
+      "command": "eval-last-sexp",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)3\n",
+      "expected_bytes": "(+ 1 2)3\n",
+      "expected_cursor": [
+        0,
+        8
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)3"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)3"
+        }
+      ],
+      "command_keys": [
+        "C-x",
+        "C-e"
+      ],
+      "prepare_keys": [
+        "C-e"
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/effect",
+      "path_id": "r3:eval-buffer:effect",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "effect",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/undo",
+      "path_id": "r3:eval-buffer:undo",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer",
+        "undo"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "undo",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/read-only",
+      "path_id": "r3:eval-buffer:read-only",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "read-only",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/r3/eval-buffer/narrow",
+      "path_id": "r3:eval-buffer:narrow",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer",
+        "execute-extended-command",
+        "narrow-to-region"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "narrow",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/split-window",
+      "path_id": "r3:eval-buffer:split-window",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "split-window",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "(+ 1 2)"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/macro-replay",
+      "path_id": "r3:eval-buffer:macro-replay",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/r3/eval-buffer/prefix-u4",
+      "path_id": "r3:eval-buffer:prefix-u4",
+      "lane": "W3-7b",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "eval-buffer"
+      ],
+      "command": "eval-buffer",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "(+ 1 2)\n",
+      "effect_bytes": "(+ 1 2)\n",
+      "expected_bytes": "(+ 1 2)\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "(+ 1 2)"
+        }
+      ],
+      "command_keys": [
+        "M-x",
+        "e",
+        "v",
+        "a",
+        "l",
+        "-",
+        "b",
+        "u",
+        "f",
+        "f",
+        "e",
+        "r",
+        "RET"
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    }
+  ]
+}
