@@ -145,7 +145,7 @@
         0
       ],
       "expected_cursor_region": "body",
-      "expected_minibuffer": "Quit",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -807,7 +807,8 @@
         "buffer.txt",
         "c"
       ],
-      "history_steps": 2
+      "history_steps": 2,
+      "history_intermediate_expected": "buffer.txt"
     }
   ]
 }

@@ -20,9 +20,29 @@ _MODIFIED_BUFFER_CLEANUP = {
 
 
 class _BufferScenarioSession(Session):
-    def __init__(self, *args, cleanup_kind=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        cleanup_kind=None,
+        history_prompt_label=None,
+        history_intermediate_expected=None,
+        **kwargs,
+    ):
         self.cleanup_kind = cleanup_kind
+        self.history_prompt_label = history_prompt_label
+        self.history_intermediate_expected = history_intermediate_expected
         super().__init__(*args, **kwargs)
+
+    def key(self, *names):
+        result = super().key(*names)
+        if names == ("UP",) and self.history_intermediate_expected is not None:
+            self.wait_for_region_exact_text(
+                "minibuffer",
+                self.history_prompt_label + self.history_intermediate_expected,
+                strip_right=True,
+            )
+            self.history_intermediate_expected = None
+        return result
 
     def _discard_modified_buffer(self):
         if self.cleanup_kind == "empty":
@@ -57,6 +77,10 @@ def _scenario_function(case):
                 columns=columns,
                 rows=rows,
                 cleanup_kind=cleanup_kind,
+                history_prompt_label=case.get("prompt_label"),
+                history_intermediate_expected=case.get(
+                    "history_intermediate_expected"
+                ),
             )
 
         return run_command_path_scenario(
