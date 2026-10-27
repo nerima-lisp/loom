@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/w3-6-project/project-find-file/r1/key",
+      "path_id": "r1:project-find-file:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22f%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]}",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        14
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Project file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r1/mx",
+      "path_id": "r1:project-find-file:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "mx",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        14
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Project file: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/accept",
+      "path_id": "r2:project-find-file:prompt-1:completion:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "other"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "accept",
+      "input_text": "other.txt"
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/cancel",
+      "path_id": "r2:project-find-file:prompt-1:completion:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "cancel",
+      "input_text": "other.txt"
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/empty",
+      "path_id": "r2:project-find-file:prompt-1:completion:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Cannot open project directory",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "empty",
+      "input_text": ""
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/tab",
+      "path_id": "r2:project-find-file:prompt-1:completion:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "other"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "tab",
+      "input_text": "other",
+      "tab_expected": "Project file: other.txt"
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/history",
+      "path_id": "r2:project-find-file:prompt-1:completion:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "other"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_inputs": [
+        "other.txt"
+      ],
+      "history_expected": "other.txt"
+    },
+    {
+      "name": "command-path/w3-6-project/project-find-file/r2/invalid",
+      "path_id": "r2:project-find-file:prompt-1:completion:invalid",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"f\",\"modifiers\":[]}]};prompt:1:completion",
+      "commands": [
+        "project-find-file"
+      ],
+      "command": "project-find-file",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "File not found: missing.txt",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "f"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project file: "
+      ],
+      "prompt_label": "Project file: ",
+      "prompt_kind": "completion",
+      "prompt_case": "invalid",
+      "input_text": "missing.txt"
+    },
+    {
+      "name": "command-path/w3-6-project/project-root/r1/key",
+      "path_id": "r1:project-root:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"r\",\"modifiers\":[]}]}",
+      "commands": [
+        "project-root"
+      ],
+      "command": "project-root",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Project root: {project_root}/",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "r"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-project/project-root/r1/mx",
+      "path_id": "r1:project-root:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "project-root"
+      ],
+      "command": "project-root",
+      "entry_mode": "mx",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Project root: {project_root}/",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      }
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r1/key",
+      "path_id": "r1:project-search:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        16
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Project search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r1/mx",
+      "path_id": "r1:project-search:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "mx",
+      "initial_bytes": "needle here\n",
+      "expected_bytes": "needle here\n",
+      "expected_cursor": [
+        0,
+        16
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Project search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r2/accept",
+      "path_id": "r2:project-search:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "current\n",
+      "expected_bytes": "current\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Matches: x:1",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "{project_root}/x:1:1: needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "current\n",
+        "x": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project search: "
+      ],
+      "prompt_label": "Project search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r2/cancel",
+      "path_id": "r2:project-search:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "current\n",
+      "expected_bytes": "current\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "current"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "current\n",
+        "x": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project search: "
+      ],
+      "prompt_label": "Project search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r2/empty",
+      "path_id": "r2:project-search:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "current\n",
+      "expected_bytes": "current\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No matches",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "current"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "current\n",
+        "x": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project search: "
+      ],
+      "prompt_label": "Project search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": ""
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r2/tab",
+      "path_id": "r2:project-search:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "current\n",
+      "expected_bytes": "current\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Matches: x:1",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "{project_root}/x:1:1: needle here"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "current\n",
+        "x": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project search: "
+      ],
+      "prompt_label": "Project search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-project/project-search/r2/history",
+      "path_id": "r2:project-search:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"p\",\"modifiers\":[]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:free-string",
+      "commands": [
+        "project-search"
+      ],
+      "command": "project-search",
+      "entry_mode": "key",
+      "initial_bytes": "current\n",
+      "expected_bytes": "current\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "No matches",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "current"
+        }
+      ],
+      "project_files": {
+        "buffer.txt": "current\n",
+        "x": "needle here\n",
+        "other.txt": "other\n"
+      },
+      "entry_keys": [
+        "C-x",
+        "p",
+        "s"
+      ],
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Project search: "
+      ],
+      "prompt_label": "Project search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_inputs": [
+        "absent"
+      ],
+      "history_expected": "absent"
+    }
+  ]
+}

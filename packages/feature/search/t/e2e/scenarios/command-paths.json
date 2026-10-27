@@ -1,0 +1,5170 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r1/key",
+      "path_id": "r1:isearch-backward:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        19
+      ],
+      "expected_minibuffer": "I-search backward: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-r"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r1/mx",
+      "path_id": "r1:isearch-backward:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        19
+      ],
+      "expected_minibuffer": "I-search backward: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r2/prompt-1/accept",
+      "path_id": "r2:isearch-backward:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search backward: "
+      ],
+      "prompt_label": "I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r2/prompt-1/cancel",
+      "path_id": "r2:isearch-backward:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search backward: "
+      ],
+      "prompt_label": "I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "entry_keys": [
+        "C-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r2/prompt-1/empty",
+      "path_id": "r2:isearch-backward:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search backward: "
+      ],
+      "prompt_label": "I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r2/prompt-1/tab",
+      "path_id": "r2:isearch-backward:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search backward: "
+      ],
+      "prompt_label": "I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward/r2/prompt-1/history",
+      "path_id": "r2:isearch-backward:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward"
+      ],
+      "command": "isearch-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search backward: "
+      ],
+      "prompt_label": "I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "C-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r1/key",
+      "path_id": "r1:isearch-backward-regexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        26
+      ],
+      "expected_minibuffer": "Regexp I-search backward: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r1/mx",
+      "path_id": "r1:isearch-backward-regexp:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        26
+      ],
+      "expected_minibuffer": "Regexp I-search backward: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r2/prompt-1/accept",
+      "path_id": "r2:isearch-backward-regexp:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search backward: "
+      ],
+      "prompt_label": "Regexp I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r2/prompt-1/cancel",
+      "path_id": "r2:isearch-backward-regexp:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search backward: "
+      ],
+      "prompt_label": "Regexp I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r2/prompt-1/empty",
+      "path_id": "r2:isearch-backward-regexp:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search backward: "
+      ],
+      "prompt_label": "Regexp I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r2/prompt-1/tab",
+      "path_id": "r2:isearch-backward-regexp:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search backward: "
+      ],
+      "prompt_label": "Regexp I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-backward-regexp/r2/prompt-1/history",
+      "path_id": "r2:isearch-backward-regexp:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-backward-regexp"
+      ],
+      "command": "isearch-backward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search backward: "
+      ],
+      "prompt_label": "Regexp I-search backward: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-r"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "expected_cursor_region": "body",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r1/key",
+      "path_id": "r1:isearch-forward:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_minibuffer": "I-search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r1/mx",
+      "path_id": "r1:isearch-forward:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        10
+      ],
+      "expected_minibuffer": "I-search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r2/prompt-1/accept",
+      "path_id": "r2:isearch-forward:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search: "
+      ],
+      "prompt_label": "I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r2/prompt-1/cancel",
+      "path_id": "r2:isearch-forward:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search: "
+      ],
+      "prompt_label": "I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r2/prompt-1/empty",
+      "path_id": "r2:isearch-forward:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search: "
+      ],
+      "prompt_label": "I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r2/prompt-1/tab",
+      "path_id": "r2:isearch-forward:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search: "
+      ],
+      "prompt_label": "I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward/r2/prompt-1/history",
+      "path_id": "r2:isearch-forward:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward"
+      ],
+      "command": "isearch-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "I-search: "
+      ],
+      "prompt_label": "I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "C-s"
+      ],
+      "expected_cursor_region": "body",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r1/key",
+      "path_id": "r1:isearch-forward-regexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_minibuffer": "Regexp I-search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r1/mx",
+      "path_id": "r1:isearch-forward-regexp:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_minibuffer": "Regexp I-search: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r2/prompt-1/accept",
+      "path_id": "r2:isearch-forward-regexp:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search: "
+      ],
+      "prompt_label": "Regexp I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r2/prompt-1/cancel",
+      "path_id": "r2:isearch-forward-regexp:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search: "
+      ],
+      "prompt_label": "Regexp I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r2/prompt-1/empty",
+      "path_id": "r2:isearch-forward-regexp:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search: "
+      ],
+      "prompt_label": "Regexp I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r2/prompt-1/tab",
+      "path_id": "r2:isearch-forward-regexp:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search: "
+      ],
+      "prompt_label": "Regexp I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "body"
+    },
+    {
+      "name": "command-path/w3-6-search/isearch-forward-regexp/r2/prompt-1/history",
+      "path_id": "r2:isearch-forward-regexp:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "isearch-forward-regexp"
+      ],
+      "command": "isearch-forward-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Regexp I-search: "
+      ],
+      "prompt_label": "Regexp I-search: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-s"
+      ],
+      "expected_cursor_region": "body",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r1/mx",
+      "path_id": "r1:replace-string:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        16
+      ],
+      "expected_minibuffer": "Replace string: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-1/accept",
+      "path_id": "r2:replace-string:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "Replace string: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "continuation_inputs": [
+        "token"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-1/cancel",
+      "path_id": "r2:replace-string:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "Replace string: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "continuation_inputs": [
+        "token"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-1/empty",
+      "path_id": "r2:replace-string:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "tokenntokenetokenetokendtokenltokenetoken tokenntokenetokenetokendtokenltokenetoken\n",
+      "expected_cursor": [
+        1,
+        3
+      ],
+      "expected_minibuffer": "Replaced 14 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tokenntokenetokenetokendtokenltokenetoken tokenntokenetokenetokendtokenltokeneto"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "Replace string: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "continuation_inputs": [
+        "token"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-1/tab",
+      "path_id": "r2:replace-string:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "Replace string: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "continuation_inputs": [
+        "token"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-1/history",
+      "path_id": "r2:replace-string:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Not found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "Replace string: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "absent",
+      "continuation_inputs": [
+        "token"
+      ],
+      "history_seed_inputs": [
+        "absent",
+        "token"
+      ],
+      "history_expected": "absent",
+      "history_steps": 1,
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-2/accept",
+      "path_id": "r2:replace-string:prompt-2:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "token",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-2/cancel",
+      "path_id": "r2:replace-string:prompt-2:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "token",
+      "prior_prompt_inputs": [
+        "needle"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-2/empty",
+      "path_id": "r2:replace-string:prompt-2:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": " \n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-2/tab",
+      "path_id": "r2:replace-string:prompt-2:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "token",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r2/prompt-2/history",
+      "path_id": "r2:replace-string:prompt-2:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "history_seed_inputs": [
+        "absent",
+        "token"
+      ],
+      "history_expected": "token",
+      "history_steps": 1,
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/effect",
+      "path_id": "r3:replace-string:effect",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "effect",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx"
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/undo",
+      "path_id": "r3:replace-string:undo",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "undo",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/read-only",
+      "path_id": "r3:replace-string:read-only",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "read-only",
+      "effect_bytes": "needle needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/narrow",
+      "path_id": "r3:replace-string:narrow",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token needle\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "Replaced 1 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "mutation_case": "narrow",
+      "effect_bytes": "token needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "setup_keys": [
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-x",
+        "n",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/split-window",
+      "path_id": "r3:replace-string:split-window",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        12,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "split-window",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "setup_keys": [
+        "C-x",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/macro-replay",
+      "path_id": "r3:replace-string:macro-replay",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "macro-replay",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "command_keys": [
+        "M-x",
+        "replace-string",
+        "RET",
+        "needle",
+        "RET",
+        "token",
+        "RET"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/replace-string/r3/prefix-u4",
+      "path_id": "r3:replace-string:prefix-u4",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "replace-string"
+      ],
+      "command": "replace-string",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "prefix-u4",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace string: ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r1/mx",
+      "path_id": "r1:search-backward:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        25
+      ],
+      "expected_minibuffer": "Search backward (regex): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r2/prompt-1/accept",
+      "path_id": "r2:search-backward:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search backward (regex): "
+      ],
+      "prompt_label": "Search backward (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r2/prompt-1/cancel",
+      "path_id": "r2:search-backward:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search backward (regex): "
+      ],
+      "prompt_label": "Search backward (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r2/prompt-1/empty",
+      "path_id": "r2:search-backward:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search backward (regex): "
+      ],
+      "prompt_label": "Search backward (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r2/prompt-1/tab",
+      "path_id": "r2:search-backward:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search backward (regex): "
+      ],
+      "prompt_label": "Search backward (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-backward/r2/prompt-1/history",
+      "path_id": "r2:search-backward:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-backward"
+      ],
+      "command": "search-backward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search backward (regex): "
+      ],
+      "prompt_label": "Search backward (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ],
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r1/mx",
+      "path_id": "r1:search-forward:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        16
+      ],
+      "expected_minibuffer": "Search (regex): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r2/prompt-1/accept",
+      "path_id": "r2:search-forward:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search (regex): "
+      ],
+      "prompt_label": "Search (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r2/prompt-1/cancel",
+      "path_id": "r2:search-forward:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search (regex): "
+      ],
+      "prompt_label": "Search (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r2/prompt-1/empty",
+      "path_id": "r2:search-forward:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search (regex): "
+      ],
+      "prompt_label": "Search (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": ""
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r2/prompt-1/tab",
+      "path_id": "r2:search-forward:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search (regex): "
+      ],
+      "prompt_label": "Search (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-forward/r2/prompt-1/history",
+      "path_id": "r2:search-forward:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-forward"
+      ],
+      "command": "search-forward",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Search (regex): "
+      ],
+      "prompt_label": "Search (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-next-error/r1/key",
+      "path_id": "r1:search-next-error:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"n\",\"modifiers\":[]}]}",
+      "commands": [
+        "search-next-error"
+      ],
+      "command": "search-next-error",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No search results",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-next-error/r1/mx",
+      "path_id": "r1:search-next-error:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-next-error"
+      ],
+      "command": "search-next-error",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No search results",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "next-error"
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r1/mx",
+      "path_id": "r1:search-occur:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        28
+      ],
+      "expected_minibuffer": "List lines matching regexp: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "occur",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r2/prompt-1/accept",
+      "path_id": "r2:search-occur:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "x\n",
+      "expected_bytes": "x\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found 1 matching line(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "{project_root}/buffer.txt:1:1: x"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "List lines matching regexp: "
+      ],
+      "prompt_label": "List lines matching regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "x",
+      "invoke_name": "occur",
+      "project_files": {
+        "buffer.txt": "x\n"
+      }
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r2/prompt-1/cancel",
+      "path_id": "r2:search-occur:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "List lines matching regexp: "
+      ],
+      "prompt_label": "List lines matching regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "invoke_name": "occur"
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r2/prompt-1/empty",
+      "path_id": "r2:search-occur:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Occur doesn't work with the empty regexp",
+      "expected_screen": [
+        {
+          "region": "minibuffer",
+          "text": "Occur doesn't work with the empty regexp"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "List lines matching regexp: "
+      ],
+      "prompt_label": "List lines matching regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "invoke_name": "occur"
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r2/prompt-1/tab",
+      "path_id": "r2:search-occur:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found 1 matching line(s)",
+      "expected_screen": [
+        {
+          "region": "minibuffer",
+          "text": "Found 1 matching line(s)"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "List lines matching regexp: "
+      ],
+      "prompt_label": "List lines matching regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "invoke_name": "occur"
+    },
+    {
+      "name": "command-path/w3-6-search/search-occur/r2/prompt-1/history",
+      "path_id": "r2:search-occur:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-occur"
+      ],
+      "command": "search-occur",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Found 1 matching line(s)",
+      "expected_screen": [
+        {
+          "region": "minibuffer",
+          "text": "Found 1 matching line(s)"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "List lines matching regexp: "
+      ],
+      "prompt_label": "List lines matching regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "invoke_name": "occur",
+      "history_seed_inputs": [
+        "needle"
+      ],
+      "history_expected": "needle"
+    },
+    {
+      "name": "command-path/w3-6-search/search-previous-error/r1/key",
+      "path_id": "r1:search-previous-error:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%2C%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"p\",\"modifiers\":[]}]}",
+      "commands": [
+        "search-previous-error"
+      ],
+      "command": "search-previous-error",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No search results",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "p"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-previous-error/r1/mx",
+      "path_id": "r1:search-previous-error:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-previous-error"
+      ],
+      "command": "search-previous-error",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "No search results",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "previous-error"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r1/key",
+      "path_id": "r1:search-query-replace:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%25%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        15
+      ],
+      "expected_minibuffer": "Query replace: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r1/mx",
+      "path_id": "r1:search-query-replace:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        15
+      ],
+      "expected_minibuffer": "Query replace: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "query-replace",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-1/accept",
+      "path_id": "r2:search-query-replace:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-1/cancel",
+      "path_id": "r2:search-query-replace:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "continuation_inputs": [
+        "token"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-1/empty",
+      "path_id": "r2:search-query-replace:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "interaction_keys": [
+        "q"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-1/tab",
+      "path_id": "r2:search-query-replace:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-1/history",
+      "path_id": "r2:search-query-replace:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "needle",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "continuation_inputs": [
+        "token"
+      ],
+      "history_seed_inputs": [
+        "needle",
+        "token"
+      ],
+      "history_expected": "needle",
+      "history_steps": 1,
+      "history_seed_interaction_keys": [
+        "q"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-2/accept",
+      "path_id": "r2:search-query-replace:prompt-2:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "token",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-2/cancel",
+      "path_id": "r2:search-query-replace:prompt-2:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "token",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "prior_prompt_inputs": [
+        "needle"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-2/empty",
+      "path_id": "r2:search-query-replace:prompt-2:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-2/tab",
+      "path_id": "r2:search-query-replace:prompt-2:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "token",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r2/prompt-2/history",
+      "path_id": "r2:search-query-replace:prompt-2:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_label": "Query replace with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "M-%"
+      ],
+      "invoke_name": "query-replace",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "history_seed_inputs": [
+        "needle",
+        "token"
+      ],
+      "history_expected": "token",
+      "history_steps": 1,
+      "history_seed_interaction_keys": [
+        "q"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/effect",
+      "path_id": "r3:search-query-replace:effect",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "effect",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/undo",
+      "path_id": "r3:search-query-replace:undo",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "undo",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "expected_undo_cursor": [
+        0,
+        6
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/read-only",
+      "path_id": "r3:search-query-replace:read-only",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "read-only",
+      "effect_bytes": "needle needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/narrow",
+      "path_id": "r3:search-query-replace:narrow",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token needle\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "Replaced 1 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "mutation_case": "narrow",
+      "effect_bytes": "token needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "setup_keys": [
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-x",
+        "n",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/split-window",
+      "path_id": "r3:search-query-replace:split-window",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        12,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "split-window",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "setup_keys": [
+        "C-x",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/macro-replay",
+      "path_id": "r3:search-query-replace:macro-replay",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "macro-replay",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "command_keys": [
+        "M-%",
+        "needle",
+        "RET",
+        "token",
+        "RET",
+        "!"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace/r3/prefix-u4",
+      "path_id": "r3:search-query-replace:prefix-u4",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "search-query-replace"
+      ],
+      "command": "search-query-replace",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "prefix-u4",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace: ",
+        "Query replace with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r1/key",
+      "path_id": "r1:search-query-replace-regexp:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%25%22%2C%22modifiers%22%3A%5B%22alt%22%2C%22control%22%5D%7D%5D%7D",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        22
+      ],
+      "expected_minibuffer": "Query replace regexp: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r1/mx",
+      "path_id": "r1:search-query-replace-regexp:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        22
+      ],
+      "expected_minibuffer": "Query replace regexp: ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "query-replace-regexp",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-1/accept",
+      "path_id": "r2:search-query-replace-regexp:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-1/cancel",
+      "path_id": "r2:search-query-replace-regexp:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-1/empty",
+      "path_id": "r2:search-query-replace-regexp:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-1/tab",
+      "path_id": "r2:search-query-replace-regexp:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-1/history",
+      "path_id": "r2:search-query-replace-regexp:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:1:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "needle",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "history_seed_inputs": [
+        "needle",
+        "token"
+      ],
+      "history_expected": "needle",
+      "history_steps": 1,
+      "history_seed_interaction_keys": [
+        "q"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-2/accept",
+      "path_id": "r2:search-query-replace-regexp:prompt-2:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "token",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-2/cancel",
+      "path_id": "r2:search-query-replace-regexp:prompt-2:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "token",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-2/empty",
+      "path_id": "r2:search-query-replace-regexp:prompt-2:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-2/tab",
+      "path_id": "r2:search-query-replace-regexp:prompt-2:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "token",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r2/prompt-2/history",
+      "path_id": "r2:search-query-replace-regexp:prompt-2:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]};prompt:2:free-string",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Replaced 0 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "key",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_label": "Query replace regexp with: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "invoke_name": "query-replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "history_seed_inputs": [
+        "needle",
+        "token"
+      ],
+      "history_expected": "token",
+      "history_steps": 1,
+      "history_seed_interaction_keys": [
+        "q"
+      ],
+      "interaction_keys": [
+        "q"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/effect",
+      "path_id": "r3:search-query-replace-regexp:effect",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "effect",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/undo",
+      "path_id": "r3:search-query-replace-regexp:undo",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "undo",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "expected_undo_cursor": [
+        0,
+        6
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/read-only",
+      "path_id": "r3:search-query-replace-regexp:read-only",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "read-only",
+      "effect_bytes": "needle needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/narrow",
+      "path_id": "r3:search-query-replace-regexp:narrow",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token needle\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "Replaced 1 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "mutation_case": "narrow",
+      "effect_bytes": "token needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "setup_keys": [
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-x",
+        "n",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/split-window",
+      "path_id": "r3:search-query-replace-regexp:split-window",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        12,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "split-window",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "setup_keys": [
+        "C-x",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/macro-replay",
+      "path_id": "r3:search-query-replace-regexp:macro-replay",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "macro-replay",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "command_keys": [
+        "C-M-%",
+        "needle",
+        "RET",
+        "token",
+        "RET",
+        "!"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-query-replace-regexp/r3/prefix-u4",
+      "path_id": "r3:search-query-replace-regexp:prefix-u4",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"%\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "search-query-replace-regexp"
+      ],
+      "command": "search-query-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "prefix-u4",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Query replace regexp: ",
+        "Query replace regexp with: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-M-%"
+      ],
+      "interaction_keys": [
+        "!"
+      ],
+      "interaction_prompt_label": "Query replace:",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r1/mx",
+      "path_id": "r1:search-replace-regexp:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        17
+      ],
+      "expected_minibuffer": "Replace (regex): ",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "expected_cursor_region": "minibuffer",
+      "cleanup_keys": [
+        "C-g"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-1/accept",
+      "path_id": "r2:search-replace-regexp:prompt-1:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "Replace (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "needle",
+      "invoke_name": "replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-1/cancel",
+      "path_id": "r2:search-replace-regexp:prompt-1:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "Replace (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "needle",
+      "invoke_name": "replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-1/empty",
+      "path_id": "r2:search-replace-regexp:prompt-1:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Replaced 14 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "Replace (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "invoke_name": "replace-regexp",
+      "continuation_inputs": [
+        ""
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-1/tab",
+      "path_id": "r2:search-replace-regexp:prompt-1:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "Replace (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "needle",
+      "invoke_name": "replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-1/history",
+      "path_id": "r2:search-replace-regexp:prompt-1:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Not found",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 1,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "Replace (regex): ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "absent",
+      "invoke_name": "replace-regexp",
+      "continuation_inputs": [
+        "token"
+      ],
+      "history_seed_inputs": [
+        "absent",
+        "token"
+      ],
+      "history_expected": "absent",
+      "history_steps": 1,
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-2/accept",
+      "path_id": "r2:search-replace-regexp:prompt-2:free-string:accept",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "token",
+      "invoke_name": "replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-2/cancel",
+      "path_id": "r2:search-replace-regexp:prompt-2:free-string:cancel",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "token",
+      "invoke_name": "replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-2/empty",
+      "path_id": "r2:search-replace-regexp:prompt-2:free-string:empty",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": " \n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": ""
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "invoke_name": "replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-2/tab",
+      "path_id": "r2:search-replace-regexp:prompt-2:free-string:tab",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "token",
+      "invoke_name": "replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r2/prompt-2/history",
+      "path_id": "r2:search-replace-regexp:prompt-2:free-string:history",
+      "lane": "W3-6",
+      "rule": "r2",
+      "entry": "mx;prompt:2:free-string",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "entry_mode": "mx",
+      "prompt_index": 2,
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_label": "With: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "",
+      "invoke_name": "replace-regexp",
+      "prior_prompt_inputs": [
+        "needle"
+      ],
+      "history_seed_inputs": [
+        "absent",
+        "token"
+      ],
+      "history_expected": "token",
+      "history_steps": 1,
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/effect",
+      "path_id": "r3:search-replace-regexp:effect",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "effect",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp"
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/undo",
+      "path_id": "r3:search-replace-regexp:undo",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "undo",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/read-only",
+      "path_id": "r3:search-replace-regexp:read-only",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "mutation_case": "read-only",
+      "effect_bytes": "needle needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/narrow",
+      "path_id": "r3:search-replace-regexp:narrow",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token needle\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "Replaced 1 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "mutation_case": "narrow",
+      "effect_bytes": "token needle\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "setup_keys": [
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-x",
+        "n",
+        "n"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/split-window",
+      "path_id": "r3:search-replace-regexp:split-window",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        12,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "split-window",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "token token"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "setup_keys": [
+        "C-x",
+        "2"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/macro-replay",
+      "path_id": "r3:search-replace-regexp:macro-replay",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "macro-replay",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "command_keys": [
+        "M-x",
+        "replace-regexp",
+        "RET",
+        "needle",
+        "RET",
+        "token",
+        "RET"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-replace-regexp/r3/prefix-u4",
+      "path_id": "r3:search-replace-regexp:prefix-u4",
+      "lane": "W3-6",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "search-replace-regexp"
+      ],
+      "command": "search-replace-regexp",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "token token\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Replaced 2 occurrence(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "mutation_case": "prefix-u4",
+      "effect_bytes": "token token\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "token token"
+        }
+      ],
+      "prompt_labels": [
+        "Replace (regex): ",
+        "With: "
+      ],
+      "prompt_inputs": [
+        "needle",
+        "token"
+      ],
+      "entry_mode": "mx",
+      "invoke_name": "replace-regexp",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
+      "name": "command-path/w3-6-search/search-result-visit/r1/mx",
+      "path_id": "r1:search-result-visit:mx",
+      "lane": "W3-6",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "search-result-visit"
+      ],
+      "command": "search-result-visit",
+      "initial_bytes": "needle needle\n",
+      "expected_bytes": "needle needle\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "needle needle"
+        }
+      ],
+      "entry_mode": "mx"
+    }
+  ]
+}
