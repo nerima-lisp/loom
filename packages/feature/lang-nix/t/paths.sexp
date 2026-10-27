@@ -42,4 +42,13 @@
   :outcome "Openers insert closers and existing closers are skipped"
   :observe (:file_bytes)
   :scenario "lang-nix-pair-completion"
+  :lane "W3-7c")
+ (:id "r1:lang-nix:mode-assignment"
+  :commands (:find-file)
+  :rule :r1
+  :entry "path extension"
+  :state "Nix file exists while another file is active"
+  :outcome ".nix selects Nix mode"
+  :observe (:screen_text :file_bytes :cursor)
+  :scenario "lang-nix-mode-assignment"
   :lane "W3-7c"))
