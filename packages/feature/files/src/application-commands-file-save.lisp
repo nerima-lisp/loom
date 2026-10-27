@@ -181,13 +181,13 @@ buffer. Undo history is not transferred."
              (progn
                (buffer-set-read-only buffer nil)
                (unless (string= old-text (%file-snapshot-text snapshot))
+                 (loom/core/buffer:buffer-record-undo-boundary buffer)
                  (multiple-value-bind (end-line end-column)
                      (%text-end-position old-text)
                    (buffer-delete-region buffer 0 0 end-line end-column))
                  (unless (string= (%file-snapshot-text snapshot) "")
-                   (buffer-insert-string
-                    buffer
-                    (%file-snapshot-text snapshot))))
+                   (buffer-insert-string buffer
+                                         (%file-snapshot-text snapshot))))
                (buffer-set-point buffer point-line point-column)
                (when (and mark-line mark-column)
                  (buffer-set-mark buffer mark-line mark-column))

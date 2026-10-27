@@ -447,7 +447,26 @@
               (expect (buffer-text buffer) :to-equal before)
               (expect (loom:minibuffer-message-string minibuffer)
                       :to-equal
-                      (format nil "File is unavailable: ~A" path)))))))))
+                      (format nil "File is unavailable: ~A" path))))))))
+  (it
+    "undoes revert without undoing the prior local edit"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (buffer-set-point buffer 0 4)
+            (buffer-insert-string buffer " local")
+            (host-kit:write-file-string "external" path)
+            (loom/feature/files:revert-buffer)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil "Discard local changes and revert ~A? (y/n): " path))
+            (%confirm-minibuffer minibuffer "y")
+            (expect (buffer-text buffer) :to-equal "external")
+            (loom/core/buffer:buffer-undo buffer)
+            (expect (buffer-text buffer) :to-equal "disk local")
+            (expect (host-kit:read-file-string path) :to-equal "external")))))))
 (describe
   "saving to a missing parent directory"
   (it
