@@ -167,22 +167,43 @@ def paste_separate_undo(binary):
         _write(path, b"base\n")
 
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            _assert_paste_mode_enabled(session)
-            _paste(session, b"first")
-            _assert_body_line(session, 0, "firstbase")
-            _assert_body_cursor(session, 0, 5)
+            stage = "wait-ready"
+            try:
+                session.wait_ready()
+                stage = "check paste mode"
+                _assert_paste_mode_enabled(session)
+                stage = "send first paste"
+                _paste(session, b"first")
+                stage = "observe first paste"
+                _assert_body_line(session, 0, "firstbase")
+                stage = "check first paste cursor"
+                _assert_body_cursor(session, 0, 5)
 
-            _paste(session, b"second")
-            _assert_body_line(session, 0, "firstsecondbase")
-            _assert_body_cursor(session, 0, 11)
+                stage = "send second paste"
+                _paste(session, b"second")
+                stage = "observe second paste"
+                _assert_body_line(session, 0, "firstsecondbase")
+                stage = "check second paste cursor"
+                _assert_body_cursor(session, 0, 11)
 
-            session.send(keys.ctrl("x") + keys.text("u"))
-            _assert_body_line(session, 0, "firstbase")
-            _assert_body_cursor(session, 0, 5)
+                stage = "send first undo"
+                session.send(keys.ctrl("x") + keys.text("u"))
+                stage = "observe first undo"
+                _assert_body_line(session, 0, "firstbase")
+                stage = "check first undo cursor"
+                _assert_body_cursor(session, 0, 5)
 
-            session.send(keys.ctrl("x") + keys.text("u"))
-            _assert_body_line(session, 0, "base")
-            _assert_body_cursor(session, 0, 0)
-            _save_and_assert(session, path, b"base\n")
-            _close(session, "r6/paste/separate-undo")
+                stage = "send second undo"
+                session.send(keys.ctrl("x") + keys.text("u"))
+                stage = "observe second undo"
+                _assert_body_line(session, 0, "base")
+                stage = "check second undo cursor"
+                _assert_body_cursor(session, 0, 0)
+                stage = "save restored text"
+                _save_and_assert(session, path, b"base\n")
+                stage = "close terminal"
+                _close(session, "r6/paste/separate-undo")
+            except Exception as condition:
+                raise AssertionError(
+                    f"r6/paste/separate-undo failed during {stage}: {condition}"
+                ) from condition
