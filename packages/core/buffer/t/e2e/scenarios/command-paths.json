@@ -5523,6 +5523,361 @@
       "prepare_commands": [
         "split-window-below"
       ]
+    },
+    {
+      "name": "command-path/buffer/r3/redo/split-window",
+      "path_id": "r3:redo:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/split-window",
+      "path_id": "r3:undo:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-/"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "xa\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "xa",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "pre_command_keys": [
+        "x",
+        "\u007f"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/undo",
+      "path_id": "r3:undo:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "undo",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-/"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "xa\n",
+      "expected_bytes": "a\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "\u007f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-empty",
+      "path_id": "r2:goto-line:prompt-1:numeric:empty",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Enter a line number",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "M-g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "empty",
+      "prompt_kind": "numeric",
+      "input_text": ""
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-tab",
+      "path_id": "r2:goto-line:prompt-1:numeric:tab",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Moved",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "M-g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "tab",
+      "prompt_kind": "numeric",
+      "input_text": "2"
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-invalid",
+      "path_id": "r2:goto-line:prompt-1:numeric:invalid",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Enter a line number",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "M-g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "invalid",
+      "prompt_kind": "numeric",
+      "input_text": "not-a-line"
+    },
+    {
+      "name": "command-path/buffer/r3/redo/narrow",
+      "path_id": "r3:redo:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "set-mark-command",
+        "move-end-of-line",
+        "forward-char",
+        "narrow-to-region",
+        "beginning-of-buffer",
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "initial_bytes": "abc\noutside\n",
+      "effect_bytes": "xabc\noutside\n",
+      "expected_bytes": "xabc\noutside\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xabc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xabc"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
     }
   ]
 }
