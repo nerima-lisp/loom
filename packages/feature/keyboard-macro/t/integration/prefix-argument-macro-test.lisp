@@ -29,4 +29,25 @@
       (expect (buffer-text buffer) :to-equal "aa")
       (expect (prefix-argument-active-p
                (editor-state-prefix-argument *editor-state*))
-              :to-be nil))))
+              :to-be nil)))
+  (it
+    "replays a no-prefix command without inventing a prefix"
+    (let* ((*editor-state*
+             (%fresh-editor-state (format nil "one~%two~%three~%")
+                                  :with-minibuffer t))
+           (keymap (loom/application:install-default-keybindings (make-keymap)))
+           (macro (make-keyboard-macro))
+           (buffer (%selected-test-buffer)))
+      (setf (editor-state-keymap *editor-state*) keymap
+            (editor-state-keyboard-macro *editor-state*) macro)
+      (buffer-set-point buffer 1 0)
+      (keyboard-macro-start-recording macro)
+      (keyboard-macro-record-event
+       macro
+       (make-keyboard-macro-event :kind :key :value (cons '(:alt) #\^)))
+      (keyboard-macro-stop-recording macro)
+      (loom/feature/keyboard-macro:call-last-kbd-macro)
+      (expect (buffer-text buffer)
+              :to-equal
+              (format nil "one two~%three~%"))
+      (expect buffer :to-have-point (cons 0 3)))))

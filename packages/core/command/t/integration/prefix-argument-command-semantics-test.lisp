@@ -96,4 +96,51 @@
                              "alpha beta gamma delta epsilon zeta  eta theta iota kappa lambda mu nu~%xi omicron pi rho sigma tau upsilon~%"))
              (expect buffer :to-have-point (cons 0 0))
              (loom/core/buffer:buffer-undo buffer)
+             (expect (buffer-text buffer) :to-equal original-text)))
+          (it
+           "joins the preceding line without a prefix through M-^ and supports undo"
+           (let* ((*editor-state*
+                    (%fresh-editor-state
+                     (format nil "one~%  two~%")
+                     :with-minibuffer
+                     t))
+                  (keymap
+                   (loom/application:install-default-keybindings (make-keymap)))
+                  (keymap-state (make-keymap-state keymap))
+                  (buffer (%selected-test-buffer)))
+             (setf (editor-state-keymap *editor-state*) keymap)
+             (loom/core/buffer:buffer-set-point buffer 1 0)
+             (loom::%dispatch-key-event (%prefix-event #\^ (quote (:alt)))
+                                        keymap-state)
+             (expect (buffer-text buffer)
+                     :to-equal
+                     (format nil "one two~%"))
+             (expect buffer :to-have-point (cons 0 3))
+             (loom/core/buffer:buffer-undo buffer)
+             (expect (buffer-text buffer)
+                     :to-equal
+                     (format nil "one~%  two~%"))
+             ;; GNU Emacs 31.1 restores point at the start of the joined line.
+             (expect buffer :to-have-point (cons 1 0))))
+          (it
+           "fills a paragraph without justification when M-q has no prefix"
+           (let* ((*editor-state*
+                    (%fresh-editor-state
+                     (format nil
+                             "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon~%")
+                     :with-minibuffer
+                     t))
+                  (keymap
+                   (loom/application:install-default-keybindings (make-keymap)))
+                  (keymap-state (make-keymap-state keymap))
+                  (buffer (%selected-test-buffer))
+                  (original-text (buffer-text buffer)))
+             (setf (editor-state-keymap *editor-state*) keymap)
+             (loom::%dispatch-key-event (%prefix-event #\q (quote (:alt)))
+                                        keymap-state)
+             (expect (buffer-text buffer)
+                     :to-equal
+                     (format nil
+                             "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu~%xi omicron pi rho sigma tau upsilon~%"))
+             (loom/core/buffer:buffer-undo buffer)
              (expect (buffer-text buffer) :to-equal original-text))))

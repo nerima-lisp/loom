@@ -39,17 +39,18 @@
   (record-undo-boundary-for-command nil)
   (let ((dispatch-result nil))
     (unwind-protect
-        (let ((*current-prefix-argument* (prefix-argument-value-for-editor)))
-          (setf dispatch-result (keymap-state-dispatch keymap-state
-                                                       descriptor
-                                                       (lambda
-                                                           (command-id sequence
-                                                                       keymap-name)
-                                                         (invoke-key-command
-                                                          command-id
-                                                          :macro
-                                                          sequence
-                                                          keymap-name)))))
+        (let ((*current-prefix-argument*
+               (and (loom/core/command:prefix-argument-active-p argument)
+                    (prefix-argument-value-for-editor))))
+          (setf dispatch-result
+                (keymap-state-dispatch
+                 keymap-state
+                 descriptor
+                 (lambda (command-id sequence keymap-name)
+                   (invoke-key-command command-id
+                                       :macro
+                                       sequence
+                                       keymap-name)))))
       (unless (eq dispatch-result :pending)
         (prefix-argument-reset argument)))))
 

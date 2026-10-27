@@ -31,7 +31,8 @@
   (let ((dispatch-result nil))
     (unwind-protect
          (let ((*current-prefix-argument*
-                 (prefix-argument-value-for-editor)))
+                 (and (loom/core/command:prefix-argument-active-p prefix-argument)
+                     (prefix-argument-value-for-editor))))
            (setf dispatch-result
                  (keymap-state-dispatch
                   keymap-state
