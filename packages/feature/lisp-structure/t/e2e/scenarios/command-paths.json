@@ -1491,9 +1491,7 @@
       "command": "forward-slurp-sexp",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "C-Right"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
