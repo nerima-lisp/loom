@@ -230,7 +230,8 @@
              buffer
              (+ visible-start left-end)
              (+ visible-start right-start)
-             separator)
+             separator
+             :undo-replacement-p t)
             (%command-set-point-at-offset
              buffer
              (+ visible-start left-end)))))))
