@@ -1520,8 +1520,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {
@@ -1705,8 +1705,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {
@@ -1902,8 +1902,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {
@@ -2452,8 +2452,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {
@@ -2655,8 +2655,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {
@@ -2832,8 +2832,8 @@
         "C-a"
       ],
       "major_mode": "Common Lisp",
-      "prepare_keys": [
-        "M-<"
+      "prepare_commands": [
+        "beginning-of-buffer"
       ]
     },
     {

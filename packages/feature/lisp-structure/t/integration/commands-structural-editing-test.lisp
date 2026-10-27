@@ -45,7 +45,12 @@
       (%with-selected-buffer-state (buffer content)
         (buffer-set-major-mode buffer :common-lisp)
         (buffer-set-point buffer 0 offset)
-        (loom::universal-argument)
+        (progn
+          (setf
+           (loom/core/editor-session:editor-state-minibuffer
+            loom/core/editor-session:*editor-state*)
+           (loom/core/minibuffer:make-minibuffer))
+          (loom::universal-argument))
         (let ((minibuffer
                 (loom/core/editor-session:editor-state-minibuffer
                  loom/core/editor-session:*editor-state*)))
