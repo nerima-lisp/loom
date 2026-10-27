@@ -110,4 +110,24 @@
     (buffer-undo buffer)
     (expect (buffer-line buffer 0) :to-equal "xa")
     (buffer-undo buffer)
-    (expect (buffer-line buffer 0) :to-equal "a"))))
+    (expect (buffer-line buffer 0) :to-equal "a"))) (it
+    "undo of the marked fill replacement restores point before the replaced newline"
+    (let ((buffer (make-buffer
+                   :initial-content
+                   (format nil "alpha beta~%gamma delta~%"))))
+      (buffer-set-point buffer 0 0)
+      ;; Model fill-paragraph replacing one newline with a space.
+      (buffer-delete-region buffer 0 10 1 0 :undo-replacement-p t)
+      (buffer-insert-string buffer " ")
+      (expect (buffer-line buffer 0) :to-equal "alpha beta gamma delta")
+      (buffer-set-point buffer 0 0)
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "alpha beta")
+      (expect (buffer-line buffer 1) :to-equal "gamma delta")
+      (expect (buffer-point-column buffer) :to-equal 0)
+      (buffer-redo buffer)
+      (expect (buffer-line buffer 0) :to-equal "alpha beta gamma delta")
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "alpha beta")
+      (expect (buffer-line buffer 1) :to-equal "gamma delta")
+      (expect (buffer-point-column buffer) :to-equal 0))))

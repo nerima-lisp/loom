@@ -33,7 +33,7 @@
               (:bottom :middle)))))
 
   (defun %replace-buffer-offset-range
-      (buffer start end replacement &key minimal-change-p)
+      (buffer start end replacement &key minimal-change-p undo-replacement-p)
     (if minimal-change-p
         (let* ((visible-start (buffer-narrow-start-offset buffer))
                (text (buffer-visible-text buffer))
@@ -70,7 +70,8 @@
                          (buffer-position-line start-position)
                          (buffer-position-column start-position)
                          (buffer-position-line end-position)
-                         (buffer-position-column end-position)))
+                         (buffer-position-column end-position)
+                         :undo-replacement-p undo-replacement-p))
                       (let ((position
                               (buffer-offset-position buffer changed-start)))
                         (buffer-set-point
@@ -87,7 +88,7 @@
                     (buffer-set-point
                      buffer
                      (buffer-position-line position)
-                     (buffer-position-column position)))))))
+                     (buffer-position-column position))))))
         (let ((start-position (buffer-offset-position buffer start))
               (end-position (buffer-offset-position buffer end)))
           (buffer-delete-region
@@ -95,8 +96,9 @@
            (buffer-position-line start-position)
            (buffer-position-column start-position)
            (buffer-position-line end-position)
-           (buffer-position-column end-position))
-          (buffer-insert-string buffer replacement))))
+           (buffer-position-column end-position)
+           :undo-replacement-p undo-replacement-p)
+          (buffer-insert-string buffer replacement)))))
 
 
   (defun transpose-chars ()
@@ -330,7 +332,8 @@
                (+ visible-start start)
                (+ visible-start end)
                replacement
-               :minimal-change-p t)
+               :minimal-change-p t
+               :undo-replacement-p t)
               (%command-set-point-at-offset
                buffer
                (min point-offset

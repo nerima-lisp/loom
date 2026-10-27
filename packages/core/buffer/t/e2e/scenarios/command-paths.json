@@ -2423,7 +2423,7 @@
         {"region": "body", "index": 1, "text": "gamma delta"}
       ],
       "effect_screen": [{"region": "body", "text": "alpha beta gamma delta"}],
-      "expected_undo_cursor": [0, 10]
+      "expected_undo_cursor": [0, 0]
     },
     {
       "name": "command-path/buffer/r3/transpose-chars/undo",
@@ -3090,6 +3090,825 @@
       ],
       "prepare_commands": [
         "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-accept",
+      "path_id": "r2:goto-line:prompt-1:numeric:accept",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Moved",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "accept",
+      "prompt_kind": "numeric",
+      "input_text": "2"
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-cancel",
+      "path_id": "r2:goto-line:prompt-1:numeric:cancel",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "cancel",
+      "prompt_kind": "numeric",
+      "input_text": "2"
+    },
+    {
+      "name": "command-path/buffer/r2/goto-line/prompt-1-numeric-history",
+      "path_id": "r2:goto-line:prompt-1:numeric:history",
+      "lane": "W3-4",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"alt\"]},{\"key\":\"g\",\"modifiers\":[\"alt\"]}]};prompt:1:numeric",
+      "commands": [
+        "goto-line"
+      ],
+      "command": "goto-line",
+      "initial_bytes": "one\ntwo\nthree\n",
+      "expected_bytes": "one\ntwo\nthree\n",
+      "expected_cursor": [
+        2,
+        0
+      ],
+      "expected_minibuffer": "Moved",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "two",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "three",
+          "index": 2
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-g",
+        "g"
+      ],
+      "prompt_open": "Go to line: ",
+      "prompt_case": "history",
+      "prompt_kind": "numeric",
+      "input_text": "1",
+      "history_seed_input": "3",
+      "history_expected": "3",
+      "history_next_expected": "1"
+    },
+    {
+      "name": "command-path/buffer/r1/toggle-read-only/key",
+      "path_id": "r1:toggle-read-only:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22q%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"q\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "toggle-read-only"
+      ],
+      "command": "toggle-read-only",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "C-q"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/toggle-read-only/mx",
+      "path_id": "r1:toggle-read-only:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "toggle-read-only",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "mx"
+    },
+    {
+      "name": "command-path/buffer/r1/undo/key:%2F",
+      "path_id": "r1:undo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%2F%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "undo"
+      ],
+      "command": "undo",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-/"
+      ],
+      "pre_keys": [
+        {
+          "key": "x"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/undo/key:%5F",
+      "path_id": "r1:undo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22_%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "undo"
+      ],
+      "command": "undo",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-_"
+      ],
+      "pre_keys": [
+        {
+          "key": "x"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/undo/mx",
+      "path_id": "r1:undo:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "undo"
+      ],
+      "command": "undo",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "mx",
+      "pre_keys": [
+        {
+          "key": "x"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/undo/key-ctrl-x-u",
+      "path_id": "r1:undo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22u%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"u\",\"modifiers\":[]}]}",
+      "commands": [
+        "undo"
+      ],
+      "command": "undo",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "u"
+      ],
+      "pre_keys": [
+        {
+          "key": "x"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/buffer/r1/widen/key",
+      "path_id": "r1:widen:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22w%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"w\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "set-mark-command",
+        "narrow-to-region",
+        "widen"
+      ],
+      "command": "widen",
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Widened buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "before target after"
+        }
+      ],
+      "entry_mode": "key",
+      "pre_keys": [
+        {
+          "key": "C-f",
+          "repeat": 7
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-f",
+          "repeat": 6
+        },
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "n"
+        },
+        {
+          "key": "n"
+        }
+      ],
+      "entry_keys": [
+        "C-x",
+        "n",
+        "w"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r1/widen/mx",
+      "path_id": "r1:widen:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "forward-char",
+        "set-mark-command",
+        "narrow-to-region",
+        "execute-extended-command",
+        "widen"
+      ],
+      "command": "widen",
+      "initial_bytes": "before target after\n",
+      "expected_bytes": "before target after\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Widened buffer",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "before target after"
+        }
+      ],
+      "entry_mode": "mx",
+      "pre_keys": [
+        {
+          "key": "C-f",
+          "repeat": 7
+        },
+        {
+          "key": "C-@"
+        },
+        {
+          "key": "C-f",
+          "repeat": 6
+        },
+        {
+          "key": "C-x"
+        },
+        {
+          "key": "n"
+        },
+        {
+          "key": "n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-backward-char/read-only",
+      "path_id": "r3:delete-backward-char:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "delete-backward-char"
+      ],
+      "command": "delete-backward-char",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        ""
+      ],
+      "effect_bytes": "abc\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/read-only",
+      "path_id": "r3:delete-indentation:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "delete-indentation"
+      ],
+      "command": "delete-indentation",
+      "initial_bytes": "one\n  two\n",
+      "expected_bytes": "one\n  two\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "  two",
+          "index": 1
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-^"
+      ],
+      "effect_bytes": "one\n  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "  two",
+          "index": 1
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "pre_command_keys": [
+        "C-n"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/read-only",
+      "path_id": "r3:newline:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "newline"
+      ],
+      "command": "newline",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "RET"
+      ],
+      "effect_bytes": "abc\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/open-line/read-only",
+      "path_id": "r3:open-line:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "open-line"
+      ],
+      "command": "open-line",
+      "initial_bytes": "abc\n",
+      "expected_bytes": "abc\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-f",
+        "C-o"
+      ],
+      "effect_bytes": "abc\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/buffer/r3/redo/read-only",
+      "path_id": "r3:redo:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "redo"
+      ],
+      "command": "redo",
+      "initial_bytes": "a\n",
+      "expected_bytes": "a\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "effect_bytes": "a\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/read-only",
+      "path_id": "r3:undo:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "undo"
+      ],
+      "command": "undo",
+      "initial_bytes": "a\n",
+      "expected_bytes": "a\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-/"
+      ],
+      "effect_bytes": "a\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "pre_command_keys": [
+        "x"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/effect",
+      "path_id": "r3:delete-indentation:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-indentation",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "initial_bytes": "one\n  two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-^"
+      ],
+      "effect_bytes": "one two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "pre_command_keys": [
+        "C-n"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/delete-indentation/undo",
+      "path_id": "r3:delete-indentation:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"^\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-indentation",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "delete-indentation",
+      "initial_bytes": "one\n  two\n",
+      "expected_bytes": "one\n  two\n",
+      "expected_cursor": [
+        1,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "  two",
+          "index": 1
+        }
+      ],
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-^"
+      ],
+      "effect_bytes": "one two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "expected_undo_cursor": [
+        1,
+        0
+      ],
+      "pre_command_keys": [
+        "C-n"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/redo/undo",
+      "path_id": "r3:redo:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "redo",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "initial_bytes": "a\n",
+      "expected_bytes": "a\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "mutation_case": "undo",
+      "command_keys": [
+        "ESC",
+        "C-_"
+      ],
+      "effect_bytes": "xa\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "xa"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-x",
+        "u"
       ]
     }
   ]

@@ -61,23 +61,29 @@ end-of-line. A no-op at the very end of the buffer."
           (%delete-char-forward buffer))))
   buffer)
 
-(defun %delete-region-at-offsets (buffer start-offset end-offset)
+(defun %delete-region-at-offsets
+    (buffer start-offset end-offset &optional undo-replacement-p)
   (multiple-value-bind (start-line start-column)
       (%offset-to-position-values buffer start-offset)
     (multiple-value-bind (end-line end-column)
         (%offset-to-position-values buffer end-offset)
-      (let ((text (%do-delete buffer start-line start-column end-line end-column)))
+      (let ((text (%do-delete buffer start-line start-column end-line end-column
+                              :undo-replacement-p undo-replacement-p)))
         (%set-buffer-point-from-offset buffer start-offset)
         text))))
 
-(defun buffer-delete-region (buffer start-line start-column end-line end-column)
-  "Delete the text between the zero-based (START-LINE, START-COLUMN) and
-(END-LINE, END-COLUMN) positions (end exclusive). The end position must not
-precede the start position. Clamp the range to BUFFER's visible region.
-A nonempty deletion moves point to the clamped start, marks BUFFER modified,
-and records undo information. An empty range leaves point and history
-unchanged. Returns the deleted text as a string, empty for an empty range.
-Read-only BUFFER signals BUFFER-READ-ONLY-ERROR even for an empty range."
+(defun buffer-delete-region
+    (buffer start-line start-column end-line end-column &key undo-replacement-p)
+  "Delete text between the zero-based start and end positions, with the end
+exclusive. The end position must not precede the start position. Clamp the
+range to BUFFER visible region. A nonempty deletion moves point to the clamped
+start, marks BUFFER modified, and records undo information. When
+UNDO-REPLACEMENT-P is true, record that this deletion belongs to a replacement
+so undo restores the point saved before the deletion. Use this only when the
+replacement insertion is part of the same undo group. An empty range leaves
+point and history unchanged. Returns the deleted text as a string, empty for
+an empty range. Read-only BUFFER signals BUFFER-READ-ONLY-ERROR even for an
+empty range."
   (when (or (< end-line start-line)
             (and (= end-line start-line) (< end-column start-column)))
     (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
@@ -88,4 +94,5 @@ Read-only BUFFER signals BUFFER-READ-ONLY-ERROR even for an empty range."
        buffer start-line start-column end-line end-column)
     (if (= start-offset end-offset)
         ""
-        (%delete-region-at-offsets buffer start-offset end-offset))))
+        (%delete-region-at-offsets buffer start-offset end-offset
+                                   undo-replacement-p))))

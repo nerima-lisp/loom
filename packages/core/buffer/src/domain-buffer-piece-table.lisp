@@ -8,12 +8,15 @@
             (%buffer-narrow-end-offset buffer) (+ old-length text-length)))
   (setf (%buffer-modified-p buffer) t))
 
-(defun %record-insert (buffer line column text clear-redo)
+(defun %record-insert (buffer line column text clear-redo
+                       &optional undo-replacement-p)
   (when clear-redo
     (setf (%buffer-redo-list buffer) nil))
-  (push (list :delete line column text
-              (%buffer-point-line buffer)
-              (%buffer-point-column buffer))
+  (push (append
+         (list :delete line column text
+               (%buffer-point-line buffer)
+               (%buffer-point-column buffer))
+         (when undo-replacement-p (list :undo-replacement)))
         (%buffer-undo-list buffer)))
 
 (defun %update-after-delete (buffer was-narrowed-p old-length deleted-length)
@@ -23,19 +26,23 @@
             (%buffer-narrow-end-offset buffer) (- old-length deleted-length)))
   (setf (%buffer-modified-p buffer) t))
 
-(defun %record-delete (buffer line column text clear-redo)
+(defun %record-delete (buffer line column text clear-redo
+                       &optional undo-replacement-p)
   (when clear-redo
     (setf (%buffer-redo-list buffer) nil))
   (multiple-value-bind (end-line end-column)
       (%advance-position line column text)
-    (push (list :insert line column text
-                (%buffer-point-line buffer)
-                (%buffer-point-column buffer)
-                (and (= (%buffer-point-line buffer) end-line)
-                     (= (%buffer-point-column buffer) end-column)))
+    (push (append
+           (list :insert line column text
+                 (%buffer-point-line buffer)
+                 (%buffer-point-column buffer)
+                 (and (= (%buffer-point-line buffer) end-line)
+                      (= (%buffer-point-column buffer) end-column)))
+           (when undo-replacement-p (list :undo-replacement)))
           (%buffer-undo-list buffer))))
 
-(defun %do-insert (buffer line column text &key (clear-redo t))
+(defun %do-insert (buffer line column text &key (clear-redo t)
+                                undo-replacement-p)
   "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
 entry describing the inverse of this exact edit (a delete of the same
 span). Returns (values end-line end-column), the position just after the
@@ -49,11 +56,11 @@ new edit rather than an undo/redo replay."
          (text-length (length text)))
     (multiple-value-bind (end-line end-column) (%raw-insert-at buffer line column text)
       (%update-after-insert buffer was-narrowed old-length text-length)
-      (%record-insert buffer line column text clear-redo)
+      (%record-insert buffer line column text clear-redo undo-replacement-p)
       (values end-line end-column))))
 
 (defun %do-delete (buffer start-line start-column end-line end-column
-                   &key (clear-redo t))
+                   &key (clear-redo t) undo-replacement-p)
   "Delete the region between the two positions, mark BUFFER modified, and
 push an undo entry describing the inverse of this exact edit (a
 re-insertion of the deleted text). Returns the deleted text.
@@ -61,7 +68,7 @@ re-insertion of the deleted text). Returns the deleted text.
 When CLEAR-REDO is true, discard explicit redo history because this is a
 new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
-    (let* ((start-offset (%position-to-offset buffer start-line start-column))
+  (let* ((start-offset (%position-to-offset buffer start-line start-column))
          (end-offset (%position-to-offset buffer end-line end-column))
          (text (%piece-table-range-text buffer start-offset end-offset))
          (was-narrowed (%buffer-narrowed-p buffer))
@@ -69,5 +76,6 @@ new edit rather than an undo/redo replay."
          (deleted-length (- end-offset start-offset)))
     (%raw-delete-region buffer start-line start-column end-line end-column)
     (%update-after-delete buffer was-narrowed old-length deleted-length)
-    (%record-delete buffer start-line start-column text clear-redo)
+    (%record-delete buffer start-line start-column text clear-redo
+                    undo-replacement-p)
     text))
