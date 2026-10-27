@@ -5,11 +5,7 @@
                "loom-core-editor-session" "loom-core-minibuffer")
   :serial t
   :components
-  ((:module "kill-ring-command-support"
-    :pathname "../../../packages/feature/kill-ring/src/"
-    :serial t
-    :components ((:file "application-commands-kill-word-support")))
-   (:module "buffer-command-support"
+  ((:module "buffer-command-support"
     :pathname "../../../packages/core/buffer/src/"
     :serial t
     :components ((:file "application-commands-region-support")))
@@ -32,7 +28,6 @@
      (:file "application-word-motion")
      (:file "application-commands-movement-support")
      (:file "application-commands-emacs-defaults")
-     (:file "application-commands-kill")
      (:file "application-commands-extended-command")
      (:file "commands-keybinding-spec")
      (:file "command-specs-prefix-argument")))

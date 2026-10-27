@@ -77,9 +77,12 @@ skips line comments and nested block comments."
           (%move-point-to-offset buffer (+ start end))
           (error "Buffer is read-only: #<buffer ~A>"
                  (loom/core/buffer:buffer-name buffer)))
-        (%kill-between-offsets buffer (+ start offset) (+ start end)
-                               :coalesce (editor-state-last-command-kill-p
-                                          *editor-state*))))
+        (loom/feature/kill-ring:kill-between-offsets
+         buffer
+         (+ start offset)
+         (+ start end)
+         :coalesce
+         (editor-state-last-command-kill-p *editor-state*))))
     (setf (editor-state-last-command-kill-p *editor-state*) t))
   (%consume-structural-prefix)
   nil)
