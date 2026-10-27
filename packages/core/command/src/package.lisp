@@ -63,6 +63,7 @@
    #:command-completion-names
    #:register-key-command
    #:register-command-spec
+   #:register-internal-command
    #:find-command-spec
    #:command-specs
    #:command-spec-name
@@ -82,4 +83,6 @@
    #:defkeys-single-chord-p
    #:defkeys-chord
    #:defkeys-key-sequence
-   #:install-default-keybindings #:register-buffer-keymap-provider #:keymap-for-buffer))
+   #:install-default-keybindings
+   #:register-buffer-keymap-provider
+   #:keymap-for-buffer))

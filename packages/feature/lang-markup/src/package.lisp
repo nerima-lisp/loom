@@ -217,7 +217,7 @@
           (loom/feature/mode:comment-dwim)
           (loom/feature/mode:comment-line))))
   (eval-when (:load-toplevel :execute)
-    (loom/core/command::register-internal-command
+    (loom/core/command:register-internal-command
      :feature/lang-markup
      "lang-markup/org-comment-dwim"
      #'loom/feature/lang-markup::org-comment-dwim
