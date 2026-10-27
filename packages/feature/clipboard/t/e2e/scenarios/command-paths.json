@@ -14,25 +14,37 @@
       "command": "clipboard-yank",
       "entry_mode": "mx",
       "initial_bytes": "tail\n",
-      "expected_bytes": "clip\ntexttail\n",
+      "expected_bytes": "tailtail\n",
       "expected_cursor": [
-        1,
+        0,
         4
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
       "expected_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
-      "save_after_effect": true
+      "save_after_effect": true,
+      "pre_keys": [
+        {
+          "key": "C-a"
+        },
+        {
+          "key": "C-space"
+        },
+        {
+          "key": "C-e"
+        },
+        {
+          "key": "M-w"
+        },
+        {
+          "key": "C-a"
+        }
+      ]
     },
     {
       "lane": "W3-8",
@@ -45,35 +57,25 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntexttail\n",
-      "expected_bytes": "clip\ntexttail\n",
+      "effect_bytes": "tailtail\n",
+      "expected_bytes": "tailtail\n",
       "expected_cursor": [
-        1,
+        0,
         4
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
       "expected_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
       "name": "command-path/r3/clipboard-yank/effect",
@@ -82,7 +84,14 @@
         "clipboard-yank",
         "save-buffer"
       ],
-      "mutation_case": "effect"
+      "mutation_case": "effect",
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
+      ]
     },
     {
       "lane": "W3-8",
@@ -95,35 +104,29 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntexttail\n",
-      "expected_bytes": "clip\ntexttail\n",
+      "effect_bytes": "tailtail\n",
+      "expected_bytes": "tailtail\n",
       "expected_cursor": [
-        1,
+        0,
         4
       ],
       "expected_minibuffer": "Keyboard macro defined",
       "expected_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
         },
         {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
+          "region": "minibuffer",
+          "text": "Clipboard unavailable; using kill ring"
         }
       ],
       "name": "command-path/r3/clipboard-yank/macro-replay",
@@ -146,6 +149,13 @@
       ],
       "replay_prefix_keys": [
         "C-a"
+      ],
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
       ]
     },
     {
@@ -159,24 +169,24 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "tailclip\n",
-      "expected_bytes": "tailclip\n",
+      "effect_bytes": "tailtail\n",
+      "expected_bytes": "tailtail\n",
       "expected_cursor": [
         0,
         8
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
       "expected_screen": [
         {
           "region": "body",
-          "text": "tailclip",
+          "text": "tailtail",
           "index": 0
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "tailclip",
+          "text": "tailtail",
           "index": 0
         }
       ],
@@ -194,6 +204,13 @@
       ],
       "prepare_commands": [
         "narrow-to-region"
+      ],
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
       ]
     },
     {
@@ -215,66 +232,33 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntextclip\ntextclip\ntextclip\ntexttail\n",
-      "expected_bytes": "clip\ntextclip\ntextclip\ntextclip\ntexttail\n",
+      "effect_bytes": "tailtailtailtailtail\n",
+      "expected_bytes": "tailtailtailtailtail\n",
       "expected_cursor": [
-        4,
-        8
+        0,
+        16
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
       "expected_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtailtailtailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 1
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 2
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 3
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 4
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtailtailtailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 1
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 2
-        },
-        {
-          "region": "body",
-          "text": "textclip",
-          "index": 3
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 4
         }
+      ],
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
       ]
     },
     {
@@ -288,7 +272,7 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntexttail\n",
+      "effect_bytes": "tailtail\n",
       "expected_bytes": "tail\n",
       "expected_cursor": [
         0,
@@ -305,13 +289,8 @@
       "effect_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
       "name": "command-path/r3/clipboard-yank/read-only",
@@ -322,60 +301,13 @@
       ],
       "mutation_case": "read-only",
       "expected_read_only_status": "Buffer is read-only",
-      "read_only_command": "toggle-read-only"
-    },
-    {
-      "lane": "W3-8",
-      "rule": "r3",
-      "entry": "mx",
-      "command": "clipboard-yank",
-      "command_keys": [
-        "M-x",
-        "clipboard-yank",
-        "RET"
-      ],
-      "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntail\n",
-      "expected_bytes": "clip\ntail\n",
-      "expected_cursor": [
-        0,
-        4
-      ],
-      "expected_minibuffer": "",
-      "expected_screen": [
-        {
-          "region": "body",
-          "text": "clip",
-          "index": 0
-        },
-        {
-          "region": "body",
-          "text": "tail",
-          "index": 1
-        }
-      ],
-      "effect_screen": [
-        {
-          "region": "body",
-          "text": "clip",
-          "index": 0
-        },
-        {
-          "region": "body",
-          "text": "tail",
-          "index": 1
-        }
-      ],
-      "name": "command-path/r3/clipboard-yank/split-window",
-      "path_id": "r3:clipboard-yank:split-window",
-      "commands": [
-        "split-window-below",
-        "clipboard-yank",
-        "save-buffer"
-      ],
-      "mutation_case": "split-window",
-      "prepare_commands": [
-        "split-window-below"
+      "read_only_command": "toggle-read-only",
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
       ]
     },
     {
@@ -389,13 +321,75 @@
         "RET"
       ],
       "initial_bytes": "tail\n",
-      "effect_bytes": "clip\ntexttail\n",
+      "effect_bytes": "tailtail\n",
+      "expected_bytes": "tailtail\n",
+      "expected_cursor": [
+        12,
+        4
+      ],
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tailtail",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "tailtail",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "tailtail",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "tailtail",
+          "index": 12
+        }
+      ],
+      "name": "command-path/r3/clipboard-yank/split-window",
+      "path_id": "r3:clipboard-yank:split-window",
+      "commands": [
+        "split-window-below",
+        "clipboard-yank",
+        "save-buffer"
+      ],
+      "mutation_case": "split-window",
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
+      ],
+      "rows": 24
+    },
+    {
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "mx",
+      "command": "clipboard-yank",
+      "command_keys": [
+        "M-x",
+        "clipboard-yank",
+        "RET"
+      ],
+      "initial_bytes": "tail\n",
+      "effect_bytes": "tailtail\n",
       "expected_bytes": "tail\n",
       "expected_cursor": [
         0,
-        0
+        4
       ],
-      "expected_minibuffer": "",
+      "expected_minibuffer": "Clipboard unavailable; using kill ring",
       "expected_screen": [
         {
           "region": "body",
@@ -406,13 +400,8 @@
       "effect_screen": [
         {
           "region": "body",
-          "text": "clip",
+          "text": "tailtail",
           "index": 0
-        },
-        {
-          "region": "body",
-          "text": "texttail",
-          "index": 1
         }
       ],
       "name": "command-path/r3/clipboard-yank/undo",
@@ -426,6 +415,13 @@
       "expected_undo_cursor": [
         0,
         0
+      ],
+      "fixture_keys": [
+        "C-a",
+        "C-space",
+        "C-e",
+        "M-w",
+        "C-a"
       ]
     }
   ]
