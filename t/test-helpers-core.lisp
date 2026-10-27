@@ -100,7 +100,7 @@ File-tree command tests can then operate on a real temporary directory."
 (defun %confirm-minibuffer (minibuffer input)
   "Invoke the current confirmation callback after deactivating the MINIBUFFER prompt."
   (let ((on-confirm (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)))
-    (loom/core/minibuffer::%minibuffer-deactivate minibuffer)
+    (loom/core/minibuffer:minibuffer-deactivate minibuffer)
     (funcall on-confirm input)))
 
 (defmacro %capturing-loom-quit ((quit-var) &body body)

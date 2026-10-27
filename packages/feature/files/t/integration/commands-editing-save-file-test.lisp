@@ -530,7 +530,7 @@
                             parent))
             (let ((on-cancel
                     (loom/core/minibuffer::%minibuffer-on-cancel minibuffer)))
-              (loom/core/minibuffer::%minibuffer-deactivate minibuffer)
+              (loom/core/minibuffer:minibuffer-deactivate minibuffer)
               (funcall on-cancel))
             (expect (host-kit:directory-exists-p nested) :to-be nil)
             (expect (host-kit:directory-exists-p parent) :to-be nil)

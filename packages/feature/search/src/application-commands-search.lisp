@@ -219,7 +219,7 @@ verbatim."
   (defun %query-replacement-finish (minibuffer count)
     (when (loom/core/minibuffer:minibuffer-active-p minibuffer)
       ;; The consumed q and ! keys do not reach minibuffer's normal exit path.
-      (loom/core/minibuffer::%minibuffer-deactivate minibuffer))
+      (loom/core/minibuffer:minibuffer-deactivate minibuffer))
     (minibuffer-message
      minibuffer (format nil "Replaced ~D occurrence(s)" count)))
 
@@ -305,7 +305,7 @@ verbatim."
       (otherwise t))
   (loom/core/buffer:buffer-read-only-error (condition)
     (when (loom/core/minibuffer:minibuffer-active-p minibuffer)
-      (loom/core/minibuffer::%minibuffer-deactivate minibuffer))
+      (loom/core/minibuffer:minibuffer-deactivate minibuffer))
     (minibuffer-message minibuffer (format nil "~A" condition))
     t))))
                   (loom/core/minibuffer:minibuffer-activate

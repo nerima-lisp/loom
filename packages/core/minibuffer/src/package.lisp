@@ -11,6 +11,7 @@
    #:minibuffer-completion-candidates
    #:minibuffer-message-string
    #:minibuffer-activate
+   #:minibuffer-deactivate
    #:minibuffer-set-prompt
    #:minibuffer-message
    #:register-message-sink

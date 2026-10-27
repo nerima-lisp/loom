@@ -32,6 +32,9 @@ registration order. Callback errors propagate and stop dispatch."
     (when history
       (history-kit:history-reset-navigation history)))
   minibuffer)
+(defun minibuffer-deactivate (minibuffer)
+  "Deactivate MINIBUFFER, clearing prompt/input and callbacks without invoking them. Returns MINIBUFFER."
+  (%minibuffer-deactivate minibuffer))
 
 (defun %minibuffer-validate-function-option (value name)
   (when (and value (not (functionp value)))

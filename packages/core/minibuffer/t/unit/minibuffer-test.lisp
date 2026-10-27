@@ -53,6 +53,20 @@
       (minibuffer-message minibuffer "Wrote file.")
       (expect (minibuffer-active-p minibuffer) :to-be-truthy)
       (expect (minibuffer-input-string minibuffer) :to-equal ""))))
+(describe
+  "minibuffer-deactivate"
+  (it
+    "clears an active prompt without invoking its cancel callback"
+    (let ((minibuffer (make-minibuffer))
+          (cancelled nil))
+      (minibuffer-activate
+       minibuffer "Prompt: "
+       :on-cancel (lambda () (setf cancelled t)))
+      (loom/core/minibuffer:minibuffer-deactivate minibuffer)
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+      (expect (minibuffer-prompt-string minibuffer) :to-equal nil)
+      (expect (minibuffer-input-string minibuffer) :to-equal "")
+      (expect cancelled :to-be-falsy))))
 
 (describe
   "minibuffer query protocol"
