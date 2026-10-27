@@ -3222,10 +3222,10 @@
       "prompt_open": "Go to line: ",
       "prompt_case": "history",
       "prompt_kind": "numeric",
-      "input_text": "1",
+      "input_text": "3",
       "history_seed_input": "3",
       "history_expected": "3",
-      "history_next_expected": "1"
+      "history_next_expected": "3"
     },
     {
       "name": "command-path/buffer/r1/toggle-read-only/key",

@@ -62,32 +62,20 @@ both shapes are recognized here."
       (t :ignore))))
 
 (defun %minibuffer-recall-history (minibuffer direction)
-  "Replace MINIBUFFER input by history while preserving its in-progress draft."
-  (let ((history (%minibuffer-history minibuffer)))
-    (when history
-      (ecase direction
-        (:previous
-         (unless (history-kit:history-navigating-p history)
-           (setf (%minibuffer-history-origin minibuffer)
-                 (%minibuffer-input minibuffer)))
-         (let ((text (history-kit:history-previous history "")))
-           (if text
-               (setf (%minibuffer-input minibuffer) text
-                     (%minibuffer-point minibuffer) (length text))
-               (setf (%minibuffer-history-origin minibuffer) nil))))
-        (:next
-         (let ((was-navigating-p (history-kit:history-navigating-p history)))
-           (let ((text (history-kit:history-next history)))
-             (cond
-               ((and was-navigating-p
-                     (not (history-kit:history-navigating-p history)))
-                (let ((origin (%minibuffer-history-origin minibuffer)))
-                  (setf (%minibuffer-input minibuffer) origin
-                        (%minibuffer-point minibuffer) (length origin)
-                        (%minibuffer-history-origin minibuffer) nil)))
-               (text
-                (setf (%minibuffer-input minibuffer) text
-                      (%minibuffer-point minibuffer) (length text)))))))))))
+  "Replace MINIBUFFER's input with the history entry one step DIRECTION away:
+:PREVIOUS drives CL-HISTORY-KIT:HISTORY-PREVIOUS, handing it the current input
+so a partly typed line comes back on the way down again, and :NEXT drives
+HISTORY-NEXT. A MINIBUFFER created without a history object, and a step that
+ran off the end of the history, both leave the input untouched."
+  (let* ((history (%minibuffer-history minibuffer))
+         (recalled (when history
+                     (ecase direction
+                       (:previous (history-kit:history-previous
+                                   history (%minibuffer-input minibuffer)))
+                       (:next (history-kit:history-next history))))))
+    (when recalled
+      (setf (%minibuffer-input minibuffer) recalled
+            (%minibuffer-point minibuffer) (length recalled)))))
 
 (defun %minibuffer-consume-key (minibuffer key-event)
   "Offer KEY-EVENT to MINIBUFFER's ON-KEY hook and return true when it took it."
