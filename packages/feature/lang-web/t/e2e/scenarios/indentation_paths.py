@@ -63,9 +63,15 @@ def indentation_region(binary):
             session.wait_ready()
             session.wait_for_region_text("mode-line", "TypeScript")
             session.send(keys.ctrl("n"))
-            session.extended_command("set-mark-command")
+            session.send(keys.ctrl("@"))
             session.send(keys.ctrl("n") + keys.ctrl("e"))
             session.send(b"\x1b" + keys.ctrl("\\"))
+            session.wait_for_region_text(
+                "body", "  value", index=1, timeout=1.0
+            )
+            session.wait_for_region_text(
+                "body", "  next", index=2, timeout=1.0
+            )
             expected = b"function run() {\n  value\n  next\n}\n"
             _save(session, path, expected)
             session.assert_screen_text(

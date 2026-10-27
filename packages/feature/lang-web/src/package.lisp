@@ -22,6 +22,8 @@
    :skip-closing-delimiter t
    :indentation-width 2 :tab-width 8
    :truncate-lines t :language-id "typescript"
+   :keybindings (list (cons '(:alt :control-backslash)
+                            #'loom/feature/mode:indent-for-tab-command))
    :keywords loom/feature/lang-web::+typescript-keywords+)
   (loom/feature/mode:register-major-mode
    :typescript-react
