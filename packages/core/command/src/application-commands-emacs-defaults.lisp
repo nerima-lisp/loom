@@ -56,15 +56,15 @@
           (let ((changed-start (+ start prefix))
                 (changed-end (- end suffix))
                 (changed-text
-                  (subseq replacement prefix (- (length replacement) suffix))))
+                 (subseq replacement prefix (- (length replacement) suffix))))
             (if (or (< changed-start changed-end)
                     (plusp (length changed-text)))
                 (progn
                   (if (< changed-start changed-end)
                       (let ((start-position
-                              (buffer-offset-position buffer changed-start))
+                             (buffer-offset-position buffer changed-start))
                             (end-position
-                              (buffer-offset-position buffer changed-end)))
+                             (buffer-offset-position buffer changed-end)))
                         (buffer-delete-region
                          buffer
                          (buffer-position-line start-position)
@@ -72,33 +72,33 @@
                          (buffer-position-line end-position)
                          (buffer-position-column end-position)
                          :undo-replacement-p undo-replacement-p))
-                      (let ((position
-                              (buffer-offset-position buffer changed-start)))
-                        (buffer-set-point
-                         buffer
-                         (buffer-position-line position)
-                         (buffer-position-column position))))
+                    (let ((position
+                           (buffer-offset-position buffer changed-start)))
+                      (buffer-set-point
+                       buffer
+                       (buffer-position-line position)
+                       (buffer-position-column position))))
                   (unless (string= changed-text "")
                     (buffer-insert-string buffer changed-text)))
-                (unless (and (= start end)
-                             (string= replacement ""))
-                  (let ((position
-                          (buffer-offset-position
-                           buffer (+ start (length replacement)))))
-                    (buffer-set-point
-                     buffer
-                     (buffer-position-line position)
-                     (buffer-position-column position))))))
-        (let ((start-position (buffer-offset-position buffer start))
-              (end-position (buffer-offset-position buffer end)))
-          (buffer-delete-region
-           buffer
-           (buffer-position-line start-position)
-           (buffer-position-column start-position)
-           (buffer-position-line end-position)
-           (buffer-position-column end-position)
-           :undo-replacement-p undo-replacement-p)
-          (buffer-insert-string buffer replacement)))))
+              (unless (and (= start end)
+                           (string= replacement ""))
+                (let ((position
+                       (buffer-offset-position
+                        buffer (+ start (length replacement)))))
+                  (buffer-set-point
+                   buffer
+                   (buffer-position-line position)
+                   (buffer-position-column position)))))))
+      (let ((start-position (buffer-offset-position buffer start))
+            (end-position (buffer-offset-position buffer end)))
+        (buffer-delete-region
+         buffer
+         (buffer-position-line start-position)
+         (buffer-position-column start-position)
+         (buffer-position-line end-position)
+         (buffer-position-column end-position)
+         :undo-replacement-p undo-replacement-p)
+        (buffer-insert-string buffer replacement))))
 
 
   (defun transpose-chars ()
