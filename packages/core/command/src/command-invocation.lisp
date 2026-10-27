@@ -29,8 +29,8 @@
                      (mapcar #'%command-trace-key-descriptor key-sequence))))))))
 
 (defun invoke-command (id route &rest arguments)
-  "Resolve ID, record ROUTE, then call the registered command with ARGUMENTS."
-  (unless (member route '(:key :mx :macro :paste :mouse))
+  "Resolve ID, call the registered command, then record ROUTE completion."
+  (unless (member route (quote (:key :mx :macro :paste :mouse)))
     (error "Unsupported command route ~S." route))
   (let ((spec (%find-command-spec-by-id id)))
     (unless spec
@@ -41,18 +41,39 @@
                   *last-command-id*)))
       (setf *last-command-editor-state* state
             *last-command-id* id)
-      (let ((trace-error
-              (record-command-trace
-               id
-               route
-               (%command-trace-key-entry
-                *command-trace-key-sequence*
-                *command-trace-keymap-name*)))
-            (minibuffer (and *editor-state*
-                             (editor-state-minibuffer *editor-state*))))
-        (when (and trace-error minibuffer)
-          (minibuffer-message minibuffer trace-error)))
-      (let ((*current-command-route* route)) (apply (%command-spec-command spec) arguments)))))
+      (let* ((trace-enabled-p
+               (and (uiop:getenv "LOOM_TRACE_COMMANDS")
+                    (%command-spec-trace-visible-p spec)))
+             (prefix-state
+               (and trace-enabled-p *editor-state* (prefix-argument-for-editor)))
+             (prefix-value
+               (if prefix-state
+                   (prefix-argument-value prefix-state)
+                   json-kit:+json-null+))
+             (prefix-explicit-p
+               (and prefix-state
+                    (prefix-argument-explicit-p prefix-state)))
+             (minibuffer (and *editor-state*
+                              (editor-state-minibuffer *editor-state*)))
+             (trace-error nil)
+             (completed-p nil))
+        (let ((*current-command-route* route))
+          (unwind-protect
+               (multiple-value-prog1
+                   (apply (%command-spec-command spec) arguments)
+                 (setf completed-p t))
+            (setf trace-error
+                  (record-command-trace
+                   id
+                   route
+                   (%command-trace-key-entry
+                    *command-trace-key-sequence*
+                    *command-trace-keymap-name*)
+                   prefix-value
+                   prefix-explicit-p
+                   completed-p))
+            (when (and trace-error minibuffer)
+              (minibuffer-message minibuffer trace-error))))))))
 (defun previous-command-id () "Return the command ID immediately preceding the current invocation, or NIL." *previous-command-id*)
 (defun invoke-key-command (id route sequence keymap-name &rest arguments)
   (unless (member route (list :key :macro))

@@ -72,6 +72,7 @@ class PathReportTests(unittest.TestCase):
                     "route": trace_route,
                     "seq": sequence,
                     "pid": 1234,
+                    "completed": True,
                 }
                 if trace_entry is not None:
                     trace["entry"] = trace_entry
@@ -550,17 +551,35 @@ class PathReportTests(unittest.TestCase):
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")
 
+    def test_nonreturning_command_trace_is_path_evidence(self):
+        self._write_scenario([self._matching_observation()])
+        trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+        trace["completed"] = False
+        trace_path.write_text(json.dumps(trace) + "\n", encoding="utf-8")
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "pass")
+
     def test_trace_uses_current_command_route_sequence_pid_shape(self):
         self._write_scenario([self._matching_observation()])
         trace_path = next(self.artifacts_dir.rglob("trace.jsonl"))
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertTrue({"command", "route", "seq", "pid"} <= set(trace))
         self.assertLessEqual(
-            set(trace) - {"command", "route", "seq", "pid"}, {"entry"}
+            set(trace) - {"command", "route", "seq", "pid"},
+            {"entry", "completed"},
         )
         self.assertEqual(
             trace,
-            {"command": "save-buffer", "route": "mx", "seq": 1, "pid": 1234},
+            {
+                "command": "save-buffer",
+                "route": "mx",
+                "seq": 1,
+                "pid": 1234,
+                "completed": True,
+            },
         )
         report = self._report(ledger=self.ledger)
         self.assertEqual(report["paths"][0]["status"], "pass")

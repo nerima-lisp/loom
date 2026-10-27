@@ -288,6 +288,48 @@ class Session:
         except FileNotFoundError:
             return b""
 
+    def _read_complete_command_trace_records(self):
+        trace_data = self._read_trace_data()
+        lines = trace_data.splitlines()
+        if trace_data and not trace_data.endswith(b"\n"):
+            lines = lines[:-1]
+        return [json.loads(line.decode("utf-8")) for line in lines]
+
+    def command_trace_count(self):
+        """Return the number of complete command trace records observed so far."""
+        return len(self._read_complete_command_trace_records())
+
+    def wait_for_command_completion(
+        self, command, *, route=None, after=0, timeout=DEFAULT_TIMEOUT
+    ):
+        """Wait for a completed command trace after record index AFTER."""
+        if not isinstance(command, str) or not command:
+            raise ValueError("command must be non-empty text")
+        if route is not None and (not isinstance(route, str) or not route):
+            raise ValueError("route must be non-empty text when provided")
+        if type(after) is not int or after < 0:
+            raise ValueError("after must be a non-negative integer")
+
+        deadline = time.monotonic() + timeout
+        while True:
+            records = self._read_complete_command_trace_records()
+            if any(
+                index >= after
+                and record.get("command") == command
+                and (route is None or record.get("route") == route)
+                and record.get("completed") is True
+                for index, record in enumerate(records)
+            ):
+                return
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    f"timed out waiting for completed {command} command"
+                    f"{f' on {route} route' if route is not None else ''}; "
+                    f"trace records={len(records)}\n--- screen ---\n"
+                    f"{self.screen.dump() if self.screen is not None else ''}"
+                )
+            self.pump()
+
     def _capture_artifacts(self):
         if self.process is None or self._artifacts_captured:
             return

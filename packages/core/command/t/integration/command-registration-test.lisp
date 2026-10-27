@@ -287,7 +287,17 @@
              (loom/core/command::*command-trace-sequence* 0)
              (trace-path (namestring (merge-pathnames "commands.jsonl" directory)))
              (arguments nil)
-             (command (lambda (&rest values) (setf arguments values)))
+             (command
+               (lambda (&rest values)
+                 (let ((trace-count
+                         (if (probe-file trace-path)
+                             (with-open-file (stream trace-path)
+                               (loop for line = (read-line stream nil)
+                                     while line
+                                     count t))
+                             0)))
+                   (expect trace-count :to-equal (if arguments 1 0)))
+                 (setf arguments values)))
              (spec (loom/core/command:register-command-spec
                     :test "test/gateway" "gateway" command
                     :keys nil :keymap :global :group nil
@@ -302,7 +312,8 @@
             (uiop:getenv
              (lambda (name)
                (when (string= name "LOOM_TRACE_COMMANDS") trace-path)))
-          (expect (loom/core/command:invoke-command "test/gateway" :mx "visible-argument" 7)
+          (expect (loom/core/command:invoke-command
+                   "test/gateway" :mx "visible-argument" 7)
                   :to-equal '("visible-argument" 7))
           (expect arguments :to-equal '("visible-argument" 7))
           (loom/core/command:prefix-argument-digit prefix 3)
@@ -320,12 +331,14 @@
             (expect (gethash "command" mx-event) :to-equal "test/gateway")
             (expect (gethash "route" mx-event) :to-equal "mx")
             (expect (gethash "seq" mx-event) :to-equal 1)
+            (expect (gethash "completed" mx-event) :to-be t)
             (expect (gethash "prefix" mx-event) :to-equal 4)
             (expect (json-kit:json-false-p (gethash "prefix-explicit" mx-event))
                     :to-be t)
             (expect (gethash "command" key-event) :to-equal "test/gateway")
             (expect (gethash "route" key-event) :to-equal "key")
             (expect (gethash "seq" key-event) :to-equal 2)
+            (expect (gethash "completed" key-event) :to-be t)
             (expect (gethash "prefix" key-event) :to-equal 3)
             (expect (gethash "prefix-explicit" key-event) :to-be t)
             (expect (search "global" entry) :to-be-truthy)

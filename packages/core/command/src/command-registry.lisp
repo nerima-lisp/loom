@@ -93,7 +93,7 @@
                       (string-lessp (%command-spec-id left)
                                     (%command-spec-id right))
                       (string-lessp left-owner right-owner)))))))))
-(defun record-command-trace (id route &optional entry)
+(defun record-command-trace (id route &optional entry prefix-value prefix-explicit-p completed-p)
   (unless (keywordp route)
     (error "Command trace route must be a keyword: ~S" route))
   (let* ((trace-file (uiop:getenv "LOOM_TRACE_COMMANDS"))
@@ -104,9 +104,6 @@
             (when (zerop (length trace-file))
               (error "LOOM_TRACE_COMMANDS path must not be empty"))
             (let* ((trace-path (uiop:parse-native-namestring trace-file))
-                   (prefix-state
-                     (and *editor-state*
-                          (prefix-argument-for-editor)))
                    (trace-sequence (1+ *command-trace-sequence*))
                    (fields
                      (list
@@ -114,15 +111,11 @@
                       (cons "route" (%catalog-symbol-name route))
                       (cons "seq" trace-sequence)
                       (cons "pid" (sb-posix:getpid))
-                      (cons "prefix"
-                            (if prefix-state
-                                (prefix-argument-value prefix-state)
-                                json-kit:+json-null+))
+                      (cons "prefix" prefix-value)
                       (cons "prefix-explicit"
-                            (if (and prefix-state
-                                     (prefix-argument-explicit-p prefix-state))
-                                t
-                                json-kit:+json-false+))))
+                            (if prefix-explicit-p t json-kit:+json-false+))
+                      (cons "completed"
+                            (if completed-p t json-kit:+json-false+))))
                    (line
                      (json-kit:stringify
                       (json-kit:make-json-object

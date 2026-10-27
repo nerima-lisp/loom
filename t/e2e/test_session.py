@@ -5,12 +5,13 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from loom_e2e import keys
 from loom_e2e.deadline import current_deadline, scenario_deadline
 from loom_e2e.process import LoomProcess
 from loom_e2e.results import ScenarioResult, capture_scenario
+from loom_e2e.screen import Screen
 from loom_e2e.session import Session
 
 
@@ -109,6 +110,38 @@ class JobControlSupervisorTests(unittest.TestCase):
 
             process.close()
             self.assertEqual(process._status, 128 + signal.SIGHUP)
+
+
+class SessionCommandCompletionTests(unittest.TestCase):
+    def test_wait_for_command_completion_ignores_invocation_start(self):
+        with tempfile.TemporaryDirectory() as directory:
+            trace_path = os.path.join(directory, "trace.jsonl")
+            with open(trace_path, "wb") as handle:
+                handle.write(
+                    b'{"command":"eval-buffer","route":"mx","seq":1,'
+                    b'"completed":false}\n'
+                )
+
+            session = Session("unused")
+            session.screen = Screen(columns=20, rows=2)
+            session._trace_path = trace_path
+
+            def finish_command():
+                with open(trace_path, "ab") as handle:
+                    handle.write(
+                        b'{"command":"eval-buffer","route":"mx",'
+                        b'"seq":2,"completed":true}\n'
+                    )
+
+            session.pump = Mock(side_effect=finish_command)
+            after = session.command_trace_count()
+
+            session.wait_for_command_completion(
+                "eval-buffer", route="mx", after=after, timeout=1
+            )
+
+            session.pump.assert_called_once_with()
+            self.assertEqual(session.command_trace_count(), 2)
 
 
 class SessionRestartTests(unittest.TestCase):

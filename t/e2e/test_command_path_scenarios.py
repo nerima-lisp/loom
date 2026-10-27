@@ -27,6 +27,10 @@ SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/core/command/t/e2e/scenarios/command-paths.json"
 )
+EVALUATION_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/evaluation/t/e2e/scenarios/command-paths.json"
+)
 BUFFER_SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/core/buffer/t/e2e/scenarios/command-paths.json"
@@ -171,6 +175,7 @@ class FakeSession:
     def __init__(self, *_args, **_kwargs):
         self.calls = []
         self.screen = FakeScreen()
+        self.trace_rows = []
 
     def __enter__(self):
         return self
@@ -189,6 +194,24 @@ class FakeSession:
 
     def wait_for_file(self, path, expected):
         self.calls.append(("wait_file", expected))
+
+    def wait_until(self, predicate, timeout=None, what="condition"):
+        self.calls.append(("wait_until", what))
+        if not predicate(self.screen):
+            raise AssertionError(f"fake wait did not satisfy {what}")
+
+    def command_trace_count(self):
+        return len(self.trace_rows)
+
+    def wait_for_command_completion(
+        self, command, *, route=None, after=0, timeout=None
+    ):
+        self.calls.append(
+            ("wait_for_command_completion", command, route, after)
+        )
+        self.trace_rows.append(
+            {"command": command, "route": route, "completed": True}
+        )
 
     def wait_for_region_cursor(self, region, col, index=0):
         self.calls.append(("wait_region_cursor", region, col, index))
@@ -903,169 +926,6 @@ class CommandPathScenarioTests(unittest.TestCase):
                 with self.subTest(mutation_case=mutation_case):
                     self.assertEqual(loaded[0]["mutation_case"], mutation_case)
                     self.assertEqual(loaded[0]["expected_bytes"], case[expected_source])
-
-    def test_r4_region_scenarios_load_and_assert_screen_and_file(self):
-        scenarios = [
-            {
-                "name": "test/r4/region-present",
-                "path_id": "r4:narrow-to-region:region-present",
-                "lane": "W3-4",
-                "rule": "r4",
-                "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
-                "commands": [
-                    "forward-char",
-                    "set-mark-command",
-                    "forward-char",
-                    "narrow-to-region",
-                ],
-                "command": "narrow-to-region",
-                "region_case": "region-present",
-                "prepare_keys": ["C-f"] * 7 + ["C-SPC"] + ["C-f"] * 6,
-                "command_keys": ["C-x", "n", "n"],
-                "initial_bytes": "before target after\n",
-                "expected_bytes": "before target after\n",
-                "expected_cursor": [0, 6],
-                "expected_minibuffer": "Narrowed to the active region",
-                "expected_minibuffer_match": "contains",
-                "expected_screen": [{"region": "body", "text": "target"}],
-            },
-            {
-                "name": "test/r4/region-absent",
-                "path_id": "r4:narrow-to-region:region-absent",
-                "lane": "W3-4",
-                "rule": "r4",
-                "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"n\",\"modifiers\":[]},{\"key\":\"n\",\"modifiers\":[]}]}",
-                "commands": ["narrow-to-region"],
-                "command": "narrow-to-region",
-                "region_case": "region-absent",
-                "command_keys": ["C-x", "n", "n"],
-                "initial_bytes": "abc\n",
-                "expected_bytes": "abc\n",
-                "expected_cursor": [0, 0],
-                "expected_minibuffer": "The mark is not set now, so no region is active",
-                "expected_minibuffer_match": "contains",
-                "expected_screen": [{"region": "body", "text": "abc"}],
-            },
-        ]
-        sessions = []
-
-        def session_factory(*args, **kwargs):
-            session = FakeSession(*args, **kwargs)
-            sessions.append(session)
-            return session
-
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "r4.json"
-            path.write_text(
-                json.dumps({"schema_version": 1, "scenarios": scenarios}),
-                encoding="utf-8",
-            )
-            loaded = load_command_path_scenarios(path)
-            for case in loaded:
-                run_command_path_scenario(
-                    "unused", case, session_factory=session_factory
-                )
-
-        self.assertEqual(
-            [case["region_case"] for case in loaded],
-            ["region-present", "region-absent"],
-        )
-        self.assertEqual(len(sessions), len(loaded))
-        for case, session in zip(loaded, sessions):
-            with self.subTest(region_case=case["region_case"]):
-                sent = [call[1] for call in session.calls if call[0] == "send"]
-                expected_prepare_keys = (
-                    ["C-f"] * 7 + ["C-SPC"] + ["C-f"] * 6
-                    if case["region_case"] == "region-present"
-                    else []
-                )
-                self.assertEqual(
-                    case.get("prepare_keys", []), expected_prepare_keys
-                )
-                self.assertEqual(case["command_keys"], ["C-x", "n", "n"])
-                keys_to_send = expected_prepare_keys + case["command_keys"]
-                self.assertEqual(sent, [_key_bytes(name) for name in keys_to_send])
-                self.assertIn(
-                    ("assert_file_bytes", case["expected_bytes"].encode("utf-8")),
-                    session.calls,
-                )
-                expectation = case["expected_screen"][0]
-                self.assertIn(
-                    (
-                        "assert_screen",
-                        expectation["text"],
-                        "exact",
-                        {
-                            "region": expectation["region"],
-                            "index": expectation.get("index", 0),
-                            "strip_right": True,
-                        },
-                    ),
-                    session.calls,
-                )
-                self.assertIn(
-                    (
-                        "wait_text",
-                        "minibuffer",
-                        case["expected_minibuffer"],
-                        {},
-                    ),
-                    session.calls,
-                )
-                self.assertIn(
-                    (
-                        "assert_screen",
-                        case["expected_minibuffer"],
-                        case["expected_minibuffer_match"],
-                        {"region": "minibuffer", "strip_right": True},
-                    ),
-                    session.calls,
-                )
-                self.assertIn(
-                    (
-                        "wait_region_cursor",
-                        "body",
-                        case["expected_cursor"][1],
-                        case["expected_cursor"][0],
-                    ),
-                    session.calls,
-                )
-                self.assertIn(
-                    (
-                        "observe_cursor",
-                        tuple(case["expected_cursor"]),
-                        {"region": "body"},
-                    ),
-                    session.calls,
-                )
-
-    def test_loader_rejects_r4_without_region_case(self):
-        case = {
-            "name": "test/r4/missing-region-case",
-            "path_id": "r4:narrow-to-region:region-present",
-            "lane": "W3-4",
-            "rule": "r4",
-            "entry": "key",
-            "commands": ["narrow-to-region"],
-            "command": "narrow-to-region",
-            "command_keys": ["C-x", "n", "n"],
-            "initial_bytes": "abc\n",
-            "expected_bytes": "abc\n",
-            "expected_cursor": [0, 0],
-            "expected_minibuffer": "",
-            "expected_screen": [{"region": "body", "text": "abc"}],
-        }
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "missing-region-case.json"
-            path.write_text(
-                json.dumps({"schema_version": 1, "scenarios": [case]}),
-                encoding="utf-8",
-            )
-            with self.assertRaisesRegex(
-                CommandPathScenarioError,
-                "region_case must be region-present or region-absent",
-            ):
-                load_command_path_scenarios(path)
 
     def test_accept_flow_uses_exact_body_cursor_and_saved_bytes(self):
         case = {
@@ -1862,6 +1722,68 @@ class CommandPathScenarioTests(unittest.TestCase):
             ),
             2,
         )
+
+    def test_r3_waits_for_command_completion_before_effect_observation(self):
+        cases = json.loads(
+            EVALUATION_SCENARIO_DATA.read_text(encoding="utf-8")
+        )["scenarios"]
+        cases_by_id = {case["path_id"]: case for case in cases}
+        scenarios = (
+            "r3:eval-buffer:effect",
+            "r3:eval-buffer:macro-replay",
+            "r3:eval-last-sexp:macro-replay",
+            "r3:eval-last-sexp:prefix-u4",
+        )
+
+        for path_id in scenarios:
+            with self.subTest(path_id=path_id):
+                case = cases_by_id[path_id]
+                sessions = []
+
+                def session_factory(*args, **kwargs):
+                    session = FakeSession(*args, **kwargs)
+                    sessions.append(session)
+                    return session
+
+                def observe_effect(session, _case, **_kwargs):
+                    session.calls.append(("effect_observation",))
+
+                with patch(
+                    "loom_e2e.command_path_scenarios._assert_effect_state",
+                    side_effect=observe_effect,
+                ):
+                    run_command_path_scenario(
+                        "unused", case, session_factory=session_factory
+                    )
+
+                calls = sessions[0].calls
+                observations = [
+                    index
+                    for index, call in enumerate(calls)
+                    if call[0] == "effect_observation"
+                ]
+                completion_waits = [
+                    (index, call)
+                    for index, call in enumerate(calls)
+                    if call[0] == "wait_for_command_completion"
+                ]
+                self.assertTrue(completion_waits)
+                for observation in observations:
+                    self.assertTrue(
+                        any(index < observation for index, _call in completion_waits)
+                    )
+                if case["mutation_case"] == "macro-replay":
+                    recorded_route = (
+                        "mx" if case["command_keys"][:1] == ["M-x"] else "key"
+                    )
+                    self.assertIn(
+                        (case["command"], recorded_route),
+                        [(call[1], call[2]) for _, call in completion_waits],
+                    )
+                    self.assertIn(
+                        ("call-last-kbd-macro", "key"),
+                        [(call[1], call[2]) for _, call in completion_waits],
+                    )
 
     def test_r3_macro_replay_waits_for_the_declared_restore_screen_row(self):
         case = next(

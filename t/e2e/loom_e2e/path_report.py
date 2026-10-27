@@ -167,6 +167,9 @@ def _read_trace(result_path, result, artifacts_dir):
                 record = json.loads(line, object_pairs_hook=_unique_object)
                 if not isinstance(record, Mapping):
                     return None, f"trace line {line_number} is not a JSON object"
+                completed = record.get("completed")
+                if type(completed) is not bool:
+                    return None, f"trace line {line_number} has an invalid completed flag"
                 command = record.get("command")
                 if isinstance(command, str) and command:
                     # RET routes use "newline"; traces record its bound command.

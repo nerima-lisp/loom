@@ -57,6 +57,15 @@ def command_trace(binary):
             json.loads(line)
             for line in session.trace_bytes.decode("utf-8").splitlines()
         ]
+        if (
+            not trace_rows
+            or any(event.get("completed") is not True for event in trace_rows[:-1])
+            or trace_rows[-1].get("completed") is not False
+        ):
+            raise AssertionError(
+                "command trace completion flags do not mark only the quit command "
+                f"as nonreturning: {trace_rows!r}"
+            )
         expected = [
             ("forward-char", "key"),
             ("execute-extended-command", "key"),
@@ -65,8 +74,8 @@ def command_trace(binary):
             ("kill-line", "key"),
             ("end-kbd-macro", "key"),
             ("next-line", "key"),
-            ("call-last-kbd-macro", "key"),
             ("kill-line", "macro"),
+            ("call-last-kbd-macro", "key"),
             ("universal-argument", "key"),
             ("previous-line", "key"),
             ("save-buffer", "key"),
