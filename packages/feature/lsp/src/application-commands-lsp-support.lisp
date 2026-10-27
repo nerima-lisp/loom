@@ -17,7 +17,7 @@
 (progn
   (defun %lsp-command-display (command)
     (if (listp command)
-        (format nil "~{~A~^ ~}" command)
+        (uiop:escape-sh-command command)
         (or command "")))
 
   (defun %lsp-command-prompt-string (discovered-command)
@@ -29,11 +29,10 @@
 
 (defun %normalize-lsp-command (typed-command discovered-command)
   (let ((trimmed (and typed-command
-                      (string-trim '(#\Space #\Tab) typed-command))))
+                      (string-trim (list #\Space #\Tab) typed-command))))
     (if (or (null trimmed) (string= trimmed ""))
         (values discovered-command nil)
-        (let ((argv (%lsp-command-argv trimmed)))
-          (values argv (null argv))))))
+        (values trimmed nil))))
 
 (progn
   (defun %lsp-discovery-unchanged-p
@@ -53,7 +52,7 @@
                              (namestring current-configuration))))))))
 
   (defun %lsp-confirm-discovered-command
-      (command root configuration buffer minibuffer &optional identity)
+      (command root configuration buffer minibuffer &optional identity display-command)
     (let* ((window (loom/core/window-tree:window-tree-selected-window
                     (editor-state-window-tree *editor-state*)))
            (scroll-line (loom/core/window-tree:window-scroll-line window))
@@ -64,7 +63,9 @@
                     :initial-content
                     (format nil
                             "Discovered LSP command~%PageDown/C-v: next; PageUp/M-v: previous~%Config: ~A~%Directory: ~A~%Command: ~A~%"
-                            configuration root (%lsp-command-display command)))))
+                            configuration root
+                            (or display-command
+                                (%lsp-command-display command))))))
       (buffer-set-truncate-lines review nil)
       (buffer-set-read-only review t)
       (loom/core/window-tree:window-set-buffer window review)
@@ -128,7 +129,21 @@
                                 (lsp-session-language-id new-session)))
          (registry (lsp-session-registry-state-sessions
                     (%lsp-session-registry editor-session)))
-         (old-session (and key (gethash key registry))))
+         (registered-old (and key (gethash key registry)))
+         (legacy-old (and *editor-state*
+                          (loom/core/editor-session:editor-state-lsp-session
+                           *editor-state*)))
+         (legacy-key (and legacy-old
+                          (%lsp-session-key
+                           (lsp-session-root-path legacy-old)
+                           (lsp-session-language-id legacy-old))))
+         (legacy-matches-p
+           (and legacy-old
+                (not (lsp-session-closed-p legacy-old))
+                (or (null legacy-key)
+                    (equal key legacy-key))))
+         (old-session (or registered-old
+                          (and legacy-matches-p legacy-old))))
     (when (and old-session (not (eq old-session new-session)))
       (%lsp-unregister-session editor-session old-session)
       (lsp-session-stop old-session))

@@ -44,7 +44,7 @@
               for candidate = (string-trim '(#\Space #\Tab #\Return) line)
               unless (or (string= candidate "")
                          (char= (char candidate 0) #\#))
-                do (return (%lsp-command-argv candidate))))))
+                do (return (values (%lsp-command-argv candidate) candidate))))))
 )
 
 (defun %lsp-config-path (path)
@@ -77,22 +77,25 @@
 
   (defun %lsp-read-config-command (configuration)
     (let ((contents (%lsp-read-config-contents configuration)))
-      (values (%lsp-config-command contents) contents)))
+      (multiple-value-bind (command command-text)
+          (%lsp-config-command contents)
+        (values command contents command-text))))
 )
 
 (defun lsp-discover-command (path)
-  "Return a project-local argv command, root, config path, and content identity."
+  "Return the project-local argv, root, config, identity, and review command."
   (handler-case
       (multiple-value-bind (root configuration)
           (%lsp-config-path path)
-        (multiple-value-bind (command contents)
+        (multiple-value-bind (command contents command-text)
             (if configuration
                 (%lsp-read-config-command configuration)
-                (values nil nil))
+                (values nil nil nil))
           (if command
               (values command
                       root
                       configuration
-                      (list (namestring (truename configuration)) contents))
+                      (list (namestring (truename configuration)) contents)
+                      command-text)
               (values nil nil nil))))
     (file-error () (values nil nil nil))))

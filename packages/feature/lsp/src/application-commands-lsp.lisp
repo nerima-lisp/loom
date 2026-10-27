@@ -2,15 +2,15 @@
 
 (defun %lsp-start-discovery (buffer)
   (let ((path (or (buffer-path buffer) (truename "."))))
-    (multiple-value-bind (command root configuration identity)
+    (multiple-value-bind (command root configuration identity command-text)
         (lsp-discover-command path)
       (values command
               (or root
                   (loom/feature/project:project-find-root path)
                   (%lsp-buffer-directory buffer))
               configuration
-              identity)))
-)
+              identity
+              command-text))))
 
 (defun %lsp-start-with-command (command root buffer minibuffer &optional config-identity) (let ((editor-session (%lsp-current-editor-session))) (if command (multiple-value-bind (session condition) (%lsp-start-session command root (%lsp-language-id (loom/core/buffer:buffer-major-mode buffer)) config-identity editor-session) (when (and condition config-identity editor-session (member :feature/lsp (loom/core/editor-session:editor-session-slice-names editor-session))) (%lsp-record-autostart-failure editor-session config-identity)) (%lsp-report-start-result minibuffer session condition)) (minibuffer-message minibuffer "LSP command cannot be empty"))))
 
@@ -21,7 +21,7 @@
            (loom/core/window-tree:window-tree-selected-window
             (editor-state-window-tree *editor-state*)))))
     (multiple-value-bind (discovered-command discovered-root
-                          configuration identity)
+                          configuration identity command-text)
         (%lsp-start-discovery buffer)
       (with-prompts
           (minibuffer (editor-state-minibuffer *editor-state*)
@@ -36,7 +36,7 @@
             ((and discovered-command (null override))
              (%lsp-confirm-discovered-command
               discovered-command discovered-root configuration buffer
-              minibuffer identity))
+              minibuffer identity command-text))
             (override
              (%lsp-start-with-command
               override discovered-root buffer minibuffer))
