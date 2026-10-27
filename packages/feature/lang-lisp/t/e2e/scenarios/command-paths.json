@@ -158,6 +158,228 @@
         }
       ],
       "save_after_effect": true
+    },
+    {
+      "name": "lang-lisp/command-path-pair-completion-cl",
+      "path_id": "r1:lang-lisp:pair-completion-cl",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "keys: registered Lisp delimiters",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "self-insert-command",
+        "save-buffer"
+      ],
+      "command": "self-insert-command",
+      "entry_mode": "key",
+      "entry_keys": [
+        ")"
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "("
+        },
+        {
+          "key": "x"
+        }
+      ],
+      "extension": "asd",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "(x)tail\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(x)tail"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lang-lisp/command-path-pair-completion-elisp",
+      "path_id": "r1:lang-lisp:pair-completion-elisp",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "keys: registered Lisp delimiters",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "self-insert-command",
+        "save-buffer"
+      ],
+      "command": "self-insert-command",
+      "entry_mode": "key",
+      "entry_keys": [
+        ")"
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Emacs Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "("
+        },
+        {
+          "key": "x"
+        }
+      ],
+      "extension": "el",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "(x)tail\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(x)tail"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "lang-lisp/command-path-close-skip-cl",
+      "path_id": "r1:lang-lisp:close-skip-cl",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:)",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "self-insert-command"
+      ],
+      "command": "self-insert-command",
+      "entry_mode": "key",
+      "entry_keys": [
+        ")"
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "C-f",
+          "repeat": 2
+        }
+      ],
+      "extension": "asd",
+      "initial_bytes": "(x)tail\n",
+      "expected_bytes": "(x)tail\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(x)tail"
+        }
+      ]
+    },
+    {
+      "name": "lang-lisp/command-path-close-skip-elisp",
+      "path_id": "r1:lang-lisp:close-skip-elisp",
+      "lane": "W3-7b",
+      "rule": "r1",
+      "entry": "key:)",
+      "commands": [
+        "execute-extended-command",
+        "set-major-mode",
+        "forward-char",
+        "self-insert-command"
+      ],
+      "command": "self-insert-command",
+      "entry_mode": "key",
+      "entry_keys": [
+        ")"
+      ],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Emacs Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "C-f",
+          "repeat": 2
+        }
+      ],
+      "extension": "el",
+      "initial_bytes": "(x)tail\n",
+      "expected_bytes": "(x)tail\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "(x)tail"
+        }
+      ]
     }
   ]
 }
