@@ -403,7 +403,7 @@
                                   "DEFINE-SEXP-MOTION-COMMAND"
                                   "DEFINE-STRUCTURAL-COMMAND")
                                 :test #'string=)
-                        (list form))))))
+                        (list form)))))))
     (loop for record in records
           unless (or (eq (boundary-record-layer record) :declaration)
                      (null (boundary-record-package record)))
@@ -416,7 +416,7 @@
                   when (symbolp name)
                     collect (list (package-name (boundary-record-package record))
                                   (symbol-name name) (boundary-record-slice record)
-                                  (boundary-record-layer record)))))))
+                                  (boundary-record-layer record))))))
 
 (defun boundary-edge-from-package (source-package target-package file line reference)
   (loop for source-slice in (boundary-package-slices source-package)
@@ -761,9 +761,13 @@
   (loop for record in records
         for path = (boundary-record-path record)
         when (or (uiop:string-prefix-p "src/" path)
-                 (and (or (uiop:string-prefix-p "packages/core/" path)
-                          (uiop:string-prefix-p "packages/feature/" path))
-                      (search "/src/" path)))
+                 (some (lambda (prefix)
+                         (when (uiop:string-prefix-p prefix path)
+                           (let ((slice-end (position #\/ path :start (length prefix))))
+                             (and slice-end
+                                  (> slice-end (length prefix))
+                                  (uiop:string-prefix-p "src/" (subseq path (1+ slice-end)))))))
+                       (list "packages/core/" "packages/feature/")))
           append
           (loop for token in (boundary-scan-source (boundary-record-text record) record)
                 when (boundary-token-internal-p token)
@@ -787,7 +791,7 @@
                         ;; Reading PKG::NAME interns a missing name as internal.
                         (when (and (not (eq status :external))
                                    (if owner
-                                       (not (string-equal
+                                       (not (boundary-slice-contains-p
                                              (third owner)
                                              (boundary-record-slice record)))
                                        (not (some (lambda (target-slice)
@@ -1325,7 +1329,11 @@
                          :slice "core/minibuffer" :layer :application :package package
                          :text
                          (format nil
-                                 "(defun EXPLICIT-CROSS-REFERENCE () nil)~%(define-selected-buffer-command GENERATED-CROSS-REFERENCE nil nil)"))))
+                                 "(defun EXPLICIT-CROSS-REFERENCE () nil)~%(define-selected-buffer-command GENERATED-CROSS-REFERENCE nil nil)"))
+                        (make-boundary-record
+                         :path "packages/core/editor/src/command-owners.lisp"
+                         :slice "core" :layer :application :package package
+                         :text "(defun BROAD-OWNER-REFERENCE () nil)")))
                      (owners (boundary-function-owners owner-records))
                      (make-record
                        (lambda (path slice symbol-name)
@@ -1382,7 +1390,7 @@
                               :to-equal :internal)
                       (expect (nth-value 1 (find-symbol "PUBLIC-REFERENCE" package))
                               :to-equal :external)
-                      (expect (length owners) :to-equal 9)
+                      (expect (length owners) :to-equal 10)
                       (expect (boundary-slice-contains-p "core" "core/command")
                               :to-equal t)
                       (expect (boundary-slice-contains-p "core" "coreish")
@@ -1405,9 +1413,17 @@
                       (expect (boundary-internal-reference-findings
                                (list same-slice-record))
                               :to-equal nil)
-                      (expect (boundary-internal-reference-findings
-                               (list broad-owner-child-record))
-                              :to-equal nil)
+                      (progn
+                        (expect (boundary-internal-reference-findings
+                                 (list broad-owner-child-record))
+                                :to-equal nil)
+                        (expect
+                         (boundary-internal-reference-findings
+                          (list (funcall make-record
+                                         "packages/core/command/src/broad-owner-reference.lisp"
+                                         "core/command" "BROAD-OWNER-REFERENCE"))
+                          owners)
+                         :to-equal nil))
                       (expect (boundary-internal-reference-findings
                                (list external-record))
                               :to-equal nil)
@@ -1443,9 +1459,15 @@
                                 :to-equal 1)
                         (expect (nth-value 1 (find-symbol "ABSENT-REFERENCE" package))
                                 :to-equal nil)
-                        (expect (boundary-internal-reference-findings
+                        (expect
+                               (append
+                                (boundary-internal-reference-findings
                                  (list test-source-record) owners)
-                                :to-equal nil)
+                                (boundary-internal-reference-findings
+                                 (list (funcall make-record
+                                                "packages/feature/bookmark/t/fixtures/src/test-only.lisp"
+                                                "feature/bookmark" "PRIVATE-REFERENCE"))))
+                              :to-equal nil)
                         (let* ((finding (first specific-findings))
                                (entry
                                  (list :package-internal-reference
