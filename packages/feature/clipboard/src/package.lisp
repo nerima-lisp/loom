@@ -12,7 +12,8 @@
             (:import-from #:loom/feature/shell
                           #:run-shell-command
                           #:shell-command-result-success-p
-                          #:shell-command-result-output)
+                          #:shell-command-result-output
+                          #:shell-command-result-error-output)
             (:export #:clipboard-copy-text
                      #:clipboard-read-text
                      #:clipboard-yank))

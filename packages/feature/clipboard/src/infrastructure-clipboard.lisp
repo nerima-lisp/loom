@@ -25,35 +25,39 @@
     (error (condition)
       (values nil condition))))
 
-(defmethod %clipboard-copy-to-local ((text string))
+(defun %system-clipboard-copy-to-local (text)
   (multiple-value-bind (copied failure) (%clipboard-copy-with "pbcopy" text)
     (when copied
-      (return-from %clipboard-copy-to-local
-        (values t nil)))
+      (return-from %system-clipboard-copy-to-local (values t nil)))
     (multiple-value-bind (copied fallback-failure)
         (%clipboard-copy-with "wl-copy" text)
       (values copied (or fallback-failure failure)))))
 
-(defmethod clipboard-read-text ()
-  (let ((failure nil))
-    (dolist (command (list "pbpaste" "wl-paste --no-newline"))
-      (handler-case (let ((result
-                           (run-shell-command command :timeout-seconds 0.5)))
-                      (cond
-                        ((shell-command-result-success-p result)
-                         (return-from clipboard-read-text
-                           (values (shell-command-result-output result)
-                                   command
-                                   nil)))
-                        (t
-                         (setf failure (or
-                                        (shell-command-result-error-output
-                                         result)
-                                        (format nil
-                                                "~A exited with status ~D"
-                                                command
-                                                (shell-command-result-exit-code
-                                                 result)))))))
-        (error (condition)
-          (setf failure condition))))
-    (values nil nil failure)))
+(progn
+  (defun %system-clipboard-read-text ()
+    (let ((failure nil))
+      (dolist (command (list "pbpaste" "wl-paste --no-newline"))
+        (handler-case
+            (let ((result
+                    (run-shell-command command :timeout-seconds 0.5)))
+              (if (shell-command-result-success-p result)
+                  (return-from %system-clipboard-read-text
+                    (values (shell-command-result-output result)
+                            command
+                            nil))
+                  (unless (= (shell-command-result-exit-code result) 127)
+                    (setf failure
+                          (or failure
+                              (let ((error-output
+                                      (shell-command-result-error-output result)))
+                                (and (stringp error-output)
+                                     (plusp (length error-output))
+                                     error-output))
+                              (format nil "~A exited with status ~D"
+                                      command
+                                      (shell-command-result-exit-code result)))))))
+          (error (condition)
+            (setf failure (or failure condition)))))
+      (values nil nil failure)))
+  (setf *clipboard-read-provider* (function %system-clipboard-read-text)
+        *clipboard-local-writer* (function %system-clipboard-copy-to-local)))

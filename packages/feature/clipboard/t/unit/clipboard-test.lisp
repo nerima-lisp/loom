@@ -162,6 +162,42 @@
                   (editor-state-minibuffer *editor-state*))
                  :to-contain
                  "using kill ring")))
+          (it "falls back after clipboard process I/O failure and reports it"
+              (let* ((*editor-state*
+                      (%fresh-editor-state "" :with-minibuffer t))
+                     (buffer (%selected-test-buffer))
+                     (commands nil))
+                (setf (editor-state-kill-ring *editor-state*) (list
+                                                               "from kill ring"))
+                (with-replaced-function
+                 (run-shell-command
+                  (function
+                   (lambda (command &key input timeout-seconds)
+                     (declare (ignore timeout-seconds input))
+                     (push command commands)
+                     (if (string= command "pbpaste")
+                         (error
+                          (make-condition (quote process-kit:process-io-error)
+                                          :stream
+                                          :stdin
+                                          :cause
+                                          nil))
+                         (%clipboard-test-result command "" 127)))))
+                 (loom/feature/clipboard:clipboard-yank))
+                (expect (buffer-text buffer) :to-equal "from kill ring")
+                (expect (nreverse commands)
+                        :to-equal
+                        (list "pbpaste" "wl-paste --no-newline"))
+                (expect
+                 (loom:minibuffer-message-string
+                  (editor-state-minibuffer *editor-state*))
+                 :to-contain
+                 "Failed while draining subprocess STDIN.")
+                (expect
+                 (loom:minibuffer-message-string
+                  (editor-state-minibuffer *editor-state*))
+                 :to-contain
+                 "using kill ring")))
           (it
            "reports local clipboard writer errors without losing the kill ring"
            (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))

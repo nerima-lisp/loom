@@ -1,11 +1,19 @@
 (in-package #:loom/feature/clipboard)
 
 (progn
-  (defgeneric clipboard-read-text ())
-  (defgeneric %clipboard-copy-to-local (text))
+  (defvar *clipboard-read-provider* nil)
+  (defvar *clipboard-local-writer* nil)
+  (defun clipboard-read-text ()
+    (if *clipboard-read-provider*
+        (funcall *clipboard-read-provider*)
+        (values nil nil nil)))
+  (defun %clipboard-copy-to-local (text)
+    (if *clipboard-local-writer*
+        (funcall *clipboard-local-writer* text)
+        (values nil nil)))
   (defun %clipboard-message (text)
     (let ((minibuffer
-           (and *editor-state* (editor-state-minibuffer *editor-state*))))
+            (and *editor-state* (editor-state-minibuffer *editor-state*))))
       (when minibuffer
         (minibuffer-message minibuffer text)))))
 
