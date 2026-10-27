@@ -255,6 +255,25 @@ class PathReportTests(unittest.TestCase):
 
         self.assertEqual(report["paths"][0]["status"], "mismatch")
 
+    def test_exact_event_evidence_does_not_bypass_effect_mismatch(self):
+        target = {"type": "text_input", "text": ")"}
+        self._use_event_target(target)
+        self._write_scenario(
+            [self._matching_observation(actual="wrong")],
+            trace_commands=(),
+            events=[
+                {
+                    "timeline_sequence": 0,
+                    "type": "text_input",
+                    "text": ")",
+                }
+            ],
+        )
+
+        report = self._report(ledger=self.ledger)
+
+        self.assertEqual(report["paths"][0]["status"], "mismatch")
+
     def test_exact_text_input_event_target_precedes_effect_observation(self):
         self._use_event_target({"type": "text_input", "text": "("})
         self._write_scenario(

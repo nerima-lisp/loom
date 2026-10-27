@@ -382,38 +382,48 @@ def _language_paths():
         _language_path(
             "r1:lang-lisp:pair-completion-cl",
             lisp_owner,
-            ["self-insert-command"],
+            ["save-buffer"],
             "keys: registered Lisp delimiters",
             "Common Lisp mode at an opening delimiter or existing closer",
             "opening delimiters insert their pair and existing closers are skipped",
             ["screen_text", "file_bytes", "cursor"],
+            event_targets=tuple(
+                {"type": "text_input", "text": delimiter}
+                for delimiter in ("(", ")")
+            ),
         ),
         _language_path(
             "r1:lang-lisp:pair-completion-elisp",
             lisp_owner,
-            ["self-insert-command"],
+            ["save-buffer"],
             "keys: registered Lisp delimiters",
             "Emacs Lisp mode at an opening delimiter or existing closer",
             "opening delimiters insert their pair and existing closers are skipped",
             ["screen_text", "file_bytes", "cursor"],
+            event_targets=tuple(
+                {"type": "text_input", "text": delimiter}
+                for delimiter in ("(", ")")
+            ),
         ),
         _language_path(
             "r1:lang-lisp:close-skip-cl",
             lisp_owner,
-            ["self-insert-command"],
+            [],
             "key:)",
             "Common Lisp point is before an existing closing parenthesis",
             "typing ) skips the existing closer without inserting another one",
             ["screen_text", "file_bytes", "cursor"],
+            event_targets=({"type": "text_input", "text": ")"},),
         ),
         _language_path(
             "r1:lang-lisp:close-skip-elisp",
             lisp_owner,
-            ["self-insert-command"],
+            [],
             "key:)",
             "Emacs Lisp point is before an existing closing parenthesis",
             "typing ) skips the existing closer without inserting another one",
             ["screen_text", "file_bytes", "cursor"],
+            event_targets=({"type": "text_input", "text": ")"},),
         ),
     ]
 

@@ -168,7 +168,6 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
-        "self-insert-command",
         "save-buffer"
       ],
       "command": "self-insert-command",
@@ -225,7 +224,6 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
-        "self-insert-command",
         "save-buffer"
       ],
       "command": "self-insert-command",
@@ -282,8 +280,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
-        "forward-char",
-        "self-insert-command"
+        "forward-char"
       ],
       "command": "self-insert-command",
       "entry_mode": "key",
@@ -336,8 +333,7 @@
       "commands": [
         "execute-extended-command",
         "set-major-mode",
-        "forward-char",
-        "self-insert-command"
+        "forward-char"
       ],
       "command": "self-insert-command",
       "entry_mode": "key",

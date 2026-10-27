@@ -837,10 +837,11 @@ def _classify_path(
     if event_targets:
         for observation in expected_effects:
             if any(
-                event["type"] in event_targets
+                _event_matches_target(event, target)
                 and event["timeline_sequence"]
                 < observation["timeline_sequence"]
                 for event in events
+                for target in event_targets
             ) and observation not in attributed_effects:
                 attributed_effects.append(observation)
 

@@ -373,6 +373,23 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                     {"type": "text_input", "text": delimiter}
                     for delimiter in ("(", ")", "[", "]", "{", "}", "<", ">")
                 ]
+            }
+            | {
+                path_id: [
+                    {"type": "text_input", "text": delimiter}
+                    for delimiter in ("(", ")")
+                ]
+                for path_id in (
+                    "r1:lang-lisp:pair-completion-cl",
+                    "r1:lang-lisp:pair-completion-elisp",
+                )
+            }
+            | {
+                path_id: [{"type": "text_input", "text": ")"}]
+                for path_id in (
+                    "r1:lang-lisp:close-skip-cl",
+                    "r1:lang-lisp:close-skip-elisp",
+                )
             },
         )
         self.assertEqual(
@@ -384,6 +401,24 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             "r6:signal:sigtstp-cont",
         ):
             self.assertEqual(self.paths_by_id[path_id]["commands"], [])
+
+    def test_lisp_delimiter_paths_have_exact_text_input_targets(self):
+        pair_targets = [
+            {"type": "text_input", "text": delimiter}
+            for delimiter in ("(", ")")
+        ]
+        close_skip_targets = [{"type": "text_input", "text": ")"}]
+        expected = {
+            "r1:lang-lisp:pair-completion-cl": pair_targets,
+            "r1:lang-lisp:pair-completion-elisp": pair_targets,
+            "r1:lang-lisp:close-skip-cl": close_skip_targets,
+            "r1:lang-lisp:close-skip-elisp": close_skip_targets,
+        }
+        for path_id, event_targets in expected.items():
+            with self.subTest(path_id=path_id):
+                self.assertEqual(
+                    self.paths_by_id[path_id]["event_targets"], event_targets
+                )
 
     def test_r7_generates_all_editor_invocation_paths(self):
         for path_id in (
@@ -642,6 +677,10 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                         expected_commands = ["comment-line"]
                     elif language == "nix" and behavior == "pair":
                         expected_commands = ["save-buffer"]
+                    elif language in {"common-lisp", "emacs-lisp"} and behavior == "pair":
+                        expected_commands = ["save-buffer"]
+                    elif language in {"common-lisp", "emacs-lisp"} and behavior == "close-skip":
+                        expected_commands = []
                     elif language in {
                         "typescript",
                         "javascript",
