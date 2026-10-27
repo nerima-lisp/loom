@@ -18,6 +18,7 @@ from loom_e2e.command_path_scenarios import (
     run_command_path_scenario,
 )
 from loom_e2e.path_generation import generate_required_paths
+from loom_e2e.scenario_discovery import load_slice_scenarios
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -451,6 +452,32 @@ class CommandPathScenarioTests(unittest.TestCase):
         for contents in fixtures:
             self.assertIn("RESTORED\n", contents)
             self.assertNotIn(r"RESTORED\n", contents)
+
+    def test_lifecycle_prompt_paths_load_from_the_custom_runner(self):
+        expected_scenarios = {
+            **{
+                f"lifecycle/save-buffer-prompt-{prompt}": [
+                    "save-buffers-kill-terminal"
+                ]
+                for prompt in ("accept", "cancel", "empty", "tab", "history")
+            },
+            **{
+                f"lifecycle/abort-prompt-{prompt}": [
+                    "execute-extended-command",
+                    "kill-loom-abort",
+                ]
+                for prompt in ("accept", "cancel", "empty", "tab", "history")
+            },
+        }
+        load_slice_scenarios(REPOSITORY_ROOT)
+        registered = {
+            name: commands for name, commands, _function in registry.all_scenarios()
+        }
+
+        self.assertEqual(
+            {name: registered.get(name) for name in expected_scenarios},
+            expected_scenarios,
+        )
 
     def test_r3_read_only_setup_and_command_statuses_are_separate(self):
         case = next(
