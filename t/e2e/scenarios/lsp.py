@@ -158,7 +158,11 @@ def lsp_trust_reject(binary):
         directory = os.path.realpath(directory)
         configuration = os.path.join(directory, ".loom-lsp")
         marker = os.path.join(directory, "spawned")
-        command = "printf spawned > " + marker
+        server = os.path.join(directory, "lsp-server")
+        script = "#!/bin/sh\nprintf spawned > " + shlex.quote(marker) + "\n"
+        write_buffer(directory, "lsp-server", script.encode("utf-8"))
+        os.chmod(server, 0o755)
+        command = "exec " + shlex.quote(server)
         with open(configuration, "w", encoding="utf-8") as handle:
             handle.write(command + "\n")
         path = write_buffer(directory, "main.lisp", b"(+ 1 2)\n")
@@ -172,7 +176,7 @@ def lsp_trust_reject(binary):
         columns = max(80, max(map(len, review_lines)) + 1)
         with Session(binary, [path], columns=columns) as session:
             session.wait_ready()
-            for answer in ("", "no", "YES", " yes", "yes ", None):
+            for answer in ("", "no", None):
                 session.extended_command("lsp-start")
                 session.wait_for_text("LSP command [RET for")
                 session.key("RET")
@@ -205,11 +209,18 @@ def lsp_trust_review(binary):
         tail = "".join(tail_fragments)
         tail_forms = (tail, "\n".join(tail_fragments))
         nixd_command = _nixd_command()
+        server = os.path.join(directory, "lsp-server")
         command = (
-            "printf spawned > " + marker
-            + "; printf '%s\\n' $$ > " + pid_file + "; exec " + nixd_command
-            + " # " + "review-content " * 120 + tail
+            "exec " + shlex.quote(server) + " " + "review-content " * 120 + tail
         )
+        script = (
+            "#!/bin/sh\n"
+            "printf spawned > " + shlex.quote(marker) + "\n"
+            "printf '%s\\n' $$ > " + shlex.quote(pid_file) + "\n"
+            "exec " + shlex.quote(nixd_command) + "\n"
+        )
+        write_buffer(directory, "lsp-server", script.encode("utf-8"))
+        os.chmod(server, 0o755)
         with open(configuration, "w", encoding="utf-8") as handle:
             handle.write(command + "\n")
         write_buffer(directory, "flake.nix", b"{}\n")

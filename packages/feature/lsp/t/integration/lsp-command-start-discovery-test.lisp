@@ -12,7 +12,7 @@
         (host-kit:write-file-string
          (format nil "# project LSP~%~% fake-server --stdio ~%")
          configuration)
-        (%with-minibuffer-state (minibuffer "")
+        (%with-lsp-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp"
                                       :path path
                                       :initial-content "(+ 1 2)"))
@@ -43,7 +43,7 @@
                                        :transport transport
                                        arguments))
                           new-session))
-                     (lsp-start)
+                     (progn (%fake-push-initialize-response transport) (lsp-start))
                      (%expect-minibuffer-prompt
                       minibuffer
                       (%lsp-command-prompt-string "fake-server --stdio"))
@@ -102,7 +102,7 @@
         (host-kit:write-file-string "(+ 1 2)" path)
         (host-kit:write-file-string "fake-server --stdio"
                                     (merge-pathnames ".loom-lsp" directory))
-        (%with-minibuffer-state (minibuffer "")
+        (%with-lsp-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp" :path path))
                  (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                  (transport (make-instance '%fake-lsp-transport))
@@ -150,7 +150,7 @@
             (:modified nil) (:modified "") (:modified "yes"))
     "pages wrapped disclosure with ~S, preserving input and trust answer ~S"
     (encoding answer)
-    (%with-minibuffer-state (minibuffer "original buffer")
+    (%with-lsp-minibuffer-state (minibuffer "original buffer")
       (let* ((tree (editor-state-window-tree *editor-state*))
              (window (window-tree-selected-window tree))
              (buffer (window-buffer window))
@@ -185,10 +185,12 @@
                       (incf constructor-count)
                       (setf new-session
                             (apply original-make-session :transport transport arguments))))
-                 (loom/feature/lsp::%lsp-confirm-discovered-command
-                  (concatenate 'string (make-string 1600 :initial-element #\x)
-                               "REVIEW_END_UNIQUE")
-                  #P"/project/" #P"/project/.loom-lsp" buffer minibuffer)
+                 (progn
+  (%fake-push-initialize-response transport)
+  (loom/feature/lsp::%lsp-confirm-discovered-command
+   (concatenate 'string (make-string 1600 :initial-element #\x)
+                "REVIEW_END_UNIQUE")
+   #P"/project/" #P"/project/.loom-lsp" buffer minibuffer))
                  (%type-string minibuffer input)
                  (let ((review (window-buffer window)))
                    ;; Both pages remain inside one wrapped logical Command line.
@@ -237,7 +239,7 @@
         (host-kit:write-file-string "(+ 1 2)" path)
         (host-kit:write-file-string "discovered-server"
                                     (merge-pathnames ".loom-lsp" directory))
-        (%with-minibuffer-state (minibuffer "")
+        (%with-lsp-minibuffer-state (minibuffer "")
           (let* ((buffer (make-buffer :name "main.lisp" :path path))
                  (window (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))
                  (transport (make-instance '%fake-lsp-transport))
@@ -256,7 +258,7 @@
                           (setf captured-arguments arguments
                                 new-session (apply original-make-session
                                                    :transport transport arguments))))
-                     (lsp-start)
+                     (progn (%fake-push-initialize-response transport) (lsp-start))
                      (%expect-minibuffer-prompt
                       minibuffer (%lsp-command-prompt-string "discovered-server"))
                      (expect constructor-count :to-equal 0)
@@ -284,7 +286,7 @@
              (initialize-send-attempted nil)
              (process-exited-before-send nil)
              (initialize-send-error nil))
-        (%with-minibuffer-state (minibuffer "")
+        (%with-lsp-minibuffer-state (minibuffer "")
           (unwind-protect
                (progn
                  (with-replaced-function
@@ -317,7 +319,10 @@
                      (multiple-value-bind (session condition)
                          (loom/feature/lsp::%lsp-start-session
                           (list "sh" "-c" "exit 17")
-                          directory)
+                          directory
+                          "plaintext"
+                          nil
+                          (editor-state-session *editor-state*))
                        (declare (ignore session))
                        (loom/feature/lsp::%lsp-report-start-result
                         minibuffer new-session condition)
@@ -373,8 +378,11 @@
                                  (error unrelated-condition)))
                             (multiple-value-bind (session condition)
                                 (loom/feature/lsp::%lsp-start-session
-                                 (list "sh" "-c" "exit 17")
-                                 directory)
+                          (list "sh" "-c" "exit 17")
+                          directory
+                          "plaintext"
+                          nil
+                          (editor-state-session *editor-state*))
                               (declare (ignore session))
                               (setf returned-condition condition)))
                      (when unrelated-session

@@ -16,7 +16,9 @@
                (editor-state-window-tree *editor-state*))
               buffer)
              (setf (editor-state-concurrent-runtime *editor-state*) :runtime
-                   (editor-state-lsp-session *editor-state*) :session)
+                   (editor-state-lsp-session *editor-state*)
+                   (loom/feature/lsp:make-lsp-session
+                    :transport (make-instance (quote %fake-lsp-transport))))
              (with-replaced-function
               (loom/feature/terminal:poll-terminal-sessions
                (lambda (state)
@@ -39,7 +41,7 @@
                  (with-replaced-function
                   (loom/feature/lsp:lsp-session-refresh
                    (lambda (session selected-buffer)
-                     (expect session :to-be :session)
+                     (expect session :to-be (editor-state-lsp-session *editor-state*))
                      (expect selected-buffer :to-be buffer)
                      (setf lsp-refreshed t)))
                   (with-replaced-function

@@ -3,7 +3,7 @@
 (describe
   "LSP diagnostics command state handling"
   (it "reports inactive and pathless diagnostic states"
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (let* ((transport (make-instance '%fake-lsp-transport))
              (session (make-lsp-session :transport transport)))
         (unwind-protect

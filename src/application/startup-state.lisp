@@ -87,7 +87,8 @@ New files use the files feature constructor to initialize save metadata."
                                :feature/workspace
                                :feature/keyboard-macro
                                :feature/search
-                               :feature/project)
+                               :feature/project
+                               :feature/lsp)
            :initial-slices
            (list (cons :core/window-tree window-tree)))))
     (loom/feature/buffers:register-buffer session initial-buffer)

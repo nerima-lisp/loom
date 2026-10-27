@@ -91,15 +91,16 @@
                           #:buffer-line-count
                           #:buffer-set-point)
             (:import-from #:loom/core/editor-session
-                          #:*editor-session*
-                          #:*editor-state*
-                          #:editor-state-window-tree
-                          #:editor-state-lsp-session
-                          #:editor-state-minibuffer
-                          #:editor-state-completion
-                          #:editor-state-jump-origins
-                          #:next-visual-line-once
-                          #:previous-visual-line-once)
+              #:*editor-session*
+              #:*editor-state*
+              #:editor-state-window-tree
+              #:editor-state-lsp-session
+              #:editor-state-minibuffer
+              #:editor-state-completion
+              #:editor-state-jump-origins
+              #:next-visual-line-once
+              #:previous-visual-line-once
+              #:register-session-hook)
             (:import-from #:loom/core/minibuffer
                           #:minibuffer-message
                           #:minibuffer-activate

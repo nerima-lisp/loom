@@ -1,11 +1,16 @@
 (in-package #:loom/test)
 
-(defun %make-test-editor-session (&optional buffers &key window-tree)
+(defun %make-test-editor-session
+    (&optional buffers &key window-tree additional-slices initial-slices)
   (let ((session
           (loom/core/editor-session:make-editor-session
-           (quote (:core/window-tree :feature/buffers
-                    :feature/workspace :feature/keyboard-macro))
-           :initial-slices (list (cons :core/window-tree window-tree)))))
+           (append
+            (list :core/window-tree :feature/buffers :feature/workspace
+                  :feature/keyboard-macro)
+            additional-slices)
+           :initial-slices
+           (append (list (cons :core/window-tree window-tree))
+                   initial-slices))))
     (dolist (buffer (reverse buffers))
       (loom/feature/buffers:register-buffer session buffer))
     session))
@@ -27,7 +32,8 @@
       (loom/feature/buffers:register-buffer session buffer))
     (loom/feature/buffers:registered-buffers session)))
 
-(defun %fresh-editor-state (initial-content &key with-minibuffer)
+(defun %fresh-editor-state
+    (initial-content &key with-minibuffer additional-slices initial-slices)
   "Build a minimal *EDITOR-STATE* around a single window over a buffer
 containing INITIAL-CONTENT -- enough for movement, editing, and undo
 commands, which never touch the minibuffer/file-tree/renderer slots.
@@ -35,7 +41,11 @@ WITH-MINIBUFFER installs a live MAKE-MINIBUFFER for the prompting commands,
 which do; see %WITH-MINIBUFFER-STATE."
   (let* ((buffer (make-buffer :initial-content initial-content))
          (tree (make-window-tree buffer 80 24))
-         (session (%make-test-editor-session (list buffer) :window-tree tree)))
+         (session (%make-test-editor-session
+                   (list buffer)
+                   :window-tree tree
+                   :additional-slices additional-slices
+                   :initial-slices initial-slices)))
     (make-editor-state :session session
                        :window-tree tree
                        :minibuffer (and with-minibuffer (make-minibuffer))

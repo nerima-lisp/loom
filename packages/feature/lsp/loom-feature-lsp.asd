@@ -9,8 +9,7 @@
                              "loom-core-command"
                              "loom-feature-buffers"
                              "loom-feature-file-tree"
-                             "loom-feature-project"
-                             "loom-feature-mode")
+                             "loom-feature-project" "loom-feature-mode")
   :serial t
   :components ((:module "src"
                         :serial
@@ -32,8 +31,8 @@
                          (:file "application-lsp-requests")
                          (:file "application-lsp-protocol-routing")
                          (:file "application-lsp-protocol-receive")
-                         (:file "application-lsp-session-state")
-                         (:file "application-lsp-session-uri")
+                         (:file "application-lsp-session-state") (:file "application-lsp-session-uri")
+                         (:file "application-lsp-session-registry")
                          (:file "application-lsp-session-sync")
                          (:file "application-lsp-session-lifecycle")
                          (:file "application-lsp-diagnostics-view")

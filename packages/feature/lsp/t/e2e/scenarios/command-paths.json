@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/r2/lsp-start/free-string/empty",
+      "path_id": "r2:lsp-start:prompt-1:free-string:empty",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": ["lsp-start"],
+      "command": "lsp-start",
+      "initial_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [0, 0],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "LSP command cannot be empty",
+      "expected_screen": [{"region": "body", "text": ""}],
+      "entry_mode": "mx",
+      "prompt_open": "LSP command: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": ""
+    }
+  ]
+}

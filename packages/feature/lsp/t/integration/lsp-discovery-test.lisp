@@ -18,7 +18,7 @@
          nested-config)
         (multiple-value-bind (command root configuration)
             (lsp-discover-command source)
-          (expect command :to-equal "nested-server --stdio")
+          (expect command :to-equal (list "nested-server" "--stdio"))
           (expect (namestring root)
                   :to-equal
                   (namestring (truename nested)))
@@ -63,7 +63,7 @@
       (let ((configuration (merge-pathnames ".loom-lsp" directory)))
         (host-kit:write-file-string "server --stdio" configuration)
         (expect (loom/feature/lsp::%lsp-read-config-command configuration)
-                :to-equal "server --stdio")
+                :to-equal (list "server" "--stdio"))
         (delete-file configuration)
         (expect (loom/feature/lsp::%lsp-read-config-command configuration)
                 :to-be nil))))
@@ -86,3 +86,46 @@
   (it "ignores non-string configuration contents"
     (expect (loom/feature/lsp::%lsp-config-command nil)
             :to-be nil)))
+(describe
+  "LSP trusted configuration"
+  (it "returns argv with a content-bound configuration identity"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (source (merge-pathnames "main.nix" directory))
+             (configuration (merge-pathnames ".loom-lsp" directory))
+             (contents (format nil " fake-server --stdio ~%")))
+        (host-kit:write-file-string "source" source)
+        (host-kit:write-file-string contents configuration)
+        (multiple-value-bind (command root path identity)
+            (lsp-discover-command source)
+          (expect command :to-equal (list "fake-server" "--stdio"))
+          (expect (namestring root) :to-equal (namestring directory))
+          (expect (namestring path)
+                  :to-equal
+                  (namestring (truename configuration)))
+          (expect identity
+                  :to-equal
+                  (list (namestring (truename configuration)) contents))
+          (let ((previous-identity identity))
+            (host-kit:write-file-string "changed-server --stdio" configuration)
+            (multiple-value-bind (changed-command changed-root changed-path changed-identity)
+                (lsp-discover-command source)
+              (declare (ignore changed-command changed-root changed-path))
+              (expect (equal previous-identity changed-identity) :to-be nil)))))))
+
+  (it "rejects shell syntax and oversized configuration"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((directory (truename directory))
+             (source (merge-pathnames "main.nix" directory))
+             (configuration (merge-pathnames ".loom-lsp" directory)))
+        (host-kit:write-file-string "source" source)
+        (host-kit:write-file-string "server --stdio; exit 7" configuration)
+        (expect (multiple-value-list (lsp-discover-command source))
+                :to-equal
+                '(nil nil nil))
+        (host-kit:write-file-string (make-string 5000 :initial-element #\x)
+                                    configuration)
+        (expect (multiple-value-list (lsp-discover-command source))
+                :to-equal
+                '(nil nil nil)))))
+)

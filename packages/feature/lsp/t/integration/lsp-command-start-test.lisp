@@ -3,13 +3,13 @@
 (describe
   "LSP commands"
   (it "starts LSP sessions through the command prompt"
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (lsp-start)
       (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) " ")
       (expect (loom:minibuffer-message-string minibuffer)
               :to-equal
               "LSP command cannot be empty"))
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (let* ((transport (make-instance '%fake-lsp-transport))
              (session (make-lsp-session :transport transport)))
         (lsp-session-stop session)
@@ -24,7 +24,7 @@
                 :to-contain
                 "LSP start failed:")
         (expect (%fake-closed-p transport) :to-be-truthy)))
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (let* ((buffer (make-buffer :name "main.lisp"
                                   :path "/tmp/main.lisp"
                                   :initial-content "(+ 1 2)"))
@@ -50,7 +50,7 @@
                                    :transport new-transport
                                    arguments))
                       new-session))
-                 (lsp-start)
+                 (progn (%fake-push-initialize-response new-transport) (lsp-start))
                  (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer)
                           "fake-server"))
                (expect (editor-state-lsp-session *editor-state*)
@@ -81,7 +81,7 @@
 (describe
   "LSP command replacement failures"
   (it "keeps the existing session when construction fails"
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (%with-initialized-fake-lsp-session ((old-transport old-session))
         (setf (editor-state-lsp-session *editor-state*) old-session)
         (with-replaced-function
@@ -99,7 +99,7 @@
                 :to-equal "LSP start failed: constructor failed"))))
 
   (it "keeps the existing session and closes the new one when initialize send fails"
-    (%with-minibuffer-state (minibuffer "")
+    (%with-lsp-minibuffer-state (minibuffer "")
       (%with-initialized-fake-lsp-session ((old-transport old-session))
         (%with-fake-lsp-session ((new-transport new-session))
           (setf (editor-state-lsp-session *editor-state*) old-session
@@ -123,7 +123,7 @@
   (it-each ((:receive) (:close))
     "does not propagate an old transport ~S error through real shutdown"
     (failure)
-      (%with-minibuffer-state (minibuffer "")
+      (%with-lsp-minibuffer-state (minibuffer "")
         (%with-initialized-fake-lsp-session ((old-transport old-session))
           (%with-fake-lsp-session ((new-transport new-session))
             (let* ((boundary (ecase failure
@@ -139,7 +139,7 @@
                              (error "old transport failed"))
                            (funcall original-boundary transport)))
                      (start-command ()
-                       (lsp-start)
+                       (progn (%fake-push-initialize-response new-transport) (lsp-start))
                        (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) "fake-server")))
                 (with-replaced-function
                     (loom/feature/lsp::make-lsp-session

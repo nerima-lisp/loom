@@ -101,3 +101,15 @@
      (%fake-push-initialize-response ,transport)
      (lsp-session-drain ,session)
      ,@body))
+(defmacro %with-lsp-minibuffer-state
+    ((minibuffer initial-content &rest extra-bindings) &body body)
+  `(let* ((*editor-state* (%fresh-editor-state
+                          ,initial-content
+                          :with-minibuffer t
+                          :additional-slices (list :feature/mode :feature/lsp)
+                          :initial-slices (list (cons :feature/mode nil))))
+          (loom/core/editor-session:*editor-session*
+            (loom/core/editor-session:editor-state-session *editor-state*))
+          (,minibuffer (editor-state-minibuffer *editor-state*))
+          ,@extra-bindings)
+     ,@body))

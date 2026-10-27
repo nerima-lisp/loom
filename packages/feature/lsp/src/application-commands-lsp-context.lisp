@@ -1,7 +1,11 @@
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-navigation-session ()
-  (editor-state-lsp-session *editor-state*))
+  (let ((buffer
+          (loom/core/window-tree:window-buffer
+           (loom/core/window-tree:window-tree-selected-window
+            (editor-state-window-tree *editor-state*)))))
+    (and buffer (%lsp-current-buffer-session buffer))))
 
 (defun %lsp-navigation-minibuffer ()
   (editor-state-minibuffer *editor-state*))

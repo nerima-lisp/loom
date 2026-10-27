@@ -28,6 +28,9 @@ rejected."
   transport
   command
   root-uri
+  root-path
+  language-id
+  config-identity
   (next-id 0 :type integer)
   pending-initialize-id
   (initialized-p nil)
@@ -42,12 +45,8 @@ rejected."
   last-error
   (closed-p nil))
 
-(defun make-lsp-session (&key transport command directory root-uri)
-  "Create an LSP session over TRANSPORT or a child process COMMAND.
-
-Supplying TRANSPORT is the seam used by tests and future non-process
-frontends. COMMAND is intentionally a shell command, so launching it has
-the same trust boundary as user initialization and Lisp evaluation."
+(defun make-lsp-session (&key transport command directory root-uri root-path language-id config-identity)
+  "Create an LSP session over TRANSPORT or a child process COMMAND."
   (let ((actual-transport
           (or transport
               (progn
@@ -56,4 +55,7 @@ the same trust boundary as user initialization and Lisp evaluation."
                 (make-lsp-process command :directory directory)))))
     (%make-lsp-session :transport actual-transport
                        :command command
-                       :root-uri root-uri)))
+                       :root-uri root-uri
+                       :root-path root-path
+                       :language-id language-id
+                       :config-identity config-identity)))

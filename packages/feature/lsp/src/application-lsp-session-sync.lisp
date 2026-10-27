@@ -70,3 +70,50 @@ document or full-text didChange when its text differs."
   "Return a copy of diagnostics associated with BUFFER-OR-PATH."
   (let ((uri (%lsp-buffer-uri buffer-or-path)))
     (copy-list (and uri (gethash uri (lsp-session-diagnostic-table session))))))
+(defun %lsp-send-document-close (session uri)
+    (%lsp-send-notification
+     session
+     "textDocument/didClose"
+     (json-kit:make-json-object
+      (list
+       (cons "textDocument"
+             (json-kit:make-json-object (list (cons "uri" uri))))))))
+(defun lsp-session-save-buffer (session buffer)
+    (let ((uri (%lsp-buffer-uri buffer)))
+      (when (and uri (lsp-session-initialized-p session))
+        (lsp-session-sync-buffer session buffer)
+        (%lsp-send-notification
+         session
+         "textDocument/didSave"
+         (json-kit:make-json-object
+          (list
+           (cons "textDocument"
+                 (json-kit:make-json-object (list (cons "uri" uri))))
+           (cons "text" (buffer-text buffer))))))
+    session))
+(defun lsp-session-close-buffer (session buffer)
+    (let ((uri (%lsp-buffer-uri buffer)))
+      (when uri
+        (unwind-protect
+             (when (and (lsp-session-initialized-p session)
+                        (gethash uri (lsp-session-documents session)))
+               (%lsp-send-document-close session uri))
+          (remhash uri (lsp-session-documents session))
+          (remhash uri (lsp-session-diagnostic-table session))))
+    session))
+(defun %lsp-after-save-hook (editor-session buffer)
+    (let ((session (lsp-session-for-buffer editor-session buffer)))
+      (when session
+        (lsp-session-save-buffer session buffer))))
+(defun %lsp-buffer-close-hook (editor-session buffer &optional reason)
+    (declare (ignore reason))
+    (let ((session (lsp-session-for-buffer editor-session buffer)))
+      (when session
+        (lsp-session-close-buffer session buffer))))
+(eval-when (:load-toplevel :execute)
+    (register-session-hook :after-save
+                           :feature/lsp
+                           (function %lsp-after-save-hook))
+    (register-session-hook :buffer-close
+                           :feature/lsp
+                           (function %lsp-buffer-close-hook)))

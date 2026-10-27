@@ -1,22 +1,51 @@
 (in-package #:loom/feature/lsp)
 
-(defparameter +lsp-config-file-name+ ".loom-lsp"
-  "The project-local file used to discover an LSP server command.")
+(progn
+  (defparameter +lsp-config-file-name+ ".loom-lsp"
+    "The project-local file used to discover an LSP server command.")
+  (defparameter +lsp-config-max-characters+ 4096))
 
-(defun %lsp-config-command (contents)
-  "Return the first non-empty, non-comment command line in CONTENTS.
+(progn
+  (defun %lsp-command-argv (line)
+  (when (stringp line)
+    (let ((index 0)
+          (length (length line))
+          (arguments nil))
+      (loop while (< index length)
+            do (if (member (char line index) '(#\Space #\Tab) :test #'char=)
+                   (incf index)
+                   (let ((start index))
+                     (loop while (and (< index length)
+                                      (not (member (char line index)
+                                                   '(#\Space #\Tab)
+                                                   :test #'char=)))
+                           do (let ((character (char line index)))
+                                (when (or (< (char-code character) 32)
+                                          (= (char-code character) 127)
+                                          (member character
+                                                  '(#\; #\| #\& #\< #\>
+                                                    #\$ #\` #\' #\" #\\
+                                                    #\* #\? #\( #\) #\[
+                                                    #\] #\{ #\} #\#)
+                                                  :test #'char=))
+                                  (return-from %lsp-command-argv nil)))
+                              (incf index))
+                     (push (subseq line start index) arguments))))
+      (let ((argv (nreverse arguments)))
+        (if (and argv (string= (first argv) "exec"))
+            (rest argv)
+            argv)))))
 
-Comment lines begin with `#` after leading whitespace.  The complete line is
-preserved after trimming surrounding whitespace so shell commands can retain
-their arguments and quoting."
-  (when (stringp contents)
-    (with-input-from-string (stream contents)
-      (loop for line = (read-line stream nil nil)
-            while line
-            for candidate = (string-trim '(#\Space #\Tab #\Return) line)
-            unless (or (string= candidate "")
-                       (char= (char candidate 0) #\#))
-              do (return candidate)))))
+  (defun %lsp-config-command (contents)
+    (when (stringp contents)
+      (with-input-from-string (stream contents)
+        (loop for line = (read-line stream nil nil)
+              while line
+              for candidate = (string-trim '(#\Space #\Tab #\Return) line)
+              unless (or (string= candidate "")
+                         (char= (char candidate 0) #\#))
+                do (return (%lsp-command-argv candidate))))))
+)
 
 (defun %lsp-config-path (path)
   (let ((root
@@ -28,29 +57,42 @@ their arguments and quoting."
     (when root
       (values root (merge-pathnames +lsp-config-file-name+ root)))))
 
-(defun %lsp-read-config-command (configuration)
-  (let ((contents
-          (handler-case
-              (host-kit:read-file-string configuration)
-            (host-kit:host-operation-failed (condition)
-              (declare (ignore condition))
-              nil))))
-    (%lsp-config-command contents)))
+(progn
+  (defun %lsp-read-config-contents (configuration)
+  (handler-case
+      (with-open-file (stream configuration
+                              :direction :input
+                              :external-format :utf-8)
+        (let ((output (make-string-output-stream)))
+          (loop for count from 0
+                for character = (read-char stream nil nil)
+                do (cond
+                     ((null character)
+                      (return-from %lsp-read-config-contents
+                        (get-output-stream-string output)))
+                     ((= count +lsp-config-max-characters+)
+                      (return-from %lsp-read-config-contents nil))
+                     (t (write-char character output))))))
+    (error () nil)))
+
+  (defun %lsp-read-config-command (configuration)
+    (let ((contents (%lsp-read-config-contents configuration)))
+      (values (%lsp-config-command contents) contents)))
+)
 
 (defun lsp-discover-command (path)
-  "Discover a project-local LSP command for PATH.
-
-The nearest ancestor containing `.loom-lsp` is used.  Its first non-empty,
-non-comment line is treated as a shell command.  Return three values: the
-command, the project root, and the configuration pathname.  Return three NIL
-values when no usable configuration is found.  Reading a malformed or
-unreadable configuration is intentionally treated as no discovery so the
-interactive command can continue to offer its explicit prompt."
-  (multiple-value-bind (root configuration)
-      (handler-case (%lsp-config-path path)
-        (file-error () (values nil nil)))
-    (let ((command (and configuration
-                        (%lsp-read-config-command configuration))))
-      (if command
-          (values command root configuration)
-          (values nil nil nil)))))
+  "Return a project-local argv command, root, config path, and content identity."
+  (handler-case
+      (multiple-value-bind (root configuration)
+          (%lsp-config-path path)
+        (multiple-value-bind (command contents)
+            (if configuration
+                (%lsp-read-config-command configuration)
+                (values nil nil))
+          (if command
+              (values command
+                      root
+                      configuration
+                      (list (namestring (truename configuration)) contents))
+              (values nil nil nil))))
+    (file-error () (values nil nil nil))))
