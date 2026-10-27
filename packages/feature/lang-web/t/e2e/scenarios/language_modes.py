@@ -68,6 +68,9 @@ def language_modes(binary):
                 _find_file(session, path)
                 session.wait_for_region_text("body", body_marker)
                 session.wait_for_region_text("mode-line", mode_name)
+                session.assert_screen_text(
+                    mode_name, match="contains", region="mode-line"
+                )
 
             output, code = session.quit()
             if code != 0:
