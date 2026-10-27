@@ -161,8 +161,8 @@ def _validate_case(case, index):
             )
     for field in ("name", "path_id", "lane", "rule", "command", "entry"):
         _nonempty_string(case.get(field), f"{location}.{field}")
-    if case["rule"] not in {"r1", "r2", "r3"}:
-        raise CommandPathScenarioError(f"{location}.rule must be r1, r2, or r3")
+    if case["rule"] not in {"r1", "r2", "r3", "r4"}:
+        raise CommandPathScenarioError(f"{location}.rule must be r1, r2, r3, or r4")
     if "followup_input" in case and case["rule"] != "r1":
         raise CommandPathScenarioError(
             f"{location}.followup_input is only valid for R1 M-x goto-line"
@@ -413,7 +413,7 @@ def _validate_case(case, index):
             if "invoke_name" in case:
                 _nonempty_string(case["invoke_name"], f"{location}.invoke_name")
             _validate_key_actions(case.get("pre_keys", []), f"{location}.pre_keys")
-    else:
+    elif case["rule"] == "r3":
         if case.get("mutation_case") not in _MUTATION_CASES:
             raise CommandPathScenarioError(
                 f"{location}.mutation_case is not a supported R3 case"
@@ -536,6 +536,19 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.expected_bytes must match {expected_bytes_source}"
             )
+
+    else:
+        region_case = case.get("region_case")
+        if not isinstance(region_case, str) or region_case not in {
+            "region-present",
+            "region-absent",
+        }:
+            raise CommandPathScenarioError(
+                f"{location}.region_case must be region-present or region-absent"
+            )
+        _validate_key_list(case.get("command_keys"), f"{location}.command_keys")
+        if "prepare_keys" in case:
+            _validate_key_list(case["prepare_keys"], f"{location}.prepare_keys")
 
     if "fixture_keys" in case:
         _validate_key_list(case["fixture_keys"], f"{location}.fixture_keys")
@@ -1285,6 +1298,20 @@ def _run_r3(session, case, path):
         )
 
 
+def _run_r4(session, case, path):
+    _send_keys(session, case.get("prepare_keys", []))
+    with _deadline_stage(case["name"], "effect", session=session):
+        _send_keys(session, case["command_keys"])
+    _assert_final_state(
+        session,
+        case,
+        path,
+        case["expected_bytes"],
+        save=case.get("save_after_effect", False),
+        stage_prefix="effect",
+    )
+
+
 def _resolve_path_tokens(value, buffer_path, session_path, fixture_files=()):
     if isinstance(value, str):
         resolved = (
@@ -1338,7 +1365,7 @@ def _expand_project_root(case, project_root):
 
 
 def run_command_path_scenario(binary, case, *, session_factory=Session):
-    """Execute one strict R1, R2, or R3 example against a loom binary."""
+    """Execute one strict R1, R2, R3, or R4 example against a loom binary."""
     initial = case["initial_bytes"].encode("utf-8")
     with tempfile.TemporaryDirectory(prefix="loom-e2e-command-path-") as directory:
         path = Path(directory) / "buffer.txt"
@@ -1395,8 +1422,10 @@ def run_command_path_scenario(binary, case, *, session_factory=Session):
                 _run_r1(session, case, path)
             elif case["rule"] == "r2":
                 _run_r2(session, case, path)
-            else:
+            elif case["rule"] == "r3":
                 _run_r3(session, case, path)
+            else:
+                _run_r4(session, case, path)
             if case["rule"] == "r2":
                 with _deadline_stage(case["name"], "session quit", session=session):
                     output, code = session.quit()
