@@ -449,7 +449,7 @@
                       :to-equal
                       (format nil "File is unavailable: ~A" path))))))))
   (it
-    "undoes revert without undoing the prior local edit"
+    "undoes a revert without undoing the prior local edit, then saves from the reverted snapshot"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "note.txt" dir)))
         (host-kit:write-file-string "disk" path)
@@ -466,7 +466,13 @@
             (expect (buffer-text buffer) :to-equal "external")
             (loom/core/buffer:buffer-undo buffer)
             (expect (buffer-text buffer) :to-equal "disk local")
-            (expect (host-kit:read-file-string path) :to-equal "external")))))))
+            (expect (host-kit:read-file-string path) :to-equal "external")
+            (loom/feature/files:save-buffer)
+            (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+            (expect (host-kit:read-file-string path) :to-equal "disk local")
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal
+                    (format nil "Wrote ~A" path))))))))
 (describe
   "saving to a missing parent directory"
   (it
