@@ -68,8 +68,8 @@ def mode_sidecar_write(binary):
                 "(setf loom/feature/auto-save:*auto-save-interval* 0)"
             )
             session.key("RET")
-            session.wait_for_region_text(
-                "minibuffer", "Evaluated 1 form", timeout=2
+            session.wait_for_region_exact_text(
+                "minibuffer", "0", timeout=2
             )
             session.extended_command("switch-to-buffer", timeout=2)
             session.wait_for_region_text(
