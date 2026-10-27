@@ -1275,6 +1275,12 @@ def _run_r3(session, case, path):
     with _deadline_stage(case["name"], "effect", session=session):
         if routed_command:
             _invoke_prompted_command(session, case)
+        elif (
+            operation == "prefix-u4"
+            and case["entry"] == "mx"
+            and "prefix_keys" in case
+        ):
+            _send_mx(session, case["command"])
         else:
             _send_keys(session, case["command_keys"])
         _assert_effect_state(session, case)

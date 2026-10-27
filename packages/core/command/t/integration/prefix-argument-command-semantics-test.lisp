@@ -143,4 +143,32 @@
                      (format nil
                              "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu~%xi omicron pi rho sigma tau upsilon~%"))
              (loom/core/buffer:buffer-undo buffer)
-             (expect (buffer-text buffer) :to-equal original-text))))
+             (expect (buffer-text buffer) :to-equal original-text)))
+          (it
+           "carries C-u 4 through M-x newline"
+           (let* ((*editor-state*
+                   (%fresh-editor-state (format nil "abc~%") :with-minibuffer t))
+                  (keymap
+                   (loom/application:install-default-keybindings (make-keymap)))
+                  (keymap-state (make-keymap-state keymap))
+                  (buffer (%selected-test-buffer))
+                  (minibuffer
+                   (editor-state-minibuffer *editor-state*)))
+             (setf (editor-state-keymap *editor-state*) keymap)
+             (buffer-set-point buffer 0 1)
+             (flet ((dispatch (code &optional modifiers)
+                      (loom::%dispatch-key-event
+                       (%prefix-event code modifiers)
+                       keymap-state)))
+               (dispatch #\u '(:control))
+               (dispatch #\4)
+               (dispatch #\x '(:alt)))
+             (%type-string minibuffer "newline")
+             (minibuffer-handle-key minibuffer (%special-key :enter))
+             (expect (buffer-text buffer)
+                     :to-equal
+                     (format nil "a~%~%~%~%bc~%"))
+             (expect buffer :to-have-point (cons 4 0))
+             (expect (prefix-argument-active-p
+                      (editor-state-prefix-argument *editor-state*))
+                     :to-be nil))))

@@ -13,6 +13,7 @@ from loom_e2e.command_path_scenarios import (
     _deadline_stage,
     _key_bytes,
     _r2_prompt_display,
+    _run_r3,
     _resolve_path_tokens,
     load_command_path_scenarios,
     run_command_path_scenario,
@@ -506,6 +507,63 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertIn(setup_wait, session.calls)
         self.assertIn(final_wait, session.calls)
+
+    def test_r3_prefix_u4_waits_for_mx_prompt_before_sending_command(self):
+        case = {
+            "name": "test/r3-newline-prefix-u4",
+            "entry": "mx",
+            "command": "newline",
+            "mutation_case": "prefix-u4",
+            "prefix_keys": ["C-u", "4"],
+            "command_keys": ["M-x", "newline", "RET"],
+            "initial_bytes": "abc\n",
+            "effect_bytes": "a\n\n\n\nbc\n",
+            "expected_bytes": "a\n\n\n\nbc\n",
+        }
+        session = FakeSession()
+
+        with (
+            patch("loom_e2e.command_path_scenarios._assert_effect_state"),
+            patch("loom_e2e.command_path_scenarios._save_and_assert"),
+        ):
+            _run_r3(session, case, Path("buffer.txt"))
+
+        calls = session.calls
+        prefix_argument = calls.index(("send", _key_bytes("C-u")))
+        mx_entry = calls.index(("send", b"\x1bx"))
+        prompt_open = calls.index(
+            ("wait_text", "minibuffer", "M-x ", {})
+        )
+        command_input = calls.index(("type", "newline"))
+        command_accept = calls.index(("key", "RET"), command_input)
+        self.assertLess(prefix_argument, mx_entry)
+        self.assertLess(mx_entry, prompt_open)
+        self.assertLess(prompt_open, command_input)
+        self.assertLess(command_input, command_accept)
+
+    def test_r3_prefix_u4_keeps_inline_mx_key_sequence(self):
+        case = {
+            "name": "test/r3-clipboard-yank-prefix-u4",
+            "entry": "mx",
+            "command": "clipboard-yank",
+            "mutation_case": "prefix-u4",
+            "command_keys": ["C-u", "M-x", "clipboard-yank", "RET"],
+            "initial_bytes": "tail",
+            "effect_bytes": "tailtailtailtailtail",
+            "expected_bytes": "tailtailtailtailtail",
+        }
+        session = FakeSession()
+
+        with (
+            patch("loom_e2e.command_path_scenarios._send_keys") as send_keys,
+            patch("loom_e2e.command_path_scenarios._send_mx") as send_mx,
+            patch("loom_e2e.command_path_scenarios._assert_effect_state"),
+            patch("loom_e2e.command_path_scenarios._save_and_assert"),
+        ):
+            _run_r3(session, case, Path("buffer.txt"))
+
+        send_keys.assert_any_call(session, case["command_keys"])
+        send_mx.assert_not_called()
 
     def test_r2_fixture_wait_precedes_followup_keys(self):
         case = next(
