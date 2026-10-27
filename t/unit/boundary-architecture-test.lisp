@@ -1305,59 +1305,175 @@
             (let* ((target-name (symbol-name (gensym "BOUNDARY-IREF-")))
                    (package (make-package target-name :use nil)))
               (setf target-package package)
-              (let* ((internal-symbol (intern "PRIVATE-REFERENCE" package))
-                     (external-symbol (intern "PUBLIC-REFERENCE" package)))
-                (declare (ignore internal-symbol))
-                (export external-symbol package)
-                (let* ((*boundary-package-map*
-                         (list (list target-name (list "core")
-                                     (list :core) "synthetic/target.lisp")))
-                       (make-record
-                         (lambda (path slice symbol-name)
-                           (make-boundary-record
-                            :path path :slice slice :layer :application :package *package*
-                            :text (format nil "NIL~%  (~A::~A)" target-name symbol-name))))
-                       (cross-record
-                         (funcall make-record "synthetic/cross.lisp" "feature/other"
-                                  "PRIVATE-REFERENCE"))
-                       (same-slice-record
-                         (funcall make-record "synthetic/same-slice.lisp" "core"
-                                  "PRIVATE-REFERENCE"))
-                       (external-record
-                         (funcall make-record "synthetic/external.lisp" "feature/other"
-                                  "PUBLIC-REFERENCE"))
-                       (cross-findings
-                         (boundary-internal-reference-findings (list cross-record))))
-                  (expect (let ((finding (first cross-findings)))
-                            (and (= (length cross-findings) 1)
-                                 (eq (boundary-finding-category finding)
-                                     :package-internal-reference)
-                                 (string= (boundary-finding-slice finding) "feature/other")
-                                 (string= (boundary-finding-file finding)
-                                          "synthetic/cross.lisp")
-                                 (= (boundary-finding-line finding) 2)
-                                 (string= (boundary-finding-reference finding)
-                                          (format nil "~A::PRIVATE-REFERENCE" target-name))))
-                          :to-equal t)
-                  (expect (boundary-internal-reference-findings (list same-slice-record))
-                          :to-equal nil)
-                  (expect (boundary-internal-reference-findings (list external-record))
-                          :to-equal nil)
-                  (let* ((entry
-                           (list :package-internal-reference "synthetic/cross.lisp"
-                                 (format nil "~A::PRIVATE-REFERENCE" target-name)
-                                 "fixture reason"))
-                         (groups (list (list "feature/other" entry))))
-                    (expect (boundary-validate-allowlist-groups groups
-                                                                (list "feature/other"))
-                            :to-equal groups)))))
+              (let* ((*boundary-package-map*
+                       (list (list target-name (list "core")
+                                   (list :core) "packages/core/src/package.lisp")))
+                     (internal-symbol (intern "PRIVATE-REFERENCE" package))
+                     (external-symbol (intern "PUBLIC-REFERENCE" package))
+                     (provider-package
+                       (make-package (format nil "~A-PROVIDER" target-name) :use nil))
+                     (owner-records
+                       (list
+                        (make-boundary-record
+                         :path "packages/core/buffer/src/command-owners.lisp"
+                         :slice "core/buffer" :layer :application :package package
+                         :text
+                         (format nil
+                                 "(defun EXPLICIT-SAME-REFERENCE () nil)~%(define-repeating-command GENERATED-SAME-REFERENCE nil nil nil)~%(define-current-line-boundary-command GENERATED-CURRENT-LINE nil nil)~%(define-buffer-boundary-command GENERATED-BUFFER nil nil)~%(define-word-kill-command GENERATED-WORD nil nil)~%(define-sexp-motion-command GENERATED-SEXP nil nil)~%(define-structural-command GENERATED-STRUCTURAL nil nil)"))
+                        (make-boundary-record
+                         :path "packages/core/minibuffer/src/command-owners.lisp"
+                         :slice "core/minibuffer" :layer :application :package package
+                         :text
+                         (format nil
+                                 "(defun EXPLICIT-CROSS-REFERENCE () nil)~%(define-selected-buffer-command GENERATED-CROSS-REFERENCE nil nil)"))))
+                     (owners (boundary-function-owners owner-records))
+                     (make-record
+                       (lambda (path slice symbol-name)
+                         (make-boundary-record
+                          :path path :slice slice :layer :application :package *package*
+                          :text (format nil "NIL~%  (~A::~A)" target-name symbol-name))))
+                     (cross-record
+                       (funcall make-record "packages/feature/other/src/cross.lisp"
+                                "feature/other" "PRIVATE-REFERENCE"))
+                     (same-slice-record
+                       (funcall make-record "packages/core/src/same-slice.lisp"
+                                "core" "PRIVATE-REFERENCE"))
+                     (broad-owner-child-record
+                       (funcall make-record "packages/core/command/src/broad-owner-child.lisp"
+                                "core/command" "PRIVATE-REFERENCE"))
+                     (external-record
+                       (funcall make-record "packages/feature/other/src/external.lisp"
+                                "feature/other" "PUBLIC-REFERENCE"))
+                     (specific-owner-record
+                       (funcall make-record "packages/core/command/src/specific-owner.lisp"
+                                "core/command" "PRIVATE-REFERENCE"))
+                     (inherited-record
+                       (funcall make-record "packages/core/command/src/inherited.lisp"
+                                "core/command" "INHERITED-REFERENCE"))
+                     (absent-record
+                       (funcall make-record "packages/core/command/src/absent.lisp"
+                                "core/command" "ABSENT-REFERENCE"))
+                     (explicit-same-record
+                       (funcall make-record "packages/core/buffer/src/explicit-same.lisp"
+                                "core/buffer" "EXPLICIT-SAME-REFERENCE"))
+                     (explicit-cross-record
+                       (funcall make-record "packages/core/command/src/explicit-cross.lisp"
+                                "core/command" "EXPLICIT-CROSS-REFERENCE"))
+                     (generated-same-record
+                       (funcall make-record "packages/core/buffer/src/generated-same.lisp"
+                                "core/buffer" "GENERATED-SAME-REFERENCE"))
+                     (generated-cross-record
+                       (funcall make-record "packages/core/command/src/generated-cross.lisp"
+                                "core/command" "GENERATED-CROSS-REFERENCE"))
+                     (test-source-record
+                       (funcall make-record
+                                "packages/feature/bookmark/t/integration/minibuffer-test.lisp"
+                                "feature/bookmark" "PRIVATE-REFERENCE"))
+                     (cross-findings
+                       (boundary-internal-reference-findings (list cross-record))))
+                (unwind-protect
+                    (progn
+                      (export external-symbol package)
+                      (let ((inherited-symbol
+                              (intern "INHERITED-REFERENCE" provider-package)))
+                        (export inherited-symbol provider-package)
+                        (cl:use-package provider-package package))
+                      (expect (nth-value 1 (find-symbol "PRIVATE-REFERENCE" package))
+                              :to-equal :internal)
+                      (expect (nth-value 1 (find-symbol "PUBLIC-REFERENCE" package))
+                              :to-equal :external)
+                      (expect (length owners) :to-equal 9)
+                      (expect (boundary-slice-contains-p "core" "core/command")
+                              :to-equal t)
+                      (expect (boundary-slice-contains-p "core" "coreish")
+                              :to-equal nil)
+                      (expect (boundary-slice-contains-p "core/command" "core")
+                              :to-equal nil)
+                      (expect (let ((finding (first cross-findings)))
+                                (and (= (length cross-findings) 1)
+                                     (eq (boundary-finding-category finding)
+                                         :package-internal-reference)
+                                     (string= (boundary-finding-slice finding)
+                                              "feature/other")
+                                     (string= (boundary-finding-file finding)
+                                              "packages/feature/other/src/cross.lisp")
+                                     (= (boundary-finding-line finding) 2)
+                                     (string= (boundary-finding-reference finding)
+                                              (format nil "~A::PRIVATE-REFERENCE"
+                                                      target-name))))
+                              :to-equal t)
+                      (expect (boundary-internal-reference-findings
+                               (list same-slice-record))
+                              :to-equal nil)
+                      (expect (boundary-internal-reference-findings
+                               (list broad-owner-child-record))
+                              :to-equal nil)
+                      (expect (boundary-internal-reference-findings
+                               (list external-record))
+                              :to-equal nil)
+                      (expect (boundary-internal-reference-findings
+                               (list explicit-same-record) owners)
+                              :to-equal nil)
+                      (expect (length (boundary-internal-reference-findings
+                                       (list explicit-cross-record) owners))
+                              :to-equal 1)
+                      (expect (boundary-internal-reference-findings
+                               (list generated-same-record) owners)
+                              :to-equal nil)
+                      (expect (length (boundary-internal-reference-findings
+                                       (list generated-cross-record) owners))
+                              :to-equal 1)
+                      (let* ((*boundary-package-map*
+                               (list (list target-name (list "core/minibuffer")
+                                           (list :core) "packages/core/minibuffer/src/package.lisp")))
+                             (specific-findings
+                               (boundary-internal-reference-findings
+                                (list specific-owner-record) owners)))
+                        (expect (length specific-findings) :to-equal 1)
+                        (expect (nth-value 1
+                                           (find-symbol "INHERITED-REFERENCE" package))
+                                :to-equal :inherited)
+                        (expect (length (boundary-internal-reference-findings
+                                         (list inherited-record) owners))
+                                :to-equal 1)
+                        (expect (nth-value 1 (find-symbol "ABSENT-REFERENCE" package))
+                                :to-equal nil)
+                        (expect (length (boundary-internal-reference-findings
+                                         (list absent-record) owners))
+                                :to-equal 1)
+                        (expect (nth-value 1 (find-symbol "ABSENT-REFERENCE" package))
+                                :to-equal nil)
+                        (expect (boundary-internal-reference-findings
+                                 (list test-source-record) owners)
+                                :to-equal nil)
+                        (let* ((finding (first specific-findings))
+                               (entry
+                                 (list :package-internal-reference
+                                       "packages/core/command/src/specific-owner.lisp"
+                                       (format nil "~A::PRIVATE-REFERENCE" target-name)
+                                       "fixture reason"))
+                               (groups (list (list "core/command" entry)))
+                               (unallowlisted
+                                 (boundary-unallowlisted specific-findings nil)))
+                          (expect (length unallowlisted) :to-equal 1)
+                          (multiple-value-bind (new statuses stale)
+                              (boundary-unallowlisted specific-findings groups)
+                            (expect new :to-equal nil)
+                            (expect (eq (car (first statuses)) finding) :to-equal t)
+                            (expect (cdr (first statuses)) :to-equal t)
+                            (expect stale :to-equal nil))
+                          (expect (boundary-validate-allowlist-groups
+                                   groups (list "core/command"))
+                                  :to-equal groups))))
+                  (cl:unuse-package provider-package package)
+                  (delete-package provider-package))))
           (when target-package (delete-package target-package))))
       (expect *boundary-report-vs-fail* :to-equal :fail)
       t)))
 
 (describe
   "boundary architecture audit"
-  (it "detects forbidden package and same-package layer edges, then allowlists one"
+  (it "detects cross-slice internal references and excludes same-slice, external, and test-source references"
     (expect (boundary-self-test) :to-equal t))
   (it "reports current package, layer, state, I/O, and D.1 findings"
     (boundary-current-report))
