@@ -165,14 +165,17 @@
                                (prompts nil prompts-p)
                                (needs-region nil needs-region-p)
                                (external nil external-p)
-                               (modes nil modes-p))
+                               (modes nil modes-p)
+                               (catalog-visible-p t)
+                               (trace-visible-p t))
   "Register one immutable command definition, returning its opaque spec."
   (unless (and mutates-p prompts-p needs-region-p external-p modes-p)
     (error "Command registration requires all five metadata keys."))
   (%register-command-spec
    owner id name command :keys keys :keymap keymap :group group :help help
    :help-order help-order :mutates mutates :prompts prompts
-   :needs-region needs-region :external external :modes modes))
+   :needs-region needs-region :external external :modes modes
+   :catalog-visible-p catalog-visible-p :trace-visible-p trace-visible-p))
 
 (defun register-key-command (owner id command keymap keys &rest metadata)
   "Register a key-only command with stable identity and required metadata."

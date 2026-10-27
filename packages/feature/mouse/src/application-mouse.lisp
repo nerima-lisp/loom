@@ -156,10 +156,10 @@
                            #'%mouse-input-event-hook)
     (register-session-hook :terminal-modes :feature/mouse
                            #'%mouse-terminal-modes-hook)
-    (loom/core/command::%register-command-spec
+    (loom/core/command:register-command-spec
      :feature/mouse "mouse-event" nil
      (function %mouse-handle-event-command)
      :keys nil :keymap :global :group nil
      :help nil :help-order nil
-     :mutates t :prompts nil :needs-region nil :external nil :modes '(:all)
+     :mutates t :prompts nil :needs-region nil :external nil :modes (list :all)
      :catalog-visible-p nil :trace-visible-p t)))
