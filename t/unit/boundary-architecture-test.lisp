@@ -745,6 +745,34 @@
                               (boundary-token-line token)
                               (format nil "~A::~A" (boundary-token-package token)
                                       (boundary-token-symbol token))))))
+(defun boundary-internal-reference-findings (records)
+  (loop for record in records
+        append
+        (loop for token in (boundary-scan-source (boundary-record-text record) record)
+              when (boundary-token-internal-p token)
+                append
+                (let* ((package-name (boundary-token-package token))
+                       (package-row (and package-name
+                                         (boundary-package-row package-name)))
+                       (target-package (and package-name
+                                            (find-package package-name))))
+                  (when (and package-row target-package)
+                    (multiple-value-bind (symbol status)
+                        (find-symbol (boundary-token-symbol token) target-package)
+                      (declare (ignore symbol))
+                      (when (and (eq status :internal)
+                                 (not (member (boundary-record-slice record)
+                                              (second package-row)
+                                              :test #'string-equal)))
+                        (list
+                         (make-boundary-finding
+                          :category :package-internal-reference
+                          :slice (boundary-record-slice record)
+                          :file (boundary-record-path record)
+                          :line (boundary-token-line token)
+                          :reference
+                          (format nil "~A::~A" package-name
+                                  (boundary-token-symbol token)))))))))))
 
 (defun boundary-d1-cycle-findings (edges)
   ;; Cycle pairs: C1 root/feature; C2 LOOM/LOOM-APPLICATION;
@@ -915,7 +943,8 @@
     (and (= (or (boundary-proper-list-length entry) -1) 4)
          (member (first entry)
                  '(:d1-cycle :domain-editor-state :domain-io :domain-io-package
-                   :infrastructure-editor-state :layer-direction :package-direction)
+                   :infrastructure-editor-state :layer-direction :package-direction
+                   :package-internal-reference)
                  :test #'eq)
          (every (lambda (field)
                   (and (stringp field) (plusp (length field))))
@@ -1010,7 +1039,8 @@
                              (boundary-domain-findings records)
                              (boundary-domain-package-findings records)
                              (boundary-infrastructure-findings records)
-                             (boundary-d1-cycle-findings edges)))
+                             (boundary-d1-cycle-findings edges)
+                             (boundary-internal-reference-findings records)))
            (internal-refs (boundary-internal-references records))
            (allowlist (boundary-load-allowlists records)))
       (unless records (error "No Lisp components found in ASDF system loom"))
