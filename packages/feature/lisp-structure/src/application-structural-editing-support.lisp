@@ -10,7 +10,8 @@
     (and argument (/= argument 1))))
 (defun %structural-prefix-count ()
   (or loom/core/command:*current-prefix-argument*
-      (loom/core/command:prefix-argument-value-for-editor)
+      (when loom/core/editor-session:*editor-state*
+        (loom/core/command:prefix-argument-value-for-editor))
       1))
 
 (defun %structural-list-bounds (text classes offset)

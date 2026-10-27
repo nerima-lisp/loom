@@ -49,7 +49,11 @@
                                  (< start position))
                       do (setf target start
                                position start)
-                      finally (return target))))
+                      finally
+                        (return
+                          (and target
+                               (%sexp-skip-backward-filler
+                                text classes target))))))
           (when target
             (values (list (list :delete close 1)
                           (list :insert
