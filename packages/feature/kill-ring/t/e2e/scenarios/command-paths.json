@@ -1948,20 +1948,20 @@
       "expected_bytes": "one two two\n",
       "expected_cursor": [
         0,
-        11
+        3
       ],
       "expected_minibuffer": "Narrowed to the active region",
       "expected_screen": [
         {
           "region": "body",
-          "text": "one two two",
+          "text": "two",
           "index": 0
         }
       ],
       "effect_screen": [
         {
           "region": "body",
-          "text": "one two two",
+          "text": "two",
           "index": 0
         }
       ],
@@ -2175,7 +2175,7 @@
       "expected_bytes": "one two two\n",
       "expected_cursor": [
         12,
-        13
+        11
       ],
       "expected_minibuffer": "",
       "expected_screen": [
@@ -2234,7 +2234,9 @@
         "C-f",
         "C-space",
         "M-f",
-        "C-w",
+        "C-w"
+      ],
+      "post_setup_keys": [
         "C-y"
       ],
       "command_keys": [
@@ -2381,7 +2383,7 @@
       "expected_screen": [
         {
           "region": "body",
-          "text": "oneone two",
+          "text": "oneone",
           "index": 0
         }
       ],
@@ -2448,7 +2450,7 @@
       "effect_screen": [
         {
           "region": "body",
-          "text": "oneone two",
+          "text": "oneone",
           "index": 0
         }
       ],
