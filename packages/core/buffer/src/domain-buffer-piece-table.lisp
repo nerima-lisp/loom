@@ -11,7 +11,8 @@
 (defun %record-insert (buffer line column text clear-redo
                        &optional undo-replacement-p)
   (when clear-redo
-    (setf (%buffer-redo-list buffer) nil))
+    (setf (%buffer-redo-list buffer) nil
+          (%buffer-undo-continuation-count buffer) 0))
   (push (append
          (list :delete line column text
                (%buffer-point-line buffer)
@@ -29,7 +30,8 @@
 (defun %record-delete (buffer line column text clear-redo
                        &optional undo-replacement-p)
   (when clear-redo
-    (setf (%buffer-redo-list buffer) nil))
+    (setf (%buffer-redo-list buffer) nil
+          (%buffer-undo-continuation-count buffer) 0))
   (multiple-value-bind (end-line end-column)
       (%advance-position line column text)
     (push (append

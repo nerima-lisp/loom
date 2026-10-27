@@ -144,4 +144,16 @@
       (buffer-undo buffer)
       (expect (buffer-line buffer 0) :to-equal "alpha beta")
       (expect (buffer-line buffer 1) :to-equal "gamma delta")
-      (expect (buffer-point-column buffer) :to-equal 0))))
+      (expect (buffer-point-column buffer) :to-equal 0)))
+  (it
+    "continues to older bounded edits on repeated undo"
+    (let ((buffer (make-buffer :initial-content "base")))
+      (buffer-record-undo-boundary buffer)
+      (buffer-insert-string buffer "first")
+      (buffer-record-undo-boundary buffer)
+      (buffer-insert-string buffer "second")
+      (expect (buffer-line buffer 0) :to-equal "firstsecondbase")
+      (buffer-undo buffer)
+      (expect (buffer-line buffer 0) :to-equal "firstbase")
+      (buffer-undo buffer :continue-p t)
+      (expect (buffer-line buffer 0) :to-equal "base"))))
