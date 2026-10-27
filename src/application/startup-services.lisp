@@ -69,14 +69,17 @@ together."
                   (when input-fd
                     (ignore-errors (sb-unix:unix-close input-fd)))
                   (ignore-errors (sb-unix:unix-close terminal-fd)))))))))
+(defun %ensure-loom-messages-buffer ()
+  (when *editor-state*
+    (let ((session (editor-state-session *editor-state*)))
+      (or (loom/feature/buffers:find-buffer-by-name session "*Messages*")
+          (loom/feature/buffers:register-buffer
+           session
+           (loom/core/buffer:make-buffer :name "*Messages*"))))))
+
 (defun %append-loom-message-to-buffer (text)
   (when *editor-state*
-    (let* ((session (editor-state-session *editor-state*))
-           (buffer
-             (or (loom/feature/buffers:find-buffer-by-name session "*Messages*")
-                 (loom/feature/buffers:register-buffer
-                  session
-                  (loom/core/buffer:make-buffer :name "*Messages*"))))
+    (let* ((buffer (%ensure-loom-messages-buffer))
            (last-line (1- (loom/core/buffer:buffer-line-count buffer))))
       (loom/core/buffer:buffer-set-point
        buffer
@@ -84,6 +87,12 @@ together."
        (length (loom/core/buffer:buffer-line buffer last-line)))
       (loom/core/buffer:buffer-insert-string buffer (format nil "~A~%" text))
       (loom/core/buffer:buffer-mark-saved buffer))))
+
+(defun %install-loom-message-sink ()
+  (loom/core/minibuffer:register-message-sink
+   :loom-messages
+   (function %append-loom-message-to-buffer))
+  (%ensure-loom-messages-buffer))
 
 (defun %run-loom-session (startup-context fd render-frame-function)
   (let ((session (editor-state-session *editor-state*))
@@ -111,9 +120,7 @@ together."
                                                                     startup-context
                                                                     terminal-session)
                         (progn
-                          (loom/core/minibuffer:register-message-sink
-                           :loom-messages
-                           (function %append-loom-message-to-buffer))
+                          (%install-loom-message-sink)
                           (unless (gethash "--no-init"
                                            (loom/core/editor-session:startup-context-options startup-context))
                             (handler-case

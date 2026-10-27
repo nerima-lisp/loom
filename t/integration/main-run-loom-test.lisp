@@ -662,3 +662,43 @@
      :to-equal
      expected-events)))
 ))))))
+
+(describe
+ "Messages buffer ordering"
+ (it
+  "keeps the messages buffer behind file buffers opened later"
+  (let* ((loom/core/minibuffer::*message-sinks* nil)
+         (startup-context
+           (loom::%parse-startup-context (list "--no-init")))
+         (selected-buffer-name nil))
+    (expect
+     (%call-with-test-run-loom-session
+      startup-context
+      (lambda
+          (output-stream input-stream terminal-session render-frame-function)
+        (declare (ignore output-stream input-stream terminal-session
+                         render-frame-function))
+        (let* ((state *editor-state*)
+               (session (editor-state-session state))
+               (alpha (loom/core/buffer:make-buffer :name "alpha"))
+               (beta (loom/core/buffer:make-buffer :name "beta"))
+               (copy (loom/core/buffer:make-buffer :name "copy.txt"))
+               (loom/core/editor-session:*editor-session* session))
+          (setf (editor-state-window-tree state)
+                (loom/core/window-tree:make-window-tree copy 80 24))
+          (loom/feature/buffers:register-buffer session alpha)
+          (loom/feature/buffers:register-buffer session beta)
+          (loom/feature/buffers:register-buffer session copy)
+          (loom/core/minibuffer:minibuffer-message
+           (editor-state-minibuffer state)
+           "Wrote copy.txt")
+          (loom/feature/buffers::%kill-buffer-now copy)
+          (setf selected-buffer-name
+                (loom/core/buffer:buffer-name
+                 (loom/core/window-tree:window-buffer
+                  (loom/core/window-tree:window-tree-selected-window
+                   (editor-state-window-tree state)))))
+          (values :normal 0))))
+     :to-equal
+     (list :normal 0))
+    (expect selected-buffer-name :to-equal "beta"))))
