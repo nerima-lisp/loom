@@ -25,13 +25,20 @@
   %toggle-buffer-read-only)
 
 (define-selected-buffer-command undo-command
-  "Undo one change group, continuing through history on repeated calls."
+  "Undo change groups, continuing through history on repeated calls."
   (lambda (buffer)
-    (buffer-undo
-     buffer
-     :continue-p
-     (equal (loom/core/command:previous-command-id) "undo"))))
+    (with-nonnegative-command-prefix (count)
+      (loop repeat count
+            for continue-p = (equal (loom/core/command:previous-command-id) "undo")
+              then t
+            do (buffer-undo buffer :continue-p continue-p)))))
 
 (define-selected-buffer-command redo-command
-  "Redo the most recently undone change group in the selected buffer."
-  buffer-redo)
+  "Redo the most recently undone change groups in the selected buffer."
+  (lambda (buffer)
+    (let ((point-line (buffer-point-line buffer))
+          (point-column (buffer-point-column buffer)))
+      (with-nonnegative-command-prefix (count)
+        (loop repeat count
+              do (buffer-redo buffer))
+        (when (> count 1) (buffer-set-point buffer point-line point-column))))))

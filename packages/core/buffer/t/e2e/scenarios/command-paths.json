@@ -3237,7 +3237,7 @@
       "entry_mode": "key",
       "entry_keys": [
         "M-g",
-        "g"
+        "M-g"
       ],
       "prompt_open": "Go to line: ",
       "prompt_case": "accept",
@@ -3281,7 +3281,7 @@
       "entry_mode": "key",
       "entry_keys": [
         "M-g",
-        "g"
+        "M-g"
       ],
       "prompt_open": "Go to line: ",
       "prompt_case": "cancel",
@@ -3325,7 +3325,7 @@
       "entry_mode": "key",
       "entry_keys": [
         "M-g",
-        "g"
+        "M-g"
       ],
       "prompt_open": "Go to line: ",
       "prompt_case": "history",
@@ -5888,6 +5888,197 @@
       ],
       "post_setup_keys": [
         "M-<"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/newline/prefix-u4",
+      "path_id": "r3:newline:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+      "commands": [
+        "universal-argument",
+        "newline",
+        "save-buffer"
+      ],
+      "command": "newline",
+      "mutation_case": "prefix-u4",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ],
+      "command_keys": [
+        "RET"
+      ],
+      "initial_bytes": "abc\n",
+      "effect_bytes": "a\n\n\n\nbc\n",
+      "expected_bytes": "a\n\n\n\nbc\n",
+      "expected_cursor": [
+        4,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 1
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 2
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 3
+        },
+        {
+          "region": "body",
+          "text": "bc",
+          "index": 4
+        }
+      ],
+      "pre_command_keys": [
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/redo/prefix-u4",
+      "path_id": "r3:redo:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"_\",\"modifiers\":[\"alt\",\"control\"]}]}",
+      "commands": [
+        "universal-argument",
+        "redo",
+        "save-buffer"
+      ],
+      "command": "redo",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "ESC",
+        "C-_"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "wzyxa\n",
+      "expected_bytes": "wzyxa\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "wzyxa"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "wzyxa"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-b",
+        "y",
+        "C-b",
+        "z",
+        "C-b",
+        "w",
+        "C-x",
+        "u",
+        "C-x",
+        "u",
+        "C-x",
+        "u",
+        "C-x",
+        "u"
+      ]
+    },
+    {
+      "name": "command-path/buffer/r3/undo/prefix-u4",
+      "path_id": "r3:undo:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"/\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "universal-argument",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "undo",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-/"
+      ],
+      "initial_bytes": "a\n",
+      "effect_bytes": "a\n",
+      "expected_bytes": "a\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "a"
+        }
+      ],
+      "pre_command_keys": [
+        "x",
+        "C-b",
+        "y",
+        "C-b",
+        "z",
+        "C-b",
+        "w"
       ]
     }
   ]

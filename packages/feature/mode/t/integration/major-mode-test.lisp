@@ -415,4 +415,30 @@ run" (buffer (%selected-test-buffer)))
            keymap-state))
         (expect (buffer-text buffer) :to-equal (format nil "- item~%  - "))
         (expect (buffer-point-line buffer) :to-equal 1)
-        (expect (buffer-point-column buffer) :to-equal 4)))))
+        (expect (buffer-point-column buffer) :to-equal 4))))
+  (it
+    "applies C-u 4 to RET newline-and-indent"
+    (%with-minibuffer-state
+        (minibuffer (format nil "abc~%") (buffer (%selected-test-buffer)))
+      (let* ((keymap
+               (loom/application:install-default-keybindings (make-keymap)))
+             (keymap-state (loom/core/command:make-keymap-state keymap)))
+        (setf (editor-state-keymap *editor-state*) keymap)
+        (buffer-set-point buffer 0 1)
+        (flet ((dispatch (event)
+                 (loom::%dispatch-key-event event keymap-state)))
+          (dispatch
+           (cl-tty-kit:make-key-event
+            :type :character :code #\u :modifiers (list :control)))
+          (dispatch
+           (cl-tty-kit:make-key-event :type :character :code #\4))
+          (dispatch
+           (cl-tty-kit:make-key-event :type :special :code :enter)))
+        (expect (buffer-text buffer)
+                :to-equal
+                (format nil "a~%~%~%~%bc~%"))
+        (expect buffer :to-have-point (cons 4 0))
+        (expect (prefix-argument-active-p
+                 (editor-state-prefix-argument *editor-state*))
+                :to-be nil)
+        (expect (minibuffer-message-string minibuffer) :to-equal nil)))))
