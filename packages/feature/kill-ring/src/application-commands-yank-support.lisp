@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/kill-ring)
 
 (defun %repeat-kill-text (text count)
   (with-output-to-string (stream)

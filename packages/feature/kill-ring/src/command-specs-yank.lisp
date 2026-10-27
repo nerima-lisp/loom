@@ -1,7 +1,7 @@
 (in-package #:loom/core/command)
 
 (progn
-  (register-command-spec :feature/kill-ring "yank" "yank" #'loom::yank
+  (register-command-spec :feature/kill-ring "yank" "yank" #'loom/feature/kill-ring:yank
                        :keys '((:control #\y))
                        :keymap :global
                        :group "editing"
@@ -12,7 +12,7 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all))
-  (register-command-spec :feature/kill-ring "yank-pop" "yank-pop" #'loom::yank-pop
+  (register-command-spec :feature/kill-ring "yank-pop" "yank-pop" #'loom/feature/kill-ring:yank-pop
                        :keys '((:alt #\y))
                        :keymap :global
                        :group "editing"

@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/kill-ring)
 
 (defun %active-region-bounds (buffer)
   "Return region bounds and coalescing direction for BUFFER, or NIL values."

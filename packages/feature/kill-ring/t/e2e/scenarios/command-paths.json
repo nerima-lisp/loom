@@ -1,0 +1,2683 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "name": "command-path/kill-ring/r1/backward-kill-word/key",
+      "path_id": "r1:backward-kill-word:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22backspace%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "entry_mode": "key",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "entry_keys": [
+        "M-"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/backward-kill-word/mx",
+      "path_id": "r1:backward-kill-word:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "entry_mode": "mx",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "pre_keys": [
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-line/key",
+      "path_id": "r1:kill-line:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22k%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "entry_mode": "key",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "entry_keys": [
+        "C-k"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-line/mx",
+      "path_id": "r1:kill-line:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "entry_mode": "mx",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-region/key",
+      "path_id": "r1:kill-region:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22w%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "entry_mode": "key",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "entry_keys": [
+        "C-w"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-space"
+        },
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-region/mx",
+      "path_id": "r1:kill-region:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "entry_mode": "mx",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "pre_keys": [
+        {
+          "key": "C-space"
+        },
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-ring-save/key",
+      "path_id": "r1:kill-ring-save:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22w%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "kill-ring-save"
+      ],
+      "command": "kill-ring-save",
+      "entry_mode": "key",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "save_after_effect": false,
+      "entry_keys": [
+        "M-w"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-space"
+        },
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-ring-save/mx",
+      "path_id": "r1:kill-ring-save:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-ring-save"
+      ],
+      "command": "kill-ring-save",
+      "entry_mode": "mx",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "save_after_effect": false,
+      "pre_keys": [
+        {
+          "key": "C-space"
+        },
+        {
+          "key": "C-e"
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-word/key",
+      "path_id": "r1:kill-word:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "entry_mode": "key",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "entry_keys": [
+        "M-d"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/kill-word/mx",
+      "path_id": "r1:kill-word:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "entry_mode": "mx",
+      "initial_bytes": "tail\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/kill-ring/r1/yank-pop/key",
+      "path_id": "r1:yank-pop:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22y%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "yank-pop"
+      ],
+      "command": "yank-pop",
+      "entry_mode": "key",
+      "initial_bytes": "one two three\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Previous command was not a yank",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ],
+      "entry_keys": [
+        "M-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/yank-pop/mx",
+      "path_id": "r1:yank-pop:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "yank-pop"
+      ],
+      "command": "yank-pop",
+      "entry_mode": "mx",
+      "initial_bytes": "one two three\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Previous command was not a yank",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/yank/key",
+      "path_id": "r1:yank:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22y%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "yank"
+      ],
+      "command": "yank",
+      "entry_mode": "key",
+      "initial_bytes": "one two three\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ],
+      "entry_keys": [
+        "C-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/yank/mx",
+      "path_id": "r1:yank:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "yank"
+      ],
+      "command": "yank",
+      "entry_mode": "mx",
+      "initial_bytes": "one two three\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/effect",
+      "path_id": "r3:backward-kill-word:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "effect",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ],
+      "command_keys": [
+        "M-"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/macro-replay",
+      "path_id": "r3:backward-kill-word:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro",
+        "backward-kill-word",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-e"
+      ],
+      "command_keys": [
+        "C-e",
+        "M-"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/narrow",
+      "path_id": "r3:backward-kill-word:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "narrow",
+      "initial_bytes": "tail\nOUT\n",
+      "effect_bytes": "\nOUT\n",
+      "expected_bytes": "\nOUT\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "M-"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/prefix-u4",
+      "path_id": "r3:backward-kill-word:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "one two three four\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/read-only",
+      "path_id": "r3:backward-kill-word:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "backward-kill-word"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "read-only",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ],
+      "command_keys": [
+        "M-"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/split-window",
+      "path_id": "r3:backward-kill-word:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "backward-kill-word",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "split-window",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "command_keys": [
+        "M-"
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/backward-kill-word/undo",
+      "path_id": "r3:backward-kill-word:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"backspace\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "backward-kill-word",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "backward-kill-word",
+      "mutation_case": "undo",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-e"
+      ],
+      "command_keys": [
+        "M-"
+      ],
+      "expected_undo_cursor": [
+        0,
+        4
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/effect",
+      "path_id": "r3:kill-line:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "effect",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "C-k"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/macro-replay",
+      "path_id": "r3:kill-line:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro",
+        "kill-line",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "C-k"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/narrow",
+      "path_id": "r3:kill-line:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "narrow",
+      "initial_bytes": "tail\nOUT\n",
+      "effect_bytes": "\nOUT\n",
+      "expected_bytes": "\nOUT\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "C-k"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/prefix-u4",
+      "path_id": "r3:kill-line:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "",
+      "expected_bytes": "",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-k"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/read-only",
+      "path_id": "r3:kill-line:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "kill-line"
+      ],
+      "command": "kill-line",
+      "mutation_case": "read-only",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "C-k"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/split-window",
+      "path_id": "r3:kill-line:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "kill-line",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "split-window",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "command_keys": [
+        "C-k"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-line/undo",
+      "path_id": "r3:kill-line:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"k\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-line",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "kill-line",
+      "mutation_case": "undo",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "C-k"
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/effect",
+      "path_id": "r3:kill-region:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "effect",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-space",
+        "C-e"
+      ],
+      "command_keys": [
+        "C-w"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/macro-replay",
+      "path_id": "r3:kill-region:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro",
+        "kill-region",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "C-space",
+        "C-e",
+        "C-w"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/narrow",
+      "path_id": "r3:kill-region:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "narrow",
+      "initial_bytes": "tail\nOUT\n",
+      "effect_bytes": "\nOUT\n",
+      "expected_bytes": "\nOUT\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "C-w"
+      ],
+      "post_setup_keys": [
+        "M-<",
+        "C-space",
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/prefix-u4",
+      "path_id": "r3:kill-region:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-space",
+        "C-e"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-w"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/read-only",
+      "path_id": "r3:kill-region:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "kill-region"
+      ],
+      "command": "kill-region",
+      "mutation_case": "read-only",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        4
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-space",
+        "C-e"
+      ],
+      "command_keys": [
+        "C-w"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/split-window",
+      "path_id": "r3:kill-region:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "kill-region",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "split-window",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "command_keys": [
+        "C-w"
+      ],
+      "prepare_keys": [
+        "C-space",
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-region/undo",
+      "path_id": "r3:kill-region:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"w\",\"modifiers\":[\"control\"]}]}",
+      "commands": [
+        "kill-region",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "kill-region",
+      "mutation_case": "undo",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [
+        "C-space",
+        "C-e"
+      ],
+      "command_keys": [
+        "C-w"
+      ],
+      "expected_undo_cursor": [
+        0,
+        4
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/effect",
+      "path_id": "r3:kill-word:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "effect",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "M-d"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/macro-replay",
+      "path_id": "r3:kill-word:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro",
+        "kill-word",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "M-d"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/narrow",
+      "path_id": "r3:kill-word:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "narrow",
+      "initial_bytes": "tail\nOUT\n",
+      "effect_bytes": "\nOUT\n",
+      "expected_bytes": "\nOUT\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "M-d"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/prefix-u4",
+      "path_id": "r3:kill-word:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "one two three four\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-d"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/read-only",
+      "path_id": "r3:kill-word:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "kill-word"
+      ],
+      "command": "kill-word",
+      "mutation_case": "read-only",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "M-d"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/split-window",
+      "path_id": "r3:kill-word:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "kill-word",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "split-window",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "command_keys": [
+        "M-d"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/kill-word/undo",
+      "path_id": "r3:kill-word:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "kill-word",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "kill-word",
+      "mutation_case": "undo",
+      "initial_bytes": "tail\n",
+      "effect_bytes": "\n",
+      "expected_bytes": "tail\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "tail",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "",
+          "index": 0
+        }
+      ],
+      "pre_command_keys": [],
+      "command_keys": [
+        "M-d"
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/effect",
+      "path_id": "r3:yank-pop:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "effect",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two two\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "yank-pop",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "M-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/macro-replay",
+      "path_id": "r3:yank-pop:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two threetwo\n",
+      "expected_bytes": "one two threetwo\n",
+      "expected_cursor": [
+        0,
+        16
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two threetwo",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two threetwo",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "start-kbd-macro",
+        "yank-pop",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "C-y",
+        "M-y"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-e"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/narrow",
+      "path_id": "r3:yank-pop:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "narrow",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two two\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "narrow-to-region",
+        "yank-pop",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f"
+      ],
+      "command_keys": [
+        "M-y"
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-w",
+        "C-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/prefix-u4",
+      "path_id": "r3:yank-pop:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two two\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "yank-pop",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/read-only",
+      "path_id": "r3:yank-pop:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "read-only",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        13
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "toggle-read-only",
+        "yank-pop"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "M-y"
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/split-window",
+      "path_id": "r3:yank-pop:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "split-window",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two two\n",
+      "expected_cursor": [
+        12,
+        13
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 12
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "split-window-below",
+        "yank-pop",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "M-y"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank-pop/undo",
+      "path_id": "r3:yank-pop:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"alt\"]}]}",
+      "command": "yank-pop",
+      "mutation_case": "undo",
+      "initial_bytes": "one two three\n",
+      "effect_bytes": "one two two\n",
+      "expected_bytes": "one two three\n",
+      "expected_cursor": [
+        0,
+        11
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "kill-region",
+        "yank",
+        "yank-pop",
+        "undo",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "M-w",
+        "C-a",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-space",
+        "M-f",
+        "C-w",
+        "C-y"
+      ],
+      "command_keys": [
+        "M-y"
+      ],
+      "expected_undo_cursor": [
+        0,
+        13
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/effect",
+      "path_id": "r3:yank:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "effect",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "oneone two\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "yank",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/macro-replay",
+      "path_id": "r3:yank:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "oneone two\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "start-kbd-macro",
+        "yank",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "one two",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a",
+        "M-f"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/narrow",
+      "path_id": "r3:yank:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "narrow",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "oneone two\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "Narrowed to the active region",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "oneone",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "narrow-to-region",
+        "yank",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-space",
+        "M-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/prefix-u4",
+      "path_id": "r3:yank:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneoneoneoneone two\n",
+      "expected_bytes": "oneoneoneoneone two\n",
+      "expected_cursor": [
+        0,
+        15
+      ],
+      "expected_minibuffer": "Prefix argument: 4",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "oneoneoneoneone two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneoneoneoneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "yank",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-y"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/read-only",
+      "path_id": "r3:yank:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "read-only",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "Buffer is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "toggle-read-only",
+        "yank"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/split-window",
+      "path_id": "r3:yank:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "split-window",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "oneone two\n",
+      "expected_cursor": [
+        12,
+        6
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 12
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "split-window-below",
+        "yank",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/yank/undo",
+      "path_id": "r3:yank:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"y\",\"modifiers\":[\"control\"]}]}",
+      "command": "yank",
+      "mutation_case": "undo",
+      "initial_bytes": "one two\n",
+      "effect_bytes": "oneone two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        6
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "oneone two",
+          "index": 0
+        }
+      ],
+      "commands": [
+        "kill-ring-save",
+        "yank",
+        "undo",
+        "save-buffer"
+      ],
+      "pre_command_keys": [
+        "C-a",
+        "C-space",
+        "M-f",
+        "M-w"
+      ],
+      "command_keys": [
+        "C-y"
+      ],
+      "expected_undo_cursor": [
+        0,
+        3
+      ]
+    }
+  ]
+}

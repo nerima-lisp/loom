@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/kill-ring)
 
 (defconstant +kill-ring-max+ 120
   "Maximum number of entries kept in EDITOR-STATE-KILL-RING. Oldest entries
@@ -24,14 +24,18 @@ dropped once a push would exceed this.")
      (cons entry (if existing (rest kill-ring) kill-ring)))))
 
 (defun %kill-ring-push (text &key prepend coalesce)
-  "Push TEXT onto the kill ring, optionally coalescing with its newest entry.
+  "Push TEXT onto the kill ring and enqueue the newest entry during a live session.
 
 When COALESCE is true, append TEXT to the newest entry by default, or prepend
-it when PREPEND is true.  The caller supplies COALESCE explicitly so a copied
+it when PREPEND is true. The caller supplies COALESCE explicitly so a copied
 region (M-w) always starts a fresh entry while adjacent kill commands join."
-  (let ((kill-ring (editor-state-kill-ring *editor-state*)))
-    (setf (editor-state-kill-ring *editor-state*)
-          (%updated-kill-ring kill-ring text prepend coalesce))))
+  (let* ((kill-ring (editor-state-kill-ring *editor-state*))
+         (updated (%updated-kill-ring kill-ring text prepend coalesce)))
+    (setf (editor-state-kill-ring *editor-state*) updated)
+    (when loom/core/editor-session:*editor-session*
+      (loom/core/editor-session:request-terminal-clipboard-write
+       loom/core/editor-session:*editor-session* (first updated)))
+    updated))
 
 (defun %kill-line-end-position-for-line (line column line-len line-count)
   (cond
@@ -54,7 +58,7 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
         (values line column end-line end-column)))))
 
 (defun %kill-line-once (&key coalesce)
-  (let ((buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
+  (let ((buffer (%selected-kill-ring-buffer)))
     (multiple-value-bind (line column end-line end-column)
         (%kill-line-range buffer)
       (when line
@@ -83,8 +87,7 @@ region (M-w) always starts a fresh entry while adjacent kill commands join."
 
 (defun %kill-line-command ()
   (%clear-last-yank)
-  (with-nonnegative-command-prefix (count)
-    (let ((previous-kill (editor-state-last-command-kill-p *editor-state*)))
+  (let ((count (max 0 (%kill-ring-command-prefix-count)))) (let ((previous-kill (editor-state-last-command-kill-p *editor-state*)))
       (loop for index below count
             do (%kill-line-once
                 :coalesce (%kill-line-coalesce-p previous-kill index)))

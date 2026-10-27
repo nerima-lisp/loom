@@ -1,4 +1,4 @@
-(in-package #:loom)
+(in-package #:loom/feature/kill-ring)
 
 (defun %valid-yank-pop-context-p (buffer ring start end ranges last-buffer index)
   (and ring
@@ -72,7 +72,7 @@ right to left preserves those offsets; the returned ranges use the resulting
                  (- (cdr other) (car other)))))
 
 (defun %next-yank-pop-index (ring index)
-  (mod (+ index (%command-prefix-count))
+  (mod (+ index (%kill-ring-command-prefix-count))
        (length ring)))
 
 (defun %yank-pop-primary-range (start ranges new-ranges)
