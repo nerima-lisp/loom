@@ -108,9 +108,9 @@
                          :group
                          "editing"
                          :help
-                         nil
+                         "M-w Copy"
                          :help-order
-                         nil
+                         32
                          :mutates
                          nil
                          :prompts
