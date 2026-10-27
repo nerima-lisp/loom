@@ -541,7 +541,7 @@
       "path_id": "r3:forward-slurp-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "forward-char",
         "execute-extended-command",
@@ -582,7 +582,7 @@
       "path_id": "r3:forward-slurp-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "forward-char",
         "execute-extended-command",
@@ -628,7 +628,7 @@
       "path_id": "r3:forward-slurp-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -671,7 +671,7 @@
       "path_id": "r3:forward-barf-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "forward-char",
         "execute-extended-command",
@@ -712,7 +712,7 @@
       "path_id": "r3:forward-barf-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "forward-char",
         "execute-extended-command",
@@ -758,7 +758,7 @@
       "path_id": "r3:forward-barf-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -801,7 +801,7 @@
       "path_id": "r3:backward-slurp-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "backward-slurp-sexp",
         "save-buffer"
@@ -842,7 +842,7 @@
       "path_id": "r3:backward-slurp-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -886,7 +886,7 @@
       "path_id": "r3:backward-barf-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "backward-barf-sexp",
         "save-buffer"
@@ -925,7 +925,7 @@
       "path_id": "r3:backward-barf-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -1044,7 +1044,7 @@
       "path_id": "r3:raise-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "raise-sexp",
         "save-buffer"
@@ -1086,7 +1086,7 @@
       "path_id": "r3:raise-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -1131,7 +1131,7 @@
       "path_id": "r3:splice-sexp:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "splice-sexp",
         "save-buffer"
@@ -1173,7 +1173,7 @@
       "path_id": "r3:splice-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "splice-sexp",
         "undo",
@@ -1220,7 +1220,7 @@
       "path_id": "r3:splice-sexp:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -1265,7 +1265,7 @@
       "path_id": "r3:wrap-round:effect",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "wrap-round",
         "save-buffer"
@@ -1303,7 +1303,7 @@
       "path_id": "r3:wrap-round:read-only",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "toggle-read-only",
@@ -1344,7 +1344,7 @@
       "path_id": "r3:forward-slurp-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1404,7 +1404,7 @@
       "path_id": "r3:forward-slurp-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1485,9 +1485,7 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-slurp-sexp",
-        "RET"
+        "\u001b[1;5C"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b)\n",
@@ -1525,7 +1523,7 @@
       "path_id": "r3:forward-barf-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1585,7 +1583,7 @@
       "path_id": "r3:forward-barf-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1666,9 +1664,7 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        "M-x",
-        "forward-barf-sexp",
-        "RET"
+        "\u001b[1;5D"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a) b\n",
@@ -1706,7 +1702,7 @@
       "path_id": "r3:backward-slurp-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1770,7 +1766,7 @@
       "path_id": "r3:backward-slurp-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1859,9 +1855,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "backward-slurp-sexp",
-        "RET"
+        "\u001b[1;7D"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -1899,7 +1893,7 @@
       "path_id": "r3:backward-barf-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -1959,7 +1953,7 @@
       "path_id": "r3:backward-barf-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2246,7 +2240,7 @@
       "path_id": "r3:raise-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2312,7 +2306,7 @@
       "path_id": "r3:raise-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2405,9 +2399,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "raise-sexp",
-        "RET"
+        "M-r"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2445,7 +2437,7 @@
       "path_id": "r3:splice-sexp:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2511,7 +2503,7 @@
       "path_id": "r3:splice-sexp:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2604,9 +2596,7 @@
         "C-f",
         "C-f",
         "C-f",
-        "M-x",
-        "splice-sexp",
-        "RET"
+        "M-s"
       ],
       "initial_bytes": "(a (b) c)\n",
       "effect_bytes": "(a b c)\n",
@@ -2644,7 +2634,7 @@
       "path_id": "r3:wrap-round:narrow",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2702,7 +2692,7 @@
       "path_id": "r3:wrap-round:split-window",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "execute-extended-command",
         "set-major-mode",
@@ -2777,9 +2767,7 @@
       "command": "wrap-round",
       "mutation_case": "macro-replay",
       "command_keys": [
-        "M-x",
-        "wrap-round",
-        "RET"
+        "M-("
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a) b\n",
@@ -2817,7 +2805,7 @@
       "path_id": "r3:backward-barf-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"right\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "backward-barf-sexp",
         "undo",
@@ -2861,7 +2849,7 @@
       "path_id": "r3:backward-slurp-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"left\",\"modifiers\":[\"alt\",\"control\"]}]}",
       "commands": [
         "backward-slurp-sexp",
         "undo",
@@ -2949,7 +2937,7 @@
       "path_id": "r3:raise-sexp:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"r\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "raise-sexp",
         "undo",
@@ -2996,7 +2984,7 @@
       "path_id": "r3:wrap-round:undo",
       "lane": "W3-7b",
       "rule": "r3",
-      "entry": "mx",
+      "entry": "key:{\"keymap\":\"lisp-mode-local\",\"sequence\":[{\"key\":\"(\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
         "wrap-round",
         "undo",
@@ -3052,7 +3040,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "\u001b[1;7C"
+        "M-x",
+        "backward-barf-sexp",
+        "RET"
       ],
       "initial_bytes": "(a b)\n",
       "effect_bytes": "(a b)\n",
@@ -3099,7 +3089,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "\u001b[1;7D"
+        "M-x",
+        "backward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "a (b)\n",
       "effect_bytes": "(a b)\n",
@@ -3146,7 +3138,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "\u001b[1;5D"
+        "M-x",
+        "forward-barf-sexp",
+        "RET"
       ],
       "initial_bytes": "(a b c d e)\n",
       "effect_bytes": "(a) b c d e\n",
@@ -3191,7 +3185,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "\u001b[1;5C"
+        "M-x",
+        "forward-slurp-sexp",
+        "RET"
       ],
       "initial_bytes": "(a) b\n",
       "effect_bytes": "(a b\n   )",
@@ -3233,8 +3229,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "ESC",
-        "C-k"
+        "M-x",
+        "kill-sexp",
+        "RET"
       ],
       "initial_bytes": "(a b) c\n",
       "effect_bytes": "",
@@ -3276,7 +3273,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "M-r"
+        "M-x",
+        "raise-sexp",
+        "RET"
       ],
       "initial_bytes": "((a b c d e) z)\n",
       "effect_bytes": "(a b c d z)\n",
@@ -3325,7 +3324,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "M-s"
+        "M-x",
+        "splice-sexp",
+        "RET"
       ],
       "initial_bytes": "(a (b c) d)\n",
       "effect_bytes": "(a b c d)\n",
@@ -3372,7 +3373,9 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "M-("
+        "M-x",
+        "wrap-round",
+        "RET"
       ],
       "initial_bytes": "a b\n",
       "effect_bytes": "(a b)\n",
@@ -3418,6 +3421,21 @@
       "expected_bytes": "(a b)\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 1
         }
@@ -3433,8 +3451,7 @@
           "text": "(a b)"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/forward-barf-sexp/key",
@@ -3458,6 +3475,21 @@
       "expected_bytes": "(a) b\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 1
         }
@@ -3473,8 +3505,7 @@
           "text": "(a) b"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/backward-slurp-sexp/key",
@@ -3500,6 +3531,21 @@
       "expected_bytes": "(a b)\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 3
         }
@@ -3515,8 +3561,7 @@
           "text": "(a b)"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/backward-barf-sexp/key",
@@ -3540,6 +3585,21 @@
       "expected_bytes": "a (b)\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 1
         }
@@ -3555,8 +3615,7 @@
           "text": "a (b)"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/wrap-round/key",
@@ -3577,7 +3636,23 @@
       ],
       "initial_bytes": "a b\n",
       "expected_bytes": "(a) b\n",
-      "pre_keys": [],
+      "pre_keys": [
+        {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        }
+      ],
       "expected_cursor": [
         0,
         1
@@ -3589,8 +3664,7 @@
           "text": "(a) b"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/splice-sexp/key",
@@ -3617,6 +3691,21 @@
       "expected_bytes": "(a b c d)\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 4
         }
@@ -3632,8 +3721,7 @@
           "text": "(a b c d)"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     },
     {
       "name": "lisp-structure/r1/raise-sexp/key",
@@ -3659,6 +3747,21 @@
       "expected_bytes": "(b c)\n",
       "pre_keys": [
         {
+          "key": "M-x"
+        },
+        {
+          "key": "set-major-mode"
+        },
+        {
+          "key": "RET"
+        },
+        {
+          "key": "Common Lisp"
+        },
+        {
+          "key": "RET"
+        },
+        {
           "key": "RIGHT",
           "repeat": 3
         }
@@ -3674,8 +3777,7 @@
           "text": "(b c)"
         }
       ],
-      "save_after_effect": true,
-      "major_mode": "Common Lisp"
+      "save_after_effect": true
     }
   ]
 }
