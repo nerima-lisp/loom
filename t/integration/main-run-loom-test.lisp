@@ -372,15 +372,17 @@
         (list :normal 0))
        (expect event-loop-called :to-be-truthy)))))
             (it
-  "skips a failing init with --no-init and continues editing"
+  "reloads startup and skips a failing init with --no-init"
   (let* ((loom/core/minibuffer::*message-sinks* nil)
          (message-texts nil)
          (event-loop-called nil)
          (startup-context (loom::%parse-startup-context (list "--no-init"))))
-    (loom/core/minibuffer:register-message-sink
-     :loom-startup-integration
-     (lambda (text)
-       (push text message-texts)))
+    (progn
+      (load (asdf:system-relative-pathname :loom "src/application/startup.lisp"))
+      (loom/core/minibuffer:register-message-sink
+       :loom-startup-integration
+       (lambda (text)
+         (push text message-texts))))
     (%call-with-run-loom-init-file
      "(error \"startup integration init failure\")"
      (lambda (home init-path)
