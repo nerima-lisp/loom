@@ -12,7 +12,7 @@ from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
 
-_OUTCOMES = ("success", "missing", "nonzero", "signal-status")
+_OUTCOMES = ("success", "missing", "nonzero", "interrupted")
 _READ_TEXT = b"external"
 _INITIAL = b"tail\n"
 
@@ -56,7 +56,7 @@ def _write_fake_paste_tool(bin_dir, outcome, result_path):
                 f"printf '{{\"status\":\"{outcome}\",\"payload\":\"{_READ_TEXT.decode('utf-8') if outcome == 'success' else ''}\"}}' > {shlex.quote(str(result_path))}",
                 f"if [ \"{outcome}\" = success ]; then printf '%s' {shlex.quote(_READ_TEXT.decode('utf-8'))}; exit 0; fi",
                 f"if [ \"{outcome}\" = nonzero ]; then exit 23; fi",
-                f"if [ \"{outcome}\" = signal-status ]; then exit 143; fi",
+                f"if [ \"{outcome}\" = interrupted ]; then exit 143; fi",
             )
         )
         + "\n",
@@ -132,7 +132,7 @@ def _run_clipboard_yank(binary, outcome):
                     "Clipboard read failed (pbpaste exited with status 23); "
                     "using kill ring"
                 )
-            elif outcome == "signal-status":
+            elif outcome == "interrupted":
                 expected_message = (
                     "Clipboard read failed (pbpaste exited with status 143); "
                     "using kill ring"

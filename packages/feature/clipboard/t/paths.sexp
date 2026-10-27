@@ -185,7 +185,7 @@
       (:external_state)
       :scenario
       "r5/clipboard/clipboard-yank/nonzero")
- (:id "r5:clipboard-yank:clipboard:signal-status"
+ (:id "r5:clipboard-yank:clipboard:interrupted"
       :commands
       ("clipboard-yank")
       :rule
@@ -201,7 +201,7 @@
       :observe
       (:external_state)
       :scenario
-      "r5/clipboard/clipboard-yank/signal-status")
+      "r5/clipboard/clipboard-yank/interrupted")
  (:id "r6:paste"
       :commands
       ()
