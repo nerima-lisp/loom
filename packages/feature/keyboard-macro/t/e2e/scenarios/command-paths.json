@@ -207,7 +207,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Keyboard macro defined",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -257,7 +257,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Keyboard macro defined",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -379,7 +379,7 @@
         0,
         1
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -496,7 +496,7 @@
         0,
         4
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",

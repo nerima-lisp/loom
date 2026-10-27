@@ -7,15 +7,25 @@
       "lane": "W3-1",
       "rule": "r1",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]}",
-      "commands": ["execute-extended-command"],
+      "commands": [
+        "execute-extended-command"
+      ],
       "command": "execute-extended-command",
       "entry_mode": "open-mx",
       "initial_bytes": "abc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 4],
+      "expected_cursor": [
+        0,
+        4
+      ],
       "expected_cursor_region": "minibuffer",
       "expected_minibuffer": "M-x ",
-      "expected_screen": [{"region": "body", "text": "abc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
     },
     {
       "name": "command-path/r1/keyboard-quit/key",
@@ -23,15 +33,27 @@
       "lane": "W3-1",
       "rule": "r1",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["keyboard-quit"],
+      "commands": [
+        "keyboard-quit"
+      ],
       "command": "keyboard-quit",
       "entry_mode": "key",
-      "entry_keys": ["C-g"],
+      "entry_keys": [
+        "C-g"
+      ],
       "initial_bytes": "abc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Quit",
-      "expected_screen": [{"region": "body", "text": "abc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
     },
     {
       "name": "command-path/r1/keyboard-quit/mx",
@@ -39,14 +61,25 @@
       "lane": "W3-1",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "keyboard-quit"],
+      "commands": [
+        "execute-extended-command",
+        "keyboard-quit"
+      ],
       "command": "keyboard-quit",
       "entry_mode": "mx",
       "initial_bytes": "abc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Quit",
-      "expected_screen": [{"region": "body", "text": "abc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
     },
     {
       "name": "command-path/r1/universal-argument/key",
@@ -54,15 +87,27 @@
       "lane": "W3-1",
       "rule": "r1",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["universal-argument"],
+      "commands": [
+        "universal-argument"
+      ],
       "command": "universal-argument",
       "entry_mode": "key",
-      "entry_keys": ["C-u"],
+      "entry_keys": [
+        "C-u"
+      ],
       "initial_bytes": "abcde\n",
       "expected_bytes": "abcde\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Prefix argument: 4",
-      "expected_screen": [{"region": "body", "text": "abcde"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcde"
+        }
+      ]
     },
     {
       "name": "command-path/r1/universal-argument/mx",
@@ -70,14 +115,25 @@
       "lane": "W3-1",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "universal-argument"],
+      "commands": [
+        "execute-extended-command",
+        "universal-argument"
+      ],
       "command": "universal-argument",
       "entry_mode": "mx",
       "initial_bytes": "abcde\n",
       "expected_bytes": "abcde\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Prefix argument: 4",
-      "expected_screen": [{"region": "body", "text": "abcde"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcde"
+        }
+      ]
     },
     {
       "name": "command-path/r2/accept",
@@ -85,16 +141,28 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command", "capitalize-word", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "capitalize-word",
+        "save-buffer"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "accept",
       "input_text": "capitalize-word",
       "accepted_command": "capitalize-word",
       "initial_bytes": "one two\n",
       "expected_bytes": "One two\n",
-      "expected_cursor": [0, 3],
+      "expected_cursor": [
+        0,
+        3
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "One two"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -103,15 +171,25 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command"],
+      "commands": [
+        "execute-extended-command"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "cancel",
       "input_text": "capitalize-word",
       "initial_bytes": "one two\n",
       "expected_bytes": "one two\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Quit",
-      "expected_screen": [{"region": "body", "text": "one two"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ]
     },
     {
       "name": "command-path/r2/empty",
@@ -119,15 +197,25 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command"],
+      "commands": [
+        "execute-extended-command"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "empty",
       "input_text": "",
       "initial_bytes": "one two\n",
       "expected_bytes": "one two\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Unknown command: ",
-      "expected_screen": [{"region": "body", "text": "one two"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ]
     },
     {
       "name": "command-path/r2/tab",
@@ -135,7 +223,11 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command", "capitalize-word", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "capitalize-word",
+        "save-buffer"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "tab",
       "input_text": "capitalize-wo",
@@ -143,9 +235,17 @@
       "accepted_command": "capitalize-word",
       "initial_bytes": "one two\n",
       "expected_bytes": "One two\n",
-      "expected_cursor": [0, 3],
+      "expected_cursor": [
+        0,
+        3
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "One two"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -154,7 +254,10 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command", "forward-char"],
+      "commands": [
+        "execute-extended-command",
+        "forward-char"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "history",
       "input_text": "",
@@ -163,9 +266,17 @@
       "accepted_command": "forward-char",
       "initial_bytes": "abcd\n",
       "expected_bytes": "abcd\n",
-      "expected_cursor": [0, 2],
+      "expected_cursor": [
+        0,
+        2
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "abcd"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abcd"
+        }
+      ]
     },
     {
       "name": "command-path/r2/invalid",
@@ -173,15 +284,25 @@
       "lane": "W3-1",
       "rule": "r2",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"alt\"]}]};prompt:1:completion",
-      "commands": ["execute-extended-command"],
+      "commands": [
+        "execute-extended-command"
+      ],
       "command": "execute-extended-command",
       "prompt_case": "invalid",
       "input_text": "missing-loom-command",
       "initial_bytes": "one two\n",
       "expected_bytes": "one two\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Unknown command: missing-loom-command",
-      "expected_screen": [{"region": "body", "text": "one two"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ]
     },
     {
       "name": "command-path/r1/capitalize-word/mx",
@@ -189,14 +310,26 @@
       "lane": "W3-4",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "capitalize-word", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "capitalize-word",
+        "save-buffer"
+      ],
       "command": "capitalize-word",
       "entry_mode": "mx",
       "initial_bytes": "ONE two three\n",
       "expected_bytes": "One two three\n",
-      "expected_cursor": [0, 3],
+      "expected_cursor": [
+        0,
+        3
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "One two three"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "One two three"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -205,14 +338,26 @@
       "lane": "W3-4",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "downcase-word", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "downcase-word",
+        "save-buffer"
+      ],
       "command": "downcase-word",
       "entry_mode": "mx",
       "initial_bytes": "ONE two three\n",
       "expected_bytes": "one two three\n",
-      "expected_cursor": [0, 3],
+      "expected_cursor": [
+        0,
+        3
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "one two three"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two three"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -221,14 +366,26 @@
       "lane": "W3-4",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "upcase-word", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "upcase-word",
+        "save-buffer"
+      ],
       "command": "upcase-word",
       "entry_mode": "mx",
       "initial_bytes": "one two three\n",
       "expected_bytes": "ONE two three\n",
-      "expected_cursor": [0, 3],
+      "expected_cursor": [
+        0,
+        3
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "ONE two three"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "ONE two three"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -237,15 +394,32 @@
       "lane": "W3-4",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "forward-char", "transpose-chars", "save-buffer"],
+      "commands": [
+        "execute-extended-command",
+        "forward-char",
+        "transpose-chars",
+        "save-buffer"
+      ],
       "command": "transpose-chars",
       "entry_mode": "mx",
-      "pre_keys": [{"key": "C-f"}],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        }
+      ],
       "initial_bytes": "abcd\n",
       "expected_bytes": "bacd\n",
-      "expected_cursor": [0, 2],
+      "expected_cursor": [
+        0,
+        2
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "bacd"}],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bacd"
+        }
+      ],
       "save_after_effect": true
     },
     {
@@ -254,16 +428,34 @@
       "lane": "W3-4",
       "rule": "r1",
       "entry": "mx",
-      "commands": ["execute-extended-command", "next-line", "recenter-top-bottom"],
+      "commands": [
+        "execute-extended-command",
+        "next-line",
+        "recenter-top-bottom"
+      ],
       "command": "recenter-top-bottom",
       "entry_mode": "mx",
-      "pre_keys": [{"key": "C-n", "repeat": 7}],
+      "pre_keys": [
+        {
+          "key": "C-n",
+          "repeat": 7
+        }
+      ],
       "rows": 9,
       "initial_bytes": "line0\nline1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10\nline11\nline12\nline13\nline14\n",
       "expected_bytes": "line0\nline1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10\nline11\nline12\nline13\nline14\n",
-      "expected_cursor": [3, 0],
+      "expected_cursor": [
+        3,
+        0
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "index": 3, "text": "line7"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 3,
+          "text": "line7"
+        }
+      ]
     },
     {
       "name": "command-path/r3/delete-char/effect",
@@ -271,17 +463,35 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["delete-char", "save-buffer"],
+      "commands": [
+        "delete-char",
+        "save-buffer"
+      ],
       "command": "delete-char",
       "mutation_case": "effect",
-      "command_keys": ["C-d"],
+      "command_keys": [
+        "C-d"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
       "expected_bytes": "bc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "bc"}],
-      "effect_screen": [{"region": "body", "text": "bc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ]
     },
     {
       "name": "command-path/r3/delete-char/undo",
@@ -289,18 +499,40 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["delete-char", "undo", "save-buffer"],
+      "commands": [
+        "delete-char",
+        "undo",
+        "save-buffer"
+      ],
       "command": "delete-char",
       "mutation_case": "undo",
-      "command_keys": ["C-d"],
+      "command_keys": [
+        "C-d"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 0],
-      "expected_undo_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "",
-      "expected_screen": [{"region": "body", "text": "abc"}],
-      "effect_screen": [{"region": "body", "text": "bc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ]
     },
     {
       "name": "command-path/r3/delete-char/read-only",
@@ -308,18 +540,37 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[\"control\"]}]}",
-      "commands": ["execute-extended-command", "toggle-read-only", "delete-char"],
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "delete-char"
+      ],
       "command": "delete-char",
       "mutation_case": "read-only",
       "read_only_command": "toggle-read-only",
-      "command_keys": ["C-d"],
+      "command_keys": [
+        "C-d"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "abc\n",
       "expected_bytes": "abc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Buffer is read-only",
-      "expected_screen": [{"region": "body", "text": "abc"}],
-      "effect_screen": [{"region": "body", "text": "abc"}]
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
     },
     {
       "name": "command-path/r3/delete-char/macro-replay",
@@ -327,19 +578,49 @@
       "lane": "W3-4",
       "rule": "r3",
       "entry": "macro",
-      "commands": ["start-kbd-macro", "delete-char", "end-kbd-macro", "undo", "move-beginning-of-line", "call-last-kbd-macro", "save-buffer"],
+      "commands": [
+        "start-kbd-macro",
+        "delete-char",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
       "command": "delete-char",
       "mutation_case": "macro-replay",
-      "command_keys": ["C-d"],
+      "command_keys": [
+        "C-d"
+      ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
       "expected_bytes": "bc\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Keyboard macro defined",
-      "replay_prefix_keys": ["C-a"],
-      "expected_screen": [{"region": "body", "text": "bc"}],
-      "effect_screen": [{"region": "body", "text": "bc"}],
-      "restore_screen": [{"region": "body", "text": "abc"}]
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "bc"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "abc"
+        }
+      ]
     },
     {
       "name": "command-path/r3/comment-line/effect",
@@ -366,7 +647,7 @@
         0,
         7
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -407,7 +688,7 @@
         0,
         7
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -499,7 +780,7 @@
         0,
         7
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -663,7 +944,7 @@
         0,
         7
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -704,7 +985,7 @@
         1,
         4
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -750,7 +1031,7 @@
         1,
         4
       ],
-      "expected_minibuffer": "Mode: Python",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -850,7 +1131,7 @@
         1,
         4
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1022,7 +1303,7 @@
         1,
         4
       ],
-      "expected_minibuffer": "Prefix argument: 4",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -1070,17 +1351,34 @@
       "initial_bytes": "1+1\n",
       "effect_bytes": "1 + 1\n",
       "expected_bytes": "1 + 1\n",
-      "expected_cursor": [0, 0],
+      "expected_cursor": [
+        0,
+        0
+      ],
       "expected_minibuffer": "Keyboard macro defined",
       "expected_screen": [
-        {"region": "body", "index": 0, "text": "1 + 1"}
+        {
+          "region": "body",
+          "index": 0,
+          "text": "1 + 1"
+        }
       ],
       "effect_screen": [
-        {"region": "body", "index": 0, "text": "1 + 1"}
+        {
+          "region": "body",
+          "index": 0,
+          "text": "1 + 1"
+        }
       ],
-      "replay_prefix_keys": ["M-<"],
+      "replay_prefix_keys": [
+        "M-<"
+      ],
       "restore_screen": [
-        {"region": "body", "index": 0, "text": "1+1"}
+        {
+          "region": "body",
+          "index": 0,
+          "text": "1+1"
+        }
       ]
     }
   ]

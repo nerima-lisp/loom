@@ -581,7 +581,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/forward-slurp-sexp/undo",
       "path_id": "r3:forward-slurp-sexp:undo",
       "lane": "W3-7b",
@@ -633,7 +633,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/forward-slurp-sexp/read-only",
       "path_id": "r3:forward-slurp-sexp:read-only",
       "lane": "W3-7b",
@@ -682,7 +682,7 @@
       ],
       "read_only_command": "toggle-read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/forward-barf-sexp/effect",
       "path_id": "r3:forward-barf-sexp:effect",
       "lane": "W3-7b",
@@ -729,7 +729,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/forward-barf-sexp/undo",
       "path_id": "r3:forward-barf-sexp:undo",
       "lane": "W3-7b",
@@ -781,7 +781,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/forward-barf-sexp/read-only",
       "path_id": "r3:forward-barf-sexp:read-only",
       "lane": "W3-7b",
@@ -830,7 +830,7 @@
       ],
       "read_only_command": "toggle-read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-slurp-sexp/effect",
       "path_id": "r3:backward-slurp-sexp:effect",
       "lane": "W3-7b",
@@ -877,7 +877,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-slurp-sexp/read-only",
       "path_id": "r3:backward-slurp-sexp:read-only",
       "lane": "W3-7b",
@@ -927,7 +927,7 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-barf-sexp/effect",
       "path_id": "r3:backward-barf-sexp:effect",
       "lane": "W3-7b",
@@ -972,7 +972,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-barf-sexp/read-only",
       "path_id": "r3:backward-barf-sexp:read-only",
       "lane": "W3-7b",
@@ -1020,7 +1020,7 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/kill-sexp/effect",
       "path_id": "r3:kill-sexp:effect",
       "lane": "W3-7b",
@@ -1065,7 +1065,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/kill-sexp/read-only",
       "path_id": "r3:kill-sexp:read-only",
       "lane": "W3-7b",
@@ -1113,7 +1113,7 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/raise-sexp/effect",
       "path_id": "r3:raise-sexp:effect",
       "lane": "W3-7b",
@@ -1161,7 +1161,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/raise-sexp/read-only",
       "path_id": "r3:raise-sexp:read-only",
       "lane": "W3-7b",
@@ -1212,7 +1212,7 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/splice-sexp/effect",
       "path_id": "r3:splice-sexp:effect",
       "lane": "W3-7b",
@@ -1260,7 +1260,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/splice-sexp/undo",
       "path_id": "r3:splice-sexp:undo",
       "lane": "W3-7b",
@@ -1313,7 +1313,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/splice-sexp/read-only",
       "path_id": "r3:splice-sexp:read-only",
       "lane": "W3-7b",
@@ -1364,7 +1364,7 @@
       "read_only_command": "toggle-read-only",
       "expected_read_only_status": "Buffer is read-only"
     },
-            {
+    {
       "name": "lisp-structure/r3/wrap-round/effect",
       "path_id": "r3:wrap-round:effect",
       "lane": "W3-7b",
@@ -1408,7 +1408,7 @@
         }
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/wrap-round/read-only",
       "path_id": "r3:wrap-round:read-only",
       "lane": "W3-7b",
@@ -1764,7 +1764,7 @@
         "C-f"
       ]
     },
-        {
+    {
       "name": "lisp-structure/r3/forward-barf-sexp/macro-replay",
       "path_id": "r3:forward-barf-sexp:macro-replay",
       "lane": "W3-7b",
@@ -2230,7 +2230,7 @@
         0,
         0
       ],
-      "expected_minibuffer": "Narrowed to the active region",
+      "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
@@ -2948,7 +2948,7 @@
         "beginning-of-buffer"
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-barf-sexp/undo",
       "path_id": "r3:backward-barf-sexp:undo",
       "lane": "W3-7b",
@@ -2998,7 +2998,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/backward-slurp-sexp/undo",
       "path_id": "r3:backward-slurp-sexp:undo",
       "lane": "W3-7b",
@@ -3050,7 +3050,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/kill-sexp/undo",
       "path_id": "r3:kill-sexp:undo",
       "lane": "W3-7b",
@@ -3100,7 +3100,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/raise-sexp/undo",
       "path_id": "r3:raise-sexp:undo",
       "lane": "W3-7b",
@@ -3153,7 +3153,7 @@
         0
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/wrap-round/undo",
       "path_id": "r3:wrap-round:undo",
       "lane": "W3-7b",
@@ -3410,7 +3410,7 @@
         "4"
       ]
     },
-            {
+    {
       "name": "lisp-structure/r3/kill-sexp/prefix-u4",
       "path_id": "r3:kill-sexp:prefix-u4",
       "lane": "W3-7b",

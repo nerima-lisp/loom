@@ -28,7 +28,7 @@
         }
       ],
       "entry_keys": [
-        ""
+        "\u007f"
       ],
       "pre_keys": [
         {
@@ -1519,7 +1519,7 @@
       "mutation_case": "effect",
       "command_keys": [
         "C-f",
-        ""
+        "\u007f"
       ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
@@ -1558,7 +1558,7 @@
       "mutation_case": "undo",
       "command_keys": [
         "C-f",
-        ""
+        "\u007f"
       ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
@@ -1605,7 +1605,7 @@
       "mutation_case": "macro-replay",
       "command_keys": [
         "C-f",
-        ""
+        "\u007f"
       ],
       "initial_bytes": "abc\n",
       "effect_bytes": "bc\n",
@@ -2982,7 +2982,7 @@
       ],
       "pre_command_keys": [
         "x",
-        ""
+        "\u007f"
       ],
       "restore_screen": [
         {
@@ -3622,7 +3622,7 @@
       "mutation_case": "read-only",
       "command_keys": [
         "C-f",
-        ""
+        "\u007f"
       ],
       "effect_bytes": "abc\n",
       "effect_screen": [
@@ -4016,7 +4016,7 @@
       "mutation_case": "narrow",
       "command_keys": [
         "C-f",
-        "DEL"
+        "C-?"
       ],
       "initial_bytes": "abc\noutside\n",
       "effect_bytes": "bc\noutside\n",
@@ -4633,7 +4633,7 @@
       "mutation_case": "prefix-u4",
       "command_keys": [
         "C-u",
-        "DEL"
+        "C-?"
       ],
       "initial_bytes": "abcdefgh\n",
       "effect_bytes": "abcd\n",
@@ -4863,6 +4863,9 @@
           "text": "bc",
           "index": 4
         }
+      ],
+      "pre_command_keys": [
+        "C-f"
       ]
     },
     {
@@ -4943,6 +4946,9 @@
           "text": "bc",
           "index": 4
         }
+      ],
+      "pre_command_keys": [
+        "C-f"
       ]
     },
     {
@@ -4981,6 +4987,9 @@
           "region": "body",
           "text": "bcdeaf"
         }
+      ],
+      "pre_command_keys": [
+        "C-f"
       ]
     },
     {
@@ -5022,26 +5031,26 @@
       ]
     },
     {
-      "name": "command-path/buffer/r1/undo/key:c-x-u",
-      "path_id": "r1:undo:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22u%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "name": "command-path/buffer/r3/end-of-buffer/effect",
+      "path_id": "r3:end-of-buffer:effect",
       "lane": "W3-4",
-      "rule": "r1",
-      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"u\",\"modifiers\":[]}]}",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\">\",\"modifiers\":[\"alt\"]}]}",
       "commands": [
-        "undo",
+        "end-of-buffer",
         "save-buffer"
       ],
-      "command": "undo",
-      "entry_mode": "key",
-      "entry_keys": [
-        "C-x",
-        "u"
+      "command": "end-of-buffer",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M->"
       ],
-      "initial_bytes": "abc\n",
-      "expected_bytes": "abc\n",
+      "initial_bytes": "abc",
+      "effect_bytes": "abc",
+      "expected_bytes": "abc",
       "expected_cursor": [
         0,
-        0
+        3
       ],
       "expected_minibuffer": "",
       "expected_screen": [
@@ -5050,12 +5059,12 @@
           "text": "abc"
         }
       ],
-      "pre_keys": [
+      "effect_screen": [
         {
-          "key": "x"
+          "region": "body",
+          "text": "abc"
         }
-      ],
-      "save_after_effect": true
+      ]
     }
   ]
 }
