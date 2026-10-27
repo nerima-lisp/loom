@@ -1239,7 +1239,61 @@
         (when import-source (delete-package import-source))
         (when use-source (delete-package use-source))
         (when target-package (delete-package target-package))))
-    (progn (expect *boundary-report-vs-fail* :to-equal :fail) t)))
+    (progn
+      (let ((target-package nil))
+        (unwind-protect
+            (let* ((target-name (symbol-name (gensym "BOUNDARY-IREF-")))
+                   (package (make-package target-name :use nil)))
+              (setf target-package package)
+              (let* ((internal-symbol (intern "PRIVATE-REFERENCE" package))
+                     (external-symbol (intern "PUBLIC-REFERENCE" package)))
+                (declare (ignore internal-symbol))
+                (export external-symbol package)
+                (let* ((*boundary-package-map*
+                         (list (list target-name (list "core")
+                                     (list :core) "synthetic/target.lisp")))
+                       (make-record
+                         (lambda (path slice symbol-name)
+                           (make-boundary-record
+                            :path path :slice slice :layer :application :package *package*
+                            :text (format nil "NIL~%  (~A::~A)" target-name symbol-name))))
+                       (cross-record
+                         (funcall make-record "synthetic/cross.lisp" "feature/other"
+                                  "PRIVATE-REFERENCE"))
+                       (same-slice-record
+                         (funcall make-record "synthetic/same-slice.lisp" "core"
+                                  "PRIVATE-REFERENCE"))
+                       (external-record
+                         (funcall make-record "synthetic/external.lisp" "feature/other"
+                                  "PUBLIC-REFERENCE"))
+                       (cross-findings
+                         (boundary-internal-reference-findings (list cross-record))))
+                  (expect (let ((finding (first cross-findings)))
+                            (and (= (length cross-findings) 1)
+                                 (eq (boundary-finding-category finding)
+                                     :package-internal-reference)
+                                 (string= (boundary-finding-slice finding) "feature/other")
+                                 (string= (boundary-finding-file finding)
+                                          "synthetic/cross.lisp")
+                                 (= (boundary-finding-line finding) 2)
+                                 (string= (boundary-finding-reference finding)
+                                          (format nil "~A::PRIVATE-REFERENCE" target-name))))
+                          :to-equal t)
+                  (expect (boundary-internal-reference-findings (list same-slice-record))
+                          :to-equal nil)
+                  (expect (boundary-internal-reference-findings (list external-record))
+                          :to-equal nil)
+                  (let* ((entry
+                           (list :package-internal-reference "synthetic/cross.lisp"
+                                 (format nil "~A::PRIVATE-REFERENCE" target-name)
+                                 "fixture reason"))
+                         (groups (list (list "feature/other" entry))))
+                    (expect (boundary-validate-allowlist-groups groups
+                                                                (list "feature/other"))
+                            :to-equal groups)))))
+          (when target-package (delete-package target-package))))
+      (expect *boundary-report-vs-fail* :to-equal :fail)
+      t)))
 
 (describe
   "boundary architecture audit"
