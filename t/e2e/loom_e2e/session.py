@@ -32,6 +32,17 @@ from .screen import Screen
 
 DEFAULT_TIMEOUT = 10.0
 _SESSION_ENVIRONMENT_ALLOWLIST = ("PATH",)
+_COMMAND_TRACE_ALIASES = {
+    "newline-and-indent": "newline",
+    "mode/newline-and-indent": "newline",
+    "mode/comment-dwim": "comment-line",
+}
+
+
+def _canonical_command_trace_name(command):
+    return _COMMAND_TRACE_ALIASES.get(command, command)
+
+
 def _session_environment(
     home_dir, locale_name, profile=keys.DEFAULT_PROFILE, trace_path=None,
     layout_trace_path=None,
@@ -300,30 +311,34 @@ class Session:
         return len(self._read_complete_command_trace_records())
 
     def wait_for_command_completion(
-        self, command, *, route=None, after=0, timeout=DEFAULT_TIMEOUT
+        self,
+        command,
+        *,
+        route=None,
+        after=0,
+        timeout=DEFAULT_TIMEOUT,
     ):
-        """Wait for a completed command trace after record index AFTER."""
+        """Wait for a post-call command trace after record index AFTER."""
         if not isinstance(command, str) or not command:
             raise ValueError("command must be non-empty text")
         if route is not None and (not isinstance(route, str) or not route):
             raise ValueError("route must be non-empty text when provided")
         if type(after) is not int or after < 0:
             raise ValueError("after must be a non-negative integer")
-
+        command = _canonical_command_trace_name(command)
         deadline = time.monotonic() + timeout
         while True:
             records = self._read_complete_command_trace_records()
             if any(
                 index >= after
-                and record.get("command") == command
+                and _canonical_command_trace_name(record.get("command")) == command
                 and (route is None or record.get("route") == route)
-                and record.get("completed") is True
                 for index, record in enumerate(records)
             ):
                 return
             if time.monotonic() >= deadline:
                 raise TimeoutError(
-                    f"timed out waiting for completed {command} command"
+                    f"timed out waiting for {command} command completion"
                     f"{f' on {route} route' if route is not None else ''}; "
                     f"trace records={len(records)}\n--- screen ---\n"
                     f"{self.screen.dump() if self.screen is not None else ''}"

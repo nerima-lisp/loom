@@ -1489,7 +1489,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -1660,7 +1661,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -1734,7 +1736,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -2021,7 +2024,8 @@
         0,
         1
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -2131,7 +2135,7 @@
       ],
       "pre_command_keys": [
         "x",
-        "C-h"
+        "C-?"
       ]
     },
     {
@@ -2157,7 +2161,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3612,7 +3617,8 @@
         0,
         1
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3651,7 +3657,8 @@
         1,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3704,7 +3711,8 @@
         0,
         1
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3743,7 +3751,8 @@
         0,
         1
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3783,7 +3792,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",
@@ -3831,7 +3841,8 @@
         0,
         0
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",

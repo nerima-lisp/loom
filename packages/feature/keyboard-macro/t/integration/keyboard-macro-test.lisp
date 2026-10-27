@@ -425,8 +425,8 @@
    (buffer-set-point buffer 0 0)
    (with-replaced-function
     (loom/core/command:record-command-trace
-     (lambda (id route &optional entry)
-      (push (list id route entry) traces)
+     (lambda (id route &optional entry &rest trace-fields)
+      (push (append (list id route entry) trace-fields) traces)
       nil))
     (flet ((dispatch (code &optional (modifiers nil) (type :character))
              (loom::%dispatch-key-event

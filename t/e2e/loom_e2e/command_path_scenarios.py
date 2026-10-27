@@ -1218,7 +1218,7 @@ def _command_route(case):
 
 def _recorded_command_route(case):
     command_keys = case.get("command_keys", [])
-    return "mx" if command_keys[:1] == ["M-x"] else "key"
+    return "mx" if "M-x" in command_keys else "key"
 
 
 def _wait_for_command_completion(session, case, command, route, trace_count):
@@ -1288,7 +1288,11 @@ def _run_r3(session, case, path):
             trace_count = session.command_trace_count()
             _send_keys(session, case["command_keys"])
         _wait_for_command_completion(
-            session, case, case["command"], _command_route(case), trace_count
+            session,
+            case,
+            case["command"],
+            _command_route(case),
+            trace_count,
         )
         _assert_final_state(session, case, path, case["expected_bytes"])
         return

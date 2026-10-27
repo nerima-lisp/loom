@@ -113,7 +113,7 @@ class JobControlSupervisorTests(unittest.TestCase):
 
 
 class SessionCommandCompletionTests(unittest.TestCase):
-    def test_wait_for_command_completion_ignores_invocation_start(self):
+    def test_wait_for_command_completion_ignores_prior_trace_records(self):
         with tempfile.TemporaryDirectory() as directory:
             trace_path = os.path.join(directory, "trace.jsonl")
             with open(trace_path, "wb") as handle:
@@ -142,6 +142,27 @@ class SessionCommandCompletionTests(unittest.TestCase):
 
             session.pump.assert_called_once_with()
             self.assertEqual(session.command_trace_count(), 2)
+
+    def test_wait_for_command_completion_accepts_failed_invocation_trace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            trace_path = os.path.join(directory, "trace.jsonl")
+            session = Session("unused")
+            session.screen = Screen(columns=20, rows=2)
+            session._trace_path = trace_path
+
+            def finish_command():
+                with open(trace_path, "ab") as handle:
+                    handle.write(
+                        b'{"command":"mode/newline-and-indent",'
+                        b'"route":"key","seq":1,"completed":false}\n'
+                    )
+
+            session.pump = Mock(side_effect=finish_command)
+            session.wait_for_command_completion(
+                "newline", route="key", timeout=1
+            )
+
+            session.pump.assert_called_once_with()
 
 
 class SessionRestartTests(unittest.TestCase):

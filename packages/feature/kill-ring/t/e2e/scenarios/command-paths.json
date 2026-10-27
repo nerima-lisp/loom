@@ -2470,7 +2470,8 @@
         0,
         3
       ],
-      "expected_minibuffer": "Buffer is read-only",
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_read_only_status": "Buffer is read-only",
       "expected_screen": [
         {
           "region": "body",

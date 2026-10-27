@@ -14,6 +14,7 @@ from loom_e2e.command_path_scenarios import (
     _key_bytes,
     _r2_prompt_display,
     _run_r3,
+    _recorded_command_route,
     _resolve_path_tokens,
     load_command_path_scenarios,
     run_command_path_scenario,
@@ -210,7 +211,11 @@ class FakeSession:
             ("wait_for_command_completion", command, route, after)
         )
         self.trace_rows.append(
-            {"command": command, "route": route, "completed": True}
+            {
+                "command": command,
+                "route": route,
+                "completed": True,
+            }
         )
 
     def wait_for_region_cursor(self, region, col, index=0):
@@ -1661,9 +1666,15 @@ class CommandPathScenarioTests(unittest.TestCase):
             calls.index(("send", b"\x04")),
         )
         self.assertIn(("send", b"\x04"), calls)
-        self.assertIn(("assert_screen", "Buffer is read-only", "exact", {
-            "region": "minibuffer", "strip_right": True,
-        }), calls)
+        self.assertIn(
+            (
+                "assert_screen",
+                case["expected_minibuffer"],
+                "exact",
+                {"region": "minibuffer", "strip_right": True},
+            ),
+            calls,
+        )
         self.assertIn(("assert_file_bytes", b"abc\n"), calls)
 
     def test_r3_macro_replay_saves_exact_result_after_cursor_reset(self):
@@ -1730,6 +1741,7 @@ class CommandPathScenarioTests(unittest.TestCase):
         cases_by_id = {case["path_id"]: case for case in cases}
         scenarios = (
             "r3:eval-buffer:effect",
+            "r3:eval-buffer:read-only",
             "r3:eval-buffer:macro-replay",
             "r3:eval-last-sexp:macro-replay",
             "r3:eval-last-sexp:prefix-u4",
@@ -1773,9 +1785,7 @@ class CommandPathScenarioTests(unittest.TestCase):
                         any(index < observation for index, _call in completion_waits)
                     )
                 if case["mutation_case"] == "macro-replay":
-                    recorded_route = (
-                        "mx" if case["command_keys"][:1] == ["M-x"] else "key"
-                    )
+                    recorded_route = _recorded_command_route(case)
                     self.assertIn(
                         (case["command"], recorded_route),
                         [(call[1], call[2]) for _, call in completion_waits],
@@ -1784,6 +1794,21 @@ class CommandPathScenarioTests(unittest.TestCase):
                         ("call-last-kbd-macro", "key"),
                         [(call[1], call[2]) for _, call in completion_waits],
                     )
+                if case["mutation_case"] == "read-only":
+                    route = "mx" if case.get("entry") in {"mx", "m-x"} else "key"
+                    self.assertIn(
+                        (case["command"], route),
+                        [(call[1], call[2]) for _, call in completion_waits],
+                    )
+
+    def test_r3_macro_recorded_mx_command_uses_mx_route_after_setup_keys(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(SCENARIO_DATA)
+            if case["path_id"] == "r3:format-current-buffer:macro-replay"
+        )
+
+        self.assertEqual(_recorded_command_route(case), "mx")
 
     def test_r3_macro_replay_waits_for_the_declared_restore_screen_row(self):
         case = next(
