@@ -35,6 +35,16 @@ end-of-file (no octet was read at all)."
          (session (editor-state-session *editor-state*)))
     (dolist (event (cl-tty-kit:decode-input-chunk decoder chunk))
       (cond
+        ((typep event 'cl-tty-kit:mouse-event)
+         (handler-case
+             (loom/core/editor-session:run-session-hooks
+              :input-event
+              session
+              :mouse
+              event)
+           (error (condition)
+             (minibuffer-message (editor-state-minibuffer *editor-state*)
+                                 (princ-to-string condition)))))
         ((typep event 'cl-tty-kit:key-event)
          (let ((event-type (cl-tty-kit:key-event-type event)))
            (if (member event-type (quote (:character :special)) :test (function eq))
@@ -54,16 +64,6 @@ end-of-file (no octet was read at all)."
                  (error (condition)
                    (minibuffer-message (editor-state-minibuffer *editor-state*)
                                        (princ-to-string condition)))))))
-        ((typep event 'cl-tty-kit:mouse-event)
-         (handler-case
-             (loom/core/editor-session:run-session-hooks
-              :input-event
-              session
-              :mouse
-              event)
-           (error (condition)
-             (minibuffer-message (editor-state-minibuffer *editor-state*)
-                                 (princ-to-string condition)))))
         (t
          (let ((logger
                  (log-kit:make-logger
