@@ -60,6 +60,6 @@ Append a space when the character at TARGET requires separation."
                (loom/core/command:prefix-argument-active-p
                 (loom/core/command:prefix-argument-for-editor)))
       (loom/core/command:consume-prefix-argument-for-editor)
-      (loom/core/command:minibuffer-message
+      (loom/core/minibuffer:minibuffer-message
        (loom/core/editor-session:editor-state-minibuffer state)
        nil))))
