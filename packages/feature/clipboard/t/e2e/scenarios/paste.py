@@ -205,5 +205,7 @@ def paste_separate_undo(binary):
                 _close(session, "r6/paste/separate-undo")
             except Exception as condition:
                 raise AssertionError(
-                    f"r6/paste/separate-undo failed during {stage}: {condition}"
+                    f"r6/paste/separate-undo failed during {stage}: {condition}\n"
+                    f"cursor={session.screen.cursor}\n"
+                    f"{session.screen.dump()}"
                 ) from condition
