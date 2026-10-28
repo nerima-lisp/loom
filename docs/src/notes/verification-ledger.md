@@ -1044,6 +1044,28 @@ counts above refer to separate local, CI, and current-workspace snapshots.
 | [40622923555](https://github.com/nerima-lisp/loom/actions/runs/40622923555) | `acc36bdd39c6ef1762c02b3ebe97d0ec6b481cd7` | Linux full E2E passed 1,164/1,164 scenarios and covered 148/148 commands. Darwin preflight passed 260/260 tests; full E2E passed 1,134/1,164 with 30 failures. Eighteen failures were files-path expectations that compared `/tmp/...` with the screen's `/private/tmp/...`; the remaining 12 were one shell pipe case, three user-init non-TTY cases, seven clipboard cases, and one window cursor case owned outside W4-2. Linux and Darwin flake checks and both release archives passed. Darwin's log contained no `PermissionError` or `killpg` failure. |
 | [40629723568](https://github.com/nerima-lisp/loom/actions/runs/40629723568) | `42ad1e19d3b99f1696c913e1aa1f70b4c71eb792` | Darwin preflight passed 261/261 tests; full E2E passed 1,152/1,164 scenarios. Failures were one save-buffer cancellation expectation showing `/tmp/...` while the screen showed `/private/tmp/...`, one W3-11 shell-pipe case, three non-TTY cases (`R7 xargs non-tty stdin`, `non-tty stdin uses /dev/tty`, and `non-tty stdout uses /dev/tty`), and seven W3-8 clipboard-yank cases. Path coverage reported 986 pass, 2 excluded, and 59 failing required paths. The Darwin performance report was skipped. Linux PTY E2E was canceled while building the default package after the job reached its 12-minute maximum, so it produced no E2E result. Linux flake check timed out after 1,800 seconds (exit 124). Linux release archive, Darwin flake check, and Darwin release archive passed. |
 | [40639146526](https://github.com/nerima-lisp/loom/actions/runs/40639146526) | `a54f28a21924f2fd7cceafcd7919af2aa956ef54` | Linux flake check and full E2E passed; E2E passed 1,165/1,165 scenarios and covered 148/148 commands. Path coverage reported 1,003 pass, 2 excluded, and 54 failing required paths. Startup was 0.194 s, NFR-01 open was 0.890 s, redraw p95 was 1.773 ms, and D13 was 39.115 ms, all within their unchanged thresholds. The end-of-buffer sample reported 3.556 s, but did not observe the last line before its deadline; it remains informational. Darwin flake check and archive passed; preflight passed 261/261 tests. Darwin E2E passed 1,152/1,165 and failed 13 scenarios: `shell/pipe-command-r5-missing`; three non-TTY user-init scenarios; seven clipboard-yank paths; `file-tree-select-next`; and `split-window-below`. The corrected R2 save-buffer cancellation scenario passed. Darwin path coverage reported 990 pass, 2 excluded, and 67 failing required paths; its performance report was skipped. Linux release archive was canceled after 20m18s while `Build default package` was still running, and its restore step was skipped. |
+| [40678259201](https://github.com/nerima-lisp/loom/actions/runs/40678259201) | `3bc69c8a3a262c27db0a3cf1290389b9ab450d01` | Main push CI had five of six jobs succeed and failed only in `PTY E2E (aarch64-darwin)`. Full Darwin E2E passed 1,172/1,172 scenarios (job log line 2114). The `Enforce PTY performance targets` step failed during the 264-test harness preflight in `ScenarioDeadlineTests.test_cleanup_timeout_during_pty_close_still_reaps_child` (line 2249): it raised `ScenarioCleanupDeadlineExceeded: scenario cleanup exceeded 0.1 seconds` (line 2262), followed by `TimeoutError: loom child was not reaped before the scenario deadline` from `LoomProcess.close` (line 2279). The preflight ended `FAILED (errors=1)` at lines 2282–2285, before benchmark scenarios ran. |
+
+The cleanup-timeout integration test retains its real-timer interruption,
+child-reap assertion, and closed-PTY-fd assertion. Its logical contract is
+already covered by `ScenarioDeadlineTests.test_cleanup_deadline_interrupts_cleanup`,
+which patches the clock and timer and asserts the exact cleanup-deadline
+exception. For the real-timer test, a loaded macOS arm64 host with 16 logical
+cores and 0% idle was measured over 100 trials. Each trial used an unkillable
+Python PTY child and the same 0.2-second execution phase, with a roomy
+2.0-second calibration cleanup reserve to avoid censoring close times. The
+measured interval ran from the nominal execution deadline through successful
+`LoomProcess.close()` completion, including alarm dispatch and verified child
+reap/fd closure. It was 7.575 ms minimum, 10.006 ms median, 13.276 ms p90,
+14.176 ms p95, 22.995 ms p99, and 23.218 ms maximum. The host load averages
+were 122.55/103.50/94.10 before and 95.64/99.95/94.04 after the run; both
+snapshots showed 0% idle CPU. The test now reserves 0.25 seconds for cleanup,
+10.8 times the observed maximum, while retaining its 0.2-second execution
+phase. All 100 calibration trials raised `ScenarioDeadlineExceeded` as
+expected and ended with the child reaped and PTY fd closed.
+After choosing the 0.25-second reserve, the exact integration test passed
+50/50 consecutive local runs with the original child-reap and fd-close
+assertions.
 
 On local macOS, the save-buffer scenario initially expected a minibuffer path under
 `/tmp/` while the screen displayed the same file under `/private/tmp/`. The revert
