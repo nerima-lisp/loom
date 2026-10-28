@@ -740,6 +740,7 @@ def generate_required_paths(catalog):
     for row in rows:
         command_id = row["id"]
         lane = row["lane"]
+        # Exchange moves point without changing buffer text, so observe the cursor.
         r1_observations = ["cursor"] if command_id == "exchange-point-and-mark" else ["screen_text"]
         paths.extend(_lisp_mode_local_paths(row))
         for key in row["keys"]:
