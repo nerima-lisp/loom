@@ -177,7 +177,7 @@ jobs:
               --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           else
             timeout --signal=TERM --kill-after=15s 600s nix run .#e2e -- \
-              --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
+              --require-path-coverage --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           fi
 
       - name: Publish PTY scenario timings
@@ -261,7 +261,7 @@ jobs:
             nix run .#e2e -- --only "$E2E_SCENARIO" \
               --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           else
-            nix run .#e2e -- --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
+            nix run .#e2e -- --require-path-coverage --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           fi
 
       - name: Publish PTY scenario timings
