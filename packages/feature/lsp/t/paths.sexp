@@ -282,4 +282,175 @@
       "lsp/diagnostics"
       :lane
       "W3-9")
-)
+
+ (:id "r2:lsp-rename:prompt-1:free-string:accept"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r2
+      :lane "W3-9"
+      :entry "mx;prompt:1:free-string"
+      :state "prompt:free-string"
+      :outcome "accept"
+      :observe (:screen_text)
+      :scenario "command-path/r2/lsp-rename/free-string/accept")
+ (:id "r2:lsp-rename:prompt-1:free-string:cancel"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r2
+      :lane "W3-9"
+      :entry "mx;prompt:1:free-string"
+      :state "prompt:free-string"
+      :outcome "cancel"
+      :observe (:screen_text)
+      :scenario "command-path/r2/lsp-rename/free-string/cancel")
+ (:id "r2:lsp-rename:prompt-1:free-string:empty"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r2
+      :lane "W3-9"
+      :entry "mx;prompt:1:free-string"
+      :state "prompt:free-string"
+      :outcome "empty"
+      :observe (:screen_text)
+      :scenario "command-path/r2/lsp-rename/free-string/empty")
+ (:id "r2:lsp-rename:prompt-1:free-string:tab"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r2
+      :lane "W3-9"
+      :entry "mx;prompt:1:free-string"
+      :state "prompt:free-string"
+      :outcome "tab"
+      :observe (:screen_text)
+      :scenario "command-path/r2/lsp-rename/free-string/tab")
+ (:id "r2:lsp-rename:prompt-1:free-string:history"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r2
+      :lane "W3-9"
+      :entry "mx;prompt:1:free-string"
+      :state "prompt:free-string"
+      :outcome "history"
+      :observe (:screen_text)
+      :scenario "command-path/r2/lsp-rename/free-string/history")
+ (:id "r3:lsp-rename:effect"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "editable-buffer"
+      :outcome "buffer changes"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/effect")
+ (:id "r3:lsp-rename:undo"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename" "undo")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "after-one-change"
+      :outcome "original bytes restored"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/undo")
+ (:id "r3:lsp-rename:read-only"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename" "toggle-read-only")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "read-only-buffer"
+      :outcome "rejected without byte changes"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/read-only")
+ (:id "r3:lsp-rename:narrow"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename" "narrow-to-region")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "narrowed-buffer"
+      :outcome "outside range remains unchanged"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/narrow")
+ (:id "r3:lsp-rename:split-window"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename" "split-window-below")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "split-window"
+      :outcome "both views reflect the change"
+      :observe (:screen_text)
+      :scenario "command-path/r3/lsp-rename/split-window")
+ (:id "r3:lsp-rename:macro-replay"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename" "start-kbd-macro" "end-kbd-macro" "undo" "call-last-kbd-macro")
+      :rule :r3
+      :lane "W3-9"
+      :entry "macro"
+      :state "macro-recording"
+      :outcome "replay has the same effect"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/macro-replay")
+ (:id "r3:lsp-rename:prefix-u4"
+      :commands ("execute-extended-command" "lsp-start" "lsp-rename")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "prefix-C-u-4"
+      :outcome "specified prefix behavior is observed"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-rename/prefix-u4")
+ (:id "r3:lsp-format-buffer:effect"
+      :commands ("execute-extended-command" "lsp-start" "lsp-format-buffer")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "editable-buffer"
+      :outcome "buffer changes"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/effect")
+ (:id "r3:lsp-format-buffer:undo"
+      :commands ("execute-extended-command" "lsp-start" "lsp-format-buffer" "undo")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "after-one-change"
+      :outcome "original bytes restored"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/undo")
+ (:id "r3:lsp-format-buffer:read-only"
+      :commands ("execute-extended-command" "lsp-start" "toggle-read-only" "lsp-format-buffer")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "read-only-buffer"
+      :outcome "rejected without byte changes"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/read-only")
+ (:id "r3:lsp-format-buffer:narrow"
+      :commands ("execute-extended-command" "lsp-start" "narrow-to-region" "lsp-format-buffer")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "narrowed-buffer"
+      :outcome "outside range remains unchanged"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/narrow")
+ (:id "r3:lsp-format-buffer:split-window"
+      :commands ("execute-extended-command" "lsp-start" "split-window-below" "lsp-format-buffer")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "split-window"
+      :outcome "both views reflect the change"
+      :observe (:screen_text)
+      :scenario "command-path/r3/lsp-format-buffer/split-window")
+ (:id "r3:lsp-format-buffer:macro-replay"
+      :commands ("execute-extended-command" "lsp-start" "start-kbd-macro" "lsp-format-buffer" "end-kbd-macro" "undo" "call-last-kbd-macro")
+      :rule :r3
+      :lane "W3-9"
+      :entry "macro"
+      :state "macro-recording"
+      :outcome "replay has the same effect"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/macro-replay")
+ (:id "r3:lsp-format-buffer:prefix-u4"
+      :commands ("execute-extended-command" "lsp-start" "lsp-format-buffer")
+      :rule :r3
+      :lane "W3-9"
+      :entry "mx"
+      :state "prefix-C-u-4"
+      :outcome "specified prefix behavior is observed"
+      :observe (:file_bytes)
+      :scenario "command-path/r3/lsp-format-buffer/prefix-u4"))

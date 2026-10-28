@@ -1520,6 +1520,447 @@
           "text": "lsp route"
         }
       ]
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-format-buffer"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one  two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Formatting applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/effect",
+      "path_id": "r3:lsp-format-buffer:effect",
+      "mutation_case": "effect"
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-format-buffer",
+        "undo"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Formatting applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/undo",
+      "path_id": "r3:lsp-format-buffer:undo",
+      "mutation_case": "undo",
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "toggle-read-only",
+        "lsp-format-buffer"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Formatting rejected: READ-ONLY",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/read-only",
+      "path_id": "r3:lsp-format-buffer:read-only",
+      "mutation_case": "read-only",
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "narrow-to-region",
+        "lsp-format-buffer"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Formatting rejected: NARROWING",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/narrow",
+      "path_id": "r3:lsp-format-buffer:narrow",
+      "mutation_case": "narrow",
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "split-window-below",
+        "lsp-format-buffer"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one  two\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "Formatting applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one  two",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "one  two",
+          "index": 12
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/split-window",
+      "path_id": "r3:lsp-format-buffer:split-window",
+      "mutation_case": "split-window",
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "start-kbd-macro",
+        "lsp-format-buffer",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one  two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/macro-replay",
+      "path_id": "r3:lsp-format-buffer:macro-replay",
+      "mutation_case": "macro-replay",
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "one two"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "lane": "W3-9",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-format-buffer"
+      ],
+      "command": "lsp-format-buffer",
+      "command_keys": [
+        "M-x",
+        "lsp-format-buffer",
+        "RET"
+      ],
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one  two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Formatting applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"exit\":\n        break\n    if method == \"initialize\":\n        result = {\"capabilities\": {\"documentFormattingProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}\n    elif method == \"textDocument/formatting\":\n        result = [{\"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 0, \"character\": 7}}, \"newText\": \"one  two\"}]\n    elif method == \"shutdown\":\n        result = None\n    else:\n        continue\n    send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": result})"
+        }
+      ],
+      "effect_bytes": "one  two\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "one  two"
+        }
+      ],
+      "name": "command-path/r3/lsp-format-buffer/prefix-u4",
+      "path_id": "r3:lsp-format-buffer:prefix-u4",
+      "mutation_case": "prefix-u4",
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
     }
   ]
 }
