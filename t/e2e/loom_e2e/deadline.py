@@ -23,15 +23,20 @@ class ScenarioCleanupDeadlineExceeded(ScenarioDeadlineExceeded):
 
 
 class ScenarioDeadlineBudget:
-    """Expose the one absolute wall-clock deadline to cleanup owners."""
+    """Expose execution and total deadlines to scenario cleanup owners."""
 
-    def __init__(self, deadline):
+    def __init__(self, deadline, execution_deadline):
         self.deadline = deadline
+        self.execution_deadline = execution_deadline
         self.expired = False
         self._cleanup_processes = []
 
     def remaining(self):
         return max(0.0, self.deadline - time.monotonic())
+
+    def execution_remaining(self):
+        """Return time before execution ends and the cleanup reserve begins."""
+        return max(0.0, self.execution_deadline - time.monotonic())
 
     def register_process(self, process):
         self._cleanup_processes.append(process)
@@ -119,7 +124,9 @@ def scenario_deadline(
     previous_timer = signal.getitimer(signal.ITIMER_REAL)
     started = time.monotonic()
     execution_seconds = seconds - cleanup_seconds
-    budget = ScenarioDeadlineBudget(started + seconds)
+    budget = ScenarioDeadlineBudget(
+        started + seconds, started + execution_seconds
+    )
     budget_token = _ACTIVE_DEADLINE.set(budget)
 
     def expire(_signum, _frame):

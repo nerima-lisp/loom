@@ -16,6 +16,7 @@ from loom_e2e.deadline import (
     SCENARIO_EXECUTION_TIMEOUT_SECONDS,
     SCENARIO_TIMEOUT_SECONDS,
     ScenarioCleanupDeadlineExceeded,
+    ScenarioDeadlineBudget,
     ScenarioDeadlineExceeded,
     current_deadline,
     run_scenario,
@@ -60,6 +61,15 @@ class ScenarioDeadlineTests(unittest.TestCase):
         self.addCleanup(process.close)
         self.assertFalse(process.has_exited())
         return process
+
+    def test_budget_separates_execution_time_from_cleanup_reserve(self):
+        budget = ScenarioDeadlineBudget(110.0, 105.0)
+        with mock.patch("loom_e2e.deadline.time.monotonic", return_value=103.5):
+            self.assertEqual(budget.execution_remaining(), 1.5)
+            self.assertEqual(budget.remaining(), 6.5)
+        with mock.patch("loom_e2e.deadline.time.monotonic", return_value=106.0):
+            self.assertEqual(budget.execution_remaining(), 0.0)
+            self.assertEqual(budget.remaining(), 4.0)
 
     def test_run_scenario_enforces_total_deadline(self):
         def slow(_binary):

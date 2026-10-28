@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, Mock, patch
 from loom_e2e import keys, registry
 from loom_e2e.benchmarks import (
     _redraw_samples,
+    _measure_large_file_open,
     benchmark_scenarios,
     build_benchmark_report,
 )
@@ -561,7 +562,10 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         expected = {
             "startup": ("startup_to_first_screen_seconds", "seconds"),
             "redraw": ("input_to_redraw_p95_milliseconds", "milliseconds"),
-            "large-file-open": ("open_100000_lines_5mb_seconds", "seconds"),
+            "large-file-open": (
+                "open_100000_lines_5mb_seconds",
+                "end_of_buffer_100000_lines_5mb_seconds",
+            ),
         }
         for scenario_name, scenario in benchmark_scenarios().items():
             with self.subTest(scenario=scenario_name):
@@ -580,16 +584,22 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                             run_scenario(scenario, "unused")
 
                 category = scenario_name.rsplit("-trial-", 1)[0]
-                metric, unit = expected[category]
                 measurements = [
                     item
                     for item in result.observations
                     if item["type"] == "benchmark_measurement"
                 ]
-                self.assertEqual(len(measurements), 1)
-                self.assertEqual(measurements[0]["metric"], metric)
-                self.assertEqual(measurements[0]["unit"], unit)
-                self.assertIsInstance(measurements[0]["actual"], (int, float))
+                if category == "large-file-open":
+                    metrics = expected[category]
+                    unit = "seconds"
+                else:
+                    metric, unit = expected[category]
+                    metrics = (metric,)
+                self.assertEqual(len(measurements), len(metrics))
+                for measurement, metric in zip(measurements, metrics):
+                    self.assertEqual(measurement["metric"], metric)
+                    self.assertEqual(measurement["unit"], unit)
+                    self.assertIsInstance(measurement["actual"], (int, float))
 
                 with tempfile.TemporaryDirectory() as directory:
                     result_path = result.save(directory)
@@ -601,6 +611,108 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                     if item["type"] == "benchmark_measurement"
                 ]
                 self.assertEqual(saved, measurements)
+
+    def test_open_timeout_keeps_elapsed_sample_and_marks_first_row_missing(self):
+        class Clock:
+            now = 20.0
+
+            def monotonic(self):
+                return self.now
+
+        class Deadline:
+            expired = False
+
+            def execution_remaining(self):
+                return 3.5
+
+        clock = Clock()
+        session = MagicMock()
+        session.__enter__.return_value = session
+        session.__exit__.return_value = False
+
+        def expire_open(_marker, timeout):
+            clock.now += timeout
+            raise TimeoutError("execution deadline expired")
+
+        session.wait_for_text.side_effect = expire_open
+        result_artifact = ScenarioResult("timed out open benchmark")
+        with patch("loom_e2e.benchmarks.current_deadline", return_value=Deadline()):
+            with patch("loom_e2e.benchmarks.Session", return_value=session):
+                with patch("loom_e2e.benchmarks._large_file", return_value=(
+                    100_000, 5_000_000
+                )):
+                    with patch("loom_e2e.benchmarks.os.path.getsize", return_value=5_000_000):
+                        with patch("loom_e2e.benchmarks.time.monotonic", clock.monotonic):
+                            with capture_scenario(result_artifact):
+                                result = _measure_large_file_open("unused")
+
+        self.assertEqual(result["open_100000_lines_5mb_seconds"], 3.5)
+        self.assertEqual(result["samples"], [3.5])
+        self.assertFalse(result["first_row_observed"])
+        self.assertIsNone(result["end_of_buffer_100000_lines_5mb_seconds"])
+        self.assertEqual(
+            result_artifact.observations[-1]["metric"],
+            "open_100000_lines_5mb_seconds",
+        )
+        self.assertEqual(result_artifact.observations[-1]["actual"], 3.5)
+        self.assertFalse(result_artifact.observations[-1]["first_row_observed"])
+        session.wait_for_text.assert_called_once_with(
+            "LOOM_E2E_OPEN_BENCHMARK", timeout=3.5
+        )
+        session.quit.assert_not_called()
+
+    def test_open_first_row_and_end_of_buffer_have_separate_intervals(self):
+        class Clock:
+            now = 30.0
+
+            def monotonic(self):
+                return self.now
+
+        class Deadline:
+            expired = False
+
+            def execution_remaining(self):
+                return 5.0
+
+        clock = Clock()
+        session = MagicMock()
+        session.__enter__.return_value = session
+        session.__exit__.return_value = False
+
+        def render_marker(marker, *, timeout):
+            clock.now += (
+                0.8
+                if marker == "LOOM_E2E_OPEN_BENCHMARK"
+                else 1.7
+            )
+
+        session.wait_for_text.side_effect = render_marker
+        artifact = ScenarioResult("separate open and EOF intervals")
+        with patch("loom_e2e.benchmarks.current_deadline", return_value=Deadline()):
+            with patch("loom_e2e.benchmarks.Session", return_value=session):
+                with patch("loom_e2e.benchmarks._large_file", return_value=(
+                    100_000, 5_000_000
+                )):
+                    with patch("loom_e2e.benchmarks.os.path.getsize", return_value=5_000_000):
+                        with patch("loom_e2e.benchmarks.time.monotonic", clock.monotonic):
+                            with capture_scenario(artifact):
+                                result = _measure_large_file_open("unused")
+
+        self.assertAlmostEqual(result["open_100000_lines_5mb_seconds"], 0.8)
+        self.assertAlmostEqual(
+            result["end_of_buffer_100000_lines_5mb_seconds"], 1.7
+        )
+        self.assertAlmostEqual(result["samples"][0], 0.8)
+        self.assertAlmostEqual(result["eof_samples"][0], 1.7)
+        self.assertEqual(
+            [item["metric"] for item in artifact.observations],
+            [
+                "open_100000_lines_5mb_seconds",
+                "end_of_buffer_100000_lines_5mb_seconds",
+            ],
+        )
+        for item, expected in zip(artifact.observations, (0.8, 1.7)):
+            self.assertAlmostEqual(item["actual"], expected)
 
 
     def test_benchmark_report_aggregates_fixed_independent_trials(self):
@@ -620,16 +732,28 @@ class BenchmarkMeasurementTests(unittest.TestCase):
             "large-file-open-trial-1": {
                 "open_100000_lines_5mb_seconds": 0.8,
                 "samples": [0.8],
+                "first_row_observed": True,
+                "end_of_buffer_100000_lines_5mb_seconds": 0.2,
+                "eof_samples": [0.2],
+                "last_line_observed": True,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
             "large-file-open-trial-2": {
                 "open_100000_lines_5mb_seconds": 1.2,
                 "samples": [1.2],
+                "first_row_observed": True,
+                "end_of_buffer_100000_lines_5mb_seconds": 3.0,
+                "eof_samples": [3.0],
+                "last_line_observed": False,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
             "large-file-open-trial-3": {
                 "open_100000_lines_5mb_seconds": 0.9,
                 "samples": [0.9],
+                "first_row_observed": True,
+                "end_of_buffer_100000_lines_5mb_seconds": 0.3,
+                "eof_samples": [0.3],
+                "last_line_observed": True,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
         }
@@ -650,6 +774,30 @@ class BenchmarkMeasurementTests(unittest.TestCase):
             report["measurements"]["open_100000_lines_5mb_seconds"], 0.9
         )
         self.assertEqual(
+            report["samples"]["open_100000_lines_5mb_seconds"],
+            [0.8, 1.2, 0.9],
+        )
+        self.assertEqual(
+            report["informational_measurements"][
+                "end_of_buffer_100000_lines_5mb_seconds"
+            ],
+            0.3,
+        )
+        self.assertEqual(
+            report["informational_samples"][
+                "end_of_buffer_100000_lines_5mb_seconds"
+            ],
+            [0.2, 3.0, 0.3],
+        )
+        self.assertEqual(
+            report["informational_completion"][
+                "end_of_buffer_100000_lines_5mb_seconds"
+            ],
+            [True, False, True],
+        )
+        self.assertEqual(report["sample_completion"]["open_100000_lines_5mb_seconds"], [True, True, True])
+        self.assertTrue(report["within_targets"]["open_100000_lines_5mb"])
+        self.assertEqual(
             report["measurements"]["input_to_redraw_p95_milliseconds"], 95.0
         )
         self.assertEqual(len(report["samples"]["startup_to_first_screen_seconds"]), 3)
@@ -669,6 +817,42 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "open_100000_lines_5mb_seconds",
                 "input_to_redraw_p95_milliseconds",
             ],
+        )
+
+    def test_unobserved_open_trial_fails_target_with_its_elapsed_sample(self):
+        measurements = {
+            f"large-file-open-trial-{trial}": {
+                "open_100000_lines_5mb_seconds": value,
+                "samples": [value],
+                "first_row_observed": observed,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+                "eof_samples": [],
+            }
+            for trial, (value, observed) in enumerate(
+                ((0.8, True), (3.5, False), (0.9, True)), start=1
+            )
+        }
+
+        report = build_benchmark_report(measurements)
+
+        self.assertNotIn(
+            "open_100000_lines_5mb_seconds", report["missing_metrics"]
+        )
+        self.assertEqual(
+            report["measurements"]["open_100000_lines_5mb_seconds"], 0.9
+        )
+        self.assertEqual(
+            report["samples"]["open_100000_lines_5mb_seconds"],
+            [0.8, 3.5, 0.9],
+        )
+        self.assertFalse(report["within_targets"]["open_100000_lines_5mb"])
+        self.assertEqual(
+            report["sample_completion"]["open_100000_lines_5mb_seconds"],
+            [True, False, True],
+        )
+        self.assertEqual(
+            report["missing_informational_metrics"],
+            ["end_of_buffer_100000_lines_5mb_seconds"],
         )
 
 

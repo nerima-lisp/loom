@@ -313,6 +313,38 @@ class CoverageCliTests(unittest.TestCase):
             self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
             self.assertFalse(any(report["within_targets"].values()))
 
+    def test_benchmark_mode_prints_timed_out_open_sample(self):
+        def trial(value, first_row_observed):
+            return lambda _binary: {
+                "open_100000_lines_5mb_seconds": value,
+                "samples": [value],
+                "first_row_observed": first_row_observed,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+                "eof_samples": [],
+            }
+
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(
+                cli,
+                "benchmark_scenarios",
+                return_value={
+                    "large-file-open-trial-1": trial(0.8, True),
+                    "large-file-open-trial-2": trial(3.5, False),
+                    "large-file-open-trial-3": trial(0.9, True),
+                },
+            ):
+                self.assertEqual(cli.main([
+                    "--benchmarks", "--artifacts-dir", directory,
+                ]), 0)
+
+        self.assertIn(
+            "open_100000_lines_5mb_seconds: 0.900 (target 1; over target; "
+            "first row not observed by execution deadline; "
+            "samples=[0.8, 3.5, 0.9])",
+            self.stdout.getvalue(),
+        )
+
     def test_benchmark_mode_reports_failed_scenarios_as_missing_metrics(self):
         def startup(binary):
             return {"startup_to_first_screen_seconds": 0.2}

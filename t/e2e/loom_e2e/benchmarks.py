@@ -12,6 +12,7 @@ from .deadline import (
     SCENARIO_CLEANUP_TIMEOUT_SECONDS,
     SCENARIO_EXECUTION_TIMEOUT_SECONDS,
     SCENARIO_TIMEOUT_SECONDS,
+    ScenarioCleanupDeadlineExceeded,
     current_deadline,
 )
 from .results import record_observation
@@ -84,13 +85,34 @@ def _require_active_deadline():
         raise RuntimeError("PTY benchmarks require an active scenario deadline")
 
 
-def _record_measurement(metric, value, unit, samples=None):
+def _record_measurement(metric, value, unit, samples=None, **extra_details):
     details = {"metric": metric, "unit": unit}
     if samples is not None:
         details["samples"] = samples
+    details.update(extra_details)
     record_observation(
         "benchmark_measurement", value, **details
     )
+
+
+def _mark_execution_deadline_if_expired(budget):
+    if budget.execution_remaining() <= 0:
+        budget.expired = True
+
+
+def _wait_for_benchmark_text(session, text, budget, started):
+    timeout = budget.execution_remaining()
+    if timeout <= 0:
+        budget.expired = True
+        return time.monotonic() - started, False
+    try:
+        session.wait_for_text(text, timeout=timeout)
+    except ScenarioCleanupDeadlineExceeded:
+        raise
+    except TimeoutError:
+        _mark_execution_deadline_if_expired(budget)
+        return time.monotonic() - started, False
+    return time.monotonic() - started, True
 
 
 def _measure_startup(binary):
@@ -143,27 +165,24 @@ def _measure_large_file_open(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-benchmark-") as directory:
         path = os.path.join(directory, "large.txt")
         line_count, byte_count = _large_file(path)
+        eof_elapsed = None
+        eof_reached = False
         with Session(binary) as session:
             session.wait_ready()
             session.send(keys.ctrl("x") + keys.ctrl("f"))
-            session.wait_for_region_text("minibuffer", "Find file: ")
-            started = time.monotonic()
+            session.wait_for_region_text(
+                "minibuffer", "Find file: ",
+                timeout=budget.execution_remaining(),
+            )
             session.type(path)
+            started = time.monotonic()
             session.key("RET")
-            session.wait_for_text(
-                _OPEN_MARKER.decode("ascii"), timeout=budget.remaining()
+            measurement, first_row_observed = _wait_for_benchmark_text(
+                session,
+                _OPEN_MARKER.decode("ascii"),
+                budget,
+                started,
             )
-            session.wait_for_region_cursor(
-                "body", 0, timeout=budget.remaining()
-            )
-            session.extended_command(
-                "end-of-buffer", timeout=budget.remaining()
-            )
-            session.wait_for_text(
-                _OPEN_LAST_LINE_MARKER.decode("ascii"),
-                timeout=budget.remaining(),
-            )
-            measurement = time.monotonic() - started
             session.observe_external_state(
                 "benchmark input size",
                 os.path.getsize(path),
@@ -174,14 +193,52 @@ def _measure_large_file_open(binary):
                 line_count,
                 expected=_LINE_COUNT,
             )
-            session.quit()
-        samples = [measurement]
-        _record_measurement(
-            "open_100000_lines_5mb_seconds", measurement, "seconds", samples
-        )
+            samples = [measurement]
+            _record_measurement(
+                "open_100000_lines_5mb_seconds",
+                measurement,
+                "seconds",
+                samples,
+                first_row_observed=first_row_observed,
+            )
+            if first_row_observed:
+                try:
+                    session.send(keys.meta("x"))
+                    session.wait_for_region_text(
+                        "minibuffer", "M-x ",
+                        timeout=budget.execution_remaining(),
+                    )
+                    session.type("end-of-buffer")
+                    eof_started = time.monotonic()
+                    session.key("RET")
+                    eof_elapsed, eof_reached = _wait_for_benchmark_text(
+                        session,
+                        _OPEN_LAST_LINE_MARKER.decode("ascii"),
+                        budget,
+                        eof_started,
+                    )
+                except ScenarioCleanupDeadlineExceeded:
+                    raise
+                except TimeoutError:
+                    _mark_execution_deadline_if_expired(budget)
+                    pass
+                if eof_elapsed is not None:
+                    _record_measurement(
+                        "end_of_buffer_100000_lines_5mb_seconds",
+                        eof_elapsed,
+                        "seconds",
+                        [eof_elapsed],
+                        last_line_observed=eof_reached,
+                    )
+            if first_row_observed and eof_reached:
+                session.quit()
     return {
         "open_100000_lines_5mb_seconds": measurement,
         "samples": samples,
+        "first_row_observed": first_row_observed,
+        "end_of_buffer_100000_lines_5mb_seconds": eof_elapsed,
+        "eof_samples": [eof_elapsed] if eof_elapsed is not None else [],
+        "last_line_observed": eof_reached,
         "input": {"lines": line_count, "bytes": byte_count},
     }
 
@@ -216,9 +273,17 @@ def benchmark_scenarios(registered=None):
     return scenarios
 
 
-def _aggregate_trials(measurements, scenario, metric, sample_count, aggregate):
+def _aggregate_trials(
+    measurements,
+    scenario,
+    metric,
+    sample_count,
+    aggregate,
+    sample_field="samples",
+    allow_direct=True,
+):
     direct = measurements.get(scenario)
-    if isinstance(direct, dict):
+    if allow_direct and isinstance(direct, dict):
         return direct
 
     trial_count = {
@@ -235,7 +300,7 @@ def _aggregate_trials(measurements, scenario, metric, sample_count, aggregate):
 
     samples = []
     for trial in trials:
-        trial_samples = trial.get("samples")
+        trial_samples = trial.get(sample_field)
         if not isinstance(trial_samples, list):
             return None
         samples.extend(trial_samples)
@@ -244,6 +309,14 @@ def _aggregate_trials(measurements, scenario, metric, sample_count, aggregate):
 
     result = {metric: aggregate(samples), "samples": samples}
     if scenario == "large-file-open":
+        result["completed_samples"] = [
+            trial.get(
+                "first_row_observed" if sample_field == "samples" else "last_line_observed",
+                True,
+            )
+            for trial in trials
+        ]
+        result["completed"] = all(result["completed_samples"])
         input_details = trials[0].get("input")
         if not isinstance(input_details, dict) or any(
             trial.get("input") != input_details for trial in trials
@@ -276,6 +349,7 @@ def build_benchmark_report(measurements):
     }
     values = {}
     samples = {}
+    sample_completion = {}
     missing_metrics = []
     targets = {}
     within_targets = {}
@@ -295,20 +369,51 @@ def build_benchmark_report(measurements):
             within_targets[gate] = False
             continue
         values[metric] = value
-        within_targets[gate] = value <= target
+        completed = result.get("completed", True)
+        within_targets[gate] = value <= target and completed
         if isinstance(result.get("samples"), list):
             samples[metric] = result["samples"]
+        if isinstance(result.get("completed_samples"), list):
+            sample_completion[metric] = result["completed_samples"]
+
+    eof_metric = "end_of_buffer_100000_lines_5mb_seconds"
+    eof_result = _aggregate_trials(
+        measurements,
+        "large-file-open",
+        eof_metric,
+        _FILE_OPEN_TRIALS,
+        statistics.median,
+        sample_field="eof_samples",
+        allow_direct=False,
+    )
+    informational_measurements = {}
+    informational_samples = {}
+    informational_completion = {}
+    missing_informational_metrics = []
+    if isinstance(eof_result, dict):
+        informational_measurements[eof_metric] = eof_result[eof_metric]
+        informational_samples[eof_metric] = eof_result["samples"]
+        informational_completion[eof_metric] = eof_result["completed_samples"]
+    else:
+        missing_informational_metrics.append(eof_metric)
     report = {
         "measurements": values,
         "samples": samples,
+        "sample_completion": sample_completion,
+        "informational_measurements": informational_measurements,
+        "informational_samples": informational_samples,
+        "informational_completion": informational_completion,
         "targets": targets,
         "within_targets": within_targets,
         "missing_metrics": missing_metrics,
+        "missing_informational_metrics": missing_informational_metrics,
         "protocol": {
             "startup_samples": _STARTUP_TRIALS,
             "startup_aggregation": "median of independent processes",
             "file_open_samples": _FILE_OPEN_TRIALS,
             "file_open_aggregation": "median of independent processes",
+            "end_of_buffer_samples": _FILE_OPEN_TRIALS,
+            "end_of_buffer_aggregation": "median of independent processes",
             "redraw_samples": _REDRAW_SAMPLES,
             "redraw_aggregation": "nearest-rank p95",
             "redraw_batches": _REDRAW_BATCHES,
@@ -319,8 +424,18 @@ def build_benchmark_report(measurements):
                 "64-character buffer"
             ),
             "file_open_interval": (
-                "from filename entry after the Find file prompt to rendering "
-                "the unique last-line marker after end-of-buffer"
+                "from RET after filename entry to the first visible row marker; "
+                "if the execution deadline expires first, record elapsed time "
+                "as a lower bound and mark the row unobserved"
+            ),
+            "file_open_deadline": (
+                "uses the remaining existing 5-second execution budget; fixture "
+                "creation and PTY startup consume that budget but are excluded "
+                "from the measured interval"
+            ),
+            "end_of_buffer_interval": (
+                "from RET invoking end-of-buffer to rendering the unique "
+                "last-line marker; informational only, with no target"
             ),
             "scenario_deadline_seconds": SCENARIO_TIMEOUT_SECONDS,
             "execution_budget_seconds": SCENARIO_EXECUTION_TIMEOUT_SECONDS,

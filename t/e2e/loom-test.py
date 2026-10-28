@@ -218,12 +218,43 @@ def main(argv):
                 print(f"{metric}: missing (target {target:g})")
                 continue
             value = report["measurements"][metric]
-            status = (
-                "within target"
-                if report["within_targets"][target_gate_names[metric]]
-                else "over target"
+            completed = report["sample_completion"].get(metric)
+            if completed and not all(completed):
+                samples = report["samples"].get(metric, [])
+                missed_samples = [
+                    sample
+                    for sample, reached in zip(samples, completed)
+                    if not reached
+                ]
+                status = (
+                    "over target; first row not observed by execution deadline"
+                    if any(sample > target for sample in missed_samples)
+                    else "first row not observed by execution deadline"
+                )
+                sample_text = "; samples=" + repr(samples)
+            else:
+                status = (
+                    "within target"
+                    if report["within_targets"][target_gate_names[metric]]
+                    else "over target"
+                )
+                sample_text = ""
+            print(
+                f"{metric}: {value:.3f} (target {target:g}; {status}"
+                f"{sample_text})"
             )
-            print(f"{metric}: {value:.3f} (target {target:g}; {status})")
+        for metric, value in report["informational_measurements"].items():
+            completed = report["informational_completion"][metric]
+            status = (
+                "last line observed"
+                if all(completed)
+                else "last line not observed before the execution deadline"
+            )
+            print(
+                f"{metric}: {value:.3f} (informational; no threshold; {status})"
+            )
+        for metric in report["missing_informational_metrics"]:
+            print(f"{metric}: missing (informational; no complete sample set)")
         if benchmark_errors:
             print(
                 "benchmark scenarios failed; affected metrics are reported as missing: "
