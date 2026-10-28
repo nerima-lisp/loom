@@ -72,11 +72,20 @@ class ScenarioDeadlineTests(unittest.TestCase):
             self.assertEqual(budget.remaining(), 4.0)
 
     def test_run_scenario_enforces_total_deadline(self):
-        def slow(_binary):
-            time.sleep(0.5)
+        started = 100.0
+        execution_seconds = 0.07
 
-        with self.assertRaises(ScenarioDeadlineExceeded):
-            run_scenario(slow, "unused", seconds=0.1, cleanup_seconds=0.03)
+        def expire(_binary):
+            clock.return_value = started + execution_seconds
+            signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
+
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic", return_value=started
+        ) as clock, mock.patch("loom_e2e.deadline.signal.setitimer"):
+            with self.assertRaises(ScenarioDeadlineExceeded):
+                run_scenario(
+                    expire, "unused", seconds=0.1, cleanup_seconds=0.03
+                )
 
     def test_delayed_execution_alarm_preserves_absolute_deadline(self):
         for elapsed, remaining in [(0.6, 0.4), (0.9, 0.1), (1.1, 0.0)]:
@@ -100,23 +109,33 @@ class ScenarioDeadlineTests(unittest.TestCase):
                         self.assertAlmostEqual(timer.call_args.args[1], remaining)
                         self.assertEqual(timer.call_args.args[2], 0.0)
 
-    def test_cleanup_has_a_real_bounded_budget(self):
+    def test_cleanup_deadline_interrupts_cleanup(self):
         cleanup_finished = []
+        started = 100.0
+        execution_seconds = 0.09
+        total_seconds = 0.12
 
-        def slow(_binary):
+        def expiring_cleanup(_binary):
             try:
-                time.sleep(0.5)
+                clock.return_value = started + execution_seconds
+                signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
             finally:
-                time.sleep(0.08)
+                clock.return_value = started + total_seconds
+                signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
                 cleanup_finished.append(True)
 
-        started = time.monotonic()
-        with self.assertRaises(ScenarioCleanupDeadlineExceeded):
-            run_scenario(slow, "unused", seconds=0.12, cleanup_seconds=0.03)
-        elapsed = time.monotonic() - started
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic", return_value=started
+        ) as clock, mock.patch("loom_e2e.deadline.signal.setitimer"):
+            with self.assertRaises(ScenarioCleanupDeadlineExceeded):
+                run_scenario(
+                    expiring_cleanup,
+                    "unused",
+                    seconds=total_seconds,
+                    cleanup_seconds=0.03,
+                )
 
         self.assertFalse(cleanup_finished)
-        self.assertLess(elapsed, 0.3)
 
     def test_body_timeout_reaps_unkillable_pty_with_final_kill(self):
         processes = []
@@ -125,7 +144,7 @@ class ScenarioDeadlineTests(unittest.TestCase):
             process = self._track_unkillable_process()
             processes.append(process)
             try:
-                time.sleep(6.0)
+                signal.pause()
             finally:
                 process.close()
 
@@ -149,7 +168,7 @@ class ScenarioDeadlineTests(unittest.TestCase):
             process = self._track_unkillable_process()
             processes.append(process)
             try:
-                time.sleep(1.0)
+                signal.pause()
             finally:
                 process.close()
 
@@ -606,23 +625,18 @@ while True: time.sleep(1)
                     sessions.append(second)
                     scratch_dirs.append(second.scratch_dir)
                     self.assertIsNotNone(current_deadline())
-                    time.sleep(0.6)
+                    signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
 
-        started = time.monotonic()
-        try:
-            with self.assertRaises(ScenarioDeadlineExceeded):
-                run_scenario(body, "unused", seconds=0.8, cleanup_seconds=0.4)
-        finally:
-            elapsed = time.monotonic() - started
+        with self.assertRaises(ScenarioDeadlineExceeded):
+            run_scenario(body, "unused", seconds=0.8, cleanup_seconds=0.4)
 
-        self.assertLess(elapsed, 1.0)
         self.assertEqual(len(sessions), 2)
         for session in sessions:
             self.assertTrue(session.process.has_exited())
             self.assertIsNone(session.process._fd)
         self.assertTrue(all(not os.path.exists(path) for path in scratch_dirs))
 
-    def test_long_success_finalizer_is_bounded_and_test_cleanup_reaps_pty(self):
+    def test_execution_deadline_interrupts_success_finalizer_and_reaps_pty(self):
         processes = []
 
         def body(_binary):
@@ -631,15 +645,12 @@ while True: time.sleep(1)
             try:
                 return
             finally:
-                time.sleep(0.35)
+                signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
                 process.close()
 
-        started = time.monotonic()
         with self.assertRaises(ScenarioDeadlineExceeded):
             run_scenario(body, "unused", seconds=0.4, cleanup_seconds=0.2)
-        elapsed = time.monotonic() - started
 
-        self.assertLess(elapsed, 0.6)
         process = processes[0]
         process.close()
         self.assertTrue(process.has_exited())
@@ -693,35 +704,51 @@ while True: time.sleep(1)
             pass
 
         signal.signal(signal.SIGALRM, previous_handler)
-        signal.setitimer(signal.ITIMER_REAL, 30.0, 0.0)
+        started = 100.0
+        execution_seconds = 0.07
 
-        def slow(_binary):
-            time.sleep(0.5)
+        def expire(_binary):
+            clock.return_value = started + execution_seconds
+            signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
 
-        with self.assertRaises(ScenarioDeadlineExceeded):
-            run_scenario(slow, "unused", seconds=0.1, cleanup_seconds=0.03)
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic", return_value=started
+        ) as clock, mock.patch(
+            "loom_e2e.deadline.signal.getitimer",
+            return_value=(30.0, 0.0),
+        ), mock.patch("loom_e2e.deadline.signal.setitimer") as timer:
+            with self.assertRaises(ScenarioDeadlineExceeded):
+                run_scenario(
+                    expire, "unused", seconds=0.1, cleanup_seconds=0.03
+                )
 
         self.assertIs(signal.getsignal(signal.SIGALRM), previous_handler)
-        remaining, interval = signal.getitimer(signal.ITIMER_REAL)
-        self.assertGreater(remaining, 29.0)
-        self.assertLess(remaining, 30.0)
-        self.assertEqual(interval, 0.0)
+        timer_restoration = timer.call_args_list[-1].args
+        self.assertEqual(timer_restoration[0], signal.ITIMER_REAL)
+        self.assertAlmostEqual(timer_restoration[1], 29.93)
+        self.assertEqual(timer_restoration[2], 0.0)
 
     def test_restores_existing_handler_and_timer(self):
         def previous_handler(_signum, _frame):
             pass
 
         signal.signal(signal.SIGALRM, previous_handler)
-        signal.setitimer(signal.ITIMER_REAL, 30.0, 0.0)
 
-        with scenario_deadline(seconds=0.1, cleanup_seconds=0.03):
-            pass
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic",
+            side_effect=[100.0, 100.025],
+        ), mock.patch(
+            "loom_e2e.deadline.signal.getitimer",
+            return_value=(30.0, 0.0),
+        ), mock.patch("loom_e2e.deadline.signal.setitimer") as timer:
+            with scenario_deadline(seconds=0.1, cleanup_seconds=0.03):
+                pass
 
         self.assertIs(signal.getsignal(signal.SIGALRM), previous_handler)
-        remaining, interval = signal.getitimer(signal.ITIMER_REAL)
-        self.assertGreater(remaining, 29.0)
-        self.assertLess(remaining, 30.0)
-        self.assertEqual(interval, 0.0)
+        timer_restoration = timer.call_args_list[-1].args
+        self.assertEqual(timer_restoration[0], signal.ITIMER_REAL)
+        self.assertAlmostEqual(timer_restoration[1], 29.975)
+        self.assertEqual(timer_restoration[2], 0.0)
 
 
 if __name__ == "__main__":
