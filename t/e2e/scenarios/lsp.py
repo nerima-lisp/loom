@@ -118,6 +118,15 @@ def _server_exit_fixture():
     return directory, path, status_path
 
 
+def _missing_server_fixture():
+    directory = tempfile.TemporaryDirectory(prefix="loom-e2e-missing-lsp-")
+    command = os.path.join(directory.name, "typescript-language-server-missing")
+    with open(os.path.join(directory.name, ".loom-lsp"), "w", encoding="utf-8") as handle:
+        handle.write("exec " + shlex.quote(command) + "\n")
+    path = write_buffer(directory.name, "main.ts", b"const value = 1;\nvalue;\n")
+    return directory, path, command
+
+
 def _start(session):
     session.extended_command("lsp-start")
     session.wait_for_text("LSP command [RET for")
@@ -864,5 +873,74 @@ def lsp_server_nonzero_exit(binary):
             session.wait_for_file(path, b"still usable updated\n")
             output, code = session.quit()
         assert_exit_zero("lsp-server-nonzero-exit", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-missing-server",
+    commands=[
+        "lsp-start",
+        "lsp-stop",
+        "lsp-diagnostics",
+        "lsp-completion-at-point",
+        "lsp-find-definition",
+        "lsp-find-references",
+        "lsp-hover-at-point",
+        "lsp-rename",
+        "lsp-format-buffer",
+    ],
+)
+def lsp_missing_server(binary):
+    directory, path, command = _missing_server_fixture()
+    no_session = "No LSP session for this buffer"
+    no_session_plain = "No LSP session."
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.extended_command("lsp-start")
+            session.wait_for_text("LSP command [RET for")
+            session.key("RET")
+            session.wait_for_text("Run discovered LSP command? Type yes: ")
+            session.type("yes")
+            session.key("RET")
+            session.wait_for_text("LSP start failed:")
+            session.assert_screen_text(
+                "LSP start failed:", match="contains", region="minibuffer"
+            )
+            session.assert_external_state(
+                "configured TypeScript server executable is absent",
+                os.path.exists(command),
+                False,
+            )
+
+            for name, message in (
+                ("lsp-stop", no_session_plain),
+                ("lsp-diagnostics", no_session_plain),
+                ("lsp-completion-at-point", no_session),
+                ("lsp-find-definition", no_session),
+                ("lsp-find-references", no_session),
+                ("lsp-hover-at-point", no_session),
+                ("lsp-rename", no_session),
+                ("lsp-format-buffer", no_session),
+            ):
+                if name == "lsp-completion-at-point":
+                    session.send(b"\x1b[105;7u")
+                elif name == "lsp-find-definition":
+                    session.send(keys.meta("."))
+                else:
+                    session.extended_command(name)
+                session.wait_for_text(message)
+                session.assert_screen_text(
+                    message, match="contains", region="minibuffer"
+                )
+                session.assert_external_state(
+                    "configured TypeScript server executable remains absent",
+                    os.path.exists(command),
+                    False,
+                )
+
+            output, code = session.quit()
+        assert_exit_zero("lsp-missing-server", output, code)
     finally:
         directory.cleanup()
