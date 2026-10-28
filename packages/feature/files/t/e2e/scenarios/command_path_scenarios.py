@@ -569,6 +569,7 @@ def _assert_initial_files_r3_state(session, case, path):
             line, region="body", index=index, strip_right=True
         ) is not True:
             raise AssertionError(f"{case['name']} initial body row {index} did not match")
+    session.wait_for_region_cursor("body", 0, index=0)
     if session.observe_cursor(expected=(0, 0), region="body") is not True:
         raise AssertionError(f"{case['name']} did not start at the declared buffer origin")
 
@@ -781,7 +782,9 @@ def _run_files_mutation_scenario(binary, case):
     with TemporaryDirectory(prefix="loom-e2e-files-command-path-") as directory:
         path = Path(directory) / "buffer.txt"
         path.write_bytes(case["initial_bytes"].encode("utf-8"))
-        runtime_case = _expand(case, {"{file_path}": str(path)})
+        runtime_case = _expand(
+            case, {"{file_path}": str(path.resolve(strict=False))}
+        )
         with Session(
             binary,
             [str(path)],
