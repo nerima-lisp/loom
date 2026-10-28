@@ -562,9 +562,10 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         expected = {
             "startup": ("startup_to_first_screen_seconds", "seconds"),
             "redraw": ("input_to_redraw_p95_milliseconds", "milliseconds"),
-            "large-file-open": (
-                "open_100000_lines_5mb_seconds",
+            "large-file-open": ("open_100000_lines_5mb_seconds", "seconds"),
+            "large-file-eof": (
                 "end_of_buffer_100000_lines_5mb_seconds",
+                "seconds",
             ),
         }
         for scenario_name, scenario in benchmark_scenarios().items():
@@ -584,22 +585,16 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                             run_scenario(scenario, "unused")
 
                 category = scenario_name.rsplit("-trial-", 1)[0]
-                measurements = [
+                metric, unit = expected[category]
+                observations = [
                     item
                     for item in result.observations
                     if item["type"] == "benchmark_measurement"
                 ]
-                if category == "large-file-open":
-                    metrics = expected[category]
-                    unit = "seconds"
-                else:
-                    metric, unit = expected[category]
-                    metrics = (metric,)
-                self.assertEqual(len(measurements), len(metrics))
-                for measurement, metric in zip(measurements, metrics):
-                    self.assertEqual(measurement["metric"], metric)
-                    self.assertEqual(measurement["unit"], unit)
-                    self.assertIsInstance(measurement["actual"], (int, float))
+                self.assertEqual(len(observations), 1)
+                self.assertEqual(observations[0]["metric"], metric)
+                self.assertEqual(observations[0]["unit"], unit)
+                self.assertIsInstance(observations[0]["actual"], (int, float))
 
                 with tempfile.TemporaryDirectory() as directory:
                     result_path = result.save(directory)
@@ -610,7 +605,7 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                     for item in payload["observations"]
                     if item["type"] == "benchmark_measurement"
                 ]
-                self.assertEqual(saved, measurements)
+                self.assertEqual(saved, observations)
 
     def test_open_timeout_keeps_elapsed_sample_and_marks_first_row_missing(self):
         class Clock:
@@ -649,7 +644,6 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         self.assertEqual(result["open_100000_lines_5mb_seconds"], 3.5)
         self.assertEqual(result["samples"], [3.5])
         self.assertFalse(result["first_row_observed"])
-        self.assertIsNone(result["end_of_buffer_100000_lines_5mb_seconds"])
         self.assertEqual(
             result_artifact.observations[-1]["metric"],
             "open_100000_lines_5mb_seconds",
@@ -661,23 +655,20 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         )
         session.quit.assert_not_called()
 
-    def test_open_first_row_and_end_of_buffer_have_separate_intervals(self):
+    def test_open_and_eof_use_separate_scenarios_and_keep_both_measurements(self):
         class Clock:
             now = 30.0
 
             def monotonic(self):
                 return self.now
 
-        class Deadline:
-            expired = False
-
-            def execution_remaining(self):
-                return 5.0
-
         clock = Clock()
-        session = MagicMock()
-        session.__enter__.return_value = session
-        session.__exit__.return_value = False
+        open_session = MagicMock()
+        open_session.__enter__.return_value = open_session
+        open_session.__exit__.return_value = False
+        eof_session = MagicMock()
+        eof_session.__enter__.return_value = eof_session
+        eof_session.__exit__.return_value = False
 
         def render_marker(marker, *, timeout):
             clock.now += (
@@ -686,33 +677,70 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 else 1.7
             )
 
-        session.wait_for_text.side_effect = render_marker
-        artifact = ScenarioResult("separate open and EOF intervals")
-        with patch("loom_e2e.benchmarks.current_deadline", return_value=Deadline()):
-            with patch("loom_e2e.benchmarks.Session", return_value=session):
-                with patch("loom_e2e.benchmarks._large_file", return_value=(
-                    100_000, 5_000_000
-                )):
-                    with patch("loom_e2e.benchmarks.os.path.getsize", return_value=5_000_000):
-                        with patch("loom_e2e.benchmarks.time.monotonic", clock.monotonic):
+        open_session.wait_for_text.side_effect = render_marker
+        eof_session.wait_for_text.side_effect = render_marker
+        scenarios = benchmark_scenarios()
+        self.assertIsNot(
+            scenarios["large-file-open-trial-1"],
+            scenarios["large-file-eof-trial-1"],
+        )
+        artifacts = []
+        results = []
+        with patch(
+            "loom_e2e.benchmarks.Session",
+            side_effect=[open_session, eof_session],
+        ):
+            with patch(
+                "loom_e2e.benchmarks._large_file",
+                return_value=(100_000, 5_000_000),
+            ):
+                with patch(
+                    "loom_e2e.benchmarks.os.path.getsize",
+                    return_value=5_000_000,
+                ):
+                    with patch(
+                        "loom_e2e.benchmarks.time.monotonic", clock.monotonic
+                    ):
+                        for name in (
+                            "large-file-open-trial-1",
+                            "large-file-eof-trial-1",
+                        ):
+                            artifact = ScenarioResult(name)
                             with capture_scenario(artifact):
-                                result = _measure_large_file_open("unused")
+                                results.append(
+                                    run_scenario(scenarios[name], "unused")
+                                )
+                            artifacts.append(artifact)
 
-        self.assertAlmostEqual(result["open_100000_lines_5mb_seconds"], 0.8)
-        self.assertAlmostEqual(
-            result["end_of_buffer_100000_lines_5mb_seconds"], 1.7
-        )
-        self.assertAlmostEqual(result["samples"][0], 0.8)
-        self.assertAlmostEqual(result["eof_samples"][0], 1.7)
+        open_result, eof_result = results
+        self.assertAlmostEqual(open_result["open_100000_lines_5mb_seconds"], 0.8)
+        self.assertAlmostEqual(eof_result["end_of_buffer_100000_lines_5mb_seconds"], 1.7)
+        self.assertAlmostEqual(open_result["samples"][0], 0.8)
+        self.assertAlmostEqual(eof_result["eof_samples"][0], 1.7)
         self.assertEqual(
-            [item["metric"] for item in artifact.observations],
-            [
-                "open_100000_lines_5mb_seconds",
-                "end_of_buffer_100000_lines_5mb_seconds",
-            ],
+            [item["metric"] for item in artifacts[0].observations],
+            ["open_100000_lines_5mb_seconds"],
         )
-        for item, expected in zip(artifact.observations, (0.8, 1.7)):
-            self.assertAlmostEqual(item["actual"], expected)
+        self.assertEqual(
+            [item["metric"] for item in artifacts[1].observations],
+            ["end_of_buffer_100000_lines_5mb_seconds"],
+        )
+        self.assertAlmostEqual(
+            open_session.wait_for_region_text.call_args.kwargs["timeout"],
+            5.0,
+        )
+        eof_setup_timeouts = [
+            call.kwargs["timeout"]
+            for call in eof_session.wait_for_region_text.call_args_list
+        ]
+        self.assertAlmostEqual(eof_setup_timeouts[0], 5.0)
+        self.assertAlmostEqual(eof_setup_timeouts[1], 4.2)
+        open_session.send.assert_called_once_with(keys.ctrl("x") + keys.ctrl("f"))
+        open_session.type.assert_called_once()
+        open_session.quit.assert_called_once_with()
+        eof_session.send.assert_any_call(keys.meta("x"))
+        eof_session.type.assert_any_call("end-of-buffer")
+        eof_session.quit.assert_called_once_with()
 
 
     def test_benchmark_report_aggregates_fixed_independent_trials(self):
@@ -733,30 +761,30 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "open_100000_lines_5mb_seconds": 0.8,
                 "samples": [0.8],
                 "first_row_observed": True,
-                "end_of_buffer_100000_lines_5mb_seconds": 0.2,
-                "eof_samples": [0.2],
-                "last_line_observed": True,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
             "large-file-open-trial-2": {
                 "open_100000_lines_5mb_seconds": 1.2,
                 "samples": [1.2],
                 "first_row_observed": True,
-                "end_of_buffer_100000_lines_5mb_seconds": 3.0,
-                "eof_samples": [3.0],
-                "last_line_observed": False,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
             "large-file-open-trial-3": {
                 "open_100000_lines_5mb_seconds": 0.9,
                 "samples": [0.9],
                 "first_row_observed": True,
-                "end_of_buffer_100000_lines_5mb_seconds": 0.3,
-                "eof_samples": [0.3],
-                "last_line_observed": True,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
         }
+        for trial, (value, observed) in enumerate(
+            ((0.2, True), (3.0, False), (0.3, True)), start=1
+        ):
+            measurements[f"large-file-eof-trial-{trial}"] = {
+                "end_of_buffer_100000_lines_5mb_seconds": value,
+                "eof_samples": [value],
+                "last_line_observed": observed,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            }
         for batch in range(4):
             first = batch * 25 + 1
             values = [float(value) for value in range(first, first + 25)]
@@ -826,7 +854,6 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "samples": [value],
                 "first_row_observed": observed,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
-                "eof_samples": [],
             }
             for trial, (value, observed) in enumerate(
                 ((0.8, True), (3.5, False), (0.9, True)), start=1

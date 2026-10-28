@@ -115,6 +115,24 @@ def _wait_for_benchmark_text(session, text, budget, started):
     return time.monotonic() - started, True
 
 
+def _open_benchmark_file(session, path, budget):
+    session.wait_ready()
+    session.send(keys.ctrl("x") + keys.ctrl("f"))
+    session.wait_for_region_text(
+        "minibuffer", "Find file: ",
+        timeout=budget.execution_remaining(),
+    )
+    session.type(path)
+    started = time.monotonic()
+    session.key("RET")
+    return _wait_for_benchmark_text(
+        session,
+        _OPEN_MARKER.decode("ascii"),
+        budget,
+        started,
+    )
+
+
 def _measure_startup(binary):
     _require_active_deadline()
     with Session(binary) as session:
@@ -165,23 +183,9 @@ def _measure_large_file_open(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-benchmark-") as directory:
         path = os.path.join(directory, "large.txt")
         line_count, byte_count = _large_file(path)
-        eof_elapsed = None
-        eof_reached = False
         with Session(binary) as session:
-            session.wait_ready()
-            session.send(keys.ctrl("x") + keys.ctrl("f"))
-            session.wait_for_region_text(
-                "minibuffer", "Find file: ",
-                timeout=budget.execution_remaining(),
-            )
-            session.type(path)
-            started = time.monotonic()
-            session.key("RET")
-            measurement, first_row_observed = _wait_for_benchmark_text(
-                session,
-                _OPEN_MARKER.decode("ascii"),
-                budget,
-                started,
+            measurement, first_row_observed = _open_benchmark_file(
+                session, path, budget
             )
             session.observe_external_state(
                 "benchmark input size",
@@ -200,6 +204,38 @@ def _measure_large_file_open(binary):
                 "seconds",
                 samples,
                 first_row_observed=first_row_observed,
+            )
+            if first_row_observed:
+                session.quit()
+    return {
+        "open_100000_lines_5mb_seconds": measurement,
+        "samples": samples,
+        "first_row_observed": first_row_observed,
+        "input": {"lines": line_count, "bytes": byte_count},
+    }
+
+
+def _measure_large_file_eof(binary):
+    _require_active_deadline()
+    budget = current_deadline()
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-benchmark-") as directory:
+        path = os.path.join(directory, "large.txt")
+        line_count, byte_count = _large_file(path)
+        eof_elapsed = None
+        eof_reached = False
+        with Session(binary) as session:
+            _first_row_elapsed, first_row_observed = _open_benchmark_file(
+                session, path, budget
+            )
+            session.observe_external_state(
+                "benchmark input size",
+                os.path.getsize(path),
+                expected=byte_count,
+            )
+            session.observe_external_state(
+                "benchmark input line count",
+                line_count,
+                expected=_LINE_COUNT,
             )
             if first_row_observed:
                 try:
@@ -221,7 +257,6 @@ def _measure_large_file_open(binary):
                     raise
                 except TimeoutError:
                     _mark_execution_deadline_if_expired(budget)
-                    pass
                 if eof_elapsed is not None:
                     _record_measurement(
                         "end_of_buffer_100000_lines_5mb_seconds",
@@ -233,9 +268,6 @@ def _measure_large_file_open(binary):
             if first_row_observed and eof_reached:
                 session.quit()
     return {
-        "open_100000_lines_5mb_seconds": measurement,
-        "samples": samples,
-        "first_row_observed": first_row_observed,
         "end_of_buffer_100000_lines_5mb_seconds": eof_elapsed,
         "eof_samples": [eof_elapsed] if eof_elapsed is not None else [],
         "last_line_observed": eof_reached,
@@ -253,6 +285,8 @@ def benchmark_scenarios(registered=None):
         )
     for trial in range(1, _FILE_OPEN_TRIALS + 1):
         scenarios[f"large-file-open-trial-{trial}"] = _measure_large_file_open
+    for trial in range(1, _FILE_OPEN_TRIALS + 1):
+        scenarios[f"large-file-eof-trial-{trial}"] = _measure_large_file_eof
     if registered is not None:
         d13_scenario = next(
             (
@@ -290,6 +324,7 @@ def _aggregate_trials(
         "startup": _STARTUP_TRIALS,
         "redraw": _REDRAW_BATCHES,
         "large-file-open": _FILE_OPEN_TRIALS,
+        "large-file-eof": _FILE_OPEN_TRIALS,
     }[scenario]
     trials = [
         measurements.get(f"{scenario}-trial-{trial}")
@@ -308,12 +343,14 @@ def _aggregate_trials(
         return None
 
     result = {metric: aggregate(samples), "samples": samples}
-    if scenario == "large-file-open":
+    if scenario in {"large-file-open", "large-file-eof"}:
+        completion_field = (
+            "first_row_observed"
+            if scenario == "large-file-open"
+            else "last_line_observed"
+        )
         result["completed_samples"] = [
-            trial.get(
-                "first_row_observed" if sample_field == "samples" else "last_line_observed",
-                True,
-            )
+            trial.get(completion_field, True)
             for trial in trials
         ]
         result["completed"] = all(result["completed_samples"])
@@ -379,7 +416,7 @@ def build_benchmark_report(measurements):
     eof_metric = "end_of_buffer_100000_lines_5mb_seconds"
     eof_result = _aggregate_trials(
         measurements,
-        "large-file-open",
+        "large-file-eof",
         eof_metric,
         _FILE_OPEN_TRIALS,
         statistics.median,
@@ -436,6 +473,12 @@ def build_benchmark_report(measurements):
             "end_of_buffer_interval": (
                 "from RET invoking end-of-buffer to rendering the unique "
                 "last-line marker; informational only, with no target"
+            ),
+            "end_of_buffer_deadline": (
+                "uses the remaining existing 5-second execution budget after "
+                "the first visible row; fixture creation, PTY startup, and "
+                "file loading consume that budget but are excluded from the "
+                "measured interval"
             ),
             "scenario_deadline_seconds": SCENARIO_TIMEOUT_SECONDS,
             "execution_budget_seconds": SCENARIO_EXECUTION_TIMEOUT_SECONDS,

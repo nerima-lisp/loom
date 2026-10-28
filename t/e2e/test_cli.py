@@ -457,7 +457,14 @@ class CoverageCliTests(unittest.TestCase):
                 "samples": [value],
                 "first_row_observed": first_row_observed,
                 "input": {"lines": 100_000, "bytes": 5_000_000},
-                "eof_samples": [],
+            }
+
+        def eof_trial(value, last_line_observed):
+            return lambda _binary: {
+                "end_of_buffer_100000_lines_5mb_seconds": value,
+                "eof_samples": [value],
+                "last_line_observed": last_line_observed,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
             }
 
         self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
@@ -469,6 +476,9 @@ class CoverageCliTests(unittest.TestCase):
                     "large-file-open-trial-1": trial(0.8, True),
                     "large-file-open-trial-2": trial(3.5, False),
                     "large-file-open-trial-3": trial(0.9, True),
+                    "large-file-eof-trial-1": eof_trial(4.7, True),
+                    "large-file-eof-trial-2": eof_trial(5.0, False),
+                    "large-file-eof-trial-3": eof_trial(4.9, True),
                 },
             ):
                 self.assertEqual(cli.main([
@@ -479,6 +489,12 @@ class CoverageCliTests(unittest.TestCase):
             "open_100000_lines_5mb_seconds: 0.900 (target 1; over target; "
             "first row not observed by execution deadline; "
             "samples=[0.8, 3.5, 0.9])",
+            self.stdout.getvalue(),
+        )
+        self.assertIn(
+            "end_of_buffer_100000_lines_5mb_seconds: 4.900 "
+            "(informational; no threshold; last line not observed before the "
+            "execution deadline)",
             self.stdout.getvalue(),
         )
 
