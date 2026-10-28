@@ -220,6 +220,16 @@ def _install_git_wrapper(directory, mode, marker=None):
             "fi\n"
             f"exec {shlex.quote(real_git)} \"$@\"\n"
         )
+    elif marker is not None:
+        marker_test = f"[ -f {shlex.quote(marker)} ]"
+        body = (
+            "#!/bin/sh\n"
+            f"if {marker_test}; then\n"
+            f"  {shlex.quote(real_git)} \"$@\"\n"
+            "  kill -TERM $$\n"
+            "fi\n"
+            f"exec {shlex.quote(real_git)} \"$@\"\n"
+        )
     else:
         body = (
             "#!/bin/sh\n"
@@ -246,7 +256,8 @@ def _run_failure(binary, command, outcome):
     index_path = os.path.join(directory.name, ".git", "index")
     with open(index_path, "rb") as handle:
         original_index = handle.read()
-    marker = os.path.join(directory.name, "force-nonzero")
+    # Keep the control marker out of the worktree so Git's untracked cache stays stable.
+    marker = os.path.join(directory.name, ".git", "force-nonzero")
     original_path = os.environ.get("PATH")
     real_git = shutil.which("git", path=original_path)
     if outcome == "nonzero":
@@ -255,7 +266,11 @@ def _run_failure(binary, command, outcome):
             part for part in (wrapper_dir, original_path) if part
         )
     elif outcome == "interrupted":
-        wrapper_dir = _install_git_wrapper(directory.name, "interrupted")
+        wrapper_dir = _install_git_wrapper(
+            directory.name,
+            "interrupted",
+            marker if command == "git-status" else None,
+        )
         os.environ["PATH"] = os.pathsep.join(
             part for part in (wrapper_dir, original_path) if part
         )
@@ -271,6 +286,19 @@ def _run_failure(binary, command, outcome):
                 session.wait_for_region_contents("body", "##", timeout=_WAIT)
                 with open(marker, "wb") as handle:
                     handle.write(b"force failure\n")
+            elif outcome == "interrupted" and command == "git-status":
+                _command(session, command)
+                session.wait_for_region_contents("body", "##", timeout=_WAIT)
+                # Reuse the source buffer so the interrupted status uses the same repo.
+                session.send(keys.ctrl("x") + b"b")
+                session.wait_for_region_text(
+                    "minibuffer", "Switch to buffer: ", timeout=_WAIT
+                )
+                session.type(os.path.basename(path))
+                session.key("RET")
+                session.wait_for_region_contents("body", "tracked", timeout=_WAIT)
+                with open(marker, "wb") as handle:
+                    handle.write(b"force failure\n")
 
             if command in ("git-stage-file", "git-unstage-file"):
                 if outcome == "nonzero":
@@ -280,6 +308,8 @@ def _run_failure(binary, command, outcome):
                 if outcome == "nonzero" and command != "git-status":
                     _write(marker, b"force failure\n")
                 if command == "git-status":
+                    with open(index_path, "rb") as handle:
+                        original_index = handle.read()
                     session.send(keys.ctrl("x") + keys.text("g"))
                 else:
                     _command(session, command)
@@ -326,7 +356,21 @@ def _run_failure(binary, command, outcome):
                 if _cached_names(directory.name, real_git):
                     raise AssertionError("interrupted git-unstage-file did not run real Git")
             elif current_index != original_index:
-                raise AssertionError(f"{command} changed the Git index on failure")
+                difference = next(
+                    (
+                        offset
+                        for offset, (before, after) in enumerate(
+                            zip(original_index, current_index)
+                        )
+                        if before != after
+                    ),
+                    min(len(original_index), len(current_index)),
+                )
+                raise AssertionError(
+                    f"{command} changed the Git index on failure "
+                    f"(length {len(original_index)} to {len(current_index)}, "
+                    f"first difference at byte {difference})"
+                )
             _assert_alive(session)
             _assert_quit(session, f"real-git-{command}-{outcome}")
     finally:

@@ -194,17 +194,23 @@
           "key": "n"
         }
       ],
-      "initial_bytes": "file tree\n",
-      "expected_bytes": "file tree\n",
+      "initial_bytes": "starting buffer\n",
+      "expected_bytes": "starting buffer\n",
       "expected_cursor": [
         0,
         0
+      ],
+      "fixture_files": [
+        {
+          "path": "a-selected.txt",
+          "contents": "opened selected file\n"
+        }
       ],
       "expected_minibuffer": "",
       "expected_screen": [
         {
           "region": "body",
-          "text": "file tree"
+          "text": "opened selected file"
         }
       ]
     },

@@ -80,6 +80,9 @@ def mode_sidecar_write(binary):
             session.wait_for_region_text("body", "draft", timeout=2)
             session.type("x")
             session.extended_command("auto-save-mode", timeout=2)
+            session.wait_for_region_text(
+                "minibuffer", "Auto-save mode enabled", timeout=2
+            )
             session.wait_for_file(sidecar, b"xdraft\n", timeout=2)
             session.assert_screen_text(
                 "Auto-save mode enabled",
