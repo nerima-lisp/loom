@@ -20,16 +20,27 @@
 
 (defun buffer-visible-line-count (buffer)
   "Return the visible line count for BUFFER."
-  (nth-value 1 (%visible-line-scan buffer)))
+  (let ((index (%buffer-visible-line-index buffer)))
+    (if index
+        (length (%visible-line-index-line-starts index))
+        (nth-value 1 (%visible-line-scan buffer)))))
 
 (defun buffer-visible-line (buffer line-number)
   "Return zero-based LINE-NUMBER from the visible region of BUFFER."
-  (multiple-value-bind (line line-count found-p)
-      (%visible-line-scan buffer line-number)
-    (unless found-p
-      (error "buffer-visible-line: line-number ~D out of range [0,~D)"
-             line-number line-count))
-    line))
+  (let ((index (%buffer-visible-line-index buffer)))
+    (if index
+        (multiple-value-bind (line found-p)
+            (%visible-line-index-line index line-number)
+          (unless found-p
+            (error "buffer-visible-line: line-number ~D out of range [0,~D)"
+                   line-number (length (%visible-line-index-line-starts index))))
+          line)
+        (multiple-value-bind (line line-count found-p)
+            (%visible-line-scan buffer line-number)
+          (unless found-p
+            (error "buffer-visible-line: line-number ~D out of range [0,~D)"
+                   line-number line-count))
+          line))))
 
 (defun buffer-visible-point-line (buffer)
   "Return point's zero-based line within BUFFER's visible region."
@@ -82,3 +93,9 @@ Leave BUFFER's read-only state unchanged. Returns BUFFER."
   (setf (%buffer-narrow-start-offset buffer) 0
         (%buffer-narrow-end-offset buffer) (%buffer-full-length buffer))
   buffer)
+(defun buffer-visible-lines (buffer start-line line-limit)
+  "Return up to LINE-LIMIT visible lines beginning at START-LINE, plus total line count."
+  (let ((index (%buffer-visible-line-index buffer)))
+    (if index
+        (%visible-line-index-lines index start-line line-limit)
+        (%visible-lines-scan buffer start-line line-limit))))

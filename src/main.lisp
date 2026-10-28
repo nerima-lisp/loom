@@ -145,40 +145,47 @@
          screen-x screen-y window-x window-y window-width window-height)
       (when row
         (let* ((buffer (loom/core/window-tree:window-buffer window))
-               (gutter-width (%layout-window-gutter-width buffer window-width))
-               (body-width (- window-width gutter-width)))
-          (when (and (eq kind :window-blank)
-                     (>= column gutter-width)
-                     (plusp body-width))
-            (let ((position
-                    (%presentation-window-buffer-position
-                     session renderer window row (- column gutter-width)
-                     body-width)))
-              (when position
-                (return-from %presentation-window-hit-test
-                  (loom/core/editor-session:make-hit-test-result
-                   :core/presentation :buffer-text
-                   :window window :buffer buffer :position position)))))
-          (loom/core/editor-session:make-hit-test-result
-           :core/presentation kind :window window))))))
+               (scroll-line (loom/core/window-tree:window-scroll-line window)))
+          (multiple-value-bind (visible-lines line-count)
+              (loom/core/buffer:buffer-visible-lines buffer scroll-line (1+ row))
+            (let* ((gutter-width
+                     (%layout-window-gutter-width buffer window-width line-count))
+                   (body-width (- window-width gutter-width)))
+              (when (and (eq kind :window-blank)
+                         (>= column gutter-width)
+                         (plusp body-width))
+                (let ((position
+                        (%presentation-window-buffer-position
+                         session renderer window row (- column gutter-width)
+                         body-width visible-lines line-count)))
+                  (when position
+                    (return-from %presentation-window-hit-test
+                      (loom/core/editor-session:make-hit-test-result
+                       :core/presentation :buffer-text
+                       :window window :buffer buffer :position position)))))
+              (loom/core/editor-session:make-hit-test-result
+               :core/presentation kind :window window))))))))
+
 
 (defun %presentation-window-buffer-position
-    (session renderer window row body-column body-width)
+    (session renderer window row body-column body-width visible-lines line-count)
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (line-count (loom/core/buffer:buffer-visible-line-count buffer))
          (scroll-line (loom/core/window-tree:window-scroll-line window))
          (truncate-p
-           (loom/core/editor-session:buffer-truncate-lines-p session buffer)))
+           (loom/core/editor-session:buffer-truncate-lines-p session buffer))
+         (tab-width (%layout-mode-tab-width (buffer-major-mode buffer))))
     (if truncate-p
         (let ((line (+ scroll-line row)))
-          (when (< line line-count)
+          (when (and (< line line-count)
+                     (< row (length visible-lines)))
             (multiple-value-bind (text mapping)
-                (%layout-buffer-line-display buffer line)
-              (let* ((display-column
-                       (loom-renderer-segment-column
-                        renderer text (cons 0 (length text))
-                        (+ (loom/core/window-tree:window-scroll-column window)
-                           body-column))))
+                (%loom-renderer-expand-tabs (nth row visible-lines)
+                                            :tab-width tab-width)
+              (let ((display-column
+                      (loom-renderer-segment-column
+                       renderer text (cons 0 (length text))
+                       (+ (loom/core/window-tree:window-scroll-column window)
+                          body-column))))
                 (when (< display-column (length text))
                   (%presentation-buffer-position
                    buffer line
@@ -186,37 +193,40 @@
         (let ((line scroll-line)
               (sub-row (loom/core/window-tree:window-scroll-sub-row window))
               (visible-row 0))
-          (progn
-            (loop while (< line line-count)
-                  for text = (nth-value 0 (%layout-buffer-line-display buffer line))
-                  for segments = (%layout-line-segments renderer buffer line body-width)
-                  do (progn
-                       (loop for segment-index from sub-row below (length segments)
-                             do (progn
-                                  (when (= visible-row row)
-                                    (let* ((segment (nth segment-index segments))
-                                           (segment-width
-                                             (loom-renderer-segment-cells
-                                              renderer text segment (cdr segment))))
-                                      (when (< body-column segment-width)
-                                        (let ((display-column
-                                                (loom-renderer-segment-column
-                                                 renderer text segment body-column)))
-                                          (return-from
-                                           %presentation-window-buffer-position
-                                            (%presentation-line-position
-                                             buffer line display-column))))))
-                                  (incf visible-row)))
-                       (incf line)
-                       (setf sub-row 0)))
-          nil)))))
+          (loop for source-text in visible-lines
+                while (< line line-count)
+                do (progn
+                     (multiple-value-bind (text mapping)
+                         (%loom-renderer-expand-tabs source-text
+                                                     :tab-width tab-width)
+                       (let ((segments
+                               (loom-renderer-wrap-segments
+                                renderer text body-width)))
+                         (loop for segment-index from sub-row
+                               below (length segments)
+                               do (progn
+                                    (when (= visible-row row)
+                                      (let* ((segment (nth segment-index segments))
+                                             (segment-width
+                                               (loom-renderer-segment-cells
+                                                renderer text segment
+                                                (cdr segment))))
+                                        (when (< body-column segment-width)
+                                          (let ((display-column
+                                                  (loom-renderer-segment-column
+                                                   renderer text segment
+                                                   body-column)))
+                                            (return-from
+                                             %presentation-window-buffer-position
+                                              (%presentation-buffer-position
+                                               buffer line
+                                               (%presentation-source-column
+                                                mapping display-column))))))
+                                    (incf visible-row)))))
+                     (incf line)
+                     (setf sub-row 0))))))))
 
-(defun %presentation-line-position (buffer line display-column)
-  (multiple-value-bind (text mapping)
-      (%layout-buffer-line-display buffer line)
-    (when (< display-column (length text))
-      (%presentation-buffer-position
-       buffer line (%presentation-source-column mapping display-column)))))
+
 
 (defun %presentation-buffer-position (buffer visible-line source-column)
   (let* ((visible-start (loom/core/buffer:buffer-narrow-start-offset buffer))
@@ -242,34 +252,35 @@
 
 (defun compose-frame (editor-state)
   "Compose the current editor frame and return its immutable cell snapshot."
-  (let* ((renderer (editor-state-renderer editor-state))
-         (width (loom-renderer-width renderer))
-         (height (loom-renderer-height renderer))
-         (file-tree (editor-state-file-tree editor-state))
-         (file-tree-visible
-           (loom/feature/file-tree:file-tree-visible-p file-tree))
-         (window-tree (editor-state-window-tree editor-state))
-         (workspace-manager (editor-state-workspaces editor-state))
-         (workspace-name
-           (and workspace-manager
-                (loom/feature/workspace:workspace-manager-current-name
-                 workspace-manager)))
-         (buffer-cell-function (function %layout-buffer-cell)))
-    (multiple-value-bind (content-height minibuffer-row file-tree-width
-                           window-area-width)
-        (%layout-compute-regions width height file-tree-visible)
-      (loom-renderer-clear renderer)
-      (%layout-draw-frame-content renderer file-tree file-tree-visible
-                                   file-tree-width window-area-width content-height
-                                   window-tree buffer-cell-function workspace-name)
-      (%layout-draw-frame-footer renderer editor-state width minibuffer-row)
-      (let ((cursor (editor-cursor editor-state)))
-        (loom/core/editor-session:make-frame-snapshot
-         width height (%loom-renderer-frame-cells renderer)
-         :cursor
-         (list (cl-tty-kit:cursor-x cursor)
-               (cl-tty-kit:cursor-y cursor)
-               (cl-tty-kit:cursor-visible-p cursor)))))))
+  (loom/core/buffer:with-buffer-visible-line-index-cache
+    (let* ((renderer (editor-state-renderer editor-state))
+           (width (loom-renderer-width renderer))
+           (height (loom-renderer-height renderer))
+           (file-tree (editor-state-file-tree editor-state))
+           (file-tree-visible
+             (loom/feature/file-tree:file-tree-visible-p file-tree))
+           (window-tree (editor-state-window-tree editor-state))
+           (workspace-manager (editor-state-workspaces editor-state))
+           (workspace-name
+             (and workspace-manager
+                  (loom/feature/workspace:workspace-manager-current-name
+                   workspace-manager)))
+           (buffer-cell-function (function %layout-buffer-cell)))
+      (multiple-value-bind (content-height minibuffer-row file-tree-width
+                            window-area-width)
+          (%layout-compute-regions width height file-tree-visible)
+        (loom-renderer-clear renderer)
+        (%layout-draw-frame-content renderer file-tree file-tree-visible
+                                    file-tree-width window-area-width content-height
+                                    window-tree buffer-cell-function workspace-name)
+        (%layout-draw-frame-footer renderer editor-state width minibuffer-row)
+        (let ((cursor (editor-cursor editor-state)))
+          (loom/core/editor-session:make-frame-snapshot
+           width height (%loom-renderer-frame-cells renderer)
+           :cursor
+           (list (cl-tty-kit:cursor-x cursor)
+                 (cl-tty-kit:cursor-y cursor)
+                 (cl-tty-kit:cursor-visible-p cursor))))))))
 
 (defun %layout-draw-frame-footer (renderer editor-state width minibuffer-row)
   (%layout-draw-minibuffer renderer (editor-state-minibuffer editor-state)
@@ -638,63 +649,67 @@ the mode line or another footer in the remaining window rows."
          (y (loom/core/window-tree:window-y window))
          (width (loom/core/window-tree:window-width window))
          (height (or height (loom/core/window-tree:window-height window)))
-         (gutter-width (%layout-window-gutter-width buffer width))
-         (body-x (%layout-window-body-x (+ x gutter-width) selected-p))
-         (body-width (- width gutter-width))
-         (line-count (%layout-buffer-visible-line-count buffer))
          (scroll-line (loom/core/window-tree:window-scroll-line window))
          (scroll-sub-row (loom/core/window-tree:window-scroll-sub-row window))
+         (scroll-column (loom/core/window-tree:window-scroll-column window))
+         (line-count (%layout-buffer-visible-line-count buffer))
          (truncate-p
            (loom/core/editor-session:buffer-truncate-lines-p
             *editor-state* buffer)))
-    (labels ((draw-number (line row)
-               (%layout-write-window-string
-                renderer x (+ y row)
-                (format nil "~vD " (1- gutter-width) (1+ line))
-                :style '((:fg 8))))
-             (draw-gutter ()
-               (when (plusp gutter-width)
-                 (if truncate-p
-                     (dotimes (row height)
-                       (let ((line (+ scroll-line row)))
-                         (when (< line line-count)
-                           (draw-number line row))))
-                     (let ((row 0)
-                           (line scroll-line)
-                           (sub-row scroll-sub-row))
-                       (loop while (and (< row height) (< line line-count))
-                             for segments =
-                               (%layout-line-segments
-                                renderer buffer line body-width)
-                             do (loop for segment-index from sub-row
-                                      below (length segments)
-                                      while (< row height)
-                                      do (when (zerop segment-index)
-                                           (draw-number line row))
-                                         (incf row))
-                                (incf line)
-                                (setf sub-row 0)))))))
-      (if truncate-p
-          (%layout-draw-truncated-buffer
-           renderer buffer body-x y body-width height
-           scroll-line
-           (loom/core/window-tree:window-scroll-column window))
-          (%layout-draw-wrapped-buffer
-           renderer buffer body-x y body-width height
-           scroll-line scroll-sub-row))
-      (draw-gutter))))
+    (let* ((gutter-width
+             (%layout-window-gutter-width buffer width line-count))
+           (body-x (%layout-window-body-x (+ x gutter-width) selected-p))
+           (body-width (- width gutter-width)))
+      (labels ((draw-number (line row)
+                 (%layout-write-window-string
+                  renderer x (+ y row)
+                  (format nil "~vD " (1- gutter-width) (1+ line))
+                  :style '((:fg 8))))
+               (draw-gutter ()
+                 (when (plusp gutter-width)
+                   (if truncate-p
+                       (loop for line from scroll-line
+                             for row from 0 below
+                               (min height (max 0 (- line-count scroll-line)))
+                             do (draw-number line row))
+                       (let ((row 0)
+                             (line scroll-line)
+                             (sub-row scroll-sub-row))
+                         (loop while (and (< row height) (< line line-count))
+                               do (let* ((text
+                                           (nth-value
+                                            0
+                                            (%layout-buffer-line-display buffer line)))
+                                         (segments
+                                           (loom-renderer-wrap-segments
+                                            renderer text body-width)))
+                                    (loop for segment-index from sub-row
+                                          below (length segments)
+                                          while (< row height)
+                                          do (when (zerop segment-index)
+                                               (draw-number line row))
+                                             (incf row))
+                                    (incf line)
+                                    (setf sub-row 0))))))))
+        (if truncate-p
+            (%layout-draw-truncated-buffer
+             renderer buffer body-x y body-width height scroll-line
+             scroll-column line-count)
+            (%layout-draw-wrapped-buffer
+             renderer buffer body-x y body-width height scroll-line
+             scroll-sub-row line-count))
+        (draw-gutter)))))
 
 (defun %layout-draw-truncated-buffer
-    (renderer buffer x y width height start-line start-column)
-  (let ((mode (buffer-major-mode buffer))
-        (line-count (buffer-visible-line-count buffer)))
-    (dotimes (row height)
-      (let ((line (+ start-line row)))
-        (when (< line line-count)
-          (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
-           renderer
-           (nth-value 0 (%layout-buffer-line-display buffer line))
-           x (+ y row) width mode start-column))))))
+    (renderer buffer x y width height start-line start-column line-count)
+  (let ((mode (buffer-major-mode buffer)))
+    (loop for line from start-line
+          for row from 0 below height
+          while (< line line-count)
+          do (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
+              renderer
+              (nth-value 0 (%layout-buffer-line-display buffer line))
+              x (+ y row) width mode start-column))))
 
 (defun %layout-draw-window-overlays
     (renderer leaf x-offset selected-p buffer-cell-function)
@@ -708,7 +723,8 @@ the mode line or another footer in the remaining window rows."
     (%layout-draw-window-buffer
      renderer leaf x-offset (%layout-window-content-height leaf) selected-p)
     (%layout-draw-mode-display-lines
-     renderer leaf buffer x-offset display-lines)
+     renderer leaf buffer x-offset display-lines
+     (loom/core/window-tree:window-scroll-line leaf))
     (%layout-draw-diagnostics renderer leaf x-offset)
     (%layout-draw-region renderer leaf x-offset)
     (%layout-draw-matching-paren renderer leaf x-offset)

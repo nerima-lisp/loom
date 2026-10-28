@@ -72,20 +72,18 @@ Returns NIL once the count is known to exceed LIMIT."
     drawn))
 
 (defun %layout-draw-wrapped-buffer (renderer buffer x y width height
-                                    scroll-line scroll-sub-row)
+                                    start-line scroll-sub-row line-count)
   "Draw BUFFER wrapped into a WIDTH by HEIGHT rectangle at (X, Y)."
   (let ((mode (buffer-major-mode buffer))
-        (line-count (buffer-visible-line-count buffer))
         (row 0)
-        (line scroll-line)
+        (line start-line)
         (sub-row scroll-sub-row))
     (loop while (and (< row height) (< line line-count))
-          do (incf row
-                   (%layout-draw-wrapped-line
-                    renderer (nth-value 0
-                                        (%layout-buffer-line-display buffer line))
-                    x (+ y row)
-                    width mode sub-row (- height row)))
-             (setf sub-row 0)
-             (incf line))
+          do (let ((text
+                     (nth-value 0 (%layout-buffer-line-display buffer line))))
+               (incf row
+                     (%layout-draw-wrapped-line
+                      renderer text x (+ y row) width mode sub-row (- height row)))
+               (incf line)
+               (setf sub-row 0)))
     renderer))

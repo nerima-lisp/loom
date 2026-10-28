@@ -121,23 +121,28 @@ draws nothing rather than clipping to the wrong row."
           (%layout-draw-wrapped-line-run
            renderer window x y text width height line start end style)))))
 (defun %layout-draw-mode-display-lines
-    (renderer window buffer x-offset display-lines)
-  "Apply mode display-run styles to rendered source lines."
-  (loop for line from 0
-        for line-runs in display-lines
-        while (< line (%layout-buffer-visible-line-count buffer))
-        do (let ((start 0))
-             (dolist (run line-runs)
-               (let* ((kind (first run))
-                      (text (second run))
-                      (end (+ start (length text)))
-                      (style
-                        (cdr (assoc kind +layout-markup-display-styles+
-                                    :test (function eq)))))
-                 (when (and style (< start end))
-                   (%layout-draw-line-run
-                    renderer window x-offset line start end style))
-                 (setf start end))))))
+    (renderer window buffer x-offset display-lines start-line)
+  "Apply mode display-run styles to visible source lines."
+  (let* ((line-count (%layout-buffer-visible-line-count buffer))
+         (first-line (max 0 start-line))
+         (end-line
+           (min line-count
+                (+ first-line (%layout-window-content-height window)))))
+    (loop for line from first-line
+          for line-runs in (nthcdr first-line display-lines)
+          while (< line end-line)
+          do (let ((start 0))
+               (dolist (run line-runs)
+                 (let* ((kind (first run))
+                        (text (second run))
+                        (end (+ start (length text)))
+                        (style
+                          (cdr (assoc kind +layout-markup-display-styles+
+                                      :test (function eq)))))
+                   (when (and style (< start end))
+                     (%layout-draw-line-run
+                      renderer window x-offset line start end style))
+                   (setf start end)))))))
 (defun %layout-span-line-bounds (buffer span)
   (let ((start (buffer-visible-offset-position buffer
                                                 (buffer-span-start span)))

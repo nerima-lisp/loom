@@ -65,7 +65,41 @@ code
       (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 1))
               :to-equal (quote ((:fg 8))))
       (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 3))
-              :to-equal (quote ((:fg 2)))))))
+              :to-equal (quote ((:fg 2))))
+      (progn (buffer-set-point buffer 2 0) (setf (loom/core/window-tree:window-scroll-line (%layout-window state)) 2))
+      (loom::compose-frame state)
+      (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 7)
+              :to-equal "```text")
+      (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 4)
+              :to-equal "code")
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
+              :to-equal (quote ((:fg 2))))))
+  (it
+    "uses one visible line index for all reads in a rendered frame"
+    (let* ((state (%fresh-layout-state
+                   :name "README.md"
+                   :content (format nil "# Heading~%text~%")
+                   :height 5))
+           (buffer (window-buffer (%layout-window state)))
+           (screen (%layout-screen state))
+           (builder-symbol
+             (find-symbol "%BUILD-VISIBLE-LINE-INDEX" "LOOM/CORE/BUFFER"))
+           (original-builder (symbol-function builder-symbol))
+           (build-count 0))
+      (buffer-set-major-mode buffer :markdown)
+      (unwind-protect
+           (progn
+             (setf (symbol-function builder-symbol)
+                   (lambda (target)
+                     (incf build-count)
+                     (funcall original-builder target)))
+             (loom::compose-frame state)
+             (expect build-count :to-equal 1)
+             (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 9)
+                     :to-equal "# Heading")
+             (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+                     :to-equal (quote (:bold (:fg 6)))))
+        (setf (symbol-function builder-symbol) original-builder)))))
 
 (describe
   "syntax-highlighted layout drawing"

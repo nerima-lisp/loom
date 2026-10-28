@@ -17,6 +17,7 @@
    #:buffer-visible-text
    #:buffer-visible-line-count
    #:buffer-visible-line
+   #:with-buffer-visible-line-index-cache
    #:buffer-visible-point-line
    #:buffer-visible-point-column
    #:buffer-visible-offset-position
@@ -59,4 +60,7 @@
    #:buffer-redo
    #:buffer-record-undo-boundary
    #:buffer-load
-   #:buffer-save #:buffer-position-offset #:buffer-clamped-position-offset))
+   #:buffer-save
+   #:buffer-position-offset
+   #:buffer-clamped-position-offset
+   #:buffer-visible-lines))
