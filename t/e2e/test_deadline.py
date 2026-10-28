@@ -11,6 +11,7 @@ import time
 import unittest
 from unittest import mock
 
+import loom_e2e.deadline as deadline_module
 from loom_e2e.deadline import (
     SCENARIO_CLEANUP_TIMEOUT_SECONDS,
     SCENARIO_EXECUTION_TIMEOUT_SECONDS,
@@ -107,6 +108,26 @@ class ScenarioDeadlineTests(unittest.TestCase):
                 )
         self.assertEqual(len(elapsed), 1)
         self.assertAlmostEqual(elapsed[0], execution_seconds)
+
+    def test_preparation_time_does_not_consume_execution_budget(self):
+        first_action_completed = []
+
+        def body(_binary):
+            budget = current_deadline()
+            remaining = budget.execution_remaining()
+            with deadline_module.scenario_preparation():
+                time.sleep(0.25)
+                self.assertAlmostEqual(
+                    budget.execution_remaining(), remaining, delta=0.05
+                )
+            time.sleep(0.05)
+            first_action_completed.append(True)
+            time.sleep(0.06)
+
+        with self.assertRaises(ScenarioDeadlineExceeded):
+            run_scenario(body, "unused", seconds=0.15, cleanup_seconds=0.05)
+        self.assertEqual(first_action_completed, [True])
+
 
     def test_delayed_execution_alarm_preserves_absolute_deadline(self):
         for elapsed, remaining in [(0.6, 0.4), (0.9, 0.1), (1.1, 0.0)]:

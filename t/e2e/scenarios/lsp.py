@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 
 from loom_e2e import keys
+from loom_e2e.deadline import scenario_preparation
 from loom_e2e.registry import scenario
 from loom_e2e.session import Session
 
@@ -68,6 +69,22 @@ def _typescript_pid(session, pid_file):
         "typescript-language-server PID is greater than 1", pid > 1, True
     )
     return pid
+
+
+def _warm_up_typescript_server(session):
+    # The first hover waits for TypeScript's project service to load the file.
+    session.send(keys.ctrl("n"))
+    session.wait_for_region_cursor("body", 0, index=1)
+    session.extended_command("lsp-hover-at-point")
+    session.wait_for_region_text("minibuffer", "targetValue")
+    session.assert_screen_text(
+        "targetValue",
+        match="contains",
+        region="minibuffer",
+        purpose="precondition",
+    )
+    session.send(keys.ctrl("p"))
+    session.wait_for_region_cursor("body", 0, index=0)
 
 
 def _move_to_buffer_position(session, line, column):
@@ -530,9 +547,11 @@ def lsp_typescript_hover_completion_success(binary):
     directory, path, pid_file = _typescript_fixture(source)
     try:
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            _start(session)
-            pid = _typescript_pid(session, pid_file)
+            with scenario_preparation():
+                session.wait_ready()
+                _start(session)
+                pid = _typescript_pid(session, pid_file)
+                _warm_up_typescript_server(session)
 
             session.send(keys.ctrl("n"))
             session.wait_for_region_cursor("body", 0, index=1)
@@ -600,7 +619,13 @@ def lsp_typescript_definition_success(binary):
 
 @scenario(
     "lsp/r5-typescript-success/editing",
-    commands=["lsp-start", "lsp-rename", "lsp-format-buffer", "lsp-find-references"],
+    commands=[
+        "lsp-start",
+        "lsp-hover-at-point",
+        "lsp-rename",
+        "lsp-format-buffer",
+        "lsp-find-references",
+    ],
 )
 def lsp_typescript_editing_success(binary):
     source = (
@@ -611,9 +636,11 @@ def lsp_typescript_editing_success(binary):
     directory, path, pid_file = _typescript_fixture(source)
     try:
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            _start(session)
-            pid = _typescript_pid(session, pid_file)
+            with scenario_preparation():
+                session.wait_ready()
+                _start(session)
+                pid = _typescript_pid(session, pid_file)
+                _warm_up_typescript_server(session)
 
             session.send(keys.ctrl("f") * len("const "))
             session.wait_for_region_cursor("body", len("const "))

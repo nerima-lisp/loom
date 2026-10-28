@@ -30,13 +30,24 @@ class ScenarioDeadlineBudget:
         self.execution_deadline = execution_deadline
         self.expired = False
         self._cleanup_processes = []
+        self._preparation_started = None
+
+    def _preparation_elapsed(self, now):
+        if self._preparation_started is None:
+            return 0.0
+        return now - self._preparation_started
 
     def remaining(self):
-        return max(0.0, self.deadline - time.monotonic())
+        now = time.monotonic()
+        return max(0.0, self.deadline - now + self._preparation_elapsed(now))
 
     def execution_remaining(self):
         """Return time before execution ends and the cleanup reserve begins."""
-        return max(0.0, self.execution_deadline - time.monotonic())
+        now = time.monotonic()
+        return max(
+            0.0,
+            self.execution_deadline - now + self._preparation_elapsed(now),
+        )
 
     def register_process(self, process):
         self._cleanup_processes.append(process)
@@ -63,6 +74,35 @@ _ACTIVE_DEADLINE = ContextVar("loom_active_scenario_deadline", default=None)
 
 def current_deadline():
     return _ACTIVE_DEADLINE.get()
+
+
+@contextmanager
+def scenario_preparation():
+    """Pause the active scenario budget while it waits for external readiness."""
+    budget = current_deadline()
+    if budget is None or budget.expired:
+        yield
+        return
+    if budget._preparation_started is not None:
+        yield
+        return
+
+    delay, interval = signal.getitimer(signal.ITIMER_REAL)
+    if delay <= 0.0:
+        signal.getsignal(signal.SIGALRM)(signal.SIGALRM, None)
+
+    started = time.monotonic()
+    signal.setitimer(signal.ITIMER_REAL, 0.0, 0.0)
+    budget._preparation_started = started
+    try:
+        yield
+    finally:
+        elapsed = time.monotonic() - started
+        budget.deadline += elapsed
+        budget.execution_deadline += elapsed
+        budget._preparation_started = None
+        if not budget.expired:
+            signal.setitimer(signal.ITIMER_REAL, delay, interval)
 
 
 def _validate_seconds(seconds):
