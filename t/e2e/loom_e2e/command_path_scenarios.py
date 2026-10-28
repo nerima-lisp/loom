@@ -933,7 +933,9 @@ def _send_pre_keys(session, case):
 def _run_r1(session, case, path):
     _send_pre_keys(session, case)
     entry_mode = case["entry_mode"]
+    trace_count = None
     if entry_mode == "key":
+        trace_count = session.command_trace_count()
         _send_keys(session, case["entry_keys"])
     elif entry_mode == "mx":
         _send_mx(session, case.get("invoke_name", case["command"]))
@@ -944,6 +946,10 @@ def _run_r1(session, case, path):
             session.wait_for_region_text("minibuffer", "Go to line: ")
             session.type(case["followup_input"])
             session.key("RET")
+    if trace_count is not None:
+        _wait_for_command_completion(
+            session, case, case["command"], "key", trace_count
+        )
     _assert_final_state(
         session,
         case,

@@ -441,6 +441,83 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertIn("[final state minibuffer]: expired", str(raised.exception))
         self.assertIn("--- screen ---\nfake screen", str(raised.exception))
 
+    def test_r1_key_route_waits_for_command_trace_before_effect_observation(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["name"] == "command-path/buffer/r1/backward-char/key"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        key_index = session.calls.index(("send", b"\x02"))
+        trace_wait_index = session.calls.index(
+            ("wait_for_command_completion", "backward-char", "key", 0)
+        )
+        effect_observation_index = next(
+            index
+            for index, call in enumerate(session.calls)
+            if call[0] == "assert_screen"
+        )
+        self.assertLess(key_index, trace_wait_index)
+        self.assertLess(trace_wait_index, effect_observation_index)
+
+    def test_user_init_editor_waits_for_both_command_traces_before_observing(self):
+        module_path = (
+            REPOSITORY_ROOT
+            / "packages/feature/user-init/t/e2e/scenarios/user_init_lifecycle.py"
+        )
+        spec = importlib.util.spec_from_file_location(
+            "loom_user_init_lifecycle_test", module_path
+        )
+        module = importlib.util.module_from_spec(spec)
+        with patch(
+            "loom_e2e.registry.scenario",
+            side_effect=lambda *_args, **_kwargs: lambda function: function,
+        ):
+            spec.loader.exec_module(module)
+
+        calls = []
+        trace_counts = iter((7, 8))
+
+        class EditorSession:
+            def command_trace_count(self):
+                calls.append(("trace_count",))
+                return next(trace_counts)
+
+            def send(self, _data):
+                calls.append(("send",))
+
+            def wait_for_command_completion(
+                self, command, *, route=None, after=0, timeout=None
+            ):
+                calls.append(("wait_command", command, route, after, timeout))
+
+            def wait_for_file(self, _path, _expected, timeout=None):
+                calls.append(("wait_file", timeout))
+
+            def assert_file_bytes(self, _path, _expected):
+                calls.append(("assert_file",))
+
+        module._save_and_exit_editor(EditorSession(), "todo", b"unchanged")
+
+        self.assertEqual(
+            calls,
+            [
+                ("trace_count",),
+                ("send",),
+                ("wait_command", "save-buffer", "key", 7, 1),
+                ("wait_file", 1),
+                ("assert_file",),
+                ("trace_count",),
+                ("send",),
+                ("wait_command", "save-buffers-kill-terminal", "key", 8, 1),
+            ],
+        )
+
     def test_r2_history_waits_for_the_selected_command_before_accepting(self):
         case = next(
             case

@@ -77,11 +77,19 @@ def _init_git_repo(directory, commits):
 
 
 def _save_and_exit_editor(session, file_path=None, expected_bytes=None):
+    trace_count = session.command_trace_count()
     session.send(keys.ctrl("x") + keys.ctrl("s"))
+    session.wait_for_command_completion(
+        "save-buffer", route="key", after=trace_count, timeout=1
+    )
     if file_path is not None:
         session.wait_for_file(file_path, expected_bytes, timeout=1)
         session.assert_file_bytes(file_path, expected_bytes)
+    trace_count = session.command_trace_count()
     session.send(keys.ctrl("x") + keys.ctrl("c"))
+    session.wait_for_command_completion(
+        "save-buffers-kill-terminal", route="key", after=trace_count, timeout=1
+    )
 
 
 def _wait_editor_parent(session, name):
