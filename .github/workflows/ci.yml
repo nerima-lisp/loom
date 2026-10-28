@@ -178,11 +178,11 @@ jobs:
             timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
           fi
 
-      - name: Report PTY performance metrics
+      - name: Enforce PTY performance targets
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
         run: |
           set -euo pipefail
-          nix run .#e2e -- --benchmarks \
+          nix run .#e2e -- --benchmark-gate \
             --artifacts-dir "$RUNNER_TEMP/loom-benchmarks" \
             | tee "$RUNNER_TEMP/loom-benchmark-report.txt"
           {
@@ -243,11 +243,11 @@ jobs:
             nix run .#e2e
           fi
 
-      - name: Report PTY performance metrics
+      - name: Enforce PTY performance targets
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
         run: |
           set -euo pipefail
-          nix run .#e2e -- --benchmarks \
+          nix run .#e2e -- --benchmark-gate \
             --artifacts-dir "$RUNNER_TEMP/loom-benchmarks" \
             | tee "$RUNNER_TEMP/loom-benchmark-report.txt"
           {
