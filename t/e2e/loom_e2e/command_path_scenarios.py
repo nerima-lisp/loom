@@ -1,6 +1,7 @@
 """Load strict command-path examples and run their shared PTY flows."""
 
 import json
+import os
 import tempfile
 from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
@@ -1522,6 +1523,33 @@ def _expand_project_root(case, project_root):
     return expanded
 
 
+@contextmanager
+def _clipboard_unavailable_environment():
+    previous_path = os.environ.get("PATH")
+    with tempfile.TemporaryDirectory(
+        prefix="loom-e2e-clipboard-unavailable-"
+    ) as directory:
+        bin_dir = Path(directory)
+        (bin_dir / "pbcopy").write_text(
+            "#!/bin/sh\n/bin/cat >/dev/null\n", encoding="utf-8"
+        )
+        (bin_dir / "pbcopy").chmod(0o755)
+        (bin_dir / "pbpaste").write_text(
+            "#!/bin/sh\nexit 127\n", encoding="utf-8"
+        )
+        (bin_dir / "pbpaste").chmod(0o755)
+        os.environ["PATH"] = os.pathsep.join(
+            part for part in (directory, previous_path) if part
+        )
+        try:
+            yield
+        finally:
+            if previous_path is None:
+                os.environ.pop("PATH", None)
+            else:
+                os.environ["PATH"] = previous_path
+
+
 def run_command_path_scenario(binary, case, *, session_factory=Session):
     """Execute one strict R1, R2, or R3 example against a loom binary."""
     initial = case["initial_bytes"].encode("utf-8")
@@ -1562,6 +1590,8 @@ def run_command_path_scenario(binary, case, *, session_factory=Session):
             case = _expand_project_root(case, project_root)
 
         with ExitStack() as stack:
+            if case["command"] == "clipboard-yank":
+                stack.enter_context(_clipboard_unavailable_environment())
             session_context = session_factory(
                 binary,
                 [str(path)],
