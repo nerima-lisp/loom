@@ -62,6 +62,20 @@ class ScenarioDeadlineTests(unittest.TestCase):
         self.assertFalse(process.has_exited())
         return process
 
+    def test_run_scenario_reports_execution_elapsed_to_callback(self):
+        elapsed = []
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic",
+            side_effect=[10.0, 10.125, 10.125],
+        ):
+            value = run_scenario(
+                lambda _binary: "done",
+                "unused",
+                execution_elapsed_callback=elapsed.append,
+            )
+        self.assertEqual(value, "done")
+        self.assertEqual(elapsed, [0.125])
+
     def test_budget_separates_execution_time_from_cleanup_reserve(self):
         budget = ScenarioDeadlineBudget(110.0, 105.0)
         with mock.patch("loom_e2e.deadline.time.monotonic", return_value=103.5):
@@ -74,6 +88,7 @@ class ScenarioDeadlineTests(unittest.TestCase):
     def test_run_scenario_enforces_total_deadline(self):
         started = 100.0
         execution_seconds = 0.07
+        elapsed = []
 
         def expire(_binary):
             clock.return_value = started + execution_seconds
@@ -84,8 +99,14 @@ class ScenarioDeadlineTests(unittest.TestCase):
         ) as clock, mock.patch("loom_e2e.deadline.signal.setitimer"):
             with self.assertRaises(ScenarioDeadlineExceeded):
                 run_scenario(
-                    expire, "unused", seconds=0.1, cleanup_seconds=0.03
+                    expire,
+                    "unused",
+                    seconds=0.1,
+                    cleanup_seconds=0.03,
+                    execution_elapsed_callback=elapsed.append,
                 )
+        self.assertEqual(len(elapsed), 1)
+        self.assertAlmostEqual(elapsed[0], execution_seconds)
 
     def test_delayed_execution_alarm_preserves_absolute_deadline(self):
         for elapsed, remaining in [(0.6, 0.4), (0.9, 0.1), (1.1, 0.0)]:

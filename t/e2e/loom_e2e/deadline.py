@@ -108,7 +108,9 @@ def _restore_signal_state(handler, timer, elapsed):
 
 @contextmanager
 def scenario_deadline(
-    seconds=SCENARIO_TIMEOUT_SECONDS, cleanup_seconds=None
+    seconds=SCENARIO_TIMEOUT_SECONDS,
+    cleanup_seconds=None,
+    execution_elapsed_callback=None,
 ):
     """Run a scenario with one Unix wall-clock deadline.
 
@@ -127,9 +129,13 @@ def scenario_deadline(
     budget = ScenarioDeadlineBudget(
         started + seconds, started + execution_seconds
     )
+    execution_elapsed = None
     budget_token = _ACTIVE_DEADLINE.set(budget)
 
     def expire(_signum, _frame):
+        nonlocal execution_elapsed
+        if execution_elapsed_callback is not None:
+            execution_elapsed = time.monotonic() - started
         budget.expired = True
         remaining = min(cleanup_seconds, budget.remaining())
         if remaining <= 0.0:
@@ -164,15 +170,27 @@ def scenario_deadline(
     try:
         yield
     finally:
+        if execution_elapsed_callback is not None and execution_elapsed is None:
+            execution_elapsed = time.monotonic() - started
         _restore_signal_state(
             previous_handler, previous_timer, time.monotonic() - started
         )
         _ACTIVE_DEADLINE.reset(budget_token)
+        if execution_elapsed_callback is not None:
+            execution_elapsed_callback(execution_elapsed)
 
 
 def run_scenario(
-    function, binary, seconds=SCENARIO_TIMEOUT_SECONDS, cleanup_seconds=None
+    function,
+    binary,
+    seconds=SCENARIO_TIMEOUT_SECONDS,
+    cleanup_seconds=None,
+    execution_elapsed_callback=None,
 ):
     """Call one registered scenario under its complete wall-clock budget."""
-    with scenario_deadline(seconds, cleanup_seconds):
+    with scenario_deadline(
+        seconds,
+        cleanup_seconds,
+        execution_elapsed_callback=execution_elapsed_callback,
+    ):
         return function(binary)

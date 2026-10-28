@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +23,10 @@ from loom_e2e.benchmarks import (  # noqa: E402
     benchmark_scenarios,
     build_benchmark_report,
 )
-from loom_e2e.deadline import run_scenario  # noqa: E402
+from loom_e2e.deadline import (  # noqa: E402
+    SCENARIO_EXECUTION_TIMEOUT_SECONDS,
+    run_scenario,
+)
 from loom_e2e.registry import all_scenarios  # noqa: E402
 from loom_e2e.scenario_discovery import (  # noqa: E402
     format_scenario_listing,
@@ -62,6 +66,11 @@ def _parse_args(argv):
         "--artifacts-dir",
         default=None,
         help="write per-scenario results here (default: a unique retained temp directory)",
+    )
+    parser.add_argument(
+        "--timing-report",
+        default=None,
+        help="write one JSON line per scenario with its execution time and budget use",
     )
     parser.add_argument(
         "--benchmarks",
@@ -148,24 +157,72 @@ def _artifact_directory(explicit):
 
 
 def _run_with_artifacts(
-    name, function, binary, artifacts_dir, declared_commands=()
+    name,
+    function,
+    binary,
+    artifacts_dir,
+    declared_commands=(),
+    timing_report_path=None,
 ):
     result = ScenarioResult(
         name,
         binary_realpath=os.path.realpath(binary),
         declared_commands=declared_commands,
     )
+    started = time.monotonic()
+    execution_elapsed = None
+
+    def record_execution_elapsed(elapsed):
+        nonlocal execution_elapsed
+        execution_elapsed = elapsed
+
     try:
         with capture_scenario(result):
-            value = run_scenario(function, binary)
+            value = run_scenario(
+                function,
+                binary,
+                execution_elapsed_callback=record_execution_elapsed,
+            )
     except Exception as error:
+        elapsed = (
+            time.monotonic() - started
+            if execution_elapsed is None
+            else execution_elapsed
+        )
         result.status = "failed"
         result.error = {"type": type(error).__name__, "message": str(error)}
+        timing = result.record_timing(
+            "scenario_execution", elapsed, SCENARIO_EXECUTION_TIMEOUT_SECONDS
+        )
         result.save(artifacts_dir)
+        _write_scenario_timing(result, timing, timing_report_path)
         raise
     result.status = "passed"
+    elapsed = (
+        time.monotonic() - started
+        if execution_elapsed is None
+        else execution_elapsed
+    )
+    timing = result.record_timing(
+        "scenario_execution", elapsed, SCENARIO_EXECUTION_TIMEOUT_SECONDS
+    )
     result.save(artifacts_dir)
+    _write_scenario_timing(result, timing, timing_report_path)
     return value
+
+
+def _write_scenario_timing(result, timing, report_path):
+    record = {
+        "scenario": result.name,
+        "result": result.status,
+        "stage": "scenario_execution",
+        **timing,
+    }
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if report_path is not None:
+        with open(report_path, "a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+    print(f"SCENARIO_TIMING {line}")
 
 
 def main(argv):
@@ -187,6 +244,12 @@ def main(argv):
     binary = _binary_from_arguments(args.binary)
     artifacts_dir = _artifact_directory(args.artifacts_dir)
     print(f"scenario artifacts: {artifacts_dir}")
+    timing_report_path = None
+    if args.timing_report is not None:
+        timing_report_path = os.path.abspath(args.timing_report)
+        os.makedirs(os.path.dirname(timing_report_path) or ".", exist_ok=True)
+        with open(timing_report_path, "w", encoding="utf-8"):
+            pass
 
     if benchmark_mode:
         _run_harness_preflight()
@@ -196,7 +259,11 @@ def main(argv):
             for name, function in benchmark_scenarios(registered).items():
                 try:
                     measurements[name] = _run_with_artifacts(
-                        f"benchmarks/{name}", function, binary, artifacts_dir
+                        f"benchmarks/{name}",
+                        function,
+                        binary,
+                        artifacts_dir,
+                        timing_report_path=timing_report_path,
                     )
                 except Exception as error:
                     print(f"FAIL benchmarks/{name}: {error}", file=sys.stderr)
@@ -292,7 +359,12 @@ def main(argv):
     for name, scenario_commands, fn in selected:
         try:
             _run_with_artifacts(
-                name, fn, binary, artifacts_dir, scenario_commands
+                name,
+                fn,
+                binary,
+                artifacts_dir,
+                scenario_commands,
+                timing_report_path,
             )
         except Exception as error:
             failed += 1

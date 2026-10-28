@@ -5,7 +5,7 @@ import os
 import json
 import tempfile
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import ANY, call, patch
 
 from loom_e2e import commands, registry
 
@@ -105,21 +105,26 @@ class CoverageCliTests(unittest.TestCase):
         self.assertEqual(cli.main(["--only", "forward"]), 0)
         self.assertIn("commands covered: 1 / 2", self.stdout.getvalue())
         self.assertIn("uncovered commands: backward-char", self.stdout.getvalue())
-        self.run.assert_called_once_with(self.forward, "loom")
+        self.run.assert_called_once_with(
+            self.forward, "loom", execution_elapsed_callback=ANY,
+        )
         self.preflight.assert_called_once_with()
 
     def test_partial_run_cannot_claim_full_coverage(self):
         self.assertEqual(cli.main([
             "--only", "forward", "--require-full-coverage",
         ]), 1)
-        self.run.assert_called_once_with(self.forward, "loom")
+        self.run.assert_called_once_with(
+            self.forward, "loom", execution_elapsed_callback=ANY,
+        )
         self.preflight.assert_called_once_with()
 
     def test_full_run_reports_full_coverage(self):
         self.assertEqual(cli.main([]), 0)
         self.assertIn("commands covered: 2 / 2", self.stdout.getvalue())
         self.assertEqual(self.run.call_args_list, [
-            call(self.forward, "loom"), call(self.backward, "loom"),
+            call(self.forward, "loom", execution_elapsed_callback=ANY),
+            call(self.backward, "loom", execution_elapsed_callback=ANY),
         ])
         self.preflight.assert_called_once_with()
 
@@ -247,6 +252,64 @@ class CoverageCliTests(unittest.TestCase):
             self.assertEqual(result["binary_realpath"], os.path.realpath("loom"))
             self.assertEqual(result["declared_commands"], ["forward-char"])
 
+    def test_scenario_timing_is_saved_and_reported_as_one_json_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts_dir = os.path.join(directory, "artifacts")
+            report_path = os.path.join(directory, "scenario-timings.jsonl")
+            with patch.object(cli.time, "monotonic", side_effect=[10.0, 12.5]):
+                self.assertEqual(cli.main([
+                    "--only", "forward",
+                    "--artifacts-dir", artifacts_dir,
+                    "--timing-report", report_path,
+                ]), 0)
+
+            with open(report_path, encoding="utf-8") as handle:
+                lines = handle.read().splitlines()
+            self.assertEqual(len(lines), 1)
+            record = json.loads(lines[0])
+            self.assertEqual(record, {
+                "scenario": "forward",
+                "result": "passed",
+                "stage": "scenario_execution",
+                "elapsed_seconds": 2.5,
+                "budget_seconds": 5.0,
+                "budget_percent": 50.0,
+            })
+            self.assertIn(f"SCENARIO_TIMING {lines[0]}", self.stdout.getvalue())
+
+            result_files = [
+                os.path.join(root, filename)
+                for root, _dirs, files in os.walk(artifacts_dir)
+                for filename in files
+                if filename == "result.json"
+            ]
+            self.assertEqual(len(result_files), 1)
+            with open(result_files[0], encoding="utf-8") as handle:
+                result = json.load(handle)
+            self.assertEqual(result["timings"]["scenario_execution"], {
+                "elapsed_seconds": 2.5,
+                "budget_seconds": 5.0,
+                "budget_percent": 50.0,
+            })
+
+    def test_failed_scenario_timing_records_use_over_one_hundred_percent(self):
+        def fail_with_timing(_function, _binary, execution_elapsed_callback):
+            execution_elapsed_callback(6.0)
+            raise RuntimeError("scenario failed")
+
+        self.run.side_effect = fail_with_timing
+        with tempfile.TemporaryDirectory() as directory:
+            report_path = os.path.join(directory, "scenario-timings.jsonl")
+            self.assertEqual(cli.main([
+                "--only", "forward", "--timing-report", report_path,
+            ]), 1)
+            with open(report_path, encoding="utf-8") as handle:
+                record = json.loads(handle.readline())
+        self.assertEqual(record["result"], "failed")
+        self.assertEqual(record["elapsed_seconds"], 6.0)
+        self.assertEqual(record["budget_percent"], 120.0)
+        self.assertIn('"result":"failed"', self.stdout.getvalue())
+
     def test_default_artifact_directories_are_printed_and_retained(self):
         self.assertEqual(cli.main(["--only", "forward"]), 0)
         self.assertEqual(cli.main(["--only", "forward"]), 0)
@@ -280,7 +343,7 @@ class CoverageCliTests(unittest.TestCase):
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             }
 
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(
                 cli,
@@ -298,9 +361,9 @@ class CoverageCliTests(unittest.TestCase):
             self.assertEqual(
                 self.run.call_args_list,
                 [
-                    call(startup, "loom"),
-                    call(redraw, "loom"),
-                    call(large_file_open, "loom"),
+                    call(startup, "loom", execution_elapsed_callback=ANY),
+                    call(redraw, "loom", execution_elapsed_callback=ANY),
+                    call(large_file_open, "loom", execution_elapsed_callback=ANY),
                 ],
             )
             with open(os.path.join(directory, "benchmarks.json"), encoding="utf-8") as handle:
@@ -326,7 +389,7 @@ class CoverageCliTests(unittest.TestCase):
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
         }
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
                 self.assertEqual(cli.main([
@@ -349,7 +412,7 @@ class CoverageCliTests(unittest.TestCase):
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
         }
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
                 self.assertEqual(cli.main([
@@ -374,7 +437,7 @@ class CoverageCliTests(unittest.TestCase):
                 "input": {"lines": 100_000, "bytes": 5_000_000},
             },
         }
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
                 self.assertEqual(cli.main([
@@ -397,7 +460,7 @@ class CoverageCliTests(unittest.TestCase):
                 "eof_samples": [],
             }
 
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(
                 cli,
@@ -429,7 +492,7 @@ class CoverageCliTests(unittest.TestCase):
         def large_file_open(binary):
             raise TimeoutError("scenario execution deadline expired")
 
-        self.run.side_effect = lambda function, binary: function(binary)
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(
                 cli,

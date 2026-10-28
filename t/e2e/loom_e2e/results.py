@@ -49,6 +49,7 @@ class ScenarioResult:
         self.declared_commands = list(declared_commands)
         self.status = "running"
         self.error = None
+        self.timings = {}
         self.observations = []
         self.events = []
         self.sessions = []
@@ -113,6 +114,17 @@ class ScenarioResult:
             }
         )
 
+    def record_timing(self, stage, elapsed_seconds, budget_seconds):
+        elapsed_seconds = float(elapsed_seconds)
+        budget_seconds = float(budget_seconds)
+        timing = {
+            "elapsed_seconds": round(elapsed_seconds, 3),
+            "budget_seconds": budget_seconds,
+            "budget_percent": round(elapsed_seconds / budget_seconds * 100.0, 1),
+        }
+        self.timings[stage] = timing
+        return timing
+
     def _classification(self):
         observations = [
             item
@@ -146,6 +158,7 @@ class ScenarioResult:
             "observation_class": classification,
             "binary_realpath": self.binary_realpath,
             "declared_commands": self.declared_commands,
+            "timings": self.timings,
             "events": self.events,
             "observed_types": sorted({item["type"] for item in self.observations}),
             "observations": self.observations,

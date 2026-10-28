@@ -173,10 +173,30 @@ jobs:
           E2E_SCENARIO: ${{ inputs.e2e_scenario || '' }}
         run: |
           if [[ -n "$E2E_SCENARIO" ]]; then
-            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e -- --only "$E2E_SCENARIO"
+            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e -- --only "$E2E_SCENARIO" \
+              --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           else
-            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
+            timeout --signal=TERM --kill-after=15s 600s nix run .#e2e -- \
+              --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           fi
+
+      - name: Publish PTY scenario timings
+        if: ${{ always() }}
+        run: |
+          report="$RUNNER_TEMP/loom-e2e-timings.jsonl"
+          {
+            echo '### PTY scenario timings (x86_64-linux)'
+            echo
+            echo 'Elapsed time ends at scenario return or its execution alarm; reserved cleanup time is excluded.'
+            echo
+            if [[ -s "$report" ]]; then
+              echo '```jsonl'
+              cat "$report"
+              echo '```'
+            else
+              echo 'No per-scenario execution timings were recorded.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce PTY performance targets
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
@@ -238,10 +258,29 @@ jobs:
           E2E_SCENARIO: ${{ inputs.e2e_scenario || '' }}
         run: |
           if [[ -n "$E2E_SCENARIO" ]]; then
-            nix run .#e2e -- --only "$E2E_SCENARIO"
+            nix run .#e2e -- --only "$E2E_SCENARIO" \
+              --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           else
-            nix run .#e2e
+            nix run .#e2e -- --timing-report "$RUNNER_TEMP/loom-e2e-timings.jsonl"
           fi
+
+      - name: Publish PTY scenario timings
+        if: ${{ always() }}
+        run: |
+          report="$RUNNER_TEMP/loom-e2e-timings.jsonl"
+          {
+            echo '### PTY scenario timings (aarch64-darwin)'
+            echo
+            echo 'Elapsed time ends at scenario return or its execution alarm; reserved cleanup time is excluded.'
+            echo
+            if [[ -s "$report" ]]; then
+              echo '```jsonl'
+              cat "$report"
+              echo '```'
+            else
+              echo 'No per-scenario execution timings were recorded.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce PTY performance targets
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
