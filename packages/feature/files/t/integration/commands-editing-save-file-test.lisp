@@ -367,7 +367,13 @@
                     (funcall snapshot-reader path)))
                  (target
                   (prog1 (loom/feature/files:visit-file path)
-                    (expect snapshot-read-count :to-equal 0))))
+                    (expect snapshot-read-count
+                            :to-equal
+                            (if (funcall
+                                 loom/feature/files::*file-metadata-stamp-reader*
+                                 path)
+                                0
+                                1)))))
             (window-set-buffer (window-tree-selected-window tree) source)
             (host-kit:write-file-string "external" path)
             (loom/feature/buffers:switch-to-buffer)
