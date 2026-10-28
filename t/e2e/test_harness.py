@@ -27,6 +27,7 @@ from loom_e2e.results import (
 )
 from loom_e2e.screen import Screen
 from loom_e2e.session import Session, _session_environment
+from scenarios.scenario_helpers import probe_command
 
 
 class TerminalProfileTests(unittest.TestCase):
@@ -59,6 +60,48 @@ class TerminalProfileTests(unittest.TestCase):
         session.process = Mock()
         session.key("END", "RET")
         session.process.write.assert_called_once_with(b"\x1b[4~\r")
+
+
+class ScenarioProbeTests(unittest.TestCase):
+    def test_probe_waits_for_target_prompt_before_canceling(self):
+        calls = []
+
+        class ProbeSession:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def wait_ready(self):
+                calls.append(("ready",))
+
+            def extended_command(self, command):
+                calls.append(("extended_command", command))
+
+            def wait_for_region_text(self, region, expected):
+                calls.append(("wait_for_region_text", region, expected))
+
+            def send(self, data):
+                calls.append(("send", data))
+
+            def quit(self):
+                calls.append(("quit",))
+                return b"", 0
+
+        with patch("scenarios.scenario_helpers.Session", return_value=ProbeSession()):
+            probe_command(
+                "unused",
+                "eval-expression",
+                b"(progn)\n",
+                expected_prompt="Eval: ",
+            )
+
+        prompt_index = calls.index(
+            ("wait_for_region_text", "minibuffer", "Eval: ")
+        )
+        cancel_index = calls.index(("send", keys.ctrl("g")))
+        self.assertLess(prompt_index, cancel_index)
 
 
 class ScenarioRegistryTests(unittest.TestCase):

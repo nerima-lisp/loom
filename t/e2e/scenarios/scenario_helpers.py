@@ -19,12 +19,16 @@ def write_buffer(directory, name="buffer.txt", contents=b"alpha beta\ngamma\n"):
     return path
 
 
-def probe_command(binary, command, contents=b"alpha beta\ngamma\n"):
+def probe_command(
+    binary, command, contents=b"alpha beta\ngamma\n", expected_prompt=None
+):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-") as directory:
         path = write_buffer(directory, contents=contents)
         with Session(binary, [path]) as session:
             session.wait_ready()
             session.extended_command(command)
+            if expected_prompt is not None:
+                session.wait_for_region_text("minibuffer", expected_prompt)
             session.send(keys.ctrl("g"))
             output, code = session.quit()
         assert_exit_zero(command, output, code)
