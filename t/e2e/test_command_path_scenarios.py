@@ -482,6 +482,14 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         calls = []
         trace_counts = iter((7, 8))
+        initial_todo = b"pick 0123456 first\npick 789abcd second\n"
+        expected_todo = module._rebase_todo_after_save_edit(initial_todo)
+        self.assertNotEqual(expected_todo, initial_todo)
+        test_case = self
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        todo_path = Path(directory.name) / "git-rebase-todo"
+        todo_path.write_bytes(initial_todo)
 
         class EditorSession:
             def command_trace_count(self):
@@ -495,14 +503,22 @@ class CommandPathScenarioTests(unittest.TestCase):
                 self, command, *, route=None, after=0, timeout=None
             ):
                 calls.append(("wait_command", command, route, after, timeout))
+                if command == "save-buffer":
+                    test_case.assertEqual(todo_path.read_bytes(), initial_todo)
+                    todo_path.write_bytes(expected_todo)
 
-            def wait_for_file(self, _path, _expected, timeout=None):
+            def wait_for_file(self, path, expected, timeout=None):
                 calls.append(("wait_file", timeout))
+                test_case.assertEqual(Path(path).read_bytes(), expected)
 
-            def assert_file_bytes(self, _path, _expected):
+            def assert_file_bytes(self, path, expected):
                 calls.append(("assert_file",))
+                test_case.assertEqual(Path(path).read_bytes(), expected)
 
-        module._save_and_exit_editor(EditorSession(), "todo", b"unchanged")
+        self.assertNotEqual(todo_path.read_bytes(), expected_todo)
+        module._save_and_exit_editor(
+            EditorSession(), str(todo_path), expected_todo
+        )
 
         self.assertEqual(
             calls,

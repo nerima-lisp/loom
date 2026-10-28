@@ -92,6 +92,10 @@ def _save_and_exit_editor(session, file_path=None, expected_bytes=None):
     )
 
 
+def _rebase_todo_after_save_edit(initial_todo):
+    return b"# E2E save observation\n" + initial_todo
+
+
 def _wait_editor_parent(session, name):
     output, code = session.process.wait(timeout=2)
     session.observe_exit_code(code, expected=0)
@@ -289,7 +293,7 @@ def interactive_rebase_uses_editor_contract(binary):
                 _save_and_exit_editor(
                     session,
                     os.fspath(todo_path),
-                    initial_todo,
+                    _rebase_todo_after_save_edit(initial_todo),
                 )
                 _wait_editor_parent(session, "git rebase -i editor")
                 actual_history = _git(
