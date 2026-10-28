@@ -251,9 +251,24 @@ def pipe_command_r5_missing(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _pipe(session, "./w3-11-shell-missing-tool")
-            session.wait_for_text("not found")
+            missing_error_fragments = (
+                "not found",
+                "No such file or directory",
+            )
+            session.wait_until(
+                lambda _screen: any(
+                    fragment in _result_text(session)
+                    for fragment in missing_error_fragments
+                ),
+                what="the shell's missing executable diagnostic",
+            )
+            missing_error = next(
+                fragment
+                for fragment in missing_error_fragments
+                if fragment in _result_text(session)
+            )
             _assert_exit_message(session, 127)
-            _assert_result_text(session, "not found")
+            _assert_result_text(session, missing_error)
             session.assert_external_state(
                 "pipe-command exit code", _result_exit_code(session), 127
             )
