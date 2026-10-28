@@ -284,20 +284,29 @@ buffer. Undo history is not transferred."
   (defun %guard-file-buffer-switch (buffer continuation)
     (let ((path (buffer-path buffer)))
       (if path
-          (let ((current (read-file-snapshot path)))
+          (let ((fresh-stamp
+                  (prog1 (gethash buffer *freshly-loaded-file-buffers*)
+                    (remhash buffer *freshly-loaded-file-buffers*))))
             (multiple-value-bind (baseline baseline-known-p)
                 (%file-buffer-snapshot buffer)
-              (cond
-                ((and baseline-known-p
-                      (%file-snapshot-equal-p baseline current))
-                 (funcall continuation))
-                ((and (not baseline-known-p)
-                      current
-                      (string= (buffer-text buffer)
-                               (%file-snapshot-text current)))
-                 (%remember-file-snapshot buffer current)
-                 (funcall continuation))
-                (t
-                 (%prompt-buffer-switch buffer current continuation)))))
+              (if (and fresh-stamp
+                       baseline-known-p
+                       *file-metadata-stamp-reader*
+                       (equal fresh-stamp
+                              (funcall *file-metadata-stamp-reader* path)))
+                  (funcall continuation)
+                  (let ((current (read-file-snapshot path)))
+                    (cond
+                      ((and baseline-known-p
+                            (%file-snapshot-equal-p baseline current))
+                       (funcall continuation))
+                      ((and (not baseline-known-p)
+                            current
+                            (string= (buffer-text buffer)
+                                     (%file-snapshot-text current)))
+                       (%remember-file-snapshot buffer current)
+                       (funcall continuation))
+                      (t
+                       (%prompt-buffer-switch buffer current continuation)))))))
           (funcall continuation))))
   (register-buffer-switch-guard :feature/files #'%guard-file-buffer-switch))

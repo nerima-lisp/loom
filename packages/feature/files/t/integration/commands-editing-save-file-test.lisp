@@ -15,6 +15,24 @@
       octets)))
 
 (it
+  "refreshes file path completion after a directory entry is created"
+  (host-kit:with-temporary-directory (directory)
+    (let* ((directory-text
+             (namestring (host-kit:ensure-directory-pathname directory)))
+           (first-name (concatenate 'string directory-text "first.txt"))
+           (second-name (concatenate 'string directory-text "second.txt")))
+      (host-kit:write-file-string "first" first-name)
+      (expect (member first-name
+                      (loom/feature/files::%find-file-candidates directory-text)
+                      :test #'string=)
+              :to-be-truthy)
+      (host-kit:write-file-string "second" second-name)
+      (expect (member second-name
+                      (loom/feature/files::%find-file-candidates directory-text)
+                      :test #'string=)
+              :to-be-truthy))))
+
+(it
   "writes the selected buffer to a new path and registers the new buffer"
   (host-kit:with-temporary-directory (dir)
     (%with-minibuffer-state (minibuffer "hello world"
@@ -341,7 +359,15 @@
         (%with-minibuffer-state (minibuffer "source"
                                  (source (%selected-test-buffer))
                                  (tree (editor-state-window-tree *editor-state*)))
-          (let ((target (loom/feature/files:visit-file path)))
+          (let* ((snapshot-read-count 0)
+                 (snapshot-reader loom/feature/files::*file-snapshot-reader*)
+                 (loom/feature/files::*file-snapshot-reader*
+                  (lambda (path)
+                    (incf snapshot-read-count)
+                    (funcall snapshot-reader path)))
+                 (target
+                  (prog1 (loom/feature/files:visit-file path)
+                    (expect snapshot-read-count :to-equal 0))))
             (window-set-buffer (window-tree-selected-window tree) source)
             (host-kit:write-file-string "external" path)
             (loom/feature/buffers:switch-to-buffer)
@@ -365,6 +391,88 @@
             (expect (buffer-text target) :to-equal "later")
             (expect (window-buffer (window-tree-selected-window tree))
                     :to-be target))))))
+  (it
+    "rechecks an external write between loading and the first display"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "target.txt" dir))
+            (snapshot-read-count 0)
+            (snapshot-reader loom/feature/files::*file-snapshot-reader*))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "source")
+          (let* ((loom/feature/files::*file-snapshot-reader*
+                  (lambda (snapshot-path)
+                    (incf snapshot-read-count)
+                    (funcall snapshot-reader snapshot-path)))
+                 (target (loom/feature/files::%load-file-buffer path))
+                 (continued nil))
+            (%register-test-buffer *editor-state* target)
+            (host-kit:write-file-string "external" path)
+            (loom/feature/files::%guard-file-buffer-switch
+             target
+             (lambda () (setf continued t)))
+            (expect snapshot-read-count :to-equal 1)
+            (expect continued :to-be nil)
+            (expect (buffer-text target) :to-equal "disk")
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil
+                            "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                            path)))))))
+  #+(and sbcl darwin 64-bit)
+(it
+  "detects a same-size rewrite with a changed subsecond stamp on first display"
+  (host-kit:with-temporary-directory (dir)
+    (let ((path (merge-pathnames "target.txt" dir))
+          (snapshot-read-count 0)
+          (snapshot-reader loom/feature/files::*file-snapshot-reader*))
+      (host-kit:write-file-string "disk" path)
+      (expect (sb-posix:utimes (namestring path)
+                               1700000000.125d0
+                               1700000000.125d0)
+              :to-equal 0)
+      (%with-minibuffer-state (minibuffer "source")
+        (let* ((loom/feature/files::*file-snapshot-reader*
+                 (lambda (snapshot-path)
+                   (incf snapshot-read-count)
+                   (funcall snapshot-reader snapshot-path)))
+               (target (loom/feature/files::%load-file-buffer path))
+               (loaded-stamp
+                 (gethash target
+                          loom/feature/files::*freshly-loaded-file-buffers*))
+               (continued nil))
+          (%register-test-buffer *editor-state* target)
+          (expect loaded-stamp :to-be-truthy)
+          (with-open-file (stream path
+                                  :direction :output
+                                  :if-exists :overwrite)
+            (write-string "else" stream))
+          (expect (sb-posix:utimes (namestring path)
+                                   1700000000.875d0
+                                   1700000000.875d0)
+                  :to-equal 0)
+          (let ((current-stamp
+                  (loom/feature/files::%file-metadata-stamp path)))
+            (expect (equal (subseq loaded-stamp 0 4)
+                           (subseq current-stamp 0 4))
+                    :to-be-truthy)
+            (expect (/= (nth 4 loaded-stamp) (nth 4 current-stamp))
+                    :to-be-truthy)
+            (setf (gethash target
+                           loom/feature/files::*freshly-loaded-file-buffers*)
+                  (append (subseq current-stamp 0 4)
+                          (list (nth 4 loaded-stamp))
+                          (subseq current-stamp 5))))
+          (loom/feature/files::%guard-file-buffer-switch
+           target
+           (lambda () (setf continued t)))
+          (expect snapshot-read-count :to-equal 1)
+          (expect continued :to-be nil)
+          (expect (buffer-text target) :to-equal "disk")
+          (expect (minibuffer-prompt-string minibuffer)
+                  :to-equal
+                  (format nil
+                          "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                          path)))))))
   (it
     "distinguishes restored file buffers from external changes"
     (host-kit:with-temporary-directory (dir)

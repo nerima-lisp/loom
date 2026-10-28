@@ -1,30 +1,144 @@
 (in-package #:loom/feature/files)
 
+(progn
+  #+(and sbcl darwin 64-bit)
+  (sb-alien:define-alien-routine ("stat" %file-metadata-stat) sb-alien:int
+    (path sb-alien:c-string)
+    (buffer (* t)))
+  (defun %file-metadata-stamp (path)
+    ;; SBCL drops subsecond fields from its public stat object. Check the
+    ;; private generated Darwin layout before reading it; otherwise the switch
+    ;; guard compares contents. A same-stamp rewrite can pass this one-shot
+    ;; check and is compared by file contents on a later switch.
+    #+(and sbcl darwin 64-bit)
+    (when (%native-file-octet-io-p)
+      (ignore-errors
+        (let* ((posix-package (find-package :sb-posix))
+               (alien-package (find-package :sb-alien-internals))
+               (parse-symbol (and alien-package
+                                  (find-symbol "PARSE-ALIEN-TYPE" alien-package)))
+               (bits-symbol (and alien-package
+                                 (find-symbol "ALIEN-TYPE-BITS" alien-package)))
+               (alignment-symbol
+                 (and alien-package
+                      (find-symbol "ALIEN-TYPE-ALIGNMENT" alien-package))))
+          (when (and posix-package
+                     parse-symbol
+                     (fboundp parse-symbol)
+                     bits-symbol
+                     (fboundp bits-symbol)
+                     alignment-symbol
+                     (fboundp alignment-symbol))
+            (let ((parse-function (symbol-function parse-symbol))
+                  (bits-function (symbol-function bits-symbol))
+                  (alignment-function (symbol-function alignment-symbol)))
+              (flet ((posix-value (name)
+                       (let ((symbol (find-symbol name posix-package)))
+                         (and symbol
+                              (boundp symbol)
+                              (symbol-value symbol))))
+                     (posix-type (name)
+                       (let ((symbol (find-symbol name posix-package)))
+                         (and symbol (funcall parse-function symbol nil))))
+                     (type-bits (type)
+                       (funcall bits-function type))
+                     (type-alignment (type)
+                       (funcall alignment-function type)))
+                (let* ((dev-offset
+                         (posix-value "OFFSET-OF-ALIEN-STAT-DEV"))
+                       (ino-offset
+                         (posix-value "OFFSET-OF-ALIEN-STAT-INO"))
+                       (size-offset
+                         (posix-value "OFFSET-OF-ALIEN-STAT-SIZE"))
+                       (mtime-offset
+                         (posix-value "OFFSET-OF-ALIEN-STAT-MTIME"))
+                       (ctime-offset
+                         (posix-value "OFFSET-OF-ALIEN-STAT-CTIME"))
+                       (stat-type (posix-type "ALIEN-STAT"))
+                       (dev-type (posix-type "DEV-T"))
+                       (ino-type (posix-type "INO-T"))
+                       (off-type (posix-type "OFF-T"))
+                       (time-type (posix-type "TIME-T"))
+                       (stat-bits (and stat-type (type-bits stat-type)))
+                       (stat-size (and stat-bits (/ stat-bits 8))))
+                  (when (and (eql dev-offset 0)
+                             (eql ino-offset 8)
+                             (eql size-offset 96)
+                             (eql mtime-offset 48)
+                             (eql ctime-offset 64)
+                             (= (- ctime-offset mtime-offset) 16)
+                             stat-type dev-type ino-type off-type time-type
+                             (= stat-bits 1152)
+                             (= (type-alignment stat-type) 64)
+                             (= (type-bits dev-type) 32)
+                             (= (type-alignment dev-type) 32)
+                             (= (type-bits ino-type) 64)
+                             (= (type-alignment ino-type) 64)
+                             (= (type-bits off-type) 64)
+                             (= (type-alignment off-type) 64)
+                             (= (type-bits time-type) 64)
+                             (= (type-alignment time-type) 64)
+                             (<= (+ ctime-offset 16) stat-size)
+                             (<= (+ size-offset 8) stat-size)
+                             (sb-sys:find-foreign-symbol-address "stat"))
+                    (let* ((raw (sb-alien:make-alien sb-alien:char stat-size))
+                           (sap (sb-alien:alien-sap raw)))
+                      (unwind-protect
+                           (when (zerop
+                                  (%file-metadata-stat
+                                   (%native-namestring path)
+                                   (sb-alien:cast raw (* t))))
+                             (let ((mtime-nanoseconds
+                                     (sb-sys:sap-ref-64
+                                      sap (+ mtime-offset 8)))
+                                   (ctime-nanoseconds
+                                     (sb-sys:sap-ref-64
+                                      sap (+ ctime-offset 8))))
+                               (when (and (<= 0 mtime-nanoseconds 999999999)
+                                          (<= 0 ctime-nanoseconds 999999999))
+                                 (list (sb-sys:sap-ref-32 sap dev-offset)
+                                       (sb-sys:sap-ref-64 sap ino-offset)
+                                       (sb-sys:sap-ref-64 sap size-offset)
+                                       (sb-sys:sap-ref-64 sap mtime-offset)
+                                       mtime-nanoseconds
+                                       (sb-sys:sap-ref-64 sap ctime-offset)
+                                       ctime-nanoseconds))))
+                        (sb-alien:free-alien raw)))))))))))
+    #-(and sbcl darwin 64-bit)
+    (declare (ignore path))
+    #-(and sbcl darwin 64-bit)
+    nil)
+  (defvar *freshly-loaded-file-buffers* (make-hash-table :test #'eq)))
 (defun %load-file-buffer (path &key (name (file-namestring path)))
-  (let* ((snapshot (%read-file-snapshot path))
+  (let* ((before-stamp (%file-metadata-stamp path))
+         (snapshot (%read-file-snapshot path))
+         (after-stamp (%file-metadata-stamp path))
          (buffer
-           (make-buffer :name
-                        name
-                        :path
-                        path
+           (make-buffer :name name
+                        :path path
                         :initial-content
                         (if snapshot
                             (%file-snapshot-text snapshot)
                             (error "Cannot load missing file ~A" path)))))
     (%remember-file-snapshot buffer snapshot)
+    (setf (gethash buffer *freshly-loaded-file-buffers*)
+          (and before-stamp
+               after-stamp
+               (equal before-stamp after-stamp)
+               after-stamp))
     (buffer-set-major-mode buffer
                            (loom/feature/mode:major-mode-for-path path))
-    (when
-        (and (eq *loom-filesystem* *loom-real-filesystem*)
-             (not
-              (if (%native-path-operation-p path)
-                  (%native-file-writable-p path)
-                  (host-kit:file-writable-p path))))
+    (when (and (eq *loom-filesystem* *loom-real-filesystem*)
+               (not (if (%native-path-operation-p path)
+                        (%native-file-writable-p path)
+                        (host-kit:file-writable-p path))))
       (buffer-set-read-only buffer t))
     buffer))
 
 (defmethod buffer-load (path)
-  (%load-file-buffer path))
+  (let ((buffer (%load-file-buffer path)))
+    (remhash buffer *freshly-loaded-file-buffers*)
+    buffer))
 
 (defvar *loom-backup-directory* nil)
 (defun %loom-backup-directory ()
@@ -119,7 +233,8 @@
     raw-octets
     text
     format)
-  (defvar *file-buffer-snapshots* (make-hash-table :test #'eq))
+  (progn
+    (defvar *file-buffer-snapshots* (make-hash-table :test #'eq)))
   (defvar *confirmed-file-overwrite* nil)
   (define-condition %file-changed-on-disk (error)
     ((path :initarg :path :reader %file-changed-path)
@@ -150,7 +265,9 @@
                :format format)))
           (%make-file-snapshot
            :text (cl-boundary-kit:filesystem-read-file *loom-filesystem* path)))))
-  (setf *file-snapshot-reader* (function %read-file-snapshot))
+  (progn
+    (setf *file-snapshot-reader* (function %read-file-snapshot))
+    (setf *file-metadata-stamp-reader* (function %file-metadata-stamp)))
   (defun %file-snapshot-equal-p (left right)
     (cond
       ((and (null left) (null right)) t)
@@ -186,6 +303,7 @@ The string contains newline style and encoding, plus BOM when present. New file 
   (defun %forget-file-buffer-snapshot (session buffer reason)
     (declare (ignore session reason))
     (remhash buffer *file-buffer-snapshots*)
+    (remhash buffer *freshly-loaded-file-buffers*)
     nil)
   (register-session-hook :buffer-close
                          :feature/files

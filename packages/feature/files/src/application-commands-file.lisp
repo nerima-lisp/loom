@@ -55,6 +55,48 @@ different owner is rejected."
     (error "Recent-file recorder is not registered"))
   (funcall (cdr *recent-file-recorder*) path))
 
+(progn
+  (defvar *find-file-candidate-cache* nil)
+
+  (defun %find-file-directory-candidates (directory-text resolved-directory)
+    (let* ((stamp
+             (and *file-metadata-stamp-reader*
+                  (funcall *file-metadata-stamp-reader* resolved-directory)))
+           (cache *find-file-candidate-cache*)
+           (cache-hit-p
+             (and stamp
+                  cache
+                  (string= directory-text (first cache))
+                  (equal stamp (second cache)))))
+      (if cache-hit-p
+          (third cache)
+          (let ((entries nil))
+            (host-kit:call-with-directory-entries
+             (lambda (child-path metadata)
+               (let* ((kind (host-kit:file-metadata-kind metadata))
+                      (name (file-namestring child-path)))
+                 (when (member kind '(:directory :regular-file))
+                   (push (cons (concatenate 'string
+                                            directory-text
+                                            name
+                                            (if (eq kind :directory) "/" ""))
+                               kind)
+                         entries))))
+             resolved-directory)
+            (setf entries
+                  (mapcar #'car
+                          (sort entries
+                                (lambda (first second)
+                                  (or (and (eq (cdr first) :directory)
+                                           (eq (cdr second) :regular-file))
+                                      (and (eq (cdr first) (cdr second))
+                                           (string< (car first)
+                                                    (car second))))))))
+            (when stamp
+              (setf *find-file-candidate-cache*
+                    (list directory-text stamp entries)))
+            entries)))))
+
 (defun %find-file-candidates (input)
   "Return path candidates from INPUT's existing parent directory."
   (let* ((separator (position #\/ input :from-end t))
@@ -62,31 +104,10 @@ different owner is rejected."
          (directory (if (string= directory-text "")
                         #p"./"
                         (pathname directory-text)))
-         (resolved-directory (probe-file directory))
-         (entries nil))
+         (resolved-directory (probe-file directory)))
     (when (and resolved-directory
                (host-kit:directory-pathname-p resolved-directory))
-      (host-kit:call-with-directory-entries
-       (lambda (child-path metadata)
-         (let* ((kind (host-kit:file-metadata-kind metadata))
-                (name (if (eq kind :directory)
-                          (file-namestring child-path)
-                          (file-namestring child-path))))
-           (when (member kind '(:directory :regular-file))
-             (push (cons (concatenate 'string
-                                      directory-text
-                                      name
-                                      (if (eq kind :directory) "/" ""))
-                         kind)
-                   entries))))
-       resolved-directory))
-    (mapcar #'car
-            (sort entries
-                  (lambda (first second)
-                    (or (and (eq (cdr first) :directory)
-                             (eq (cdr second) :regular-file))
-                        (and (eq (cdr first) (cdr second))
-                             (string< (car first) (car second)))))))))
+      (%find-file-directory-candidates directory-text resolved-directory))))
 (defun %recent-file-candidates (input)
   "Return recent file paths suitable for minibuffer completion."
   (declare (ignore input))

@@ -1,5 +1,6 @@
 (in-package #:loom/feature/files)
 (defvar *file-snapshot-reader* nil)
+(defvar *file-metadata-stamp-reader* nil)
 
 (defun editor-path-string (path)
   "Return a stable string representation of PATH when it is available."
