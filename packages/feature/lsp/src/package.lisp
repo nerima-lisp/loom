@@ -73,7 +73,7 @@
                      #:make-lsp-location
                      #:lsp-location-p
                      #:lsp-location-uri
-                     #:lsp-location-range #:register-completion-popup-provider #:lsp-rename #:lsp-request-rename)
+                     #:lsp-location-range #:register-completion-popup-provider #:lsp-rename #:lsp-request-rename #:lsp-format-buffer #:lsp-request-formatting)
             (:import-from #:loom/feature/buffers
                           #:registered-buffers
                           #:register-buffer)

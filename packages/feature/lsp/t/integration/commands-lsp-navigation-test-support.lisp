@@ -4,12 +4,15 @@
   (defparameter +lsp-navigation-capabilities+
     "{\"capabilities\":{\"completionProvider\":{},\"definitionProvider\":true,\"hoverProvider\":true,\"referencesProvider\":true}}"))
 
-(defun %lsp-navigation-state (&key (content "foo") (path "/tmp/main.lisp"))
+(defun %lsp-navigation-state (&key (content "foo") (path "/tmp/main.lisp") mode)
   "An editor state whose selected buffer is file-backed, as a request needs."
   (let* ((buffer (make-buffer :name "main.lisp"
                               :path path
                               :initial-content content))
-         (tree (make-window-tree buffer 80 24)))
+         (tree (progn
+                 (when mode
+                   (buffer-set-major-mode buffer mode))
+                 (make-window-tree buffer 80 24))))
     (make-editor-state :window-tree tree
                        :workspaces (make-workspace-manager tree :name "main")
                        :minibuffer (make-minibuffer)
@@ -17,20 +20,24 @@
                        :file-tree nil
                        :renderer nil
                        :session (%make-test-editor-session
-                        (list buffer)
-                        :window-tree tree
-                        :additional-slices '(:feature/lsp :feature/search))
+                                 (list buffer)
+                                 :window-tree tree
+                                 :additional-slices '(:feature/lsp :feature/search))
                        :kill-ring nil)))
 
 (defmacro %with-lsp-navigation
     ((transport session buffer
       &key (content "foo")
            (path "/tmp/main.lisp")
-           (capabilities +lsp-navigation-capabilities+))
+           (capabilities +lsp-navigation-capabilities+)
+           mode)
      &body body)
   "Run BODY with an initialized fake session and a buffer at PATH."
   (let ((buffer-binding (gensym "BUFFER-")))
-    `(let* ((*editor-state* (%lsp-navigation-state :content ,content :path ,path))
+    `(let* ((*editor-state* (%lsp-navigation-state
+                             :content ,content
+                             :path ,path
+                             :mode ,mode))
             (loom/core/editor-session:*editor-session*
              (loom/core/editor-session:editor-state-session *editor-state*))
             (,buffer-binding (%selected-test-buffer)))

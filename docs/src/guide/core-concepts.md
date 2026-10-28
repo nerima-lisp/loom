@@ -97,8 +97,11 @@ sends the complete buffer through its standard input. Successful output replaces
 the buffer as one undoable edit; failed commands, read-only buffers, and
 narrowed buffers leave the original text unchanged.
 
-This command runs an external formatter. It is separate from LSP formatting,
-which is not implemented.
+`M-x lsp-format-buffer` asks the language server to format the selected file's
+full document when it advertises `documentFormattingProvider`. The returned
+edits are validated and applied as one undoable change. If the buffer changes or
+closes while the request is pending, loom discards the response. If the server
+does not support formatting, loom reports that in the minibuffer.
 
 ## Language server support
 
@@ -109,8 +112,8 @@ shows a discovered command, its configuration path, and directory for review;
 type `yes` at the confirmation prompt to start it. If no command is discovered,
 enter a server command at the prompt.
 
-The current LSP commands provide diagnostics, completion, definition
-navigation, and hover information:
+The current LSP commands provide diagnostics, completion, navigation, hover,
+rename, references, and formatting:
 
 - Run `M-x lsp-diagnostics` to refresh and display diagnostics for the selected
   file-backed buffer.
@@ -118,8 +121,10 @@ navigation, and hover information:
 - Use `M-.` to jump to a definition and `M-,` to return to the saved location.
 - Run `M-x lsp-hover-at-point` to show hover information in the minibuffer when
   the server advertises hover support.
-
-References, rename, and LSP formatting are not implemented.
+- Run `M-x lsp-find-references` to show local references in a result list.
+- Run `M-x lsp-rename` to apply the server's validated WorkspaceEdit.
+- Run `M-x lsp-format-buffer` to format the selected file when the server
+  advertises formatting support.
 
 ## Git status, staging, and diff
 

@@ -1,11 +1,1 @@
-(
-  "lsp-completion-at-point"
-  "lsp-diagnostics"
-  "lsp-find-definition"
-  "lsp-pop-definition"
-  "lsp-start"
-  "lsp-stop"
-  "lsp-hover-at-point"
-  "lsp-find-references"
-  "lsp-rename"
-)
+("lsp-completion-at-point" "lsp-diagnostics" "lsp-find-definition" "lsp-pop-definition" "lsp-start" "lsp-stop" "lsp-hover-at-point" "lsp-find-references" "lsp-rename" "lsp-format-buffer")

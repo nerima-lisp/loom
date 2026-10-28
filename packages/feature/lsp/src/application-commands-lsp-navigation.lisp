@@ -203,3 +203,81 @@ back even when the jump crossed into another file."
                 (%lsp-rename-response
                  session editor-session result error-message))))))))))
   )
+(defun %lsp-formatting-response-current-p
+    (session editor-session buffer uri request-document request-version request-text)
+  (let ((document (gethash uri (lsp-session-documents session))))
+    (and editor-session
+         document
+         (eq document request-document)
+         (buffer-p buffer)
+         (member buffer
+                 (loom/feature/buffers:registered-buffers editor-session)
+                 :test (function eq))
+         (member buffer (lsp-document-buffers document) :test (function eq))
+         (buffer-path buffer)
+         (string= uri (lsp-path-uri (buffer-path buffer)))
+         (eql request-version (lsp-document-version document))
+         (string= request-text (lsp-document-text document))
+         (string= request-text (buffer-text buffer)))))
+(defun lsp-format-buffer ()
+  "Format the selected buffer with its language server."
+  (multiple-value-bind (session buffer uri line column)
+      (%lsp-navigation-context)
+    (declare (ignore line column))
+    (let ((editor-session
+            (loom/core/editor-session:editor-state-session *editor-state*)))
+      (cond
+        ((null session)
+         (%lsp-navigation-message "No LSP session for this buffer"))
+        ((not (lsp-session-capability session "documentFormattingProvider"))
+         (%lsp-navigation-message "Server does not provide formatting"))
+        (t
+         (lsp-session-sync-buffer session buffer editor-session)
+         (let ((request-document
+                 (gethash uri (lsp-session-documents session))))
+           (if (null request-document)
+               (%lsp-navigation-message
+                "No open LSP document for this buffer")
+               (let ((request-version
+                       (lsp-document-version request-document))
+                     (request-text (lsp-document-text request-document)))
+                 (lsp-request-formatting
+                  session
+                  uri
+                  (json-kit:make-json-object
+                   (list
+                    (cons "tabSize"
+                          (loom/feature/mode:major-mode-indentation-width
+                           (loom/core/buffer:buffer-major-mode buffer)))
+                    (cons "insertSpaces" t)))
+                  (lambda (result error-message)
+                    (cond
+                      (error-message
+                       (%lsp-navigation-message
+                        (format nil "Formatting failed: ~A" error-message)))
+                      ((or (null result) (eq result json-kit:+json-null+))
+                       (%lsp-navigation-message
+                        "No formatting edits returned"))
+                      ((not (%lsp-formatting-response-current-p
+                             session editor-session buffer uri request-document
+                             request-version request-text))
+                       (%lsp-navigation-message
+                        "Formatting response discarded because the buffer changed or closed"))
+                      (t
+                       (handler-case
+                           (progn
+                             (let ((changes
+                                     (make-hash-table :test (quote equal)))
+                                   (workspace-edit
+                                     (make-hash-table :test (quote equal))))
+                               (setf (gethash uri changes) result
+                                     (gethash "changes" workspace-edit)
+                                     changes)
+                               (%lsp-apply-workspace-edit
+                                session editor-session workspace-edit))
+                             (%lsp-navigation-message "Formatting applied"))
+                         (lsp-workspace-edit-error (condition)
+                           (%lsp-navigation-message
+                            (format nil "Formatting rejected: ~A"
+                                    (lsp-workspace-edit-error-reason
+                                     condition)))))))))))))))))

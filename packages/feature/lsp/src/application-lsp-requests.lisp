@@ -124,4 +124,14 @@ The request includes declarations in the returned locations."
             (cons "newName" new-name)))
      (lambda (result error-message)
        (funcall handler result error-message)))))
+(defun lsp-request-formatting (session uri options handler)
+  "Ask SESSION to format the full document identified by URI."
+  (when (lsp-session-capability session "documentFormattingProvider")
+    (%lsp-request
+     session "textDocument/formatting"
+     (json-kit:make-json-object
+      (list (cons "textDocument"
+                  (json-kit:make-json-object (list (cons "uri" uri))))
+            (cons "options" options)))
+     handler)))
 

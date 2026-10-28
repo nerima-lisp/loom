@@ -14,4 +14,18 @@
 (register-command-spec :feature/lsp "lsp-rename" "lsp-rename" #'loom/feature/lsp:lsp-rename
                        :keys '() :keymap :global :group "tooling" :help nil :help-order nil
                        :mutates t :prompts '(:free-string) :needs-region nil :external '("lsp-server") :modes '(:all))
+(register-command-spec :feature/lsp
+                       "lsp-format-buffer"
+                       "lsp-format-buffer"
+                       (function loom/feature/lsp:lsp-format-buffer)
+                       :keys (quote ())
+                       :keymap :global
+                       :group "tooling"
+                       :help nil
+                       :help-order nil
+                       :mutates t
+                       :prompts (quote ())
+                       :needs-region nil
+                       :external (quote ("lsp-server"))
+                       :modes (quote (:all)))
 

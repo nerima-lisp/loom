@@ -86,6 +86,7 @@
                                    (:file
                                     "commands-lsp-navigation-test-support")
                                    (:file "commands-lsp-navigation-test")
+                                   (:file "lsp-formatting-test")
                                    (:file "lsp-completion-data-test")
                                    (:file "commands-lsp-definition-test")
                                    (:file "lsp-command-diagnostics-format-test")

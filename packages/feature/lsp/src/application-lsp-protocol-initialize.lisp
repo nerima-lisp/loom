@@ -11,6 +11,9 @@
            (list
             (cons "synchronization"
                   (json-kit:make-json-object
+                   (list (cons "dynamicRegistration" t))))
+            (cons "formatting"
+                  (json-kit:make-json-object
                    (list (cons "dynamicRegistration" t)))))))
     (cons "publishDiagnostics"
           (json-kit:make-json-object

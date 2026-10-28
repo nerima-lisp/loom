@@ -256,4 +256,13 @@
       :observe (:screen_text)
       :scenario "command-path/r1/lsp-rename/mx"
       :lane "W3-9")
+ (:id "r1:lsp-format-buffer:mx"
+      :commands ("lsp-format-buffer")
+      :rule :r1
+      :entry "mx"
+      :state "default"
+      :outcome "command runs from M-x"
+      :observe (:screen_text)
+      :scenario "command-path/r1/lsp-format-buffer/mx"
+      :lane "W3-9")
 )

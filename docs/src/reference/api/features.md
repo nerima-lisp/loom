@@ -1346,8 +1346,8 @@ Public symbols from `loom/feature/lsp`.
 
 LSP sessions are selected by canonical project root and the buffer's language
 ID from `loom/feature/mode:major-mode-language-id`. The commands and session
-APIs below cover diagnostics, completion, hover, definition jumps, and returning
-from the most recent definition jump.
+APIs below cover diagnostics, completion, formatting, references, rename,
+hover, definition jumps, and returning from the most recent definition jump.
 
 ### `lsp-column-to-character`
 
@@ -1618,6 +1618,17 @@ call the handler. When sent, the function returns the request ID. The handler
 receives `(content error-message)`: `content` is decoded hover text or `nil`,
 and `error-message` is a string or `nil`.
 
+### `lsp-request-formatting`
+
+```lisp
+(loom/feature/lsp:lsp-request-formatting session uri options handler)
+```
+
+Request full-document formatting for `uri`. The caller must synchronize the
+document first. The request is not sent when the server does not advertise
+`documentFormattingProvider`; otherwise the function returns the request ID and
+calls `handler` with the raw result and an error message.
+
 ### `lsp-completion-item`
 
 The value type for one completion candidate.
@@ -1675,6 +1686,15 @@ Request and display completion candidates at point. `C-M-i` opens the popup;
 Run `M-x lsp-hover-at-point` to request hover information at point. The command
 shows the decoded server text in the minibuffer when the server advertises
 `hoverProvider`.
+
+### `lsp-format-buffer`
+
+Run `M-x lsp-format-buffer` to request full-document formatting for the selected
+file-backed buffer. The command uses the mode's indentation width and spaces,
+then validates and applies the returned text edits through the WorkspaceEdit
+path. It reports a missing session, missing server capability, empty result,
+server error, or rejected edit in the minibuffer. If the buffer changes or
+closes while the request is pending, the command discards the response.
 
 ### `lsp-find-definition`
 
