@@ -103,10 +103,10 @@ HOME=$(mktemp -d) LOOM_BINARY="$out/bin/loom" python3 t/e2e/loom-test.py
 | P1 ハーネス | 完了 | `a8c7f09`（flake: pyte と `apps.e2e`）、`22b7415`（`t/e2e` 再構成） | `nix run .#e2e` を 2 回連続実行、いずれも `12 passed, 0 failed, 12 total`、`commands covered: 12 / 120`、exit 0。`nix run .#e2e -- --list` が 12 件を列挙。固定 sleep はハーネスから除去済み（`grep -rn 'time.sleep' t/e2e` はプロセス終了待ちの 1 箇所のみ） |
 | P2 全コマンド | 完了 | `a76ee02`, `a7cdca3`, `6f3db63`, `86d09a3`, `4298135`, `6b6187a` | `nix run .#e2e -- --list` は 120/120、未カバー 0。`nix run .#e2e` は 107 passed, 3 failed, 110 total。失敗 3 件は §2 の #4-#6 に記録済み |
 | P3 配線処置 | 完了 | `473b43f`, `c2e2cbf`, `fbbbf7f` | PTY E2E は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`、exit 0。in-process は launchctl 経由で `1408 passed, 0 skipped, 0 todo, 0 failed, 0 errored, 1408 total`、exit 0。`nix flake check --print-build-logs` は `all checks passed!`、exit 0。#1/#4/#5/#6 は closed、#2 は対象外として deferred |
+| P4 Documentation: 要件書と slop | 完了 | `ccb2c34` | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |
 | P5 CI | 実装済み | `cb5022c` | `nix build .#default` は実測 3.73 秒、`nix run .#e2e` は実測 28.47 秒。いずれも exit 0。E2E は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`。この実測を根拠に E2E ジョブの `timeout-minutes` は 10 とした。CI の両ジョブは未実行 |
 | 統合（presentation） | 完了 | `9bbca23`, `cc0380d`, `f892bb4`, `e6ae4d5` | `nix run .#e2e` は `110 passed, 0 failed, 110 total`、`commands covered: 120 / 120`、未カバー `0`、exit 0。launchctl 経由の in-process は `1427 passed, 0 skipped, 0 todo, 0 failed, 0 errored, 1427 total`、exit 0。`nix flake check` は `all checks passed!`、exit 0。`nix build --no-link --print-out-paths .#default` は exit 0。実PTY は mode-line、C-x 2/C-x 3 の mode-line 分離、C-SPC の緑背景、M-x terminal の `pty-integration` 出力を画面ダンプで確認し、exit 0 |
 | 診断可視化実機 | 完了 | `514c5a3`, `ed0b49c` | 実 `nixd` を使った一時 PTY スクリプトが exit 0。診断付き画面は mode-line に `Diag: E1 W1`、診断範囲は赤背景、リージョン重畳は緑背景と診断範囲の赤背景を同一画面で確認。LSP セッション無しと診断ゼロでは `Diag:` が無く、40 列の長い日本語名でも mode-line は `cells=40` で折り返さなかった。 |
-| P4 Documentation: 要件書と slop | 完了 | `ccb2c34` | `requirements-daily-driver.md` を現行の判断記録へ書き直し、FR-000 から FR-010 の状態、対象言語、SWANK と LSP の境界、v5 永続化境界、Org の範囲を記録。dead export 7 件、冗長 docstring 3 件、roadmap 自賛 2 件、英語 em dash 4 行 / 3 ファイルを除去。 |
 
 ## 4. Development verification and open criteria
 
@@ -277,7 +277,7 @@ that neither reaches the child. `python3 -B -m unittest discover -s t/e2e -p
 'test_*.py'` exited 0 with all 38 tests passing. Explicit process environments
 remain caller-controlled replacements rather than inheriting the parent.
 
-The discovered LSP command now requires an exact `yes` after review. All 15
+The LSP server-discovery confirmation now requires an exact `yes` after review. All 15
 selected discovery and session-start tests passed on declared SBCL 2.6.7;
 exit 0. These include constructor and initialization-send failures that preserve
 the old session, and replacement with an old transport that fails during receive
@@ -437,17 +437,6 @@ creating a draft release, it checks the live remote tag against the verified
 commit. Shell syntax, ShellCheck, and actionlint passed; these static checks do
 not establish a live release run. The author's real-terminal acceptance remains
 required before release.
-
-The current checkout also passed the exact PTY app on aarch64-darwin:
-
-```sh
-nix run path:.#e2e --no-update-lock-file
-```
-
-It exited 0: all 30 deadline preflight tests and all 117 scenarios passed,
-covering all 120 registered commands. This confirms the current automated
-terminal gate, not real-terminal input-method behavior or the cause of earlier
-intermittent failures.
 
 ### Lower-level terminal library gate
 
@@ -657,7 +646,7 @@ checks do not establish Japanese IME usability or author acceptance. No draft
 or published release has been created.
 ## 5. W0-1 仕様書コミット後の基線
 
-`docs/src/notes/requirements-modern-editor.md`をバイト単位で複製し、コミット`5f24574071e69b053b65f2f15cfe770ee2b37b3f`を`origin/main`へ反映した。このコミットを実機基線として、macOS arm64で`.#default`のバイナリを実PTYから観測した。アプリ、テスト、ハーネスの変更はない。
+コミット `5f24574071e69b053b65f2f15cfe770ee2b37b3f` で `docs/src/notes/requirements-modern-editor.md` を `origin/main` に反映した。この文書を実機基線として、macOS arm64で `.#default` のバイナリを実PTYから観測した。アプリ、テスト、ハーネスの変更はない。
 
 仕様2.2にある端末縮小後の自動再描画は再現しなかった。確認条件と結果は「仕様2.2の維持項目」に記録した。
 
@@ -1053,6 +1042,7 @@ counts above refer to separate local, CI, and current-workspace snapshots.
 | [40605724231](https://github.com/nerima-lisp/loom/actions/runs/40605724231) | `71c68a3013e2a7bd0e3a2bb0887b3023a2af40ee` | Linux and Darwin flake checks passed with 1,811 passed, 6 skipped, and 0 failures on each platform. The Darwin release archive passed; both archive job cards later appeared concluded. The Darwin E2E job failed during its 251-test preflight because `ScenarioDeadlineTests.test_restores_existing_handler_and_timer` attempted a 0.02-second sleep inside a 0.07-second execution budget; its performance gate was skipped. After GitHub API rate limiting, the workflow HTML showed the Linux E2E and archive jobs as concluded, but their conclusions, E2E metrics, and the overall workflow conclusion could not be confirmed. The known Darwin E2E failure already makes this run unusable as promotion evidence. |
 | [40614855675](https://github.com/nerima-lisp/loom/actions/runs/40614855675) | `e4b7c055b083092933a590982e7117a14c537693` | Five of six jobs passed; the workflow failed only in Darwin PTY E2E. Linux full E2E passed 1,151/1,151 scenarios and covered 147/147 commands; path coverage reported 999 pass, 2 excluded, and 29 failing required paths. Startup was 0.122 s, redraw p95 was 1.785 ms, D13 was 38.224 ms, and all three large-file-open trials expired before producing a metric. Darwin's 252-test harness preflight passed, including the job-control tests; the log contained no `PermissionError` or `killpg` failure. Darwin full E2E failed with 1,108 passed and 43 failed scenarios: 32 execution-budget expirations, 8 buffer-origin mismatches, and 3 user-init non-TTY I/O expectation failures. Its performance report was skipped. The benchmark changes described above were not present in this tested SHA. The Darwin flake check and archive both passed. |
 | [40622923555](https://github.com/nerima-lisp/loom/actions/runs/40622923555) | `acc36bdd39c6ef1762c02b3ebe97d0ec6b481cd7` | Linux full E2E passed 1,164/1,164 scenarios and covered 148/148 commands. Darwin preflight passed 260/260 tests; full E2E passed 1,134/1,164 with 30 failures. Eighteen failures were files-path expectations that compared `/tmp/...` with the screen's `/private/tmp/...`; the remaining 12 were one shell pipe case, three user-init non-TTY cases, seven clipboard cases, and one window cursor case owned outside W4-2. Linux and Darwin flake checks and both release archives passed. Darwin's log contained no `PermissionError` or `killpg` failure. |
+| [40629723568](https://github.com/nerima-lisp/loom/actions/runs/40629723568) | `42ad1e19d3b99f1696c913e1aa1f70b4c71eb792` | Darwin preflight passed 261/261 tests; full E2E passed 1,152/1,164 scenarios. Failures were one save-buffer cancellation expectation showing `/tmp/...` while the screen showed `/private/tmp/...`, one W3-11 shell-pipe case, three non-TTY cases (`R7 xargs non-tty stdin`, `non-tty stdin uses /dev/tty`, and `non-tty stdout uses /dev/tty`), and seven W3-8 clipboard-yank cases. Path coverage reported 986 pass, 2 excluded, and 59 failing required paths. The Darwin performance report was skipped. Linux PTY E2E was canceled while building the default package after the job reached its 12-minute maximum, so it produced no E2E result. Linux flake check timed out after 1,800 seconds (exit 124). Linux release archive, Darwin flake check, and Darwin release archive passed. |
 
 On local macOS, the save-buffer scenario initially expected a minibuffer path under
 `/tmp/` while the screen displayed the same file under `/private/tmp/`. The revert
@@ -1074,6 +1064,17 @@ group passed 6/6, the save-buffer shell group passed 4/4, and the missing-path
 scenario passed 1/1. Each selected run passed the 260-test harness preflight.
 These checks support a harness expectation mismatch, not a product file
 identity defect.
+
+Run 40629723568 exposed one more expected-string override in the R2
+save-buffer cancellation scenario. It assigned `Wrote {target_path}` after the
+shared helper had normalized the target. The scenario now applies the same
+display-path normalization at that assignment. The CI trace showed the screen
+result under `/private/tmp/` while the raw expected path began with `/tmp/`; the
+exact-minibuffer wait then exhausted its five-second scenario budget. This is a
+harness expectation fix; it does not change file identity or product behavior.
+The local rerun of this selected case did not reach the test: `nix run` waited
+on the Nix build for about 15 minutes without further output and was interrupted.
+Python compilation of the changed scenario module passed separately.
 
 The other 12 Darwin failures in run 40622923555 do not belong to this path
 fix. A local reproduction of the scenario selected by

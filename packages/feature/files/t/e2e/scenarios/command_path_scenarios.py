@@ -462,7 +462,9 @@ def _run_files_prompt_scenario(binary, case):
             ):
                 _save_pathless_buffer_for_assertion(session, runtime_case)
                 path = target_path
-                runtime_case["expected_minibuffer"] = f"Wrote {target_path}"
+                runtime_case["expected_minibuffer"] = (
+                    f"Wrote {_display_path(target_path)}"
+                )
 
             _assert_final_state(session, runtime_case, path, runtime_case["expected_bytes"])
             if runtime_case.get("expected_target_exists") is False and target_path.exists():
