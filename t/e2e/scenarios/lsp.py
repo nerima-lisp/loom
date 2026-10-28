@@ -385,7 +385,65 @@ def lsp_stop(binary):
 
 @scenario("lsp/diagnostics", commands=["lsp-diagnostics"])
 def lsp_diagnostics(binary):
-    _run_lsp_command(binary, "lsp-diagnostics", "LSP diagnostics refreshed.")
+    malformed_nix = b"let\n  value = ;\nin\n  value\n"
+    directory, path = _fixture(malformed_nix)
+    directory_path = os.path.realpath(directory.name)
+    pid_file = os.path.join(directory_path, "nixd.pid")
+    server = os.path.join(directory_path, "lsp-server")
+    script = (
+        "#!/bin/sh\n"
+        "printf '%s\\n' \"$$\" > " + shlex.quote(pid_file) + "\n"
+        "exec " + shlex.quote(_nixd_command()) + "\n"
+    )
+    write_buffer(directory_path, "lsp-server", script.encode("utf-8"))
+    os.chmod(server, 0o755)
+    with open(os.path.join(directory_path, ".loom-lsp"), "w", encoding="utf-8") as handle:
+        handle.write("exec " + shlex.quote(server) + "\n")
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            session.wait_for_region_text("mode-line", "Diag:")
+            session.wait_for_external_state(
+                "nixd PID file exists", lambda: os.path.exists(pid_file), True
+            )
+            pid_data = session.observe_file_bytes(
+                pid_file, purpose="precondition"
+            )
+            pid = int(pid_data.decode("ascii").strip())
+            session.extended_command("lsp-diagnostics")
+            session.wait_for_text("LSP diagnostics refreshed.")
+            session.wait_for_region_text("body", "Diagnostics for main.nix")
+            session.wait_for_region_text(
+                "body", "expected binding expression", index=1
+            )
+            session.assert_screen_text(
+                "expected binding expression",
+                match="contains",
+                region="body",
+                index=1,
+            )
+            session.assert_external_state(
+                "nixd process is running after diagnostics",
+                _process_running(pid),
+                True,
+            )
+            session.extended_command("switch-to-buffer")
+            session.wait_for_text("Switch to buffer: ")
+            session.type("main.nix")
+            session.key("RET")
+            session.wait_for_text("let")
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+            session.wait_for_external_state(
+                "nixd process exited after lsp-stop",
+                lambda: not _process_running(pid),
+                True,
+            )
+            output, code = session.quit()
+        assert_exit_zero("lsp-diagnostics", output, code)
+    finally:
+        directory.cleanup()
 
 
 @scenario("lsp/completion", commands=["lsp-completion-at-point"])

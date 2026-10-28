@@ -265,4 +265,21 @@
       :observe (:screen_text)
       :scenario "command-path/r1/lsp-format-buffer/mx"
       :lane "W3-9")
+ (:id "r5:lsp-diagnostics:lsp-server:success"
+      :commands
+      (:lsp-diagnostics)
+      :rule
+      :r5
+      :entry
+      "mx"
+      :state
+      "tool:lsp-server"
+      :outcome
+      "success"
+      :observe
+      (:external_state)
+      :scenario
+      "lsp/diagnostics"
+      :lane
+      "W3-9")
 )
