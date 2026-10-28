@@ -124,56 +124,58 @@
   "Return visible lines starting at START-LINE and their total count in one scan."
   (check-type start-line (integer 0 *))
   (check-type line-limit (integer 0 *))
-  (let* ((visible-start (%buffer-narrow-start-offset buffer))
-         (visible-end (%buffer-narrow-end-offset buffer))
-         (requested-end (+ start-line line-limit))
-         (cursor 0)
-         (line-index 0)
-         (line-count 1)
-         (line-stream
-           (when (and (zerop start-line) (plusp line-limit))
-             (make-string-output-stream)))
-         (lines nil))
-    (dolist (piece (%buffer-pieces buffer))
-      (when (>= cursor visible-end)
-        (return))
-      (let* ((piece-end (+ cursor (%piece-length piece)))
-             (visible-piece-start (max visible-start cursor))
-             (visible-piece-end (min visible-end piece-end)))
-        (when (< visible-piece-start visible-piece-end)
-          (let* ((source (%piece-source-text buffer piece))
-                 (source-start
-                   (+ (%piece-start piece) (- visible-piece-start cursor)))
-                 (source-end
-                   (+ (%piece-start piece) (- visible-piece-end cursor))))
-            (loop with segment-start = source-start
-                  for newline = (position #\Newline source
-                                          :start segment-start
-                                          :end source-end)
-                  do (if newline
-                         (progn
-                           (when line-stream
-                             (write-string source line-stream
-                                           :start segment-start
-                                           :end newline)
-                             (push (get-output-stream-string line-stream) lines)
-                             (setf line-stream nil))
-                           (incf line-count)
-                           (incf line-index)
-                           (when (and (>= line-index start-line)
-                                      (< line-index requested-end))
-                             (setf line-stream (make-string-output-stream)))
-                           (setf segment-start (1+ newline)))
-                         (progn
-                           (when line-stream
-                             (write-string source line-stream
-                                           :start segment-start
-                                           :end source-end))
-                           (return))))))
-        (setf cursor piece-end)))
-    (when line-stream
-      (push (get-output-stream-string line-stream) lines))
-    (values (nreverse lines) line-count)))
+  (flet ((join-line-parts (parts)
+           (if parts
+               (if (cdr parts)
+                   (apply #'concatenate 'string (nreverse parts))
+                   (car parts))
+               "")))
+    (let* ((visible-start (%buffer-narrow-start-offset buffer))
+           (visible-end (%buffer-narrow-end-offset buffer))
+           (requested-end (+ start-line line-limit))
+           (cursor 0)
+           (line-index 0)
+           (line-count 1)
+           (line-parts nil)
+           (lines nil))
+      (dolist (piece (%buffer-pieces buffer))
+        (when (>= cursor visible-end)
+          (return))
+        (let* ((piece-end (+ cursor (%piece-length piece)))
+               (visible-piece-start (max visible-start cursor))
+               (visible-piece-end (min visible-end piece-end)))
+          (when (< visible-piece-start visible-piece-end)
+            (let* ((source (%piece-source-text buffer piece))
+                   (source-start
+                     (+ (%piece-start piece) (- visible-piece-start cursor)))
+                   (source-end
+                     (+ (%piece-start piece) (- visible-piece-end cursor))))
+              (loop with segment-start = source-start
+                    for newline = (position #\Newline source
+                                            :start segment-start
+                                            :end source-end)
+                    do (if newline
+                           (progn
+                             (when (and (<= start-line line-index)
+                                        (< line-index requested-end))
+                               (push (subseq source segment-start newline)
+                                     line-parts)
+                               (push (join-line-parts line-parts) lines)
+                               (setf line-parts nil))
+                             (incf line-count)
+                             (incf line-index)
+                             (setf segment-start (1+ newline)))
+                           (progn
+                             (when (and (<= start-line line-index)
+                                        (< line-index requested-end))
+                               (push (subseq source segment-start source-end)
+                                     line-parts))
+                             (return))))))
+          (setf cursor piece-end)))
+      (when (and (<= start-line line-index)
+                 (< line-index requested-end))
+        (push (join-line-parts line-parts) lines))
+      (values (nreverse lines) line-count))))
 (progn
   (defvar *buffer-visible-line-index-cache* nil)
   (defmacro with-buffer-visible-line-index-cache (&body body)
