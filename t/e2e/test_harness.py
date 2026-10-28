@@ -63,7 +63,7 @@ class TerminalProfileTests(unittest.TestCase):
 
 
 class ScenarioProbeTests(unittest.TestCase):
-    def test_probe_waits_for_target_prompt_before_canceling(self):
+    def test_probe_waits_for_buffer_and_command_prompts_before_canceling(self):
         calls = []
 
         class ProbeSession:
@@ -97,10 +97,16 @@ class ScenarioProbeTests(unittest.TestCase):
                 expected_prompt="Eval: ",
             )
 
+        buffer_index = calls.index(
+            ("wait_for_region_text", "body", "(progn)")
+        )
+        command_index = calls.index(("extended_command", "eval-expression"))
         prompt_index = calls.index(
             ("wait_for_region_text", "minibuffer", "Eval: ")
         )
         cancel_index = calls.index(("send", keys.ctrl("g")))
+        self.assertLess(buffer_index, command_index)
+        self.assertLess(command_index, prompt_index)
         self.assertLess(prompt_index, cancel_index)
 
 

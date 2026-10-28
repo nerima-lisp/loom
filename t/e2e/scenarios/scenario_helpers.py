@@ -26,6 +26,11 @@ def probe_command(
         path = write_buffer(directory, contents=contents)
         with Session(binary, [path]) as session:
             session.wait_ready()
+            initial_lines = contents.splitlines()
+            if initial_lines:
+                first_line = initial_lines[0].decode("utf-8")
+                if first_line:
+                    session.wait_for_region_text("body", first_line)
             session.extended_command(command)
             if expected_prompt is not None:
                 session.wait_for_region_text("minibuffer", expected_prompt)
