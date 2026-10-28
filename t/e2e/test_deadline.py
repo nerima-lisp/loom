@@ -110,24 +110,37 @@ class ScenarioDeadlineTests(unittest.TestCase):
         self.assertAlmostEqual(elapsed[0], execution_seconds)
 
     def test_preparation_time_does_not_consume_execution_budget(self):
-        first_action_completed = []
-
-        def body(_binary):
-            budget = current_deadline()
-            remaining = budget.execution_remaining()
+        clock = [100.0]
+        budget = ScenarioDeadlineBudget(110.0, 105.0)
+        with (
+            mock.patch(
+                "loom_e2e.deadline.current_deadline", return_value=budget
+            ),
+            mock.patch(
+                "loom_e2e.deadline.signal.getitimer", return_value=(5.0, 0.0)
+            ),
+            mock.patch("loom_e2e.deadline.signal.setitimer") as setitimer,
+            mock.patch(
+                "loom_e2e.deadline.time.monotonic", side_effect=lambda: clock[0]
+            ),
+        ):
             with deadline_module.scenario_preparation():
-                time.sleep(0.25)
-                self.assertAlmostEqual(
-                    budget.execution_remaining(), remaining, delta=0.05
-                )
-            time.sleep(0.05)
-            first_action_completed.append(True)
-            time.sleep(0.06)
+                clock[0] = 130.0
+                self.assertEqual(budget.execution_remaining(), 5.0)
+                self.assertEqual(budget.remaining(), 10.0)
 
-        with self.assertRaises(ScenarioDeadlineExceeded):
-            run_scenario(body, "unused", seconds=0.15, cleanup_seconds=0.05)
-        self.assertEqual(first_action_completed, [True])
-
+            self.assertEqual(budget.execution_remaining(), 5.0)
+            self.assertEqual(budget.remaining(), 10.0)
+            clock[0] += 1.0
+            self.assertEqual(budget.execution_remaining(), 4.0)
+            self.assertEqual(budget.remaining(), 9.0)
+            self.assertEqual(
+                setitimer.call_args_list,
+                [
+                    mock.call(signal.ITIMER_REAL, 0.0, 0.0),
+                    mock.call(signal.ITIMER_REAL, 5.0, 0.0),
+                ],
+            )
 
     def test_delayed_execution_alarm_preserves_absolute_deadline(self):
         for elapsed, remaining in [(0.6, 0.4), (0.9, 0.1), (1.1, 0.0)]:
