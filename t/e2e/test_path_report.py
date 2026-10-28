@@ -868,6 +868,38 @@ class PathReportTests(unittest.TestCase):
         self.assertFalse(report["paths"][0]["failed"])
         self.assertFalse(report["has_failures"])
 
+    def test_exclusion_without_reason_fails_and_does_not_hide_path(self):
+        (self.repo_root / "evidence.txt").write_text("reason\n", encoding="utf-8")
+        report = self._report(
+            exclusions=[
+                {"id": self.required["id"], "evidence": "evidence.txt:1"}
+            ]
+        )
+        path = report["paths"][0]
+        self.assertNotEqual(path["status"], "excluded")
+        self.assertTrue(path["failed"])
+        self.assertEqual(report["missing_paths"][0]["id"], self.required["id"])
+        self.assertTrue(report["has_failures"])
+        self.assertIn("invalid exclusion reason", " ".join(path["failure_reasons"]))
+
+    def test_whitespace_exclusion_reason_fails_and_does_not_hide_path(self):
+        (self.repo_root / "evidence.txt").write_text("reason\n", encoding="utf-8")
+        report = self._report(
+            exclusions=[
+                {
+                    "id": self.required["id"],
+                    "reason": " \t ",
+                    "evidence": "evidence.txt:1",
+                }
+            ]
+        )
+        path = report["paths"][0]
+        self.assertNotEqual(path["status"], "excluded")
+        self.assertTrue(path["failed"])
+        self.assertEqual(report["missing_paths"][0]["id"], self.required["id"])
+        self.assertTrue(report["has_failures"])
+        self.assertIn("invalid exclusion reason", " ".join(path["failure_reasons"]))
+
     def test_nonexistent_exclusion_evidence_fails_and_does_not_hide_path(self):
         self._write_scenario([self._matching_observation()])
         report = self._report(

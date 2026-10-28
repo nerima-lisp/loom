@@ -436,24 +436,35 @@ def _classify_path(
 
     exclusion_error = None
     if exclusion is not None:
-        exclusion_error = _evidence_error(
+        exclusion_errors = []
+        reason = exclusion.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            exclusion_errors.append(
+                "invalid exclusion reason: reason must be a non-empty string"
+            )
+
+        evidence_error = _evidence_error(
             exclusion.get("evidence"), exclusion.get("repo_root")
         )
+        if evidence_error is not None:
+            exclusion_errors.append(
+                f"invalid exclusion evidence: {evidence_error}"
+            )
+
+        exclusion_error = "; ".join(exclusion_errors) or None
         if exclusion_error is None:
             item.update(
                 status="excluded",
                 failed=False,
-                reason=exclusion.get("reason") or "excluded by ledger",
+                reason=reason,
             )
             item["evidence"] = exclusion.get("evidence")
             return item
-        item["failure_reasons"].append(
-            f"invalid exclusion evidence: {exclusion_error}"
-        )
+        item["failure_reasons"].extend(exclusion_errors)
 
     if ledger is None:
         if exclusion_error is not None:
-            item["reason"] = "generated path has no ledger entry; exclusion evidence is invalid"
+            item["reason"] = "generated path has no ledger entry; exclusion is invalid"
         item["failed"] = True
         return item
 
@@ -743,9 +754,6 @@ def _classify_path(
         )
         if exclusion_error is not None:
             item["failed"] = True
-            item["failure_reasons"].append(
-                f"invalid exclusion evidence: {exclusion_error}"
-            )
         return item
 
     trace_commands, trace_error = _read_trace(result_path, result, artifacts_dir)
@@ -882,9 +890,6 @@ def _classify_path(
     )
     if exclusion_error is not None:
         item["failed"] = True
-        item["failure_reasons"].append(
-            f"invalid exclusion evidence: {exclusion_error}"
-        )
     return item
 
 
