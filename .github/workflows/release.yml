@@ -46,8 +46,9 @@ jobs:
           EVENT_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == push ]]; then
-            [[ "$(git rev-parse HEAD)" == "$EVENT_COMMIT" ]]
+          if [[ "$EVENT_NAME" == push ]] && [[ "$(git rev-parse HEAD)" != "$EVENT_COMMIT" ]]; then
+            echo "::error::Checkout commit does not match push event commit" >&2
+            exit 1
           fi
           asd_version="$(sed -n 's/^[[:space:]]*:version "\([^"]*\)".*/\1/p' "$PACKAGE.asd" | head -n1)"
           tag_version="${RELEASE_REF#v}"
@@ -58,23 +59,19 @@ jobs:
           fi
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - uses: ./.github/actions/nix-setup
-        with:
-          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Check flake
-        run: nix flake check --print-build-logs
-
-      - name: Test release archive input validation
-        run: python3 -B t/release/test-archives.py -v
-
-      - name: Test release workflow guards
-        run: python3 -B t/release/test-workflow.py -v
+  cross-platform-ci:
+    name: Cross-platform CI (Linux and aarch64-darwin)
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+    with:
+      platforms: all
+      checkout_ref: ${{ needs.verify.outputs.commit }}
+    secrets:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
   release:
     name: build and publish x86_64-linux
-    needs: verify
+    needs: [verify, cross-platform-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

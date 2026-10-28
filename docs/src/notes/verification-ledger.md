@@ -990,3 +990,71 @@ On this source commit, `nix flake check --print-build-logs` exited 0 on
 aarch64-darwin. All eight checks passed; the coverage derivation reported 1507
 passed, 3 skipped, and 0 failed or errored. Nix omitted `x86_64-linux` and
 warned that the E2E app lacks `meta`.
+
+## W4-2 cross-platform CI and NFR reporting
+
+The NFR thresholds remain unchanged: first screen within 0.3 seconds,
+opening a 100,000-line / 5 MB file within 1.0 second, and input-to-redraw p95
+within 50 ms. Startup and large-file open each use three independent trials and
+the median; redraw uses 100 key-move samples (four batches of 25) and the
+nearest-rank p95. There is no warm-up or retry-until-green. The median limits
+the effect of one slow trial, while the fixed sample count bounds CI work. Three
+trials do not characterize the full noise distribution, so an expired open
+deadline remains a missing measurement, not an inferred pass or a measured
+1.0-second regression. CI reports measurements and scenario errors without
+failing on a missing or over-target metric until the NFR-01 open issue is fixed
+and the enforcement change is landed separately. Full E2E results remain
+required on both platforms.
+
+Main pushes and pull requests run the Linux and aarch64-darwin flake checks,
+full PTY E2E, NFR report, and release-archive jobs. Path-coverage reporting
+remains report-only in this lane; no coverage acceptance rule changed. Candidate
+`workflow_dispatch` defaults to both platforms and can select Linux or Darwin
+to reduce diagnostic queue load. A single-platform dispatch does not satisfy
+FR-V06 promotion evidence. The release workflow runs the reusable CI on the
+tag-verified commit with both platforms and waits for it before publishing.
+Each E2E job summary records the actual checked-out commit and, for a push,
+links the pushed commit range. The platform-specific job name identifies which
+environment failed. This locates the exact source range and the lane changes
+visible in its commits and paths; it does not prove causality automatically if
+multiple lane changes are combined in one commit or push.
+
+The report-mode tests verify that over-target values remain visible and that a
+failed large-file-open trial produces a missing metric and a named scenario
+error in `benchmarks.json` while allowing the report to complete. The
+fail-closed NFR enforcement tests belong to the deferred performance-gate
+change. The full local E2E harness preflight passed all 251 Python tests after
+the deadline-test timing fix prompted by the Darwin failure below.
+
+| Run | Commit | Results |
+| --- | --- | --- |
+| [40604333588](https://github.com/nerima-lisp/loom/actions/runs/40604333588) | `f2eab7f47ac5ed8324ed5b6cb71ef4d977f95027` | Linux full E2E passed 1,149/1,149 scenarios and covered 147/147 commands. Startup was 0.137 s and redraw p95 was 0.908 ms. All three large-file-open trials exceeded the unchanged 5-second scenario execution deadline, so the required open metric was missing and the performance gate failed. The Linux flake check and archive passed. The three Darwin jobs stopped at the Apple Silicon system guard. |
+| [40605055059](https://github.com/nerima-lisp/loom/actions/runs/40605055059) | `964d645313d1b4f007b1099dbac9c22efacdb573b` | Linux full E2E passed 1,149/1,149 scenarios and covered 147/147 commands. Startup was 0.118 s and redraw p95 was 1.830 ms. All three large-file-open trials exceeded the unchanged 5-second scenario execution deadline, so the required open metric was missing and the performance gate failed. Linux flake check and archive passed. Darwin's system guard passed in the flake job, which then exposed a release-workflow guard-test failure; the Darwin E2E and archive jobs still stopped at the system guard. |
+| [40605724231](https://github.com/nerima-lisp/loom/actions/runs/40605724231) | `71c68a3013e2a7bd0e3a2bb0887b3023a2af40ee` | Linux and Darwin flake checks passed with 1,811 passed, 6 skipped, and 0 failures on each platform. The Darwin release archive passed; both archive job cards later appeared concluded. The Darwin E2E job failed during its 251-test preflight because `ScenarioDeadlineTests.test_restores_existing_handler_and_timer` attempted a 0.02-second sleep inside a 0.07-second execution budget; its performance gate was skipped. After GitHub API rate limiting, the workflow HTML showed the Linux E2E and archive jobs as concluded, but their conclusions, E2E metrics, and the overall workflow conclusion could not be confirmed. The known Darwin E2E failure already makes this run unusable as promotion evidence. |
+
+The Darwin preflight failure above came from the test harness's timing-sensitive
+sleep, not from a product change. The test now performs no sleep inside the
+0.1-second total / 0.03-second cleanup deadline and retains its signal-handler
+and timer-restoration assertions. The targeted deadline suite passed 31/31 tests,
+and the full Python E2E preflight passed 251/251 tests locally. No deadline was
+extended.
+
+A separate local full PTY run was concurrent with another session's E2E process
+and had a high system load. Its 50 scenario failures are contaminated and are
+not used as evidence about product behavior or the CI gate. No other session or
+process was changed.
+
+The earlier `w4-2-ci-candidate` ref at
+`136af8ab4af29bd5fbb62a33f4a38f760c537275` contains the fail-closed
+performance-gate invocation and is not the promotion candidate. Its
+single-platform diagnostic dispatch was rejected with HTTP 403 for API rate
+limiting. The replacement candidate is based on the current main tip and keeps
+benchmark enforcement separate from the cross-platform CI change.
+
+The failed large-file-open runs do not establish whether the 1.0-second target
+passes or fails. A separate review stream owns the NFR-01 open issue. The
+replacement candidate reports the measurement without enforcing the threshold;
+the fail-closed gate will be restored after the open fix lands and passes its
+threshold. Darwin needs a fresh full E2E run on the commit containing the
+deadline-test fix. A one-platform dispatch is diagnostic only and cannot
+substitute for both platforms in a promotion decision.

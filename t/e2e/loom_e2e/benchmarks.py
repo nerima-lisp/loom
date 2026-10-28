@@ -2,6 +2,8 @@
 
 import math
 import os
+import statistics
+from functools import partial
 import tempfile
 import time
 
@@ -20,7 +22,14 @@ _LINE_COUNT = 100_000
 _LINE_BYTES = 50
 _OPEN_MARKER = b"LOOM_E2E_OPEN_BENCHMARK"
 _OPEN_LAST_LINE_MARKER = b"LOOM_E2E_LAST_LINE_MARKER"
-_REDRAW_SAMPLES = 25
+_STARTUP_TRIALS = 3
+_FILE_OPEN_TRIALS = 3
+_REDRAW_SAMPLES = 100
+_REDRAW_BATCHES = 4
+_REDRAW_BATCH_SAMPLES = _REDRAW_SAMPLES // _REDRAW_BATCHES
+_STARTUP_TARGET_SECONDS = 0.3
+_FILE_OPEN_TARGET_SECONDS = 1.0
+_REDRAW_TARGET_MILLISECONDS = 50.0
 _D13_KEY_RESPONSE_TARGET_MS = 50.0
 
 
@@ -38,12 +47,12 @@ def _large_file(path):
     return _LINE_COUNT, _LINE_COUNT * len(line)
 
 
-def _redraw_samples(session):
+def _redraw_samples(session, sample_count=_REDRAW_SAMPLES):
     samples = []
     budget = current_deadline()
     if budget is None:
         raise RuntimeError("PTY benchmarks require an active scenario deadline")
-    for sample in range(_REDRAW_SAMPLES):
+    for sample in range(sample_count):
         before = session.screen.cursor
         expected = (before[0], before[1] + 1)
         started = time.monotonic()
@@ -75,9 +84,12 @@ def _require_active_deadline():
         raise RuntimeError("PTY benchmarks require an active scenario deadline")
 
 
-def _record_measurement(metric, value, unit):
+def _record_measurement(metric, value, unit, samples=None):
+    details = {"metric": metric, "unit": unit}
+    if samples is not None:
+        details["samples"] = samples
     record_observation(
-        "benchmark_measurement", value, metric=metric, unit=unit
+        "benchmark_measurement", value, **details
     )
 
 
@@ -86,14 +98,18 @@ def _measure_startup(binary):
     with Session(binary) as session:
         session.wait_ready()
         measurement = session.first_screen_at - session.started_at
-        _record_measurement(
-            "startup_to_first_screen_seconds", measurement, "seconds"
-        )
         session.quit()
-    return {"startup_to_first_screen_seconds": measurement}
+    samples = [measurement]
+    _record_measurement(
+        "startup_to_first_screen_seconds", measurement, "seconds", samples
+    )
+    return {
+        "startup_to_first_screen_seconds": measurement,
+        "samples": samples,
+    }
 
 
-def _measure_redraw(binary):
+def _measure_redraw(binary, sample_count=_REDRAW_BATCH_SAMPLES):
     _require_active_deadline()
     with tempfile.TemporaryDirectory(prefix="loom-e2e-benchmark-") as directory:
         path = os.path.join(directory, "redraw.txt")
@@ -103,18 +119,27 @@ def _measure_redraw(binary):
             session.wait_ready()
             session.wait_for_text("x" * 64)
             session.wait_for_region_cursor("body", 0)
-            measurement = _percentile_95(_redraw_samples(session)) * 1000.0
+            samples = [
+                sample * 1000.0
+                for sample in _redraw_samples(session, sample_count=sample_count)
+            ]
+            measurement = _percentile_95(samples)
             _record_measurement(
                 "input_to_redraw_p95_milliseconds",
                 measurement,
                 "milliseconds",
+                samples,
             )
             session.quit()
-    return {"input_to_redraw_p95_milliseconds": measurement}
+    return {
+        "input_to_redraw_p95_milliseconds": measurement,
+        "samples": samples,
+    }
 
 
 def _measure_large_file_open(binary):
     _require_active_deadline()
+    budget = current_deadline()
     with tempfile.TemporaryDirectory(prefix="loom-e2e-benchmark-") as directory:
         path = os.path.join(directory, "large.txt")
         line_count, byte_count = _large_file(path)
@@ -125,32 +150,52 @@ def _measure_large_file_open(binary):
             started = time.monotonic()
             session.type(path)
             session.key("RET")
-            session.wait_for_text(_OPEN_MARKER.decode("ascii"))
-            session.wait_for_region_cursor("body", 0)
-            session.extended_command("end-of-buffer")
-            session.wait_for_text(_OPEN_LAST_LINE_MARKER.decode("ascii"))
+            session.wait_for_text(
+                _OPEN_MARKER.decode("ascii"), timeout=budget.remaining()
+            )
+            session.wait_for_region_cursor(
+                "body", 0, timeout=budget.remaining()
+            )
+            session.extended_command(
+                "end-of-buffer", timeout=budget.remaining()
+            )
+            session.wait_for_text(
+                _OPEN_LAST_LINE_MARKER.decode("ascii"),
+                timeout=budget.remaining(),
+            )
             measurement = time.monotonic() - started
-            _record_measurement(
-                "open_100000_lines_5mb_seconds", measurement, "seconds"
+            session.observe_external_state(
+                "benchmark input size",
+                os.path.getsize(path),
+                expected=byte_count,
             )
             session.observe_external_state(
-                "benchmark input size", os.path.getsize(path), expected=byte_count
-            )
-            session.observe_external_state(
-                "benchmark input line count", line_count, expected=_LINE_COUNT
+                "benchmark input line count",
+                line_count,
+                expected=_LINE_COUNT,
             )
             session.quit()
+        samples = [measurement]
+        _record_measurement(
+            "open_100000_lines_5mb_seconds", measurement, "seconds", samples
+        )
     return {
         "open_100000_lines_5mb_seconds": measurement,
+        "samples": samples,
         "input": {"lines": line_count, "bytes": byte_count},
     }
 
 
 def benchmark_scenarios(registered=None):
-    scenarios = {
-        "startup": _measure_startup,
-        "redraw": _measure_redraw,
-    }
+    scenarios = {}
+    for trial in range(1, _STARTUP_TRIALS + 1):
+        scenarios[f"startup-trial-{trial}"] = _measure_startup
+    for trial in range(1, _REDRAW_BATCHES + 1):
+        scenarios[f"redraw-trial-{trial}"] = partial(
+            _measure_redraw, sample_count=_REDRAW_BATCH_SAMPLES
+        )
+    for trial in range(1, _FILE_OPEN_TRIALS + 1):
+        scenarios[f"large-file-open-trial-{trial}"] = _measure_large_file_open
     if registered is not None:
         d13_scenario = next(
             (
@@ -168,41 +213,106 @@ def benchmark_scenarios(registered=None):
                 )
 
             scenarios["d13-20k-line-key-response"] = measure_d13_key_response
-    scenarios["large-file-open"] = _measure_large_file_open
     return scenarios
 
 
+def _aggregate_trials(measurements, scenario, metric, sample_count, aggregate):
+    direct = measurements.get(scenario)
+    if isinstance(direct, dict):
+        return direct
+
+    trial_count = {
+        "startup": _STARTUP_TRIALS,
+        "redraw": _REDRAW_BATCHES,
+        "large-file-open": _FILE_OPEN_TRIALS,
+    }[scenario]
+    trials = [
+        measurements.get(f"{scenario}-trial-{trial}")
+        for trial in range(1, trial_count + 1)
+    ]
+    if any(not isinstance(trial, dict) for trial in trials):
+        return None
+
+    samples = []
+    for trial in trials:
+        trial_samples = trial.get("samples")
+        if not isinstance(trial_samples, list):
+            return None
+        samples.extend(trial_samples)
+    if len(samples) != sample_count:
+        return None
+
+    result = {metric: aggregate(samples), "samples": samples}
+    if scenario == "large-file-open":
+        input_details = trials[0].get("input")
+        if not isinstance(input_details, dict) or any(
+            trial.get("input") != input_details for trial in trials
+        ):
+            return None
+        result["input"] = input_details
+    return result
+
+
 def build_benchmark_report(measurements):
-    values = {
-        name: value
-        for result in measurements.values()
-        for name, value in result.items()
-        if name != "input"
+    metric_specs = {
+        "startup_to_first_screen_seconds": (
+            "startup",
+            _STARTUP_TRIALS,
+            statistics.median,
+            _STARTUP_TARGET_SECONDS,
+        ),
+        "open_100000_lines_5mb_seconds": (
+            "large-file-open",
+            _FILE_OPEN_TRIALS,
+            statistics.median,
+            _FILE_OPEN_TARGET_SECONDS,
+        ),
+        "input_to_redraw_p95_milliseconds": (
+            "redraw",
+            _REDRAW_SAMPLES,
+            _percentile_95,
+            _REDRAW_TARGET_MILLISECONDS,
+        ),
     }
-    startup_seconds = values["startup_to_first_screen_seconds"]
-    open_seconds = values["open_100000_lines_5mb_seconds"]
-    redraw_milliseconds = values["input_to_redraw_p95_milliseconds"]
+    values = {}
+    samples = {}
+    missing_metrics = []
+    targets = {}
+    within_targets = {}
+    for metric, (scenario, sample_count, aggregate, target) in metric_specs.items():
+        gate = {
+            "startup": "startup_to_first_screen",
+            "large-file-open": "open_100000_lines_5mb",
+            "redraw": "input_to_redraw_p95",
+        }[scenario]
+        targets[metric] = target
+        result = _aggregate_trials(
+            measurements, scenario, metric, sample_count, aggregate
+        )
+        value = result.get(metric) if isinstance(result, dict) else None
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            missing_metrics.append(metric)
+            within_targets[gate] = False
+            continue
+        values[metric] = value
+        within_targets[gate] = value <= target
+        if isinstance(result.get("samples"), list):
+            samples[metric] = result["samples"]
     report = {
-        "measurements": {
-            "startup_to_first_screen_seconds": startup_seconds,
-            "open_100000_lines_5mb_seconds": open_seconds,
-            "input_to_redraw_p95_milliseconds": redraw_milliseconds,
-        },
-        "targets": {
-            "startup_to_first_screen_seconds": 0.3,
-            "open_100000_lines_5mb_seconds": 1.0,
-            "input_to_redraw_p95_milliseconds": 50.0,
-        },
-        "within_targets": {
-            "startup_to_first_screen": startup_seconds <= 0.3,
-            "open_100000_lines_5mb": open_seconds <= 1.0,
-            "input_to_redraw_p95": redraw_milliseconds <= 50.0,
-        },
-        "input": measurements["large-file-open"]["input"],
+        "measurements": values,
+        "samples": samples,
+        "targets": targets,
+        "within_targets": within_targets,
+        "missing_metrics": missing_metrics,
         "protocol": {
-            "startup_samples": 1,
-            "file_open_samples": 1,
+            "startup_samples": _STARTUP_TRIALS,
+            "startup_aggregation": "median of independent processes",
+            "file_open_samples": _FILE_OPEN_TRIALS,
+            "file_open_aggregation": "median of independent processes",
             "redraw_samples": _REDRAW_SAMPLES,
+            "redraw_aggregation": "nearest-rank p95",
+            "redraw_batches": _REDRAW_BATCHES,
+            "redraw_batch_samples": _REDRAW_BATCH_SAMPLES,
             "warmup_runs": 0,
             "redraw_interval": (
                 "from C-f input to cursor-position output in a loaded "
@@ -217,9 +327,18 @@ def build_benchmark_report(measurements):
             "cleanup_budget_seconds": SCENARIO_CLEANUP_TIMEOUT_SECONDS,
         },
     }
+    input_details = _aggregate_trials(
+        measurements,
+        "large-file-open",
+        "open_100000_lines_5mb_seconds",
+        _FILE_OPEN_TRIALS,
+        statistics.median,
+    )
+    if input_details is not None and input_details.get("input") is not None:
+        report["input"] = input_details["input"]
     d13_measurement = measurements.get("d13-20k-line-key-response")
     if d13_measurement is not None:
-        d13_milliseconds = values[
+        d13_milliseconds = d13_measurement[
             "d13_20k_line_key_response_milliseconds"
         ]
         report["measurements"][

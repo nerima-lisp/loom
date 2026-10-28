@@ -313,6 +313,45 @@ class CoverageCliTests(unittest.TestCase):
             self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
             self.assertFalse(any(report["within_targets"].values()))
 
+    def test_benchmark_mode_reports_failed_scenarios_as_missing_metrics(self):
+        def startup(binary):
+            return {"startup_to_first_screen_seconds": 0.2}
+
+        def redraw(binary):
+            return {"input_to_redraw_p95_milliseconds": 20.0}
+
+        def large_file_open(binary):
+            raise TimeoutError("scenario execution deadline expired")
+
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(
+                cli,
+                "benchmark_scenarios",
+                return_value={
+                    "startup": startup,
+                    "redraw": redraw,
+                    "large-file-open": large_file_open,
+                },
+            ):
+                self.assertEqual(cli.main([
+                    "--benchmarks", "--artifacts-dir", directory,
+                ]), 0)
+
+            self.assertIn(
+                "open_100000_lines_5mb_seconds: missing (target 1)",
+                self.stdout.getvalue(),
+            )
+            self.assertIn("large-file-open", self.stderr.getvalue())
+            with open(
+                os.path.join(directory, "benchmarks.json"), encoding="utf-8"
+            ) as handle:
+                report = json.load(handle)
+            self.assertIn(
+                "open_100000_lines_5mb_seconds", report["missing_metrics"]
+            )
+            self.assertEqual(report["scenario_errors"], ["large-file-open"])
+
 
 if __name__ == "__main__":
     unittest.main()

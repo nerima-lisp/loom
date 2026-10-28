@@ -529,9 +529,9 @@ class BenchmarkDeadlineTests(unittest.TestCase):
             "unused",
             seconds=1.0,
         )
-        self.assertEqual(len(samples), 25)
-        self.assertEqual(session.sent, [keys.ctrl("f")] * 25)
-        self.assertEqual(session.screen.cursor, (0, 25))
+        self.assertEqual(len(samples), 100)
+        self.assertEqual(session.sent, [keys.ctrl("f")] * 100)
+        self.assertEqual(session.screen.cursor, (0, 100))
         self.assertFalse(session.modified)
 
     def test_large_file_has_exact_size_and_unique_last_line(self):
@@ -579,7 +579,8 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                         with capture_scenario(result):
                             run_scenario(scenario, "unused")
 
-                metric, unit = expected[scenario_name]
+                category = scenario_name.rsplit("-trial-", 1)[0]
+                metric, unit = expected[category]
                 measurements = [
                     item
                     for item in result.observations
@@ -600,6 +601,75 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                     if item["type"] == "benchmark_measurement"
                 ]
                 self.assertEqual(saved, measurements)
+
+
+    def test_benchmark_report_aggregates_fixed_independent_trials(self):
+        measurements = {
+            "startup-trial-1": {
+                "startup_to_first_screen_seconds": 0.2,
+                "samples": [0.2],
+            },
+            "startup-trial-2": {
+                "startup_to_first_screen_seconds": 0.4,
+                "samples": [0.4],
+            },
+            "startup-trial-3": {
+                "startup_to_first_screen_seconds": 0.3,
+                "samples": [0.3],
+            },
+            "large-file-open-trial-1": {
+                "open_100000_lines_5mb_seconds": 0.8,
+                "samples": [0.8],
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+            "large-file-open-trial-2": {
+                "open_100000_lines_5mb_seconds": 1.2,
+                "samples": [1.2],
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+            "large-file-open-trial-3": {
+                "open_100000_lines_5mb_seconds": 0.9,
+                "samples": [0.9],
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+        }
+        for batch in range(4):
+            first = batch * 25 + 1
+            values = [float(value) for value in range(first, first + 25)]
+            measurements[f"redraw-trial-{batch + 1}"] = {
+                "input_to_redraw_p95_milliseconds": values[-1],
+                "samples": values,
+            }
+
+        report = build_benchmark_report(measurements)
+
+        self.assertEqual(
+            report["measurements"]["startup_to_first_screen_seconds"], 0.3
+        )
+        self.assertEqual(
+            report["measurements"]["open_100000_lines_5mb_seconds"], 0.9
+        )
+        self.assertEqual(
+            report["measurements"]["input_to_redraw_p95_milliseconds"], 95.0
+        )
+        self.assertEqual(len(report["samples"]["startup_to_first_screen_seconds"]), 3)
+        self.assertEqual(len(report["samples"]["open_100000_lines_5mb_seconds"]), 3)
+        self.assertEqual(len(report["samples"]["input_to_redraw_p95_milliseconds"]), 100)
+        self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
+        self.assertEqual(report["protocol"]["redraw_batches"], 4)
+        self.assertEqual(report["protocol"]["redraw_batch_samples"], 25)
+
+        incomplete = build_benchmark_report({
+            "startup-trial-1": measurements["startup-trial-1"],
+        })
+        self.assertEqual(
+            incomplete["missing_metrics"],
+            [
+                "startup_to_first_screen_seconds",
+                "open_100000_lines_5mb_seconds",
+                "input_to_redraw_p95_milliseconds",
+            ],
+        )
 
 
     def test_d13_benchmark_adapter_returns_registered_scenario_measurement(self):

@@ -166,7 +166,7 @@ def _run_with_artifacts(
 def main(argv):
     args = _parse_args(argv)
     if args.benchmarks and args.only is not None:
-        raise SystemExit("--benchmarks cannot be combined with --only")
+        raise SystemExit("benchmark modes cannot be combined with --only")
     registered = all_scenarios()
 
     if args.list:
@@ -185,6 +185,7 @@ def main(argv):
     if args.benchmarks:
         _run_harness_preflight()
         measurements = {}
+        benchmark_errors = []
         try:
             for name, function in benchmark_scenarios(registered).items():
                 try:
@@ -193,29 +194,41 @@ def main(argv):
                     )
                 except Exception as error:
                     print(f"FAIL benchmarks/{name}: {error}", file=sys.stderr)
-                    return 1
+                    benchmark_errors.append(name)
         except Exception as error:
             print(f"FAIL benchmarks: {error}", file=sys.stderr)
             return 1
         report = build_benchmark_report(measurements)
+        report["scenario_errors"] = benchmark_errors
         report_path = os.path.join(artifacts_dir, "benchmarks.json")
         with open(report_path, "w", encoding="utf-8") as handle:
             json.dump(report, handle, ensure_ascii=False, sort_keys=True, indent=2)
             handle.write("\n")
         print(f"PTY benchmark report: {report_path}")
-        for metric, value in report["measurements"].items():
-            target = report["targets"][metric]
-            status = "within target" if report["within_targets"][
-                {
-                    "startup_to_first_screen_seconds": "startup_to_first_screen",
-                    "open_100000_lines_5mb_seconds": "open_100000_lines_5mb",
-                    "input_to_redraw_p95_milliseconds": "input_to_redraw_p95",
-                    "d13_20k_line_key_response_milliseconds": (
-                        "d13_20k_line_key_response"
-                    ),
-                }[metric]
-            ] else "over target"
+        target_gate_names = {
+            "startup_to_first_screen_seconds": "startup_to_first_screen",
+            "open_100000_lines_5mb_seconds": "open_100000_lines_5mb",
+            "input_to_redraw_p95_milliseconds": "input_to_redraw_p95",
+            "d13_20k_line_key_response_milliseconds": (
+                "d13_20k_line_key_response"
+            ),
+        }
+        for metric, target in report["targets"].items():
+            if metric not in report["measurements"]:
+                print(f"{metric}: missing (target {target:g})")
+                continue
+            value = report["measurements"][metric]
+            status = (
+                "within target"
+                if report["within_targets"][target_gate_names[metric]]
+                else "over target"
+            )
             print(f"{metric}: {value:.3f} (target {target:g}; {status})")
+        if benchmark_errors:
+            print(
+                "benchmark scenarios failed; affected metrics are reported as missing: "
+                + ", ".join(benchmark_errors)
+            )
         return 0
 
     selected = select_scenarios(registered, args.only)

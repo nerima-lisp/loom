@@ -705,7 +705,7 @@ while True: time.sleep(1)
         signal.setitimer(signal.ITIMER_REAL, 30.0, 0.0)
 
         with scenario_deadline(seconds=0.1, cleanup_seconds=0.03):
-            time.sleep(0.02)
+            pass
 
         self.assertIs(signal.getsignal(signal.SIGALRM), previous_handler)
         remaining, interval = signal.getitimer(signal.ITIMER_REAL)

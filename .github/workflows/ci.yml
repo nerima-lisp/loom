@@ -4,6 +4,26 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
+    inputs:
+      e2e_scenario:
+        description: Run one PTY E2E scenario
+        required: false
+        type: string
+        default: ""
+      platforms:
+        description: Platforms to run when called by another workflow
+        required: false
+        type: string
+        default: all
+      checkout_ref:
+        description: Commit or ref to verify when called by another workflow
+        required: false
+        type: string
+        default: ""
+    secrets:
+      CACHIX_AUTH_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       e2e_scenario:
@@ -11,6 +31,15 @@ on:
         required: false
         type: string
         default: ""
+      platforms:
+        description: Platforms to run for this candidate CI
+        required: false
+        type: choice
+        options:
+          - all
+          - linux
+          - darwin
+        default: all
 
 permissions:
   contents: read
@@ -23,12 +52,13 @@ concurrency:
 jobs:
   check:
     name: nix flake check
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'darwin') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           persist-credentials: false
 
       - uses: ./.github/actions/nix-setup
@@ -68,14 +98,67 @@ jobs:
       - name: Check diff hygiene
         run: git diff --check
 
+  check-darwin:
+    name: nix flake check (aarch64-darwin)
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux') }}
+    runs-on: macos-14
+    # macOS does not ship GNU timeout; this job-level limit bounds nix flake check.
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Verify Apple Silicon runner
+        run: |
+          test "$(uname -m)" = arm64
+          test "$(nix eval --raw --impure --expr builtins.currentSystem)" = aarch64-darwin
+
+      - name: Test release archive input validation
+        run: python3 -B t/release/test-archives.py -v
+
+      - name: Test release workflow guards
+        run: python3 -B t/release/test-workflow.py -v
+
+      - name: Check flake
+        run: |
+          set -o pipefail
+          nix flake check --print-build-logs 2>&1 | tee "$RUNNER_TEMP/loom-flake-check.log"
+
+      - name: Check diff hygiene
+        run: git diff --check
+
   e2e:
     name: PTY E2E
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.platforms != 'darwin' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           persist-credentials: false
+
+      - name: Record tested source commit
+        env:
+          SOURCE_BASE: ${{ github.event.before || '' }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          {
+            echo "### Tested source commit"
+            echo
+            echo "- Commit: $commit"
+            echo "- https://github.com/$GITHUB_REPOSITORY/commit/$commit"
+            if [[ "$SOURCE_BASE" =~ ^[0-9a-f]{40}$ && ! "$SOURCE_BASE" =~ ^0+$ && "$SOURCE_BASE" != "$commit" ]]; then
+              echo "- Push range: https://github.com/$GITHUB_REPOSITORY/compare/$SOURCE_BASE...$commit"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: ./.github/actions/nix-setup
         with:
@@ -95,14 +178,95 @@ jobs:
             timeout --signal=TERM --kill-after=15s 600s nix run .#e2e
           fi
 
+      - name: Report PTY performance metrics
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
+        run: |
+          set -euo pipefail
+          nix run .#e2e -- --benchmarks \
+            --artifacts-dir "$RUNNER_TEMP/loom-benchmarks" \
+            | tee "$RUNNER_TEMP/loom-benchmark-report.txt"
+          {
+            echo '### PTY performance report (x86_64-linux)'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/loom-benchmark-report.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  e2e-darwin:
+    name: PTY E2E (aarch64-darwin)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux' }}
+    runs-on: macos-14
+    # Per-scenario deadlines remain in the harness; this job limit replaces GNU timeout.
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          persist-credentials: false
+
+      - name: Record tested source commit
+        env:
+          SOURCE_BASE: ${{ github.event.before || '' }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          {
+            echo "### Tested source commit"
+            echo
+            echo "- Commit: $commit"
+            echo "- https://github.com/$GITHUB_REPOSITORY/commit/$commit"
+            if [[ "$SOURCE_BASE" =~ ^[0-9a-f]{40}$ && ! "$SOURCE_BASE" =~ ^0+$ && "$SOURCE_BASE" != "$commit" ]]; then
+              echo "- Push range: https://github.com/$GITHUB_REPOSITORY/compare/$SOURCE_BASE...$commit"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Verify Apple Silicon runner
+        run: |
+          test "$(uname -m)" = arm64
+          test "$(nix eval --raw --impure --expr builtins.currentSystem)" = aarch64-darwin
+
+      - name: Build default package
+        run: nix build .#default --print-build-logs
+
+      - name: Run PTY E2E
+        env:
+          E2E_SCENARIO: ${{ inputs.e2e_scenario || '' }}
+        run: |
+          if [[ -n "$E2E_SCENARIO" ]]; then
+            nix run .#e2e -- --only "$E2E_SCENARIO"
+          else
+            nix run .#e2e
+          fi
+
+      - name: Report PTY performance metrics
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
+        run: |
+          set -euo pipefail
+          nix run .#e2e -- --benchmarks \
+            --artifacts-dir "$RUNNER_TEMP/loom-benchmarks" \
+            | tee "$RUNNER_TEMP/loom-benchmark-report.txt"
+          {
+            echo '### PTY performance report (aarch64-darwin)'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/loom-benchmark-report.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   release-archive:
     name: Offline release archive
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '' }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'darwin') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           persist-credentials: false
 
       - uses: ./.github/actions/nix-setup
@@ -121,3 +285,41 @@ jobs:
           # The runner restricts unprivileged mounts; keep the restored store isolated.
           sudo env "PATH=$(dirname "$(command -v nix)"):/usr/bin:/bin" \
             bash scripts/test-release.sh "$RUNNER_TEMP/dist/loom-ci-x86_64-linux.tar.gz" "$version"
+
+  release-archive-darwin:
+    name: Offline release archive (aarch64-darwin)
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux') }}
+    runs-on: macos-14
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Verify Apple Silicon runner
+        run: |
+          test "$(uname -m)" = arm64
+          test "$(nix eval --raw --impure --expr builtins.currentSystem)" = aarch64-darwin
+
+      - name: Build default package
+        run: nix build .#default --print-build-logs
+
+      - name: Package and restore in an empty store
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^[[:space:]]*:version "\([^"]*\)".*/\1/p' loom.asd | head -n1)"
+          name=loom-ci-aarch64-darwin
+          archive="$RUNNER_TEMP/dist/$name.tar.gz"
+          bash scripts/package-release.sh result "$name" "$RUNNER_TEMP/dist"
+          bash scripts/test-release.sh "$archive" "$version"
+          printf 'loom %s\n' "$version" > "$RUNNER_TEMP/expected-version"
+          result/bin/loom --version > "$RUNNER_TEMP/actual-version"
+          cmp "$RUNNER_TEMP/expected-version" "$RUNNER_TEMP/actual-version"
+          result/bin/loom --help > "$RUNNER_TEMP/help"
+          grep -F 'Usage: loom [PATH...]' "$RUNNER_TEMP/help"
