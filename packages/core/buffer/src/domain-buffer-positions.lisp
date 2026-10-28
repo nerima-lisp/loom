@@ -30,10 +30,10 @@ accepted as the position just after its last visible character."
 
 (defun buffer-point-offset (buffer)
   "Return BUFFER's point as an offset in BUFFER-TEXT."
-  (let ((offset (buffer-point-column buffer)))
-    (loop for line below (buffer-point-line buffer)
-          do (incf offset (1+ (length (buffer-line buffer line)))))
-    offset))
+  (buffer-position-offset
+   buffer
+   (buffer-point-line buffer)
+   (buffer-point-column buffer)))
 
 (defun buffer-offset-position (buffer offset)
   "Return the BUFFER-POSITION corresponding to OFFSET in BUFFER-TEXT."

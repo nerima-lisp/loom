@@ -828,15 +828,25 @@ the mode line or another footer in the remaining window rows."
 (defun %layout-draw-matching-paren (renderer window x-offset)
   "Mark the parenthesis point is adjacent to, together with its partner."
   (let* ((buffer (loom/core/window-tree:window-buffer window))
-         (start (buffer-narrow-start-offset buffer))
-         (text (buffer-visible-text buffer))
-         (offset (max 0 (min (length text)
-                             (- (buffer-point-offset buffer) start)))))
-    (multiple-value-bind (paren match) (%matching-paren-offset text offset)
-      (when (and paren match)
-        (dolist (local (list paren match))
-          (%layout-draw-matching-paren-at
-           renderer window x-offset buffer start local))))))
+         (candidate-p
+           (or (buffer-narrowed-p buffer)
+               (let* ((line (%layout-visible-line
+                             buffer (buffer-point-line buffer)))
+                      (column (buffer-point-column buffer)))
+                 (or (and (< column (length line))
+                          (find (char line column) "()[]{}"))
+                     (and (plusp column)
+                          (find (char line (1- column)) "()[]{}")))))))
+    (when candidate-p
+      (let* ((start (buffer-narrow-start-offset buffer))
+             (text (buffer-visible-text buffer))
+             (offset (max 0 (min (length text)
+                                 (- (buffer-point-offset buffer) start)))))
+        (multiple-value-bind (paren match) (%matching-paren-offset text offset)
+          (when (and paren match)
+            (dolist (local (list paren match))
+              (%layout-draw-matching-paren-at
+               renderer window x-offset buffer start local))))))))
 
 (defun %visual-row-layout (session buffer logical-line window-width)
   (let ((renderer (editor-state-renderer session)))

@@ -14,7 +14,65 @@
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
                 :to-equal '(:bold (:fg 0) (:bg 5)))
         (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 4 0))
-                :to-equal '(:bold (:fg 0) (:bg 5)))))))
+                :to-equal '(:bold (:fg 0) (:bg 5))))))
+  (it
+    "skips full-text matching work at EOF and ordinary characters"
+    (let* ((state (%fresh-layout-state
+                   :content (format nil "plain~%") :width 8 :height 2))
+           (buffer (window-buffer (%layout-window state)))
+           (visible-text-symbol
+             (find-symbol "BUFFER-VISIBLE-TEXT" "LOOM/CORE/BUFFER"))
+           (point-offset-symbol
+             (find-symbol "BUFFER-POINT-OFFSET" "LOOM/CORE/BUFFER"))
+           (matcher-symbol (find-symbol "%MATCHING-PAREN-OFFSET" "LOOM"))
+           (original-visible-text (symbol-function visible-text-symbol))
+           (original-point-offset (symbol-function point-offset-symbol))
+           (original-matcher (symbol-function matcher-symbol))
+           (visible-text-calls 0)
+           (point-offset-calls 0)
+           (matcher-calls 0))
+      (unwind-protect
+           (progn
+             (setf (symbol-function visible-text-symbol)
+                   (lambda (target)
+                     (incf visible-text-calls)
+                     (funcall original-visible-text target))
+                   (symbol-function point-offset-symbol)
+                   (lambda (target)
+                     (incf point-offset-calls)
+                     (funcall original-point-offset target))
+                   (symbol-function matcher-symbol)
+                   (lambda (&rest arguments)
+                     (incf matcher-calls)
+                     (apply original-matcher arguments)))
+             (dolist (position (list (list 1 0) (list 0 2)))
+               (buffer-set-point buffer (first position) (second position))
+               (loom::compose-frame state))
+             (expect (list visible-text-calls point-offset-calls matcher-calls)
+                     :to-equal (list 0 0 0))
+             (buffer-narrow-to-region buffer 0 1 0 5)
+             (buffer-set-point buffer 0 2)
+             (loom::compose-frame state)
+             (expect (list (plusp visible-text-calls)
+                           (plusp point-offset-calls)
+                           matcher-calls)
+                     :to-equal (list t t 1)))
+        (setf (symbol-function visible-text-symbol) original-visible-text
+              (symbol-function point-offset-symbol) original-point-offset
+              (symbol-function matcher-symbol) original-matcher))))
+  (it
+    "handles a point row beyond the visible buffer lines"
+    (let* ((state (%fresh-layout-state :content "plain" :width 8 :height 2))
+           (buffer (window-buffer (%layout-window state))))
+      (expect (buffer-visible-line-count buffer) :to-equal 1)
+      (setf (loom/core/buffer::%buffer-point-line buffer) 1)
+      (expect
+        (progn
+          (loom/core/buffer:with-buffer-visible-line-index-cache
+            (loom::%layout-draw-matching-paren
+             (editor-state-renderer state) (%layout-window state) 0))
+          :completed)
+        :to-equal :completed))))
 
 (describe
   "active region layout drawing"

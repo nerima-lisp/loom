@@ -28,6 +28,7 @@
    #:buffer-point-line
    #:buffer-point-column
    #:buffer-set-point
+   #:buffer-set-point-offset
    #:buffer-mark
    #:buffer-set-mark
    #:buffer-deactivate-mark

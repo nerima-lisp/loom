@@ -27,7 +27,7 @@
        ,documentation
        (let ((,buffer (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
          (symbol-macrolet ((buffer ,buffer))
-           (%move-point-to-offset ,buffer ,offset-form))))))
+           (buffer-set-point-offset ,buffer ,offset-form))))))
 
 (defun %forward-char-once ()
   "Move point forward by one character within the narrowing bounds."

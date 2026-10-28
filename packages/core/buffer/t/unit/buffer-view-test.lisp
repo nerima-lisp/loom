@@ -72,7 +72,44 @@
       (buffer-narrow-to-region buffer 0 2 2 1)
       (let ((position (buffer-visible-offset-position buffer 6)))
         (expect (buffer-position-line position) :to-equal 1)
-        (expect (buffer-position-column position) :to-equal 1)))))
+        (expect (buffer-position-column position) :to-equal 1))))
+  (it "computes late point offsets without recounting lines"
+    (let* ((initial-content
+             (format nil "~{~4D~^~%~}"
+                     (loop for line below 100 collect line)))
+           (buffer (make-buffer :initial-content initial-content))
+           (narrowed-buffer (make-buffer :initial-content initial-content))
+           (line-count-symbol (find-symbol "%LINE-COUNT" "LOOM/CORE/BUFFER"))
+           (original-line-count (symbol-function line-count-symbol))
+           (line-count-calls 0))
+      (buffer-set-point buffer 99 4)
+      (buffer-narrow-to-region narrowed-buffer 50 2 99 4)
+      (buffer-set-point narrowed-buffer 99 4)
+      (unwind-protect
+           (progn
+             (setf (symbol-function line-count-symbol)
+                   (lambda (target)
+                     (incf line-count-calls)
+                     (funcall original-line-count target)))
+             (expect (buffer-point-offset buffer) :to-equal 499)
+             (expect (buffer-point-offset narrowed-buffer) :to-equal 499)
+             (expect line-count-calls :to-equal 0))
+        (setf (symbol-function line-count-symbol) original-line-count))))
+  (it "clamps absolute point offsets to buffer and narrowed bounds"
+    (let ((buffer (make-buffer :initial-content
+                               (format nil "zero~%visible~%after"))))
+      (expect (eq (loom/core/buffer:buffer-set-point-offset buffer 999) buffer) :to-be-truthy)
+      (expect (buffer-point-offset buffer) :to-equal 18)
+      (expect buffer :to-have-point (cons 2 5))
+      (expect (eq (loom/core/buffer:buffer-set-point-offset buffer -1) buffer) :to-be-truthy)
+      (expect (buffer-point-offset buffer) :to-equal 0)
+      (buffer-narrow-to-region buffer 1 2 1 7)
+      (expect (eq (loom/core/buffer:buffer-set-point-offset buffer 999) buffer) :to-be-truthy)
+      (expect (buffer-point-offset buffer) :to-equal 12)
+      (expect buffer :to-have-point (cons 1 7))
+      (expect (eq (loom/core/buffer:buffer-set-point-offset buffer 0) buffer) :to-be-truthy)
+      (expect (buffer-point-offset buffer) :to-equal 7)
+      (expect buffer :to-have-point (cons 1 2)))))
 
 (describe
   "buffer narrowing"

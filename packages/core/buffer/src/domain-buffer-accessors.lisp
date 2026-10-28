@@ -57,6 +57,13 @@ to BUFFER's visible region. Returns BUFFER."
              (%position-to-offset buffer clamped-line clamped-column))))
       (%set-buffer-point-from-offset buffer offset)))
   buffer)
+(defun buffer-set-point-offset (buffer offset)
+  "Move BUFFER point to absolute OFFSET, clamped to its visible region. Returns BUFFER."
+  (declare (type integer offset))
+  (%set-buffer-point-from-offset
+   buffer
+   (%clamp-offset-to-narrowing buffer offset))
+  buffer)
 
 (defun buffer-mark (buffer)
   "Return the position of BUFFER's mark as (VALUES LINE COLUMN), both
