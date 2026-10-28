@@ -375,14 +375,87 @@ together."
                                              (fd sb-alien:int)
                                              (events sb-alien:short)
                                              (revents sb-alien:short)))
+#+darwin
+(sb-alien:define-alien-type %loom-select-fd-set
+  (sb-alien:struct %loom-select-fd-set
+    (bits (array sb-alien:unsigned-int 32))))
+#+darwin
+(sb-alien:define-alien-type %loom-select-timeval
+  (sb-alien:struct %loom-select-timeval
+    (seconds sb-alien:long)
+    (microseconds sb-alien:int)))
 
 (sb-alien:define-alien-routine ("poll" %loom-poll)
                                sb-alien:int
                                (descriptors (* %loom-pollfd))
                                (count sb-alien:unsigned-int)
                                (timeout-ms sb-alien:int))
+#+darwin
+(sb-alien:define-alien-routine ("select" %loom-select)
+  sb-alien:int
+  (nfds sb-alien:int)
+  (readfds (* %loom-select-fd-set))
+  (writefds (* %loom-select-fd-set))
+  (exceptfds (* %loom-select-fd-set))
+  (timeout (* %loom-select-timeval)))
+
+#+darwin
+(defun %select-loom-terminal-session (terminal-session input-fd timeout-ms)
+  (let ((wake-fd (%loom-terminal-session-wake-read-fd terminal-session)))
+    (dolist (fd (list input-fd wake-fd))
+      (unless (and (integerp fd) (<= 0 fd) (< fd 1024))
+        (error "Selecting terminal input or wake pipe found an invalid descriptor: ~S."
+               fd)))
+    (loop
+      (sb-alien:with-alien ((read-fds %loom-select-fd-set)
+                            (write-fds %loom-select-fd-set)
+                            (except-fds %loom-select-fd-set)
+                            (timeout %loom-select-timeval))
+        (dolist (fd-set (list read-fds write-fds except-fds))
+          (dotimes (word 32)
+            (setf (sb-alien:deref (sb-alien:slot fd-set 'bits) word) 0)))
+        (flet ((add-fd (fd)
+                 (let* ((word (floor fd 32))
+                        (mask (ash 1 (mod fd 32)))
+                        (bits (sb-alien:slot read-fds 'bits)))
+                   (setf (sb-alien:deref bits word)
+                         (logior (sb-alien:deref bits word) mask))))
+               (fd-ready-p (fd)
+                 (let* ((word (floor fd 32))
+                        (mask (ash 1 (mod fd 32)))
+                        (bits (sb-alien:slot read-fds 'bits)))
+                   (logtest mask (sb-alien:deref bits word)))))
+          (add-fd input-fd)
+          (add-fd wake-fd)
+          (let* ((timeout-pointer
+                   (if (and timeout-ms (not (minusp timeout-ms)))
+                       (multiple-value-bind (seconds milliseconds)
+                           (floor timeout-ms 1000)
+                         (setf (sb-alien:slot timeout 'seconds) seconds
+                               (sb-alien:slot timeout 'microseconds)
+                               (* milliseconds 1000))
+                         (sb-alien:addr timeout))
+                       (sb-alien:sap-alien
+                        (sb-sys:int-sap 0)
+                        (* %loom-select-timeval))))
+                 (result (%loom-select
+                          (1+ (max input-fd wake-fd))
+                          (sb-alien:addr read-fds)
+                          (sb-alien:addr write-fds)
+                          (sb-alien:addr except-fds)
+                          timeout-pointer)))
+            (if (minusp result)
+                (let ((errno (sb-alien:get-errno)))
+                  (unless (eql errno sb-unix:eintr)
+                    (error "Selecting terminal input and wake pipe failed: ~S"
+                           errno)))
+                (return (values (fd-ready-p input-fd)
+                                (fd-ready-p wake-fd))))))))))
 
 (defun %poll-loom-terminal-session (terminal-session input-fd timeout-ms)
+  #+darwin
+  (%select-loom-terminal-session terminal-session input-fd timeout-ms)
+  #-darwin
   (sb-alien:with-alien ((descriptors (array %loom-pollfd 2)))
                        (setf (sb-alien:slot (sb-alien:deref descriptors 0) 'fd) input-fd
                              (sb-alien:slot (sb-alien:deref descriptors 0)
