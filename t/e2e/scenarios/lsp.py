@@ -37,6 +37,53 @@ def _fixture(contents=b"# no definition here\nlet\n  value = 1;\nin\n  value\n")
     return directory, path
 
 
+def _typescript_fixture(contents):
+    if not shutil.which("typescript-language-server"):
+        raise RuntimeError("typescript-language-server is missing from the E2E PATH")
+    directory = tempfile.TemporaryDirectory(prefix="loom-e2e-typescript-lsp-")
+    directory_path = os.path.realpath(directory.name)
+    pid_file = os.path.join(directory_path, "typescript-language-server.pid")
+    server = os.path.join(directory_path, "lsp-server")
+    script = (
+        "#!/bin/sh\n"
+        "printf '%s\\n' \"$$\" > " + shlex.quote(pid_file) + "\n"
+        "exec typescript-language-server --stdio\n"
+    )
+    write_buffer(directory_path, "lsp-server", script.encode("utf-8"))
+    os.chmod(server, 0o755)
+    with open(os.path.join(directory_path, ".loom-lsp"), "w", encoding="utf-8") as handle:
+        handle.write("exec " + shlex.quote(server) + "\n")
+    path = write_buffer(directory_path, "main.ts", contents.encode("utf-8"))
+    return directory, path, pid_file
+
+
+def _typescript_pid(session, pid_file):
+    session.wait_until(
+        lambda _screen: os.path.exists(pid_file),
+        what="typescript-language-server PID file to appear",
+    )
+    pid_data = session.observe_file_bytes(pid_file, purpose="precondition")
+    pid = int(pid_data.decode("ascii").strip())
+    session.assert_external_state(
+        "typescript-language-server PID is greater than 1", pid > 1, True
+    )
+    return pid
+
+
+def _move_to_buffer_position(session, line, column):
+    session.extended_command("beginning-of-buffer")
+    session.send(keys.ctrl("n") * line + keys.ctrl("f") * column)
+    session.wait_for_region_cursor("body", column, index=line)
+
+
+def _assert_typescript_server_running(session, pid, command):
+    session.assert_external_state(
+        "typescript-language-server is running after " + command,
+        _process_running(pid),
+        True,
+    )
+
+
 def _server_exit_fixture():
     directory = tempfile.TemporaryDirectory(prefix="loom-e2e-lsp-")
     command = os.path.join(directory.name, "lsp-server")
@@ -442,6 +489,224 @@ def lsp_diagnostics(binary):
             )
             output, code = session.quit()
         assert_exit_zero("lsp-diagnostics", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario("lsp/r5-typescript-success/start", commands=["lsp-start"])
+def lsp_typescript_start_success(binary):
+    directory, path, pid_file = _typescript_fixture("const serverStarts = true;\n")
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            pid = _typescript_pid(session, pid_file)
+            session.assert_external_state(
+                "typescript-language-server is running after lsp-start",
+                _process_running(pid),
+                True,
+            )
+            output, code = session.quit()
+        assert_exit_zero("lsp-typescript-start-success", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-typescript-success/hover-completion",
+    commands=[
+        "lsp-start",
+        "lsp-hover-at-point",
+        "lsp-completion-at-point",
+    ],
+)
+def lsp_typescript_hover_completion_success(binary):
+    source = (
+        "const targetValue = 1;\n"
+        "targetValue;\n"
+        "targetV\n"
+        "targetValue;\n"
+    )
+    directory, path, pid_file = _typescript_fixture(source)
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            pid = _typescript_pid(session, pid_file)
+
+            session.send(keys.ctrl("n"))
+            session.wait_for_region_cursor("body", 0, index=1)
+            session.extended_command("lsp-hover-at-point")
+            session.wait_for_region_text("minibuffer", "targetValue")
+            session.assert_screen_text(
+                "targetValue", match="contains", region="minibuffer"
+            )
+            _assert_typescript_server_running(session, pid, "lsp-hover-at-point")
+
+            session.send(keys.ctrl("n") + keys.ctrl("e"))
+            session.wait_for_region_cursor("body", len("targetV"), index=2)
+            session.send(b"\x1b[105;7u")
+            session.wait_until(
+                lambda _screen: session.region_contents("body")
+                .splitlines()[3]
+                .rstrip()
+                == "targetValue",
+                what="TypeScript completion popup to display targetValue",
+            )
+            session.assert_screen_text(
+                "targetValue",
+                match="exact",
+                region="body",
+                index=3,
+                strip_right=True,
+            )
+            _assert_typescript_server_running(
+                session, pid, "lsp-completion-at-point"
+            )
+
+            output, code = session.quit()
+        assert_exit_zero("lsp-typescript-hover-completion-success", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-typescript-success/definition",
+    commands=["lsp-start", "lsp-find-definition"],
+)
+def lsp_typescript_definition_success(binary):
+    source = "const targetValue = 1;\ntargetValue;\n"
+    directory, path, pid_file = _typescript_fixture(source)
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            pid = _typescript_pid(session, pid_file)
+            _move_to_buffer_position(session, 1, 1)
+            session.send(keys.meta("."))
+            session.wait_for_region_cursor("body", len("const "), index=0)
+            session.assert_screen_text(
+                "const targetValue = 1;",
+                match="contains",
+                region="body",
+                index=0,
+            )
+            _assert_typescript_server_running(session, pid, "lsp-find-definition")
+            output, code = session.quit()
+        assert_exit_zero("lsp-typescript-definition-success", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-typescript-success/editing",
+    commands=["lsp-start", "lsp-rename", "lsp-format-buffer", "lsp-find-references"],
+)
+def lsp_typescript_editing_success(binary):
+    source = (
+        "const targetValue = 1;\n"
+        "targetValue;\n"
+        "const formatProbe={answer:42}\n"
+    )
+    directory, path, pid_file = _typescript_fixture(source)
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            pid = _typescript_pid(session, pid_file)
+
+            session.send(keys.ctrl("f") * len("const "))
+            session.wait_for_region_cursor("body", len("const "))
+            session.extended_command("lsp-rename")
+            session.wait_for_text("Rename to: ")
+            session.type("renamedTarget")
+            session.key("RET")
+            session.wait_until(
+                lambda _screen: "const renamedTarget = 1;"
+                in session.region_contents("body"),
+                what="TypeScript rename to update the declaration",
+            )
+            session.assert_screen_text(
+                "const renamedTarget = 1;",
+                match="contains",
+                region="body",
+                index=0,
+            )
+            session.assert_screen_text(
+                "renamedTarget;", match="contains", region="body", index=1
+            )
+            _assert_typescript_server_running(session, pid, "lsp-rename")
+
+            session.extended_command("lsp-format-buffer")
+            session.wait_until(
+                lambda _screen: "const formatProbe = { answer: 42 }"
+                in session.region_contents("body"),
+                what="TypeScript formatting to add standard spacing",
+            )
+            session.assert_screen_text(
+                "const formatProbe={answer:42}",
+                match="not_contains",
+                region="body",
+                index=None,
+            )
+            session.assert_screen_text(
+                "const formatProbe = { answer: 42 }",
+                match="contains",
+                region="body",
+                index=None,
+            )
+            _assert_typescript_server_running(session, pid, "lsp-format-buffer")
+
+            session.extended_command("save-buffer")
+            session.extended_command("lsp-find-references")
+            session.wait_for_region_text("minibuffer", "References found:")
+            session.assert_screen_text(
+                "References found:", match="contains", region="minibuffer"
+            )
+            session.assert_screen_text(
+                "renamedTarget",
+                match="contains",
+                region="body",
+                index=None,
+            )
+            _assert_typescript_server_running(session, pid, "lsp-find-references")
+
+            output, code = session.quit()
+        assert_exit_zero("lsp-typescript-editing-success", output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-typescript-success/stop",
+    commands=["lsp-start", "lsp-stop"],
+)
+def lsp_typescript_stop_success(binary):
+    directory, path, pid_file = _typescript_fixture("const serverStops = true;\n")
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            pid = _typescript_pid(session, pid_file)
+            session.observe_external_state(
+                "typescript-language-server is running before lsp-stop",
+                _process_running(pid),
+                True,
+                purpose="precondition",
+            )
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+            session.wait_until(
+                lambda _screen: not _process_running(pid),
+                what="typescript-language-server process to exit after lsp-stop",
+            )
+            session.assert_external_state(
+                "typescript-language-server exited after lsp-stop",
+                _process_running(pid),
+                False,
+            )
+            output, code = session.quit()
+        assert_exit_zero("lsp-typescript-stop-success", output, code)
     finally:
         directory.cleanup()
 
