@@ -313,6 +313,10 @@ def _expand(value, replacements):
     return value
 
 
+def _display_path(path):
+    return str(Path(path).resolve(strict=False))
+
+
 def _invoke_prompt_target(session, case):
     if case["target_command"] == "revert-buffer":
         session.extended_command("revert-buffer")
@@ -360,14 +364,16 @@ def _run_files_prompt_scenario(binary, case):
         source_path = Path(directory) / "buffer.txt"
         target_path = Path(directory) / "written.txt"
         source_path.write_bytes(case["initial_bytes"].encode("utf-8"))
+        source_display_path = _display_path(source_path)
+        target_display_path = _display_path(target_path)
         replacements = {
-            "{source_path}": str(source_path),
-            "{source_prefix}": str(source_path)[:-4],
-            "{target_path}": str(target_path),
-            "{target_prefix}": str(target_path)[:-4],
+            "{source_path}": source_display_path,
+            "{source_prefix}": source_display_path[:-4],
+            "{target_path}": target_display_path,
+            "{target_prefix}": target_display_path[:-4],
         }
         runtime_case = _expand(case, replacements)
-        runtime_case["target_path"] = str(target_path)
+        runtime_case["target_path"] = target_display_path
         target = runtime_case["target_command"]
         prompt_index = runtime_case["prompt_index"]
         path = source_path if runtime_case["expected_file"] == "source" else target_path
@@ -782,9 +788,7 @@ def _run_files_mutation_scenario(binary, case):
     with TemporaryDirectory(prefix="loom-e2e-files-command-path-") as directory:
         path = Path(directory) / "buffer.txt"
         path.write_bytes(case["initial_bytes"].encode("utf-8"))
-        runtime_case = _expand(
-            case, {"{file_path}": str(path.resolve(strict=False))}
-        )
+        runtime_case = _expand(case, {"{file_path}": _display_path(path)})
         with Session(
             binary,
             [str(path)],
@@ -918,7 +922,7 @@ def _run_save_buffer_shell_outcome(binary, outcome, expected_status, expected_by
             session.wait_ready()
             _set_save_buffer_shell_command(session, shlex.quote(command_path))
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_text(f"Wrote {path}")
+            session.wait_for_text(f"Wrote {_display_path(path)}")
             session.assert_external_state(
                 f"save-buffer shell {outcome} started", Path(marker_path).read_text(), "started"
             )

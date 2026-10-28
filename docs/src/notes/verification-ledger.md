@@ -1052,6 +1052,7 @@ counts above refer to separate local, CI, and current-workspace snapshots.
 | [40605055059](https://github.com/nerima-lisp/loom/actions/runs/40605055059) | `964d645313d1b4f007b1099dbac9c22efacdb573b` | Linux full E2E passed 1,149/1,149 scenarios and covered 147/147 commands. Startup was 0.118 s and redraw p95 was 1.830 ms. All three large-file-open trials exceeded the unchanged 5-second scenario execution deadline, so the required open metric was missing and the performance gate failed. Linux flake check and archive passed. Darwin's system guard passed in the flake job, which then exposed a release-workflow guard-test failure; the Darwin E2E and archive jobs still stopped at the system guard. |
 | [40605724231](https://github.com/nerima-lisp/loom/actions/runs/40605724231) | `71c68a3013e2a7bd0e3a2bb0887b3023a2af40ee` | Linux and Darwin flake checks passed with 1,811 passed, 6 skipped, and 0 failures on each platform. The Darwin release archive passed; both archive job cards later appeared concluded. The Darwin E2E job failed during its 251-test preflight because `ScenarioDeadlineTests.test_restores_existing_handler_and_timer` attempted a 0.02-second sleep inside a 0.07-second execution budget; its performance gate was skipped. After GitHub API rate limiting, the workflow HTML showed the Linux E2E and archive jobs as concluded, but their conclusions, E2E metrics, and the overall workflow conclusion could not be confirmed. The known Darwin E2E failure already makes this run unusable as promotion evidence. |
 | [40614855675](https://github.com/nerima-lisp/loom/actions/runs/40614855675) | `e4b7c055b083092933a590982e7117a14c537693` | Five of six jobs passed; the workflow failed only in Darwin PTY E2E. Linux full E2E passed 1,151/1,151 scenarios and covered 147/147 commands; path coverage reported 999 pass, 2 excluded, and 29 failing required paths. Startup was 0.122 s, redraw p95 was 1.785 ms, D13 was 38.224 ms, and all three large-file-open trials expired before producing a metric. Darwin's 252-test harness preflight passed, including the job-control tests; the log contained no `PermissionError` or `killpg` failure. Darwin full E2E failed with 1,108 passed and 43 failed scenarios: 32 execution-budget expirations, 8 buffer-origin mismatches, and 3 user-init non-TTY I/O expectation failures. Its performance report was skipped. The benchmark changes described above were not present in this tested SHA. The Darwin flake check and archive both passed. |
+| [40622923555](https://github.com/nerima-lisp/loom/actions/runs/40622923555) | `acc36bdd39c6ef1762c02b3ebe97d0ec6b481cd7` | Linux full E2E passed 1,164/1,164 scenarios and covered 148/148 commands. Darwin preflight passed 260/260 tests; full E2E passed 1,134/1,164 with 30 failures. Eighteen failures were files-path expectations that compared `/tmp/...` with the screen's `/private/tmp/...`; the remaining 12 were one shell pipe case, three user-init non-TTY cases, seven clipboard cases, and one window cursor case owned outside W4-2. Linux and Darwin flake checks and both release archives passed. Darwin's log contained no `PermissionError` or `killpg` failure. |
 
 On local macOS, the save-buffer scenario initially expected a minibuffer path under
 `/tmp/` while the screen displayed the same file under `/private/tmp/`. The revert
@@ -1062,6 +1063,28 @@ the declared cursor before retaining the exact origin assertion. After this
 change, both selected scenarios passed, each with a 257/257 preflight and 1/1
 selected scenario. Revert's prompt and result displayed `/private/tmp/` and
 matched the expected strings; file contents matched exactly.
+
+The next full CI run exposed the same spelling difference in the shared files
+prompt helper, save-buffer shell scenarios, and the missing-path CLI scenario.
+The test harness now resolves temporary paths before constructing prompt input
+and expected strings, and filesystem assertions still target the same temporary
+files. On local macOS, the selected recent-file completion passed 1/1,
+the save-buffer confirmation group passed 6/6, the revert-buffer confirmation
+group passed 6/6, the save-buffer shell group passed 4/4, and the missing-path
+scenario passed 1/1. Each selected run passed the 260-test harness preflight.
+These checks support a harness expectation mismatch, not a product file
+identity defect.
+
+The other 12 Darwin failures in run 40622923555 do not belong to this path
+fix. A local reproduction of the scenario selected by
+`nix run .#e2e -- --only 'user-init non-tty stdin uses /dev/tty'` failed because
+the editor reported `Polling terminal input or wake pipe found an invalid
+descriptor.` and the file remained unchanged. The condition is raised in
+`src/application/startup-services.lisp` at line 423; this product-side issue is
+left for its owning lane. The other failures were
+`shell/pipe-command-r5-missing` (W3-11), seven `clipboard-yank` command paths
+(W3-8), and `split-window-below` (W3-10). The Darwin preflight and CI logs
+showed no job-control test failure or `killpg` permission error.
 
 The Darwin preflight failure above came from the test harness's timing-sensitive
 sleep, not from a product change. The test now performs no sleep inside the

@@ -154,7 +154,10 @@ def missing_path(binary):
             session.send(keys.ctrl("x") + keys.ctrl("s"))
             session.wait_for_file(path, b"created")
             session.assert_file_bytes(path, b"created")
-            session.wait_for_region_exact_text("minibuffer", f"Wrote {path}")
+            display_path = str(Path(path).resolve(strict=False))
+            session.wait_for_region_exact_text(
+                "minibuffer", f"Wrote {display_path}"
+            )
 
             output, code = session.quit()
     _assert_exit_zero("missing path", output, code)
