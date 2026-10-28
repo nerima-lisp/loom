@@ -999,12 +999,17 @@ within 50 ms. Startup and large-file open each use three independent trials and
 the median; redraw uses 100 key-move samples (four batches of 25) and the
 nearest-rank p95. There is no warm-up or retry-until-green. The median limits
 the effect of one slow trial, while the fixed sample count bounds CI work. Three
-trials do not characterize the full noise distribution, so an expired open
-deadline remains a missing measurement, not an inferred pass or a measured
-1.0-second regression. CI reports measurements and scenario errors without
-failing on a missing or over-target metric until the NFR-01 open issue is fixed
-and the enforcement change is landed separately. Full E2E results remain
-required on both platforms.
+trials do not characterize the full noise distribution. The NFR-01 open sample
+starts at Enter after filename entry and stops when the first row marker is
+visible. The existing five-second execution budget still includes file creation
+and PTY setup, but those steps are outside the measured interval. If that budget
+expires while waiting for the first row, the harness records the elapsed open
+time as a lower bound, marks that trial incomplete, and reports the metric as
+over target even when the median is at or below 1.0 seconds. A deadline before
+the open attempt begins still leaves the metric missing. EOF navigation has a
+separate informational measurement and no threshold. CI remains report-only
+until the NFR-01 product fix is on main and the enforcement change lands
+separately. Full E2E results remain required on both platforms.
 
 Main pushes and pull requests run the Linux and aarch64-darwin flake checks,
 full PTY E2E, NFR report, and release-archive jobs. Path-coverage reporting
@@ -1019,18 +1024,34 @@ environment failed. This locates the exact source range and the lane changes
 visible in its commits and paths; it does not prove causality automatically if
 multiple lane changes are combined in one commit or push.
 
-The report-mode tests verify that over-target values remain visible and that a
-failed large-file-open trial produces a missing metric and a named scenario
-error in `benchmarks.json` while allowing the report to complete. The
-fail-closed NFR enforcement tests belong to the deferred performance-gate
+The report-mode tests verify that an open trial which misses its first-row
+deadline retains its measured lower bound and completion status in
+`benchmarks.json`, and that it cannot count as within target. EOF is reported
+separately without a threshold. A scenario failure before a numeric sample is
+available remains named in `scenario_errors` and leaves that metric missing.
+The fail-closed NFR enforcement tests belong to the deferred performance-gate
 change. The full local E2E harness preflight passed all 251 Python tests after
 the deadline-test timing fix prompted by the Darwin failure below.
+
+The macOS `--benchmarks` report-only run from the source tree committed as
+`5272f8ea756780cf8dd20346fe3e298669bd2017` (based on
+`e4b7c055b083092933a590982e7117a14c537693`) recorded open lower bounds of
+4.715, 4.814, and 4.776 seconds. The first-row
+marker was not observed in any trial before the existing execution deadline,
+so the median remains over the unchanged 1.0-second target and all three
+samples are incomplete. EOF has no sample because its navigation starts only
+after the first row appears. Startup was 0.365 seconds, redraw p95 was 10.476
+ms, and the D13 scenario reported an error. These working-copy measurements
+are not CI evidence and do not validate the product-side open fix. The updated
+local Python E2E suite passed 257/257 tests. The 251, 252, and 257 preflight
+counts above refer to separate local, CI, and current-workspace snapshots.
 
 | Run | Commit | Results |
 | --- | --- | --- |
 | [40604333588](https://github.com/nerima-lisp/loom/actions/runs/40604333588) | `f2eab7f47ac5ed8324ed5b6cb71ef4d977f95027` | Linux full E2E passed 1,149/1,149 scenarios and covered 147/147 commands. Startup was 0.137 s and redraw p95 was 0.908 ms. All three large-file-open trials exceeded the unchanged 5-second scenario execution deadline, so the required open metric was missing and the performance gate failed. The Linux flake check and archive passed. The three Darwin jobs stopped at the Apple Silicon system guard. |
 | [40605055059](https://github.com/nerima-lisp/loom/actions/runs/40605055059) | `964d645313d1b4f007b1099dbac9c22efacdb573b` | Linux full E2E passed 1,149/1,149 scenarios and covered 147/147 commands. Startup was 0.118 s and redraw p95 was 1.830 ms. All three large-file-open trials exceeded the unchanged 5-second scenario execution deadline, so the required open metric was missing and the performance gate failed. Linux flake check and archive passed. Darwin's system guard passed in the flake job, which then exposed a release-workflow guard-test failure; the Darwin E2E and archive jobs still stopped at the system guard. |
 | [40605724231](https://github.com/nerima-lisp/loom/actions/runs/40605724231) | `71c68a3013e2a7bd0e3a2bb0887b3023a2af40ee` | Linux and Darwin flake checks passed with 1,811 passed, 6 skipped, and 0 failures on each platform. The Darwin release archive passed; both archive job cards later appeared concluded. The Darwin E2E job failed during its 251-test preflight because `ScenarioDeadlineTests.test_restores_existing_handler_and_timer` attempted a 0.02-second sleep inside a 0.07-second execution budget; its performance gate was skipped. After GitHub API rate limiting, the workflow HTML showed the Linux E2E and archive jobs as concluded, but their conclusions, E2E metrics, and the overall workflow conclusion could not be confirmed. The known Darwin E2E failure already makes this run unusable as promotion evidence. |
+| [40614855675](https://github.com/nerima-lisp/loom/actions/runs/40614855675) | `e4b7c055b083092933a590982e7117a14c537693` | Linux full E2E passed 1,151/1,151 scenarios and covered 147/147 commands; path coverage reported 999 pass, 2 excluded, and 29 failing required paths. Startup was 0.122 s, redraw p95 was 1.785 ms, D13 was 38.224 ms, and all three large-file-open trials expired before producing a metric. Darwin's 252-test harness preflight passed, including the job-control tests; the log contained no `PermissionError` or `killpg` failure. Darwin full E2E then failed with 1,108 passed and 43 failed scenarios: 32 execution-budget expirations, 8 buffer-origin mismatches, and 3 user-init non-TTY I/O expectation failures. Its performance report was skipped. The benchmark changes described above were not present in this tested SHA. The Darwin archive passed, but the Darwin flake-check remained queued and the workflow had no final conclusion when these results were collected. |
 
 The Darwin preflight failure above came from the test harness's timing-sensitive
 sleep, not from a product change. The test now performs no sleep inside the
