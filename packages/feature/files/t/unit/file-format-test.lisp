@@ -150,3 +150,74 @@
               :to-equal
               "startup-note.lisp")
       (expect (loom/core/buffer:buffer-text buffer) :to-equal "draft"))))
+(describe "file format scan edge cases"
+  (it "keeps bare carriage returns as text"
+    (let ((octets #(65 13 66 13 67)))
+      (multiple-value-bind (text format)
+          (loom/feature/files::%decode-file-octets octets)
+        (expect text :to-equal (format nil "A~CB~CC" #\Return #\Return))
+        (expect (loom/feature/files::%file-format-newline format) :to-equal :lf)
+        (expect (loom/feature/files::%file-format-newline-sequence format)
+                :to-equalp
+                #())
+        (expect (loom/feature/files::%encode-file-text text format)
+                :to-equalp
+                octets))))
+  (it "preserves BOM-prefixed Latin-1 bytes and mixed newline styles"
+    (let ((octets #(239 187 191 65 13 10 233 13 88 10)))
+      (multiple-value-bind (text format)
+          (loom/feature/files::%decode-file-octets octets)
+        (expect text
+                :to-equal
+                (format nil "A~C~C~CX~C"
+                        #\Linefeed
+                        (code-char #xe9)
+                        #\Return
+                        #\Linefeed))
+        (expect (loom/feature/files::%file-format-encoding format)
+                :to-equal
+                :latin-1)
+        (expect (loom/feature/files::%file-format-bom-p format) :to-be-truthy)
+        (expect (loom/feature/files::%file-format-newline format)
+                :to-equal
+                :crlf)
+        (expect (loom/feature/files::%file-format-mixed-newlines-p format)
+                :to-be-truthy)
+        (expect (loom/feature/files::%file-format-newline-sequence format)
+                :to-equalp
+                #(:crlf :lf))
+        (expect (loom/feature/files::%encode-file-text text format)
+                :to-equalp
+                octets))))
+  (it "reads file bytes into the result vector"
+  (let* ((path
+           (merge-pathnames
+            (make-pathname :name (symbol-name (gensym "loom-file-read-"))
+                           :type "bytes")
+            (uiop:temporary-directory)))
+         (octets #(239 187 191 65 13 10 233 13 88 10)))
+    (unwind-protect
+         (progn
+           (with-open-file (stream path
+                                   :direction :output
+                                   :element-type '(unsigned-byte 8)
+                                   :if-exists :error
+                                   :if-does-not-exist :create)
+             (write-sequence octets stream))
+           (expect (loom/feature/files::%native-read-file-octets path)
+                   :to-equalp
+                   octets))
+      (when (probe-file path)
+        (delete-file path)))))
+    (it "returns an exact-sized newline sequence"
+    (let* ((count 100000)
+           (octets (make-array count
+                               :element-type '(unsigned-byte 8)
+                               :initial-element 10)))
+      (multiple-value-bind (text format)
+          (loom/feature/files::%decode-file-octets octets)
+        (declare (ignore text))
+        (let ((sequence
+               (loom/feature/files::%file-format-newline-sequence format)))
+          (expect (length sequence) :to-equal count)
+          (expect (array-total-size sequence) :to-equal count))))))

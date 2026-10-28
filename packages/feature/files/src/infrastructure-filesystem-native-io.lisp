@@ -12,22 +12,37 @@
 #+sbcl (progn
   (defun %native-read-file-octets (path)
     (%with-native-file-descriptor (fd path sb-posix:o-rdonly)
-      (let ((stream (sb-sys:make-fd-stream
-                     fd
-                     :input t
-                     :element-type (quote (unsigned-byte 8)))))
+      (let* ((file-size (sb-posix:stat-size (sb-posix:fstat fd)))
+             (stream (sb-sys:make-fd-stream
+                      fd
+                      :input t
+                      :element-type '(unsigned-byte 8))))
         (setf fd nil)
         (unwind-protect
-             (let ((chunk (make-array 8192
-                                      :element-type (quote (unsigned-byte 8))))
-                   (output (make-array 0
-                                       :element-type (quote (unsigned-byte 8))
-                                       :adjustable t
-                                       :fill-pointer 0)))
-               (loop for count = (read-sequence chunk stream)
-                     while (plusp count)
-                     do (loop for index below count
-                              do (vector-push-extend (aref chunk index) output)))
+             (let* ((capacity (1+ (max 8192 file-size)))
+                    (output (make-array capacity
+                                        :element-type '(unsigned-byte 8)
+                                        :adjustable t
+                                        :fill-pointer capacity))
+                    (probe (make-array 1 :element-type '(unsigned-byte 8)))
+                    (used 0))
+               (loop
+                 (when (= used (length output))
+                   (when (zerop (read-sequence probe stream))
+                     (return))
+                   (let ((new-capacity (max 8192 (* 2 (length output)))))
+                     (setf output
+                           (adjust-array output new-capacity
+                                         :fill-pointer new-capacity)))
+                   (setf (aref output used) (aref probe 0))
+                   (incf used))
+                 (let ((end (read-sequence output stream
+                                           :start used
+                                           :end (length output))))
+                   (when (= end used)
+                     (return))
+                   (setf used end)))
+               (setf (fill-pointer output) used)
                output)
           (close stream)))))
 

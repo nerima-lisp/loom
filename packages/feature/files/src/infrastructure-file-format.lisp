@@ -65,9 +65,9 @@
                (logand fourth #x3f))
             4)))
         (t (error '%invalid-file-utf-8)))))
-  (defun %decode-utf-8-octets (octets)
+  (defun %decode-utf-8-octets (octets &optional (start 0))
     (with-output-to-string (output)
-      (loop with index = 0
+      (loop with index = start
             while (< index (length octets))
             do (multiple-value-bind (code width)
                    (%decode-utf-8-character octets index)
@@ -75,86 +75,77 @@
                    (unless character
                      (error '%invalid-file-utf-8))
                    (write-char character output))
-                 (incf index width)))))
-  (defun %decode-latin-1-octets (octets)
+                 (incf index width))))
+    )
+  (defun %decode-latin-1-octets (octets &optional (start 0))
     (with-output-to-string (output)
-      (loop for octet across octets
+      (loop for index from start below (length octets)
+            for octet = (aref octets index)
             do (let ((character (code-char octet)))
                  (unless character
                    (error "Unsupported Latin-1 byte ~D" octet))
-                 (write-char character output)))))
+                 (write-char character output))))
+    )
   (defun %normalize-file-newlines (text)
-    (with-output-to-string (output)
-      (loop with index = 0
-            while (< index (length text))
-            do (let ((character (char text index)))
-                 (if (and (char= character #\Return)
-                          (< (1+ index) (length text))
-                          (char= (char text (1+ index)) #\Linefeed))
-                     (progn
-                       (write-char #\Linefeed output)
-                       (incf index 2))
-                     (progn
-                       (write-char character output)
-                       (incf index)))))))
-  (defun %detect-file-newline (octets start)
     (let ((crlf-count 0)
           (lf-count 0)
           (first-newline nil)
-          (newline-sequence nil)
-          (index start))
-      (loop while (< index (length octets))
-            do (let ((octet (aref octets index)))
-                 (cond
-                   ((and (= octet 13)
-                         (< (1+ index) (length octets))
-                         (= (aref octets (1+ index)) 10))
-                     (incf crlf-count)
-                     (unless first-newline
-                       (setf first-newline :crlf))
-                     (push :crlf newline-sequence)
-                     (incf index 2))
-                   ((= octet 10)
-                     (incf lf-count)
-                     (unless first-newline
-                       (setf first-newline :lf))
-                     (push :lf newline-sequence)
-                     (incf index))
-                   (t (incf index)))))
-      (let ((ordered-newlines (nreverse newline-sequence)))
-        (values
-         (cond
-           ((> crlf-count lf-count) :crlf)
-           ((> lf-count crlf-count) :lf)
-           ((eq first-newline :crlf) :crlf)
-           (t :lf))
-         (and (plusp crlf-count) (plusp lf-count))
-         (make-array (length ordered-newlines)
-                     :initial-contents
-                     ordered-newlines)))))
+          (newline-sequence (make-array 0 :adjustable t :fill-pointer 0)))
+      (let ((normalized-text
+             (with-output-to-string (output)
+               (loop with index = 0
+                     while (< index (length text))
+                     do (let ((character (char text index)))
+                          (cond
+                           ((and (char= character #\Return)
+                                 (< (1+ index) (length text))
+                                 (char= (char text (1+ index)) #\Linefeed))
+                            (write-char #\Linefeed output)
+                            (incf crlf-count)
+                            (unless first-newline
+                              (setf first-newline :crlf))
+                            (vector-push-extend :crlf newline-sequence)
+                            (incf index 2))
+                           ((char= character #\Linefeed)
+                            (write-char character output)
+                            (incf lf-count)
+                            (unless first-newline
+                              (setf first-newline :lf))
+                            (vector-push-extend :lf newline-sequence)
+                            (incf index))
+                           (t
+                            (write-char character output)
+                            (incf index))))))))
+        (values normalized-text
+                (cond
+                 ((> crlf-count lf-count) :crlf)
+                 ((> lf-count crlf-count) :lf)
+                 ((eq first-newline :crlf) :crlf)
+                 (t :lf))
+                (and (plusp crlf-count) (plusp lf-count))
+                (make-array (length newline-sequence) :initial-contents newline-sequence))))
+    )
   (defun %decode-file-octets (octets)
     (let* ((bom-p
             (and (>= (length octets) 3)
                  (= (aref octets 0) #xef)
                  (= (aref octets 1) #xbb)
                  (= (aref octets 2) #xbf)))
-           (start (if bom-p 3 0))
-           (body (subseq octets start)))
+           (start (if bom-p 3 0)))
       (multiple-value-bind (text encoding)
-          (handler-case (values (%decode-utf-8-octets body) :utf-8)
+          (handler-case (values (%decode-utf-8-octets octets start) :utf-8)
             (%invalid-file-utf-8 ()
-              (values (%decode-latin-1-octets body) :latin-1)))
-        (let ((normalized-text (%normalize-file-newlines text)))
-          (multiple-value-bind (newline mixed-newlines-p newline-sequence)
-              (%detect-file-newline octets start)
-            (values normalized-text
-                    (%make-file-format :encoding encoding
-                                       :newline newline
-                                       :mixed-newlines-p mixed-newlines-p
-                                       :newline-sequence newline-sequence
-                                       :bom-p bom-p
-                                       :original-text
-                                       (copy-seq normalized-text))))))))
+                                 (values (%decode-latin-1-octets octets start) :latin-1)))
+        (multiple-value-bind (normalized-text newline mixed-newlines-p newline-sequence)
+            (%normalize-file-newlines text)
+          (values normalized-text
+                  (%make-file-format :encoding encoding
+                                     :newline newline
+                                     :mixed-newlines-p mixed-newlines-p
+                                     :newline-sequence newline-sequence
+                                     :bom-p bom-p
+                                     :original-text
+                                     (copy-seq normalized-text)))))))
   (defun %file-format-indicator (format)
     (format nil
             "~A ~A~A"
