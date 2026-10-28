@@ -313,6 +313,80 @@ class CoverageCliTests(unittest.TestCase):
             self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
             self.assertFalse(any(report["within_targets"].values()))
 
+    def test_benchmark_gate_fails_when_targets_are_missed(self):
+        scenarios = {
+            "startup": lambda _binary: {
+                "startup_to_first_screen_seconds": 0.4,
+            },
+            "redraw": lambda _binary: {
+                "input_to_redraw_p95_milliseconds": 60.0,
+            },
+            "large-file-open": lambda _binary: {
+                "open_100000_lines_5mb_seconds": 1.2,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+        }
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
+                self.assertEqual(cli.main([
+                    "--benchmark-gate", "--artifacts-dir", directory,
+                ]), 1)
+        self.assertIn("FAIL PTY performance gate", self.stderr.getvalue())
+        self.assertIn("open_100000_lines_5mb", self.stderr.getvalue())
+        self.assertIn("input_to_redraw_p95", self.stderr.getvalue())
+
+    def test_benchmark_gate_passes_when_targets_are_met(self):
+        scenarios = {
+            "startup": lambda _binary: {
+                "startup_to_first_screen_seconds": 0.2,
+            },
+            "redraw": lambda _binary: {
+                "input_to_redraw_p95_milliseconds": 10.0,
+            },
+            "large-file-open": lambda _binary: {
+                "open_100000_lines_5mb_seconds": 0.8,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+        }
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
+                self.assertEqual(cli.main([
+                    "--benchmark-gate", "--artifacts-dir", directory,
+                ]), 0)
+        self.assertNotIn("FAIL PTY performance gate", self.stderr.getvalue())
+
+    def test_benchmark_gate_fails_with_elapsed_value_when_open_expires(self):
+        scenarios = {
+            "startup": lambda _binary: {
+                "startup_to_first_screen_seconds": 0.2,
+            },
+            "redraw": lambda _binary: {
+                "input_to_redraw_p95_milliseconds": 10.0,
+            },
+            "large-file-open": lambda _binary: {
+                "open_100000_lines_5mb_seconds": 5.0,
+                "samples": [5.0],
+                "first_row_observed": False,
+                "completed_samples": [False],
+                "completed": False,
+                "input": {"lines": 100_000, "bytes": 5_000_000},
+            },
+        }
+        self.run.side_effect = lambda function, binary: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
+                self.assertEqual(cli.main([
+                    "--benchmark-gate", "--artifacts-dir", directory,
+                ]), 1)
+        self.assertIn(
+            "over target; first row not observed by execution deadline",
+            self.stdout.getvalue(),
+        )
+        self.assertIn("samples=[5.0]", self.stdout.getvalue())
+        self.assertIn("FAIL PTY performance gate", self.stderr.getvalue())
+
     def test_benchmark_mode_prints_timed_out_open_sample(self):
         def trial(value, first_row_observed):
             return lambda _binary: {

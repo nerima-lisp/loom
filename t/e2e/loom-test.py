@@ -68,6 +68,11 @@ def _parse_args(argv):
         action="store_true",
         help="report PTY startup, large-file open, and input-to-redraw measurements",
     )
+    parser.add_argument(
+        "--benchmark-gate",
+        action="store_true",
+        help="report benchmark measurements and fail when any target is missed",
+    )
     parser.add_argument("--list", action="store_true", help="list scenario names and exit")
     parser.add_argument(
         "--require-full-coverage", action="store_true",
@@ -165,7 +170,8 @@ def _run_with_artifacts(
 
 def main(argv):
     args = _parse_args(argv)
-    if args.benchmarks and args.only is not None:
+    benchmark_mode = args.benchmarks or args.benchmark_gate
+    if benchmark_mode and args.only is not None:
         raise SystemExit("benchmark modes cannot be combined with --only")
     registered = all_scenarios()
 
@@ -182,7 +188,7 @@ def main(argv):
     artifacts_dir = _artifact_directory(args.artifacts_dir)
     print(f"scenario artifacts: {artifacts_dir}")
 
-    if args.benchmarks:
+    if benchmark_mode:
         _run_harness_preflight()
         measurements = {}
         benchmark_errors = []
@@ -260,6 +266,19 @@ def main(argv):
                 "benchmark scenarios failed; affected metrics are reported as missing: "
                 + ", ".join(benchmark_errors)
             )
+        failed_targets = [
+            metric
+            for metric, within_target in report["within_targets"].items()
+            if not within_target
+        ]
+        if args.benchmark_gate and (failed_targets or benchmark_errors):
+            details = []
+            if failed_targets:
+                details.append("missed targets: " + ", ".join(failed_targets))
+            if benchmark_errors:
+                details.append("failed scenarios: " + ", ".join(benchmark_errors))
+            print("FAIL PTY performance gate: " + "; ".join(details), file=sys.stderr)
+            return 1
         return 0
 
     selected = select_scenarios(registered, args.only)
