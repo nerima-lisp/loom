@@ -85,7 +85,7 @@
       "expected_bytes": "abc\n",
       "expected_cursor": [
         0,
-        0
+        1
       ],
       "expected_minibuffer": "",
       "expected_screen": [
@@ -100,6 +100,9 @@
       ],
       "pre_keys": [
         {
+          "key": "C-f"
+        },
+        {
           "key": "M-x"
         },
         {
@@ -110,7 +113,7 @@
         },
         {
           "key": "C-f",
-          "repeat": 3
+          "repeat": 2
         }
       ]
     },
@@ -194,7 +197,7 @@
       "expected_bytes": "abc\n",
       "expected_cursor": [
         0,
-        0
+        1
       ],
       "expected_minibuffer": "",
       "expected_screen": [
@@ -204,6 +207,9 @@
         }
       ],
       "pre_keys": [
+        {
+          "key": "C-f"
+        },
         {
           "key": "M-x"
         },
@@ -215,7 +221,7 @@
         },
         {
           "key": "C-f",
-          "repeat": 3
+          "repeat": 2
         }
       ]
     },

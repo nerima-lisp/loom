@@ -740,6 +740,7 @@ def generate_required_paths(catalog):
     for row in rows:
         command_id = row["id"]
         lane = row["lane"]
+        r1_observations = ["cursor"] if command_id == "exchange-point-and-mark" else ["screen_text"]
         paths.extend(_lisp_mode_local_paths(row))
         for key in row["keys"]:
             signature = json.dumps(key, sort_keys=True, separators=(",", ":"))
@@ -752,7 +753,7 @@ def generate_required_paths(catalog):
                     f"key:{signature}",
                     "default",
                     "command runs from its key sequence",
-                    ["screen_text"],
+                    r1_observations,
                 )
             )
         if row["mx-eligible"]:
@@ -765,7 +766,7 @@ def generate_required_paths(catalog):
                     "mx",
                     "default",
                     "command runs from M-x",
-                    ["screen_text"],
+                    r1_observations,
                 )
             )
 

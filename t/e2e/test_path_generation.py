@@ -231,6 +231,24 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertTrue(any(path["id"].startswith("r1:execute-extended-command:key:") for path in key_paths))
         self.assertEqual({path["lane"] for path in key_paths}, {"W3-1", "W3-4", "W3-6", "W3-8"})
 
+    def test_exchange_point_and_mark_r1_paths_observe_cursor(self):
+        catalog = self.catalog + [
+            _row(
+                "exchange-point-and-mark",
+                owner="core/buffer",
+                keys=[_key("x", ("control",))],
+            )
+        ]
+        paths = [
+            path
+            for path in generate_required_paths(catalog)
+            if path["id"].startswith("r1:exchange-point-and-mark:")
+        ]
+
+        self.assertEqual(len(paths), 2)
+        self.assertEqual(sum(path["entry"] == "mx" for path in paths), 1)
+        self.assertTrue(all(path["observe"] == ["cursor"] for path in paths))
+
     def test_space_is_a_valid_catalog_key(self):
         catalog = _catalog()
         row = next(row for row in catalog if row["id"] == "forward-char")
