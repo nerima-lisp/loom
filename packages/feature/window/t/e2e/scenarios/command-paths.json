@@ -331,7 +331,7 @@
       "initial_bytes": "WINDOW-COMMAND-PATH\n",
       "expected_bytes": "WINDOW-COMMAND-PATH\n",
       "expected_cursor": [
-        0,
+        12,
         0
       ],
       "expected_minibuffer": "",
