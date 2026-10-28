@@ -82,12 +82,15 @@ work. Deferred items are not production-readiness claims.
   configuration path, directory, and command, followed by the exact answer
   `yes` before execution. The client negotiates initialization capabilities,
   synchronize file-backed buffers with UTF-8 percent-encoded URIs, render
-  `publishDiagnostics` messages in `*Loom-Diagnostics*`, and perform the
-  `shutdown`/`exit` handshake with a timeout fallback. `lsp-completion-at-point`
-  (`C-M-i`) requests completion and presents a capability-gated candidate
-  popup; `lsp-hover-at-point` displays supported hover text in the minibuffer;
-  `lsp-find-definition` (`M-.`) jumps to a returned local file and
-  `lsp-pop-definition` (`M-,`) returns to the jump origin.
+  `publishDiagnostics` messages in `*Loom-Diagnostics*` and severity counts in
+  the mode line, and perform the `shutdown`/`exit` handshake with a timeout
+  fallback. `lsp-completion-at-point` (`C-M-i`) requests completion and presents
+  a capability-gated candidate popup; `lsp-hover-at-point` displays supported
+  hover text in the minibuffer; `lsp-find-definition` (`M-.`) jumps to a
+  returned local file and `lsp-pop-definition` (`M-,`) returns to the jump
+  origin. `M-x lsp-find-references` lists returned locations in local files,
+  `M-x lsp-rename` applies validated server edits, and `M-x lsp-format-buffer`
+  requests full-document formatting when the server supports it.
 - **S-expression motion** -- `C-M-f` and `C-M-b` move by expression, `C-M-u`
   and `C-M-d` cross the enclosing parentheses, and `C-M-k` kills the expression
   after point. Parentheses inside a string, a comment, or a `#\` character

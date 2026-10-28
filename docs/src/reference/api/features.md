@@ -1372,8 +1372,6 @@ Construct an LSP position.
 
 ### `lsp-position-p`
 
-Return true when an object is an LSP position.
-
 ### `lsp-position-line`
 
 Return an LSP position's zero-based line.
@@ -1392,8 +1390,6 @@ Construct an LSP range.
 
 ### `lsp-range-p`
 
-Return true when an object is an LSP range.
-
 ### `lsp-range-start`
 
 Return an LSP range's start position.
@@ -1411,8 +1407,6 @@ The LSP diagnostic value type.
 Construct an LSP diagnostic.
 
 ### `lsp-diagnostic-p`
-
-Return true when an object is an LSP diagnostic.
 
 ### `lsp-diagnostic-range`
 
@@ -1448,8 +1442,6 @@ Construct an LSP document state.
 
 ### `lsp-document-p`
 
-Return true when an object is an LSP document.
-
 ### `lsp-document-uri`
 
 Return an LSP document's URI.
@@ -1471,8 +1463,6 @@ Return an LSP document's current text.
 Construct an LSP session for a project or document root.
 
 ### `lsp-session-p`
-
-Return true when an object is an LSP session.
 
 ### `lsp-session-start`
 
@@ -1618,6 +1608,33 @@ call the handler. When sent, the function returns the request ID. The handler
 receives `(content error-message)`: `content` is decoded hover text or `nil`,
 and `error-message` is a string or `nil`.
 
+### `lsp-request-references`
+
+```lisp
+(loom/feature/lsp:lsp-request-references session uri line character handler)
+```
+
+Request references at a zero-based document position, with the character offset
+measured in UTF-16 code units. The caller must synchronize the document before
+requesting references. The request includes declaration locations. Without
+`referencesProvider`, the function returns `nil` without sending a request or
+calling `handler`. Otherwise it returns the request ID and calls `handler` with
+`(locations nil)` on success or `(nil error-message)` on a protocol error.
+`locations` contains decoded local and non-local locations returned by the server.
+
+### `lsp-request-rename`
+
+```lisp
+(loom/feature/lsp:lsp-request-rename session uri line character new-name handler)
+```
+
+Request a rename at a zero-based document position, with the character offset
+measured in UTF-16 code units. The caller must synchronize the document before
+requesting a rename. Without `renameProvider`, the function returns `nil` without
+sending a request or calling `handler`. Otherwise it returns the request ID and
+calls `handler` with `(raw-result nil)` on success or `(nil error-message)` on a
+protocol error.
+
 ### `lsp-request-formatting`
 
 ```lisp
@@ -1642,8 +1659,6 @@ The value type for one completion candidate.
 Construct a completion candidate with optional insertion text and server metadata.
 
 ### `lsp-completion-item-p`
-
-Return true when an object is a completion item.
 
 ### Completion item fields
 
@@ -1670,8 +1685,6 @@ Construct a definition target from its URI and range.
 
 ### `lsp-location-p`
 
-Return true when an object is an LSP location.
-
 ### `lsp-location-uri`, `lsp-location-range`
 
 Return a location's URI or range.
@@ -1686,6 +1699,19 @@ Request and display completion candidates at point. `C-M-i` opens the popup;
 Run `M-x lsp-hover-at-point` to request hover information at point. The command
 shows the decoded server text in the minibuffer when the server advertises
 `hoverProvider`.
+
+### `lsp-find-references`
+
+Run `M-x lsp-find-references` to request references at point. It lists returned
+locations in local files in the read-only `*Loom-References*` result buffer;
+declarations are included when returned by the server. The command requires
+`referencesProvider`.
+
+### `lsp-rename`
+
+Run `M-x lsp-rename` to rename the symbol at point. Enter the new name at the
+prompt; the command validates the server's edits before applying them and
+reports edits it cannot safely apply. The command requires `renameProvider`.
 
 ### `lsp-format-buffer`
 

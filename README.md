@@ -6,8 +6,9 @@
 
 `loom` is a terminal text editor for SBCL with Emacs-style keybindings. It
 combines raw-mode editing, window management, interactive PTY terminal sessions,
-shell commands, Git status, diff, and staging commands, code-formatting integration,
-auto-save, feature slices, and a bounded concurrent file-tree runtime.
+shell commands, Git status, diff, and staging commands, external and language-server
+formatting, LSP completion, definition navigation, hover, references, rename, and
+diagnostics, auto-save, feature slices, and a bounded concurrent file-tree runtime.
 
 ## Quick Start
 

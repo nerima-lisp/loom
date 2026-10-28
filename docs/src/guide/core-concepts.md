@@ -41,8 +41,6 @@ command specification is in
 `packages/feature/file-tree/src/command-specs-file-tree.lisp`. The registry
 provides lookup and M-x completion.
 
-Default bindings are declared in
-`packages/core/command/src/application-commands-emacs-defaults.lisp`.
 Feature commands share the same dispatch path whether they are invoked by a key
 sequence, M-x, or a user initialization file.
 
@@ -115,14 +113,20 @@ enter a server command at the prompt.
 The current LSP commands provide diagnostics, completion, navigation, hover,
 rename, references, and formatting:
 
-- Run `M-x lsp-diagnostics` to refresh and display diagnostics for the selected
-  file-backed buffer.
+- The mode line shows counts by diagnostic severity. Run `M-x lsp-diagnostics`
+  to refresh and display diagnostics for the selected file-backed buffer in
+  `*Loom-Diagnostics*`. Each entry shows a 1-based line and column, message, and
+  severity and source when the server provides them.
 - Use `C-M-i` to request completion at point.
 - Use `M-.` to jump to a definition and `M-,` to return to the saved location.
 - Run `M-x lsp-hover-at-point` to show hover information in the minibuffer when
   the server advertises hover support.
-- Run `M-x lsp-find-references` to show local references in a result list.
-- Run `M-x lsp-rename` to apply the server's validated WorkspaceEdit.
+- Run `M-x lsp-find-references` at a symbol to list references returned for
+  local files in the read-only `*Loom-References*` result buffer. Declarations
+  are included when returned by the server; non-local locations are not listed.
+- Run `M-x lsp-rename` at a symbol and enter its new name at the prompt. loom
+  validates the server's edits before applying them and reports edits it cannot
+  safely apply.
 - Run `M-x lsp-format-buffer` to format the selected file when the server
   advertises formatting support.
 
