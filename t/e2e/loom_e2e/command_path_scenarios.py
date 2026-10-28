@@ -567,10 +567,26 @@ def _validate_case(case, index):
 
     if "fixture_keys" in case:
         _validate_key_list(case["fixture_keys"], f"{location}.fixture_keys")
-    if "fixture_wait" in case:
-        if case["rule"] != "r2":
+    if "history_seed_wait" in case:
+        if case["rule"] != "r2" or case.get("prompt_case") != "history":
             raise CommandPathScenarioError(
-                f"{location}.fixture_wait is only valid for R2 scenarios"
+                f"{location}.history_seed_wait is only valid for R2 history prompts"
+            )
+        history_seed_wait = case["history_seed_wait"]
+        if not isinstance(history_seed_wait, dict):
+            raise CommandPathScenarioError(
+                f"{location}.history_seed_wait must be an object"
+            )
+        _validate_screen_expectations(
+            [history_seed_wait], f"{location}.history_seed_wait"
+        )
+        _nonempty_string(
+            history_seed_wait["text"], f"{location}.history_seed_wait.text"
+        )
+    if "fixture_wait" in case:
+        if case["rule"] not in {"r2", "r3"}:
+            raise CommandPathScenarioError(
+                f"{location}.fixture_wait is only valid for R2 or R3 scenarios"
             )
         fixture_wait = case["fixture_wait"]
         if not isinstance(fixture_wait, dict):
@@ -1099,6 +1115,14 @@ def _run_r2(session, case, path):
                 session.type(case["history_seed_input"])
             with stage("history seed accept (RET)"):
                 session.key("RET")
+            if case.get("history_seed_wait"):
+                history_seed_wait = case["history_seed_wait"]
+                with stage("history seed wait"):
+                    session.wait_for_region_text(
+                        history_seed_wait["region"],
+                        history_seed_wait["text"],
+                        index=history_seed_wait.get("index", 0),
+                    )
 
     with stage("target prompt open"):
         _open_r2_prompt(session, case)
@@ -1184,6 +1208,7 @@ def _run_r2(session, case, path):
         save=case.get("save_after_effect", False),
         stage_prefix="final state",
         check_minibuffer=False,
+        wait_for_save=case.get("save_after_effect", False),
     )
 
     if case.get("cancel_prompt_after_assert", False):
@@ -1279,6 +1304,19 @@ def _run_r3(session, case, path):
     routed_command = "entry_mode" in case
     if case.get("fixture_keys"):
         _send_keys(session, case["fixture_keys"])
+    if case.get("fixture_wait"):
+        fixture_wait = case["fixture_wait"]
+        with _deadline_stage(case["name"], "fixture wait", session=session):
+            session.wait_for_region_text(
+                fixture_wait["region"],
+                fixture_wait["text"],
+                index=fixture_wait.get("index", 0),
+            )
+    if case.get("fixture_keys_after_wait"):
+        with _deadline_stage(
+            case["name"], "fixture keys after wait", session=session
+        ):
+            _send_keys(session, case["fixture_keys_after_wait"])
 
     if "pre_command_keys" in case:
         _send_keys(session, case["pre_command_keys"])

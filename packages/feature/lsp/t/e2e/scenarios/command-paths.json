@@ -746,6 +746,730 @@
       ]
     },
     {
+      "name": "command-path/r2/lsp-rename/free-string/accept",
+      "path_id": "r2:lsp-rename:prompt-1:free-string:accept",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_open": "Rename to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "accept",
+      "input_text": "renamed",
+      "initial_bytes": "foo foo\n",
+      "expected_bytes": "renamed renamed\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Rename applied",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/r2/lsp-rename/free-string/cancel",
+      "path_id": "r2:lsp-rename:prompt-1:free-string:cancel",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_open": "Rename to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "cancel",
+      "input_text": "draft",
+      "initial_bytes": "foo foo\n",
+      "expected_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Rename cancelled",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-rename/free-string/empty",
+      "path_id": "r2:lsp-rename:prompt-1:free-string:empty",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_open": "Rename to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "empty",
+      "input_text": "",
+      "initial_bytes": "foo foo\n",
+      "expected_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Rename name cannot be empty",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/lsp-rename/free-string/tab",
+      "path_id": "r2:lsp-rename:prompt-1:free-string:tab",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_open": "Rename to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "tab",
+      "input_text": "renamed",
+      "initial_bytes": "foo foo\n",
+      "expected_bytes": "renamed renamed\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Rename applied",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/r2/lsp-rename/free-string/history",
+      "path_id": "r2:lsp-rename:prompt-1:free-string:history",
+      "lane": "W3-9",
+      "rule": "r2",
+      "entry": "mx;prompt:1:free-string",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_open": "Rename to: ",
+      "prompt_kind": "free-string",
+      "prompt_case": "history",
+      "input_text": "f",
+      "initial_bytes": "foo bar\n",
+      "expected_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_cursor_region": "body",
+      "expected_minibuffer": "Rename applied",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "history_seed_input": "foo",
+      "history_expected": "foo",
+      "history_next_expected": "f",
+      "history_cancel": false,
+      "history_seed_wait": {
+        "region": "minibuffer",
+        "text": "Rename applied"
+      },
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/r3/lsp-rename/effect",
+      "path_id": "r3:lsp-rename:effect",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "effect",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Rename applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "renamed renamed\n",
+      "expected_bytes": "renamed renamed\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/lsp-rename/undo",
+      "path_id": "r3:lsp-rename:undo",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "undo",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename",
+        "undo"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Rename applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "renamed renamed\n",
+      "expected_bytes": "foo foo\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/lsp-rename/read-only",
+      "path_id": "r3:lsp-rename:read-only",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "read-only",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename",
+        "toggle-read-only"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Rename rejected: READ-ONLY",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "foo foo\n",
+      "expected_bytes": "foo foo\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/r3/lsp-rename/narrow",
+      "path_id": "r3:lsp-rename:narrow",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "narrow",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename",
+        "narrow-to-region"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Rename rejected: NARROWING",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "foo foo\n",
+      "expected_bytes": "foo foo\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "foo"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "foo"
+        }
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/r3/lsp-rename/split-window",
+      "path_id": "r3:lsp-rename:split-window",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "split-window",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename",
+        "split-window-below"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "Rename applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "renamed renamed\n",
+      "expected_bytes": "renamed renamed\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "renamed renamed",
+          "index": 12
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "renamed renamed",
+          "index": 12
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/lsp-rename/macro-replay",
+      "path_id": "r3:lsp-rename:macro-replay",
+      "rule": "r3",
+      "entry": "macro",
+      "mutation_case": "macro-replay",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "renamed renamed\n",
+      "expected_bytes": "renamed renamed\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "foo foo"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "M-x",
+        "lsp-rename",
+        "RET",
+        "renamed",
+        "RET"
+      ]
+    },
+    {
+      "name": "command-path/r3/lsp-rename/prefix-u4",
+      "path_id": "r3:lsp-rename:prefix-u4",
+      "rule": "r3",
+      "entry": "mx",
+      "mutation_case": "prefix-u4",
+      "lane": "W3-9",
+      "commands": [
+        "execute-extended-command",
+        "lsp-start",
+        "lsp-rename"
+      ],
+      "command": "lsp-rename",
+      "entry_mode": "mx",
+      "prompt_labels": [
+        "Rename to: "
+      ],
+      "prompt_inputs": [
+        "renamed"
+      ],
+      "initial_bytes": "foo foo\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Rename applied",
+      "fixture_keys": [
+        "M-x",
+        "lsp-start",
+        "RET",
+        "python3 $fixture_file:fake-lsp.py",
+        "RET"
+      ],
+      "fixture_wait": {
+        "region": "minibuffer",
+        "text": "LSP started."
+      },
+      "fixture_files": [
+        {
+          "path": "fake-lsp.py",
+          "contents": "import json, sys\ndef receive():\n    headers = {}\n    while True:\n        line = sys.stdin.buffer.readline()\n        if not line:\n            return None\n        if line in (b\"\\r\\n\", b\"\\n\"):\n            break\n        name, _, value = line.partition(b\":\")\n        headers[name.lower()] = value.strip()\n    return json.loads(sys.stdin.buffer.read(int(headers[b\"content-length\"])))\ndef send(message):\n    body = json.dumps(message, separators=(\",\", \":\")).encode()\n    sys.stdout.buffer.write(b\"Content-Length: \" + str(len(body)).encode() + b\"\\r\\n\\r\\n\" + body)\n    sys.stdout.buffer.flush()\nwhile True:\n    message = receive()\n    if message is None:\n        break\n    method = message.get(\"method\")\n    if method == \"initialize\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"capabilities\": {\"renameProvider\": True}, \"serverInfo\": {\"name\": \"fixture\", \"version\": \"1\"}}})\n    elif method == \"textDocument/rename\":\n        params = message[\"params\"]\n        uri = params[\"textDocument\"][\"uri\"]\n        edits = []\n        for start, end in ((0, 3), (4, 7)):\n            edits.append({\"range\": {\"start\": {\"line\": 0, \"character\": start}, \"end\": {\"line\": 0, \"character\": end}}, \"newText\": params[\"newName\"]})\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": {\"changes\": {uri: edits}}})\n    elif method == \"shutdown\":\n        send({\"jsonrpc\": \"2.0\", \"id\": message[\"id\"], \"result\": None})\n    elif method == \"exit\":\n        break\n"
+        }
+      ],
+      "effect_bytes": "renamed renamed\n",
+      "expected_bytes": "renamed renamed\n",
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "renamed renamed"
+        }
+      ],
+      "prefix_keys": [
+        "C-u",
+        "4"
+      ]
+    },
+    {
       "name": "command-path/r1/lsp-rename/mx",
       "path_id": "r1:lsp-rename:mx",
       "lane": "W3-9",

@@ -28,6 +28,10 @@ SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/core/command/t/e2e/scenarios/command-paths.json"
 )
+LSP_SCENARIO_DATA = (
+    REPOSITORY_ROOT
+    / "packages/feature/lsp/t/e2e/scenarios/command-paths.json"
+)
 EVALUATION_SCENARIO_DATA = (
     REPOSITORY_ROOT
     / "packages/feature/evaluation/t/e2e/scenarios/command-paths.json"
@@ -464,6 +468,51 @@ class CommandPathScenarioTests(unittest.TestCase):
         )
         self.assertLess(up_index, history_wait_index)
         self.assertLess(history_wait_index, accept_index)
+
+    def test_r2_waits_for_save_completion_before_quit(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(LSP_SCENARIO_DATA)
+            if case["name"] == "command-path/r2/lsp-rename/free-string/history"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        save_wait = session.calls.index(
+            ("wait_for_command_completion", "save-buffer", "key", 0)
+        )
+        quit_index = session.calls.index(("quit",))
+        self.assertLess(save_wait, quit_index)
+
+    def test_r2_history_waits_for_seed_command_before_target_prompt(self):
+        case = dict(
+            next(
+                case
+                for case in load_command_path_scenarios(LSP_SCENARIO_DATA)
+                if case["name"] == "command-path/r2/lsp-rename/free-string/history"
+            )
+        )
+        case["history_seed_wait"] = {
+            "region": "minibuffer",
+            "text": "Rename applied",
+        }
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        seed_wait = session.calls.index(
+            ("wait_text", "minibuffer", "Rename applied", {"index": 0})
+        )
+        target_prompt = session.calls.index(
+            ("wait_text", "minibuffer", "Rename to: ", {}),
+            seed_wait + 1,
+        )
+        self.assertLess(seed_wait, target_prompt)
 
     def test_load_session_fixtures_encode_restored_text_with_a_newline(self):
         cases = load_command_path_scenarios(SESSION_SCENARIO_DATA)
@@ -1636,6 +1685,56 @@ class CommandPathScenarioTests(unittest.TestCase):
 
         sends = [call for call in sessions[0].calls if call[0] == "send"]
         self.assertEqual(sends[:2], [("send", b"\x07"), ("send", b"\x04")])
+
+    def test_r3_fixture_wait_precedes_followup_keys_and_mutation(self):
+        case = {
+            "name": "test/r3-fixture-wait-before-mutation",
+            "path_id": "r3:delete-char:effect",
+            "lane": "W3-4",
+            "rule": "r3",
+            "entry": "key:C-d",
+            "commands": ["delete-char"],
+            "command": "delete-char",
+            "mutation_case": "effect",
+            "fixture_keys": ["C-g"],
+            "fixture_wait": {"region": "screen", "text": "LSP ready"},
+            "fixture_keys_after_wait": ["RET"],
+            "command_keys": ["C-d"],
+            "initial_bytes": "abc\n",
+            "effect_bytes": "bc\n",
+            "expected_bytes": "bc\n",
+            "expected_cursor": [0, 1],
+            "expected_minibuffer": "",
+            "expected_screen": [{"region": "body", "text": "bc"}],
+            "effect_screen": [{"region": "body", "text": "bc"}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            scenario_path = Path(directory) / "scenarios.json"
+            scenario_path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded = load_command_path_scenarios(scenario_path)[0]
+
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        run_command_path_scenario("unused", loaded, session_factory=session_factory)
+
+        calls = sessions[0].calls
+        fixture_key = calls.index(("send", b"\x07"))
+        fixture_wait = calls.index(
+            ("wait_text", "screen", "LSP ready", {"index": 0})
+        )
+        followup_key = calls.index(("key", "RET"))
+        mutation_key = calls.index(("send", b"\x04"))
+        self.assertLess(fixture_key, fixture_wait)
+        self.assertLess(fixture_wait, followup_key)
+        self.assertLess(followup_key, mutation_key)
 
     def test_r3_read_only_refusal_preserves_exact_bytes(self):
         case = next(
