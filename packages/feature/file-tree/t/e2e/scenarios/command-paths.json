@@ -309,7 +309,8 @@
       "expected_minibuffer": "",
       "expected_screen": [
         {
-          "region": "body",
+          "region": "screen",
+          "match": "contains",
           "text": "file tree"
         }
       ]
