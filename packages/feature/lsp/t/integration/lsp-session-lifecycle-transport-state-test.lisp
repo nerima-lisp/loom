@@ -8,6 +8,15 @@
            (expect (loom/feature/lsp::lsp-transport-receive process)
                    :to-be nil)
         (loom/feature/lsp::lsp-transport-close process))))
+  (it "signals when the process output reaches EOF"
+    (let ((process (%make-test-lsp-process)))
+      (unwind-protect
+           (progn
+             (cl-concurrent-kit:close-channel
+              (loom/feature/lsp::lsp-process-result-channel process))
+             (signals error
+               (loom/feature/lsp::lsp-transport-receive process)))
+        (loom/feature/lsp::lsp-transport-close process))))
   (it "receives a queued message without touching the child process"
     (let ((process (%make-test-lsp-process)))
       (unwind-protect

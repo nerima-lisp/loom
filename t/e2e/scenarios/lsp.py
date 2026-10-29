@@ -2,6 +2,7 @@
 
 import os
 import shlex
+import signal
 import shutil
 import subprocess
 import tempfile
@@ -91,6 +92,11 @@ def _move_to_buffer_position(session, line, column):
     session.extended_command("beginning-of-buffer")
     session.send(keys.ctrl("n") * line + keys.ctrl("f") * column)
     session.wait_for_region_cursor("body", column, index=line)
+
+
+def _wait_for_nixd_diagnostics(session):
+    # This indicator follows nixd's publishDiagnostics for the opened file.
+    session.wait_for_region_text("mode-line", "Diag:")
 
 
 def _assert_typescript_server_running(session, pid, command):
@@ -193,6 +199,78 @@ def _process_running(pid):
     except ProcessLookupError:
         return False
     return True
+
+
+def _supervised_server_fixture(server_argv, filename, contents, prefix):
+    directory = tempfile.TemporaryDirectory(prefix=f"loom-e2e-{prefix}-")
+    directory_path = os.path.realpath(directory.name)
+    child_pid_file = os.path.join(directory_path, "lsp-server-child.pid")
+    wrapper_pid_file = os.path.join(directory_path, "lsp-server-wrapper.pid")
+    exit_status_file = os.path.join(directory_path, "lsp-server-exit-status")
+    server = os.path.join(directory_path, "lsp-server")
+    script = "\n".join(
+        (
+            "#!/bin/sh",
+            "printf '%s\\n' \"$$\" > " + shlex.quote(wrapper_pid_file),
+            shlex.join(server_argv) + " <&0 >&1 2>&2 &",
+            "child=$!",
+            "printf '%s\\n' \"$child\" > " + shlex.quote(child_pid_file),
+            "wait \"$child\"",
+            "status=$?",
+            "printf '%s\\n' \"$status\" > " + shlex.quote(exit_status_file),
+            "exit \"$status\"",
+        )
+    ) + "\n"
+    write_buffer(directory_path, "lsp-server", script.encode("utf-8"))
+    os.chmod(server, 0o755)
+    with open(os.path.join(directory_path, ".loom-lsp"), "w", encoding="utf-8") as handle:
+        handle.write("exec " + shlex.quote(server) + "\n")
+    if filename.endswith(".nix"):
+        with open(os.path.join(directory_path, "flake.nix"), "wb") as handle:
+            handle.write(b"{}\n")
+    contents_bytes = contents.encode("utf-8") if isinstance(contents, str) else contents
+    path = write_buffer(directory_path, filename, contents_bytes)
+    return directory, path, child_pid_file, wrapper_pid_file, exit_status_file
+
+
+def _supervised_child_pid(session, child_pid_file, wrapper_pid_file):
+    pids = []
+    for description, pid_file in (
+        ("child", child_pid_file),
+        ("wrapper", wrapper_pid_file),
+    ):
+        session.wait_for_external_state(
+            f"language server {description} PID file exists",
+            lambda pid_file=pid_file: os.path.exists(pid_file),
+            True,
+        )
+        pid_data = session.observe_file_bytes(pid_file, purpose="precondition")
+        pid = int(pid_data.decode("ascii").strip())
+        session.assert_external_state(
+            f"language server {description} PID is greater than 1",
+            pid > 1,
+            True,
+        )
+        pids.append(pid)
+    return tuple(pids)
+
+
+def _assert_supervised_exit(session, exit_status_file, wrapper_pid, expected_status):
+    session.wait_for_external_state(
+        "language server child exit status exists",
+        lambda: os.path.exists(exit_status_file),
+        True,
+    )
+    session.wait_for_external_state(
+        "language server wrapper has exited",
+        lambda: not _process_running(wrapper_pid),
+        True,
+    )
+    with open(exit_status_file, encoding="ascii") as handle:
+        actual_status = handle.read().strip()
+    session.assert_external_state(
+        "language server child exit status", actual_status, expected_status
+    )
 
 
 def _run_lsp_command(binary, command, expected):
@@ -944,3 +1022,106 @@ def lsp_missing_server(binary):
         assert_exit_zero("lsp-missing-server", output, code)
     finally:
         directory.cleanup()
+
+
+def _run_nixd_failure(binary, signal_number, expected_status, label):
+    malformed_nix = b"let\n  value = ;\nin\n  value\n"
+    directory, path, child_pid_file, wrapper_pid_file, exit_status_file = (
+        _supervised_server_fixture(
+            [_nixd_command()], "main.nix", malformed_nix, "nixd-" + label
+        )
+    )
+    expected_error = f"server exited with status {expected_status}"
+    try:
+        with Session(binary, [path]) as session:
+            with scenario_preparation():
+                session.wait_ready()
+                _start(session)
+                child_pid, wrapper_pid = _supervised_child_pid(
+                    session, child_pid_file, wrapper_pid_file
+                )
+                _wait_for_nixd_diagnostics(session)
+            os.kill(child_pid, signal_number)
+            _assert_supervised_exit(
+                session, exit_status_file, wrapper_pid, expected_status
+            )
+
+            for name in (
+                "lsp-diagnostics",
+                "lsp-completion-at-point",
+                "lsp-find-definition",
+                "lsp-find-references",
+                "lsp-hover-at-point",
+                "lsp-rename",
+                "lsp-format-buffer",
+                "lsp-stop",
+            ):
+                if name == "lsp-completion-at-point":
+                    session.send(b"\x1b[105;7u")
+                elif name == "lsp-find-definition":
+                    session.send(keys.meta("."))
+                else:
+                    session.extended_command(name)
+
+                if name == "lsp-diagnostics":
+                    expected_message = "LSP error:"
+                elif name == "lsp-stop":
+                    expected_message = "LSP stopped."
+                else:
+                    expected_message = expected_error
+
+                if name == "lsp-rename":
+                    session.wait_for_text("Rename to: ")
+                    session.type("renamedValue")
+                    session.key("RET")
+
+                session.wait_for_region_text("minibuffer", expected_message)
+                session.assert_screen_text(
+                    expected_message,
+                    match="contains",
+                    region="minibuffer",
+                )
+                _assert_supervised_exit(
+                    session, exit_status_file, wrapper_pid, expected_status
+                )
+
+            output, code = session.quit()
+        assert_exit_zero("lsp-nixd-" + label, output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario(
+    "lsp/r5-nixd-nonzero",
+    commands=[
+        "lsp-start",
+        "lsp-diagnostics",
+        "lsp-completion-at-point",
+        "lsp-find-definition",
+        "lsp-find-references",
+        "lsp-hover-at-point",
+        "lsp-rename",
+        "lsp-format-buffer",
+        "lsp-stop",
+    ],
+)
+def lsp_nixd_nonzero_exit(binary):
+    _run_nixd_failure(binary, signal.SIGKILL, "137", "nonzero")
+
+
+@scenario(
+    "lsp/r5-nixd-interrupted",
+    commands=[
+        "lsp-start",
+        "lsp-diagnostics",
+        "lsp-completion-at-point",
+        "lsp-find-definition",
+        "lsp-find-references",
+        "lsp-hover-at-point",
+        "lsp-rename",
+        "lsp-format-buffer",
+        "lsp-stop",
+    ],
+)
+def lsp_nixd_interrupted_exit(binary):
+    _run_nixd_failure(binary, signal.SIGTERM, "143", "interrupted")

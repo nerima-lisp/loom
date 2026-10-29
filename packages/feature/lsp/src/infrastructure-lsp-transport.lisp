@@ -121,10 +121,14 @@
             (error condition))))))
 
 (defmethod lsp-transport-receive ((transport lsp-process))
-  (multiple-value-bind (result ready closed)
-      (cl-concurrent-kit:try-recv (lsp-process-result-channel transport))
-    (declare (ignore closed))
-    (when ready result)))
+  (unless (lsp-process-closed-p transport)
+    (multiple-value-bind (result ready closed)
+        (cl-concurrent-kit:try-recv (lsp-process-result-channel transport))
+      (cond
+        ((and ready result) result)
+        ((or ready closed)
+         (error "LSP server process output reached EOF"))
+        (t nil)))))
 
 (defmethod lsp-transport-close ((transport lsp-process))
   (unless (lsp-process-closed-p transport)
