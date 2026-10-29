@@ -82,4 +82,4 @@
  (:exclude
   :id "r5:terminal-stop:shell:missing"
   :reason "terminal-stop closes an existing PTY session and does not spawn the configured shell, so a missing executable can only occur when terminal creates the session"
-  :evidence "packages/feature/terminal/src/infrastructure-terminal-session-runtime.lisp:92"))
+  :evidence "packages/feature/terminal/src/infrastructure-terminal-session-runtime.lisp:94"))

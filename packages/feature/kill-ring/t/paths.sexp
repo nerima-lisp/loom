@@ -787,7 +787,7 @@
       (:file_bytes)
       :scenario
       "command-path/kill-ring/r3/yank-pop/prefix-u4")
- (:exclude :id "r3:yank-pop:read-only" :reason "M-x toggle-read-only clears the previous yank context before M-y, so this path cannot reach the yank-pop read-only guard" :evidence "src/application/input-routing-effects.lisp:4")
+ (:exclude :id "r3:yank-pop:read-only" :reason "M-x toggle-read-only clears the previous yank context before M-y, so this path cannot reach the yank-pop read-only guard" :evidence "src/application/input-routing-effects.lisp:8")
  (:id "r3:yank-pop:split-window"
       :commands
       ("yank-pop")
