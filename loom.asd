@@ -94,7 +94,7 @@ root source tree responsible for every feature."
              (sb-ext:save-lisp-and-die
               (asdf:output-file o c)
               :executable t
-              :compression t
+              :compression -7
               :save-runtime-options t
               :toplevel (uiop:ensure-function
                          (asdf/system:component-entry-point c))))

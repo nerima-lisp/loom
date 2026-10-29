@@ -165,6 +165,53 @@ class SessionCommandCompletionTests(unittest.TestCase):
             session.pump.assert_called_once_with()
 
 
+class SessionStartupTimingTests(unittest.TestCase):
+    def test_wait_ready_uses_time_when_output_is_read(self):
+        clock = {"now": 10.0}
+
+        class FakeScreen:
+            def __init__(self):
+                self.content = False
+                self.fed_bytes = None
+
+            def has_content(self):
+                return self.content
+
+            def feed(self, data):
+                self.fed_bytes = data
+                clock["now"] = 10.20
+                self.content = True
+
+        screen = FakeScreen()
+        process = Mock()
+
+        def poll(timeout):
+            self.assertEqual(timeout, 0.05)
+            clock["now"] = 10.05
+            return b"screen"
+
+        process.poll.side_effect = poll
+        session = Session("unused")
+        session.process = process
+        session.screen = screen
+        session._refresh_layout_trace = Mock(
+            side_effect=lambda: clock.__setitem__("now", 10.30)
+        )
+        session.observe_screen_text = Mock()
+
+        with patch(
+            "loom_e2e.session.time.monotonic",
+            side_effect=lambda: clock["now"],
+        ):
+            session.wait_ready(timeout=1.0)
+
+        self.assertEqual(screen.fed_bytes, b"screen")
+        self.assertEqual(clock["now"], 10.30)
+        self.assertEqual(session.first_screen_at, 10.05)
+        process.poll.assert_called_once_with(0.05)
+        session._refresh_layout_trace.assert_called_once_with()
+
+
 class SessionRestartTests(unittest.TestCase):
     def test_restart_reuses_session_and_captures_each_child(self):
         with tempfile.TemporaryDirectory() as root:

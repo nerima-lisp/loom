@@ -401,8 +401,17 @@ class Session:
 
     def pump(self, poll_timeout=0.05):
         """Read whatever is available without blocking and feed the screen."""
+        had_content = self.screen.has_content()
         data = self.process.poll(poll_timeout)
+        read_at = time.monotonic()
         self.screen.feed(data)
+        if (
+            data
+            and not had_content
+            and self.first_screen_at is None
+            and self.screen.has_content()
+        ):
+            self.first_screen_at = read_at
         self._refresh_layout_trace()
         return data
 
@@ -714,7 +723,6 @@ class Session:
             lambda screen: screen.has_content(),
             timeout, "the initial frame to render",
         )
-        self.first_screen_at = time.monotonic()
         self.observe_screen_text(
             expected={"non_empty": True},
             match="non_empty",

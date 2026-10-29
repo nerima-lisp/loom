@@ -1166,6 +1166,18 @@ coverage totals:
 | Linux | 1,057 pass, 2 excluded, 0 failing / 1,059 | 79 pass, 0 excluded, 0 failures / 79 |
 | Darwin | 1,057 pass, 2 excluded, 0 failing / 1,059 | 79 pass, 0 excluded, 0 failures / 79 |
 
+## Darwin startup-to-first-screen gate
+
+Main push CI run `40886444919` on SHA `6faf025e0e51d996159a17fa96d228deea36dc91` failed `startup_to_first_screen` at 0.348 seconds against the unchanged 0.300-second target. The same-source runs supplied for this investigation ranged from 0.165 to 0.348 seconds. The failing job's startup scenario execution times were 0.434, 0.359, and 0.263 seconds; these include the full harness scenario, not only the startup metric. The 50 ms `select` timeout is an upper bound: readable PTY output wakes it, so it does not add a fixed 50 ms delay.
+
+`Session.started_at` was recorded immediately before `LoomProcess` launched the PTY child. `first_screen_at` was recorded after `Screen.feed()` parsed the output and after the harness refreshed the layout trace. On this machine, screen parsing and trace refresh after the first content read took a median of 1.816 ms and a maximum of 2.760 ms across nine launches. An interleaved tracing A/B run found no measurable startup difference: the current condition's median was 0.126746 seconds and the condition without command/layout tracing and layout-trace reads was 0.126785 seconds.
+
+The first launch after the initial Nix build measured 0.125281 seconds; the median of the following eight traced launches was 0.128490 seconds. The OS file cache was not cleared, so this does not establish a cold-disk startup time.
+
+`Session.pump()` now records the time immediately after `process.poll()` returns the bytes that make `screen.has_content()` true. It records that time before screen parsing and trace refresh. The fake-clock regression test in `t/e2e/test_session.py` expects 10.05 seconds, before screen parsing advances the clock to 10.20 and trace refresh advances it to 10.30. It failed before the fix with 10.30 seconds and passed after it. The local Python E2E preflight passed 276 tests.
+
+`loom.asd` now saves the SBCL image with `:compression -7`. With one warm-up pair excluded and nine counterbalanced PTY pairs, the default `:compression t` binary had a 0.116589-second median and the `-7` binary had a 0.106305-second median. The median paired difference was -12.063 ms; `-7` was faster in all nine pairs, and all 20 screen signatures matched. Two independent runs before the timing correction also favored `-7` in 9/9 pairs, with median paired differences of -15.497 ms and -14.249 ms. These repeated launches used the local page cache; OS caches were not cleared. The binary grew from 20,845,760 to 34,049,240 bytes (1.63x). The 0.300-second target and three-process startup aggregation remain unchanged.
+
 The PTY preflight passed 275 tests in each platform job. The CLI regression test
 in `t/e2e/test_cli.py` asserts that `--require-path-coverage` exits nonzero
 when the report contains coverage gaps.
