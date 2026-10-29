@@ -2,6 +2,7 @@ import json
 import importlib.util
 import tempfile
 import unittest
+from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
@@ -531,6 +532,101 @@ class CommandPathScenarioTests(unittest.TestCase):
                 ("trace_count",),
                 ("send",),
                 ("wait_command", "save-buffers-kill-terminal", "key", 8, 1),
+            ],
+        )
+
+    def test_user_init_xargs_waits_for_save_trace_before_file_observation(self):
+        module_path = (
+            REPOSITORY_ROOT
+            / "packages/feature/user-init/t/e2e/scenarios/user_init_lifecycle.py"
+        )
+        spec = importlib.util.spec_from_file_location(
+            "loom_user_init_xargs_test", module_path
+        )
+        module = importlib.util.module_from_spec(spec)
+        with patch(
+            "loom_e2e.registry.scenario",
+            side_effect=lambda *_args, **_kwargs: lambda function: function,
+        ):
+            spec.loader.exec_module(module)
+
+        calls = []
+        trace_counts = iter((7, 8, 9))
+        test_case = self
+
+        class EditorProcess:
+            def wait(self, *, timeout):
+                calls.append(("process_wait", timeout))
+                return b"", 0
+
+        class EditorSession:
+            def __init__(self):
+                self.process = EditorProcess()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def wait_ready(self, *, timeout):
+                calls.append(("wait_ready", timeout))
+
+            def send(self, _data):
+                calls.append(("send",))
+
+            def type(self, text):
+                calls.append(("type", text))
+
+            def command_trace_count(self):
+                calls.append(("trace_count",))
+                return next(trace_counts)
+
+            def wait_for_command_completion(
+                self, command, *, route=None, after=0, timeout=None
+            ):
+                calls.append(("wait_command", command, route, after, timeout))
+
+            def wait_for_file(self, path, contents, *, timeout):
+                calls.append(("wait_file", timeout))
+                test_case.assertEqual(
+                    calls[-2], ("wait_command", "save-buffer", "key", 7, 1.5)
+                )
+                Path(path).write_bytes(contents)
+
+            def assert_file_bytes(self, path, contents):
+                calls.append(("assert_file",))
+                test_case.assertEqual(Path(path).read_bytes(), contents)
+
+            def observe_exit_code(self, code, *, expected):
+                calls.append(("observe_exit_code", code, expected))
+
+        session = EditorSession()
+        with (
+            patch.object(module, "scenario_deadline", lambda **_kwargs: nullcontext()),
+            patch.object(module, "Session", return_value=session),
+        ):
+            module.xargs_non_tty_stdin_uses_controlling_tty("unused")
+
+        self.assertEqual(
+            calls,
+            [
+                ("wait_ready", 1.5),
+                ("send",),
+                ("type", "edited "),
+                ("trace_count",),
+                ("send",),
+                ("wait_command", "save-buffer", "key", 7, 1.5),
+                ("wait_file", 1.5),
+                ("assert_file",),
+                ("trace_count",),
+                ("send",),
+                ("wait_command", "save-buffer", "key", 8, 1),
+                ("trace_count",),
+                ("send",),
+                ("wait_command", "save-buffers-kill-terminal", "key", 9, 1),
+                ("process_wait", 2),
+                ("observe_exit_code", 0, 0),
             ],
         )
 

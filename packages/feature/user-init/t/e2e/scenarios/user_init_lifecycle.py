@@ -379,7 +379,11 @@ def xargs_non_tty_stdin_uses_controlling_tty(binary):
                 session.wait_ready(timeout=1.5)
                 session.send(keys.ctrl("a"))
                 session.type("edited ")
+                trace_count = session.command_trace_count()
                 session.send(keys.ctrl("x") + keys.ctrl("s"))
+                session.wait_for_command_completion(
+                    "save-buffer", route="key", after=trace_count, timeout=1.5
+                )
                 session.wait_for_file(os.fspath(path), expected, timeout=1.5)
                 session.assert_file_bytes(os.fspath(path), expected)
                 _save_and_exit_editor(session)
