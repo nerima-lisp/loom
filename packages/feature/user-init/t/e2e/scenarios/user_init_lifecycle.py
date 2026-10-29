@@ -290,6 +290,7 @@ def interactive_rebase_uses_editor_contract(binary):
                 session.wait_for_region_text("body", "pick", timeout=1)
                 todo_path = repo / ".git" / "rebase-merge" / "git-rebase-todo"
                 initial_todo = todo_path.read_bytes()
+                session.type("# E2E save observation\n")
                 _save_and_exit_editor(
                     session,
                     os.fspath(todo_path),
