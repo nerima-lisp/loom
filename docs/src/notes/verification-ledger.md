@@ -1181,3 +1181,11 @@ The first launch after the initial Nix build measured 0.125281 seconds; the medi
 The PTY preflight passed 275 tests in each platform job. The CLI regression test
 in `t/e2e/test_cli.py` asserts that `--require-path-coverage` exits nonzero
 when the report contains coverage gaps.
+
+## v0.1.0 manual acceptance status
+
+This release does not satisfy the FR-V07 manual-acceptance criterion in
+`requirements-modern-editor.md`. The author chose to release v0.1.0 before
+completing W4-4 checks for real-IME input, OSC 52 terminal clipboard, mouse
+input, bracketed paste, and daily editing comfort. The corresponding
+`Author result` cells in `daily-driver-checklist.md` remain blank.
