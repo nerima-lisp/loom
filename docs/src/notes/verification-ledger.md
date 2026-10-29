@@ -30,7 +30,7 @@ roots through every project command`（`t/integration/project-missing-root-test.
 
 同じ実行で、`main-run-loom` 系テストの間に alternate-screen 切り替えと 80x24 の空白フレームが
 ジョブの stdout に書き出されている（出力の先頭 `ESC[?1049h ESC[2J`）。テストが描画先を実端末の
-stdout に流している観察であり、判定には影響しない。処置は §2 に積む。
+stdout に流していることを観察した。
 
 ### 1.2 `nix flake check`
 
@@ -1001,11 +1001,12 @@ until the NFR-01 product fix is on main and the enforcement change lands
 separately. Full E2E results remain required on both platforms.
 
 Main pushes and pull requests run the Linux and aarch64-darwin flake checks,
-full PTY E2E, NFR report, and release-archive jobs. Path-coverage reporting
-remains report-only in this lane; no coverage acceptance rule changed. Candidate
-`workflow_dispatch` defaults to both platforms and can select Linux or Darwin
-to reduce diagnostic queue load. A single-platform dispatch does not satisfy
-FR-V06 promotion evidence. The release workflow runs the reusable CI on the
+full PTY E2E, NFR report, and release-archive jobs. W4-2 left path-coverage
+reporting in report mode; W4-1 later enabled the fail-closed coverage gate for
+full PTY E2E on both platforms. See [W4-1 path-coverage gate](#w4-1-path-coverage-gate).
+Dispatches using `workflow_dispatch` default to both platforms and can select
+Linux or Darwin to reduce diagnostic queue load. A single-platform dispatch
+does not satisfy FR-V06 promotion evidence. The release workflow runs the reusable CI on the
 tag-verified commit with both platforms and waits for it before publishing.
 Each E2E job summary records the actual checked-out commit and, for a push,
 links the pushed commit range. The platform-specific job name identifies which
@@ -1015,8 +1016,7 @@ multiple lane changes are combined in one commit or push.
 
 The report-mode tests verify that an open trial which misses its first-row
 deadline retains its measured lower bound and completion status in
-`benchmarks.json`, and that it cannot count as within target. EOF is reported
-separately without a threshold. A scenario failure before a numeric sample is
+`benchmarks.json`, and that it cannot count as within target. A scenario failure before a numeric sample is
 available remains named in `scenario_errors` and leaves that metric missing.
 The fail-closed NFR enforcement tests belong to the deferred performance-gate
 change. The full local E2E harness preflight passed all 251 Python tests after
@@ -1132,8 +1132,40 @@ benchmark enforcement separate from the cross-platform CI change.
 
 The failed large-file-open runs do not establish whether the 1.0-second target
 passes or fails. A separate review stream owns the NFR-01 open issue. The
-replacement candidate reports the measurement without enforcing the threshold;
-the fail-closed gate will be restored after the open fix lands and passes its
-threshold. Promotion still requires a fresh full E2E run on Linux and Darwin
+W4-2 replacement candidate reports the measurement without enforcing the
+threshold; the fail-closed NFR gate will be restored after the open fix lands
+and passes its threshold. Promotion still requires a fresh full E2E run on Linux and Darwin
 with the corrected file-path scenarios. A one-platform dispatch is diagnostic
 only and cannot substitute for both platforms in a promotion decision.
+
+The W4-1 entry below covers path-coverage enforcement. NFR-01 threshold
+enforcement remains open as recorded above.
+
+## W4-1 path-coverage gate
+
+Full Linux and Darwin PTY CI runs pass `--require-path-coverage`. Scenario-specific
+diagnostic runs retain `--only` and do not require complete coverage. W4-2's
+`--timing-report` remains enabled for both full runs.
+
+An excluded path is accepted only when its reason is nonblank and its `file:line`
+evidence is valid. The two remaining exclusions retain reasons: W3-8
+`r3:yank-pop:read-only` points to
+`src/application/input-routing-effects.lisp:8`, and W3-11
+`r5:terminal-stop:shell:missing` points to
+`packages/feature/terminal/src/infrastructure-terminal-session-runtime.lisp:94`.
+These evidence references point to the statements that clear the yank context
+and close the existing terminal session.
+
+Candidate dispatch run `40830080722` and main push CI run `40874212745` both
+completed all six jobs successfully on SHA
+`8498ecf5be3d5a92b06e64ab7d73a53b0e9dc308`. Both runs reported the following
+coverage totals:
+
+| Lane | Required paths | W3-9 |
+|---|---|---|
+| Linux | 1,057 pass, 2 excluded, 0 failing / 1,059 | 79 pass, 0 excluded, 0 failures / 79 |
+| Darwin | 1,057 pass, 2 excluded, 0 failing / 1,059 | 79 pass, 0 excluded, 0 failures / 79 |
+
+The PTY preflight passed 275 tests in each platform job. The CLI regression test
+in `t/e2e/test_cli.py` asserts that `--require-path-coverage` exits nonzero
+when the report contains coverage gaps.
