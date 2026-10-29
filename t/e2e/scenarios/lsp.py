@@ -1,10 +1,12 @@
 """PTY scenarios using the real nixd language server."""
 
+import json
 import os
 import shlex
 import signal
 import shutil
 import subprocess
+import sys
 import tempfile
 
 from loom_e2e import keys
@@ -72,18 +74,58 @@ def _typescript_pid(session, pid_file):
     return pid
 
 
-def _warm_up_typescript_server(session):
+def _warm_up_typescript_server(session, pid):
     # The first hover waits for TypeScript's project service to load the file.
     session.send(keys.ctrl("n"))
     session.wait_for_region_cursor("body", 0, index=1)
-    session.extended_command("lsp-hover-at-point")
-    session.wait_for_region_text("minibuffer", "targetValue")
-    session.assert_screen_text(
-        "targetValue",
-        match="contains",
-        region="minibuffer",
-        purpose="precondition",
-    )
+    while True:
+        trace_count = session.command_trace_count()
+        session.extended_command("lsp-hover-at-point")
+        session.wait_for_command_completion(
+            "lsp-hover-at-point", after=trace_count
+        )
+
+        def readiness_completed(_screen):
+            minibuffer = session.region_contents("minibuffer")
+            return (
+                "targetValue" in minibuffer
+                or "No LSP session for this buffer" in minibuffer
+                or "LSP error:" in minibuffer
+                or not _process_running(pid)
+            )
+
+        session.wait_until(
+            readiness_completed,
+            what="TypeScript hover response or initialization state",
+        )
+        minibuffer = session.region_contents("minibuffer")
+        if "targetValue" in minibuffer:
+            session.assert_screen_text(
+                "targetValue",
+                match="contains",
+                region="minibuffer",
+                purpose="precondition",
+            )
+            _assert_typescript_server_running(
+                session,
+                pid,
+                "lsp-hover-at-point readiness",
+                purpose="precondition",
+            )
+            break
+        if "LSP error:" in minibuffer or not _process_running(pid):
+            raise AssertionError(
+                "TypeScript server failed during readiness; "
+                f"cursor={session.screen.cursor}; minibuffer={minibuffer!r}\n"
+                f"--- screen ---\n{session.screen.dump()}"
+            )
+        _assert_typescript_server_running(
+            session,
+            pid,
+            "lsp-hover-at-point initialization retry",
+            purpose="precondition",
+        )
+
     session.send(keys.ctrl("p"))
     session.wait_for_region_cursor("body", 0, index=0)
 
@@ -94,16 +136,14 @@ def _move_to_buffer_position(session, line, column):
     session.wait_for_region_cursor("body", column, index=line)
 
 
-def _wait_for_nixd_diagnostics(session):
-    # This indicator follows nixd's publishDiagnostics for the opened file.
-    session.wait_for_region_text("mode-line", "Diag:")
-
-
-def _assert_typescript_server_running(session, pid, command):
+def _assert_typescript_server_running(
+    session, pid, command, *, purpose="scenario"
+):
     session.assert_external_state(
         "typescript-language-server is running after " + command,
         _process_running(pid),
         True,
+        purpose=purpose,
     )
 
 
@@ -207,21 +247,135 @@ def _supervised_server_fixture(server_argv, filename, contents, prefix):
     child_pid_file = os.path.join(directory_path, "lsp-server-child.pid")
     wrapper_pid_file = os.path.join(directory_path, "lsp-server-wrapper.pid")
     exit_status_file = os.path.join(directory_path, "lsp-server-exit-status")
+    protocol_log = os.path.join(directory_path, "lsp-protocol.jsonl")
+    stderr_file = os.path.join(directory_path, "lsp-server-stderr.log")
     server = os.path.join(directory_path, "lsp-server")
-    script = "\n".join(
-        (
-            "#!/bin/sh",
-            "printf '%s\\n' \"$$\" > " + shlex.quote(wrapper_pid_file),
-            shlex.join(server_argv) + " <&0 >&1 2>&2 &",
-            "child=$!",
-            "printf '%s\\n' \"$child\" > " + shlex.quote(child_pid_file),
-            "wait \"$child\"",
-            "status=$?",
-            "printf '%s\\n' \"$status\" > " + shlex.quote(exit_status_file),
-            "exit \"$status\"",
-        )
-    ) + "\n"
-    write_buffer(directory_path, "lsp-server", script.encode("utf-8"))
+    proxy = os.path.join(directory_path, "lsp-supervisor.py")
+    proxy_source = (
+        "#!" + sys.executable + "\n"
+        + """import json
+import os
+import signal
+import subprocess
+import sys
+import threading
+
+argv = json.loads(sys.argv[1])
+child_pid_file, wrapper_pid_file, exit_status_file, protocol_log, stderr_file = sys.argv[2:]
+with open(wrapper_pid_file, "w", encoding="ascii") as handle:
+    handle.write(str(os.getpid()) + "\\n")
+
+stderr_handle = open(stderr_file, "wb")
+child = subprocess.Popen(
+    argv,
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=stderr_handle,
+    bufsize=0,
+)
+with open(child_pid_file, "w", encoding="ascii") as handle:
+    handle.write(str(child.pid) + "\\n")
+
+def forward_signal(signum, _frame):
+    if child.poll() is None:
+        child.send_signal(signum)
+
+signal.signal(signal.SIGTERM, forward_signal)
+signal.signal(signal.SIGINT, forward_signal)
+log_lock = threading.Lock()
+
+def record_message(direction, body):
+    try:
+        message = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        message = {"raw": body.decode("utf-8", errors="replace")}
+    event = {"direction": direction, "message": message}
+    with log_lock, open(protocol_log, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(event, sort_keys=True) + "\\n")
+        handle.flush()
+
+def record_frames(direction, pending):
+    while True:
+        header_end = pending.find(b"\\r\\n\\r\\n")
+        if header_end < 0:
+            return
+        headers = pending[:header_end].split(b"\\r\\n")
+        length = None
+        for header in headers:
+            name, separator, value = header.partition(b":")
+            if separator and name.strip().lower() == b"content-length":
+                length = int(value.strip())
+                break
+        if length is None:
+            return
+        body_start = header_end + 4
+        body_end = body_start + length
+        if len(pending) < body_end:
+            return
+        record_message(direction, bytes(pending[body_start:body_end]))
+        del pending[:body_end]
+
+def write_all(fd, data):
+    while data:
+        written = os.write(fd, data)
+        if written == 0:
+            raise BrokenPipeError()
+        data = data[written:]
+
+def forward_input():
+    pending = bytearray()
+    while True:
+        try:
+            chunk = os.read(0, 65536)
+        except OSError:
+            return
+        if not chunk:
+            break
+        pending.extend(chunk)
+        record_frames("loom->nixd", pending)
+        try:
+            write_all(child.stdin.fileno(), chunk)
+        except BrokenPipeError:
+            return
+    child.stdin.close()
+
+def forward_output():
+    pending = bytearray()
+    while True:
+        chunk = os.read(child.stdout.fileno(), 65536)
+        if not chunk:
+            return
+        pending.extend(chunk)
+        record_frames("nixd->loom", pending)
+        write_all(1, chunk)
+
+threading.Thread(target=forward_input, daemon=True).start()
+output_thread = threading.Thread(target=forward_output, daemon=True)
+output_thread.start()
+status = child.wait()
+output_thread.join()
+stderr_handle.close()
+if status < 0:
+    status = 128 + -status
+with open(exit_status_file, "w", encoding="ascii") as handle:
+    handle.write(str(status) + "\\n")
+sys.exit(status)
+"""
+    )
+    proxy_source = proxy_source.replace(
+        "argv = json.loads(sys.argv[1])\n"
+        "child_pid_file, wrapper_pid_file, exit_status_file, protocol_log, stderr_file = sys.argv[2:]\n",
+        f"argv = {server_argv!r}\n"
+        f"child_pid_file, wrapper_pid_file, exit_status_file, protocol_log, stderr_file = "
+        f"{(child_pid_file, wrapper_pid_file, exit_status_file, protocol_log, stderr_file)!r}\n",
+    )
+    write_buffer(directory_path, "lsp-supervisor.py", proxy_source.encode("utf-8"))
+    launcher_source = (
+        "#!/bin/sh\nexec "
+        + shlex.join([sys.executable, proxy])
+        + "\n"
+    )
+    write_buffer(directory_path, "lsp-server", launcher_source.encode("utf-8"))
     os.chmod(server, 0o755)
     with open(os.path.join(directory_path, ".loom-lsp"), "w", encoding="utf-8") as handle:
         handle.write("exec " + shlex.quote(server) + "\n")
@@ -230,7 +384,15 @@ def _supervised_server_fixture(server_argv, filename, contents, prefix):
             handle.write(b"{}\n")
     contents_bytes = contents.encode("utf-8") if isinstance(contents, str) else contents
     path = write_buffer(directory_path, filename, contents_bytes)
-    return directory, path, child_pid_file, wrapper_pid_file, exit_status_file
+    return (
+        directory,
+        path,
+        child_pid_file,
+        wrapper_pid_file,
+        exit_status_file,
+        protocol_log,
+        stderr_file,
+    )
 
 
 def _supervised_child_pid(session, child_pid_file, wrapper_pid_file):
@@ -250,6 +412,7 @@ def _supervised_child_pid(session, child_pid_file, wrapper_pid_file):
             f"language server {description} PID is greater than 1",
             pid > 1,
             True,
+            purpose="precondition",
         )
         pids.append(pid)
     return tuple(pids)
@@ -638,7 +801,7 @@ def lsp_typescript_hover_completion_success(binary):
                 session.wait_ready()
                 _start(session)
                 pid = _typescript_pid(session, pid_file)
-                _warm_up_typescript_server(session)
+                _warm_up_typescript_server(session, pid)
 
             session.send(keys.ctrl("n"))
             session.wait_for_region_cursor("body", 0, index=1)
@@ -678,16 +841,19 @@ def lsp_typescript_hover_completion_success(binary):
 
 @scenario(
     "lsp/r5-typescript-success/definition",
-    commands=["lsp-start", "lsp-find-definition"],
+    commands=["lsp-start", "lsp-hover-at-point", "lsp-find-definition"],
 )
 def lsp_typescript_definition_success(binary):
     source = "const targetValue = 1;\ntargetValue;\n"
     directory, path, pid_file = _typescript_fixture(source)
     try:
         with Session(binary, [path]) as session:
-            session.wait_ready()
-            _start(session)
-            pid = _typescript_pid(session, pid_file)
+            with scenario_preparation():
+                session.wait_ready()
+                _start(session)
+                pid = _typescript_pid(session, pid_file)
+                _warm_up_typescript_server(session, pid)
+
             _move_to_buffer_position(session, 1, 1)
             session.send(keys.meta("."))
             session.wait_for_region_cursor("body", len("const "), index=0)
@@ -727,7 +893,7 @@ def lsp_typescript_editing_success(binary):
                 session.wait_ready()
                 _start(session)
                 pid = _typescript_pid(session, pid_file)
-                _warm_up_typescript_server(session)
+                _warm_up_typescript_server(session, pid)
 
             session.send(keys.ctrl("f") * len("const "))
             session.wait_for_region_cursor("body", len("const "))
@@ -1025,11 +1191,17 @@ def lsp_missing_server(binary):
 
 
 def _run_nixd_failure(binary, signal_number, expected_status, label):
-    malformed_nix = b"let\n  value = ;\nin\n  value\n"
-    directory, path, child_pid_file, wrapper_pid_file, exit_status_file = (
-        _supervised_server_fixture(
-            [_nixd_command()], "main.nix", malformed_nix, "nixd-" + label
-        )
+    valid_nix = b"let\n  value = 1;\nin\n  value\n"
+    (
+        directory,
+        path,
+        child_pid_file,
+        wrapper_pid_file,
+        exit_status_file,
+        protocol_log,
+        stderr_file,
+    ) = _supervised_server_fixture(
+        [_nixd_command()], "main.nix", valid_nix, "nixd-" + label
     )
     expected_error = f"server exited with status {expected_status}"
     try:
@@ -1040,8 +1212,170 @@ def _run_nixd_failure(binary, signal_number, expected_status, label):
                 child_pid, wrapper_pid = _supervised_child_pid(
                     session, child_pid_file, wrapper_pid_file
                 )
-                _wait_for_nixd_diagnostics(session)
-            os.kill(child_pid, signal_number)
+
+                def definition_ready():
+                    return (
+                        session.region_cursor("body") == (1, 2)
+                        and "value = 1;"
+                        in session.region_contents("body").splitlines()[1]
+                    )
+
+                def readiness_completed(_screen):
+                    minibuffer = session.region_contents("minibuffer")
+                    return (
+                        definition_ready()
+                        or "No LSP session for this buffer" in minibuffer
+                        or "LSP error:" in minibuffer
+                        or os.path.exists(exit_status_file)
+                        or not _process_running(child_pid)
+                    )
+
+                def fail_if_nixd_exited(stage):
+                    if not (
+                        os.path.exists(exit_status_file)
+                        or not _process_running(child_pid)
+                    ):
+                        return
+                    session.wait_for_external_state(
+                        "nixd child exit status exists",
+                        lambda: os.path.exists(exit_status_file),
+                        True,
+                    )
+                    session.wait_for_external_state(
+                        "nixd wrapper has exited",
+                        lambda: not _process_running(wrapper_pid),
+                        True,
+                    )
+                    with open(exit_status_file, encoding="ascii") as handle:
+                        actual_status = handle.read().strip()
+                    session.observe_external_state(
+                        f"nixd exit status {stage}",
+                        actual_status,
+                        purpose="precondition",
+                    )
+                    with open(protocol_log, encoding="utf-8") as handle:
+                        protocol = handle.read().strip() or "(no LSP frames captured)"
+                    with open(stderr_file, encoding="utf-8") as handle:
+                        server_stderr = handle.read().strip() or "(empty)"
+                    minibuffer = session.region_contents("minibuffer")
+                    raise AssertionError(
+                        f"nixd exited {stage} with status {actual_status}; "
+                        f"cursor={session.screen.cursor}; "
+                        f"minibuffer={minibuffer!r}\n"
+                        f"--- screen ---\n{session.screen.dump()}\n"
+                        f"--- LSP traffic ---\n{protocol}\n"
+                        f"--- nixd stderr ---\n{server_stderr}"
+                    )
+
+                while True:
+                    _move_to_buffer_position(session, 3, 2)
+                    trace_count = session.command_trace_count()
+                    session.extended_command("lsp-find-definition")
+                    session.wait_for_command_completion(
+                        "lsp-find-definition", after=trace_count
+                    )
+                    session.wait_until(
+                        readiness_completed,
+                        what=(
+                            "nixd definition response or initialization "
+                            "state"
+                        ),
+                    )
+                    if definition_ready():
+                        break
+                    fail_if_nixd_exited("before the definition response")
+                    minibuffer = session.region_contents("minibuffer")
+                    if "LSP error:" in minibuffer:
+                        with open(protocol_log, encoding="utf-8") as handle:
+                            protocol = handle.read().strip() or "(no LSP frames captured)"
+                        with open(stderr_file, encoding="utf-8") as handle:
+                            server_stderr = handle.read().strip() or "(empty)"
+                        raise AssertionError(
+                            "nixd reported an LSP error while its process "
+                            "was still running before termination; "
+                            f"cursor={session.screen.cursor}; "
+                            f"minibuffer={minibuffer!r}\n"
+                            f"--- screen ---\n{session.screen.dump()}\n"
+                            f"--- LSP traffic ---\n{protocol}\n"
+                            f"--- nixd stderr ---\n{server_stderr}"
+                        )
+                    session.assert_external_state(
+                        "nixd remains running while initialization is pending",
+                        _process_running(child_pid),
+                        True,
+                        purpose="precondition",
+                    )
+
+                with open(protocol_log, encoding="utf-8") as handle:
+                    protocol_events = [
+                        json.loads(line) for line in handle if line.strip()
+                    ]
+                outgoing = [
+                    event["message"]
+                    for event in protocol_events
+                    if event["direction"] == "loom->nixd"
+                ]
+                incoming = [
+                    event["message"]
+                    for event in protocol_events
+                    if event["direction"] == "nixd->loom"
+                ]
+                initialize_request = next(
+                    (
+                        message
+                        for message in outgoing
+                        if message.get("method") == "initialize"
+                    ),
+                    None,
+                )
+                definition_request = next(
+                    (
+                        message
+                        for message in outgoing
+                        if message.get("method") == "textDocument/definition"
+                    ),
+                    None,
+                )
+
+                def response_received(request):
+                    return request is not None and any(
+                        message.get("id") == request.get("id")
+                        and ("result" in message or "error" in message)
+                        for message in incoming
+                    )
+
+                session.assert_external_state(
+                    "nixd initialize request was recorded",
+                    initialize_request is not None,
+                    True,
+                    purpose="precondition",
+                )
+                session.assert_external_state(
+                    "nixd initialize response was recorded",
+                    response_received(initialize_request),
+                    True,
+                    purpose="precondition",
+                )
+                session.assert_external_state(
+                    "nixd definition request and response were recorded",
+                    response_received(definition_request),
+                    True,
+                    purpose="precondition",
+                )
+
+            fail_if_nixd_exited("immediately before termination")
+            session.assert_external_state(
+                "nixd process is running immediately before termination",
+                _process_running(child_pid),
+                True,
+                purpose="precondition",
+            )
+            try:
+                os.kill(child_pid, signal_number)
+            except ProcessLookupError:
+                fail_if_nixd_exited("while sending the termination signal")
+                raise
+
             _assert_supervised_exit(
                 session, exit_status_file, wrapper_pid, expected_status
             )
