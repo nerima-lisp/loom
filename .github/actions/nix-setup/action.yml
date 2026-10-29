@@ -54,9 +54,19 @@ runs:
         skipPush: true
 
     - name: Configure Cachix (push-enabled)
+      id: cachix-push
       if: ${{ inputs.cachix-cache != '' && steps.cachix-mode.outputs.push == 'true' }}
+      # Cachix post-job upload is optional; the guard below keeps setup failures strict.
+      continue-on-error: true
       uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
       with:
         name: ${{ inputs.cachix-cache }}
         authToken: ${{ inputs.cachix-auth-token }}
         extraPullNames: nix-community
+
+    - name: Require Cachix setup
+      if: ${{ steps.cachix-push.outcome == 'failure' }}
+      shell: bash
+      run: |
+        echo "::error::Cachix setup failed"
+        exit 1
