@@ -52,8 +52,20 @@
     ((string-equal answer "c") :cancel)
     (t :retry)))
 
-(defun %prompt-kill-buffer (minibuffer buffer)
-  "Ask how to handle modified BUFFER before killing it."
+(defun %save-buffer-before-kill (minibuffer buffer on-cancelled)
+  "Save BUFFER and return true. With ON-CANCELLED, a save error is shown and
+passed to ON-CANCELLED, returning NIL; without it, the error propagates."
+  (if on-cancelled
+      (handler-case (progn (buffer-save buffer) t)
+        (error (condition)
+          (minibuffer-message minibuffer (princ-to-string condition))
+          (funcall on-cancelled)
+          nil))
+      (progn (buffer-save buffer) t)))
+
+(defun %prompt-kill-buffer (minibuffer buffer &optional on-killed on-cancelled)
+  "Ask how to handle modified BUFFER before killing it.
+ON-KILLED runs after the kill; ON-CANCELLED runs after c, C-g, or a save error."
   (let ((has-path-p (not (null (buffer-path buffer)))))
     (minibuffer-activate minibuffer
                          (%kill-buffer-prompt-text buffer)
@@ -61,11 +73,19 @@
                          (lambda (answer)
                            (case (%kill-buffer-answer-action answer has-path-p)
                              (:save
-                               (buffer-save buffer)
-                               (%kill-buffer-now buffer))
-                             (:discard (%kill-buffer-now buffer))
-                             (:cancel nil)
-                             (:retry (%prompt-kill-buffer minibuffer buffer))))
+                               (when (%save-buffer-before-kill
+                                      minibuffer buffer on-cancelled)
+                                 (%kill-buffer-now buffer)
+                                 (when on-killed (funcall on-killed))))
+                             (:discard
+                               (%kill-buffer-now buffer)
+                               (when on-killed (funcall on-killed)))
+                             (:cancel
+                               (when on-cancelled (funcall on-cancelled)))
+                             (:retry
+                               (%prompt-kill-buffer
+                                minibuffer buffer on-killed on-cancelled))))
                          :on-cancel
                          (lambda ()
-                           (minibuffer-message minibuffer "Quit")))))
+                           (minibuffer-message minibuffer "Quit")
+                           (when on-cancelled (funcall on-cancelled))))))

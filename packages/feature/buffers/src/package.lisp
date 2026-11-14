@@ -33,4 +33,5 @@
            #:run-buffer-switch-guard
            #:switch-to-buffer
            #:kill-buffer
+           #:kill-buffer-with-confirmation
            #:quit-buffer-list))

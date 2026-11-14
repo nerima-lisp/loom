@@ -120,3 +120,111 @@
         (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
         (expect (find buffer (%test-registered-buffers *editor-state*) :test #'eq)
                 :to-be buffer))))
+
+(describe
+  "kill-buffer-with-confirmation outcomes"
+  (it
+    "kills an unmodified buffer at once and reports killed"
+    (%with-minibuffer-state (minibuffer "selected")
+      (let ((calls nil)
+            (other (make-buffer :name "other.txt" :initial-content "other")))
+        (%register-test-buffer *editor-state* other)
+        (loom/feature/buffers:kill-buffer-with-confirmation
+         other
+         :on-killed (lambda () (push :killed calls))
+         :on-cancelled (lambda () (push :cancelled calls)))
+        (expect calls :to-equal '(:killed))
+        (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+        (expect (find other (%test-registered-buffers *editor-state*) :test #'eq)
+                :to-be nil)
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Killed other.txt"))))
+
+  (it
+    "re-asks after an invalid answer, then discards and reports killed once"
+    (%with-minibuffer-state (minibuffer "draft")
+      (let ((calls nil)
+            (buffer (%selected-test-buffer)))
+        (buffer-insert-string buffer "!")
+        (loom/feature/buffers:kill-buffer-with-confirmation
+         buffer
+         :on-killed (lambda () (push :killed calls))
+         :on-cancelled (lambda () (push :cancelled calls)))
+        (%expect-minibuffer-prompt minibuffer (%discard-buffer-prompt-string buffer))
+        (%confirm-minibuffer minibuffer "x")
+        (expect calls :to-be nil)
+        (%expect-minibuffer-prompt minibuffer (%discard-buffer-prompt-string buffer))
+        (%confirm-minibuffer minibuffer "d")
+        (expect calls :to-equal '(:killed))
+        (expect (find buffer (%test-registered-buffers *editor-state*) :test #'eq)
+                :to-be nil))))
+
+  (it
+    "reports cancelled after c and after C-g, keeping the buffer"
+    (%with-minibuffer-state (minibuffer "draft")
+      (let ((calls nil)
+            (buffer (%selected-test-buffer)))
+        (buffer-insert-string buffer "!")
+        (flet ((ask ()
+                 (loom/feature/buffers:kill-buffer-with-confirmation
+                  buffer
+                  :on-killed (lambda () (push :killed calls))
+                  :on-cancelled (lambda () (push :cancelled calls)))))
+          (ask)
+          (%confirm-minibuffer minibuffer "c")
+          (expect calls :to-equal '(:cancelled))
+          (ask)
+          (minibuffer-handle-key minibuffer (%special-key :control-g))
+          (expect calls :to-equal '(:cancelled :cancelled))
+          (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
+          (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+          (expect (find buffer (%test-registered-buffers *editor-state*) :test #'eq)
+                  :to-be buffer)
+          (expect (buffer-modified-p buffer) :to-be t)))))
+
+  (it
+    "saves with s and reports killed"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "draft.txt" directory)))
+        (host-kit:write-file-string "draft" path)
+        (%with-minibuffer-state (minibuffer "selected")
+          (let ((calls nil)
+                (buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "backups/" directory)))
+            (buffer-insert-string buffer "!")
+            (loom/feature/buffers:kill-buffer-with-confirmation
+             buffer
+             :on-killed (lambda () (push :killed calls))
+             :on-cancelled (lambda () (push :cancelled calls)))
+            (%expect-minibuffer-prompt minibuffer (%save-buffer-prompt-string buffer))
+            (%confirm-minibuffer minibuffer "s")
+            (expect calls :to-equal '(:killed))
+            (expect (host-kit:read-file-string path) :to-equal "!draft")
+            (expect (find buffer (%test-registered-buffers *editor-state*)
+                          :test #'eq)
+                    :to-be nil))))))
+
+  (it
+    "shows a save error after s and reports cancelled without killing"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "draft.txt" directory)))
+        (host-kit:write-file-string "draft" path)
+        (%with-minibuffer-state (minibuffer "selected")
+          (let ((calls nil)
+                (buffer (loom/feature/files:visit-file path)))
+            (buffer-insert-string buffer "!")
+            (host-kit:write-file-string "external" path)
+            (loom/feature/buffers:kill-buffer-with-confirmation
+             buffer
+             :on-killed (lambda () (push :killed calls))
+             :on-cancelled (lambda () (push :cancelled calls)))
+            (%confirm-minibuffer minibuffer "s")
+            (expect calls :to-equal '(:cancelled))
+            (expect (search "File changed on disk: "
+                            (loom:minibuffer-message-string minibuffer))
+                    :to-equal 0)
+            (expect (host-kit:read-file-string path) :to-equal "external")
+            (expect (find buffer (%test-registered-buffers *editor-state*)
+                          :test #'eq)
+                    :to-be buffer)))))))
