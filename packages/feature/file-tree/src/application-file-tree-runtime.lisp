@@ -49,7 +49,9 @@
                   (file-tree-scroll-top-for-selection
                    (file-tree-scroll-top tree)
                    (file-tree-selection-index tree)
-                   (file-tree-entry-count tree) height)
+                   (max (file-tree-entry-count tree)
+                        (+ (file-tree-scroll-top tree) height))
+                   height)
                   (file-tree-scroll-top tree)))
          (limit (+ top height
                    (if follow-p (%file-tree-scroll-margin height) 0)

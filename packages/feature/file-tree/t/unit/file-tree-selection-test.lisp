@@ -197,3 +197,26 @@
       (expect (loom/feature/file-tree:file-tree-scroll-follow-needed-p tree)
               :to-be-truthy))))
 
+(describe
+  "file-tree resize with an unselected scrolled viewport"
+  (it
+    "preserves top while the new viewport fits and clamps after entries shrink"
+    (let ((tree (make-file-tree "/root/"))
+          (children (loop for index below 200
+                          collect (cons (format nil "/root/file~3,'0D" index) :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path) (declare (ignore path)) children))
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (dotimes (index 10)
+        (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5 :wheel-delta 3))
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 30)
+      (expect (loom/feature/file-tree:file-tree-entry-count tree) :to-equal 35)
+      (expect (file-tree-selected-path tree) :to-be nil)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 10)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 30)
+      (setf children (subseq children 0 35))
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 10)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 25)
+      (expect (file-tree-selected-path tree) :to-be nil))))
+
+
