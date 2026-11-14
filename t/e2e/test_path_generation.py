@@ -305,6 +305,29 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             'key:{"keymap":"global","sequence":[{"key":"%","modifiers":["alt"]}]};prompt:2:free-string',
         )
 
+    def test_r2_generates_only_accept_cancel_and_invalid_for_char_prompts(self):
+        catalog = _catalog()
+        replace_string = next(row for row in catalog if row["id"] == "replace-string")
+        replace_string["prompts"].append("char")
+
+        paths = generate_required_paths(catalog)
+        ids = {path["id"] for path in paths}
+        existing_ids = set(self.paths_by_id)
+        char_ids = {
+            path_id for path_id in ids if ":char:" in path_id
+        }
+
+        self.assertTrue(existing_ids.issubset(ids))
+        self.assertEqual(ids - existing_ids, char_ids)
+        self.assertEqual(
+            char_ids,
+            {
+                "r2:replace-string:prompt-6:char:accept",
+                "r2:replace-string:prompt-6:char:cancel",
+                "r2:replace-string:prompt-6:char:invalid",
+            },
+        )
+
     def test_r3_generates_each_mutation_case_and_marks_macro_route(self):
         cases = {path["id"].rsplit(":", 1)[1] for path in self.paths if path["rule"] == "r3"}
         self.assertEqual(

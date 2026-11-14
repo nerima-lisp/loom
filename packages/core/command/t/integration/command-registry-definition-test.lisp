@@ -125,3 +125,12 @@
         :command kill-line :keys nil :help nil :help-order nil
         :mutates nil :prompts nil :needs-region nil
         :external nil :modes (:all))))))
+(describe
+  "command spec prompt kinds"
+  (it "accepts :char as a prompt kind"
+    (let ((spec
+            (eval
+             (macroexpand-1
+              (read-from-string
+               "(loom/core/command:command-spec \"char-command\" forward-char :mutates nil :prompts (:char) :needs-region nil :external nil :modes (:all)")))))
+      (expect (getf spec :prompts) :to-equal (list :char)))))

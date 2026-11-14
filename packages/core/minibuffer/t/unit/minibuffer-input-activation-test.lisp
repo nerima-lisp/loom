@@ -140,7 +140,98 @@
                     (push input changes)))
       (%type-string minibuffer "ab")
       (minibuffer-handle-key minibuffer (%special-key :backspace))
-      (expect changes :to-equal '("a" "ab" "a")))))
+      (expect changes :to-equal '("a" "ab" "a"))))
+
+  (it
+    "accepts an allowed character without RET"
+    (let ((minibuffer (make-minibuffer))
+          (confirmed nil))
+      (minibuffer-activate
+       minibuffer "Choose: "
+       :input-kind :char
+       :allowed-characters "rdi"
+       :on-confirm (lambda (input)
+                     (setf confirmed input)))
+      (minibuffer-handle-key minibuffer (%char-key #\d))
+      (expect confirmed :to-equal "d")
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
+    "keeps a :char prompt active and shows allowed keys for invalid input"
+    (let ((minibuffer (make-minibuffer))
+          (confirmed nil))
+      (minibuffer-activate
+       minibuffer "Choose: "
+       :input-kind :char
+       :allowed-characters "rdi"
+       :on-confirm (lambda (input)
+                     (setf confirmed input)))
+      (dolist
+          (event
+            (list
+             (%char-key #\x)
+             (cl-tty-kit:make-key-event
+              :type :character
+              :code #\r
+              :modifiers (list :control))
+             (%special-key :up)
+             (%special-key :enter)))
+        (minibuffer-handle-key minibuffer event)
+        (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+        (expect confirmed :to-be-falsy)
+        (let ((message (minibuffer-message-string minibuffer)))
+          (expect
+           (and (stringp message)
+                (search "r" message)
+                (search "d" message)
+                (search "i" message))
+           :to-be-truthy)))
+      (expect (minibuffer-input-string minibuffer) :to-equal "")
+      (minibuffer-handle-key minibuffer (%special-key :control-g))
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
+    "accepts any character when no allowed set is specified"
+    (let ((minibuffer (make-minibuffer))
+          (confirmed nil))
+      (minibuffer-activate
+       minibuffer "Type a character: "
+       :input-kind :char
+       :allowed-characters nil
+       :on-confirm (lambda (input)
+                     (setf confirmed input)))
+      (minibuffer-handle-key minibuffer (%special-key :up))
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (expect (minibuffer-message-string minibuffer) :to-be-truthy)
+      (minibuffer-handle-key minibuffer (%char-key #\z))
+      (expect confirmed :to-equal "z")
+      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+
+  (it
+    "cancels :char prompts with both C-g event forms"
+    (dolist
+        (event
+          (list
+           (%special-key :control-g)
+           (cl-tty-kit:make-key-event
+            :type :character
+            :code #\g
+            :modifiers (list :control))))
+      (let ((minibuffer (make-minibuffer))
+            (cancelled nil)
+            (confirmed nil))
+        (minibuffer-activate
+         minibuffer "Choose: "
+         :input-kind :char
+         :allowed-characters "rdi"
+         :on-cancel (lambda ()
+                      (setf cancelled t))
+         :on-confirm (lambda (input)
+                       (setf confirmed input)))
+        (minibuffer-handle-key minibuffer event)
+        (expect cancelled :to-be-truthy)
+        (expect confirmed :to-be-falsy)
+        (expect (minibuffer-active-p minibuffer) :to-be-falsy)))))
 
 (describe
   "minibuffer activation contracts"

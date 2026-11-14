@@ -272,6 +272,75 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertEqual(_r2_prompt_display(case, ""), "Register name:")
         self.assertEqual(_r2_prompt_display(case, "a"), "Register name: a")
 
+    def test_char_prompt_results_use_character_specific_actions(self):
+        cases = {
+            "accept": {"input_text": "d", "expected_minibuffer": ""},
+            "cancel": {"input_text": "d", "expected_minibuffer": ""},
+            "invalid": {
+                "input_text": "x",
+                "expected_minibuffer": "Allowed keys: r, d, i",
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            for prompt_case, values in cases.items():
+                case = {
+                    "name": f"test/char-{prompt_case}",
+                    "path_id": f"r2:zap-to-char:prompt-1:char:{prompt_case}",
+                    "lane": "F1",
+                    "rule": "r2",
+                    "entry": "key:M-z;prompt:1:char",
+                    "commands": ["zap-to-char"],
+                    "command": "zap-to-char",
+                    "entry_mode": "key",
+                    "entry_keys": ["M-z"],
+                    "prompt_open": "Zap to char: ",
+                    "prompt_kind": "char",
+                    "prompt_case": prompt_case,
+                    "input_text": values["input_text"],
+                    "initial_bytes": "abc\n",
+                    "expected_bytes": "abc\n",
+                    "expected_cursor": [0, 0],
+                    "expected_minibuffer": values["expected_minibuffer"],
+                    "expected_screen": [{"region": "body", "text": "abc"}],
+                }
+                path.write_text(
+                    json.dumps({"schema_version": 1, "scenarios": [case]}),
+                    encoding="utf-8",
+                )
+                loaded_case = load_command_path_scenarios(path)[0]
+                sessions = []
+
+                def session_factory(*args, **kwargs):
+                    session = FakeSession(*args, **kwargs)
+                    sessions.append(session)
+                    return session
+
+                with self.subTest(prompt_case=prompt_case):
+                    run_command_path_scenario(
+                        "unused", loaded_case, session_factory=session_factory
+                    )
+
+                    calls = sessions[0].calls
+                    self.assertIn(("type", values["input_text"]), calls)
+                    self.assertNotIn(("key", "RET"), calls)
+                    if prompt_case == "accept":
+                        self.assertNotIn(("send", b"\x07"), calls)
+                    elif prompt_case == "cancel":
+                        self.assertIn(("send", b"\x07"), calls)
+                    else:
+                        notice_index = next(
+                            index
+                            for index, call in enumerate(calls)
+                            if call[0] in {"wait_text", "wait_exact_text"}
+                            and call[1] == "minibuffer"
+                            and call[2] == values["expected_minibuffer"]
+                        )
+                        cancel_key = ("send", b"\x07")
+                        self.assertIn(cancel_key, calls)
+                        self.assertLess(notice_index, calls.index(cancel_key))
+
     def test_r2_command_prompts_send_pre_keys_before_opening_the_prompt(self):
         case = {
             "name": "test/r2-pre-keys",
