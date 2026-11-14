@@ -147,6 +147,7 @@ root source tree responsible for every feature."
    (:file "t/integration/input-routing-keymap-test")
    (:file "t/integration/main-test-support")
    (:file "t/integration/main-input-test")
+   (:file "t/integration/input-monitor-test")
    (:file "t/integration/main-terminal-size-test")
    (:file "t/integration/main-event-loop-input-test")
    (:file "t/integration/main-run-loom-test")
