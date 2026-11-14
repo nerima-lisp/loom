@@ -75,7 +75,7 @@ code
       (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 1 0))
               :to-equal (quote ((:fg 2))))))
   (it
-    "uses one visible line index for all reads in a rendered frame"
+    "uses one visible buffer view for all reads in a rendered frame"
     (let* ((state (%fresh-layout-state
                    :name "README.md"
                    :content (format nil "# Heading~%text~%")
@@ -83,7 +83,7 @@ code
            (buffer (window-buffer (%layout-window state)))
            (screen (%layout-screen state))
            (builder-symbol
-             (find-symbol "%BUILD-VISIBLE-LINE-INDEX" "LOOM/CORE/BUFFER"))
+             (find-symbol "%BUILD-BUFFER-VISIBLE-VIEW" "LOOM/CORE/BUFFER"))
            (original-builder (symbol-function builder-symbol))
            (build-count 0))
       (buffer-set-major-mode buffer :markdown)
