@@ -101,7 +101,7 @@ jobs:
   check-darwin:
     name: nix flake check (aarch64-darwin)
     if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux') }}
-    runs-on: macos-14
+    runs-on: macos-15
     # macOS does not ship GNU timeout; this job-level limit bounds nix flake check.
     timeout-minutes: 35
     steps:
@@ -216,7 +216,7 @@ jobs:
   e2e-darwin:
     name: PTY E2E (aarch64-darwin)
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux' }}
-    runs-on: macos-14
+    runs-on: macos-15
     # Per-scenario deadlines remain in the harness; this job limit replaces GNU timeout.
     timeout-minutes: 12
     steps:
@@ -328,7 +328,7 @@ jobs:
   release-archive-darwin:
     name: Offline release archive (aarch64-darwin)
     if: ${{ (github.event_name != 'workflow_dispatch' || inputs.e2e_scenario == '') && (github.event_name != 'workflow_dispatch' || inputs.platforms != 'linux') }}
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
