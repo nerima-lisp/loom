@@ -132,5 +132,5 @@
             (eval
              (macroexpand-1
               (read-from-string
-               "(loom/core/command:command-spec \"char-command\" forward-char :mutates nil :prompts (:char) :needs-region nil :external nil :modes (:all)")))))
+               "(loom/core/command:command-spec \"char-command\" forward-char :mutates nil :prompts (:char) :needs-region nil :external nil :modes (:all))")))))
       (expect (getf spec :prompts) :to-equal (list :char)))))
