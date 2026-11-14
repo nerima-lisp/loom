@@ -261,4 +261,49 @@
   :outcome "history"
   :observe (:screen_text)
   :scenario "command-path/r2/file-tree-rename/free-string/history")
+ (:id "r6:file-tree-scroll:down"
+  :commands ()
+  :rule :r6
+  :lane "W3-10"
+  :entry "C-c n repeatedly"
+  :state "200-entry directory with file-tree visible"
+  :outcome "each selected entry stays visible"
+  :observe (:screen_text :cell_attrs)
+  :scenario "file-tree/wp3-scroll/down")
+ (:id "r6:file-tree-scroll:up"
+  :commands ()
+  :rule :r6
+  :lane "W3-10"
+  :entry "C-c p repeatedly from last entry"
+  :state "200-entry directory with file-tree visible"
+  :outcome "each selected entry stays visible"
+  :observe (:screen_text :cell_attrs)
+  :scenario "file-tree/wp3-scroll/up")
+ (:id "r6:file-tree-scroll:click"
+  :commands ()
+  :rule :r6
+  :lane "W3-10"
+  :entry "click lower half of scrolled sidebar"
+  :state "200-entry directory with file-tree visible"
+  :outcome "the displayed file is opened"
+  :observe (:screen_text)
+  :scenario "file-tree/wp3-scroll/click")
+ (:id "r6:file-tree-scroll:resize"
+  :commands ()
+  :rule :r6
+  :lane "W3-10"
+  :entry "shrink terminal"
+  :state "200-entry directory with file-tree visible"
+  :outcome "last selected entry stays visible and scroll is clamped"
+  :observe (:screen_text :cell_attrs)
+  :scenario "file-tree/wp3-scroll/resize")
+ (:id "r6:file-tree-scroll:wheel"
+  :commands ()
+  :rule :r6
+  :lane "W3-10"
+  :entry "sidebar wheel down then up"
+  :state "200-entry directory with file-tree visible"
+  :outcome "viewport moves three rows without changing selection"
+  :observe (:screen_text :cell_attrs)
+  :scenario "file-tree/wp3-scroll/wheel")
 )

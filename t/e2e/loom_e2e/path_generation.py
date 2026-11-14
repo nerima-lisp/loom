@@ -703,8 +703,31 @@ def _buffer_menu_fixed_paths():
     ]
 
 
+def _file_tree_scroll_paths():
+    return [
+        _path(
+            f"r6:file-tree-scroll:{operation}",
+            [],
+            "r6",
+            "W3-10",
+            entry,
+            "200-entry directory with file-tree visible",
+            outcome,
+            observe,
+        )
+        for operation, entry, outcome, observe in (
+            ("down", "C-c n repeatedly", "each selected entry stays visible", ["screen_text", "cell_attrs"]),
+            ("up", "C-c p repeatedly from last entry", "each selected entry stays visible", ["screen_text", "cell_attrs"]),
+            ("click", "click lower half of scrolled sidebar", "the displayed file is opened", ["screen_text"]),
+            ("resize", "shrink terminal", "last selected entry stays visible and scroll is clamped", ["screen_text", "cell_attrs"]),
+            ("wheel", "sidebar wheel down then up", "viewport moves three rows without changing selection", ["screen_text", "cell_attrs"]),
+        )
+    ]
+
+
 def _fixed_paths():
     paths = []
+    paths.extend(_file_tree_scroll_paths())
     dimensions = ("fullwidth", "combining", "emoji", "wrap", "truncate")
     operations = (
         ("move", ["forward-char"], ["cursor"]),
