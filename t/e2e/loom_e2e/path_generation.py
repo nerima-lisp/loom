@@ -22,7 +22,7 @@ _REQUIRED_FIELDS = {
     "modes",
     "mx-eligible",
 }
-_PROMPT_KINDS = {"free-string", "completion", "yes-no", "numeric"}
+_PROMPT_KINDS = {"free-string", "completion", "yes-no", "numeric", "char"}
 _INVALID_PROMPT_KINDS = {"completion", "yes-no", "numeric"}
 _PROMPT_CASES = ("accept", "cancel", "empty", "tab", "history")
 _MUTATION_CASES = (
@@ -772,9 +772,12 @@ def generate_required_paths(catalog):
             )
 
         for prompt_index, prompt in enumerate(row["prompts"], start=1):
-            cases = list(_PROMPT_CASES)
-            if prompt in _INVALID_PROMPT_KINDS:
-                cases.append("invalid")
+            if prompt == "char":
+                cases = ("accept", "cancel", "invalid")
+            else:
+                cases = list(_PROMPT_CASES)
+                if prompt in _INVALID_PROMPT_KINDS:
+                    cases.append("invalid")
             for case in cases:
                 paths.append(
                     _path(

@@ -299,10 +299,35 @@ def _validate_case(case, index):
             "prompt_kind",
             "completion" if entry_mode == "open-mx" else None,
         )
-        if prompt_kind not in {"free-string", "completion", "yes-no", "numeric"}:
+        if prompt_kind not in {
+            "free-string",
+            "completion",
+            "yes-no",
+            "numeric",
+            "char",
+        }:
             raise CommandPathScenarioError(
                 f"{location}.prompt_kind is not a supported prompt kind"
             )
+        if prompt_kind == "char":
+            if case["prompt_case"] not in {"accept", "cancel", "invalid"}:
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_case is not supported for char prompts"
+                )
+            if case["prompt_case"] == "cancel":
+                if case["input_text"]:
+                    raise CommandPathScenarioError(
+                        f"{location}.input_text must be empty for char cancellation"
+                    )
+            elif len(case["input_text"]) != 1:
+                raise CommandPathScenarioError(
+                    f"{location}.input_text must contain one character for char prompts"
+                )
+            if case["prompt_case"] == "invalid":
+                _nonempty_string(
+                    case.get("expected_minibuffer"),
+                    f"{location}.expected_minibuffer",
+                )
         if "accepted_command" in case:
             _nonempty_string(case["accepted_command"], f"{location}.accepted_command")
         if (
@@ -1003,6 +1028,18 @@ def _enter_command_prompt(session, case, prompt_label):
 
 def _answer_command_prompt(session, case):
     prompt_case = case["prompt_case"]
+    if case.get("prompt_kind") == "char":
+        if prompt_case == "cancel":
+            _send_key(session, "C-g")
+            return False
+        session.type(case["input_text"])
+        if prompt_case == "invalid":
+            session.wait_for_region_exact_text(
+                "minibuffer", case["expected_minibuffer"], strip_right=True
+            )
+            _send_key(session, "C-g")
+            return False
+        return True
     if prompt_case == "history":
         for _ in range(case.get("history_steps", 1)):
             session.key("UP")
@@ -1066,11 +1103,14 @@ def _run_r2_command_prompts(session, case, path):
             )
             _send_keys(session, case["interaction_keys"])
 
-    _assert_minibuffer(
-        session,
-        case["expected_minibuffer"],
-        case.get("expected_minibuffer_match", "exact"),
-    )
+    if not (
+        case.get("prompt_kind") == "char" and case["prompt_case"] == "invalid"
+    ):
+        _assert_minibuffer(
+            session,
+            case["expected_minibuffer"],
+            case.get("expected_minibuffer_match", "exact"),
+        )
     _assert_final_state(
         session,
         case,
@@ -1167,6 +1207,18 @@ def _run_r2(session, case, path):
                     _r2_prompt_display(case, case["history_expected"]),
                     strip_right=True,
                 )
+    elif case.get("prompt_kind") == "char":
+        if prompt_case != "cancel":
+            with stage("target prompt input"):
+                session.type(case["input_text"])
+        if prompt_case == "invalid":
+            with stage("invalid prompt guidance"):
+                session.wait_for_region_exact_text(
+                    "minibuffer", case["expected_minibuffer"], strip_right=True
+                )
+        if prompt_case in {"cancel", "invalid"}:
+            with stage("prompt cancel (C-g)"):
+                _send_key(session, "C-g")
     else:
         with stage("target prompt input"):
             session.type(case["input_text"])
@@ -1192,21 +1244,23 @@ def _run_r2(session, case, path):
                             region="minibuffer",
                             strip_right=True,
                         )
-    if prompt_case == "cancel" or (
-        prompt_case == "history" and case.get("history_cancel", False)
-    ):
-        with stage("prompt cancel (C-g)"):
-            _send_key(session, "C-g")
-    else:
-        with stage("prompt accept (RET)"):
-            session.key("RET")
+    if case.get("prompt_kind") != "char":
+        if prompt_case == "cancel" or (
+            prompt_case == "history" and case.get("history_cancel", False)
+        ):
+            with stage("prompt cancel (C-g)"):
+                _send_key(session, "C-g")
+        else:
+            with stage("prompt accept (RET)"):
+                session.key("RET")
 
-    with stage("prompt result"):
-        _assert_minibuffer(
-            session,
-            case["expected_minibuffer"],
-            case.get("expected_minibuffer_match", "exact"),
-        )
+    if not (case.get("prompt_kind") == "char" and prompt_case == "invalid"):
+        with stage("prompt result"):
+            _assert_minibuffer(
+                session,
+                case["expected_minibuffer"],
+                case.get("expected_minibuffer_match", "exact"),
+            )
     _assert_final_state(
         session,
         case,

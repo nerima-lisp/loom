@@ -222,3 +222,37 @@ completes, and C-g cancels. Returns MINIBUFFER."
            (kind (%minibuffer-key-kind key-event type code)))
       (%minibuffer-dispatch-key minibuffer kind code)))
   minibuffer)
+(defun %minibuffer-char-guidance (allowed-characters)
+  (cond
+    ((null allowed-characters) "Type a character.")
+    ((zerop (length allowed-characters)) "No character keys are allowed.")
+    (t
+     (format nil
+             "Allowed keys: ~{~C~^, ~}"
+             (loop for character across allowed-characters collect character)))))
+(defun %minibuffer-handle-char-event (minibuffer key-event
+                                       allowed-characters on-key)
+  "Handle one event for a :CHAR activation, with C-g taking priority."
+  (let* ((type (cl-tty-kit:key-event-type key-event))
+         (code (cl-tty-kit:key-event-code key-event))
+         (modifiers (cl-tty-kit:key-event-modifiers key-event)))
+    (cond
+      ((%control-g-key-p key-event)
+       (%minibuffer-cancel minibuffer)
+       t)
+      ((and on-key (funcall on-key key-event)) t)
+      ((and (eq type :character) (characterp code) (null modifiers))
+       (if (or (null allowed-characters)
+               (find code allowed-characters))
+           (progn
+             (setf (%minibuffer-input minibuffer) (string code)
+                   (%minibuffer-point minibuffer) 1)
+             (minibuffer-message minibuffer nil)
+             (%minibuffer-confirm minibuffer))
+           (minibuffer-message
+            minibuffer (%minibuffer-char-guidance allowed-characters)))
+       t)
+      (t
+       (minibuffer-message
+        minibuffer (%minibuffer-char-guidance allowed-characters))
+       t))))

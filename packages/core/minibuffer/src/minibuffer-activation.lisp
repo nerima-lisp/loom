@@ -1,4 +1,5 @@
 (in-package #:loom/core/minibuffer)
+(declaim (ftype (function (t t t t) t) %minibuffer-handle-char-event))
 (defvar *message-sinks* nil)
 (defun register-message-sink (owner function)
   "Register FUNCTION to receive minibuffer messages for OWNER.
@@ -41,25 +42,25 @@ registration order. Callback errors propagate and stop dispatch."
     (error "~A must be a function or NIL: ~S" name value))
   value)
 
-(defun minibuffer-activate (minibuffer prompt &key on-confirm on-cancel
-                                                   on-change on-key
-                                                   completion-function)
+(defun minibuffer-activate (minibuffer prompt
+                            &key on-confirm on-cancel on-change on-key
+                              completion-function input-kind
+                              allowed-characters)
   "Begin an interactive input session in MINIBUFFER, displaying PROMPT and
-accepting keystrokes via MINIBUFFER-HANDLE-KEY. ON-CONFIRM, when supplied, is
-a function of one argument (the final input string) called when the user
-confirms the input (e.g. RET). ON-CANCEL, when supplied, is a function of
-zero arguments called when the user cancels (e.g. C-g). ON-CHANGE, when
-supplied, is a function of the current input string called after every edit to
-it, which is what lets a prompt act while it is still being typed rather than
-only at RET. ON-KEY, when supplied, is a function of one key event called
-before MINIBUFFER-HANDLE-KEY classifies it; returning true consumes the event,
-which is how a caller keeps a chord like C-s from being typed into the input.
-COMPLETION-FUNCTION, when supplied, is a function of the current input string
-that returns a list of candidate strings for Tab completion. Returns
-MINIBUFFER."
+accepting keystrokes via MINIBUFFER-HANDLE-KEY. ON-CONFIRM is called with the
+confirmed input string, and ON-CANCEL is called with no arguments. ON-CHANGE
+is called after each edit. ON-KEY may consume an event before default handling.
+When INPUT-KIND is :CHAR, the first allowed unmodified character is confirmed
+immediately without RET. ALLOWED-CHARACTERS, when supplied, is a string of
+accepted characters; otherwise any unmodified character is accepted. Invalid
+events leave the prompt active and show input guidance. Returns MINIBUFFER."
   (%minibuffer-validate-function-option completion-function ":completion-function")
   (%minibuffer-validate-function-option on-change ":on-change")
   (%minibuffer-validate-function-option on-key ":on-key")
+  (unless (or (null input-kind) (eq input-kind :char))
+    (error "INPUT-KIND must be NIL or :CHAR: ~S" input-kind))
+  (unless (or (null allowed-characters) (stringp allowed-characters))
+    (error "ALLOWED-CHARACTERS must be a string or NIL: ~S" allowed-characters))
   (let ((history (%minibuffer-history minibuffer)))
     (when history
       (history-kit:history-reset-navigation history)))
@@ -70,7 +71,13 @@ MINIBUFFER."
         (%minibuffer-on-confirm minibuffer) on-confirm
         (%minibuffer-on-cancel minibuffer) on-cancel
         (%minibuffer-on-change minibuffer) on-change
-        (%minibuffer-on-key minibuffer) on-key
+        (%minibuffer-on-key minibuffer
+                            (if (eq input-kind :char)
+                                (lambda (key-event)
+                                  (%minibuffer-handle-char-event
+                                   minibuffer key-event allowed-characters
+                                   on-key))
+                                on-key))
         (%minibuffer-completion-function minibuffer) completion-function
         (%minibuffer-completion-candidates minibuffer) nil
         (%minibuffer-message minibuffer) nil)

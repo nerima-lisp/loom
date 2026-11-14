@@ -26,7 +26,7 @@
     (error "COMMAND-SPEC :MUTATES must be true or false: ~S" mutates))
   (unless (and (listp prompts)
                (every (lambda (prompt)
-                        (member prompt '(:free-string :completion :yes-no :numeric)))
+                        (member prompt '(:free-string :completion :yes-no :numeric :char)))
                       prompts))
     (error "COMMAND-SPEC :PROMPTS must be a list of prompt kinds: ~S" prompts))
   (unless (member needs-region '(nil t))
