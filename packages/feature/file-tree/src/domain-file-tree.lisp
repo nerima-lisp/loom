@@ -13,7 +13,15 @@ usable in isolation, e.g. in domain-layer tests."
   root-path
   (shown nil)
   (expanded (make-hash-table :test #'equal))
+  (expanded-directory-index (make-hash-table :test #'equal))
   selection
+  selection-index
+  (entry-count 0)
+  (scroll-top 0)
+  (scroll-follow-needed-p nil)
+  (scroll-follow-p nil)
+  (viewport-height 0)
+  (viewport-width 0)
   (child-lister #'%default-child-lister))
 
 (defun file-tree-install-child-lister (tree lister)

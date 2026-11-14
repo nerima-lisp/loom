@@ -56,5 +56,5 @@
                      #:recent-file
                      #:save-buffer
                      #:write-file
-                     #:register-recent-file-recorder)
+                     #:register-recent-file-recorder #:file-tree-scroll-top #:file-tree-viewport-height #:file-tree-viewport-width #:file-tree-scroll-follow-needed-p #:file-tree-selection-index #:file-tree-entry-count #:file-tree-clamp-scroll-top #:file-tree-scroll-top-for-selection #:file-tree-scroll-top-for-wheel #:file-tree-prepare-viewport #:file-tree-scroll-follow-p)
             (:export #:enable-file-tree-runtime #:shutdown-file-tree-runtime #:refresh-file-tree-runtime #:file-tree-runtime-background-work-p))

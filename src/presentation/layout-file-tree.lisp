@@ -19,17 +19,14 @@ string via NAMESTRING/identity."
             (when (equal path selected) '(:reverse)))))
 
 (defun %layout-draw-file-tree (renderer file-tree width height)
-  "Draw FILE-TREE's currently visible entries (FILE-TREE-ENTRIES) into the
-left WIDTH-column, HEIGHT-row strip of RENDERER starting at (0,0), one entry
-per row, each indented two columns per depth level and truncated to WIDTH
-columns. The row whose path is FILE-TREE-SELECTED-PATH is drawn in reverse
-video so the current selection is visible. Entries beyond HEIGHT rows are
-simply not drawn -- no scrolling is attempted here, matching this file's
-\"plain sequential draw\" scope."
+  "Draw the prepared sidebar viewport without copying its entry list."
+  (loom/feature/file-tree:file-tree-prepare-viewport file-tree width height)
   (when (plusp width)
-    (let ((entries (loom/feature/file-tree:file-tree-entries file-tree))
-          (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
-      (loop for (path . depth) in entries
+    (let* ((top (loom/feature/file-tree:file-tree-scroll-top file-tree))
+           (entries (loom/feature/file-tree:file-tree-entries
+                     file-tree (+ top height)))
+           (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
+      (loop for (path . depth) in (nthcdr top entries)
             for row from 0 below height
             do (multiple-value-bind (visible style)
                    (%layout-file-tree-row path depth selected width)

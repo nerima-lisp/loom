@@ -116,3 +116,27 @@
      :feature/file-tree
      (function %file-tree-keymap-provider)
      :priority 100)))
+
+(defun %file-tree-scroll-tick-hook (session now)
+  (declare (ignore now))
+  (when (and *editor-state*
+             (eq session (loom/core/editor-session:editor-state-session
+                          *editor-state*)))
+    (let ((tree (editor-state-file-tree *editor-state*)))
+      (when (and tree (file-tree-scroll-follow-needed-p tree))
+        (file-tree-prepare-viewport tree (file-tree-viewport-width tree)
+                                    (file-tree-viewport-height tree))))))
+
+(defun %file-tree-scroll-resize-hook (session width height)
+  (when (and *editor-state*
+             (eq session (loom/core/editor-session:editor-state-session
+                          *editor-state*)))
+    (let ((tree (editor-state-file-tree *editor-state*)))
+      (when tree
+        (file-tree-prepare-viewport tree width (max 0 (1- height)))))))
+
+(eval-when (:load-toplevel :execute)
+  (loom/core/editor-session:register-session-hook
+   :tick :feature/file-tree #'%file-tree-scroll-tick-hook)
+  (loom/core/editor-session:register-session-hook
+   :resize :feature/file-tree #'%file-tree-scroll-resize-hook))

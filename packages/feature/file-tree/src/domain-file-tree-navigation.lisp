@@ -1,33 +1,13 @@
 (in-package #:loom/feature/file-tree)
 
-(defun %file-tree-flatten-child (tree child-path kind depth active-paths)
-  (cons (cons child-path depth)
-        (when (%file-tree-expanded-directory-p tree child-path kind)
-          (%file-tree-flatten tree child-path (1+ depth) active-paths))))
-
-(defun %file-tree-flatten-children (tree path depth active-paths)
-  (loop for (child-path . kind) in
-        (funcall (file-tree-child-lister tree) path)
-        append (%file-tree-flatten-child tree child-path kind depth
-                                         active-paths)))
-
-(defun %file-tree-flatten (tree path depth active-paths)
-  "Return the depth-first flattening of PATH's children (at DEPTH) and, for
-each child directory currently in TREE's expanded set, its children in turn,
-recursing only into expanded directories."
-  (unless (gethash path active-paths)
-    (setf (gethash path active-paths) t)
-    (unwind-protect
-         (%file-tree-flatten-children tree path depth active-paths)
-      (remhash path active-paths))))
+(defun %file-tree-directory-key (path)
+  (host-kit:ensure-directory-pathname (pathname path)))
 
 (defun %file-tree-path-equal-p (first second &optional directory-p)
   (or (equal first second)
-      (and directory-p
-           first
-           second
-           (equal (host-kit:ensure-directory-pathname (pathname first))
-                  (host-kit:ensure-directory-pathname (pathname second))))))
+      (and directory-p first second
+           (equal (%file-tree-directory-key first)
+                  (%file-tree-directory-key second)))))
 (defun %file-tree-child-kind (path children)
   (or (cdr (assoc path children :test (function equal)))
       (loop for (child-path . kind) in children
@@ -36,9 +16,8 @@ recursing only into expanded directories."
                       kind))))
 
 (defun %file-tree-expanded-directory-key (tree path)
-  (loop for expanded-path being the hash-keys of (file-tree-expanded tree)
-        when (%file-tree-path-equal-p path expanded-path t)
-          return expanded-path))
+  (gethash (%file-tree-directory-key path)
+           (file-tree-expanded-directory-index tree)))
 (defun %file-tree-expanded-directory-p (tree path kind)
   (and (eq kind :directory)
        (%file-tree-expanded-directory-key tree path)))
@@ -68,13 +47,59 @@ its root, for an entry whose path is EQUAL to PATH, and return its kind
   (%file-tree-search-directory tree path (file-tree-root-path tree)
                                (make-hash-table :test #'equal)))
 
-(defun file-tree-entries (tree)
-  "Return the flattened list of currently visible entries in TREE,
-respecting each directory's expand/collapse state, as a list of (PATH .
-DEPTH) conses in display order. DEPTH is a non-negative integer: ROOT-PATH's
-direct children are at depth 0."
-  (%file-tree-flatten tree (file-tree-root-path tree) 0
-                      (make-hash-table :test #'equal)))
+(defun file-tree-entries (tree &optional limit
+                        &key stop-after-path (trailing-rows 0))
+  "Return display-order entries through LIMIT and STOP-AFTER-PATH's trailing rows."
+  (let ((entries nil)
+        (count 0)
+        (target-seen (null stop-after-path))
+        (active-paths (make-hash-table :test #'equal)))
+    (block collected
+      (labels ((complete-p ()
+                 (and limit (>= count limit) target-seen))
+               (visit (path depth)
+                 (when (complete-p)
+                   (return-from collected))
+                 (unless (gethash path active-paths)
+                   (setf (gethash path active-paths) t)
+                   (unwind-protect
+                        (dolist (child (funcall (file-tree-child-lister tree) path))
+                          (when (complete-p)
+                            (return-from collected))
+                          (let ((child-path (car child)))
+                            (push (cons child-path depth) entries)
+                            (incf count)
+                            (when (and limit (not target-seen)
+                                       (equal child-path stop-after-path))
+                              (setf target-seen t
+                                    limit (max limit (+ count trailing-rows))))
+                            (when (%file-tree-expanded-directory-p
+                                   tree child-path (cdr child))
+                              (visit child-path (1+ depth)))))
+                     (remhash path active-paths)))))
+        (visit (file-tree-root-path tree) 0)))
+    (nreverse entries)))
+
+(defun file-tree-clamp-scroll-top (top count height)
+  (max 0 (min top (max 0 (- count height)))))
+
+(defun %file-tree-scroll-margin (height)
+  (if (> height 3) 1 0))
+
+(defun file-tree-scroll-top-for-selection (top index count height)
+  (let* ((top (file-tree-clamp-scroll-top top count height))
+         (margin (%file-tree-scroll-margin height)))
+    (file-tree-clamp-scroll-top
+     (cond
+       ((or (null index) (zerop height)) top)
+       ((< index (+ top margin)) (- index margin))
+       ((>= index (- (+ top height) margin))
+        (+ (- index height) margin 1))
+       (t top))
+     count height)))
+
+(defun file-tree-scroll-top-for-wheel (top count height delta)
+  (file-tree-clamp-scroll-top (+ top delta) count height))
 
 (defun file-tree-selected-path (tree)
   "Return the path of TREE's currently selected entry, or NIL if nothing
@@ -114,28 +139,35 @@ The calculation is independent of FILE-TREE state so callers can keep the
 selection mutation at the boundary and test navigation as a pure operation."
   (let ((next-position (%file-tree-next-position paths selected-path direction)))
     (when next-position
-      (nth next-position paths))))
+      (values (nth next-position paths) next-position))))
 
 (defun file-tree-move-selection (tree direction)
-  "Move TREE's selection cursor by one visible entry (see
-FILE-TREE-ENTRIES) in DIRECTION, which is :UP or :DOWN. A no-op at either
-end of the visible entry list. Returns the newly selected path."
-  (let ((paths (mapcar #'car (file-tree-entries tree))))
-    (setf (file-tree-selection tree)
-          (%file-tree-next-selection paths
-                                     (file-tree-selection tree)
-                                     direction))))
+  "Move selection one entry in DIRECTION and request viewport following."
+  (let* ((paths (mapcar #'car (file-tree-entries tree)))
+         (old-selection (file-tree-selection tree)))
+    (multiple-value-bind (selection index)
+        (%file-tree-next-selection paths old-selection direction)
+      (setf (file-tree-selection tree) selection
+            (file-tree-selection-index tree) index
+            (file-tree-entry-count tree) (length paths))
+      (unless (equal selection old-selection)
+        (setf (file-tree-scroll-follow-needed-p tree) t
+              (file-tree-scroll-follow-p tree) t))
+      selection)))
 
 (defun file-tree-toggle-expand (tree path)
-  "Toggle the expand/collapse state of the directory at PATH within TREE,
-changing which entries FILE-TREE-ENTRIES subsequently returns. Signals an
-error if PATH does not name a directory in TREE. Returns the new
-expanded-p state."
+  "Toggle the directory at PATH and request viewport following."
   (unless (eq (%file-tree-find-kind tree path) :directory)
     (error "not a directory in tree: ~S" path))
-  (let ((expanded-path (%file-tree-expanded-directory-key tree path)))
+  (let ((expanded-path (%file-tree-expanded-directory-key tree path))
+        (key (%file-tree-directory-key path)))
+    (setf (file-tree-scroll-follow-needed-p tree) t
+          (file-tree-scroll-follow-p tree) t)
     (if expanded-path
         (progn
           (remhash expanded-path (file-tree-expanded tree))
+          (remhash key (file-tree-expanded-directory-index tree))
           nil)
-        (setf (gethash path (file-tree-expanded tree)) t))))
+        (progn
+          (setf (gethash key (file-tree-expanded-directory-index tree)) path)
+          (setf (gethash path (file-tree-expanded tree)) t)))))

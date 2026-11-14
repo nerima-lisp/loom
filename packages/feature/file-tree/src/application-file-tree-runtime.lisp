@@ -41,3 +41,41 @@
           (hash-table-count
            (loom-concurrent-runtime-pending runtime))))))
 
+(defun file-tree-prepare-viewport (tree width height &key wheel-delta)
+  "Apply selection following or wheel movement to the current sidebar geometry."
+  (let* ((follow-p (or (file-tree-scroll-follow-p tree)
+                       (/= height (file-tree-viewport-height tree))))
+         (top (if follow-p
+                  (file-tree-scroll-top-for-selection
+                   (file-tree-scroll-top tree)
+                   (file-tree-selection-index tree)
+                   (file-tree-entry-count tree) height)
+                  (file-tree-scroll-top tree)))
+         (limit (+ top height
+                   (if follow-p (%file-tree-scroll-margin height) 0)
+                   (max 0 (or wheel-delta 0))))
+         (entries (file-tree-entries
+                   tree limit
+                   :stop-after-path (when follow-p (file-tree-selected-path tree))
+                   :trailing-rows (if follow-p (%file-tree-scroll-margin height) 0)))
+         (count (length entries))
+         (index (when follow-p
+                  (position (file-tree-selected-path tree) entries
+                            :key #'car :test #'equal)))
+         (top (if follow-p
+                  (file-tree-scroll-top-for-selection top index count height)
+                  (file-tree-clamp-scroll-top top count height))))
+    (when wheel-delta
+      (setf top (file-tree-scroll-top-for-wheel top count height wheel-delta)))
+    (setf (file-tree-scroll-top tree) top
+          (file-tree-viewport-width tree) (min 24 width)
+          (file-tree-viewport-height tree) height
+          (file-tree-scroll-follow-p tree)
+          (and (file-tree-scroll-follow-p tree) (null wheel-delta))
+          (file-tree-scroll-follow-needed-p tree) nil
+          (file-tree-entry-count tree)
+          (if (< count limit) count (max count (file-tree-entry-count tree))))
+    (when index
+      (setf (file-tree-selection-index tree) index))
+    tree))
+

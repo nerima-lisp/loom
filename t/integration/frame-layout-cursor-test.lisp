@@ -239,3 +239,171 @@
       (let ((cursor (loom::editor-cursor state)))
         (expect (cl-tty-kit:cursor-x cursor) :to-equal 11)
         (expect (cl-tty-kit:cursor-y cursor) :to-equal 5)))))
+
+(describe
+  "file-tree scrolling frame and mouse boundaries"
+  (it
+    "draws the selected last entry on the first frame and keeps wheel scrolling"
+    (let* ((*editor-state* (%fresh-layout-state :content "body"))
+           (tree (editor-state-file-tree *editor-state*))
+           (children (loop for i below 20
+                           collect (cons (format nil "/root/entry~2,'0D" i) :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path) (declare (ignore path)) children))
+      (file-tree-toggle tree)
+      (file-tree-move-selection tree :up)
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 15)
+      (expect (cl-tty-kit:screen-row-string (%layout-screen *editor-state*) 0
+                                            :start 0 :end 7)
+              :to-equal "entry15")
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen *editor-state*) 0 4))
+              :to-equal '(:reverse))
+      (loom/feature/mouse::%mouse-scroll-file-tree :wheel-up)
+      (expect (file-tree-selected-path tree) :to-equal "/root/entry19")
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
+      (setf children (subseq children 0 8))
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 3)))
+
+  (it
+    "maps scrolled clicks and bounds the sidebar to the real narrow width"
+    (let* ((*editor-state* (%fresh-layout-state :width 20))
+           (tree (editor-state-file-tree *editor-state*))
+           (session (loom/core/editor-session:editor-state-session *editor-state*)))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (declare (ignore path))
+              (loop for i below 20
+                    collect (cons (format nil "/root/entry~2,'0D" i) :file))))
+      (file-tree-toggle tree)
+      (loom::compose-frame *editor-state*)
+      (setf (loom/feature/file-tree:file-tree-scroll-top tree) 10)
+      (let ((hit (loom/feature/mouse::%mouse-file-tree-hit-test session 19 3)))
+        (expect hit :to-be-truthy)
+        (expect (loom/core/editor-session:hit-test-result-target hit)
+                :to-equal "/root/entry13"))
+      (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 20 3)
+              :to-be nil)
+      (expect (loom/feature/mouse::%mouse-file-tree-hit-test session -1 3)
+              :to-be nil)
+      (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 0 5)
+              :to-be nil)))
+
+  (it
+    "applies pending selection before a wheel event and follows resize hooks"
+    (let* ((*editor-state* (%fresh-layout-state))
+           (tree (editor-state-file-tree *editor-state*))
+           (session (loom/core/editor-session:editor-state-session *editor-state*)))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (declare (ignore path))
+              (loop for i below 20
+                    collect (cons (format nil "/root/entry~2,'0D" i) :file))))
+      (file-tree-toggle tree)
+      (loom::compose-frame *editor-state*)
+      (file-tree-move-selection tree :up)
+      (loom/feature/mouse::%mouse-scroll-file-tree :wheel-up)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
+      (loom/core/editor-session:run-session-hooks :tick session 0)
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
+      (loom/core/editor-session:run-session-hooks :resize session 20 4)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 17)
+      (expect (loom/feature/file-tree:file-tree-viewport-width tree) :to-equal 20)
+      (expect (file-tree-selected-path tree) :to-equal "/root/entry19")
+      (loom/core/editor-session:run-session-hooks :resize session 20 1)
+      (expect (loom/feature/file-tree:file-tree-viewport-height tree) :to-equal 0))))
+
+(describe
+  "file-tree delayed expansion viewport"
+  (it
+    "keeps the bottom margin when children arrive after the open command tick"
+    (let* ((*editor-state* (%fresh-layout-state))
+           (tree (editor-state-file-tree *editor-state*))
+           (session (loom/core/editor-session:editor-state-session *editor-state*))
+           (root-children
+             (append (loop for i below 5
+                           collect (cons (format nil "/root/file~D" i) :file))
+                     '(("/root/sub/" . :directory))))
+           (directory-children nil)
+           (visits nil))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (push path visits)
+              (if (equal path "/root/") root-children directory-children)))
+      (file-tree-toggle tree)
+      (file-tree-move-selection tree :up)
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 1)
+      (file-tree-toggle-expand tree "/root/sub/")
+      (loom/core/editor-session:run-session-hooks :tick session 0)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 1)
+      (setf directory-children '(("/root/sub/a" . :file)
+                                 ("/root/sub/b" . :file)
+                                 ("/root/sub/c" . :file)))
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 2)
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen *editor-state*) 0 3))
+              :to-equal '(:reverse))
+      (file-tree-toggle-expand tree "/root/sub/")
+      (loom/core/editor-session:run-session-hooks :tick session 0)
+      (setf visits nil)
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 1)
+      (expect visits :to-equal '("/root/" "/root/"))
+      (setf directory-children nil)
+      (file-tree-toggle-expand tree "/root/sub/")
+      (loom/core/editor-session:run-session-hooks :tick session 0)
+      (setf visits nil)
+      (loom::compose-frame *editor-state*)
+      (expect visits :to-equal '("/root/" "/root/sub/" "/root/"))
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 1)
+      (loom/feature/mouse::%mouse-scroll-file-tree :wheel-up)
+      (setf directory-children '(("/root/sub/a" . :file)))
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 0)
+      (expect (file-tree-selected-path tree) :to-equal "/root/sub/"))))
+
+(describe
+  "file-tree delayed expansion before selection"
+  (it
+    "finds a selected sibling after asynchronously inserted children"
+    (let* ((*editor-state* (%fresh-layout-state))
+           (tree (editor-state-file-tree *editor-state*))
+           (session (loom/core/editor-session:editor-state-session *editor-state*))
+           (root-children '(("/root/a/" . :directory)
+                            ("/root/b" . :file)
+                            ("/root/c" . :file)
+                            ("/root/d" . :file)
+                            ("/root/e" . :file)
+                            ("/root/f" . :file)))
+           (directory-children nil))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (if (equal path "/root/") root-children directory-children)))
+      (file-tree-toggle tree)
+      (loom::compose-frame *editor-state*)
+      (file-tree-move-selection tree :down)
+      (file-tree-toggle-expand tree "/root/a/")
+      (file-tree-move-selection tree :down)
+      (loom/core/editor-session:run-session-hooks :tick session 0)
+      (expect (file-tree-selected-path tree) :to-equal "/root/b")
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 0)
+      (setf directory-children
+            (loop for i below 20
+                  collect (cons (format nil "/root/a/child~D" i) :file)))
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 18)
+      (expect (cl-tty-kit:cell-style
+               (cl-tty-kit:screen-cell (%layout-screen *editor-state*) 0 3))
+              :to-equal '(:reverse))
+      (loom/feature/mouse::%mouse-scroll-file-tree :wheel-up)
+      (loom::compose-frame *editor-state*)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 15)
+      (expect (file-tree-selected-path tree) :to-equal "/root/b"))))
+
+

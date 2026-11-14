@@ -26,23 +26,34 @@
         (window-tree-select-index tree index)
         t)))
 
-  (defun %mouse-file-tree-hit-test (session screen-x screen-y)
-    (let* ((state *editor-state*)
-           (tree (and state (editor-state-file-tree state))))
-      ;; The sidebar starts at (0, 0), is at most 24 columns wide, and draws
-      ;; one visible file-tree entry per row.
-      (when (and tree
-                 (eq session (editor-state-session state))
-                 (file-tree-visible-p tree)
-                 (<= 0 screen-x) (< screen-x 24)
-                 (<= 0 screen-y)
-                 (< screen-y
-                    (window-tree-height
-                     (editor-state-window-tree state))))
-        (let ((entry (nth screen-y (file-tree-entries tree))))
-          (when entry
-            (make-hit-test-result :feature/mouse :feature-item
-                                  :target (car entry)))))))
+  (defun %mouse-file-tree-region-p (session screen-x screen-y)
+  (let* ((state *editor-state*)
+         (tree (and state (editor-state-file-tree state))))
+    (and tree
+         (eq session (editor-state-session state))
+         (file-tree-visible-p tree)
+         (<= 0 screen-x)
+         (< screen-x (loom/feature/file-tree:file-tree-viewport-width tree))
+         (<= 0 screen-y)
+         (< screen-y (loom/feature/file-tree:file-tree-viewport-height tree)))))
+
+(defun %mouse-file-tree-hit-test (session screen-x screen-y)
+  (when (%mouse-file-tree-region-p session screen-x screen-y)
+    (let* ((tree (editor-state-file-tree *editor-state*)))
+      (loom/feature/file-tree:file-tree-prepare-viewport
+       tree (loom/feature/file-tree:file-tree-viewport-width tree)
+       (loom/feature/file-tree:file-tree-viewport-height tree))
+      (let* ((index (+ (loom/feature/file-tree:file-tree-scroll-top tree) screen-y))
+             (entry (nth index (file-tree-entries tree (1+ index)))))
+        (when entry
+          (make-hit-test-result :feature/mouse :feature-item :target (car entry)))))))
+
+(defun %mouse-scroll-file-tree (button)
+  (let ((tree (editor-state-file-tree *editor-state*)))
+    (loom/feature/file-tree:file-tree-prepare-viewport
+     tree (loom/feature/file-tree:file-tree-viewport-width tree)
+     (loom/feature/file-tree:file-tree-viewport-height tree)
+     :wheel-delta (if (eq button :wheel-up) -3 3))))
 
   (defun %mouse-open-file-tree-target (target)
     (let* ((tree (editor-state-file-tree *editor-state*))
@@ -109,6 +120,12 @@
         (when window
           (%mouse-select-window window))
         (cond
+          ((and (member action '(:scroll :press) :test #'eq)
+                (member button '(:wheel-up :wheel-down) :test #'eq)
+                (%mouse-file-tree-region-p
+                 (editor-state-session *editor-state*)
+                 (mouse-event-x event) (mouse-event-y event)))
+           (%mouse-scroll-file-tree button))
           ((and hit
                 (eq kind :feature-item)
                 (eq action :press)
