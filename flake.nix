@@ -75,11 +75,11 @@
       flake = false;
     };
     cl-process-kit = {
-      url = "github:nerima-lisp/cl-process-kit/v3.4.0";
+      url = "github:nerima-lisp/cl-process-kit/v3.4.4";
       flake = false;
     };
     cl-vcs-kit = {
-      url = "github:nerima-lisp/cl-vcs-kit/v0.2.0";
+      url = "github:nerima-lisp/cl-vcs-kit/1ab663a0c036e53754d6ef04f21371cc5a2ca739";
       flake = false;
     };
     cl-resilience-kit = {
