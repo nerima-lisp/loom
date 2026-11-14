@@ -19,15 +19,17 @@
 (defun system-dependencies (system-name)
   (copy-list (getf (cddr (find-defsystem-form system-name)) :depends-on)))
 
-(defun flake-input-repositories ()
-  (loop for line in (uiop:split-string (repo-file-string "flake.nix")
-                                       :separator '(#\Newline))
+(defun flake-input-repositories (&optional (text (repo-file-string "flake.nix")))
+  (loop for line in (uiop:split-string text :separator '(#\Newline))
         for marker = "url = \"github:nerima-lisp/"
         for marker-position = (search marker line)
         when marker-position
-          collect (subseq line
-                          (+ marker-position (length marker))
-                          (search "/v" line :start2 marker-position))))
+          collect (let ((start (+ marker-position (length marker))))
+                    (subseq line start
+                            (position-if (lambda (character)
+                                           (or (char= character #\/)
+                                               (char= character #\")))
+                                         line :start start)))))
 
 (defun block-between-markers (string start-marker end-marker &key from-end)
   (let ((start (search start-marker string :from-end from-end)))
@@ -242,3 +244,20 @@
                     (uiop:string-suffix-p system-name "/test")
                     (uiop:string-suffix-p system-name "/test-support"))
           (expect root-dependencies :to-contain system-name))))))
+(describe "flake input repository identifiers"
+  (it "extracts a repository from a version tag URL"
+    (expect (flake-input-repositories
+             "url = \"github:nerima-lisp/cl-process-kit/v3.4.4\";")
+            :to-equal '("cl-process-kit")))
+  (it "extracts a repository from the candidate commit URL"
+    (expect (flake-input-repositories
+             "url = \"github:nerima-lisp/cl-vcs-kit/1ab663a0c036e53754d6ef04f21371cc5a2ca739\";")
+            :to-equal '("cl-vcs-kit")))
+  (it "extracts a repository when a URL omits its ref"
+    (expect (flake-input-repositories
+             "url = \"github:nerima-lisp/cl-vcs-kit\";")
+            :to-equal '("cl-vcs-kit")))
+  (it "ignores repositories outside the declared owner"
+    (expect (flake-input-repositories
+             "url = \"github:NixOS/nixpkgs/nixos-unstable\";")
+            :to-equal nil)))
