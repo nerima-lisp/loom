@@ -122,6 +122,7 @@ root source tree responsible for every feature."
   (:file "t/unit/dependency-contract-test")
    (:file "t/unit/boundary-architecture-test")
    (:file "t/integration/commands-test")
+   (:file "t/integration/concurrent-kit-interruption-test")
    (:file "t/integration/commands-lsp-completion-popup-test")
    (:file "t/integration/commands-movement-char-test")
    (:file "t/integration/commands-movement-line-test")
