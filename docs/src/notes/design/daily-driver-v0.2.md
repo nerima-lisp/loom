@@ -17,8 +17,8 @@
 | | | `M-m`・`M-\`・`M-SPC`・`M-t`・`M-=` がない | WP5a |
 | | | `M-z` がない（`:prompts (:char)` を使う） | WP5b（F1 の後） |
 | 移動と一覧 | isearch・occur・next-error・プロジェクト検索・ブックマーク | file-tree が画面より長いと選択が見えない | WP3 |
-| 言語 | CL / Elisp / Nix / Web / Markdown / Org のインデント・コメント・括弧 | CL の複数行文字列と `#\| \|#` の色が崩れる | WP6（C1 の後） |
-| LSP | 補完・定義・hover・参照・rename・format・診断件数 | サーバからの要求に一切応答しない | WP7 |
+| 言語 | CL / Elisp / Nix / Web / Markdown / Org のインデント・コメント・括弧 | CL の複数行文字列と `#\| \|#` の2行目以降が、文字列やコメントの色で描かれない | WP6（C1 の後） |
+| LSP | 補完・定義・hover・参照・rename・format・診断件数 | サーバからの要求に応答しない | WP7 |
 | 止まらない | 性能ゲート | `M-:` の暴走でエディタごと止まる。評価中に SIGTERM・SIGHUP を受けても、退避を書いて終了できない（D20） | WP2 |
 | git 連携 | git のコマンドの E2E | loom の git パッケージが `git-status`・`git-diff` を defun し、`vcs-kit` が export する同じ名前の関数をイメージ全体で上書きしている | G1（D29） |
 | 表示の安全 | 本文の制御文字（ESC の OSC・SGR、C1 の CSI）は端末にそのまま出ず、空白のセルとして描かれる（`d0d8b75` から組み立てた loom で確認済み） | 回帰テストがない | S1（D29） |
@@ -40,7 +40,7 @@ T9 で、これを1本の PTY シナリオにして `t/e2e/scenarios/` に置く
 | 09:00 | 前回の続きから始める | `loom` を引数なしで起動し、案内を確かめてから `M-x list-recoverable-files`、RET、`r`、`C-x C-s` | 案内の文字列。保存後の `a.lisp` が退避の内容と一致する。退避が消えている | 昨夜の SIGHUP で退避した変更が見つからない | WP1 |
 | 09:05 | ファイルを探して開く | `C-x p f` | 画面に本文が出る | 通る | なし |
 | 09:10 | Lisp を書く | `.lisp` で `RET` `TAB` `M-;` `C-→` | バイト列 | 通る | なし |
-| 09:15 | 長い docstring と `#\| \|#` を書く | 3行の docstring と `#\| \|#` を書く | `cell_attrs` | 2行目以降の色が崩れる | WP6 |
+| 09:15 | 長い docstring と `#\| \|#` を書く | 3行の docstring と `#\| \|#` を書く | `cell_attrs` | 2行目以降が文字列やコメントの色で描かれない | WP6 |
 | 09:20 | 字下げ先頭へ・空白を詰める | `M-m` `M-\` | カーソルとバイト列 | 何も起きない | WP5a |
 | 09:30 | 式を試す | `M-:` に `(loop)`、続けて `C-g` | `Evaluation interrupted`。バイト列が変わらない | ループする式でエディタごと止まる | WP2 |
 | 10:00 | ツリーで深い階層を開く | 200項目のディレクトリで `C-x d`、`C-c n` を連打 | 選択行が毎回画面内にある | 選択が画面外に消える | WP3 |
@@ -101,6 +101,6 @@ WP の規模は S < M の相対値で、WP0・WP3・WP5a・WP5b が S、ほか�
    - ベンチマークゲート（WP6 で足すケースを含む）
 3. どの `boundary-allowlist.lisp` にも、増えた項目がない。
 4. 1日のシナリオ（R9）の、前夜と続く12場面がすべて通る。
-5. `docs/src/notes/daily-driver-checklist.md` の5行を作者が記入し、Fail がない。Fail があった行は、新しい WP として片付けてある（D22）。
+5. `docs/src/notes/daily-driver-checklist.md` の5行を作者が記入し、Fail がない。Fail があった行は、新しい WP として片付けてある。
 6. 既知の制約（v0.2 実行計画書11章）が、`docs/src/notes/release-v0.2.0.md` に書かれている。
 7. タグを付けたときの `release.yml` が成功する。

@@ -45,5 +45,5 @@ R6 の固定導線として、`t/e2e/loom_e2e/path_generation.py` に WP3 用の
 
 ## テスト
 
-- unit: `scroll-top` の更新関数（境界：項目0・1件、高さ1〜3、末尾、縮小）
+- unit: `scroll-top` の更新関数（境界は、項目0・1件、高さ1〜3、末尾、縮小）
 - 既存の file-tree / mouse のテストが緑のまま

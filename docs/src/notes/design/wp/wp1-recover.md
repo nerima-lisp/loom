@@ -14,8 +14,9 @@
    変更ありの各バッファを `~/.loom/recovery/buffer-<reason>-<時刻>-<内部時刻>-<index>-<attempt>.txt` に書く。
    **本文だけで、元のファイルのパスもバッファ名も残していない**。このままでは、どのファイルの退避か分からない。
 
-どちらも `with-open-file` で書いており、権限を指定していない。そのファイルを開いている loom が生きているかを示すもの（ロックや PID）もない。
-ファイルを開くどの経路でも、退避を調べていない。`recover-file` 系のコマンドもない。
+どちらも `with-open-file` で書いており、権限を指定していない。
+また、そのファイルを開いている loom が生きているかを示すもの（ロックや PID）も、ファイルを開くときに退避を調べる処理も、
+`recover-file` 系のコマンドもない。
 
 ## 仕様
 
@@ -24,7 +25,7 @@
 - 本文 `….txt` の隣に、同じ名前で拡張子だけ違うメタデータ `….sexp` を書く。
   中身は `(:version 1 :path <絶対パスか nil> :buffer-name <名前> :reason <:sigterm か :sighup> :time <universal-time>)`。ファイル形式の欄は入れない（D13）。
 - 書く順は本文、メタの順。書き込みは 8節のとおり cl-host-kit を通す。
-- 読み込みでは `*read-eval*` を nil にし、形を検証する。4 KiB を超えるものと壊れたものは無視する。
+- 読み込みでは `*read-eval*` を nil にし、形を検証する。4 KiB を超えるものと、読めないもの・形の検証に通らないものは無視する。
 - メタのない `.txt` は、パス不明の旧形式として扱う。
 
 ### 2. ファイルを開いた後のフック
@@ -82,7 +83,7 @@ Unsaved work found (<auto-save|recovery>, <age> newer); M-x recover-file to rest
 
 どちらも `:help` を付け、`:help-order` は 40〜41 にする（D11）。
 
-`recover-file`:
+`recover-file` は次のように動く。
 
 - 候補がなければ `No unsaved work for <path>`、ファイルを持たないバッファなら `Buffer is not visiting a file` を出す。
 - プロンプトは `Recover from <kind> (<age> newer)? (r, d, i, C-g)`。他の loom が開いている場合は、先頭に3節の警告を付ける。
@@ -91,7 +92,7 @@ Unsaved work found (<auto-save|recovery>, <age> newer); M-x recover-file to rest
 - `i` は何もしない。C-g は `Quit` を出す。
 - narrow 中は `Widen before recovering` で拒否する。読み取り専用では、既存の拒否メッセージを出す。前置引数は無視する。
 
-`list-recoverable-files`:
+`list-recoverable-files` は次のように動く。
 
 - 列は、パス・種類・時刻（ローカル時刻の ISO 形式）。
 - 旧形式は、`(unknown path)` と退避のファイル名で表示する。

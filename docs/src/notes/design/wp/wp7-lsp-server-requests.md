@@ -20,7 +20,7 @@
 ### 1. 要求の判別
 
 受信メッセージに `id` と `method` が両方あれば「サーバからの要求」。`%lsp-route-message` の最初の分岐で拾い、
-`%lsp-handle-server-request` に渡す。**どの要求にも必ず1回だけ応答する。**
+`%lsp-handle-server-request` に渡す。**どの要求にも1回だけ応答する。**
 
 ### 2. 応答の表
 
@@ -44,7 +44,7 @@
 `dynamicRegistration` は、2か所とも `false` にする（使わないものを広告しない）。`registerCapability` への応答は、それでも上の表どおりに行う。
 `publishDiagnostics` の能力は、`capabilities` の直下から `textDocument` の下に移す。
 
-### 4. 見える化
+### 4. 未知の要求の記録
 
 未知の method を受けたら `*Messages*` に1行（`lsp: unhandled server request <method>`）。エコー行には出さない。
 そのために、core/minibuffer に、エコー行に出さずに `*Messages*` にだけ書く公開関数を足す（D2）。

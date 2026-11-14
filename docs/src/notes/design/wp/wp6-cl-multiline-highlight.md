@@ -9,7 +9,7 @@
 
 `packages/feature/syntax-highlighting/src/domain-syntax-highlighting-common-lisp.lisp:76-79` の `syntax-highlight-line` の docstring に
 「The tokenizer is deliberately line-local. Reader state spanning multiple ...」とある。
-1行ずつ独立に色を決めるので、次が2行目以降で崩れる（FR-D03 の目標に届いていない）。
+1行ずつ独立に色を決めるので、次の構文の2行目以降が、文字列やコメントの色で描かれない（FR-D03 の目標に届いていない）。
 
 - 複数行の文字列（docstring）
 - ブロックコメント `#| ... |#`（入れ子あり）
@@ -27,7 +27,7 @@
    - `;` の後の `#|` もコメントを開かない。
    - `#|` は入れ子にできる。
    - `|sym|` のように複数行にまたがるシンボルは対象外。
-2. `syntax-highlight-line` を `(line start-state) → (values tokens end-state)` に広げる。既存の呼び出し口は `start-state = :code` の薄い包みとして残す。
+2. `syntax-highlight-line` を `(line start-state) → (values tokens end-state)` に広げる。既存の呼び出し口は、`start-state` に `:code` を渡して新しい関数を呼ぶだけの関数として残す。
 3. 「行 → 開始状態」のキャッシュを持つ。キーは、絶対行、C1 の版数、メジャーモードの3つ（D24）。
 4. 無効化には C1 の変更行の問い合わせ（利用側の版数 V の後に変わった最小の絶対行。記録の上限を超えたら行0）を使い、
    その行から下だけ再計算する。**ある行の終了状態が前回と同じになったら打ち切る**。

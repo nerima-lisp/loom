@@ -12,7 +12,7 @@
 
 `packages/feature/evaluation/src/infrastructure-lisp-evaluator.lisp:35-69`（`%evaluate-form` / `evaluate-lisp-source`）が、
 エディタと同じスレッドで `LOOM-USER` の式を評価する。タイムアウトも中断もない。
-`M-:` で `(loop)` を評価するとイベントループが止まり、`C-g` も効かず、端末から kill するしかない。
+`M-:` で `(loop)` を評価するとイベントループが止まり、`C-g` でも中断できず、端末から kill するしかない。
 
 - 端末は `/dev/tty` を開いた fd で、ISIG は無効である（`src/application/startup-services.lisp:41-62`）。
   `C-g` はシグナルではなく入力のバイトとして届く。
@@ -42,7 +42,7 @@
 
 ## 性能
 
-- 評価していないときの、2万行のキー応答（要件文書の欠陥 D13）と再描画の p95 は変えない。
+- 評価していないときの、2万行ファイルでのキー応答（要件文書の欠陥番号 D13。計画書の決定 D13 とは別）と再描画の p95 は変えない。
 
 ## 既知の制約
 
@@ -60,7 +60,7 @@ v0.2.0 のリリースノートに書く（v0.2 実行計画書 11章）。
 - `M-:` に `(loop)` → `C-g` でエディタに戻り、バッファのバイト列が不変、エコー行に `Evaluation interrupted`
 - `M-:` に `(loop (ignore-errors (sleep 0.1)))` → `C-g` で中断する
 - `M-:` に `(sleep 1) 42` を評価中に `C-f` を打つ → `42` の後に1つ進む
-- `C-x C-e` と `eval-buffer` でも同じ中断が効く
+- `C-x C-e` と `eval-buffer` でも、`C-g` で同じように中断できる
 - 公開 API を呼ぶ式が、正しい値を返す
 - 評価中に端末の大きさを変えても、中断しない
 - `(loop)` の最中に SIGTERM を送る → exit 143 になり、退避の本文が書かれる
