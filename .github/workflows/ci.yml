@@ -362,3 +362,57 @@ jobs:
           cmp "$RUNNER_TEMP/expected-version" "$RUNNER_TEMP/actual-version"
           result/bin/loom --help > "$RUNNER_TEMP/help"
           grep -F 'Usage: loom [PATH...]' "$RUNNER_TEMP/help"
+
+  k1-probe-benchmarks:
+    name: K1 paired benchmarks (${{ matrix.os }})
+    if: ${{ github.ref == 'refs/heads/wp/k1-probe' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: d0d8b75dbc65dc58cb596798de568833a149e3e6
+          path: k1-baseline
+          persist-credentials: false
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE || 'takeokunn-loom' }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build baseline
+        working-directory: k1-baseline
+        run: nix build .#default --out-link "$RUNNER_TEMP/k1-before" --print-build-logs
+
+      - name: Build candidate
+        run: nix build .#default --out-link "$RUNNER_TEMP/k1-after" --print-build-logs
+
+      - name: Measure paired baseline and candidate
+        run: |
+          set -euo pipefail
+          nix develop -c python3 scripts/k1-probe-benchmarks.py \
+            --before "$RUNNER_TEMP/k1-before/bin/loom" \
+            --after "$RUNNER_TEMP/k1-after/bin/loom" \
+            --rounds 20 --artifacts-dir "$RUNNER_TEMP/k1-paired-benchmarks" \
+            | tee "$RUNNER_TEMP/k1-paired-benchmarks.log"
+
+      - name: Publish paired benchmark statistics
+        if: ${{ always() }}
+        run: |
+          if [[ -s "$RUNNER_TEMP/k1-paired-benchmarks/paired-benchmarks.json" ]]; then
+            {
+              echo '### K1 paired benchmark report'
+              echo '```json'
+              cat "$RUNNER_TEMP/k1-paired-benchmarks/paired-benchmarks.json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
