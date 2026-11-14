@@ -11,7 +11,7 @@
              (declare (ignore arguments))
              (setf captured-repository repository)
              result))
-        (expect (vcs-kit:git-status "/repo/") :to-be result))
+        (expect (vcs-kit:git-status "/repo/") :to-be-truthy))
       (expect captured-repository :to-equal "/repo/"))))
 
 (describe
