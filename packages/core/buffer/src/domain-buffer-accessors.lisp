@@ -10,6 +10,7 @@
 Revisions outside the bounded history invalidate from line zero."
   (let ((current (%buffer-version buffer)))
     (cond ((= version current) nil)
+          ((> version current) 0)
           ((< version (- current +buffer-change-history-size+)) 0)
           (t (loop for revision from (1+ version) to current
                    minimize (aref (%buffer-changed-lines buffer)

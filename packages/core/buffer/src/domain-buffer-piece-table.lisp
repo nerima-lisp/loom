@@ -45,6 +45,13 @@
 
 (defun %do-insert (buffer line column text &key (clear-redo t)
                                 undo-replacement-p)
+  "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
+entry describing the inverse of this exact edit (a delete of the same
+span). Returns (values end-line end-column), the position just after the
+inserted text.
+
+When CLEAR-REDO is true, discard explicit redo history because this is a
+new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
   (sb-sys:without-interrupts
     (let* ((was-narrowed (%buffer-narrowed-p buffer))
@@ -61,6 +68,12 @@
 
 (defun %do-delete (buffer start-line start-column end-line end-column
                    &key (clear-redo t) undo-replacement-p)
+  "Delete the region between the two positions, mark BUFFER modified, and
+push an undo entry describing the inverse of this exact edit (a
+re-insertion of the deleted text). Returns the deleted text.
+
+When CLEAR-REDO is true, discard explicit redo history because this is a
+new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
   (sb-sys:without-interrupts
     (let* ((start-offset (%position-to-offset buffer start-line start-column))

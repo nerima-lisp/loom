@@ -68,7 +68,10 @@ invariant without manufacturing an undo entry or changing point."
   buffer)
 
 (defun buffer-redo (buffer)
-  "Redo the most recently undone change group in BUFFER."
+  "Redo the most recently undone change group in BUFFER.
+
+Redo is a no-op when no explicit redo history remains. A subsequent normal
+edit clears the redo history. Returns BUFFER."
   (%ensure-buffer-writable buffer)
   (sb-sys:without-interrupts
     (multiple-value-bind (group tail)
