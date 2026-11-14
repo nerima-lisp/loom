@@ -74,7 +74,9 @@
                        :to-equal
                        (json-kit:stringify
                         (gethash "workspaceFolders"
-                                 (loom/feature/lsp::%lsp-initialize-params session)))))
+                                 (%parse-lsp-json
+                                  (json-kit:stringify
+                                   (loom/feature/lsp::%lsp-initialize-params session)))))))
               ((equal id "unknown")
                (expect (gethash "code" (gethash "error" response)) :to-equal -32601)
                (expect (gethash "message" (gethash "error" response))
@@ -252,3 +254,36 @@
       (expect (minibuffer-prompt-string minibuffer) :to-equal "Existing: ")
       (expect (nth-value 1 (find-symbol "MINIBUFFER-LOG-MESSAGE" :loom/core/minibuffer))
               :to-be :external))))
+
+(describe
+  "LSP server request boundary values (WP7)"
+  (it "answers absent and empty actions immediately without opening a prompt"
+    (%with-lsp-minibuffer-state (minibuffer "")
+      (%with-fake-lsp-session ((transport session))
+        (%wp7-request transport session 20 "window/showMessageRequest"
+                      "{\"message\":\"Notice\"}")
+        (%wp7-request transport session 21 "window/showMessageRequest"
+                      "{\"message\":\"Notice\",\"actions\":[]}")
+        (expect (minibuffer-active-p minibuffer) :to-be nil)
+        (expect (gethash "result" (%wp7-response transport 20)) :to-be json-kit:+json-null+)
+        (expect (gethash "result" (%wp7-response transport 21)) :to-be json-kit:+json-null+)
+        (expect (%fake-sent-in-order transport) :to-have-length 2))))
+
+  (it "preserves null IDs and distinguishes string IDs from numeric IDs"
+    (%with-fake-lsp-session ((transport session))
+      (dolist (id (list json-kit:+json-null+ 22 "22"))
+        (%wp7-request transport session id "window/workDoneProgress/create")
+        (expect (gethash "result" (%wp7-response transport id)) :to-be json-kit:+json-null+))
+      (expect (%fake-sent-in-order transport) :to-have-length 3)))
+
+  (it "preserves JSON false inside the selected original action"
+    (%with-lsp-minibuffer-state (minibuffer "")
+      (%with-fake-lsp-session ((transport session))
+        (%fake-push-and-drain
+         transport session
+         "{\"jsonrpc\":\"2.0\",\"id\":23,\"method\":\"window/showMessageRequest\",\"params\":{\"message\":\"Choose\",\"actions\":[{\"title\":\"Yes\",\"data\":{\"flag\":false,\"items\":[]}}]}}")
+        (%wp7-type minibuffer "Yes")
+        (%wp7-key minibuffer :enter)
+        (%wp7-response transport 23)
+        (expect (search "\"flag\":false" (first (%fake-sent-in-order transport))) :to-be-truthy)
+        (expect (search "\"items\":[]" (first (%fake-sent-in-order transport))) :to-be-truthy)))))

@@ -48,7 +48,7 @@
                                                        "dynamicRegistration"
                                                        formatting))
                                                  :to-be
-                                                 t))))
+                                                 nil))))
           (it "registers M-x lsp-format-buffer and reports a missing session"
               (let ((command (%lsp-formatting-command)))
                 (expect command :to-be-truthy)

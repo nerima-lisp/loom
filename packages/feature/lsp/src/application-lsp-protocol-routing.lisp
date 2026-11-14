@@ -28,6 +28,9 @@
   (unless (hash-table-p message)
     (error "LSP message is not an object: ~S" message))
   (cond
+    ((and (nth-value 1 (gethash "id" message))
+          (nth-value 1 (gethash "method" message)))
+     (%lsp-handle-server-request session message))
     ((%lsp-shutdown-response-message-p session message)
      (%lsp-handle-shutdown-response session message))
     ((%lsp-publish-diagnostics-message-p message)

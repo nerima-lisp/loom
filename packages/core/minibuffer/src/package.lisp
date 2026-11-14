@@ -19,4 +19,5 @@
    #:minibuffer-set-history-entries
    #:minibuffer-complete
    #:minibuffer-handle-key
-   #:with-prompts))
+   #:with-prompts
+   #:minibuffer-log-message))

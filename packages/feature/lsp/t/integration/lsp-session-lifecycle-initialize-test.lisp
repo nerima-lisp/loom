@@ -5,6 +5,12 @@
   (it "initializes through a transport seam"
     (%with-started-fake-lsp-session
         ((transport session) :root-uri "file:///tmp")
+      (expect (loop with json = (first (%fake-sent-in-order transport))
+                    with needle = "\"dynamicRegistration\":false"
+                    for start = 0 then (+ position (length needle))
+                    for position = (search needle json :start2 start)
+                    while position count position)
+              :to-equal 2)
       (let* ((request (%fake-sent-message transport 0))
              (params (gethash "params" request))
              (workspace-folders (gethash "workspaceFolders" params))

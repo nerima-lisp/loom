@@ -39,6 +39,9 @@ rejected."
   (documents (make-hash-table :test #'equal))
   (diagnostic-table (make-hash-table :test #'equal))
   (pending-requests (make-hash-table))
+  (registrations (make-hash-table :test #'equal))
+  server-request-queue
+  server-request-minibuffer
   pending-shutdown-id
   (exit-sent-p nil)
   transport-error

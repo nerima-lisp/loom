@@ -104,9 +104,17 @@ Non-NIL messages notify registered sinks synchronously in registration order.
 Clearing the stored message does not notify sinks. Sink callback errors propagate
 and stop dispatch. Returns MINIBUFFER."
   (setf (%minibuffer-message minibuffer) text)
+  (minibuffer-log-message text)
+  minibuffer)
+
+(defun minibuffer-log-message (text)
+  "Notify registered message sinks without changing any minibuffer's echo.
+
+NIL does not notify sinks. Callback order and error propagation match
+MINIBUFFER-MESSAGE. Returns TEXT."
   (when text
     (dolist (sink
              (mapcar (lambda (entry) (cons (car entry) (cdr entry)))
                      *message-sinks*))
       (funcall (cdr sink) text)))
-  minibuffer)
+  text)

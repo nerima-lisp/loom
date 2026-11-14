@@ -24,6 +24,7 @@
                          (:file "infrastructure-lsp-transport-support")
                          (:file "infrastructure-lsp-transport")
                          (:file "application-lsp-protocol-send")
+                         (:file "application-lsp-protocol-server-requests")
                          (:file "application-lsp-protocol-initialize")
                          (:file "application-lsp-protocol-helpers")
                          (:file "application-lsp-diagnostic-decode")

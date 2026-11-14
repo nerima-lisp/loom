@@ -1,14 +1,15 @@
 (in-package #:loom/feature/lsp)
 
 (defun %lsp-json-error-message (value)
-  (cond
-    ((hash-table-p value)
-     (let ((message (gethash "message" value)))
-       (if (stringp message)
-           message
-           (prin1-to-string value))))
-    ((stringp value) value)
-    (t (prin1-to-string value))))
+  (%lsp-display-text
+   (cond
+     ((hash-table-p value)
+      (let ((message (gethash "message" value)))
+        (if (stringp message)
+            message
+            (prin1-to-string value))))
+     ((stringp value) value)
+     (t (prin1-to-string value)))))
 
 (defun %lsp-value-present-p (object key)
   (multiple-value-bind (value present-p)
@@ -24,6 +25,11 @@
   (unless (lsp-session-exit-sent-p session)
     (ignore-errors (%lsp-send-notification session "exit"))
     (setf (lsp-session-exit-sent-p session) t))
-  (setf (lsp-session-closed-p session) t)
+  (setf (lsp-session-closed-p session) t
+        (lsp-session-server-request-queue session) nil)
+  (when (lsp-session-server-request-minibuffer session)
+    (loom/core/minibuffer:minibuffer-deactivate
+     (lsp-session-server-request-minibuffer session))
+    (setf (lsp-session-server-request-minibuffer session) nil))
   (ignore-errors (lsp-transport-close (lsp-session-transport session)))
   session)

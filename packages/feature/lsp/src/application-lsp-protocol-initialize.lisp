@@ -11,13 +11,13 @@
            (list
             (cons "synchronization"
                   (json-kit:make-json-object
-                   (list (cons "dynamicRegistration" t))))
+                   (list (cons "dynamicRegistration" json-kit:+json-false+))))
             (cons "formatting"
                   (json-kit:make-json-object
-                   (list (cons "dynamicRegistration" t)))))))
-    (cons "publishDiagnostics"
-          (json-kit:make-json-object
-           (list (cons "relatedInformation" t)))))))
+                   (list (cons "dynamicRegistration" json-kit:+json-false+))))
+            (cons "publishDiagnostics"
+                  (json-kit:make-json-object
+                   (list (cons "relatedInformation" t))))))))))
 
 (defun %lsp-client-info ()
   (json-kit:make-json-object
