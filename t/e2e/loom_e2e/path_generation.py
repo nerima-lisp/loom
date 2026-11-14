@@ -631,6 +631,31 @@ def _lisp_mode_local_paths(row):
     return paths
 
 
+def _wp7_fixed_paths():
+    return [
+        _path(
+            "r5:lsp-server-request:configuration",
+            ["lsp-completion-at-point"],
+            "r5",
+            "W3-9",
+            "server-request",
+            "completion waits for workspace/configuration response",
+            "configuration receives one response and completion succeeds",
+            ["external_state", "file_bytes"],
+        ),
+        _path(
+            "r5:lsp-server-request:control-title",
+            ["lsp-completion-at-point"],
+            "r5",
+            "W3-9",
+            "server-request",
+            "showMessageRequest action title contains ESC",
+            "replacement character is displayed and original action is returned once",
+            ["screen_text", "external_state"],
+        ),
+    ]
+
+
 def _fixed_paths():
     paths = []
     dimensions = ("fullwidth", "combining", "emoji", "wrap", "truncate")
@@ -729,6 +754,7 @@ def _fixed_paths():
                 ["screen_text", "external_state"],
             )
         )
+    paths.extend(_wp7_fixed_paths())
     return paths
 
 

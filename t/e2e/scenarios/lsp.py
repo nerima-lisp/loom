@@ -452,6 +452,136 @@ def _run_lsp_command(binary, command, expected):
         directory.cleanup()
 
 
+def _server_request_fixture(request_kind):
+    server_source = r'''import json
+import sys
+
+request_kind = sys.argv[1]
+completion_id = None
+
+def send(message):
+    body = json.dumps(dict(jsonrpc="2.0", **message)).encode("utf-8")
+    sys.stdout.buffer.write(b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n\r\n" + body)
+    sys.stdout.buffer.flush()
+
+while True:
+    headers = {}
+    while True:
+        line = sys.stdin.buffer.readline()
+        if not line:
+            sys.exit(0)
+        if line == b"\r\n":
+            break
+        name, value = line.decode("ascii").split(":", 1)
+        headers[name.lower()] = value.strip()
+    message = json.loads(sys.stdin.buffer.read(int(headers["content-length"])))
+    method = message.get("method")
+    if method == "initialize":
+        send({"id": message["id"], "result": {"capabilities": {"completionProvider": {}}}})
+    elif method == "textDocument/completion":
+        completion_id = message["id"]
+        if request_kind == "configuration":
+            send({"id": "wp7-configuration", "method": "workspace/configuration",
+                  "params": {"items": [{"section": "first"}, {"section": "second"}]}})
+        else:
+            send({"id": "wp7-title", "method": "window/showMessageRequest",
+                  "params": {"type": 3, "message": "Choose\x1b action",
+                             "actions": [{"title": "Allow\x1b[31m", "choice": 7}]}})
+    elif method == "shutdown":
+        send({"id": message["id"], "result": None})
+    elif method == "exit":
+        sys.exit(0)
+    elif method is None and message.get("id") in ("wp7-configuration", "wp7-title"):
+        expected = [None, None] if request_kind == "configuration" else {"title": "Allow\x1b[31m", "choice": 7}
+        if message.get("result") != expected:
+            raise AssertionError("unexpected server request response: " + repr(message))
+        send({"id": completion_id, "result": [{"label": "wp7Completed", "insertText": "wp7Completed"}]})
+'''
+    return _supervised_server_fixture(
+        [sys.executable, "-c", server_source, request_kind],
+        "main.ts",
+        "wp7\n",
+        "wp7-server-request",
+    )
+
+
+def _protocol_events(protocol_log):
+    if not os.path.exists(protocol_log):
+        return []
+    with open(protocol_log, encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def _run_server_request_completion(binary, request_kind):
+    (
+        directory, path, child_pid_file, wrapper_pid_file, exit_status_file,
+        protocol_log, _stderr_file,
+    ) = _server_request_fixture(request_kind)
+    try:
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            _start(session)
+            _child_pid, wrapper_pid = _supervised_child_pid(
+                session, child_pid_file, wrapper_pid_file,
+            )
+            session.wait_for_external_state(
+                "fake server received didOpen",
+                lambda: any(
+                    event["message"].get("method") == "textDocument/didOpen"
+                    for event in _protocol_events(protocol_log)
+                ),
+                True,
+            )
+            session.send(keys.ctrl("e"))
+            session.wait_for_region_cursor("body", len("wp7"))
+            session.extended_command("lsp-completion-at-point")
+            if request_kind == "title":
+                session.wait_for_region_text("minibuffer", "Choose\ufffd action")
+                session.key("TAB")
+                session.wait_for_text("Allow\ufffd[31m")
+                session.assert_screen_text("Allow\ufffd[31m", match="contains")
+                session.key("RET")
+            session.wait_for_region_text("body", "wp7Completed", index=1)
+            session.assert_screen_text(
+                "wp7Completed", match="contains", region="body", index=1,
+            )
+            session.key("RET")
+            session.extended_command("save-buffer")
+            session.wait_for_file(path, b"wp7Completed\n")
+            session.assert_file_bytes(path, b"wp7Completed\n")
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+            _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
+            events = _protocol_events(protocol_log)
+            request_id = "wp7-configuration" if request_kind == "configuration" else "wp7-title"
+            responses = [
+                event["message"]
+                for event in events
+                if event["message"].get("id") == request_id
+                and "method" not in event["message"]
+            ]
+            expected = [None, None] if request_kind == "configuration" else {"title": "Allow\x1b[31m", "choice": 7}
+            session.assert_external_state(
+                "fake server request receives exactly one expected response",
+                responses,
+                [{"jsonrpc": "2.0", "id": request_id, "result": expected}],
+            )
+            output, code = session.quit()
+        assert_exit_zero("lsp-server-request-" + request_kind, output, code)
+    finally:
+        directory.cleanup()
+
+
+@scenario("lsp/server-request/configuration", commands=["lsp-start", "lsp-completion-at-point", "lsp-stop"])
+def lsp_server_request_configuration(binary):
+    _run_server_request_completion(binary, "configuration")
+
+
+@scenario("lsp/server-request/control-title", commands=["lsp-start", "lsp-completion-at-point", "lsp-stop"])
+def lsp_server_request_control_title(binary):
+    _run_server_request_completion(binary, "title")
+
+
 @scenario("lsp/start", commands=["lsp-start"])
 def lsp_start(binary):
     directory, path = _fixture()

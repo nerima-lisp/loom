@@ -69,6 +69,7 @@
                                   ((:file "lsp-session-lifecycle-error-test")
                                    (:file
                                     "lsp-session-lifecycle-initialize-test")
+                                   (:file "lsp-server-requests-test")
                                    (:file "lsp-session-lifecycle-stop-test")
                                    (:file
                                     "lsp-session-lifecycle-transport-test")

@@ -760,4 +760,24 @@
       :outcome "interrupted"
       :observe (:external_state)
       :scenario "lsp/r5-nixd-interrupted"
-      :lane "W3-9"))
+      :lane "W3-9")
+ (:id "r5:lsp-server-request:configuration"
+      :commands ("lsp-completion-at-point")
+      :rule :r5
+      :lane "W3-9"
+      :entry "server-request"
+      :state "completion waits for workspace/configuration response"
+      :outcome "configuration receives one response and completion succeeds"
+      :observe (:external_state :file_bytes)
+      :scenario "lsp/server-request/configuration")
+ (:id "r5:lsp-server-request:control-title"
+      :commands ("lsp-completion-at-point")
+      :rule :r5
+      :lane "W3-9"
+      :entry "server-request"
+      :state "showMessageRequest action title contains ESC"
+      :outcome "replacement character is displayed and original action is returned once"
+      :observe (:screen_text :external_state)
+      :scenario "lsp/server-request/control-title")
+)
+
