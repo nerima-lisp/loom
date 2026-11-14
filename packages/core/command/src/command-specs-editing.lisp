@@ -104,3 +104,24 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all)))
+  (progn
+  (register-command-spec :core/buffer "back-to-indentation" "back-to-indentation" #'back-to-indentation
+                         :keys '((:alt #\m)) :keymap :global :group "editing"
+                         :help "M-m indent" :help-order 44 :mutates nil
+                         :prompts nil :needs-region nil :external nil :modes '(:all))
+  (register-command-spec :core/buffer "delete-horizontal-space" "delete-horizontal-space" #'delete-horizontal-space
+                         :keys '((:alt #\\)) :keymap :global :group "editing"
+                         :help "M-\\ delete space" :help-order 45 :mutates t
+                         :prompts nil :needs-region nil :external nil :modes '(:all))
+  (register-command-spec :core/buffer "just-one-space" "just-one-space" #'just-one-space
+                         :keys '((:alt #\Space)) :keymap :global :group "editing"
+                         :help "M-SPC space" :help-order 46 :mutates t
+                         :prompts nil :needs-region nil :external nil :modes '(:all))
+  (register-command-spec :core/buffer "transpose-words" "transpose-words" #'transpose-words
+                         :keys '((:alt #\t)) :keymap :global :group "editing"
+                         :help "M-t words" :help-order 47 :mutates t
+                         :prompts nil :needs-region nil :external nil :modes '(:all))
+  (register-command-spec :core/buffer "count-words-region" "count-words-region" #'count-words-region
+                         :keys '((:alt #\=)) :keymap :global :group "editing"
+                         :help "M-= count" :help-order 48 :mutates nil
+                         :prompts nil :needs-region nil :external nil :modes '(:all)))

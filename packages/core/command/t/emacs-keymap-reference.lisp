@@ -183,6 +183,21 @@
      :keys (((:alt) . #\r)) :emacs "move-to-window-line"
      :target "raise-sexp" :target-map :lisp-mode-local
      :effective "raise-sexp" :owner :w3-7b :status :implemented)
+    (:id "back-to-indentation-meta-m"
+   :keys (((:alt) . #\m)) :emacs "back-to-indentation" :target "back-to-indentation"
+   :target-map :global :effective "back-to-indentation" :owner :w3-1 :status :implemented)
+    (:id "delete-horizontal-space-meta-backslash"
+   :keys (((:alt) . #\\)) :emacs "delete-horizontal-space" :target "delete-horizontal-space"
+   :target-map :global :effective "delete-horizontal-space" :owner :w3-1 :status :implemented)
+    (:id "just-one-space-meta-space"
+   :keys (((:alt) . #\Space)) :emacs "just-one-space" :target "just-one-space"
+   :target-map :global :effective "just-one-space" :owner :w3-1 :status :implemented)
+    (:id "transpose-words-meta-t"
+   :keys (((:alt) . #\t)) :emacs "transpose-words" :target "transpose-words"
+   :target-map :global :effective "transpose-words" :owner :w3-1 :status :implemented)
+    (:id "count-words-region-meta-equals"
+   :keys (((:alt) . #\=)) :emacs "count-words-region" :target "count-words-region"
+   :target-map :global :effective "count-words-region" :owner :w3-1 :status :implemented)
     (:id "suspend-frame-control-z"
      :keys (((:control) . #\z)) :emacs "suspend-frame on text terminal"
      :target "suspend-frame" :target-map :global

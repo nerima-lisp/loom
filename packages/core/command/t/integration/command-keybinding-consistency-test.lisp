@@ -93,7 +93,7 @@
              "file-tree-create-directory-local" "paredit-forward-slurp-local"
              "paredit-forward-barf-local" "paredit-backward-slurp-local"
              "paredit-backward-barf-local" "paredit-wrap-meta-open" "paredit-splice-meta-s"
-             "paredit-raise-meta-r" "suspend-frame-control-z")))
+             "paredit-raise-meta-r" "back-to-indentation-meta-m" "delete-horizontal-space-meta-backslash" "just-one-space-meta-space" "transpose-words-meta-t" "count-words-region-meta-equals" "suspend-frame-control-z")))
       (expect (sort (copy-list ids) (lambda (a b) (string< a b)))
               :to-equal
               (sort (copy-list expected-ids) (lambda (a b) (string< a b))))

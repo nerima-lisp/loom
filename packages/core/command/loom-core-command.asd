@@ -86,4 +86,5 @@
        (:file "prefix-argument-command-semantics-test")
        (:file "prefix-argument-line-edit-test")
        (:file "prefix-argument-macro-test")
-       (:file "prefix-argument-action-test")))))))
+       (:file "prefix-argument-action-test")
+       (:file "basic-editing-test")))))))

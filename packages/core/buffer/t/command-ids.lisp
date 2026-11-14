@@ -29,4 +29,11 @@
   "undo"
   "upcase-word"
   "widen"
+
+  "back-to-indentation"
+  "delete-horizontal-space"
+  "just-one-space"
+  "transpose-words"
+  "count-words-region"
 )
+

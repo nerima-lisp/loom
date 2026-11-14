@@ -6163,6 +6163,1396 @@
         "C-b",
         "w"
       ]
+    },
+    {
+      "name": "command-path/wp5a/r1/back-to-indentation/key",
+      "path_id": "r1:back-to-indentation:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22m%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"m\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "back-to-indentation"
+      ],
+      "command": "back-to-indentation",
+      "entry_mode": "key",
+      "initial_bytes": "   alpha\n",
+      "expected_bytes": "   alpha\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "   alpha"
+        }
+      ],
+      "entry_keys": [
+        "M-m"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r1/back-to-indentation/mx",
+      "path_id": "r1:back-to-indentation:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "back-to-indentation"
+      ],
+      "command": "back-to-indentation",
+      "entry_mode": "mx",
+      "initial_bytes": "   alpha\n",
+      "expected_bytes": "   alpha\n",
+      "expected_cursor": [
+        0,
+        3
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "   alpha"
+        }
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r1/delete-horizontal-space/key",
+      "path_id": "r1:delete-horizontal-space:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%5C%5C%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "forward-char",
+        "save-buffer"
+      ],
+      "command": "delete-horizontal-space",
+      "entry_mode": "key",
+      "initial_bytes": "a   b\n",
+      "expected_bytes": "ab\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "entry_keys": [
+        "M-\\"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        },
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/delete-horizontal-space/mx",
+      "path_id": "r1:delete-horizontal-space:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "delete-horizontal-space",
+        "forward-char",
+        "save-buffer"
+      ],
+      "command": "delete-horizontal-space",
+      "entry_mode": "mx",
+      "initial_bytes": "a   b\n",
+      "expected_bytes": "ab\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        },
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/just-one-space/key",
+      "path_id": "r1:just-one-space:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%20%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "forward-char",
+        "save-buffer"
+      ],
+      "command": "just-one-space",
+      "entry_mode": "key",
+      "initial_bytes": "a   b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "entry_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        },
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/just-one-space/mx",
+      "path_id": "r1:just-one-space:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "just-one-space",
+        "forward-char",
+        "save-buffer"
+      ],
+      "command": "just-one-space",
+      "entry_mode": "mx",
+      "initial_bytes": "a   b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "pre_keys": [
+        {
+          "key": "C-f"
+        },
+        {
+          "key": "C-f"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/transpose-words/key",
+      "path_id": "r1:transpose-words:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer"
+      ],
+      "command": "transpose-words",
+      "entry_mode": "key",
+      "initial_bytes": "one two three four five\n",
+      "expected_bytes": "two one three four five\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "entry_keys": [
+        "M-t"
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/transpose-words/mx",
+      "path_id": "r1:transpose-words:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "transpose-words",
+        "save-buffer"
+      ],
+      "command": "transpose-words",
+      "entry_mode": "mx",
+      "initial_bytes": "one two three four five\n",
+      "expected_bytes": "two one three four five\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/wp5a/r1/count-words-region/key",
+      "path_id": "r1:count-words-region:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%3D%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"=\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "count-words-region"
+      ],
+      "command": "count-words-region",
+      "entry_mode": "key",
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer has 1 lines, 2 words, and 8 characters.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two"
+        }
+      ],
+      "entry_keys": [
+        "M-="
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r1/count-words-region/mx",
+      "path_id": "r1:count-words-region:mx",
+      "lane": "W3-4",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "count-words-region"
+      ],
+      "command": "count-words-region",
+      "entry_mode": "mx",
+      "initial_bytes": "one two\n",
+      "expected_bytes": "one two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer has 1 lines, 2 words, and 8 characters.",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two"
+        }
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/effect",
+      "path_id": "r3:delete-horizontal-space:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "ab\n",
+      "expected_bytes": "ab\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/undo",
+      "path_id": "r3:delete-horizontal-space:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "undo"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "ab\n",
+      "expected_bytes": "a   b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "expected_undo_cursor": [
+        0,
+        2
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/read-only",
+      "path_id": "r3:delete-horizontal-space:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a   b\n",
+      "expected_bytes": "a   b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/narrow",
+      "path_id": "r3:delete-horizontal-space:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "next-line",
+        "move-beginning-of-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "narrow-to-region"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "OUT\na   b\nTAIL\n",
+      "effect_bytes": "OUT\nab\nTAIL\n",
+      "expected_bytes": "OUT\nab\nTAIL\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-a",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a",
+        "C-space",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/split-window",
+      "path_id": "r3:delete-horizontal-space:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "ab\n",
+      "expected_bytes": "ab\n",
+      "expected_cursor": [
+        4,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "ab"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "ab"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "rows": 9,
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/macro-replay",
+      "path_id": "r3:delete-horizontal-space:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "ab\n",
+      "expected_bytes": "ab\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "ab"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/delete-horizontal-space/prefix-u4",
+      "path_id": "r3:delete-horizontal-space:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"\\\\\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "delete-horizontal-space",
+        "save-buffer",
+        "forward-char",
+        "universal-argument"
+      ],
+      "command": "delete-horizontal-space",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-\\"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a  b\n",
+      "expected_bytes": "a  b\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a  b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a  b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/effect",
+      "path_id": "r3:just-one-space:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "effect",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/undo",
+      "path_id": "r3:just-one-space:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "undo"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "undo",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a   b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "expected_undo_cursor": [
+        0,
+        2
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/read-only",
+      "path_id": "r3:just-one-space:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a   b\n",
+      "expected_bytes": "a   b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/narrow",
+      "path_id": "r3:just-one-space:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "next-line",
+        "move-beginning-of-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "narrow-to-region"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "OUT\na   b\nTAIL\n",
+      "effect_bytes": "OUT\na b\nTAIL\n",
+      "expected_bytes": "OUT\na b\nTAIL\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-a",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a",
+        "C-space",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/split-window",
+      "path_id": "r3:just-one-space:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        4,
+        2
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "a b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "rows": 9,
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/macro-replay",
+      "path_id": "r3:just-one-space:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "execute-extended-command",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a b\n",
+      "expected_bytes": "a b\n",
+      "expected_cursor": [
+        0,
+        2
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a   b"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a",
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/just-one-space/prefix-u4",
+      "path_id": "r3:just-one-space:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\" \",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "just-one-space",
+        "save-buffer",
+        "forward-char",
+        "universal-argument"
+      ],
+      "command": "just-one-space",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "ESC",
+        "SPC"
+      ],
+      "initial_bytes": "a   b\n",
+      "effect_bytes": "a    b\n",
+      "expected_bytes": "a    b\n",
+      "expected_cursor": [
+        0,
+        5
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a    b"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "a    b"
+        }
+      ],
+      "prepare_keys": [
+        "C-f",
+        "C-f"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/effect",
+      "path_id": "r3:transpose-words:effect",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "two one three four five\n",
+      "expected_bytes": "two one three four five\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/undo",
+      "path_id": "r3:transpose-words:undo",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "undo"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "two one three four five\n",
+      "expected_bytes": "one two three four five\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/read-only",
+      "path_id": "r3:transpose-words:read-only",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "execute-extended-command",
+        "toggle-read-only"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "one two three four five\n",
+      "expected_bytes": "one two three four five\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two three four five"
+        }
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/narrow",
+      "path_id": "r3:transpose-words:narrow",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "execute-extended-command",
+        "next-line",
+        "move-beginning-of-line",
+        "set-mark-command",
+        "move-end-of-line",
+        "narrow-to-region"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "OUT\none two three four five\nTAIL\n",
+      "effect_bytes": "OUT\ntwo one three four five\nTAIL\n",
+      "expected_bytes": "OUT\ntwo one three four five\nTAIL\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "prepare_keys": [
+        "DOWN",
+        "C-a",
+        "C-space",
+        "C-e"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a",
+        "C-space"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/split-window",
+      "path_id": "r3:transpose-words:split-window",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "execute-extended-command",
+        "split-window-below"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "two one three four five\n",
+      "expected_bytes": "two one three four five\n",
+      "expected_cursor": [
+        4,
+        7
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "two one three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        },
+        {
+          "region": "body",
+          "index": 4,
+          "text": "two one three four five"
+        }
+      ],
+      "rows": 9,
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/macro-replay",
+      "path_id": "r3:transpose-words:macro-replay",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "execute-extended-command",
+        "start-kbd-macro",
+        "end-kbd-macro",
+        "undo",
+        "move-beginning-of-line",
+        "call-last-kbd-macro"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "two one three four five\n",
+      "expected_bytes": "two one three four five\n",
+      "expected_cursor": [
+        0,
+        7
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two one three four five"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "one two three four five"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/wp5a/r3/transpose-words/prefix-u4",
+      "path_id": "r3:transpose-words:prefix-u4",
+      "lane": "W3-4",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"t\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "transpose-words",
+        "save-buffer",
+        "universal-argument"
+      ],
+      "command": "transpose-words",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "M-t"
+      ],
+      "initial_bytes": "one two three four five\n",
+      "effect_bytes": "two three four five one\n",
+      "expected_bytes": "two three four five one\n",
+      "expected_cursor": [
+        0,
+        23
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two three four five one"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "two three four five one"
+        }
+      ]
     }
   ]
 }
