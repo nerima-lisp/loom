@@ -55,7 +55,12 @@ title、message、method 名は、TAB 以外の C0・C1 制御文字を U+FFFD �
 
 ## テストの期待値
 
-変えてよいのは `lsp-session-lifecycle-initialize-test.lisp` 27〜28行だけ（v0.2 実行計画書 5章）。
+`lsp-session-lifecycle-initialize-test.lisp` は、仕様に合わせて次の行を追従させる。
+
+- 27〜28行（`synchronization` の `dynamicRegistration` の assert）。FR-705 から決まる。
+- 24行の `publishDiagnostics` を読む束縛と、それを使う29〜30行の assert（`publishDiagnostics` の位置の参照）。FR-706 で能力を `textDocument` の下に移すことから決まる。
+
+ほかのテストの期待値は、仕様が直接に引き起こす追従のほかは変えない。
 
 ## 受け入れ導線（先に書く）
 
