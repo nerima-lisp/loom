@@ -116,13 +116,13 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
         self.assertEqual(
             rule_counts,
-            {"r1": 54, "r2": 34, "r3": 14, "r4": 2, "r5": 10, "r6": 32, "r7": 7, "r8": 4},
+            {"r1": 58, "r2": 34, "r3": 14, "r4": 2, "r5": 10, "r6": 32, "r7": 7, "r8": 4},
         )
         self.assertEqual(len(self.paths), len(self.paths_by_id))
         self.assertEqual(
             sum(len(row["keys"]) for row in self.catalog)
             + sum(row["mx-eligible"] for row in self.catalog),
-            rule_counts["r1"] - 32,
+            rule_counts["r1"] - 36,
         )
         execute_command = next(
             row for row in self.catalog if row["id"] == "execute-extended-command"
@@ -148,6 +148,7 @@ class GenerateRequiredPathsTests(unittest.TestCase):
                 "feature/user-init": "W3-2",
                 "feature/files": "W3-3",
                 "feature/buffers": "W3-3",
+                "feature/buffer-menu": "W3-3",
                 "core/buffer": "W3-4",
                 "renderer": "W3-4",
                 "src/presentation/": "W3-4",

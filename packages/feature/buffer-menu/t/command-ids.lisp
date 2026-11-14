@@ -1,0 +1,13 @@
+(
+  "buffer-menu-delete"
+  "buffer-menu-execute"
+  "buffer-menu-next-line"
+  "buffer-menu-other-window"
+  "buffer-menu-previous-line"
+  "buffer-menu-quit"
+  "buffer-menu-revert"
+  "buffer-menu-save"
+  "buffer-menu-this-window"
+  "buffer-menu-unmark"
+  "list-buffers"
+)

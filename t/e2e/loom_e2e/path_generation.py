@@ -56,6 +56,7 @@ LANE_REGISTRY = {
     "feature/user-init": "W3-2",
     "feature/files": "W3-3",
     "feature/buffers": "W3-3",
+    "feature/buffer-menu": "W3-3",
     "core/buffer": "W3-4",
     "renderer": "W3-4",
     "src/presentation/": "W3-4",
@@ -656,6 +657,52 @@ def _wp7_fixed_paths():
     ]
 
 
+def _buffer_menu_fixed_paths():
+    lane = LANE_REGISTRY["feature/buffer-menu"]
+    return [
+        _path(
+            "r1:buffer-menu:one-window-split-quit",
+            ["list-buffers", "buffer-menu-quit"],
+            "r1",
+            lane,
+            "keys: C-x C-b, C-x o, q",
+            "one window with point after the first line start",
+            "C-x C-b splits and keeps point in the origin window; q deletes the list window",
+            ["screen_text", "cursor"],
+        ),
+        _path(
+            "r1:buffer-menu:two-window-reuse-quit",
+            ["list-buffers", "buffer-menu-quit"],
+            "r1",
+            lane,
+            "keys: C-x C-b in the lower of two windows, C-x o, q",
+            "two windows, the upper one showing another buffer",
+            "C-x C-b reuses the upper window; q restores its previous buffer and keeps both windows",
+            ["screen_text", "cursor"],
+        ),
+        _path(
+            "r1:buffer-menu:mark-replacement",
+            ["list-buffers", "buffer-menu-delete", "buffer-menu-save"],
+            "r1",
+            lane,
+            "keys: d, p, s",
+            "buffer list line marked D",
+            "s replaces the D mark with S on the same line",
+            ["screen_text", "cursor"],
+        ),
+        _path(
+            "r1:buffer-menu:execute-stops-on-cancelled-save",
+            ["list-buffers", "buffer-menu-save", "buffer-menu-delete", "buffer-menu-execute"],
+            "r1",
+            lane,
+            "keys: s, d, x, C-g",
+            "S line whose file changed on disk and a later D line",
+            "C-g at the overwrite prompt stops x; both marks stay and nothing is killed or written",
+            ["screen_text", "file_bytes"],
+        ),
+    ]
+
+
 def _fixed_paths():
     paths = []
     dimensions = ("fullwidth", "combining", "emoji", "wrap", "truncate")
@@ -755,6 +802,7 @@ def _fixed_paths():
             )
         )
     paths.extend(_wp7_fixed_paths())
+    paths.extend(_buffer_menu_fixed_paths())
     return paths
 
 

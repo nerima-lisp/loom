@@ -1,0 +1,1562 @@
+{
+ "schema_version": 1,
+ "scenarios": [
+  {
+   "name": "command-path/r1/list-buffers/key",
+   "path_id": "r1:list-buffers:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22b%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"b\",\"modifiers\":[\"control\"]}]}",
+   "commands": [
+    "list-buffers"
+   ],
+   "command": "list-buffers",
+   "entry_mode": "key",
+   "entry_keys": [
+    "C-x",
+    "C-b"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/list-buffers/mx",
+   "path_id": "r1:list-buffers:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "execute-extended-command",
+    "list-buffers"
+   ],
+   "command": "list-buffers",
+   "entry_mode": "mx",
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-next-line/key",
+   "path_id": "r1:buffer-menu-next-line:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22n%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"n\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-next-line"
+   ],
+   "command": "buffer-menu-next-line",
+   "entry_mode": "key",
+   "entry_keys": [
+    "n"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-next-line/mx",
+   "path_id": "r1:buffer-menu-next-line:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-next-line"
+   ],
+   "command": "buffer-menu-next-line",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-previous-line/key",
+   "path_id": "r1:buffer-menu-previous-line:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22p%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"p\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-previous-line"
+   ],
+   "command": "buffer-menu-previous-line",
+   "entry_mode": "key",
+   "entry_keys": [
+    "p"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "n"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-previous-line/mx",
+   "path_id": "r1:buffer-menu-previous-line:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-previous-line"
+   ],
+   "command": "buffer-menu-previous-line",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "n"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-this-window/key",
+   "path_id": "r1:buffer-menu-this-window:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22enter%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-this-window"
+   ],
+   "command": "buffer-menu-this-window",
+   "entry_mode": "key",
+   "entry_keys": [
+    "RET"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "abc"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-this-window/mx",
+   "path_id": "r1:buffer-menu-this-window:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-this-window"
+   ],
+   "command": "buffer-menu-this-window",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "abc"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-other-window/key",
+   "path_id": "r1:buffer-menu-other-window:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22o%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"o\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-other-window"
+   ],
+   "command": "buffer-menu-other-window",
+   "entry_mode": "key",
+   "entry_keys": [
+    "o"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-other-window/mx",
+   "path_id": "r1:buffer-menu-other-window:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-other-window"
+   ],
+   "command": "buffer-menu-other-window",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-delete/key",
+   "path_id": "r1:buffer-menu-delete:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22d%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"d\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete"
+   ],
+   "command": "buffer-menu-delete",
+   "entry_mode": "key",
+   "entry_keys": [
+    "d"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-delete/mx",
+   "path_id": "r1:buffer-menu-delete:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-delete"
+   ],
+   "command": "buffer-menu-delete",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-save/key",
+   "path_id": "r1:buffer-menu-save:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"s\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-save"
+   ],
+   "command": "buffer-menu-save",
+   "entry_mode": "key",
+   "entry_keys": [
+    "s"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "S .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-save/mx",
+   "path_id": "r1:buffer-menu-save:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-save"
+   ],
+   "command": "buffer-menu-save",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "S .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-unmark/key",
+   "path_id": "r1:buffer-menu-unmark:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22u%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"u\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-unmark"
+   ],
+   "command": "buffer-menu-unmark",
+   "entry_mode": "key",
+   "entry_keys": [
+    "u"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "d"
+    },
+    {
+     "key": "p"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-unmark/mx",
+   "path_id": "r1:buffer-menu-unmark:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-unmark"
+   ],
+   "command": "buffer-menu-unmark",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "d"
+    },
+    {
+     "key": "p"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "  .   buffer.txt",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-execute/key",
+   "path_id": "r1:buffer-menu-execute:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-f"
+    },
+    {
+     "key": "$fixture_file:other.txt"
+    },
+    {
+     "key": "RET"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "n"
+    },
+    {
+     "key": "n"
+    },
+    {
+     "key": "d"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    7,
+    0
+   ],
+   "expected_minibuffer": "Killed other.txt",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "      buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 8,
+     "text": ""
+    }
+   ],
+   "rows": 11,
+   "fixture_files": [
+    {
+     "path": "other.txt",
+     "contents": "other\n"
+    }
+   ]
+  },
+  {
+   "name": "command-path/r1/buffer-menu-execute/mx",
+   "path_id": "r1:buffer-menu-execute:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-f"
+    },
+    {
+     "key": "$fixture_file:other.txt"
+    },
+    {
+     "key": "RET"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "n"
+    },
+    {
+     "key": "n"
+    },
+    {
+     "key": "d"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    7,
+    0
+   ],
+   "expected_minibuffer": "Killed other.txt",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "      buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 8,
+     "text": ""
+    }
+   ],
+   "rows": 11,
+   "fixture_files": [
+    {
+     "path": "other.txt",
+     "contents": "other\n"
+    }
+   ]
+  },
+  {
+   "name": "command-path/r1/buffer-menu-revert/key",
+   "path_id": "r1:buffer-menu-revert:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22g%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"g\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-revert"
+   ],
+   "command": "buffer-menu-revert",
+   "entry_mode": "key",
+   "entry_keys": [
+    "g"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "d"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-revert/mx",
+   "path_id": "r1:buffer-menu-revert:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-revert"
+   ],
+   "command": "buffer-menu-revert",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    },
+    {
+     "key": "d"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D .   buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*Buffer List*",
+     "match": "contains"
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-quit/key",
+   "path_id": "r1:buffer-menu-quit:key:%7B%22keymap%22%3A%22buffer-menu-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22q%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"q\",\"modifiers\":[]}]}",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-quit"
+   ],
+   "command": "buffer-menu-quit",
+   "entry_mode": "key",
+   "entry_keys": [
+    "q"
+   ],
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": ""
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "name": "command-path/r1/buffer-menu-quit/mx",
+   "path_id": "r1:buffer-menu-quit:mx",
+   "lane": "W3-3",
+   "rule": "r1",
+   "entry": "mx",
+   "commands": [
+    "list-buffers",
+    "execute-extended-command",
+    "buffer-menu-quit"
+   ],
+   "command": "buffer-menu-quit",
+   "entry_mode": "mx",
+   "pre_keys": [
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "C-b"
+    },
+    {
+     "key": "C-x"
+    },
+    {
+     "key": "o"
+    }
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "expected_cursor": [
+    0,
+    0
+   ],
+   "expected_minibuffer": "",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": ""
+    }
+   ],
+   "rows": 11
+  },
+  {
+   "lane": "W3-3",
+   "rule": "r2",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]};prompt:1:free-string",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "prompt_kind": "free-string",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "prompt_open": "Save buffer.txt? (s/d/c): ",
+   "fixture_keys": [
+    "!",
+    "C-x",
+    "C-b",
+    "C-x",
+    "o",
+    "d"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "rows": 11,
+   "name": "command-path/r2/buffer-menu-execute/prompt-1/accept",
+   "path_id": "r2:buffer-menu-execute:prompt-1:free-string:accept",
+   "prompt_case": "accept",
+   "input_text": "d",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "Killed buffer.txt",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": ""
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Buffer List*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*scratch*",
+     "match": "contains"
+    }
+   ]
+  },
+  {
+   "lane": "W3-3",
+   "rule": "r2",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]};prompt:1:free-string",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "prompt_kind": "free-string",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "prompt_open": "Save buffer.txt? (s/d/c): ",
+   "fixture_keys": [
+    "!",
+    "C-x",
+    "C-b",
+    "C-x",
+    "o",
+    "d"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "rows": 11,
+   "name": "command-path/r2/buffer-menu-execute/prompt-1/cancel",
+   "path_id": "r2:buffer-menu-execute:prompt-1:free-string:cancel",
+   "prompt_case": "cancel",
+   "input_text": "",
+   "expected_minibuffer": "Quit",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "!abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D . * buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    }
+   ]
+  },
+  {
+   "lane": "W3-3",
+   "rule": "r2",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]};prompt:1:free-string",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "prompt_kind": "free-string",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "prompt_open": "Save buffer.txt? (s/d/c): ",
+   "fixture_keys": [
+    "!",
+    "C-x",
+    "C-b",
+    "C-x",
+    "o",
+    "d"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "rows": 11,
+   "name": "command-path/r2/buffer-menu-execute/prompt-1/empty",
+   "path_id": "r2:buffer-menu-execute:prompt-1:free-string:empty",
+   "prompt_case": "empty",
+   "input_text": "",
+   "expected_minibuffer": "Save buffer.txt? (s/d/c):",
+   "expected_cursor": [
+    0,
+    26
+   ],
+   "expected_cursor_region": "minibuffer",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "!abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D . * buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    }
+   ],
+   "cancel_prompt_after_assert": true
+  },
+  {
+   "lane": "W3-3",
+   "rule": "r2",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]};prompt:1:free-string",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "prompt_kind": "free-string",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "prompt_open": "Save buffer.txt? (s/d/c): ",
+   "fixture_keys": [
+    "!",
+    "C-x",
+    "C-b",
+    "C-x",
+    "o",
+    "d"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "rows": 11,
+   "name": "command-path/r2/buffer-menu-execute/prompt-1/tab",
+   "path_id": "r2:buffer-menu-execute:prompt-1:free-string:tab",
+   "prompt_case": "tab",
+   "input_text": "d",
+   "tab_expected": "d",
+   "expected_cursor": [
+    5,
+    0
+   ],
+   "expected_minibuffer": "Killed buffer.txt",
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": ""
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "*Messages*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Buffer List*",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 7,
+     "text": "*scratch*",
+     "match": "contains"
+    }
+   ]
+  },
+  {
+   "lane": "W3-3",
+   "rule": "r2",
+   "entry": "key:{\"keymap\":\"buffer-menu-local\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[]}]};prompt:1:free-string",
+   "commands": [
+    "list-buffers",
+    "buffer-menu-delete",
+    "buffer-menu-execute"
+   ],
+   "command": "buffer-menu-execute",
+   "prompt_kind": "free-string",
+   "entry_mode": "key",
+   "entry_keys": [
+    "x"
+   ],
+   "prompt_open": "Save buffer.txt? (s/d/c): ",
+   "fixture_keys": [
+    "!",
+    "C-x",
+    "C-b",
+    "C-x",
+    "o",
+    "d"
+   ],
+   "initial_bytes": "abc\n",
+   "expected_bytes": "abc\n",
+   "rows": 11,
+   "name": "command-path/r2/buffer-menu-execute/prompt-1/history",
+   "path_id": "r2:buffer-menu-execute:prompt-1:free-string:history",
+   "prompt_case": "history",
+   "input_text": "",
+   "expected_minibuffer": "",
+   "history_seed_input": "c",
+   "history_expected": "c",
+   "history_next_expected": "",
+   "expected_cursor": [
+    6,
+    0
+   ],
+   "expected_screen": [
+    {
+     "region": "body",
+     "index": 0,
+     "text": "!abc"
+    },
+    {
+     "region": "body",
+     "index": 5,
+     "text": "D . * buffer.txt",
+     "match": "contains"
+    },
+    {
+     "region": "body",
+     "index": 6,
+     "text": "*Messages*",
+     "match": "contains"
+    }
+   ]
+  }
+ ]
+}
