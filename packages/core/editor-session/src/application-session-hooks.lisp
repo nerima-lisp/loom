@@ -24,6 +24,7 @@
                  :feature/lifecycle
                  :feature/files
                  :feature/buffers
+                 :feature/buffer-menu
                  :feature/file-tree
                  :feature/minibuffer-ui
                  :feature/completion
