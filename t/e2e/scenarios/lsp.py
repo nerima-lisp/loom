@@ -265,6 +265,18 @@ child_pid_file, wrapper_pid_file, exit_status_file, protocol_log, stderr_file = 
 with open(wrapper_pid_file, "w", encoding="ascii") as handle:
     handle.write(str(os.getpid()) + "\\n")
 
+# The transport urgently terminates its direct child on close. Keep recording
+# in a worker that can drain the server pipes and publish the final log status.
+recorder_pid = os.fork()
+if recorder_pid:
+    def forward_to_recorder(signum, _frame):
+        os.kill(recorder_pid, signum)
+
+    signal.signal(signal.SIGTERM, forward_to_recorder)
+    signal.signal(signal.SIGINT, forward_to_recorder)
+    _pid, status = os.waitpid(recorder_pid, 0)
+    sys.exit(os.waitstatus_to_exitcode(status))
+
 stderr_handle = open(stderr_file, "wb")
 child = subprocess.Popen(
     argv,
@@ -341,13 +353,18 @@ def forward_input():
 
 def forward_output():
     pending = bytearray()
+    forwarding = True
     while True:
         chunk = os.read(child.stdout.fileno(), 65536)
         if not chunk:
             return
         pending.extend(chunk)
         record_frames("server->loom", pending)
-        write_all(1, chunk)
+        if forwarding:
+            try:
+                write_all(1, chunk)
+            except BrokenPipeError:
+                forwarding = False
 
 threading.Thread(target=forward_input, daemon=True).start()
 output_thread = threading.Thread(target=forward_output, daemon=True)
@@ -588,7 +605,9 @@ def _run_server_request_completion(binary, request_kind):
                 session.wait_for_region_text("minibuffer", "Choose\ufffd action")
                 session.key("TAB")
                 session.wait_for_text("Allow\ufffd[31m")
-                session.assert_screen_text("Allow\ufffd[31m", match="contains")
+                session.assert_screen_text(
+                    "Allow\ufffd[31m", match="contains", region="minibuffer",
+                )
                 session.key("RET")
             session.wait_for_region_text("body", "wp7Completed", index=1)
             session.assert_screen_text(
