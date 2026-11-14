@@ -219,4 +219,59 @@
       (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 25)
       (expect (file-tree-selected-path tree) :to-be nil))))
 
+(describe
+  "file-tree wheel movement while delayed entries arrive"
+  (cl-weave:it-each
+      ((3 21) (-3 15))
+      "applies wheel delta ~D after following the shifted selection"
+      (delta expected)
+    (let ((tree (make-file-tree "/root/"))
+          (children nil))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (if (equal path "/root/")
+                  '(("/root/a/" . :directory) ("/root/b" . :file)
+                    ("/root/c" . :file) ("/root/d" . :file)
+                    ("/root/e" . :file) ("/root/f" . :file))
+                  children)))
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (file-tree-move-selection tree :down)
+      (file-tree-toggle-expand tree "/root/a/")
+      (file-tree-move-selection tree :down)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (setf children (loop for index below 20
+                           collect (cons (format nil "/root/a/child~D" index) :file)))
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5 :wheel-delta delta)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal expected)
+      (expect (file-tree-selected-path tree) :to-equal "/root/b")
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal expected))))
+
+(describe
+  "file-tree zero-height viewport"
+  (it
+    "does not traverse toward an offscreen selection when there are no rows"
+    (let ((tree (make-file-tree "/root/"))
+          (children nil)
+          (visits nil))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path)
+              (push path visits)
+              (if (equal path "/root/")
+                  '(("/root/a/" . :directory) ("/root/b" . :file))
+                  children)))
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (file-tree-move-selection tree :down)
+      (file-tree-toggle-expand tree "/root/a/")
+      (file-tree-move-selection tree :down)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (setf children (loop for index below 20
+                           collect (cons (format nil "/root/a/child~D" index) :file))
+            visits nil)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 0)
+      (expect visits :to-equal nil)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 0)
+      (expect (file-tree-selected-path tree) :to-equal "/root/b"))))
+
+
 

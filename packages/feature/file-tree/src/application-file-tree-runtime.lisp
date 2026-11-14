@@ -45,6 +45,8 @@
   "Apply selection following or wheel movement to the current sidebar geometry."
   (let* ((follow-p (or (file-tree-scroll-follow-p tree)
                        (/= height (file-tree-viewport-height tree))))
+         (margin (if follow-p (%file-tree-scroll-margin height) 0))
+         (forward-rows (max 0 (or wheel-delta 0)))
          (top (if follow-p
                   (file-tree-scroll-top-for-selection
                    (file-tree-scroll-top tree)
@@ -53,13 +55,12 @@
                         (+ (file-tree-scroll-top tree) height))
                    height)
                   (file-tree-scroll-top tree)))
-         (limit (+ top height
-                   (if follow-p (%file-tree-scroll-margin height) 0)
-                   (max 0 (or wheel-delta 0))))
+         (limit (+ top height margin forward-rows))
          (entries (file-tree-entries
                    tree limit
-                   :stop-after-path (when follow-p (file-tree-selected-path tree))
-                   :trailing-rows (if follow-p (%file-tree-scroll-margin height) 0)))
+                   :stop-after-path (when (and follow-p (plusp height))
+                                      (file-tree-selected-path tree))
+                   :trailing-rows (+ margin forward-rows)))
          (count (length entries))
          (index (when follow-p
                   (position (file-tree-selected-path tree) entries
