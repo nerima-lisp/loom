@@ -332,7 +332,7 @@ def forward_input():
         if not chunk:
             break
         pending.extend(chunk)
-        record_frames("loom->nixd", pending)
+        record_frames("loom->server", pending)
         try:
             write_all(child.stdin.fileno(), chunk)
         except BrokenPipeError:
@@ -346,7 +346,7 @@ def forward_output():
         if not chunk:
             return
         pending.extend(chunk)
-        record_frames("nixd->loom", pending)
+        record_frames("server->loom", pending)
         write_all(1, chunk)
 
 threading.Thread(target=forward_input, daemon=True).start()
@@ -512,6 +512,55 @@ def _protocol_events(protocol_log):
         return [json.loads(line) for line in handle if line.strip()]
 
 
+def _server_request_response_counts(events):
+    requests = []
+    latest_request = {}
+    for event in events:
+        message = event["message"]
+        if "id" not in message:
+            continue
+        identifier = message["id"]
+        key = (type(identifier), identifier)
+        if event["direction"] == "server->loom" and "method" in message:
+            request = {
+                "id": identifier,
+                "method": message["method"],
+                "responses": 0,
+            }
+            requests.append(request)
+            latest_request[key] = request
+        elif (
+            event["direction"] == "loom->server"
+            and "method" not in message
+            and ("result" in message or "error" in message)
+            and key in latest_request
+        ):
+            latest_request[key]["responses"] += 1
+    return requests
+
+
+def _assert_server_request_responses(
+    session, protocol_log, exit_status_file, *, require_requests=False,
+):
+    session.wait_for_external_state(
+        "language server protocol log is complete",
+        lambda: os.path.exists(exit_status_file),
+        True,
+    )
+    events = _protocol_events(protocol_log)
+    session.assert_external_state("LSP protocol log contains frames", bool(events), True)
+    counts = _server_request_response_counts(events)
+    if require_requests:
+        session.assert_external_state(
+            "fake server sent at least one request", len(counts) > 0, True,
+        )
+    session.assert_external_state(
+        "each server request receives one response with the same typed ID",
+        counts,
+        [dict(request, responses=1) for request in counts],
+    )
+
+
 def _run_server_request_completion(binary, request_kind):
     (
         directory, path, child_pid_file, wrapper_pid_file, exit_status_file,
@@ -567,6 +616,9 @@ def _run_server_request_completion(binary, request_kind):
                 [{"jsonrpc": "2.0", "id": request_id, "result": expected}],
             )
             output, code = session.quit()
+            _assert_server_request_responses(
+                session, protocol_log, exit_status_file, require_requests=True,
+            )
         assert_exit_zero("lsp-server-request-" + request_kind, output, code)
     finally:
         directory.cleanup()
@@ -924,13 +976,20 @@ def lsp_typescript_hover_completion_success(binary):
         "targetV\n"
         "targetValue;\n"
     )
-    directory, path, pid_file = _typescript_fixture(source)
+    (
+        directory, path, child_pid_file, wrapper_pid_file, exit_status_file,
+        protocol_log, _stderr_file,
+    ) = _supervised_server_fixture(
+        ["typescript-language-server", "--stdio"], "main.ts", source, "typescript-lsp",
+    )
     try:
         with Session(binary, [path]) as session:
             with scenario_preparation():
                 session.wait_ready()
                 _start(session)
-                pid = _typescript_pid(session, pid_file)
+                pid, _wrapper_pid = _supervised_child_pid(
+                    session, child_pid_file, wrapper_pid_file,
+                )
                 _warm_up_typescript_server(session, pid)
 
             session.send(keys.ctrl("n"))
@@ -964,6 +1023,7 @@ def lsp_typescript_hover_completion_success(binary):
             )
 
             output, code = session.quit()
+            _assert_server_request_responses(session, protocol_log, exit_status_file)
         assert_exit_zero("lsp-typescript-hover-completion-success", output, code)
     finally:
         directory.cleanup()
@@ -1129,7 +1189,12 @@ def lsp_completion(binary):
 @scenario("lsp/completion-success", commands=["lsp-completion-at-point"])
 def lsp_completion_success(binary):
     source = "let completionValue = 1; in comp"
-    directory, path = _fixture((source + "\n").encode("utf-8"))
+    (
+        directory, path, _child_pid_file, _wrapper_pid_file, exit_status_file,
+        protocol_log, _stderr_file,
+    ) = _supervised_server_fixture(
+        [_nixd_command()], "main.nix", source + "\n", "nixd-lsp",
+    )
     try:
         with Session(binary, [path]) as session:
             session.wait_ready()
@@ -1148,6 +1213,7 @@ def lsp_completion_success(binary):
             session.extended_command("save-buffer")
             session.wait_for_file(path, (completed + "\n").encode("utf-8"))
             output, code = session.quit()
+            _assert_server_request_responses(session, protocol_log, exit_status_file)
         assert_exit_zero("lsp-completion-success", output, code)
     finally:
         directory.cleanup()
@@ -1443,12 +1509,12 @@ def _run_nixd_failure(binary, signal_number, expected_status, label):
                 outgoing = [
                     event["message"]
                     for event in protocol_events
-                    if event["direction"] == "loom->nixd"
+                    if event["direction"] == "loom->server"
                 ]
                 incoming = [
                     event["message"]
                     for event in protocol_events
-                    if event["direction"] == "nixd->loom"
+                    if event["direction"] == "server->loom"
                 ]
                 initialize_request = next(
                     (
