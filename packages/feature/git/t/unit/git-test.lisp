@@ -1,6 +1,20 @@
 (in-package #:loom/test)
 
 (describe
+    "git library symbol isolation"
+  (it "keeps vcs-kit:git-status as a repository-taking library function"
+    (let ((result (make-test-git-result :stdout "" :stderr "" :status 0))
+          captured-repository)
+      (with-replaced-function
+          (vcs-kit:run-git
+           (lambda (repository &rest arguments)
+             (declare (ignore arguments))
+             (setf captured-repository repository)
+             result))
+        (expect (vcs-kit:git-status "/repo/") :to-be result))
+      (expect captured-repository :to-equal "/repo/"))))
+
+(describe
     "git result text"
   (it "prefers standard output"
       (expect (loom/feature/git::git-result-text

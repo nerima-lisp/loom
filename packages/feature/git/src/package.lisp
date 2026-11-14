@@ -1,6 +1,8 @@
 (defpackage #:loom/feature/git
             (:documentation
              "Git status, diff, staging, and unstaging commands.")
+            (:shadow #:git-status
+                     #:git-diff)
             (:use #:cl #:vcs-kit)
             (:export #:run-git-status
                      #:git-status
