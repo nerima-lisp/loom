@@ -8,16 +8,15 @@
           (%piece-start piece))))
 
 (defun %merge-piece (previous piece)
-  (incf (%piece-length previous) (%piece-length piece))
-  previous)
+  (%make-piece :source (%piece-source previous)
+               :start (%piece-start previous)
+               :length (+ (%piece-length previous) (%piece-length piece))))
 
 (defun %coalesce-piece (piece result)
   (let ((previous (first result)))
     (if (%adjacent-piece-p previous piece)
-        (progn
-          (%merge-piece previous piece)
-          result)
-        (push piece result))))
+        (cons (%merge-piece previous piece) (rest result))
+        (cons piece result))))
 
 (defun %coalesce-pieces (pieces)
   "Merge adjacent slices from the same source, keeping metadata compact."

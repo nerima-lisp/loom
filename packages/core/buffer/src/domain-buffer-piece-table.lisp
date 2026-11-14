@@ -45,39 +45,33 @@
 
 (defun %do-insert (buffer line column text &key (clear-redo t)
                                 undo-replacement-p)
-  "Insert TEXT at (LINE, COLUMN), mark BUFFER modified, and push an undo
-entry describing the inverse of this exact edit (a delete of the same
-span). Returns (values end-line end-column), the position just after the
-inserted text.
-
-When CLEAR-REDO is true, discard explicit redo history because this is a
-new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
-  (let* ((was-narrowed (%buffer-narrowed-p buffer))
-         (old-length (%buffer-full-length buffer))
-         (text-length (length text)))
-    (multiple-value-bind (end-line end-column) (%raw-insert-at buffer line column text)
-      (%update-after-insert buffer was-narrowed old-length text-length)
-      (%record-insert buffer line column text clear-redo undo-replacement-p)
-      (values end-line end-column))))
+  (sb-sys:without-interrupts
+    (let* ((was-narrowed (%buffer-narrowed-p buffer))
+           (old-length (%buffer-full-length buffer))
+           (text-length (length text))
+           (offset (%position-to-offset buffer line column)))
+      (multiple-value-bind (end-line end-column)
+          (%raw-insert-at buffer line column text)
+        (%update-line-index-after-insert buffer line offset text)
+        (%update-after-insert buffer was-narrowed old-length text-length)
+        (%record-insert buffer line column text clear-redo undo-replacement-p)
+        (%record-buffer-change buffer line)
+        (values end-line end-column)))))
 
 (defun %do-delete (buffer start-line start-column end-line end-column
                    &key (clear-redo t) undo-replacement-p)
-  "Delete the region between the two positions, mark BUFFER modified, and
-push an undo entry describing the inverse of this exact edit (a
-re-insertion of the deleted text). Returns the deleted text.
-
-When CLEAR-REDO is true, discard explicit redo history because this is a
-new edit rather than an undo/redo replay."
   (%ensure-buffer-writable buffer)
-  (let* ((start-offset (%position-to-offset buffer start-line start-column))
-         (end-offset (%position-to-offset buffer end-line end-column))
-         (text (%piece-table-range-text buffer start-offset end-offset))
-         (was-narrowed (%buffer-narrowed-p buffer))
-         (old-length (%buffer-full-length buffer))
-         (deleted-length (- end-offset start-offset)))
-    (%raw-delete-region buffer start-line start-column end-line end-column)
-    (%update-after-delete buffer was-narrowed old-length deleted-length)
-    (%record-delete buffer start-line start-column text clear-redo
-                    undo-replacement-p)
-    text))
+  (sb-sys:without-interrupts
+    (let* ((start-offset (%position-to-offset buffer start-line start-column))
+           (end-offset (%position-to-offset buffer end-line end-column))
+           (text (%piece-table-range-text buffer start-offset end-offset))
+           (was-narrowed (%buffer-narrowed-p buffer))
+           (old-length (%buffer-full-length buffer))
+           (deleted-length (- end-offset start-offset)))
+      (%raw-delete-region buffer start-line start-column end-line end-column)
+      (%update-line-index-after-delete buffer start-line end-line deleted-length)
+      (%update-after-delete buffer was-narrowed old-length deleted-length)
+      (%record-delete buffer start-line start-column text clear-redo undo-replacement-p)
+      (%record-buffer-change buffer start-line)
+      text)))

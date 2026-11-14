@@ -7,7 +7,8 @@
                        :length (length original)))))
 
 (defun %make-initial-buffer (name path original)
-  (%make-buffer :name (or name "*scratch*")
+  (%initialize-line-index
+   (%make-buffer :name (or name "*scratch*")
                 :path path
                 :original original
                 :add-buffer (make-array 0
@@ -27,7 +28,8 @@
                 :read-only-p nil
                 :modified-p nil
                 :undo-list nil
-                :redo-list nil))
+                :redo-list nil)
+   original))
 
 (defgeneric make-buffer (&key name path initial-content)
   (:documentation

@@ -1,6 +1,16 @@
 
 (in-package #:loom/core/buffer)
 
+(defun %undo-group-and-tail (entries)
+  (let ((group nil))
+    (loop while (and entries (not (eq (first entries) :boundary)))
+          do (push (pop entries) group))
+    (values (nreverse group) (if entries (rest entries) nil))))
+
+(defun %undo-generated-prefix (entries original)
+  (loop for tail on entries until (eq tail original) collect (first tail)))
+
+
 (defun buffer-modified-p (buffer)
   "Return true if BUFFER has unsaved changes since it was created, loaded,
 or last saved."
@@ -32,42 +42,43 @@ invariant without manufacturing an undo entry or changing point."
 (defun buffer-undo (buffer &key continue-p)
   "Undo the latest change group in BUFFER. CONTINUE-P skips the inverse group recorded by the prior undo."
   (%ensure-buffer-writable buffer)
-  (when (and continue-p
-             (plusp (%buffer-undo-continuation-count buffer)))
-    (loop repeat (%buffer-undo-continuation-count buffer)
-          do (pop (%buffer-undo-list buffer)))
-    (pop (%buffer-undo-list buffer)))
-  (when (eq (car (%buffer-undo-list buffer)) :boundary)
-    (pop (%buffer-undo-list buffer)))
-  (let ((group (loop for entry = (pop (%buffer-undo-list buffer))
-                     until (or (null entry) (eq entry :boundary))
-                     collect entry)))
-    (if group
-        (progn
-          (push :boundary (%buffer-undo-list buffer))
-          (push :boundary (%buffer-redo-list buffer))
-          (dolist (entry group)
-            (push (%apply-undo-entry buffer entry
-                                     (not (eq (first entry) :insert)))
-                  (%buffer-redo-list buffer)))
-          (setf (%buffer-undo-continuation-count buffer) (length group)))
-        (setf (%buffer-undo-continuation-count buffer) 0)))
+  (sb-sys:without-interrupts
+    (let* ((original (%buffer-undo-list buffer))
+           (entries (if (and continue-p
+                             (plusp (%buffer-undo-continuation-count buffer)))
+                        (nthcdr (1+ (%buffer-undo-continuation-count buffer)) original)
+                        original)))
+      (when (eq (first entries) :boundary)
+        (setf entries (rest entries)))
+      (multiple-value-bind (group tail) (%undo-group-and-tail entries)
+        (if group
+            (progn
+              (push :boundary (%buffer-redo-list buffer))
+              (dolist (entry group)
+                (push (%apply-undo-entry buffer entry
+                                         (not (eq (first entry) :insert)))
+                      (%buffer-redo-list buffer)))
+              ;; Replay records inverses before the still-intact source history.
+              (setf (%buffer-undo-list buffer)
+                    (nconc (%undo-generated-prefix (%buffer-undo-list buffer) original)
+                           (cons :boundary tail))
+                    (%buffer-undo-continuation-count buffer) (length group)))
+            (setf (%buffer-undo-list buffer) tail
+                  (%buffer-undo-continuation-count buffer) 0)))))
   buffer)
 
 (defun buffer-redo (buffer)
-  "Redo the most recently undone change group in BUFFER.
-
-Redo is a no-op when no explicit redo history remains. A subsequent normal
-edit clears the redo history. Returns BUFFER."
+  "Redo the most recently undone change group in BUFFER."
   (%ensure-buffer-writable buffer)
-  (setf (%buffer-undo-continuation-count buffer) 0)
-  (let ((group (loop for entry = (pop (%buffer-redo-list buffer))
-                     until (or (null entry) (eq entry :boundary))
-                     collect entry)))
-    (when group
-      (push :boundary (%buffer-undo-list buffer))
-      (dolist (entry group)
-        (%apply-undo-entry buffer entry))))
+  (sb-sys:without-interrupts
+    (multiple-value-bind (group tail)
+        (%undo-group-and-tail (%buffer-redo-list buffer))
+      (setf (%buffer-undo-continuation-count buffer) 0)
+      (when group
+        (push :boundary (%buffer-undo-list buffer))
+        (dolist (entry group)
+          (%apply-undo-entry buffer entry)))
+      (setf (%buffer-redo-list buffer) tail)))
   buffer)
 
 (defun buffer-record-undo-boundary (buffer)

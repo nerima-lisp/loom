@@ -10,6 +10,8 @@
    #:buffer-set-major-mode
    #:buffer-truncate-lines
    #:buffer-set-truncate-lines
+   #:buffer-version
+   #:buffer-changed-line-since
    #:buffer-text
    #:buffer-narrow-start-offset
    #:buffer-narrow-end-offset

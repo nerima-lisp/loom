@@ -1,6 +1,21 @@
 
 (in-package #:loom/core/buffer)
 
+(defun buffer-version (buffer)
+  "Return BUFFER's text revision, advanced by each primitive insertion or deletion."
+  (%buffer-version buffer))
+
+(defun buffer-changed-line-since (buffer version)
+  "Return the earliest absolute line changed after VERSION, or NIL at the current revision.
+Revisions outside the bounded history invalidate from line zero."
+  (let ((current (%buffer-version buffer)))
+    (cond ((= version current) nil)
+          ((< version (- current +buffer-change-history-size+)) 0)
+          (t (loop for revision from (1+ version) to current
+                   minimize (aref (%buffer-changed-lines buffer)
+                                  (mod revision +buffer-change-history-size+)))))))
+
+
 (defun %clamp-offset-to-narrowing (buffer offset)
   (max (%buffer-narrow-start-offset buffer)
        (min offset (%buffer-narrow-end-offset buffer))))

@@ -52,14 +52,15 @@ end-of-line. A no-op at the very end of the buffer."
 
 (defun buffer-delete-char (buffer &key backward)
   "Delete one character next to point, returning BUFFER."
-  (%ensure-buffer-writable buffer)
-  (let ((point-offset (buffer-point-offset buffer)))
-    (if backward
-        (unless (<= point-offset (%buffer-narrow-start-offset buffer))
-          (%delete-char-backward buffer))
+  (sb-sys:without-interrupts
+    (%ensure-buffer-writable buffer)
+    (let ((point-offset (buffer-point-offset buffer)))
+      (if backward
+          (unless (<= point-offset (%buffer-narrow-start-offset buffer))
+            (%delete-char-backward buffer))
         (unless (>= point-offset (%buffer-narrow-end-offset buffer))
           (%delete-char-forward buffer))))
-  buffer)
+    buffer))
 
 (defun %delete-region-at-offsets
     (buffer start-offset end-offset &optional undo-replacement-p)
@@ -84,15 +85,16 @@ replacement insertion is part of the same undo group. An empty range leaves
 point and history unchanged. Returns the deleted text as a string, empty for
 an empty range. Read-only BUFFER signals BUFFER-READ-ONLY-ERROR even for an
 empty range."
-  (when (or (< end-line start-line)
-            (and (= end-line start-line) (< end-column start-column)))
-    (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
-           end-line end-column start-line start-column))
-  (%ensure-buffer-writable buffer)
-  (multiple-value-bind (start-offset end-offset)
-      (%region-offsets-within-narrowing
-       buffer start-line start-column end-line end-column)
-    (if (= start-offset end-offset)
-        ""
-        (%delete-region-at-offsets buffer start-offset end-offset
-                                   undo-replacement-p))))
+  (sb-sys:without-interrupts
+    (when (or (< end-line start-line)
+              (and (= end-line start-line) (< end-column start-column)))
+      (error "buffer-delete-region: end position (~D,~D) precedes start position (~D,~D)"
+             end-line end-column start-line start-column))
+    (%ensure-buffer-writable buffer)
+    (multiple-value-bind (start-offset end-offset)
+        (%region-offsets-within-narrowing
+         buffer start-line start-column end-line end-column)
+      (if (= start-offset end-offset)
+          ""
+          (%delete-region-at-offsets buffer start-offset end-offset
+                                     undo-replacement-p)))))

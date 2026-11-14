@@ -1,5 +1,16 @@
 (in-package #:loom/core/buffer)
 
+;; Packing offsets leaves room for the radix directory within eight bytes per line.
+(defconstant +line-index-chunk-bits+ 10)
+(defconstant +line-index-chunk-size+ (ash 1 +line-index-chunk-bits+))
+(defconstant +line-index-offset-bits+ (integer-length most-positive-fixnum))
+(defconstant +line-index-directory-bits+ 5)
+(defconstant +line-index-directory-depth+
+  (ceiling (- +line-index-offset-bits+ +line-index-chunk-bits+)
+           +line-index-directory-bits+))
+(defconstant +buffer-change-history-size+ 256)
+
+
 
 (defstruct (piece (:constructor %make-piece) (:conc-name %piece-))
   "A contiguous slice of a piece table source."
@@ -21,6 +32,12 @@ mark position and activity, modified-p, read-only state, and undo/redo state."
   (original "" :type string)
   (add-buffer (make-array 0 :element-type (quote character) :adjustable t :fill-pointer 0))
   (pieces nil :type list)
+  (line-index (make-array 32 :initial-element nil) :type simple-vector)
+  (line-count 1 :type fixnum)
+  (text-length 0 :type fixnum)
+  (version 0 :type integer)
+  (changed-lines (make-array +buffer-change-history-size+
+                             :element-type 'fixnum :initial-element 0))
   (narrow-start-offset 0 :type integer)
   (narrow-end-offset 0 :type integer)
   (point-line 0 :type integer)
@@ -79,9 +96,7 @@ directly observed."
         finally (return (values end-line end-column))))
 
 (defun %buffer-full-length (buffer)
-  "Return BUFFER's current full-text length without materializing its text."
-  (loop for piece in (%buffer-pieces buffer)
-        sum (%piece-length piece)))
+  (%buffer-text-length buffer))
 
 (defun %buffer-narrowed-p (buffer)
   "Return true when BUFFER's visible region is smaller than its full text."

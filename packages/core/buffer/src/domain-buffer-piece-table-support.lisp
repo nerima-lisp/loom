@@ -25,22 +25,19 @@
     (values (max start cursor)
             (min end next))))
 
-(defun %write-piece-range (stream buffer piece cursor start end)
-  (multiple-value-bind (slice-start slice-end)
-      (%piece-range-overlap cursor (+ cursor (%piece-length piece)) start end)
-    (when slice-start
-      (write-string
-       (subseq (%piece-text buffer piece)
-               (- slice-start cursor)
-               (- slice-end cursor))
-       stream))))
-
 (defun %piece-table-range-text (buffer start end)
-  (with-output-to-string (stream)
-    (let ((cursor 0))
-      (dolist (piece (%buffer-pieces buffer))
-        (%write-piece-range stream buffer piece cursor start end)
-        (incf cursor (%piece-length piece))))))
+  (let ((text (make-string (- end start)))
+        (cursor 0))
+    (dolist (piece (%buffer-pieces buffer) text)
+      (when (>= cursor end) (return text))
+      (multiple-value-bind (slice-start slice-end)
+          (%piece-range-overlap cursor (+ cursor (%piece-length piece)) start end)
+        (when slice-start
+          (replace text (%piece-source-text buffer piece)
+                   :start1 (- slice-start start)
+                   :start2 (+ (%piece-start piece) (- slice-start cursor))
+                   :end2 (+ (%piece-start piece) (- slice-end cursor)))))
+      (incf cursor (%piece-length piece)))))
 
 (defun %raw-insert-at (buffer line column text)
   "Splice TEXT into the piece table at (LINE, COLUMN), without undo bookkeeping."

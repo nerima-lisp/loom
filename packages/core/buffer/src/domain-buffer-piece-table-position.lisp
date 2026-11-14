@@ -1,72 +1,42 @@
 (in-package #:loom/core/buffer)
 
 
-(defun %position-matches-p (current-line current-column line column)
-  (and (= current-line line)
-       (= current-column column)))
-
-(defun %advance-buffer-position (character current-line current-column offset)
-  (if (char= character #\Newline)
-      (values (1+ current-line) 0 (1+ offset))
-      (values current-line (1+ current-column) (1+ offset))))
-
 (defun %position-to-offset (buffer line column)
-  (let ((current-line 0) (current-column 0) (offset 0))
-    (dolist (piece (%buffer-pieces buffer))
-      (loop for character across (%piece-text buffer piece)
-            do (when (%position-matches-p current-line current-column line column)
-                 (return-from %position-to-offset offset))
-               (multiple-value-setq (current-line current-column offset)
-                 (%advance-buffer-position character current-line current-column offset))))
-    (if (%position-matches-p current-line current-column line column)
-        offset
-        (error "buffer position (~D, ~D) out of range" line column))))
+  (when (and (<= 0 line) (< line (%buffer-line-count buffer)))
+    (let* ((start (%line-index-offset buffer line))
+           (end (if (< (1+ line) (%buffer-line-count buffer))
+                    (1- (%line-index-offset buffer (1+ line)))
+                    (%buffer-text-length buffer))))
+      (when (<= 0 column (- end start))
+        (return-from %position-to-offset (+ start column)))))
+  (error "buffer position (~D, ~D) out of range" line column))
 
 (defun %line-count (buffer)
-  (let ((count 1))
-    (dolist (piece (%buffer-pieces buffer) count)
-      (loop for character across (%piece-text buffer piece)
-            when (char= character #\Newline)
-              do (incf count)))))
+  (%buffer-line-count buffer))
 
 (defun %line-at (buffer line-number)
-  "Return the text of LINE-NUMBER, not including its trailing newline.
-Trusts its callers -- %CLAMP-POSITION, BUFFER-LINE (which validates
-LINE-NUMBER itself before calling this), and BUFFER-DELETE-CHAR's
-backward/forward helpers (which derive it from BUFFER's own point) -- to
-never pass an out-of-range LINE-NUMBER; this is an internal helper, not a
-system boundary."
-  (let ((current-line 0)
-        (text (make-string-output-stream)))
-    (block scan
-      (dolist (piece (%buffer-pieces buffer))
-        (loop for character across (%piece-text buffer piece)
-              for newline-p = (char= character #\Newline)
-              for on-target-line-p = (= current-line line-number)
-              when (and newline-p on-target-line-p) do (return-from scan)
-              when newline-p do (incf current-line)
-              when on-target-line-p do (write-char character text))))
-    (get-output-stream-string text)))
+  (let ((start (%line-index-offset buffer line-number))
+        (end (if (< (1+ line-number) (%buffer-line-count buffer))
+                 (1- (%line-index-offset buffer (1+ line-number)))
+                 (%buffer-text-length buffer))))
+    (%piece-table-range-text buffer start end)))
 
 (defun %clamp-position (buffer line column)
-  "Clamp (LINE, COLUMN) into BUFFER valid bounds."
-  (let* ((line-count (%line-count buffer))
-         (clamped-line (max 0 (min line (1- line-count))))
-         (line-len (length (%line-at buffer clamped-line)))
-         (clamped-column (max 0 (min column line-len))))
-    (values clamped-line clamped-column)))
+  (let* ((clamped-line (max 0 (min line (1- (%line-count buffer)))))
+         (start (%line-index-offset buffer clamped-line))
+         (end (if (< (1+ clamped-line) (%line-count buffer))
+                  (1- (%line-index-offset buffer (1+ clamped-line)))
+                  (%buffer-text-length buffer))))
+    (values clamped-line (max 0 (min column (- end start))))))
 
 (defun %offset-to-position-values (buffer offset)
-  "Return (VALUES LINE COLUMN) for OFFSET in BUFFER's full text."
-  (let ((line 0)
-        (column 0)
-        (remaining offset))
-    (dolist (piece (%buffer-pieces buffer))
-      (loop for character across (%piece-text buffer piece)
-            do (when (zerop remaining)
-                 (return-from %offset-to-position-values
-                   (values line column)))
-               (multiple-value-setq (line column)
-                 (%advance-buffer-position character line column 0))
-               (decf remaining)))
-    (values line column)))
+  (let ((offset (min offset (%buffer-text-length buffer)))
+        (low 0)
+        (high (%buffer-line-count buffer)))
+    (loop while (< low high)
+          for middle = (floor (+ low high) 2)
+          do (if (<= (%line-index-offset buffer middle) offset)
+                 (setf low (1+ middle))
+                 (setf high middle)))
+    (let ((line (1- low)))
+      (values line (- offset (%line-index-offset buffer line))))))
