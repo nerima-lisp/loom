@@ -715,3 +715,204 @@
             (expect (probe-file path) :to-be nil)
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-equal "Quit")))))))
+
+(defmacro %with-confirm-save-recorder ((calls) &body body)
+  "Bind CALLS to a list of outcome keywords pushed by %CONFIRM-SAVE-CALLBACKS."
+  `(let ((,calls nil))
+     (flet ((%confirm-save-callbacks ()
+              (list :on-saved (lambda () (push :saved ,calls))
+                    :on-skipped (lambda () (push :skipped ,calls))
+                    :on-cancelled (lambda () (push :cancelled ,calls)))))
+       ,@body)))
+
+(defun %visit-changed-file-buffer (path)
+  "Visit PATH, edit the buffer, then change the file on disk behind it."
+  (%write-test-file-octets path #(111 108 100))
+  (let ((buffer (loom/feature/files:visit-file path)))
+    (buffer-set-point buffer 0 3)
+    (buffer-insert-string buffer " local")
+    (%write-test-file-octets path #(101 120 116))
+    buffer))
+
+(describe
+  "confirm-save-buffer outcomes"
+  (it
+    "writes the file, records it as recent, and reports saved once"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir))
+            (recorded nil))
+        (%write-test-file-octets path #(111 108 100))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "backups/" dir))
+                (loom/feature/files::*recent-file-recorder*
+                  (cons :test (lambda (recent) (push recent recorded)))))
+            (buffer-set-point buffer 0 3)
+            (buffer-insert-string buffer "!")
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (expect calls :to-equal '(:saved))
+              (expect recorded :to-equal (list (buffer-path buffer)))
+              (expect (host-kit:read-file-string path) :to-equal "old!")
+              (expect (buffer-modified-p buffer) :to-be nil)
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal (format nil "Wrote ~A" path))))))))
+
+  (it
+    "reports skipped after n at the overwrite prompt and keeps the disk file"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (%visit-changed-file-buffer path)))
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (expect (minibuffer-prompt-string minibuffer)
+                      :to-equal
+                      (format nil "File changed on disk. Overwrite? (y/n): ~A" path))
+              (expect calls :to-be nil)
+              (%confirm-minibuffer minibuffer "maybe")
+              (expect calls :to-be nil)
+              (%confirm-minibuffer minibuffer "n")
+              (expect calls :to-equal '(:skipped))
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal "Save cancelled")
+              (expect (%read-test-file-octets path) :to-equalp #(101 120 116))
+              (expect (buffer-modified-p buffer) :to-be-truthy)))))))
+
+  (it
+    "reports cancelled after c at the overwrite prompt"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (%visit-changed-file-buffer path)))
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (%confirm-minibuffer minibuffer "c")
+              (expect calls :to-equal '(:cancelled))
+              (expect (loom:minibuffer-message-string minibuffer)
+                      :to-equal "Save cancelled")
+              (expect (buffer-modified-p buffer) :to-be-truthy)
+              (expect (%read-test-file-octets path) :to-equalp #(101 120 116))))))))
+
+  (it
+    "reports cancelled once when C-g quits the overwrite prompt"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (%visit-changed-file-buffer path)))
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (minibuffer-handle-key minibuffer (%special-key :control-g))
+              (expect calls :to-equal '(:cancelled))
+              (expect (loom:minibuffer-message-string minibuffer) :to-equal "Quit")
+              (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+              (expect (buffer-modified-p buffer) :to-be-truthy)
+              (expect (%read-test-file-octets path) :to-equalp #(101 120 116))))))))
+
+  (it
+    "reports saved after y at the overwrite prompt"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (%visit-changed-file-buffer path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "backups/" dir)))
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (%confirm-minibuffer minibuffer "y")
+              (expect calls :to-equal '(:saved))
+              (expect (host-kit:read-file-string path) :to-equal "old local")
+              (expect (%read-test-file-octets
+                       (merge-pathnames "note.txt.1~"
+                                        (merge-pathnames "backups/" dir)))
+                      :to-equalp #(101 120 116))))))))
+
+  (it
+    "shows a save error and reports cancelled instead of signalling it"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir))
+            (blocked (merge-pathnames "blocked" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%write-test-file-octets blocked #(120))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "blocked/backups/" dir)))
+            (buffer-set-point buffer 0 3)
+            (buffer-insert-string buffer "!")
+            (%with-confirm-save-recorder (calls)
+              (apply #'loom/feature/files:confirm-save-buffer
+                     buffer (%confirm-save-callbacks))
+              (expect calls :to-equal '(:cancelled))
+              (expect (loom:minibuffer-message-string minibuffer) :to-be-truthy)
+              (expect (%read-test-file-octets path) :to-equalp #(111 108 100))
+              (expect (buffer-modified-p buffer) :to-be-truthy)))))))
+
+  (it
+    "keeps signalling the same save error from save-buffer"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir))
+            (blocked (merge-pathnames "blocked" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%write-test-file-octets blocked #(120))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "blocked/backups/" dir)))
+            (window-set-buffer (window-tree-selected-window
+                                (editor-state-window-tree *editor-state*))
+                               buffer)
+            (buffer-set-point buffer 0 3)
+            (buffer-insert-string buffer "!")
+            (signals file-error (loom/feature/files:save-buffer))
+            (expect (%read-test-file-octets path) :to-equalp #(111 108 100)))))))
+
+  (it
+    "reports skipped for a buffer that visits no file"
+    (%with-minibuffer-state (minibuffer "draft")
+      (%with-confirm-save-recorder (calls)
+        (apply #'loom/feature/files:confirm-save-buffer
+               (%selected-test-buffer) (%confirm-save-callbacks))
+        (expect calls :to-equal '(:skipped))
+        (expect (loom:minibuffer-message-string minibuffer)
+                :to-equal "Buffer is not visiting a file"))))
+
+  (it
+    "reports each missing-parent answer as saved, skipped, or cancelled"
+    (host-kit:with-temporary-directory (dir)
+      (%with-minibuffer-state (minibuffer "")
+        (flet ((pending-buffer (name)
+                 (let ((buffer (loom/feature/files::%make-file-buffer
+                                (merge-pathnames
+                                 (format nil "~A/deep/new.txt" name) dir)
+                                :initial-content "pending")))
+                   (%register-test-buffer *editor-state* buffer)
+                   buffer)))
+          (%with-confirm-save-recorder (calls)
+            (apply #'loom/feature/files:confirm-save-buffer
+                   (pending-buffer "yes") (%confirm-save-callbacks))
+            (%confirm-minibuffer minibuffer "y")
+            (expect calls :to-equal '(:saved))
+            (expect (host-kit:read-file-string
+                     (merge-pathnames "yes/deep/new.txt" dir))
+                    :to-equal "pending"))
+          (%with-confirm-save-recorder (calls)
+            (apply #'loom/feature/files:confirm-save-buffer
+                   (pending-buffer "no") (%confirm-save-callbacks))
+            (%confirm-minibuffer minibuffer "n")
+            (expect calls :to-equal '(:skipped))
+            (expect (probe-file (merge-pathnames "no/" dir)) :to-be nil))
+          (%with-confirm-save-recorder (calls)
+            (apply #'loom/feature/files:confirm-save-buffer
+                   (pending-buffer "quit") (%confirm-save-callbacks))
+            (minibuffer-handle-key minibuffer (%special-key :control-g))
+            (expect calls :to-equal '(:cancelled))
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "Quit")
+            (expect (probe-file (merge-pathnames "quit/" dir)) :to-be nil)))))))

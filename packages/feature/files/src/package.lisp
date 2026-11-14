@@ -47,6 +47,7 @@
            #:visit-file
            #:recent-file
            #:save-buffer
+           #:confirm-save-buffer
            #:write-file
            #:revert-buffer
            #:file-format-indicator
