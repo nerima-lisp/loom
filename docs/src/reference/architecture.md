@@ -41,7 +41,9 @@ the command implementation.
 Feature systems depend on the core APIs and may depend on other feature
 systems. For example, `loom-feature-files` uses the buffer registry and major
 modes; `loom-feature-file-tree` uses file operations; and `loom-feature-lsp`
-uses buffers, file-tree, project discovery, and major-mode language IDs. Their
+uses buffers, file-tree, project discovery, and major-mode language IDs.
+`loom-feature-buffer-menu` depends on buffers for the registry and confirmed
+kills, on files for confirmed saves, and on mode for its local keymap. Their
 ASDF definitions declare these edges. A dependency is allowed only when it is
 listed in the system's `:depends-on`; feature-to-feature edges must remain
 acyclic. The root `loom` system depends on the core and feature systems and

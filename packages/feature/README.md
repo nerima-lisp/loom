@@ -8,6 +8,7 @@ presentation helpers in one slice:
 | --- | --- |
 | `auto-save` | Recovery files for modified buffers |
 | `bookmark` | Named bookmarks and navigation |
+| `buffer-menu` | Buffer list with marks for saving and killing buffers |
 | `buffers` | Buffer registry, switching, killing, and result buffers |
 | `clipboard` | System clipboard reads and writes, plus literal paste handling |
 | `completion` | Candidate popup display and input handling |

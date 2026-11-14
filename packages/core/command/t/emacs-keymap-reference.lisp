@@ -106,7 +106,7 @@
     (:id "list-buffers-control-x-control-b"
      :keys (((:control) . #\x) ((:control) . #\b)) :emacs "list-buffers"
      :target "list-buffers" :target-map :global
-     :effective :not-asserted :owner :w3-3 :status :pending)
+     :effective "list-buffers" :owner :w3-3 :status :implemented)
     (:id "save-some-buffers-control-x-s"
      :keys (((:control) . #\x) #\s) :emacs "save-some-buffers"
      :target "save-some-buffers" :target-map :global
