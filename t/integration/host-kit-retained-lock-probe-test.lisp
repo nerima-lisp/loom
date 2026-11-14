@@ -40,6 +40,7 @@
 
 (describe "host-kit retained-lock consumer probe"
   (it "detects a live foreign holder and acquires after that process exits"
+    (cl-weave:expect-assertions 9)
     (host-kit:with-temporary-directory (directory)
       (let* ((target (merge-pathnames "visited.lock" directory))
              (ready (merge-pathnames "ready" directory))
@@ -71,6 +72,7 @@
           (close (sb-ext:process-input process))))))
 
   (it "writes private recovery files through caller-named atomic staging files"
+    (cl-weave:expect-assertions 5)
     (host-kit:with-temporary-directory (directory)
       (let ((target (merge-pathnames "recovery.txt" directory))
             (prefix "#recovery.txt#."))
@@ -87,6 +89,7 @@
                 :to-equal #o640))))
 
   (it "copies backups with a supplied prefix while retaining source permissions"
+    (cl-weave:expect-assertions 4)
     (host-kit:with-temporary-directory (directory)
       (let ((source (merge-pathnames "note.txt" directory))
             (backup (merge-pathnames "note.txt~" directory)))
@@ -97,4 +100,14 @@
                 :to-equal #o640)
         (signals host-kit:host-operation-failed
           (host-kit:copy-file source backup :if-exists :error :prefix "#note.txt#."))
-        (expect (host-kit:read-file-string backup) :to-equal "saved work")))))
+        (expect (host-kit:read-file-string backup) :to-equal "saved work"))))
+  (it "synchronizes a new recovery file with no read permission"
+    (cl-weave:expect-assertions 2)
+    (host-kit:with-temporary-directory (directory)
+      (let ((target (merge-pathnames "restricted.txt" directory)))
+        (host-kit:write-file-string "private recovery" target
+                                    :mode #o000 :synchronize t :prefix "#restricted#.")
+        (expect (host-kit:file-metadata-mode (host-kit:file-metadata target))
+                :to-equal #o000)
+        (host-kit:set-file-mode target #o600)
+        (expect (host-kit:read-file-string target) :to-equal "private recovery")))))
