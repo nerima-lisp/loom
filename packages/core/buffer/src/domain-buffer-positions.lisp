@@ -23,9 +23,7 @@ accepted as the position just after its last visible character."
   (when (and (<= (%buffer-narrow-start-offset buffer) offset)
              (<= offset (%buffer-narrow-end-offset buffer)))
     (multiple-value-bind (line column)
-        (%text-offset-to-position-values
-         (buffer-visible-text buffer)
-         (- offset (%buffer-narrow-start-offset buffer)))
+        (%visible-offset-to-position-values buffer offset)
       (%make-buffer-position line column))))
 
 (defun buffer-point-offset (buffer)

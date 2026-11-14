@@ -14,6 +14,7 @@
    #:buffer-changed-line-since
    #:buffer-text
    #:buffer-narrow-start-offset
+   #:buffer-narrow-start-line
    #:buffer-narrow-end-offset
    #:buffer-narrowed-p
    #:buffer-visible-text

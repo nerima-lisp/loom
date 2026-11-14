@@ -1,70 +1,76 @@
 (in-package #:loom/core/buffer)
 
-(defun %text-offset-to-position-values (text offset)
-  "Return LINE and COLUMN for OFFSET in TEXT, clamped to TEXT's bounds."
-  (let ((bounded-offset (max 0 (min offset (length text))))
-        (line 0)
-        (line-start 0))
-    (loop for newline = (position #\Newline text :start line-start)
-          while (and newline (> bounded-offset newline))
-          do (incf line)
-             (setf line-start (1+ newline))
-          finally (return (values line (- bounded-offset line-start))))))
+(defvar *buffer-visible-line-index-cache* nil)
 
-(defun %visible-line-scan (buffer &optional target-line)
-  "Count visible lines, returning TARGET-LINE without building the complete text."
-  (let ((visible-start (%buffer-narrow-start-offset buffer))
-        (visible-end (%buffer-narrow-end-offset buffer))
-        (cursor 0)
-        (line-index 0)
-        (line-count 1)
-        (line-stream (and target-line (make-string-output-stream))))
-    (dolist (piece (%buffer-pieces buffer))
-      (when (>= cursor visible-end)
-        (return))
-      (let* ((piece-end (+ cursor (%piece-length piece)))
-             (visible-piece-start (max visible-start cursor))
-             (visible-piece-end (min visible-end piece-end)))
-        (when (< visible-piece-start visible-piece-end)
-          (let* ((source (%piece-source-text buffer piece))
-                 (source-start
-                   (+ (%piece-start piece) (- visible-piece-start cursor)))
-                 (source-end
-                   (+ (%piece-start piece) (- visible-piece-end cursor))))
-            (loop with segment-start = source-start
-                  for newline = (position #\Newline source
-                                          :start segment-start
-                                          :end source-end)
-                  do (if newline
-                         (progn
-                           (when (and target-line
-                                      (eql line-index target-line))
-                             (write-string source line-stream
-                                           :start segment-start
-                                           :end newline)
-                             (return-from %visible-line-scan
-                               (values
-                                (get-output-stream-string line-stream)
-                                line-count
-                                t)))
-                           (incf line-count)
-                           (incf line-index)
-                           (setf segment-start (1+ newline)))
-                         (progn
-                           (when (and target-line
-                                      (eql line-index target-line))
-                             (write-string source line-stream
-                                           :start segment-start
-                                           :end source-end))
-                           (return))))))
-        (setf cursor piece-end)))
-    (values
-     (when (and target-line
-                (eql line-index target-line))
-       (get-output-stream-string line-stream))
-     line-count
-     (and target-line
-          (eql line-index target-line)))))
+(defmacro with-buffer-visible-line-index-cache (&body body)
+  `(let ((*buffer-visible-line-index-cache* (make-hash-table :test 'eq)))
+     ,@body))
+
+(defstruct (%buffer-visible-view (:constructor %make-buffer-visible-view))
+  (version 0 :type integer)
+  (start 0 :type fixnum)
+  (end 0 :type fixnum)
+  (first-line 0 :type fixnum)
+  (last-line 0 :type fixnum)
+  (lines (make-hash-table :test 'eql) :type hash-table))
+
+(defun %buffer-narrow-start-line (buffer)
+  (let ((start (%buffer-narrow-start-offset buffer)))
+    (if (zerop start) 0 (nth-value 0 (%offset-to-position-values buffer start)))))
+
+(defun %build-buffer-visible-view (buffer)
+  (let ((end (%buffer-narrow-end-offset buffer)))
+    (%make-buffer-visible-view
+     :version (%buffer-version buffer)
+     :start (%buffer-narrow-start-offset buffer)
+     :end end
+     :first-line (%buffer-narrow-start-line buffer)
+     :last-line (if (= end (%buffer-text-length buffer))
+                    (1- (%buffer-line-count buffer))
+                    (nth-value 0 (%offset-to-position-values buffer end))))))
+
+(defun %buffer-visible-view-current-p (buffer view)
+  (and (= (%buffer-visible-view-version view) (%buffer-version buffer))
+       (= (%buffer-visible-view-start view) (%buffer-narrow-start-offset buffer))
+       (= (%buffer-visible-view-end view) (%buffer-narrow-end-offset buffer))))
+
+(defun %current-buffer-visible-view (buffer)
+  (if *buffer-visible-line-index-cache*
+      (let ((view (gethash buffer *buffer-visible-line-index-cache*)))
+        (if (and view (%buffer-visible-view-current-p buffer view))
+            view
+            (setf (gethash buffer *buffer-visible-line-index-cache*)
+                  (%build-buffer-visible-view buffer))))
+      (%build-buffer-visible-view buffer)))
+
+(defun %buffer-visible-view-line-count (view)
+  (1+ (- (%buffer-visible-view-last-line view)
+         (%buffer-visible-view-first-line view))))
+
+(defun %buffer-visible-view-line (buffer view line)
+  (multiple-value-bind (text present-p)
+      (gethash line (%buffer-visible-view-lines view))
+    (if present-p
+        text
+        (let* ((absolute-line (+ (%buffer-visible-view-first-line view) line))
+               (start (if (zerop line)
+                          (%buffer-visible-view-start view)
+                          (%line-index-offset buffer absolute-line)))
+               (end (min (%buffer-visible-view-end view)
+                         (if (< (1+ absolute-line) (%buffer-line-count buffer))
+                             (1- (%line-index-offset buffer (1+ absolute-line)))
+                             (%buffer-text-length buffer))))
+               (text (%piece-table-range-text buffer start end)))
+          (setf (gethash line (%buffer-visible-view-lines view)) text)))))
+
+(defun %visible-offset-to-position-values (buffer offset)
+  (multiple-value-bind (line column) (%offset-to-position-values buffer offset)
+    (let ((first-line (%buffer-narrow-start-line buffer)))
+      (values (- line first-line)
+              (if (= line first-line)
+                  (- column (- (%buffer-narrow-start-offset buffer)
+                               (%line-index-offset buffer first-line)))
+                  column)))))
 
 (defun %validate-narrow-region-order
     (start-line start-column end-line end-column)
@@ -120,224 +126,5 @@
     (%set-buffer-mark-from-offset
      buffer
      (%clamp-offset-to-visible-region buffer mark-offset))))
-(defun %visible-lines-scan (buffer start-line line-limit)
-  "Return visible lines starting at START-LINE and their total count in one scan."
-  (check-type start-line (integer 0 *))
-  (check-type line-limit (integer 0 *))
-  (flet ((join-line-parts (parts)
-           (if parts
-               (if (cdr parts)
-                   (apply #'concatenate 'string (nreverse parts))
-                   (car parts))
-               "")))
-    (let* ((visible-start (%buffer-narrow-start-offset buffer))
-           (visible-end (%buffer-narrow-end-offset buffer))
-           (requested-end (+ start-line line-limit))
-           (cursor 0)
-           (line-index 0)
-           (line-count 1)
-           (line-parts nil)
-           (lines nil))
-      (dolist (piece (%buffer-pieces buffer))
-        (when (>= cursor visible-end)
-          (return))
-        (let* ((piece-end (+ cursor (%piece-length piece)))
-               (visible-piece-start (max visible-start cursor))
-               (visible-piece-end (min visible-end piece-end)))
-          (when (< visible-piece-start visible-piece-end)
-            (let* ((source (%piece-source-text buffer piece))
-                   (source-start
-                     (+ (%piece-start piece) (- visible-piece-start cursor)))
-                   (source-end
-                     (+ (%piece-start piece) (- visible-piece-end cursor))))
-              (loop with segment-start = source-start
-                    for newline = (position #\Newline source
-                                            :start segment-start
-                                            :end source-end)
-                    do (if newline
-                           (progn
-                             (when (and (<= start-line line-index)
-                                        (< line-index requested-end))
-                               (push (subseq source segment-start newline)
-                                     line-parts)
-                               (push (join-line-parts line-parts) lines)
-                               (setf line-parts nil))
-                             (incf line-count)
-                             (incf line-index)
-                             (setf segment-start (1+ newline)))
-                           (progn
-                             (when (and (<= start-line line-index)
-                                        (< line-index requested-end))
-                               (push (subseq source segment-start source-end)
-                                     line-parts))
-                             (return))))))
-          (setf cursor piece-end)))
-      (when (and (<= start-line line-index)
-                 (< line-index requested-end))
-        (push (join-line-parts line-parts) lines))
-      (values (nreverse lines) line-count))))
-(progn
-  (defvar *buffer-visible-line-index-cache* nil)
-  (defmacro with-buffer-visible-line-index-cache (&body body)
-    `(let ((*buffer-visible-line-index-cache* (make-hash-table :test 'eq)))
-       ,@body))
-  (defstruct (%visible-line-index
-              (:constructor %make-visible-line-index
-                  (&key line-starts visible-length segment-starts
-                        segment-source-starts segment-sources pieces
-                        narrow-start narrow-end original add-buffer
-                        add-buffer-length line-cache)))
-    (line-starts #() :type vector)
-    (visible-length 0 :type fixnum)
-    (segment-starts #() :type vector)
-    (segment-source-starts #() :type vector)
-    (segment-sources #() :type vector)
-    (pieces nil)
-    (narrow-start 0 :type fixnum)
-    (narrow-end 0 :type fixnum)
-    (original nil)
-    (add-buffer nil)
-    (add-buffer-length 0 :type fixnum)
-    (line-cache nil :type hash-table))
-  (defun %build-visible-line-index (buffer)
-    (let* ((pieces (%buffer-pieces buffer))
-           (visible-start (%buffer-narrow-start-offset buffer))
-           (visible-end (%buffer-narrow-end-offset buffer))
-           (line-starts (make-array 16 :element-type 'fixnum
-                                    :adjustable t :fill-pointer 0))
-           (segment-starts (make-array 8 :element-type 'fixnum
-                                      :adjustable t :fill-pointer 0))
-           (segment-source-starts (make-array 8 :element-type 'fixnum
-                                              :adjustable t :fill-pointer 0))
-           (segment-sources (make-array 8 :adjustable t :fill-pointer 0))
-           (cursor 0))
-      (vector-push-extend 0 line-starts)
-      (dolist (piece pieces)
-        (when (>= cursor visible-end)
-          (return))
-        (let* ((piece-end (+ cursor (%piece-length piece)))
-               (visible-piece-start (max visible-start cursor))
-               (visible-piece-end (min visible-end piece-end)))
-          (when (< visible-piece-start visible-piece-end)
-            (let* ((source (%piece-source-text buffer piece))
-                   (source-start
-                     (+ (%piece-start piece) (- visible-piece-start cursor)))
-                   (source-end
-                     (+ (%piece-start piece) (- visible-piece-end cursor)))
-                   (logical-start (- visible-piece-start visible-start)))
-              (vector-push-extend logical-start segment-starts)
-              (vector-push-extend source-start segment-source-starts)
-              (vector-push-extend source segment-sources)
-              (loop with segment-start = source-start
-                    for newline = (position #\Newline source
-                                            :start segment-start
-                                            :end source-end)
-                    while newline
-                    do (vector-push-extend
-                        (+ logical-start (1+ (- newline source-start)))
-                        line-starts)
-                       (setf segment-start (1+ newline)))))
-          (setf cursor piece-end)))
-      (%make-visible-line-index
-       :line-starts line-starts
-       :visible-length (- visible-end visible-start)
-       :segment-starts segment-starts
-       :segment-source-starts segment-source-starts
-       :segment-sources segment-sources
-       :pieces pieces
-       :narrow-start visible-start
-       :narrow-end visible-end
-       :original (%buffer-original buffer)
-       :add-buffer (%buffer-add-buffer buffer)
-       :add-buffer-length (fill-pointer (%buffer-add-buffer buffer))
-       :line-cache (make-hash-table :test 'eql))))
-  (defun %visible-line-index-current-p (buffer index)
-    (and (eq (%visible-line-index-pieces index) (%buffer-pieces buffer))
-         (= (%visible-line-index-narrow-start index)
-            (%buffer-narrow-start-offset buffer))
-         (= (%visible-line-index-narrow-end index)
-            (%buffer-narrow-end-offset buffer))
-         (eq (%visible-line-index-original index) (%buffer-original buffer))
-         (eq (%visible-line-index-add-buffer index) (%buffer-add-buffer buffer))
-         (= (%visible-line-index-add-buffer-length index)
-            (fill-pointer (%buffer-add-buffer buffer)))))
-  (defun %buffer-visible-line-index (buffer)
-    (when *buffer-visible-line-index-cache*
-      (multiple-value-bind (index present-p)
-          (gethash buffer *buffer-visible-line-index-cache*)
-        (if (and present-p (%visible-line-index-current-p buffer index))
-            index
-            (setf (gethash buffer *buffer-visible-line-index-cache*)
-                  (%build-visible-line-index buffer))))))
-  (defun %visible-line-index-segment (index offset)
-    (let ((starts (%visible-line-index-segment-starts index))
-          (low 0)
-          (high (length (%visible-line-index-segment-starts index))))
-      (loop while (< low high)
-            for middle = (floor (+ low high) 2)
-            do (if (<= (aref starts middle) offset)
-                   (setf low (1+ middle))
-                   (setf high middle)))
-      (1- low)))
-  (defun %visible-line-index-materialize-line (index start end)
-    (if (= start end)
-        ""
-        (let ((segment-index (%visible-line-index-segment index start))
-              (position start)
-              (segment-starts (%visible-line-index-segment-starts index))
-              (source-starts
-                (%visible-line-index-segment-source-starts index))
-              (sources (%visible-line-index-segment-sources index))
-              (visible-length (%visible-line-index-visible-length index))
-              (parts nil))
-          (loop while (< position end)
-                do (let* ((segment-start (aref segment-starts segment-index))
-                          (segment-end
-                            (if (< (1+ segment-index) (length segment-starts))
-                                (aref segment-starts (1+ segment-index))
-                                visible-length))
-                          (slice-end (min end segment-end))
-                          (source-offset
-                            (+ (aref source-starts segment-index)
-                               (- position segment-start))))
-                     (push (subseq
-                            (aref sources segment-index)
-                            source-offset
-                            (+ source-offset (- slice-end position)))
-                           parts)
-                     (setf position slice-end)
-                     (when (< position end)
-                       (incf segment-index))))
-          (if (cdr parts)
-              (apply #'concatenate 'string (nreverse parts))
-              (first parts)))))
-  (defun %visible-line-index-line (index line-number)
-    (let* ((line-starts (%visible-line-index-line-starts index))
-           (line-count (length line-starts)))
-      (if (or (< line-number 0) (>= line-number line-count))
-          (values nil nil)
-          (multiple-value-bind (line present-p)
-              (gethash line-number (%visible-line-index-line-cache index))
-            (if present-p
-                (values line t)
-                (let* ((start (aref line-starts line-number))
-                       (end
-                         (if (< (1+ line-number) line-count)
-                             (1- (aref line-starts (1+ line-number)))
-                             (%visible-line-index-visible-length index)))
-                       (line
-                         (%visible-line-index-materialize-line index start end)))
-                  (setf (gethash line-number
-                                 (%visible-line-index-line-cache index))
-                        line)
-                  (values line t)))))))
-  (defun %visible-line-index-lines (index start-line line-limit)
-    (check-type start-line (integer 0 *))
-    (check-type line-limit (integer 0 *))
-    (let* ((line-count (length (%visible-line-index-line-starts index)))
-           (end-line (min line-count (+ start-line line-limit)))
-           (lines nil))
-      (loop for line-number from start-line below end-line
-            do (push (nth-value 0 (%visible-line-index-line index line-number))
-                     lines))
-      (values (nreverse lines) line-count))))
+
+
