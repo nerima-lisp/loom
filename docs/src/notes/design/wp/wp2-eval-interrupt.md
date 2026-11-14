@@ -14,7 +14,8 @@
 エディタと同じスレッドで `LOOM-USER` の式を評価する。タイムアウトも中断もない。
 `M-:` で `(loop)` を評価するとイベントループが止まり、`C-g` でも中断できず、端末から kill するしかない。
 
-- 端末は `/dev/tty` を開いた fd で、ISIG は無効である（`src/application/startup-services.lisp:41-62`）。
+- 端末の入力 fd は起動時に選ばれる。標準入力と標準出力がともに端末ならその fd を使い、そうでなければ `/dev/tty` を開いた fd を使う
+  （`src/application/startup-services.lisp:31-62`）。ISIG は無効である。
   `C-g` はシグナルではなく入力のバイトとして届く。
 - シグナルのハンドラは `sb-sys:enable-interrupt` で登録され、メインスレッドの上で走る。
   wake のパイプに、SIGTERM は 1、SIGHUP は 2、SIGTSTP は 3、SIGCONT は 4、SIGWINCH は 5 を書く
@@ -22,8 +23,8 @@
 
 ## 仕様（D1）
 
-1. `M-:`・`C-x C-e`・`eval-buffer` は、メインスレッドで評価する。評価中は、K1 で `/dev/tty` の fd を監視する
-   （fd 0 ではない）。評価中は編集できない。
+1. `M-:`・`C-x C-e`・`eval-buffer` は、メインスレッドで評価する。評価中は、K1 で、起動時に選ばれた端末の入力 fd
+   （「現状」の節）を監視する。評価中は編集できない。
 2. 評価中に `C-g`（従来のバイト 7 の形と CSI-u の形の両方）が来たら、K2 で 200ms 以内に中断し、
    エコー行に `Evaluation interrupted` を出す。途中までの標準出力は、今の結果と同じ場所に出す。
 3. 中断は、評価器の `handler-case error` より先に受け取り、エラーとしては表示しない。
