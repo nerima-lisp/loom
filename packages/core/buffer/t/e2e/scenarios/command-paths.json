@@ -6165,7 +6165,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r1/back-to-indentation/key",
+      "name": "command-path/buffer/r1/back-to-indentation/key",
       "path_id": "r1:back-to-indentation:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22m%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
       "lane": "W3-4",
       "rule": "r1",
@@ -6194,7 +6194,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r1/back-to-indentation/mx",
+      "name": "command-path/buffer/r1/back-to-indentation/mx",
       "path_id": "r1:back-to-indentation:mx",
       "lane": "W3-4",
       "rule": "r1",
@@ -6221,7 +6221,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r1/delete-horizontal-space/key",
+      "name": "command-path/buffer/r1/delete-horizontal-space/key",
       "path_id": "r1:delete-horizontal-space:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%5C%5C%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
       "lane": "W3-4",
       "rule": "r1",
@@ -6261,7 +6261,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/delete-horizontal-space/mx",
+      "name": "command-path/buffer/r1/delete-horizontal-space/mx",
       "path_id": "r1:delete-horizontal-space:mx",
       "lane": "W3-4",
       "rule": "r1",
@@ -6299,7 +6299,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/just-one-space/key",
+      "name": "command-path/buffer/r1/just-one-space/key",
       "path_id": "r1:just-one-space:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%20%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
       "lane": "W3-4",
       "rule": "r1",
@@ -6340,7 +6340,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/just-one-space/mx",
+      "name": "command-path/buffer/r1/just-one-space/mx",
       "path_id": "r1:just-one-space:mx",
       "lane": "W3-4",
       "rule": "r1",
@@ -6378,7 +6378,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/transpose-words/key",
+      "name": "command-path/buffer/r1/transpose-words/key",
       "path_id": "r1:transpose-words:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22t%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
       "lane": "W3-4",
       "rule": "r1",
@@ -6409,7 +6409,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/transpose-words/mx",
+      "name": "command-path/buffer/r1/transpose-words/mx",
       "path_id": "r1:transpose-words:mx",
       "lane": "W3-4",
       "rule": "r1",
@@ -6438,7 +6438,7 @@
       "save_after_effect": true
     },
     {
-      "name": "command-path/wp5a/r1/count-words-region/key",
+      "name": "command-path/buffer/r1/count-words-region/key",
       "path_id": "r1:count-words-region:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22%3D%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
       "lane": "W3-4",
       "rule": "r1",
@@ -6467,7 +6467,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r1/count-words-region/mx",
+      "name": "command-path/buffer/r1/count-words-region/mx",
       "path_id": "r1:count-words-region:mx",
       "lane": "W3-4",
       "rule": "r1",
@@ -6494,7 +6494,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/effect",
+      "name": "command-path/buffer/r3/delete-horizontal-space/effect",
       "path_id": "r3:delete-horizontal-space:effect",
       "lane": "W3-4",
       "rule": "r3",
@@ -6537,7 +6537,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/undo",
+      "name": "command-path/buffer/r3/delete-horizontal-space/undo",
       "path_id": "r3:delete-horizontal-space:undo",
       "lane": "W3-4",
       "rule": "r3",
@@ -6585,7 +6585,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/read-only",
+      "name": "command-path/buffer/r3/delete-horizontal-space/read-only",
       "path_id": "r3:delete-horizontal-space:read-only",
       "lane": "W3-4",
       "rule": "r3",
@@ -6632,7 +6632,7 @@
       "read_only_command": "toggle-read-only"
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/narrow",
+      "name": "command-path/buffer/r3/delete-horizontal-space/narrow",
       "path_id": "r3:delete-horizontal-space:narrow",
       "lane": "W3-4",
       "rule": "r3",
@@ -6692,7 +6692,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/split-window",
+      "name": "command-path/buffer/r3/delete-horizontal-space/split-window",
       "path_id": "r3:delete-horizontal-space:split-window",
       "lane": "W3-4",
       "rule": "r3",
@@ -6751,7 +6751,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/macro-replay",
+      "name": "command-path/buffer/r3/delete-horizontal-space/macro-replay",
       "path_id": "r3:delete-horizontal-space:macro-replay",
       "lane": "W3-4",
       "rule": "r3",
@@ -6812,7 +6812,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/delete-horizontal-space/prefix-u4",
+      "name": "command-path/buffer/r3/delete-horizontal-space/prefix-u4",
       "path_id": "r3:delete-horizontal-space:prefix-u4",
       "lane": "W3-4",
       "rule": "r3",
@@ -6857,7 +6857,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/effect",
+      "name": "command-path/buffer/r3/just-one-space/effect",
       "path_id": "r3:just-one-space:effect",
       "lane": "W3-4",
       "rule": "r3",
@@ -6901,7 +6901,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/undo",
+      "name": "command-path/buffer/r3/just-one-space/undo",
       "path_id": "r3:just-one-space:undo",
       "lane": "W3-4",
       "rule": "r3",
@@ -6950,7 +6950,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/read-only",
+      "name": "command-path/buffer/r3/just-one-space/read-only",
       "path_id": "r3:just-one-space:read-only",
       "lane": "W3-4",
       "rule": "r3",
@@ -6998,7 +6998,7 @@
       "read_only_command": "toggle-read-only"
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/narrow",
+      "name": "command-path/buffer/r3/just-one-space/narrow",
       "path_id": "r3:just-one-space:narrow",
       "lane": "W3-4",
       "rule": "r3",
@@ -7059,7 +7059,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/split-window",
+      "name": "command-path/buffer/r3/just-one-space/split-window",
       "path_id": "r3:just-one-space:split-window",
       "lane": "W3-4",
       "rule": "r3",
@@ -7119,7 +7119,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/macro-replay",
+      "name": "command-path/buffer/r3/just-one-space/macro-replay",
       "path_id": "r3:just-one-space:macro-replay",
       "lane": "W3-4",
       "rule": "r3",
@@ -7181,7 +7181,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/just-one-space/prefix-u4",
+      "name": "command-path/buffer/r3/just-one-space/prefix-u4",
       "path_id": "r3:just-one-space:prefix-u4",
       "lane": "W3-4",
       "rule": "r3",
@@ -7227,7 +7227,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/effect",
+      "name": "command-path/buffer/r3/transpose-words/effect",
       "path_id": "r3:transpose-words:effect",
       "lane": "W3-4",
       "rule": "r3",
@@ -7265,7 +7265,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/undo",
+      "name": "command-path/buffer/r3/transpose-words/undo",
       "path_id": "r3:transpose-words:undo",
       "lane": "W3-4",
       "rule": "r3",
@@ -7308,7 +7308,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/read-only",
+      "name": "command-path/buffer/r3/transpose-words/read-only",
       "path_id": "r3:transpose-words:read-only",
       "lane": "W3-4",
       "rule": "r3",
@@ -7350,7 +7350,7 @@
       "read_only_command": "toggle-read-only"
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/narrow",
+      "name": "command-path/buffer/r3/transpose-words/narrow",
       "path_id": "r3:transpose-words:narrow",
       "lane": "W3-4",
       "rule": "r3",
@@ -7407,7 +7407,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/split-window",
+      "name": "command-path/buffer/r3/transpose-words/split-window",
       "path_id": "r3:transpose-words:split-window",
       "lane": "W3-4",
       "rule": "r3",
@@ -7461,7 +7461,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/macro-replay",
+      "name": "command-path/buffer/r3/transpose-words/macro-replay",
       "path_id": "r3:transpose-words:macro-replay",
       "lane": "W3-4",
       "rule": "r3",
@@ -7515,7 +7515,7 @@
       ]
     },
     {
-      "name": "command-path/wp5a/r3/transpose-words/prefix-u4",
+      "name": "command-path/buffer/r3/transpose-words/prefix-u4",
       "path_id": "r3:transpose-words:prefix-u4",
       "lane": "W3-4",
       "rule": "r3",
