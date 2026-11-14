@@ -275,7 +275,7 @@ class CommandPathScenarioTests(unittest.TestCase):
     def test_char_prompt_results_use_character_specific_actions(self):
         cases = {
             "accept": {"input_text": "d", "expected_minibuffer": ""},
-            "cancel": {"input_text": "d", "expected_minibuffer": ""},
+            "cancel": {"input_text": "", "expected_minibuffer": ""},
             "invalid": {
                 "input_text": "x",
                 "expected_minibuffer": "Allowed keys: r, d, i",
@@ -323,13 +323,17 @@ class CommandPathScenarioTests(unittest.TestCase):
                     )
 
                     calls = sessions[0].calls
-                    self.assertIn(("type", values["input_text"]), calls)
                     self.assertNotIn(("key", "RET"), calls)
                     if prompt_case == "accept":
+                        self.assertIn(("type", values["input_text"]), calls)
                         self.assertNotIn(("send", b"\x07"), calls)
                     elif prompt_case == "cancel":
+                        self.assertFalse(
+                            any(call[0] == "type" for call in calls)
+                        )
                         self.assertIn(("send", b"\x07"), calls)
                     else:
+                        self.assertIn(("type", values["input_text"]), calls)
                         notice_index = next(
                             index
                             for index, call in enumerate(calls)
