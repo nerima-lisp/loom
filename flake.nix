@@ -21,7 +21,7 @@
     };
 
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.6.1";
+      url = "github:nerima-lisp/cl-tty-kit/eae0f12b8aa68f243e5581359851c4cee2e95609";
       flake = false;
     };
     # cl-tty-kit requires these transitive libraries explicitly.
@@ -233,7 +233,6 @@
               src = cl-tty-kit;
               patches = [
                 ./patches/cl-tty-kit-wide-character-rendering.patch
-                ./patches/cl-tty-kit-prolog-test-dependency.patch
                 ./patches/cl-tty-kit-control-h-key.patch
               ];
             };

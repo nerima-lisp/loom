@@ -27,7 +27,7 @@
         when marker-position
           collect (subseq line
                           (+ marker-position (length marker))
-                          (search "/v" line :start2 marker-position))))
+                          (position #\/ line :start (+ marker-position (length marker))))))
 
 (defun block-between-markers (string start-marker end-marker &key from-end)
   (let ((start (search start-marker string :from-end from-end)))
