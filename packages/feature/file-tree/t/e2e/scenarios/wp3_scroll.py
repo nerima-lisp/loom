@@ -23,8 +23,8 @@ def _selected_row(session, label):
     return next(
         (
             row
-            for row in range(session.rows - 1)
-            if label in session.screen.text(row)[:24]
+            for row, line in enumerate(session.screen.lines()[:session.rows - 1])
+            if label in line[:24]
             and session.screen.cell_attrs(row, 2)["reverse"]
         ),
         None,
