@@ -23,3 +23,4 @@ from . import trace  # noqa: F401
 from . import clipboard_mouse  # noqa: F401
 from . import d4_sgr_mouse  # noqa: F401
 from . import d6_bracketed_paste  # noqa: F401
+from . import text_control_characters  # noqa: F401
