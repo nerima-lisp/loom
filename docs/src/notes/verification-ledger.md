@@ -1206,15 +1206,15 @@ T9の差分は`t/e2e/scenarios/lsp.py`を変えておらず、`deadline.py`の�
 | 1 | 4章のすべてのタスクがmainに着地し、キットのリリースタグが出ている | 未達。WP1、T9、R1を待っている | 着地の事実は、進行役が`gh`と`jj`で確かめた値である。着地済みのタスクとmainのコミットは次のとおり。単位1（CI0、P2、S1、G1）は`ec5a519a`、単位2（P1、D0、WP5a、C1）は`3df0ca9e`、単位3（F1、WP7、WP4a）は`f37424f3`。WP3は`67a643c2`、C2は`dc1eb581`、FX2は`718403fa`、FX4は`ccfe2ae0`、WP2は`41164e95`、WP6は`4df46c8e`、WP4bは`75c1cb70`、WP5bは今のmainの先頭の`1d26a5bd`。未着地はWP1（実装中）、T9、R1（T9の後）、WP0（作者の手動確認）である。キットのリリースはcl-vcs-kit v0.3.0、cl-host-kit v0.4.0、cl-tty-kit v1.9.0、cl-concurrent-kit v0.8.0がすべて公開済みで、draftではない。cl-tty-kitはその後のv1.9.1がLatestである。 |
 | 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | `02ae61ea`では満たした。WP1の着地後のmainでは未確認 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。 |
 | 3 | どの`boundary-allowlist.lisp`にも増えた項目がない | T9のすべてのコミットで満たした。WP1の差分に許可表の変更があるかは未確認 | `jj diff --from v0.1.0 --to main`で変わった許可表は、新しいスライスの`packages/feature/buffer-menu/t/boundary-allowlist.lisp`だけである。中身は項目のない`("feature/buffer-menu")`で、WP4aのコミット`cce2215e`が足した。増えた項目は0件である。`1d26a5bd`からT9の最後のコミットまでの差分に、許可表のファイルはない。 |
-| 4 | R9の12場面がすべて通る | 未達。前夜と09:00を除く11行は両OSで通った。前夜と09:00はWP1の着地を待っている | 両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はpass 1件。場面ごとの結果は下の表にある。 |
+| 4 | R9の13行（前夜と12の時刻）がすべて通る | 未達。前夜と09:00を除く11行は両OSで通った。前夜と09:00はWP1の着地を待っている | 両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はpass 1件。場面ごとの結果は下の表にある。 |
 | 5 | `daily-driver-checklist.md`の5行を作者が記入し、Failがない | 未達。WP0（作者の記入）を待っている | mainの`docs/src/notes/daily-driver-checklist.md`では、`Author result`列の5行がすべて空欄である。 |
 | 6 | 11章の既知の制約が`docs/src/notes/release-v0.2.0.md`に書かれている | 未達。R1を待っている | `docs/src/notes/release-v0.2.0.md`はまだない。 |
 | 7 | タグを付けたときの`release.yml`が成功する | 未達。作者のタグ付けを待っている | タグ`v0.2.0`はまだない。 |
 
-### R9の12場面
+### R9の13行（前夜と12の時刻）
 
 `t/e2e/scenarios/r9_daily.py`は、同じscratchのHOMEでloomのプロセスを順に起動する。
-計画書7章は「12場面」と呼ぶが、その表には前夜から18:00まで13行ある。下の表も同じ13行を並べる。
+R9は計画書7章の表に合わせ、前夜と12の時刻の13行で数える。下の表も同じ13行を並べる。
 前夜と09:00を除く11行は`02ae61ea`に入っており、run `43756283240`で両OSとも通った。
 前夜と09:00はWP1の機能を使うので、T9の最後のコミットに分けて書いた。
 この2場面はmainにWP1がないため、まだ実行していない。
