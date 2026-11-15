@@ -44,7 +44,8 @@
                  (lambda (event)
                    (setf helper sb-thread:*current-thread*)
                    (push event events)
-                   (when (string= "C-g" (cl-tty-kit:key-event->string event))
+                   (when (and (typep event 'cl-tty-kit:key-event)
+                              (string= "C-g" (cl-tty-kit:key-event->string event)))
                      (sb-thread:interrupt-thread
                       caller (lambda () (throw tag :interrupted)))
                      :consume))
@@ -300,3 +301,19 @@
            (expect body-values :to-equal '(:completed 42))
            (expect diagnostics :to-be-truthy)
            (expect (listp diagnostics) :to-be-truthy)))))))
+(describe "input monitor mouse and paste consumer"
+  (it "replays SGR mouse and pasted text through loom after consuming quit"
+    (let* ((text "mouse貼付")
+           (kept (sb-ext:string-to-octets
+                  (format nil "~C[<0;1;1M~C[200~~~A~C[201~~z"
+                          #\Esc #\Esc text #\Esc)
+                  :external-format :utf-8))
+           (payload (concatenate '(simple-array (unsigned-byte 8) (*)) kept #(7))))
+      (multiple-value-bind (retained events)
+          (%input-monitor-probe-interrupt payload)
+        (expect retained :to-equalp kept)
+        (expect (length events) :to-equal 4)
+        (expect (typep (first events) 'cl-tty-kit:mouse-event) :to-be-truthy)
+        (expect (cl-tty-kit:key-event-type (second events)) :to-be :paste)
+        (expect (cl-tty-kit:key-event-code (second events)) :to-equal text)
+        (%input-monitor-probe-replay retained (concatenate 'string text "z"))))))
