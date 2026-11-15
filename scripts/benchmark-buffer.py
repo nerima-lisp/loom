@@ -1,15 +1,20 @@
+import argparse
 import json
 import os
+from pathlib import Path
 import statistics
 import subprocess
+import sys
 import tempfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "t" / "e2e"))
 
 from loom_e2e.benchmarks import (
     _measure_redraw,
     _percentile_95,
     _redraw_samples,
 )
-from loom_e2e.registry import scenario
+from loom_e2e.deadline import scenario_deadline
 from loom_e2e.session import Session
 
 
@@ -31,7 +36,7 @@ def _d13_samples(binary):
             for index in range(line_count):
                 handle.write(b"line-%05d " % index + b"x" * 20 + b"\n")
 
-        with Session(binary, [path]) as session:
+        with scenario_deadline(), Session(binary, [path]) as session:
             session.wait_ready()
             session.wait_for_region_text("body", "line-00000")
             session.wait_for_region_cursor("body", 0)
@@ -65,17 +70,17 @@ def _statistics(samples):
     }
 
 
-@scenario("c1/benchmark-statistics", commands=["forward-char"])
-def c1_benchmark_statistics(binary):
+def collect_statistics(binary):
     uptime_before = _uptime()
     d13 = _d13_samples(binary)
     redraw = []
     for _batch in range(4):
-        redraw.extend(_measure_redraw(binary, sample_count=25)["samples"])
+        with scenario_deadline():
+            redraw.extend(_measure_redraw(binary, sample_count=25)["samples"])
     if len(d13) != 25 or len(redraw) != 100:
         raise AssertionError("C1 benchmark statistics did not collect 25/100 samples")
 
-    report = {
+    return {
         "uptime_before": uptime_before,
         "uptime_after": _uptime(),
         "protocol": {
@@ -88,8 +93,20 @@ def c1_benchmark_statistics(binary):
         "d13": _statistics(d13),
         "redraw": _statistics(redraw),
     }
-    print(
-        "C1_BENCHMARK_STATISTICS "
-        + json.dumps(report, allow_nan=False, sort_keys=True),
-        flush=True,
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Record buffer benchmark distributions.")
+    parser.add_argument("--binary", required=True)
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args(argv)
+    report = json.dumps(
+        collect_statistics(args.binary), allow_nan=False, sort_keys=True
     )
+    if args.output is not None:
+        args.output.write_text(report + "\n")
+    print("C1_BENCHMARK_STATISTICS " + report, flush=True)
+
+
+if __name__ == "__main__":
+    main()
