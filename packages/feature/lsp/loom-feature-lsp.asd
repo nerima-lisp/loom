@@ -93,4 +93,5 @@
                                    (:file "commands-lsp-definition-test")
                                    (:file "lsp-command-diagnostics-format-test")
                                    (:file "lsp-command-start-test")
-                                   (:file "lsp-command-start-discovery-test")))))))
+                                   (:file "lsp-command-start-discovery-test")
+                                   (:file "lsp-server-request-errors-test")))))))

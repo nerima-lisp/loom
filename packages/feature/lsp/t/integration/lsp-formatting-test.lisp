@@ -42,13 +42,11 @@
                                                         text-document)
                                                        (gethash "formatting"
                                                                 text-document))))
-                                                (expect
-                                                 (and (hash-table-p formatting)
-                                                      (gethash
-                                                       "dynamicRegistration"
-                                                       formatting))
-                                                 :to-be
-                                                 nil))))
+                                                (expect (hash-table-p formatting) :to-be t)
+                                                (expect (nth-value 1 (gethash "dynamicRegistration" formatting))
+                                                        :to-be t)
+                                                (expect (gethash "dynamicRegistration" formatting)
+                                                        :to-be nil))))
           (it "registers M-x lsp-format-buffer and reports a missing session"
               (let ((command (%lsp-formatting-command)))
                 (expect command :to-be-truthy)
