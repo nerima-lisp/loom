@@ -267,7 +267,7 @@
   :lane "W3-10"
   :entry "C-c n repeatedly"
   :state "200-entry directory with file-tree visible"
-  :outcome "each selected entry stays visible"
+  :outcome "each selected entry stays visible with the required margin"
   :observe (:screen_text :cell_attrs)
   :scenario "file-tree/wp3-scroll/down")
  (:id "r6:file-tree-scroll:up"
@@ -276,7 +276,7 @@
   :lane "W3-10"
   :entry "C-c p repeatedly from last entry"
   :state "200-entry directory with file-tree visible"
-  :outcome "each selected entry stays visible"
+  :outcome "each selected entry stays visible with the required margin"
   :observe (:screen_text :cell_attrs)
   :scenario "file-tree/wp3-scroll/up")
  (:id "r6:file-tree-scroll:click"
@@ -294,7 +294,7 @@
   :lane "W3-10"
   :entry "shrink terminal"
   :state "200-entry directory with file-tree visible"
-  :outcome "last selected entry stays visible and scroll is clamped"
+  :outcome "viewport keeps its top on shrink and clamps on growth"
   :observe (:screen_text :cell_attrs)
   :scenario "file-tree/wp3-scroll/resize")
  (:id "r6:file-tree-scroll:wheel"
