@@ -35,7 +35,7 @@ def block_comment(binary):
     _multiline_case(
         binary,
         "#| first\nMIDDLE_COMMENT\nlast |# OUTSIDE_COMMENT\n",
-        [("MIDDLE_COMMENT", "brightblack"), ("OUTSIDE_COMMENT", "default")],
+        [("MIDDLE_COMMENT", "7f7f7f"), ("OUTSIDE_COMMENT", "default")],
     )
 
 
@@ -44,7 +44,7 @@ def nested_comment(binary):
     _multiline_case(
         binary,
         "#| outer #| inner\nINNER_COMMENT |# OUTER_COMMENT\n|# OUTSIDE_NESTED\n",
-        [("INNER_COMMENT", "brightblack"), ("OUTER_COMMENT", "brightblack"),
+        [("INNER_COMMENT", "7f7f7f"), ("OUTER_COMMENT", "7f7f7f"),
          ("OUTSIDE_NESTED", "default")],
     )
 
@@ -54,7 +54,7 @@ def docstring(binary):
     _multiline_case(
         binary,
         '(defun sample () "first\nMIDDLE_DOCSTRING\nlast" OUTSIDE_STRING)\n',
-        [("MIDDLE_DOCSTRING", "green"), ("OUTSIDE_STRING", "default")],
+        [("MIDDLE_DOCSTRING", "00cd00"), ("OUTSIDE_STRING", "default")],
     )
 
 
@@ -66,7 +66,7 @@ def delete_opening_quote(binary):
             handle.write('"first\nRESTORED_CODE\nlast\n')
         with Session(binary, [path]) as session:
             session.wait_ready()
-            _assert_word(session, "RESTORED_CODE", "green")
+            _assert_word(session, "RESTORED_CODE", "00cd00")
             session.send(keys.ctrl("f"))
             session.wait_for_region_cursor("body", 1)
             session.send(keys.ctrl("?"))

@@ -309,7 +309,7 @@ def _measure_cl_multiline(binary, split=False):
             samples = []
             for sample in range(_CL_MULTILINE_BATCH_SAMPLES):
                 quoted = sample % 2 == 0
-                expected = "green" if quoted else "default"
+                expected = "00cd00" if quoted else "default"
                 started = time.monotonic()
                 session.send(b'"' if quoted else keys.ctrl("?"))
                 while budget.execution_remaining() > 0:

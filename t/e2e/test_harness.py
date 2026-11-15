@@ -633,7 +633,7 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 def edit_syntax(data):
                     nonlocal foreground
                     if data == b'"':
-                        foreground = "green"
+                        foreground = "00cd00"
                     elif data == keys.ctrl("?"):
                         foreground = "default"
 
