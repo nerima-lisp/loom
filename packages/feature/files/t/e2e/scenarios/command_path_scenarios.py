@@ -586,13 +586,14 @@ def _assert_files_r3_state(
                     session.wait_for_prompted_file(
                         path,
                         expected_file,
-                        minibuffer or "Saved 1 file(s)",
+                        minibuffer,
                     )
                 else:
                     session.wait_for_file(
                         path, expected_file, command=command, route=route, after=after
                     )
             else:
+                # Rejected saves record completed:false; wait before reading bytes.
                 session.wait_for_command_completion(
                     command, route=route, after=after
                 )
@@ -609,11 +610,7 @@ def _send_writing_keys(session, sequence, command, route="key", *, writes=True):
 def _save_some_buffers_command(session, case, path, sequence):
     after = session.command_trace_count()
     _send_keys(session, sequence)
-    _wait_exact(
-        session,
-        "minibuffer",
-        f"Save file {_display_path(path)}? (y, n, !, q, C-g)",
-    )
+    _wait_save_some_prompt(session, path)
     session.type("y")
     if case["mutation_case"] == "read-only":
         _wait_exact(session, "minibuffer", case["expected_minibuffer"])
@@ -1153,14 +1150,11 @@ def _open_second_save_some_buffer(session, second_path):
     _edit_save_some_current(session, "!beta")
 
 
-def _start_save_some_buffers(session):
-    _send_keys(session, ["C-x", "s"])
-
-
 def _wait_save_some_prompt(session, path):
-    session.wait_for_region_text(
+    _wait_exact(
+        session,
         "minibuffer",
-        f"Save file {path.resolve()}? (y, n, !, q, C-g)",
+        f"Save file {_display_path(path)}? (y, n, !, q, C-g)",
     )
 
 
@@ -1172,7 +1166,7 @@ def save_some_buffers_n(binary):
         with _save_some_buffers_session(binary, path) as session:
             session.wait_ready()
             _edit_save_some_current(session, "!alpha")
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, path)
             session.type("n")
             session.wait_for_region_exact_text("minibuffer", "Saved 0 file(s)")
@@ -1193,7 +1187,7 @@ def save_some_buffers_bang(binary):
         with _save_some_buffers_session(binary, first_path) as session:
             session.wait_ready()
             _open_second_save_some_buffer(session, second_path)
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, first_path)
             session.type("!")
             session.wait_for_prompted_file(
@@ -1218,7 +1212,7 @@ def save_some_buffers_q(binary):
         with _save_some_buffers_session(binary, first_path) as session:
             session.wait_ready()
             _open_second_save_some_buffer(session, second_path)
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, first_path)
             session.type("y")
             _wait_save_some_prompt(session, second_path)
@@ -1243,7 +1237,7 @@ def save_some_buffers_external_change(binary):
             _edit_save_some_current(session, "!alpha")
             path.write_bytes(_SAVE_SOME_EXTERNAL)
             session.assert_file_bytes(path, _SAVE_SOME_EXTERNAL)
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, path)
             session.type("y")
             session.wait_for_region_text(
@@ -1271,7 +1265,7 @@ def save_some_buffers_bang_external_change_y(binary):
             _open_second_save_some_buffer(session, second_path)
             second_path.write_bytes(_SAVE_SOME_EXTERNAL)
             session.assert_file_bytes(second_path, _SAVE_SOME_EXTERNAL)
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, first_path)
             session.type("!")
             session.wait_for_region_text(
@@ -1303,7 +1297,7 @@ def save_some_buffers_multi_cancel(binary):
         with _save_some_buffers_session(binary, first_path) as session:
             session.wait_ready()
             _open_second_save_some_buffer(session, second_path)
-            _start_save_some_buffers(session)
+            _send_keys(session, ["C-x", "s"])
             _wait_save_some_prompt(session, first_path)
             session.send(keys.ctrl("g"))
             session.wait_for_region_exact_text("minibuffer", "Quit")

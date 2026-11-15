@@ -281,5 +281,6 @@
             (expect (find buffer (%test-registered-buffers *editor-state*)
                           :test #'eq)
                     :to-be buffer)
-            (expect (loom:minibuffer-message-string minibuffer)
+            (expect (search "blocked"
+                            (loom:minibuffer-message-string minibuffer))
                     :to-be-truthy)))))))

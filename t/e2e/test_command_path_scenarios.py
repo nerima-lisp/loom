@@ -1425,6 +1425,48 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertLess(writer_index, bytes_index)
         self.assertNotIn(("send", b"\x18\x13"), calls)
 
+    def _load_files_prompt_case(self, prompt_case, **updates):
+        data_path = (
+            REPOSITORY_ROOT
+            / "packages/feature/files/t/e2e/scenarios/command-paths.json"
+        )
+        data = json.loads(data_path.read_text(encoding="utf-8"))
+        path_id = f"r2:save-some-buffers:prompt-1:char:{prompt_case}"
+        case = next(
+            case for case in data["scenarios"] if case["path_id"] == path_id
+        )
+        case.update(updates)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenario.json"
+            data["scenarios"] = [case]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            return load_command_path_scenarios(path)
+
+    def test_prompted_file_message_rejects_non_accept_r2_case(self):
+        with self.assertRaisesRegex(
+            CommandPathScenarioError,
+            r"scenarios\[0\]\.prompted_file_message is only valid for "
+            "accepted R2 writes",
+        ):
+            self._load_files_prompt_case("cancel", prompted_file_message="Quit")
+
+    def test_prompted_file_message_rejects_save_after_effect(self):
+        with self.assertRaisesRegex(
+            CommandPathScenarioError,
+            r"scenarios\[0\] cannot combine prompted_file_message and "
+            "save_after_effect",
+        ):
+            self._load_files_prompt_case("accept", save_after_effect=True)
+
+    def test_prompted_file_message_rejects_empty_message(self):
+        with self.assertRaisesRegex(
+            CommandPathScenarioError,
+            r"scenarios\[0\]\.prompted_file_message must be a non-empty "
+            "trimmed string",
+        ):
+            self._load_files_prompt_case("accept", prompted_file_message="")
+
     def test_accept_flow_uses_exact_body_cursor_and_saved_bytes(self):
         case = {
             "name": "test/accept",
