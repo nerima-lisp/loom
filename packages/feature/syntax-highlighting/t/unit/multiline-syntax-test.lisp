@@ -298,10 +298,12 @@
       (buffer-set-truncate-lines buffer nil)
       (expect (%multiline-call-counts symbols (lambda () (loom::compose-frame state)))
               :to-equal '(2 2))
+      ;; Common Lisp buffers reserve a two-cell line-number gutter, so the
+      ;; text body wraps at eight cells and starts at column 2.
       (expect (cl-tty-kit:screen-row-string screen 1 :start 0 :end 10)
-              :to-equal "jklmnopqrs")
+              :to-equal "  hijklmno")
       (dolist (row '(0 1 2 3))
-        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 row))
+        (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 row))
                 :to-equal '((:fg 2))))
       (expect (%multiline-call-counts symbols (lambda () (loom::compose-frame state)))
               :to-equal '(2 0))))
@@ -321,8 +323,9 @@
                (list 'loom/feature/syntax-highlighting:syntax-highlight-line)
                (lambda () (loom::compose-frame state)))
               :to-equal '(1))
-      (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 2) :to-equal "42")
-      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 0 0))
+      ;; The two-cell line-number gutter shows logical line 4 before "42".
+      (expect (cl-tty-kit:screen-row-string screen 0 :start 0 :end 4) :to-equal "4 42")
+      (expect (cl-tty-kit:cell-style (cl-tty-kit:screen-cell screen 2 0))
               :to-equal '((:fg 3)))
       (dotimes (line 3)
         (expect (loom/feature/syntax-highlighting::%syntax-line-entry-token-source
