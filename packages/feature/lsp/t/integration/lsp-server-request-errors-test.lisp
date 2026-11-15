@@ -22,6 +22,87 @@
             (or (and (< code 32) (/= code 9)) (<= 127 code 159))))
         text))
 
+(defclass %wp7-final-shutdown-transport (%fake-lsp-transport)
+  ((session :accessor %wp7-final-shutdown-session)
+   (minibuffer :initarg :minibuffer :reader %wp7-final-shutdown-minibuffer)
+   (phase :initform nil :accessor %wp7-final-shutdown-phase)
+   (reply :accessor %wp7-final-shutdown-reply)
+   (observed :initform nil :accessor %wp7-final-shutdown-observed)
+   (queue-count :initform nil :accessor %wp7-final-shutdown-queue-count)
+   (prompt-active-p :initform nil :accessor %wp7-final-shutdown-prompt-active-p)))
+
+(defmethod loom/feature/lsp::lsp-transport-send ((transport %wp7-final-shutdown-transport) json)
+  (call-next-method)
+  (let ((message (%parse-lsp-json json)))
+    (when (equal (gethash "method" message) "shutdown")
+      (setf (%wp7-final-shutdown-phase transport) :server-request
+            (%wp7-final-shutdown-reply transport)
+            (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"result\":null}"
+                    (gethash "id" message)))
+      (%fake-push-incoming
+       transport
+       (%wp7-revision-raw-request
+        102 "window/showMessageRequest"
+        "{\"message\":\"Discard\",\"actions\":[{\"title\":\"Allow\"}]}")))))
+
+(defmethod loom/feature/lsp::lsp-transport-receive ((transport %wp7-final-shutdown-transport))
+  (case (%wp7-final-shutdown-phase transport)
+    (:server-request
+     (setf (%wp7-final-shutdown-phase transport) :yield)
+     (call-next-method))
+    (:yield
+     (setf (%wp7-final-shutdown-phase transport) :acknowledge)
+     nil)
+    (:acknowledge
+     (setf (%wp7-final-shutdown-observed transport) t
+           (%wp7-final-shutdown-queue-count transport)
+           (length (loom/feature/lsp::lsp-session-server-request-queue
+                    (%wp7-final-shutdown-session transport)))
+           (%wp7-final-shutdown-prompt-active-p transport)
+           (minibuffer-active-p (%wp7-final-shutdown-minibuffer transport))
+           (%wp7-final-shutdown-phase transport) nil)
+     (%wp7-final-shutdown-reply transport))
+    (otherwise (call-next-method))))
+
+(describe
+  "LSP requests displaced by a real file switch"
+  (it-each (("C-g" nil) ("confirmation" t))
+           "restores the first server request before later requests after file-switch ~A"
+           (label confirm-p)
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "external.txt" directory)))
+        (host-kit:write-file-string "original" path)
+        (%with-lsp-minibuffer-state (minibuffer "")
+          (let ((target (loom/feature/files:visit-file path)))
+            (expect (buffer-text target) :to-equal "original")
+            (host-kit:write-file-string "changed on disk" path)
+            (%with-fake-lsp-session ((transport session))
+              (%wp7-request transport session "displaced" "window/showMessageRequest"
+                            "{\"message\":\"Original request\",\"actions\":[{\"title\":\"Allow\"}]}")
+              (expect (minibuffer-prompt-string minibuffer) :to-equal "Original request: ")
+              (expect (loom/feature/files:visit-file path) :to-be target)
+              (expect (search "File changed on disk." (minibuffer-prompt-string minibuffer))
+                      :to-be-truthy)
+              (%wp7-request transport session "later" "window/showMessageRequest"
+                            "{\"message\":\"Later request\",\"actions\":[{\"title\":\"Deny\"}]}")
+              (expect (search "File changed on disk." (minibuffer-prompt-string minibuffer))
+                      :to-be-truthy)
+              (expect (%fake-sent-in-order transport) :to-have-length 0)
+              (if confirm-p
+                  (progn (%wp7-type minibuffer "k") (%wp7-key minibuffer :enter))
+                  (%wp7-key minibuffer :control-g))
+              (%wp7-frame session)
+              (expect (minibuffer-prompt-string minibuffer) :to-equal "Original request: ")
+              (%wp7-type minibuffer "Allow")
+              (%wp7-key minibuffer :enter)
+              (expect (gethash "title" (gethash "result" (%wp7-response transport "displaced")))
+                      :to-equal "Allow")
+              (%wp7-frame session)
+              (expect (minibuffer-prompt-string minibuffer) :to-equal "Later request: ")
+              (%wp7-key minibuffer :control-g)
+              (expect (gethash "result" (%wp7-response transport "later")) :to-be json-kit:+json-null+)
+              (expect (%fake-sent-in-order transport) :to-have-length 2))))))))
+
 (describe
   "LSP server request prompt ownership revision"
   (it "waits through the actual rename command's initialization before showing a server prompt"
@@ -83,16 +164,24 @@
           (%wp7-key minibuffer :enter)
           (expect confirmed :to-equal "kept")))))
 
-  (it "does not open a queued server prompt while stopping an initialized session"
+  (it "drains queued server requests without displaying them while waiting for shutdown"
     (%with-lsp-minibuffer-state (minibuffer "")
-      (%with-initialized-fake-lsp-session ((transport session))
-        (minibuffer-activate minibuffer "Existing: ")
-        (%wp7-request transport session 102 "window/showMessageRequest"
-                      "{\"message\":\"Discard\",\"actions\":[{\"title\":\"Allow\"}]}")
-        (loom/core/minibuffer:minibuffer-deactivate minibuffer)
-        (lsp-session-stop session :timeout 0)
-        (expect (minibuffer-active-p minibuffer) :to-be nil)
-        (expect (loom/feature/lsp::lsp-session-server-request-queue session) :to-be nil)))))
+      (let* ((transport (make-instance '%wp7-final-shutdown-transport :minibuffer minibuffer))
+             (session (make-lsp-session :transport transport)))
+        (setf (%wp7-final-shutdown-session transport) session)
+        (unwind-protect
+             (progn
+               (lsp-session-start session)
+               (%fake-push-initialize-response transport)
+               (lsp-session-drain session)
+               (lsp-session-stop session)
+               (expect (%wp7-final-shutdown-observed transport) :to-be t)
+               (expect (%wp7-final-shutdown-queue-count transport) :to-equal 1)
+               (expect (%wp7-final-shutdown-prompt-active-p transport) :to-be nil)
+               (expect (minibuffer-active-p minibuffer) :to-be nil)
+               (expect (%fake-closed-p transport) :to-be t)
+               (expect (loom/feature/lsp::lsp-session-server-request-queue session) :to-be nil))
+          (lsp-session-stop session :timeout 0))))))
 
 (describe
   "LSP malformed server requests revision"
@@ -186,7 +275,7 @@
         (expect (gethash "code" (gethash "error" (%wp7-response transport 303))) :to-equal -32603)
         (expect (gethash "result" (%wp7-response transport 304)) :to-be json-kit:+json-null+))))
 
-  (it "does not attempt another response after a partially written response fails"
+  (it "does not retry a response after a transport write emits it and fails"
     (let* ((transport (make-instance '%wp7-revision-transport))
            (session (make-lsp-session :transport transport)))
       (unwind-protect
