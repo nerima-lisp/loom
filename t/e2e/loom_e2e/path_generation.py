@@ -815,6 +815,26 @@ def _wp6_syntax_paths():
     ]
 
 
+def _wp1_recovery_paths():
+    lane = LANE_REGISTRY["feature/lifecycle"]
+    return [
+        _path(f"r6:recovery:{name}", [], "r6", lane, entry, state, outcome, observe)
+        for name, entry, state, outcome, observe in (
+            ("auto-save-kill9", "SIGKILL after auto-save, then reopen", "auto-save sidecar newer than its file", "notice appears and r restores the sidecar text", ["screen_text", "file_bytes"]),
+            ("sigterm-meta", "SIGTERM, then reopen", "modified buffer at SIGTERM", "body and metadata are written and reopening shows the notice", ["screen_text", "external_state"]),
+            ("sigterm-meta-watchdog", "SIGTERM during a stuck evaluation", "modified buffer while an evaluation cannot reach its boundary", "the watchdog thread writes the body and metadata and exits 143", ["external_state"]),
+            ("older-candidate", "open file", "sidecar older than its file", "no notice and recover-file reports no unsaved work", ["screen_text"]),
+            ("same-content", "open file", "newer sidecar and recovery entry holding the file text", "no notice and recover-file reports no unsaved work", ["screen_text"]),
+            ("other-loom", "open file held by another loom", "another loom holds the file lock", "the other-loom notice names its pid", ["screen_text"]),
+            ("save-deletes", "save-buffer", "sidecar with matching, unrelated, and legacy recovery entries", "sidecar and matching entry are deleted and the others remain", ["external_state", "file_bytes"]),
+            ("permissions", "auto-save, save, new file, then SIGTERM", "original file mode 0640", "sidecar and backup keep 0640, new sidecar is 0600, lock and recovery files are 0600 in 0700 directories", ["external_state"]),
+            ("backup-collision", "save-buffer", "a backup already uses the first index", "the existing backup is unchanged and the next index receives the copy", ["file_bytes"]),
+            ("special-name-writes", "auto-save and save-buffer", "file name containing glob characters and a backslash", "sidecar, saved bytes, and backup use the literal name", ["file_bytes", "external_state"]),
+            ("special-name-file-tree", "file-tree open", "file name containing glob characters and a backslash", "file-tree opens the file", ["screen_text"]),
+        )
+    ]
+
+
 def _fixed_paths():
     paths = []
     paths.extend(_file_tree_scroll_paths())
@@ -918,6 +938,7 @@ def _fixed_paths():
     paths.extend(_wp7_fixed_paths())
     paths.extend(_buffer_menu_fixed_paths())
     paths.extend(_wp2_evaluation_interrupt_paths())
+    paths.extend(_wp1_recovery_paths())
     return paths
 
 

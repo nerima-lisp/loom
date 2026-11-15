@@ -116,7 +116,7 @@ class GenerateRequiredPathsTests(unittest.TestCase):
 
         self.assertEqual(
             rule_counts,
-            {"r1": 58, "r2": 34, "r3": 14, "r4": 2, "r5": 10, "r6": 48, "r7": 7, "r8": 4},
+            {"r1": 58, "r2": 34, "r3": 14, "r4": 2, "r5": 10, "r6": 59, "r7": 7, "r8": 4},
         )
         self.assertEqual(len(self.paths), len(self.paths_by_id))
         self.assertEqual(

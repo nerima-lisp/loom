@@ -480,6 +480,580 @@
       ],
       "entry_mode": "mx",
       "entry_keys": []
+    },
+    {
+      "name": "command-path/r1/recover-file/mx",
+      "path_id": "r1:recover-file:mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "recover-file"
+      ],
+      "command": "recover-file",
+      "entry_mode": "mx",
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        54
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Recover from auto-save (<1 min newer)? (r, d, i, C-g)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Recover from auto-save (<1 min newer)? (r, d, i, C-g)"
+        }
+      ],
+      "cancel_prompt_after_assert": true
+    },
+    {
+      "name": "command-path/r1/list-recoverable-files/mx",
+      "path_id": "r1:list-recoverable-files:mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "list-recoverable-files"
+      ],
+      "command": "list-recoverable-files",
+      "entry_mode": "mx",
+      "columns": 200,
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "match": "contains",
+          "text": "$scenario_dir/lost.txt"
+        },
+        {
+          "region": "body",
+          "index": 0,
+          "match": "contains",
+          "text": "  recovery  "
+        },
+        {
+          "row": 22,
+          "match": "contains",
+          "text": "*Loom-Recover*"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/recover-file/prompt-1/accept",
+      "path_id": "r2:recover-file:prompt-1:char:accept",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:char",
+      "commands": [
+        "execute-extended-command",
+        "recover-file",
+        "save-buffer"
+      ],
+      "command": "recover-file",
+      "entry_mode": "mx",
+      "prompt_kind": "char",
+      "prompt_case": "accept",
+      "prompt_open": "Recover from auto-save (<1 min newer)? (r, d, i, C-g)",
+      "input_text": "r",
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Recovered from auto-save; save to keep",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "save_after_effect": true
+    },
+    {
+      "name": "command-path/r2/recover-file/prompt-1/cancel",
+      "path_id": "r2:recover-file:prompt-1:char:cancel",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:char",
+      "commands": [
+        "execute-extended-command",
+        "recover-file"
+      ],
+      "command": "recover-file",
+      "entry_mode": "mx",
+      "prompt_kind": "char",
+      "prompt_case": "cancel",
+      "prompt_open": "Recover from auto-save (<1 min newer)? (r, d, i, C-g)",
+      "input_text": "",
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r2/recover-file/prompt-1/invalid",
+      "path_id": "r2:recover-file:prompt-1:char:invalid",
+      "lane": "W3-2",
+      "rule": "r2",
+      "entry": "mx;prompt:1:char",
+      "commands": [
+        "execute-extended-command",
+        "recover-file"
+      ],
+      "command": "recover-file",
+      "entry_mode": "mx",
+      "prompt_kind": "char",
+      "prompt_case": "invalid",
+      "prompt_open": "Recover from auto-save (<1 min newer)? (r, d, i, C-g)",
+      "input_text": "x",
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Recover from auto-save (<1 min newer)? (r, d, i, C-g) Allowed keys: r, d, i",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/effect",
+      "path_id": "r3:recover-file:effect",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "recover-file",
+        "save-buffer"
+      ],
+      "command": "recover-file",
+      "mutation_case": "effect",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET",
+        "r"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft two\n",
+      "expected_bytes": "draft two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Recovered from auto-save; save to keep",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/undo",
+      "path_id": "r3:recover-file:undo",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "recover-file",
+        "save-buffer",
+        "undo"
+      ],
+      "command": "recover-file",
+      "mutation_case": "undo",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET",
+        "r"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft two\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Recovered from auto-save; save to keep",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/read-only",
+      "path_id": "r3:recover-file:read-only",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "toggle-read-only",
+        "execute-extended-command",
+        "recover-file"
+      ],
+      "command": "recover-file",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "expected_read_only_status": "Buffer is read-only"
+    },
+    {
+      "name": "command-path/r3/recover-file/narrow",
+      "path_id": "r3:recover-file:narrow",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "narrow-to-region",
+        "execute-extended-command",
+        "recover-file"
+      ],
+      "command": "recover-file",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Widen before recovering",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft"
+        }
+      ],
+      "prepare_keys": [
+        "C-a",
+        "C-@",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "post_setup_keys": [
+        "C-a"
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/split-window",
+      "path_id": "r3:recover-file:split-window",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "split-window-below",
+        "execute-extended-command",
+        "recover-file",
+        "save-buffer"
+      ],
+      "command": "recover-file",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET",
+        "r"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft two\n",
+      "expected_bytes": "draft two\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "Recovered from auto-save; save to keep",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        },
+        {
+          "region": "body",
+          "index": 12,
+          "text": "draft two"
+        }
+      ],
+      "prepare_commands": [
+        "split-window-below"
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/macro-replay",
+      "path_id": "r3:recover-file:macro-replay",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "execute-extended-command",
+        "recover-file",
+        "end-kbd-macro",
+        "save-buffer",
+        "undo",
+        "beginning-of-buffer",
+        "call-last-kbd-macro"
+      ],
+      "command": "recover-file",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "M-x",
+        "recover-file",
+        "RET",
+        "r"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft two\n",
+      "expected_bytes": "draft two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft one"
+        }
+      ],
+      "replay_prefix_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/r3/recover-file/prefix-u4",
+      "path_id": "r3:recover-file:prefix-u4",
+      "lane": "W3-2",
+      "rule": "r3",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "recover-file",
+        "save-buffer"
+      ],
+      "command": "recover-file",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-x",
+        "recover-file",
+        "RET",
+        "r"
+      ],
+      "fixture_files": [
+        {
+          "path": "#buffer.txt#",
+          "contents": "draft two\n"
+        }
+      ],
+      "initial_bytes": "draft one\n",
+      "effect_bytes": "draft two\n",
+      "expected_bytes": "draft two\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Recovered from auto-save; save to keep",
+      "effect_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ],
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": "draft two"
+        }
+      ]
     }
   ]
 }
