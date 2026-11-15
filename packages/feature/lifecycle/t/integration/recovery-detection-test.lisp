@@ -262,6 +262,51 @@ PATH's hash. Return both."
                     :to-equal '(t t t))
             (expect (host-kit:path-exists-p stale) :to-be nil))))))
 
+  (it "leaves staging files after a save while another loom holds the lock"
+    (cl-weave:expect-assertions 2)
+    (%with-lock-test-state (state)
+      (let* ((path (%lock-test-file state "shared.txt" "saved
+"))
+             (stale (%lock-test-file state "#shared.txt#.QWErty.tmp"))
+             (lock-path (%lock-test-lock-path state path))
+             (ready (merge-pathnames "ready" state))
+             (process nil))
+        (ensure-directories-exist lock-path)
+        (unwind-protect
+             (progn
+               (setf process (%start-lock-holder-process lock-path ready))
+               (%wait-for-host-kit-lock-holder process ready)
+               (%write-lock-test-owner
+                lock-path
+                (format nil "(:pid ~D :host \"h\" :path ~S)~%"
+                        (sb-ext:process-pid process) (%lock-test-truename path)))
+               (%with-minibuffer-state (minibuffer "")
+                 (let ((buffer (loom/feature/files:visit-file path)))
+                   (expect (host-kit:path-exists-p stale) :to-be t)
+                   (buffer-insert-string buffer "X")
+                   (buffer-save buffer)
+                   (expect (host-kit:path-exists-p stale) :to-be t))))
+          (when process (%stop-lock-holder-process process))))))
+
+  (it "leaves staging files after a save when the lock file names another owner"
+    (cl-weave:expect-assertions 2)
+    (%with-lock-test-state (state)
+      (let* ((path (%lock-test-file state "taken.txt" "saved
+"))
+             (stale (%lock-test-file state "#taken.txt#.QWErty.tmp"))
+             (lock-path (%lock-test-lock-path state path)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (expect (%lock-test-hold-count path) :to-equal 1)
+            (host-kit:write-file-string "again" stale)
+            (%write-lock-test-owner
+             lock-path
+             (format nil "(:pid ~D :host \"elsewhere\" :path ~S)~%"
+                     (1+ (sb-posix:getpid)) (%lock-test-truename path)))
+            (buffer-insert-string buffer "X")
+            (buffer-save buffer)
+            (expect (host-kit:path-exists-p stale) :to-be t))))))
+
   (it "delivers queued lifecycle messages to *Messages* sinks on the next tick"
     (cl-weave:expect-assertions 2)
     (let ((loom/feature/lifecycle::*pending-lifecycle-messages* nil)

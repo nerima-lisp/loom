@@ -192,6 +192,25 @@ tried to lock, as after write-file or the first save of a new buffer."
     (unless (and record (equal (car record) (buffer-file-truename buffer)))
       (lock-buffer-file buffer))))
 
+(defun %own-file-lock-p (buffer)
+  "True when BUFFER holds the lock of its current file and the lock file names
+this process, by pid and host, as its owner."
+  (let ((truename (and *loom-state-directory* (buffer-file-truename buffer))))
+    (and truename
+         (let ((record (sb-thread:with-mutex (*file-locks-mutex*)
+                         (gethash buffer *buffer-file-locks*))))
+           (and record (cdr record) (string= (car record) truename)))
+         (let ((owner (read-lock-owner
+                       (merge-pathnames (file-lock-name truename)
+                                        (merge-pathnames
+                                         "locks/"
+                                         (uiop:ensure-directory-pathname
+                                          *loom-state-directory*))))))
+           (and owner
+                (eql (getf owner :pid) (sb-posix:getpid))
+                (string= (getf owner :host) (host-kit:hostname))
+                (string= (getf owner :path) truename))))))
+
 (defun release-all-file-locks ()
   "Release every file lock this process holds. Safe on any thread."
   (sb-thread:with-mutex (*file-locks-mutex*)

@@ -220,14 +220,17 @@ stale auto-save staging files and report unsaved work newer than the file."
 
 (defun %recovery-after-save (session buffer)
   "After a successful save, follow a changed path with the lock and delete the
-recovery entries and stale auto-save staging files for the file."
+recovery entries for the file. Stale auto-save staging files are deleted only
+while the lock file names this process, because another loom holding the lock
+may be writing them."
   (declare (ignore session))
   (when (and *loom-state-directory* (buffer-path buffer))
     (handler-case
         (progn
           (relock-moved-buffer-file buffer)
           (delete-recovery-entries-for-buffer buffer)
-          (delete-stale-auto-save-temporaries (buffer-path buffer)))
+          (when (%own-file-lock-p buffer)
+            (delete-stale-auto-save-temporaries (buffer-path buffer))))
       (error (condition)
         (%log-lifecycle-message
          (format nil "Recovery cleanup after saving ~A failed: ~A"
