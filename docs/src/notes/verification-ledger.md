@@ -1198,16 +1198,17 @@ attempt 1ではmacOSのPTY E2Eで、既存の`lsp/find-definition-success`だけ
 T9の差分は`t/e2e/scenarios/lsp.py`を変えておらず、`deadline.py`の変更はR9の印のないシナリオの期限を変えない。
 同じシナリオはmainのrun `43748775992`で成功していたので、失敗したジョブだけを再実行した。
 10:30の照合を直したコミット`87c8adce`では、CI run `43763441781`で6ジョブがすべて成功した。
+13行がそろったコミット`f3723d85`はWP1の`bb9124b5`の上にあり、run `43766789222`ほか全件のrun 5本で6ジョブがすべて成功した。
 章番号、タスク名（WP1、R1など）、FR番号は、リポジトリの外にあるv0.2実行計画書のものである。
 
 ### 計画書1章の条件
 
 | # | 条件 | 満たしたか | 証拠 |
 |---|---|---|---|
-| 1 | 4章のすべてのタスクがmainに着地し、キットのリリースタグが出ている | 未達。WP1、T9、R1を待っている | 着地の事実は、進行役が`gh`と`jj`で確かめた値である。着地済みのタスクとmainのコミットは次のとおり。単位1（CI0、P2、S1、G1）は`ec5a519a`、単位2（P1、D0、WP5a、C1）は`3df0ca9e`、単位3（F1、WP7、WP4a）は`f37424f3`。WP3は`67a643c2`、C2は`dc1eb581`、FX2は`718403fa`、FX4は`ccfe2ae0`、WP2は`41164e95`、WP6は`4df46c8e`、WP4bは`75c1cb70`、WP5bは今のmainの先頭の`1d26a5bd`。未着地はWP1（実装中）、T9、R1（T9の後）、WP0（作者の手動確認）である。キットのリリースはcl-vcs-kit v0.3.0、cl-host-kit v0.4.0、cl-tty-kit v1.9.0、cl-concurrent-kit v0.8.0がすべて公開済みで、draftではない。cl-tty-kitはその後のv1.9.1がLatestである。 |
-| 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | `02ae61ea`と`87c8adce`では満たした。WP1の着地後のmainでは未確認 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。`87c8adce`のrun `43763441781`では6ジョブがすべて成功し、PTY E2EはLinux（job `132963132000`）とmacOS（job `132963131692`）のどちらも1,298件成功、0件失敗で、Path coverageも同じ値だった。 |
-| 3 | どの`boundary-allowlist.lisp`にも増えた項目がない | T9のすべてのコミットで満たした。WP1の差分に許可表の変更があるかは未確認 | `jj diff --from v0.1.0 --to main`で変わった許可表は、新しいスライスの`packages/feature/buffer-menu/t/boundary-allowlist.lisp`だけである。中身は項目のない`("feature/buffer-menu")`で、WP4aのコミット`cce2215e`が足した。増えた項目は0件である。`1d26a5bd`からT9の最後のコミットまでの差分に、許可表のファイルはない。 |
-| 4 | R9の13行（前夜と12の時刻）がすべて通る | 未達。前夜と09:00を除く11行は両OSで通った。前夜と09:00はWP1の着地を待っている | run `43756283240`とrun `43763441781`の両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はどちらのrunでもpass 1件。場面ごとの結果は下の表にある。 |
+| 1 | 4章のすべてのタスクがmainに着地し、キットのリリースタグが出ている | 未達。T9とR1を待っている | 着地の事実は、進行役が`gh`と`jj`で確かめた値である。着地済みのタスクとmainのコミットは次のとおり。単位1（CI0、P2、S1、G1）は`ec5a519a`、単位2（P1、D0、WP5a、C1）は`3df0ca9e`、単位3（F1、WP7、WP4a）は`f37424f3`。WP3は`67a643c2`、C2は`dc1eb581`、FX2は`718403fa`、FX4は`ccfe2ae0`、WP2は`41164e95`、WP6は`4df46c8e`、WP4bは`75c1cb70`、WP5bは`1d26a5bd`。WP1は今のmainの先頭の`bb9124b5`で着地した（WP1のCI run `43765115990`は進行役が確認）。未着地はT9、R1（T9の後）、WP0（作者の手動確認）である。キットのリリースはcl-vcs-kit v0.3.0、cl-host-kit v0.4.0、cl-tty-kit v1.9.0、cl-concurrent-kit v0.8.0がすべて公開済みで、draftではない。cl-tty-kitはその後のv1.9.1がLatestである。 |
+| 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | 満たした。WP1の`bb9124b5`の上に積んだ`f3723d85`のrun `43766789222`でも緑 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。`87c8adce`のrun `43763441781`では6ジョブがすべて成功し、PTY E2EはLinux（job `132963132000`）とmacOS（job `132963131692`）のどちらも1,298件成功、0件失敗で、Path coverageも同じ値だった。`f3723d85`のrun `43766789222`では6ジョブがすべて成功した。loom-testはLinuxで2,191件成功、6件skip、0件失敗（全2,197件）、macOSで2,192件成功、6件skip、0件失敗（全2,198件）、formattingは両OSで成功。PTY E2Eは両OSとも1,323件成功、0件失敗で、Path coverageは1,187 pass、2 excluded、0 failing（全1,189件）、r6は59件、r9は1件。 |
+| 3 | どの`boundary-allowlist.lisp`にも増えた項目がない | 満たした（WP1の`bb9124b5`とT9のすべてのコミットまで） | `jj --ignore-working-copy diff --from v0.1.0 --to bb9124b5 'glob:**/boundary-allowlist.lisp'`で変わった許可表は、新しいスライスの`packages/feature/buffer-menu/t/boundary-allowlist.lisp`だけである。中身は項目のない`("feature/buffer-menu")`で、WP4aのコミット`cce2215e`が足した。増えた項目は0件である。`bb9124b5`からT9の最後のコミットまでの差分に、許可表のファイルはない。 |
+| 4 | R9の13行（前夜と12の時刻）がすべて通る | 満たした（13行が両OSで通過） | `f3723d85`の全件のrun `43766789222`、`43771227001`、`43771230789`、`43771233980`、`43771237441`の両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はrun `43766789222`でpass 1件。場面ごとの結果は下の表にある。 |
 | 5 | `daily-driver-checklist.md`の5行を作者が記入し、Failがない | 未達。WP0（作者の記入）を待っている | mainの`docs/src/notes/daily-driver-checklist.md`では、`Author result`列の5行がすべて空欄である。 |
 | 6 | 11章の既知の制約が`docs/src/notes/release-v0.2.0.md`に書かれている | 未達。R1を待っている | `docs/src/notes/release-v0.2.0.md`はまだない。 |
 | 7 | タグを付けたときの`release.yml`が成功する | 未達。作者のタグ付けを待っている | タグ`v0.2.0`はまだない。 |
@@ -1218,13 +1219,13 @@ T9の差分は`t/e2e/scenarios/lsp.py`を変えておらず、`deadline.py`の�
 R9は計画書7章の表に合わせ、前夜と12の時刻の13行で数える。下の表も同じ13行を並べる。
 前夜と09:00を除く11行は`02ae61ea`に入っており、run `43756283240`で両OSとも通った。
 10:30の照合を直した`87c8adce`でも、11行はrun `43763441781`で両OSとも通った。
-前夜と09:00はWP1の機能を使うので、T9の最後のコミットに分けて書いた。
-この2場面はmainにWP1がないため、まだ実行していない。
+前夜と09:00はWP1の機能を使うので、WP1の`bb9124b5`の上に積んだ`f3723d85`に分けて書いた。
+13行は`f3723d85`の全件のrun 5本で両OSとも通った。
 
 | 時刻 | 観測 | 結果 |
 |---|---|---|
-| 前夜 | exit 129。`~/.loom/recovery/`に、メタの`:path`がa.lispの本文とメタが1組ある。本文は未保存のバッファと一致し、メタの`:reason`は`:sighup` | WP1待ち |
-| 09:00 | 起動時の`N recoverable file(s); M-x list-recoverable-files`（Nは起動前の本文の数）、一覧の先頭行のa.lispと`recovery`、RETの後の`Recover from recovery (<1 min newer)? (r, d, i, C-g)`、`r`の後の`Recovered from recovery; save to keep`とカーソル(0,0)、保存後のa.lisp。保存後は`:path`がa.lispの退避がなく、本文が1件減る | WP1待ち |
+| 前夜 | exit 129。`~/.loom/recovery/`に、メタの`:path`がa.lispの本文とメタが1組ある。本文は未保存のバッファと一致し、メタの`:reason`は`:sighup` | 通過（run `43766789222`と全件の4本） |
+| 09:00 | 起動時の`N recoverable file(s); M-x list-recoverable-files`（Nは起動前の本文の数）、一覧の先頭行のa.lispと`recovery`、RETの後の`Recover from recovery (<1 min newer)? (r, d, i, C-g)`、`r`の後の`Recovered from recovery; save to keep`とカーソル(0,0)、保存後のa.lisp。保存後は`:path`がa.lispの退避がなく、本文が1件減る | 通過（run `43766789222`と全件の4本） |
 | 09:05 | `C-x p f`で開いたファイルの本文 | 通過（run `43756283240`、`43763441781`） |
 | 09:10 | TAB、C-→、M-;、RETの後のカーソルと行、保存したバイト列 | 通過（run `43756283240`、`43763441781`） |
 | 09:15 | docstringの中の語の前景色`00cd00`、ブロックコメントの中の語の前景色`7f7f7f` | 通過（run `43756283240`、`43763441781`） |
@@ -1247,14 +1248,42 @@ R9に実際に掛かる期限は次の節の値である。
 
 ### R9の制限時間（FR-T903）
 
-`t/e2e/loom_e2e/deadline.py`の`R9_SCENARIO_TIMEOUT_SECONDS`は、仮の値の60秒である。
-前夜と09:00が通るようになってから、両OSで5回ずつ測り、その最大値の2倍に置き換える。
-測った値はこの節に追記する。
+R9の実行の予算（`t/e2e/loom_e2e/deadline.py`の`R9_SCENARIO_EXECUTION_TIMEOUT_SECONDS`）は33.892秒である。
+cleanupの予約5秒を足した合計（`R9_SCENARIO_TIMEOUT_SECONDS`）は38.892秒になる。
+33.892秒は、下の全件のrun 10本（両OSで5本ずつ）の`r9/daily`の最大値16.946秒（macOS）の2倍である。
+測った`elapsed_seconds`はcleanupの予約を除いた実行の時間なので、2倍した値も実行の予算に当て、測った量と予算が数える量をそろえた。
+ただし`elapsed_seconds`は、予算を止める準備の時間（10:30のLSPの起動とwarm-upなど）も含む壁時計で、予算が数える時間より大きく出る。上限を決める側には安全な向きである。
+制限時間が効くのは全件のE2Eのrunの中なので、その負荷が入った全件のrunの値で決めた。
+`r9/daily`だけを流したrunの値は、全件のrunの負荷が入らないので参考として残す。
 ほかのシナリオの10秒は変えていない。
+
+全件のrunは、どれも`f3723d85`で6ジョブがすべて成功し、PTY E2Eは両OSとも1,323件成功、0件失敗だった。
+値は`SCENARIO_TIMING`の`elapsed_seconds`（秒）である。
+
+| 回 | run | Linux（job） | macOS（job） |
+|---|---|---|---|
+| 1 | `43766789222` | 3.834（`132973637189`） | 9.629（`132973637013`） |
+| 2 | `43771227001` | 5.030（`132987361431`） | 16.107（`132987361706`） |
+| 3 | `43771230789` | 3.323（`132987372954`） | 16.946（`132987372856`） |
+| 4 | `43771233980` | 4.049（`132987384416`） | 4.015（`132987384176`） |
+| 5 | `43771237441` | 3.904（`132987394027`） | 9.636（`132987393950`） |
+
+run 2から5は、計測用のbookmark `wp/t9-m2`から`wp/t9-m5`（どれも`f3723d85`）で同時に起動した。
+refが別なのでCIのconcurrencyグループも別で、各runは別のrunnerで動いた。
+
+参考として、`r9/daily`だけを流したrun（`e2e_scenario=r9/daily`、`f3723d85`）の値を残す。両OSのPTY E2Eは全回成功した。
+
+| 回 | run | Linux | macOS |
+|---|---|---|---|
+| 1 | `43768226812` | 5.038 | 5.086 |
+| 2 | `43769041520` | 3.512 | 6.423 |
+| 3 | `43769822565` | 4.770 | 7.248 |
+| 4 | `43770341635` | 4.373 | 7.010 |
+| 5 | `43770996233` | 4.220 | 6.220 |
 
 ### ベンチマーク（`--benchmark-gate`、CI）
 
-変更前はmainのrun `43748775992`、変更後は`02ae61ea`のrun `43756283240`と`87c8adce`のrun `43763441781`である。
+変更前はmainのrun `43748775992`、変更後は`02ae61ea`のrun `43756283240`、`87c8adce`のrun `43763441781`、`f3723d85`のrun `43766789222`である。
 基準は初回画面0.3秒、入力から再描画までのp95が50 msで、すべて基準内だった。
 
 | OS | 測定 | 初回画面 | 入力→再描画 p95 | cl_multiline_20k p95 |
@@ -1265,5 +1294,7 @@ R9に実際に掛かる期限は次の節の値である。
 | macOS | 変更後（job `132944367067`） | 0.136 s | 3.604 ms | 7.042 ms |
 | Linux | 照合を直した後（job `132963132000`） | 0.128 s | 0.895 ms | 6.255 ms |
 | macOS | 照合を直した後（job `132963131692`） | 0.097 s | 2.326 ms | 14.295 ms |
+| Linux | 13行をそろえた後（job `132973637189`） | 0.136 s | 1.612 ms | 6.856 ms |
+| macOS | 13行をそろえた後（job `132973637013`） | 0.096 s | 1.713 ms | 5.948 ms |
 
 どのrunも1回ずつの測定で、計測時のランナーの負荷は記録していない。
