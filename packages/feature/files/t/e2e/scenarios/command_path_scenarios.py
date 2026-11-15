@@ -1311,6 +1311,6 @@ def save_some_buffers_multi_cancel(binary):
             session.assert_file_bytes(second_path, _SAVE_SOME_SECOND)
             _quit_after_discarding_buffer(
                 session,
-                "Save first.txt? (s/d/c): ",
                 "Save second.txt? (s/d/c): ",
+                "Save first.txt? (s/d/c): ",
             )
