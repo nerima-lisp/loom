@@ -1,15 +1,17 @@
 (in-package #:loom/test)
 
-(defun %start-host-kit-probe-holder (target ready)
+(defun %start-host-kit-probe-holder (target ready &key expect-conflict)
   (let ((form
           (format nil
                   "(let ((lock (host-kit:try-acquire-file-lock ~S)))
-                     (assert lock)
-                     (format (host-kit:file-lock-stream lock) \"pid ~~D~~%\" (sb-posix:getpid))
-                     (finish-output (host-kit:file-lock-stream lock))
+                     (assert (eq (null lock) ~S))
+                     (when lock
+                       (format (host-kit:file-lock-stream lock) \"pid ~~D~~%\" (sb-posix:getpid))
+                       (finish-output (host-kit:file-lock-stream lock)))
                      (host-kit:write-file-string \"ready\" ~S :mode #o600)
                      (read-line *standard-input* nil nil))"
                   (namestring target)
+                  expect-conflict
                   (namestring ready))))
     (sb-ext:run-program
      (namestring sb-ext:*runtime-pathname*)
@@ -110,4 +112,33 @@
         (expect (host-kit:file-metadata-mode (host-kit:file-metadata target))
                 :to-equal #o000)
         (host-kit:set-file-mode target #o600)
-        (expect (host-kit:read-file-string target) :to-equal "private recovery")))))
+        (expect (host-kit:read-file-string target) :to-equal "private recovery"))))
+
+  (it "keeps a retained lock after a scoped pathname acquisition is rejected"
+    (cl-weave:expect-assertions 5)
+    (host-kit:with-temporary-directory (directory)
+      (let* ((target (merge-pathnames "visited.lock" directory))
+             (ready (merge-pathnames "contender-ready" directory))
+             (lock (host-kit:try-acquire-file-lock target)))
+        (unwind-protect
+             (progn
+               (expect (typep lock 'host-kit:file-lock) :to-be t)
+               (signals error
+                 (host-kit:call-with-file-lock
+                  (lambda (stream) (declare (ignore stream)) nil)
+                  target :wait nil))
+               (let ((process (%start-host-kit-probe-holder target ready :expect-conflict t)))
+                 (unwind-protect
+                      (progn
+                        (%wait-for-host-kit-probe-holder process ready)
+                        (expect (sb-ext:process-alive-p process) :to-be t)
+                        (write-line "exit" (sb-ext:process-input process))
+                        (finish-output (sb-ext:process-input process))
+                        (sb-ext:process-wait process)
+                        (expect (sb-ext:process-exit-code process) :to-equal 0))
+                   (when (sb-ext:process-alive-p process)
+                     (sb-ext:process-kill process 15))
+                   (sb-ext:process-wait process)
+                   (close (sb-ext:process-input process))))
+               (expect (host-kit:release-file-lock lock) :to-be t))
+          (when lock (host-kit:release-file-lock lock)))))))
