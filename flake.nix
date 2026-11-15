@@ -54,7 +54,7 @@
       flake = false;
     };
     cl-concurrent-kit = {
-      url = "github:nerima-lisp/cl-concurrent-kit/a4fe184632f56006ecb31f7833e8ff117bd2eff6";
+      url = "github:nerima-lisp/cl-concurrent-kit/226e4fe6c56c8e06d96ca0b7e2603bb08a273088";
       flake = false;
     };
     # cl-regex-kit requires cl-parser-kit explicitly.
