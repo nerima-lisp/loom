@@ -120,4 +120,28 @@
                          :external
                          (list "clipboard")
                          :modes
+                         (list :all))
+  (register-command-spec :feature/kill-ring
+                         "zap-to-char"
+                         "zap-to-char"
+                         (function loom/feature/kill-ring:zap-to-char)
+                         :keys
+                         (list (list :alt #\z))
+                         :keymap
+                         :global
+                         :group
+                         "editing"
+                         :help
+                         "M-z Zap to char"
+                         :help-order
+                         49
+                         :mutates
+                         t
+                         :prompts
+                         (quote (:char))
+                         :needs-region
+                         nil
+                         :external
+                         nil
+                         :modes
                          (list :all)))

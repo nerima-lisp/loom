@@ -2611,6 +2611,121 @@
         0,
         3
       ]
+    },
+    {
+      "name": "command-path/kill-ring/r2/zap-to-char/accept",
+      "path_id": "r2:zap-to-char:prompt-1:char:accept",
+      "lane": "W3-8",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char",
+      "commands": [
+        "zap-to-char"
+      ],
+      "command": "zap-to-char",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-z"
+      ],
+      "prompt_open": "Zap to char: ",
+      "prompt_label": "Zap to char: ",
+      "prompt_labels": [
+        "Zap to char: "
+      ],
+      "prompt_index": 1,
+      "prompt_kind": "char",
+      "prompt_case": "accept",
+      "input_text": "b",
+      "initial_bytes": "alpha beta gamma\n",
+      "expected_bytes": "alpha beta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta beta gamma",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r2/zap-to-char/cancel",
+      "path_id": "r2:zap-to-char:prompt-1:char:cancel",
+      "lane": "W3-8",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char",
+      "commands": [
+        "zap-to-char"
+      ],
+      "command": "zap-to-char",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-z"
+      ],
+      "prompt_open": "Zap to char: ",
+      "prompt_label": "Zap to char: ",
+      "prompt_labels": [
+        "Zap to char: "
+      ],
+      "prompt_index": 1,
+      "prompt_kind": "char",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "initial_bytes": "alpha beta gamma\n",
+      "expected_bytes": "alpha beta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r2/zap-to-char/invalid",
+      "path_id": "r2:zap-to-char:prompt-1:char:invalid",
+      "lane": "W3-8",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char",
+      "commands": [
+        "zap-to-char"
+      ],
+      "command": "zap-to-char",
+      "entry_mode": "key",
+      "entry_keys": [
+        "M-z"
+      ],
+      "prompt_open": "Zap to char: ",
+      "prompt_label": "Zap to char: ",
+      "prompt_labels": [
+        "Zap to char: "
+      ],
+      "prompt_index": 1,
+      "prompt_kind": "char",
+      "prompt_case": "invalid",
+      "input_text": "",
+      "invalid_key": "UP",
+      "initial_bytes": "alpha beta gamma\n",
+      "expected_bytes": "alpha beta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ]
     }
   ]
 }

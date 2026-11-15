@@ -6,4 +6,5 @@
   "kill-word"
   "yank"
   "yank-pop"
+  "zap-to-char"
 )

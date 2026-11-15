@@ -1348,4 +1348,55 @@
       :observe
       (:file_bytes :screen_text)
       :scenario
-      "kill-ring/r4/kill-ring-save/region-absent"))
+      "kill-ring/r4/kill-ring-save/region-absent")
+ (:id "r2:zap-to-char:prompt-1:char:accept"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r2
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char"
+      :state
+      "prompt:char"
+      :outcome
+      "accept"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r2/zap-to-char/accept")
+ (:id "r2:zap-to-char:prompt-1:char:cancel"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r2
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char"
+      :state
+      "prompt:char"
+      :outcome
+      "cancel"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r2/zap-to-char/cancel")
+ (:id "r2:zap-to-char:prompt-1:char:invalid"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r2
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]};prompt:1:char"
+      :state
+      "prompt:char"
+      :outcome
+      "invalid"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r2/zap-to-char/invalid"))

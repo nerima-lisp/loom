@@ -46,3 +46,66 @@ same entry, and the index wraps around the ring."
 (defun kill-line ()
   "Kill through successive line ends according to the active prefix."
   (%kill-line-command))
+
+(defun %zap-to-char-target-offset (text point character count)
+  (cond
+    ((plusp count)
+     (loop with start = point
+           repeat
+           count
+           for target = (position character text :start start)
+           do (if target
+                  (setf start (1+ target))
+                  (return-from %zap-to-char-target-offset
+                    nil))
+           finally (return (1- start))))
+    ((minusp count)
+     (loop with
+           end = point
+           repeat (- count)
+           for target = (position character text :end end :from-end t)
+           do (if target
+                  (setf end target)
+                  (return-from %zap-to-char-target-offset
+                    nil))
+           finally (return end)))))
+
+(defun zap-to-char ()
+  "Kill through the Nth occurrence of a prompted character."
+  (let ((count (%kill-ring-command-prefix-count))
+        (coalesce-p (editor-state-last-command-kill-p *editor-state*)))
+    (%clear-last-yank)
+    (setf (editor-state-last-command-kill-p *editor-state*) nil)
+    (with-prompts
+     (minibuffer (editor-state-minibuffer *editor-state*)
+                 :on-cancel
+                 (minibuffer-message minibuffer "Quit"))
+     ((character "Zap to char: " :input-kind :char))
+     (let* ((buffer (%selected-kill-ring-buffer))
+            (narrow-start (buffer-narrow-start-offset buffer))
+            (point (- (buffer-point-offset buffer) narrow-start))
+            (target
+             (%zap-to-char-target-offset (buffer-visible-text buffer)
+                                         point
+                                         (char character 0)
+                                         count)))
+       (cond
+         ((zerop count) nil)
+         (target
+           (kill-between-offsets buffer
+                                 (+ narrow-start
+                                    (if (plusp count)
+                                        point
+                                        target))
+                                 (+ narrow-start
+                                    (if (plusp count)
+                                        (1+ target)
+                                        point))
+                                 :prepend
+                                 (minusp count)
+                                 :coalesce
+                                 coalesce-p)
+           (setf (editor-state-last-command-kill-p *editor-state*) t))
+         (t
+          (minibuffer-message minibuffer
+                              (format nil "Search failed: \"~A\"" character))))))))

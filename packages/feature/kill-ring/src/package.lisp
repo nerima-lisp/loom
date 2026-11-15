@@ -33,7 +33,9 @@
                           #:editor-state-last-yank-start-offset
                           #:editor-state-minibuffer
                           #:editor-state-window-tree)
-            (:import-from #:loom/core/minibuffer #:minibuffer-message)
+            (:import-from #:loom/core/minibuffer
+                          #:minibuffer-message
+                          #:with-prompts)
             (:export #:backward-kill-word
                      #:kill-line
                      #:kill-region
@@ -41,4 +43,5 @@
                      #:kill-ring-save
                      #:kill-word
                      #:yank
-                     #:yank-pop))
+                     #:yank-pop
+                     #:zap-to-char))
