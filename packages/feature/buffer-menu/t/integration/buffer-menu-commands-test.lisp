@@ -182,7 +182,7 @@ keep their registration, so file buffers keep their disk snapshots."
         (loom/feature/buffers:kill-buffer-with-confirmation a)
         (loom/feature/buffer-menu:buffer-menu-revert)
         (expect (mapcar (lambda (line) (subseq line 0 11)) (%buffer-menu-lines))
-                :to-equal (list "D     b.txt" "S     c.txt" "      *Buff"))
+                :to-equal (list "D     b.txt" "S     c.txt" "   %  *Buff"))
         (expect (%buffer-menu-point-line) :to-equal 2)))))
 
 (describe
@@ -250,7 +250,7 @@ keep their registration, so file buffers keep their disk snapshots."
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-equal "Killed kill.txt")
             (expect (mapcar (lambda (line) (subseq line 0 14)) (%buffer-menu-lines))
-                    :to-equal (list "  .   save.txt" "      *Buffer ")))))))
+                    :to-equal (list "  .   save.txt" "   %  *Buffer ")))))))
 
   (it
     "stops at a cancelled save, killing nothing and keeping every mark"
