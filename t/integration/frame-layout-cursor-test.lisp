@@ -406,4 +406,29 @@
       (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 15)
       (expect (file-tree-selected-path tree) :to-equal "/root/b"))))
 
+(describe
+  "file-tree selected path invalidation"
+  (it
+    "drops viewport metadata while preserving a removed selection through resize"
+    (let* ((*editor-state* (%fresh-layout-state))
+           (tree (editor-state-file-tree *editor-state*))
+           (children (loop for index below 200
+                           collect (cons (format nil "/root/file~3,'0D" index) :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path) (declare (ignore path)) children))
+      (file-tree-move-selection tree :down)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (let ((selected (file-tree-selected-path tree)))
+        (setf children (rest children))
+        (loom/feature/file-tree::%invalidate-file-tree-path selected)
+        (expect (loom/feature/file-tree:file-tree-scroll-follow-p tree) :to-be nil)
+        (expect (loom/feature/file-tree:file-tree-selection-index tree) :to-be nil)
+        (expect (file-tree-selected-path tree) :to-equal selected)
+        (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+        (expect (loom/feature/file-tree:file-tree-entry-count tree) :to-equal 5)
+        (loom/feature/file-tree:file-tree-prepare-viewport tree 24 10)
+        (expect (loom/feature/file-tree:file-tree-entry-count tree) :to-equal 10)
+        (expect (file-tree-selected-path tree) :to-equal selected)))))
+
+
 

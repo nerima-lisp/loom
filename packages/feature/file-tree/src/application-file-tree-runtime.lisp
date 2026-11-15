@@ -43,8 +43,9 @@
 
 (defun file-tree-prepare-viewport (tree width height &key wheel-delta)
   "Apply selection following or wheel movement to the current sidebar geometry."
-  (let* ((follow-p (or (file-tree-scroll-follow-p tree)
-                       (/= height (file-tree-viewport-height tree))))
+  (let* ((follow-p (and (file-tree-selection-index tree)
+                         (or (file-tree-scroll-follow-p tree)
+                             (/= height (file-tree-viewport-height tree)))))
          (margin (if follow-p (%file-tree-scroll-margin height) 0))
          (forward-rows (max 0 (or wheel-delta 0)))
          (top (if follow-p

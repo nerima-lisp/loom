@@ -5,9 +5,14 @@
   (file-tree-toggle (editor-state-file-tree *editor-state*)))
 
 (defun %invalidate-file-tree-path (path)
-  "Invalidate PATH and its parent in the running file-tree runtime."
-  (let ((runtime (and *editor-state*
+  "Invalidate PATH's listing and viewport metadata for a matching selection."
+  (let ((tree (and *editor-state* (editor-state-file-tree *editor-state*)))
+        (runtime (and *editor-state*
                       (editor-state-concurrent-runtime *editor-state*))))
+    (when (and tree (equal path (file-tree-selected-path tree)))
+      (setf (file-tree-scroll-follow-p tree) nil
+            (file-tree-selection-index tree) nil
+            (file-tree-entry-count tree) 0))
     (when runtime
       (loom-concurrent-runtime-invalidate-path runtime path))))
 
