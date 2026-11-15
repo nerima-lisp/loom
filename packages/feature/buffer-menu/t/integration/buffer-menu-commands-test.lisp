@@ -70,7 +70,7 @@ keep their registration, so file buffers keep their disk snapshots."
                   (list "  .   a.txt         5 Fundamental /nonexistent-wp4a/a.txt"
                         "    * b.txt         6 Fundamental"
                         "   %  c.txt         1 Fundamental"
-                        "      *Buffer List* 0 Buffer Menu"))
+                        "   %  *Buffer List* 0 Buffer Menu"))
           (expect (%buffer-menu-point-line) :to-equal 0)))))
 
   (it

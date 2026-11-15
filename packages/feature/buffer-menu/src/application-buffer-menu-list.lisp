@@ -128,6 +128,8 @@
                     (setf (gethash list-buffer *buffer-menu-states*)
                           (%make-buffer-menu-state)))))
     (buffer-set-major-mode list-buffer :buffer-menu)
+    ;; Read-only before the rows are built, so the list's own row shows %.
+    (buffer-set-read-only list-buffer t)
     (clrhash (buffer-menu-state-marks state))
     (setf (buffer-menu-state-origin-window state) origin
           (buffer-menu-state-origin-buffer state) (window-buffer origin))
