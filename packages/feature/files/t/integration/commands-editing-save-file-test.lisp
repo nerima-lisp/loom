@@ -855,6 +855,36 @@
               (expect (buffer-modified-p buffer) :to-be-truthy)))))))
 
   (it
+    "reports cancelled exactly once even when showing the save error fails"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir))
+            (blocked (merge-pathnames "blocked" dir)))
+        (%write-test-file-octets path #(111 108 100))
+        (%write-test-file-octets blocked #(120))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "blocked/backups/" dir)))
+            (buffer-set-point buffer 0 3)
+            (buffer-insert-string buffer "!")
+            (%with-confirm-save-recorder (calls)
+              (let ((display-failed
+                      (with-replaced-function
+                          (loom/core/minibuffer:minibuffer-message
+                           (lambda (minibuffer text)
+                             (declare (ignore minibuffer text))
+                             (error "message display failed")))
+                        (handler-case
+                            (progn
+                              (apply #'loom/feature/files:confirm-save-buffer
+                                     buffer (%confirm-save-callbacks))
+                              nil)
+                          (simple-error (condition)
+                            (princ-to-string condition))))))
+                (expect display-failed :to-equal "message display failed")
+                (expect calls :to-equal '(:cancelled)))))))))
+
+  (it
     "keeps signalling the same save error from save-buffer"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "note.txt" dir))

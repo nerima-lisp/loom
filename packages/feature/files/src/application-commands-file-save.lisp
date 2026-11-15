@@ -28,14 +28,15 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
       (funcall on-outcome outcome)))
 
   (defun %call-save-step (on-outcome function)
-    "Return FUNCTION's value and NIL. With ON-OUTCOME, an error is shown in the
-minibuffer and reported as :CANCELLED, and the values are NIL and T."
+    "Return FUNCTION's value and NIL. With ON-OUTCOME, an error is reported as
+:CANCELLED and then shown in the minibuffer, and the values are NIL and T.
+Reporting first keeps the outcome independent of the message display."
     (if on-outcome
         (handler-case (values (funcall function) nil)
           (error (condition)
+            (funcall on-outcome :cancelled)
             (minibuffer-message (editor-state-minibuffer *editor-state*)
                                 (princ-to-string condition))
-            (funcall on-outcome :cancelled)
             (values nil t)))
         (values (funcall function) nil)))
 
