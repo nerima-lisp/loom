@@ -567,9 +567,12 @@ def _assert_server_request_responses(
     events = _protocol_events(protocol_log)
     session.assert_external_state("LSP protocol log contains frames", bool(events), True)
     counts = _server_request_response_counts(events)
-    session.observe_external_state("server request count", len(counts))
+    session.observe_external_state(
+        "server request count", len(counts), purpose="precondition",
+    )
     session.observe_external_state(
         "server request methods", [request["method"] for request in counts],
+        purpose="precondition",
     )
     if require_requests:
         session.assert_external_state(
