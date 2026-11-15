@@ -44,7 +44,7 @@
   (it "detects a live foreign holder and acquires after that process exits"
     (cl-weave:expect-assertions 9)
     (host-kit:with-temporary-directory (directory)
-      (let* ((target (merge-pathnames "visited.lock" directory))
+      (let* ((target (merge-pathnames (sb-ext:parse-native-namestring "b*c.lock") directory))
              (ready (merge-pathnames "ready" directory))
              (process (%start-host-kit-probe-holder target ready)))
         (unwind-protect
@@ -141,4 +141,24 @@
                    (sb-ext:process-wait process)
                    (close (sb-ext:process-input process))))
                (expect (host-kit:release-file-lock lock) :to-be t))
-          (when lock (host-kit:release-file-lock lock)))))))
+          (when lock (host-kit:release-file-lock lock))))))
+
+  (it "saves and backs up literal native filenames containing wildcard characters"
+    (cl-weave:expect-assertions 9)
+    (host-kit:with-temporary-directory (directory)
+      (let ((target (merge-pathnames
+                     (sb-ext:parse-native-namestring "b*c?[x]\\y.txt") directory))
+            (backup (merge-pathnames
+                     (sb-ext:parse-native-namestring "b*c?[x]\\y.txt~") directory)))
+        (host-kit:write-file-string "draft" target :mode #o600 :prefix "native-save-")
+        (expect (host-kit:read-file-string target) :to-equal "draft")
+        (expect (host-kit:file-metadata-size (host-kit:file-metadata target)) :to-equal 5)
+        (expect (host-kit:file-metadata-mode (host-kit:file-metadata target)) :to-equal #o600)
+        (host-kit:write-file-string "saved work" target :mode #o640 :prefix "native-save-")
+        (expect (host-kit:read-file-string target) :to-equal "saved work")
+        (expect (host-kit:file-metadata-size (host-kit:file-metadata target)) :to-equal 10)
+        (expect (host-kit:file-metadata-mode (host-kit:file-metadata target)) :to-equal #o600)
+        (host-kit:copy-file target backup :if-exists :error :prefix "native-backup-")
+        (expect (host-kit:read-file-string backup) :to-equal "saved work")
+        (expect (host-kit:file-metadata-size (host-kit:file-metadata backup)) :to-equal 10)
+        (expect (host-kit:file-metadata-mode (host-kit:file-metadata backup)) :to-equal #o600)))))
