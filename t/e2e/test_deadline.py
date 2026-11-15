@@ -109,6 +109,38 @@ class ScenarioDeadlineTests(unittest.TestCase):
         self.assertEqual(len(elapsed), 1)
         self.assertAlmostEqual(elapsed[0], execution_seconds)
 
+    def test_run_scenario_applies_the_r9_deadline_only_to_the_r9_scenario(self):
+        budgets = []
+
+        def record(_binary):
+            budget = current_deadline()
+            budgets.append((budget.deadline, budget.execution_deadline))
+
+        def r9_record(binary):
+            record(binary)
+
+        self.assertIs(deadline_module.r9_scenario(r9_record), r9_record)
+        with mock.patch(
+            "loom_e2e.deadline.time.monotonic", return_value=100.0
+        ), mock.patch("loom_e2e.deadline.signal.setitimer"):
+            run_scenario(record, "unused")
+            run_scenario(r9_record, "unused")
+            run_scenario(r9_record, "unused", seconds=2.0, cleanup_seconds=1.0)
+
+        r9_seconds = deadline_module.R9_SCENARIO_TIMEOUT_SECONDS
+        self.assertGreater(r9_seconds, SCENARIO_TIMEOUT_SECONDS)
+        self.assertEqual(
+            budgets,
+            [
+                (100.0 + SCENARIO_TIMEOUT_SECONDS, 100.0 + SCENARIO_EXECUTION_TIMEOUT_SECONDS),
+                (
+                    100.0 + r9_seconds,
+                    100.0 + r9_seconds - SCENARIO_CLEANUP_TIMEOUT_SECONDS,
+                ),
+                (102.0, 101.0),
+            ],
+        )
+
     def test_preparation_time_does_not_consume_execution_budget(self):
         clock = [100.0]
         budget = ScenarioDeadlineBudget(110.0, 105.0)

@@ -15,6 +15,10 @@ SCENARIO_CLEANUP_TIMEOUT_SECONDS = 5.0
 SCENARIO_EXECUTION_TIMEOUT_SECONDS = (
     SCENARIO_TIMEOUT_SECONDS - SCENARIO_CLEANUP_TIMEOUT_SECONDS
 )
+# Whole-scenario deadline for the R9 day scenario only. Provisional: it is
+# replaced by a value measured five times on both OSes once all twelve R9
+# scenes exist.
+R9_SCENARIO_TIMEOUT_SECONDS = 60.0
 
 
 class ScenarioDeadlineExceeded(TimeoutError):
@@ -290,14 +294,26 @@ def _publish_timeline(
         )
 
 
+def r9_scenario(function):
+    """Mark FUNCTION as the R9 day scenario, which runs under its own deadline."""
+    function.r9_scenario = True
+    return function
+
+
 def run_scenario(
     function,
     binary,
-    seconds=SCENARIO_TIMEOUT_SECONDS,
+    seconds=None,
     cleanup_seconds=None,
     execution_elapsed_callback=None,
 ):
     """Call one registered scenario under its complete wall-clock budget."""
+    if seconds is None:
+        seconds = (
+            R9_SCENARIO_TIMEOUT_SECONDS
+            if getattr(function, "r9_scenario", False)
+            else SCENARIO_TIMEOUT_SECONDS
+        )
     with scenario_deadline(
         seconds,
         cleanup_seconds,
