@@ -53,13 +53,15 @@
     (t :retry)))
 
 (defun %save-buffer-before-kill (minibuffer buffer on-cancelled)
-  "Save BUFFER and return true. With ON-CANCELLED, a save error calls
-ON-CANCELLED and is then shown, returning NIL; without it, the error propagates."
+  "Save BUFFER and return true. With ON-CANCELLED, a save error is shown and
+ON-CANCELLED then runs even if showing it fails, returning NIL; without it, the
+error propagates."
   (if on-cancelled
       (handler-case (progn (buffer-save buffer) t)
         (error (condition)
-          (funcall on-cancelled)
-          (minibuffer-message minibuffer (princ-to-string condition))
+          (unwind-protect
+               (minibuffer-message minibuffer (princ-to-string condition))
+            (funcall on-cancelled))
           nil))
       (progn (buffer-save buffer) t)))
 
