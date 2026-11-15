@@ -23,6 +23,7 @@ _ENTRY_KEYS = {
     "find-file": ["C-x", "C-f"],
     "recent-file": ["C-x", "r", "f"],
     "save-buffer": ["C-x", "C-s"],
+    "save-some-buffers": ["C-x", "s"],
     "write-file": ["C-x", "C-w"],
 }
 _PROMPT_TEXT = {
