@@ -292,3 +292,18 @@
                 :to-equal
                 "Project search canceled"))))
   )
+
+(describe "after-file-open hooks from project-find-file"
+  (it "runs once for the loaded project file"
+    (host-kit:with-temporary-directory (root)
+      (let ((path (merge-pathnames "src/main.py" root)))
+        (ensure-directories-exist path)
+        (host-kit:write-file-string "print('x')" path)
+        (%with-minibuffer-state (minibuffer "")
+          (multiple-value-bind (value opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 (loom/feature/project::%project-visit-file root "src/main.py" minibuffer)
+                 (%selected-test-buffer)))
+            (expect (buffer-text value) :to-equal "print('x')")
+            (expect opened :to-equal (list value))))))))

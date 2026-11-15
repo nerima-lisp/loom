@@ -272,3 +272,27 @@
                                                    (expect
                                                     (buffer-modified-p buffer)
                                                     :to-be-falsy)))))
+
+(describe "%initialize-editor-state after-file-open hooks"
+  (it "runs once for the initial file and once for each additional file"
+    (host-kit:with-temporary-directory (dir)
+      (let ((first-path (merge-pathnames "first.txt" dir))
+            (second-path (merge-pathnames "second.txt" dir))
+            (*editor-state* nil))
+        (host-kit:write-file-string "first" first-path)
+        (host-kit:write-file-string "second" second-path)
+        (multiple-value-bind (value opened)
+            (%call-recording-file-opens
+             (lambda ()
+               (loom::%initialize-editor-state
+                (namestring first-path)
+                (list (namestring second-path) (namestring second-path)))))
+          (declare (ignore value))
+          (expect (mapcar #'buffer-text opened) :to-equal (list "first" "second"))
+          (expect (first opened) :to-be (%selected-test-buffer))))))
+  (it "runs no hook for the scratch buffer"
+    (let ((*editor-state* nil))
+      (multiple-value-bind (value opened)
+          (%call-recording-file-opens (lambda () (loom::%initialize-editor-state nil)))
+        (declare (ignore value))
+        (expect opened :to-be nil)))))

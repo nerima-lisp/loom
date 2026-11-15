@@ -423,3 +423,32 @@
           (expect
            (loom/feature/file-tree:file-tree-visible-p restored-tree)
            :to-be t))))))
+
+(describe "after-file-open hooks from session restore"
+  (it "runs once for each restored buffer that visits a path"
+    (let* ((scratch (make-buffer :name "*scratch*" :initial-content "scratch"))
+           (visiting (make-buffer :name "two.txt"
+                                  :path (pathname "two.txt")
+                                  :initial-content "two"))
+           (tree (make-window-tree scratch 20 8))
+           (state (make-editor-state
+                   :window-tree tree
+                   :workspaces (make-workspace-manager tree :name "main")
+                   :minibuffer (make-minibuffer :history (history-kit:make-history))
+                   :keymap (make-keymap)
+                   :file-tree (make-file-tree "/root/")
+                   :session (%make-test-editor-session (list scratch visiting)
+                                                       :window-tree tree)
+                   :kill-ring nil
+                   :bookmarks (make-hash-table :test #'equal))))
+      (let ((*editor-state* state)
+            (loom/core/editor-session:*editor-session*
+              (loom/core/editor-session:editor-state-session state)))
+        (let ((snapshot (loom/feature/session::%session-snapshot-from-state)))
+          (multiple-value-bind (value opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 (loom/feature/session::%restore-session-snapshot snapshot)
+                 (%test-registered-buffers *editor-state*)))
+            (expect (mapcar #'buffer-name opened) :to-equal (list "two.txt"))
+            (expect (find (first opened) value :test #'eq) :to-be-truthy)))))))

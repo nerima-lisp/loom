@@ -181,6 +181,13 @@ New files use the files feature constructor to initialize save metadata."
       (when startup-file
         (remember-recent-file startup-file))
       (let ((session (editor-state-session *editor-state*)))
+        (when startup-file
+          (loom/core/editor-session:run-session-hooks
+           :after-file-open
+           session
+           (loom/core/window-tree:window-buffer
+            (loom/core/window-tree:window-tree-selected-window
+             (editor-state-window-tree *editor-state*)))))
         (dolist (path additional-file-paths)
           (multiple-value-bind (file root) (%startup-file-and-root path)
             (declare (ignore root))
@@ -204,6 +211,8 @@ New files use the files feature constructor to initialize save metadata."
                        (and buffer-file
                             (equal path-string (editor-path-string buffer-file)))))
                    (loom/feature/buffers:registered-buffers session))
-                (loom/feature/buffers:register-buffer session
-                                                      (%make-startup-buffer file))
-                (remember-recent-file file)))))))))
+                (let ((buffer (%make-startup-buffer file)))
+                  (loom/feature/buffers:register-buffer session buffer)
+                  (remember-recent-file file)
+                  (loom/core/editor-session:run-session-hooks
+                   :after-file-open session buffer))))))))))

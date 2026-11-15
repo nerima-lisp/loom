@@ -43,6 +43,9 @@
   (let ((buffer (buffer-load path)))
     (loom/feature/buffers:register-buffer *editor-session* buffer)
     (remember-recent-file path)
+    (loom/core/editor-session:run-session-hooks :after-file-open
+                                                *editor-session*
+                                                buffer)
     buffer))
 
 (defun %load-bookmark-file (path)

@@ -1097,3 +1097,21 @@
                    session)
                   (expect cancel-count-a :to-equal 1)
                   (expect cancel-count-b :to-equal 1)))))
+
+(describe ":after-file-open session hooks"
+  (it "accepts any owner and returns hook results without validating them"
+    (let* ((loom/core/editor-session::*session-hooks* (make-hash-table :test #'eq))
+           (session (%make-test-editor-session))
+           (buffer (gensym "OPENED-BUFFER-")))
+      (loom/core/editor-session:register-session-hook
+       :after-file-open :feature/files
+       (lambda (received-session opened)
+         (list :files (eq received-session session) opened)))
+      (loom/core/editor-session:register-session-hook
+       :after-file-open :feature/lifecycle
+       (lambda (received-session opened)
+         (declare (ignore received-session opened))
+         :unvalidated))
+      (expect (loom/core/editor-session:run-session-hooks
+               :after-file-open session buffer)
+              :to-equal (list :unvalidated (list :files t buffer))))))

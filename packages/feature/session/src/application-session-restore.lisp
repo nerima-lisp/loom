@@ -235,4 +235,10 @@
           file-tree))
   (when (editor-state-minibuffer *editor-state*)
     (minibuffer-set-history-entries (editor-state-minibuffer *editor-state*)
-                                    (session-snapshot-command-history snapshot))))
+                                    (session-snapshot-command-history snapshot)))
+  (dolist (buffer buffers)
+    (when (buffer-path buffer)
+      (loom/core/editor-session:run-session-hooks
+       :after-file-open
+       (editor-state-session *editor-state*)
+       buffer))))

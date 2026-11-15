@@ -155,3 +155,20 @@ File-tree command tests can then operate on a real temporary directory."
        :mutates nil :prompts nil :needs-region nil :external nil
        :modes (quote (:all)))
       id)))
+
+(defun %call-recording-file-opens (thunk)
+  "Call THUNK with one extra :AFTER-FILE-OPEN hook installed on a copy of the
+current hook table. Return THUNK's value and the buffers the hook saw, in order."
+  (let ((hooks (make-hash-table :test #'eq))
+        (opened nil))
+    (maphash (lambda (kind entries)
+               (setf (gethash kind hooks) (copy-list entries)))
+             loom/core/editor-session::*session-hooks*)
+    (let ((loom/core/editor-session::*session-hooks* hooks))
+      (loom/core/editor-session:register-session-hook
+       :after-file-open :feature/user-init
+       (lambda (session buffer)
+         (declare (ignore session))
+         (push buffer opened)))
+      (let ((value (funcall thunk)))
+        (values value (reverse opened))))))

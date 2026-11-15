@@ -9,6 +9,7 @@
           :before-save
           :after-save
           :buffer-close
+          :after-file-open
           :startup
           :signal
           :suspend

@@ -131,13 +131,18 @@ different owner is rejected."
   buffer))
 
 (defun %visit-existing-file (path)
-  "Load PATH, display its file buffer, and refresh recency after the switch."
-  (let ((buffer
-         (or (find-buffer-by-path *editor-session* path)
-             (%load-file-buffer path :name (%file-buffer-name path)))))
+  "Load PATH, display its file buffer, and refresh recency after the switch.
+A buffer loaded by this call runs the :AFTER-FILE-OPEN hooks once it is shown."
+  (let* ((existing (find-buffer-by-path *editor-session* path))
+         (buffer
+           (or existing
+               (%load-file-buffer path :name (%file-buffer-name path)))))
     (%show-buffer-in-selected-window
      buffer
-     (lambda () (%record-recent-file path)))
+     (lambda ()
+       (%record-recent-file path)
+       (unless existing
+         (run-session-hooks :after-file-open *editor-session* buffer))))
     buffer))
 
 (defun visit-file (path)
@@ -172,7 +177,12 @@ an empty buffer associated with that path, so a later save creates the file."
                             (format nil "Cannot open directory: ~A" path)))
        (existing-buffer (%visit-existing-file (or existing-path path)))
        (existing-path (%visit-existing-file existing-path))
-       (t (%show-buffer-in-selected-window (%make-file-buffer path)))))))
+       (t
+        (let ((buffer (%make-file-buffer path)))
+          (%show-buffer-in-selected-window
+           buffer
+           (lambda ()
+             (run-session-hooks :after-file-open *editor-session* buffer)))))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."

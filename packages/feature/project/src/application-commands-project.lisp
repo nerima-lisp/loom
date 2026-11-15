@@ -36,7 +36,10 @@
          (window-set-buffer
           (loom/core/window-tree:window-tree-selected-window
            (editor-state-window-tree *editor-state*))
-          buffer)))
+          buffer)
+         (loom/core/editor-session:run-session-hooks :after-file-open
+                                                     *editor-session*
+                                                     buffer)))
       (t
        (minibuffer-message minibuffer
                            (format nil "File not found: ~A" relative-path))))))

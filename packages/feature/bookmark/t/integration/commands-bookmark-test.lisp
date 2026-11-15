@@ -184,3 +184,32 @@
       (loom/feature/bookmark::list-bookmarks)
       (expect (minibuffer-message-string minibuffer)
               :to-equal "No bookmarks")))
+
+(describe "after-file-open hooks from bookmark jumps"
+  (it "runs once when a jump loads its target and not for a live bookmark buffer"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "bookmark-hook.txt" dir)))
+        (host-kit:write-file-string "loaded" path)
+        (%with-minibuffer-state (minibuffer "bookmark body")
+          (setf (gethash "loads" (loom/feature/bookmark::%bookmark-table))
+                (loom/feature/bookmark:make-editor-bookmark
+                 :name "loads"
+                 :path (editor-path-string path)
+                 :line 0
+                 :column 0))
+          (setf (gethash "live" (loom/feature/bookmark::%bookmark-table))
+                (loom/feature/bookmark:make-editor-bookmark
+                 :name "live"
+                 :buffer (%selected-test-buffer)
+                 :line 0
+                 :column 0))
+          (multiple-value-bind (buffers opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 (loop for name in (list "loads" "live")
+                       do (%run-bookmark-command
+                           #'loom/feature/bookmark::jump-to-bookmark minibuffer name)
+                       collect (%selected-test-buffer))))
+            (expect (mapcar #'buffer-text buffers)
+                    :to-equal (list "loaded" "bookmark body"))
+            (expect opened :to-equal (list (first buffers)))))))))

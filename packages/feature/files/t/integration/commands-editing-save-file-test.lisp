@@ -991,3 +991,34 @@
                   nil)
               (error () t))))
       (expect rejected :to-be-truthy))))
+
+(describe "after-file-open hooks from file visits"
+  (it "runs once for a newly loaded file and not when the buffer is reused"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "opened.txt" dir)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "")
+          (multiple-value-bind (buffers opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 (list (loom/feature/files:visit-file path)
+                       (loom/feature/files:visit-file path))))
+            (expect (first buffers) :to-be (second buffers))
+            (expect opened :to-equal (list (first buffers))))))))
+  (it "runs once when find-file loads an existing file or creates a new one"
+    (host-kit:with-temporary-directory (dir)
+      (let ((existing (merge-pathnames "existing.txt" dir))
+            (missing (merge-pathnames "missing.txt" dir)))
+        (host-kit:write-file-string "disk" existing)
+        (%with-minibuffer-state (minibuffer "")
+          (multiple-value-bind (buffers opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 (loop for path in (list existing missing existing)
+                       do (loom/feature/files:find-file)
+                          (funcall (loom/core/minibuffer::%minibuffer-on-confirm
+                                    minibuffer)
+                                   path)
+                       collect (%selected-test-buffer))))
+            (expect (mapcar #'buffer-text buffers) :to-equal (list "disk" "" "disk"))
+            (expect opened :to-equal (list (first buffers) (second buffers)))))))))
