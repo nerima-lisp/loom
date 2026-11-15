@@ -22,7 +22,7 @@
         (expect (gethash "name" client-info)
                 :to-equal "Loom")
         (expect (gethash "version" client-info)
-                :to-equal "0.1.0")
+                :to-equal "0.2.0")
         (let* ((capabilities (gethash "capabilities" params))
                (workspace (gethash "workspace" capabilities))
                (text-document (gethash "textDocument" capabilities))

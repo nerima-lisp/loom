@@ -10,9 +10,9 @@ it does not authenticate the publisher. Download the archive and its matching
 `.sha256` file from the same reviewed release, then verify before extraction:
 
 ```sh
-shasum -a 256 -c loom-v0.1.0-x86_64-linux.tar.gz.sha256
-tar -xzf loom-v0.1.0-x86_64-linux.tar.gz
-cd loom-v0.1.0-x86_64-linux
+shasum -a 256 -c loom-v0.2.0-x86_64-linux.tar.gz.sha256
+tar -xzf loom-v0.2.0-x86_64-linux.tar.gz
+cd loom-v0.2.0-x86_64-linux
 nix-store --import < loom.closure
 nix profile install "$(< store-path)"
 loom --version

@@ -108,7 +108,7 @@ def version_flag(binary):
     with Session(binary, ["--version"]) as session:
         output, code = session.process.wait()
         session.observe_exit_code(code, expected=0)
-        session.assert_pty_output(output, b"loom 0.1.0")
+        session.assert_pty_output(output, b"loom 0.2.0")
     _assert_exit_zero("--version", output, code)
 
 

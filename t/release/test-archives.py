@@ -11,7 +11,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-NAME = "loom-v0.1.0-x86_64-linux"
+NAME = "loom-v0.2.0-x86_64-linux"
 CONTENTS = {
     "INSTALL.md": b"Fixture installation instructions\n",
     "LICENSE": b"Fixture license\n",
@@ -355,8 +355,8 @@ class RuntimeVersionTests(unittest.TestCase):
         self.stub.mkdir()
         self.log = self.root / "calls"
         self.version = self.root / "version-output"
-        self.version.write_bytes(b"loom 0.1.0\n")
-        self.package = "/nix/store/" + "0" * 32 + "-loom-0.1.0"
+        self.version.write_bytes(b"loom 0.2.0\n")
+        self.package = "/nix/store/" + "0" * 32 + "-loom-0.2.0"
         contents = dict(CONTENTS)
         contents["store-path"] = contents["closure-paths"] = (self.package + "\n").encode()
         self.archive = self.root / f"{NAME}.tar.gz"
