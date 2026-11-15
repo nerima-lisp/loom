@@ -48,6 +48,7 @@
   (:export #:editor-path-string
            #:remember-recent-file
            #:find-file
+           #:find-file-path
            #:visit-file
            #:recent-file
            #:save-buffer

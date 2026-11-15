@@ -165,25 +165,34 @@ an empty buffer associated with that path, so a later save creates the file."
                :on-cancel
                (minibuffer-message minibuffer "Quit"))
    ((input "Find file: " :completion-function #'%find-file-candidates))
-   (let* ((path (literal-file-path input))
-          (existing-path (probe-file path))
-          (directory-p
-            (and existing-path (host-kit:directory-pathname-p existing-path)))
-          (existing-buffer
-            (unless directory-p
-              (find-buffer-by-path *editor-session* (or existing-path path)))))
-     (cond
-       (directory-p
-        (minibuffer-message (editor-state-minibuffer *editor-state*)
-                            (format nil "Cannot open directory: ~A" input)))
-       (existing-buffer (%visit-existing-file (or existing-path path)))
-       (existing-path (%visit-existing-file existing-path))
-       (t
-        (let ((buffer (%make-file-buffer path)))
-          (%show-buffer-in-selected-window
-           buffer
-           (lambda ()
-             (run-session-hooks :after-file-open *editor-session* buffer)))))))))
+   (find-file-path input)))
+
+(defun find-file-path (input)
+  "Show the buffer for the path INPUT names in the selected window, as FIND-FILE
+does with its answer, and return the buffer.
+
+A path that does not exist opens as an empty buffer associated with that path.
+A directory is reported in the echo area and yields NIL."
+  (let* ((path (literal-file-path input))
+         (existing-path (probe-file path))
+         (directory-p
+           (and existing-path (host-kit:directory-pathname-p existing-path)))
+         (existing-buffer
+           (unless directory-p
+             (find-buffer-by-path *editor-session* (or existing-path path)))))
+    (cond
+      (directory-p
+       (minibuffer-message (editor-state-minibuffer *editor-state*)
+                           (format nil "Cannot open directory: ~A" input))
+       nil)
+      (existing-buffer (%visit-existing-file (or existing-path path)))
+      (existing-path (%visit-existing-file existing-path))
+      (t
+       (let ((buffer (%make-file-buffer path)))
+         (%show-buffer-in-selected-window
+          buffer
+          (lambda ()
+            (run-session-hooks :after-file-open *editor-session* buffer))))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."
