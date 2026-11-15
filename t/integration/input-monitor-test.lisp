@@ -12,8 +12,7 @@
          (session
            (%make-test-editor-session
             (list (%selected-test-buffer))
-            :window-tree (editor-state-window-tree *editor-state*)
-            :additional-slices '(:feature/clipboard)))
+            :window-tree (editor-state-window-tree *editor-state*)))
          (loom/core/editor-session:*editor-session* session)
          (decoder (or decoder (cl-tty-kit:make-input-decoder
                                :collect-bracketed-paste t)))
