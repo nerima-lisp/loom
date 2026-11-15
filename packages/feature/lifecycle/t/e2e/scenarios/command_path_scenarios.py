@@ -486,6 +486,19 @@ def _recovery_directory(home_dir):
     return Path(home_dir) / ".loom" / "recovery"
 
 
+def _path_hash(path):
+    # FNV-1a 64-bit over the UTF-8 path, as loom names lock and recovery files.
+    value = 0xCBF29CE484222325
+    for octet in str(path).encode("utf-8"):
+        value = ((value ^ octet) * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+    return f"{value:016x}"
+
+
+def _recovery_stem(path, serial):
+    """Name a recovery entry for PATH the way loom does, with its path hash."""
+    return f"buffer-sigterm-{_path_hash(path)}-3970000000-{serial}-0-0"
+
+
 def _write_recovery_entry(home_dir, stem, text, path=None):
     directory = _recovery_directory(home_dir)
     directory.mkdir(parents=True, exist_ok=True)
@@ -613,7 +626,7 @@ class _RecoveryDirectorySession(_RecoverySession):
             self.wait_ready()
             lost = Path(self.arguments[0]).parent.resolve() / "lost.txt"
             _write_recovery_entry(
-                self.home_dir, "buffer-sigterm-3970000000-1-0-0", "lost draft\n", lost
+                self.home_dir, _recovery_stem(lost, 1), "lost draft\n", lost
             )
             self.restart()
         except BaseException as error:
@@ -841,7 +854,7 @@ def recovery_same_content(binary):
         with Session(binary, [str(path)], columns=200) as session:
             session.wait_ready(timeout=1.5)
             entry = _write_recovery_entry(
-                session.home_dir, "buffer-sigterm-3970000000-1-0-0", "draft one\n", path
+                session.home_dir, _recovery_stem(path, 1), "draft one\n", path
             )
             _make_candidates_newer(path, [sidecar] + entry)
             session.restart()
@@ -899,11 +912,11 @@ def recovery_save_deletes(binary):
         with Session(binary, [str(path)], columns=200) as session:
             session.wait_ready(timeout=1.5)
             matching = _write_recovery_entry(
-                session.home_dir, "buffer-sigterm-3970000000-1-0-0", "draft two\n", path
+                session.home_dir, _recovery_stem(path, 1), "draft two\n", path
             )
             unrelated = _write_recovery_entry(
                 session.home_dir,
-                "buffer-sigterm-3970000000-2-0-0",
+                _recovery_stem(directory / "other.txt", 2),
                 "other\n",
                 directory / "other.txt",
             )

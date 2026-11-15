@@ -5,9 +5,18 @@
   (loop for (candidate time) on candidates-and-times by #'cddr
         do (host-kit:set-file-times candidate :modification-time time)))
 
+(defun %detection-test-hashed-stem (stem path)
+  "Insert PATH's hash after the reason in STEM, buffer-<reason>-<rest>, as
+loom names the recovery files of a buffer that visits PATH."
+  (let ((split (position #\- stem :start (1+ (position #\- stem)))))
+    (format nil "~A-~A~A" (subseq stem 0 split)
+            (loom/feature/lifecycle:file-path-hash path) (subseq stem split))))
+
 (defun %detection-test-entry (state stem text path)
-  "Write a recovery body and, when PATH is given, its metadata. Return both."
-  (let* ((directory (merge-pathnames "recovery/" state))
+  "Write a recovery body and, when PATH is given, its metadata, both named with
+PATH's hash. Return both."
+  (let* ((stem (if path (%detection-test-hashed-stem stem path) stem))
+         (directory (merge-pathnames "recovery/" state))
          (body (make-pathname :name stem :type "txt" :defaults directory))
          (meta (make-pathname :name stem :type "sexp" :defaults directory)))
     (ensure-directories-exist directory)
@@ -94,7 +103,9 @@
                                (first newer) 3900003700
                                (first other) 3900009000
                                (first legacy) 3900009000)
-        (let* ((buffer (%detection-test-buffer path))
+        ;; Opened through the link, so the entry recorded under the linked
+        ;; path is found by that path's hash and then resolved to the file.
+        (let* ((buffer (%detection-test-buffer linked-path))
                (candidate (loom/feature/lifecycle:find-recovery-candidate buffer)))
           (expect (length (loom/feature/lifecycle:recovery-entries-for-buffer buffer))
                   :to-equal 2)

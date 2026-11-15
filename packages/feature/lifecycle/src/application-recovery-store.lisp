@@ -24,11 +24,28 @@ An existing directory keeps its mode. Return NIL when no state directory is set.
     (merge-pathnames "recovery/"
                      (uiop:ensure-directory-pathname *loom-state-directory*))))
 
-(defun %recovery-entry-paths (directory reason index)
-  "Return a fresh body pathname and its metadata pathname in DIRECTORY."
+(defun %fnv-1a-64 (octets)
+  (let ((hash 14695981039346656037))
+    (loop for octet across octets
+          do (setf hash (ldb (byte 64 0)
+                             (* (logxor hash octet) 1099511628211))))
+    hash))
+
+(defun file-path-hash (native-path)
+  "Return the FNV-1a 64-bit hash of NATIVE-PATH's UTF-8 octets as 16 lowercase
+hex digits. Lock file names and recovery file names carry it."
+  (format nil "~(~16,'0X~)"
+          (%fnv-1a-64 (sb-ext:string-to-octets native-path :external-format :utf-8))))
+
+(defun %recovery-entry-paths (directory reason index hash)
+  "Return a fresh body pathname and its metadata pathname in DIRECTORY.
+HASH, the FILE-PATH-HASH of the buffer's truename, follows the reason so that
+opening a file reads only the metadata written for it; pathless buffers have
+no HASH."
   (loop for attempt from 0
-        for stem = (format nil "buffer-~(~A~)-~D-~D-~D-~D"
+        for stem = (format nil "buffer-~(~A~)-~@[~A-~]~D-~D-~D-~D"
                            reason
+                           hash
                            (get-universal-time)
                            (get-internal-real-time)
                            index
@@ -50,18 +67,15 @@ A missing file resolves through its nearest existing directory."
       (%character-string
        (native-path-namestring (host-kit:truenamize (literal-file-path path)))))))
 
-(defun %recovery-meta-path-string (buffer)
-  ;; The truename lets a later open compare paths without resolving each
-  ;; recorded one.
-  (and (buffer-path buffer) (buffer-file-truename buffer)))
-
-(defun %recovery-meta-text (buffer reason)
-  "Return the printed metadata form for BUFFER saved because of REASON."
+(defun %recovery-meta-text (buffer reason truename)
+  "Return the printed metadata form for BUFFER saved because of REASON.
+TRUENAME is recorded as the path so that a later open compares paths without
+resolving each recorded one."
   (with-standard-io-syntax
     (let ((*package* (find-package :keyword)))
       (format nil "~S~%"
               (list :version +recovery-meta-version+
-                    :path (%recovery-meta-path-string buffer)
+                    :path truename
                     :buffer-name (%character-string (buffer-name buffer))
                     :reason reason
                     :time (get-universal-time))))))
@@ -71,12 +85,15 @@ A missing file resolves through its nearest existing directory."
 Return the body pathname, or NIL when no state directory is set."
   (let ((directory (%private-state-directory "recovery/")))
     (when directory
-      (multiple-value-bind (body meta) (%recovery-entry-paths directory reason index)
-        (host-kit:write-file-string (buffer-text buffer) body
-                                    :mode #o600 :if-exists :error)
-        (host-kit:write-file-string (%recovery-meta-text buffer reason) meta
-                                    :mode #o600 :if-exists :error)
-        body))))
+      (let ((truename (and (buffer-path buffer) (buffer-file-truename buffer))))
+        (multiple-value-bind (body meta)
+            (%recovery-entry-paths directory reason index
+                                   (and truename (file-path-hash truename)))
+          (host-kit:write-file-string (buffer-text buffer) body
+                                      :mode #o600 :if-exists :error)
+          (host-kit:write-file-string (%recovery-meta-text buffer reason truename) meta
+                                      :mode #o600 :if-exists :error)
+          body)))))
 
 (defun %reject-dispatch-macro (stream character)
   (declare (ignore stream character))
@@ -225,3 +242,87 @@ and inode stay unchanged; changed metadata files are read again."
                           (%recovery-index-scanned-at index) scanned-at
                           *recovery-index* index)
                     (copy-list (%recovery-index-entries index))))))))))
+
+(defun %directory-entry-names (directory)
+  "Return the entry names in DIRECTORY, read by name only without a status
+call per entry, or NIL when DIRECTORY does not exist."
+  (let ((stream (handler-case (sb-posix:opendir (native-path-namestring directory))
+                  (sb-posix:syscall-error (condition)
+                    (if (= (sb-posix:syscall-errno condition) sb-posix:enoent)
+                        (return-from %directory-entry-names nil)
+                        (error condition))))))
+    (unwind-protect
+         (loop with names = nil
+               for entry = (sb-posix:readdir stream)
+               until (or (null entry) (sb-alien:null-alien entry))
+               do (let ((name (sb-posix:dirent-name entry)))
+                    (unless (member name '("." "..") :test #'string=)
+                      (push name names)))
+               finally (return (nreverse names)))
+      (sb-posix:closedir stream))))
+
+(defun %name-stem (name type)
+  "Return NAME without its .TYPE suffix, or NIL when NAME lacks that suffix."
+  (let ((suffix-start (- (length name) (length type) 1)))
+    (and (plusp suffix-start)
+         (char= (char name suffix-start) #\.)
+         (string= type name :start2 (1+ suffix-start))
+         (subseq name 0 suffix-start))))
+
+(defun %hashed-body-name-p (name needles)
+  "True when NAME is buffer-<reason>-<hash>-....txt and one of NEEDLES, each
+-<hash>-, follows the reason. Names are compared in place, without copying."
+  (let ((length (length name)))
+    (and (> length 11)
+         (string= "buffer-" name :end2 7)
+         (string= ".txt" name :start2 (- length 4))
+         (let ((dash (position #\- name :start 7)))
+           (and dash
+                (some (lambda (needle)
+                        (let ((end (+ dash (length needle))))
+                          (and (<= end length)
+                               (string= needle name :start2 dash :end2 end))))
+                      needles))))))
+
+(defun recovery-entries-with-hashes (hashes)
+  "Return the recovery entries whose body names carry one of HASHES and whose
+metadata is valid, in body name order. The directory is read by name, and only
+the matching bodies and their metadata files are examined, so the cost of an
+open grows with the directory's name count but not with unrelated metadata."
+  (let ((directory (%recovery-directory)))
+    (when directory
+      (let* ((needles (mapcar (lambda (hash) (concatenate 'string "-" hash "-")) hashes))
+             (bodies (remove-if-not (lambda (name) (%hashed-body-name-p name needles))
+                                    (%directory-entry-names directory))))
+        (loop for name in (sort bodies #'string<)
+              for entry = (%hashed-recovery-entry directory (%name-stem name "txt"))
+              when entry
+                collect entry)))))
+
+(defun %hashed-recovery-entry (directory stem)
+  "Return the entry for STEM's body and valid metadata, or NIL when either is
+missing, the body is not a regular file, or the metadata is invalid."
+  (let* ((body (make-pathname :name stem :type "txt" :defaults directory))
+         (meta-path (make-pathname :name stem :type "sexp" :defaults directory))
+         (meta (read-recovery-meta meta-path))
+         (metadata (and meta
+                        (handler-case (host-kit:file-metadata body)
+                          (host-kit:host-operation-failed () nil)))))
+    (when (and metadata (eq (host-kit:file-metadata-kind metadata) :regular-file))
+      (make-recovery-entry
+       :body body
+       :meta meta-path
+       :path (getf meta :path)
+       :buffer-name (getf meta :buffer-name)
+       :reason (getf meta :reason)
+       :time (getf meta :time)
+       :modification-time (host-kit:file-metadata-modification-time metadata)))))
+
+(defun recovery-body-count ()
+  "Return how many recovery bodies the state directory holds, counted from
+their names alone."
+  (let ((directory (%recovery-directory)))
+    (if directory
+        (count-if (lambda (name) (%name-stem name "txt"))
+                  (%directory-entry-names directory))
+        0)))

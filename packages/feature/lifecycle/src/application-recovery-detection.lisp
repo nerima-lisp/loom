@@ -60,13 +60,20 @@ resolved path keeps its last component unless the file itself is a link."
 
 (defun recovery-entries-for-buffer (buffer)
   "Return the recovery entries whose :PATH resolves to BUFFER's file.
-Legacy entries, which record no path, never match."
+Only entries whose names carry the hash of the file's truename or of the path
+the buffer was opened by are read, which covers a recorded truename that has
+since become a symbolic link. Legacy entries, which record no path, never
+match."
   (let ((truename (and *loom-state-directory* (buffer-file-truename buffer))))
     (when truename
-      (let ((names (%buffer-file-names buffer truename)))
+      (let ((names (%buffer-file-names buffer truename))
+            (hashes (remove-duplicates
+                     (list (file-path-hash truename)
+                           (file-path-hash (%describe-path buffer)))
+                     :test #'string=)))
         (remove-if-not (lambda (entry)
                          (%recovery-entry-for-file-p entry truename names))
-                       (recovery-entries))))))
+                       (recovery-entries-with-hashes hashes))))))
 
 (defun %candidate (kind pathname entry modification-time file-time buffer-text)
   "Return a candidate for PATHNAME when it is newer than the file and its text
@@ -143,19 +150,8 @@ directory is read by name only, without a status call per entry."
   (let* ((sidecar (auto-save-path (literal-file-path path)))
          (prefix (concatenate 'string (native-path-basename sidecar) "."))
          (directory (host-kit:pathname-directory-pathname sidecar))
-         (names nil))
-    (let ((stream (handler-case (sb-posix:opendir (native-path-namestring directory))
-                    (sb-posix:syscall-error (condition)
-                      (if (= (sb-posix:syscall-errno condition) sb-posix:enoent)
-                          (return-from delete-stale-auto-save-temporaries nil)
-                          (error condition))))))
-      (unwind-protect
-           (loop for entry = (sb-posix:readdir stream)
-                 while (and entry (not (sb-alien:null-alien entry)))
-                 for name = (sb-posix:dirent-name entry)
-                 when (%auto-save-temporary-name-p name prefix)
-                   do (push name names))
-        (sb-posix:closedir stream)))
+         (names (remove-if-not (lambda (name) (%auto-save-temporary-name-p name prefix))
+                               (%directory-entry-names directory))))
     (dolist (name names)
       (host-kit:delete-file-if-exists
        (merge-pathnames (sb-ext:parse-native-namestring name) directory)))

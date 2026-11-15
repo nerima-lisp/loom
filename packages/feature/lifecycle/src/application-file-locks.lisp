@@ -42,18 +42,10 @@
       (dolist (text (reverse messages))
         (minibuffer-log-message text)))))
 
-(defun %fnv-1a-64 (octets)
-  (let ((hash 14695981039346656037))
-    (loop for octet across octets
-          do (setf hash (ldb (byte 64 0)
-                             (* (logxor hash octet) 1099511628211))))
-    hash))
-
 (defun file-lock-name (truename)
   "Return the lock file name for native TRUENAME: the FNV-1a 64-bit hash of
 its UTF-8 octets as 16 lowercase hex digits, with type lock."
-  (format nil "~(~16,'0X~).lock"
-          (%fnv-1a-64 (sb-ext:string-to-octets truename :external-format :utf-8))))
+  (concatenate 'string (file-path-hash truename) ".lock"))
 
 (defun %lock-directory-unusable (condition)
   "Log the first failure to create or write the lock directory and return NIL."

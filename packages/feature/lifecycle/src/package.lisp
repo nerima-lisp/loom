@@ -33,6 +33,9 @@
            #:recovery-entry-reason
            #:recovery-entry-time
            #:recovery-entry-modification-time
+           #:file-path-hash
+           #:recovery-entries-with-hashes
+           #:recovery-body-count
            #:file-lock-name
            #:buffer-file-truename
            #:read-lock-owner
