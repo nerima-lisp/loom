@@ -1021,7 +1021,36 @@
                                    path)
                        collect (%selected-test-buffer))))
             (expect (mapcar #'buffer-text buffers) :to-equal (list "disk" "" "disk"))
-            (expect opened :to-equal (list (first buffers) (second buffers)))))))))
+            (expect opened :to-equal (list (first buffers) (second buffers))))))))
+  (it "runs once on the first display after a cancelled first display"
+    (cl-weave:expect-assertions 5)
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "changed.txt" dir))
+            (load-file-buffer (fdefinition 'loom/feature/files::%load-file-buffer)))
+        (host-kit:write-file-string "disk" path)
+        (%with-minibuffer-state (minibuffer "source"
+                                 (source (%selected-test-buffer)))
+          (multiple-value-bind (buffer opened)
+              (%call-recording-file-opens
+               (lambda ()
+                 ;; An external write between loading and the first display
+                 ;; makes the switch ask first.
+                 (let ((buffer
+                         (with-replaced-function
+                             (loom/feature/files::%load-file-buffer
+                              (lambda (load-path &rest options)
+                                (prog1 (apply load-file-buffer load-path options)
+                                  (host-kit:write-file-string "external" load-path))))
+                           (loom/feature/files:visit-file path))))
+                   (%confirm-minibuffer minibuffer "c")
+                   (expect (%selected-test-buffer) :to-be source)
+                   (expect (eq (loom/feature/files:visit-file path) buffer) :to-be-truthy)
+                   (%confirm-minibuffer minibuffer "k")
+                   (expect (%selected-test-buffer) :to-be buffer)
+                   (loom/feature/files:visit-file path)
+                   buffer)))
+            (expect (loom/core/minibuffer:minibuffer-active-p minibuffer) :to-be-falsy)
+            (expect opened :to-equal (list buffer))))))))
 
 (describe "backup copies"
   (it "keeps the original mode and never replaces an existing backup"

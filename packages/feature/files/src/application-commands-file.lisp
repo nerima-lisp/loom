@@ -130,19 +130,31 @@ different owner is rejected."
            (funcall on-display)))))
   buffer))
 
+(defvar *file-open-pending-buffers* (make-hash-table :test #'eq :weakness :key)
+  "Buffers this file loaded or created whose :AFTER-FILE-OPEN hooks have not run.
+A cancelled first display leaves the buffer here until a later visit shows it.")
+
+(defun %run-pending-file-open-hooks (buffer)
+  (when (remhash buffer *file-open-pending-buffers*)
+    (run-session-hooks :after-file-open *editor-session* buffer)))
+
+(defun %new-file-open-buffer (buffer)
+  (setf (gethash buffer *file-open-pending-buffers*) t)
+  buffer)
+
 (defun %visit-existing-file (path)
   "Load PATH, display its file buffer, and refresh recency after the switch.
-A buffer loaded by this call runs the :AFTER-FILE-OPEN hooks once it is shown."
-  (let* ((existing (find-buffer-by-path *editor-session* path))
-         (buffer
-           (or existing
-               (%load-file-buffer path :name (%file-buffer-name path)))))
+A buffer loaded by this file runs the :AFTER-FILE-OPEN hooks the first time it
+is shown."
+  (let ((buffer
+          (or (find-buffer-by-path *editor-session* path)
+              (%new-file-open-buffer
+               (%load-file-buffer path :name (%file-buffer-name path))))))
     (%show-buffer-in-selected-window
      buffer
      (lambda ()
        (%record-recent-file path)
-       (unless existing
-         (run-session-hooks :after-file-open *editor-session* buffer))))
+       (%run-pending-file-open-hooks buffer)))
     buffer))
 
 (defun visit-file (path)
@@ -188,11 +200,10 @@ A directory is reported in the echo area and yields NIL."
       (existing-buffer (%visit-existing-file (or existing-path path)))
       (existing-path (%visit-existing-file existing-path))
       (t
-       (let ((buffer (%make-file-buffer path)))
+       (let ((buffer (%new-file-open-buffer (%make-file-buffer path))))
          (%show-buffer-in-selected-window
           buffer
-          (lambda ()
-            (run-session-hooks :after-file-open *editor-session* buffer))))))))
+          (lambda () (%run-pending-file-open-hooks buffer))))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."
