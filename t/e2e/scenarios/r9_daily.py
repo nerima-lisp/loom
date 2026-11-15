@@ -21,6 +21,8 @@ from .lsp import (
     _assert_supervised_exit,
     _assert_typescript_server_running,
     _move_to_buffer_position,
+    _protocol_events,
+    _server_request_response_counts,
     _start as _start_lsp,
     _supervised_child_pid,
     _supervised_server_fixture,
@@ -52,6 +54,11 @@ _TODO_AFTER_1500 = b"done one\nitem two\ndone three\ndone four\n"
 _TYPESCRIPT = "const targetValue = 1;\ntargetValue;\ntargetV\ntargetValue;\n"
 _COMMIT_SUBJECT = "R9 daily commit"
 _INBOX_ENTRIES = 200
+# lsp.py's response check passes with no server requests at all, so 10:30
+# also requires this many. Neither the CI logs nor the existing real-server
+# scenarios record how many typescript-language-server sends, so the floor is
+# the smallest count that makes "every request answered" non-vacuous.
+_MIN_SERVER_REQUESTS = 1
 
 
 def _git(directory, *arguments):
@@ -351,10 +358,26 @@ def _scene_1030_typescript(session, binary):
         session.wait_for_text("LSP stopped.")
         _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
         _assert_server_request_responses(session, protocol_log, exit_status_file)
+        _assert_server_requests_present(session, protocol_log)
         _scene_1100_buffer_list(session)
         _quit(session, "11:00")
     finally:
         directory.cleanup()
+
+
+def _assert_server_requests_present(session, protocol_log):
+    requests = _server_request_response_counts(_protocol_events(protocol_log))
+    methods = [request["method"] for request in requests]
+    if session.observe_external_state(
+        f"10:30 server requests number at least {_MIN_SERVER_REQUESTS}",
+        len(requests) >= _MIN_SERVER_REQUESTS,
+        True,
+    ) is not True:
+        raise AssertionError(
+            f"10:30: typescript-language-server sent {len(requests)} server "
+            f"request(s), expected at least {_MIN_SERVER_REQUESTS}; "
+            f"methods={methods!r}"
+        )
 
 
 def _scene_1100_buffer_list(session):
