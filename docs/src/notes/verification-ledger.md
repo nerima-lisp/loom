@@ -1189,3 +1189,73 @@ This release does not satisfy the FR-V07 manual-acceptance criterion in
 completing W4-4 checks for real-IME input, OSC 52 terminal clipboard, mouse
 input, bracketed paste, and daily editing comfort. The corresponding
 `Author result` cells in `daily-driver-checklist.md` remain blank.
+
+## T9: v0.2の合格ゲートとR9「1日」シナリオ
+
+対象は`wp/t9`のコミット`02ae61ea`で、基点はmainの`1d26a5bd`である。
+CI run `43756283240`のattempt 2で、6ジョブがすべて成功した。
+attempt 1ではmacOSのPTY E2Eで、既存の`lsp/find-definition-success`だけが5.046秒（予算5秒）で失敗した。
+T9の差分は`t/e2e/scenarios/lsp.py`を変えておらず、`deadline.py`の変更はR9の印のないシナリオの期限を変えない。
+同じシナリオはmainのrun `43748775992`で成功していたので、失敗したジョブだけを再実行した。
+章番号、タスク名（WP1、R1など）、FR番号は、リポジトリの外にあるv0.2実行計画書のものである。
+
+### 計画書1章の条件
+
+| # | 条件 | 満たしたか | 証拠 |
+|---|---|---|---|
+| 1 | 4章のすべてのタスクがmainに着地し、キットのリリースタグが出ている | 未達。WP1、T9、R1を待っている | 着地の事実は、進行役が`gh`と`jj`で確かめた値である。着地済みのタスクとmainのコミットは次のとおり。単位1（CI0、P2、S1、G1）は`ec5a519a`、単位2（P1、D0、WP5a、C1）は`3df0ca9e`、単位3（F1、WP7、WP4a）は`f37424f3`。WP3は`67a643c2`、C2は`dc1eb581`、FX2は`718403fa`、FX4は`ccfe2ae0`、WP2は`41164e95`、WP6は`4df46c8e`、WP4bは`75c1cb70`、WP5bは今のmainの先頭の`1d26a5bd`。未着地はWP1（実装中）、T9、R1（T9の後）、WP0（作者の手動確認）である。キットのリリースはcl-vcs-kit v0.3.0、cl-host-kit v0.4.0、cl-tty-kit v1.9.0、cl-concurrent-kit v0.8.0がすべて公開済みで、draftではない。cl-tty-kitはその後のv1.9.1がLatestである。 |
+| 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | `02ae61ea`では満たした。WP1の着地後のmainでは未確認 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。 |
+| 3 | どの`boundary-allowlist.lisp`にも増えた項目がない | T9のすべてのコミットで満たした。WP1の差分に許可表の変更があるかは未確認 | `jj diff --from v0.1.0 --to main`で変わった許可表は、新しいスライスの`packages/feature/buffer-menu/t/boundary-allowlist.lisp`だけである。中身は項目のない`("feature/buffer-menu")`で、WP4aのコミット`cce2215e`が足した。増えた項目は0件である。`1d26a5bd`からT9の最後のコミットまでの差分に、許可表のファイルはない。 |
+| 4 | R9の12場面がすべて通る | 未達。前夜と09:00を除く11行は両OSで通った。前夜と09:00はWP1の着地を待っている | 両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はpass 1件。場面ごとの結果は下の表にある。 |
+| 5 | `daily-driver-checklist.md`の5行を作者が記入し、Failがない | 未達。WP0（作者の記入）を待っている | mainの`docs/src/notes/daily-driver-checklist.md`では、`Author result`列の5行がすべて空欄である。 |
+| 6 | 11章の既知の制約が`docs/src/notes/release-v0.2.0.md`に書かれている | 未達。R1を待っている | `docs/src/notes/release-v0.2.0.md`はまだない。 |
+| 7 | タグを付けたときの`release.yml`が成功する | 未達。作者のタグ付けを待っている | タグ`v0.2.0`はまだない。 |
+
+### R9の12場面
+
+`t/e2e/scenarios/r9_daily.py`は、同じscratchのHOMEでloomのプロセスを順に起動する。
+計画書7章は「12場面」と呼ぶが、その表には前夜から18:00まで13行ある。下の表も同じ13行を並べる。
+前夜と09:00を除く11行は`02ae61ea`に入っており、run `43756283240`で両OSとも通った。
+前夜と09:00はWP1の機能を使うので、T9の最後のコミットに分けて書いた。
+この2場面はmainにWP1がないため、まだ実行していない。
+
+| 時刻 | 観測 | 結果 |
+|---|---|---|
+| 前夜 | exit 129。メタの`:path`がa.lispの退避が1組あり、本文が未保存のバッファと一致する | WP1待ち |
+| 09:00 | 起動時の件数の案内、一覧の行、復元のプロンプトと案内、保存後のa.lisp。a.lispの退避が消え、本文が1件減る | WP1待ち |
+| 09:05 | `C-x p f`で開いたファイルの本文 | 通過 |
+| 09:10 | TAB、C-→、M-;、RETの後のカーソルと行、保存したバイト列 | 通過 |
+| 09:15 | docstringの中の語の前景色`00cd00`、ブロックコメントの中の語の前景色`7f7f7f` | 通過 |
+| 09:20 | M-mとM-\の後のカーソルと行、保存したバイト列 | 通過 |
+| 09:30 | `Evaluation interrupted`。ファイルのバイト列が変わらない | 通過 |
+| 10:00 | 200項目のディレクトリでC-c nを200回押し、選択行が毎回画面内にある | 通過 |
+| 10:30 | 補完候補の行、M-.の後のカーソル、サーバーの終了コード0、サーバーからの要求すべてに応答が1回ずつある | 通過 |
+| 11:00 | `*Buffer List*`の`main.ts`の行 | 通過 |
+| 14:00 | `EDITOR=loom git commit`のコミットの件名と対象ファイル | 通過 |
+| 15:00 | M-%で`y` `n` `!`の後の本文と`Replaced 3 occurrence(s)` | 通過 |
+| 18:00 | `C-x s`で`!`の後の2ファイルのバイト列、`C-x C-c`のexit 0 | 通過 |
+
+`02ae61ea`の`r9/daily`の所要時間は、`SCENARIO_TIMING`でLinuxが4.661秒、macOSが10.655秒だった。
+この行の`budget_seconds`は5.0と出るが、これは`t/e2e/loom-test.py`がどのシナリオにも同じ予算を記録するためである。
+R9に実際に掛かる期限は次の節の値である。
+
+### R9の制限時間（FR-T903）
+
+`t/e2e/loom_e2e/deadline.py`の`R9_SCENARIO_TIMEOUT_SECONDS`は、仮の値の60秒である。
+前夜と09:00が通るようになってから、両OSで5回ずつ測り、その最大値の2倍に置き換える。
+測った値はこの節に追記する。
+ほかのシナリオの10秒は変えていない。
+
+### ベンチマーク（`--benchmark-gate`、CI）
+
+変更前はmainのrun `43748775992`、変更後はrun `43756283240`である。
+基準は初回画面0.3秒、入力から再描画までのp95が50 msで、すべて基準内だった。
+
+| OS | 測定 | 初回画面 | 入力→再描画 p95 | cl_multiline_20k p95 |
+|---|---|---|---|---|
+| Linux | 変更前（job `132917852590`） | 0.141 s | 1.608 ms | 6.438 ms |
+| Linux | 変更後（job `132944406426`） | 0.183 s | 2.205 ms | 8.962 ms |
+| macOS | 変更前（job `132917852946`） | 0.127 s | 3.104 ms | 10.505 ms |
+| macOS | 変更後（job `132944367067`） | 0.136 s | 3.604 ms | 7.042 ms |
+
+どちらのrunも1回ずつの測定で、計測時のランナーの負荷は記録していない。
