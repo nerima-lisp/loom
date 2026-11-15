@@ -135,7 +135,7 @@
                (loom/feature/kill-ring:kill-region)
                (expect (buffer-text buffer) :to-equal "three"))))
           (it "zap-to-char kills through the Nth forward occurrence in one undo"
-              (let ((*editor-state* (%fresh-editor-state "aXaXb"))
+              (let ((*editor-state* (%fresh-editor-state "aXaXb" :with-minibuffer t))
                     (loom:*current-prefix-argument* 2))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
@@ -155,7 +155,7 @@
                   (buffer-undo buffer)
                   (expect (buffer-text buffer) :to-equal "aXaXb"))))
           (it "zap-to-char kills backward through the Nth occurrence"
-              (let ((*editor-state* (%fresh-editor-state "aXaXb"))
+              (let ((*editor-state* (%fresh-editor-state "aXaXb" :with-minibuffer t))
                     (loom:*current-prefix-argument* -2))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
@@ -173,7 +173,7 @@
                           :to-equal
                           "XaXb"))))
           (it "zap-to-char coalesces forward and backward kills"
-              (let ((*editor-state* (%fresh-editor-state "aaXbb"))
+              (let ((*editor-state* (%fresh-editor-state "aaXbb" :with-minibuffer t))
                     (loom:*current-prefix-argument* 1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
@@ -191,7 +191,7 @@
                   (expect (editor-state-kill-ring *editor-state*)
                           :to-equal
                           '("oldaaX"))))
-              (let ((*editor-state* (%fresh-editor-state "aaXbb"))
+              (let ((*editor-state* (%fresh-editor-state "aaXbb" :with-minibuffer t))
                     (loom:*current-prefix-argument* -1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
@@ -211,7 +211,7 @@
                           '("Xbbold")))))
           (it
            "zap-to-char reports a miss without changing the buffer or kill ring"
-           (let ((*editor-state* (%fresh-editor-state "abc"))
+           (let ((*editor-state* (%fresh-editor-state "abc" :with-minibuffer t))
                  (loom:*current-prefix-argument* 2))
              (let* ((buffer (%selected-test-buffer))
                     (minibuffer
@@ -232,7 +232,7 @@
                        :to-equal
                        "Search failed: \"X\""))))
           (it "zap-to-char refuses to edit a read-only buffer"
-              (let ((*editor-state* (%fresh-editor-state "aXb"))
+              (let ((*editor-state* (%fresh-editor-state "aXb" :with-minibuffer t))
                     (loom:*current-prefix-argument* 1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer

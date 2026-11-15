@@ -1399,4 +1399,157 @@
       :observe
       (:screen_text)
       :scenario
-      "command-path/kill-ring/r2/zap-to-char/invalid"))
+      "command-path/kill-ring/r2/zap-to-char/invalid")
+ (:id "r1:zap-to-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22z%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r1
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "default"
+      :outcome
+      "command runs from its key sequence"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r1/zap-to-char/key")
+ (:id "r1:zap-to-char:mx"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r1
+      :lane
+      "W3-8"
+      :entry
+      "mx"
+      :state
+      "default"
+      :outcome
+      "command runs from M-x"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r1/zap-to-char/mx")
+ (:id "r3:zap-to-char:effect"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "editable-buffer"
+      :outcome
+      "buffer changes"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/effect")
+ (:id "r3:zap-to-char:undo"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "after-one-change"
+      :outcome
+      "original bytes restored"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/undo")
+ (:id "r3:zap-to-char:read-only"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "read-only-buffer"
+      :outcome
+      "rejected without byte changes"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/read-only")
+ (:id "r3:zap-to-char:narrow"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "narrowed-buffer"
+      :outcome
+      "outside range remains unchanged"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/narrow")
+ (:id "r3:zap-to-char:split-window"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "split-window"
+      :outcome
+      "both views reflect the change"
+      :observe
+      (:screen_text)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/split-window")
+ (:id "r3:zap-to-char:macro-replay"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "macro"
+      :state
+      "macro-recording"
+      :outcome
+      "replay has the same effect"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/macro-replay")
+ (:id "r3:zap-to-char:prefix-u4"
+      :commands
+      ("zap-to-char")
+      :rule
+      :r3
+      :lane
+      "W3-8"
+      :entry
+      "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}"
+      :state
+      "prefix-C-u-4"
+      :outcome
+      "specified prefix behavior is observed"
+      :observe
+      (:file_bytes)
+      :scenario
+      "command-path/kill-ring/r3/zap-to-char/prefix-u4"))

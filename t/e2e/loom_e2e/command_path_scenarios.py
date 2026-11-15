@@ -234,6 +234,20 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.entry_mode must be key, mx, or open-mx"
             )
+        if "prompt_followup" in case:
+            prompt_followup = case["prompt_followup"]
+            if not isinstance(prompt_followup, dict):
+                raise CommandPathScenarioError(
+                    f"{location}.prompt_followup must be an object"
+                )
+            _nonempty_prompt_label(
+                prompt_followup.get("label"),
+                f"{location}.prompt_followup.label",
+            )
+            _validate_key_list(
+                prompt_followup.get("keys"),
+                f"{location}.prompt_followup.keys",
+            )
         if "followup_input" in case:
             _validate_r1_followup_input(case, location)
         if "cancel_prompt_after_assert" in case and not isinstance(
@@ -322,6 +336,13 @@ def _validate_case(case, index):
         ):
             raise CommandPathScenarioError(
                 f"{location}.invalid_key is only valid for invalid char prompts"
+            )
+        if prompt_kind == "char" and case["prompt_case"] == "invalid" and (
+            "invalid_key" in case
+        ):
+            _validate_cursor(
+                case.get("invalid_prompt_cursor"),
+                f"{location}.invalid_prompt_cursor",
             )
         if prompt_kind == "char":
             if case["prompt_case"] not in {"accept", "cancel", "invalid"}:
@@ -1004,6 +1025,11 @@ def _run_r1(session, case, path):
         _send_mx(session, case.get("invoke_name", case["command"]))
     else:
         _send_mx(session, None)
+    if "prompt_followup" in case:
+        prompt_followup = case["prompt_followup"]
+        with _deadline_stage(case["name"], "prompt follow-up", session=session):
+            session.wait_for_region_text("minibuffer", prompt_followup["label"])
+            _send_keys(session, prompt_followup["keys"])
     if "followup_input" in case:
         with _deadline_stage(case["name"], "follow-up input", session=session):
             session.wait_for_region_text("minibuffer", "Go to line: ")
@@ -1077,11 +1103,7 @@ def _answer_command_prompt(session, case):
                 session.wait_for_region_exact_text(
                     "minibuffer", invalid_prompt, strip_right=True
                 )
-                _assert_cursor(
-                    session,
-                    [0, len(invalid_prompt)],
-                    "minibuffer",
-                )
+                _assert_cursor(session, case["invalid_prompt_cursor"], "minibuffer")
             else:
                 session.type(case["input_text"])
                 session.wait_for_region_exact_text(
@@ -1278,11 +1300,7 @@ def _run_r2(session, case, path):
                 session.wait_for_region_exact_text(
                     "minibuffer", invalid_prompt, strip_right=True
                 )
-                _assert_cursor(
-                    session,
-                    [0, len(invalid_prompt)],
-                    "minibuffer",
-                )
+                _assert_cursor(session, case["invalid_prompt_cursor"], "minibuffer")
         else:
             if prompt_case != "cancel":
                 with stage("target prompt input"):

@@ -2645,7 +2645,7 @@
       "expected_screen": [
         {
           "region": "body",
-          "text": "eta beta gamma",
+          "text": "eta gamma",
           "index": 0
         }
       ]
@@ -2712,6 +2712,10 @@
       "prompt_case": "invalid",
       "input_text": "",
       "invalid_key": "UP",
+      "invalid_prompt_cursor": [
+        0,
+        30
+      ],
       "initial_bytes": "alpha beta gamma\n",
       "expected_bytes": "alpha beta gamma\n",
       "expected_cursor": [
@@ -2725,6 +2729,401 @@
           "text": "alpha beta gamma",
           "index": 0
         }
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/zap-to-char/key",
+      "path_id": "r1:zap-to-char:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22z%22%2C%22modifiers%22%3A%5B%22alt%22%5D%7D%5D%7D",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "entry_mode": "key",
+      "initial_bytes": "alpha beta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "entry_keys": [
+        "M-z",
+        "b"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r1/zap-to-char/mx",
+      "path_id": "r1:zap-to-char:mx",
+      "lane": "W3-8",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "save_after_effect": true,
+      "prompt_followup": {
+        "label": "Zap to char: ",
+        "keys": [
+          "b"
+        ]
+      }
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/effect",
+      "path_id": "r3:zap-to-char:effect",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "effect",
+      "initial_bytes": "alpha beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/undo",
+      "path_id": "r3:zap-to-char:undo",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "zap-to-char",
+        "undo",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "undo",
+      "initial_bytes": "alpha beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "alpha beta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/read-only",
+      "path_id": "r3:zap-to-char:read-only",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "zap-to-char"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "read-only",
+      "initial_bytes": "alpha beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "alpha beta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ],
+      "expected_read_only_status": "Buffer is read-only",
+      "read_only_command": "toggle-read-only"
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/narrow",
+      "path_id": "r3:zap-to-char:narrow",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "narrow",
+      "initial_bytes": "alpha beta gamma\nOUT\n",
+      "effect_bytes": "eta gamma\nOUT\n",
+      "expected_bytes": "eta gamma\nOUT\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/split-window",
+      "path_id": "r3:zap-to-char:split-window",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "split-window-below",
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "split-window",
+      "initial_bytes": "alpha beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        12,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 12
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        },
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 12
+        }
+      ],
+      "rows": 24,
+      "prepare_commands": [
+        "split-window-below"
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/macro-replay",
+      "path_id": "r3:zap-to-char:macro-replay",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "start-kbd-macro",
+        "zap-to-char",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "macro-replay",
+      "initial_bytes": "alpha beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "command_keys": [
+        "M-z",
+        "b"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/prefix-u4",
+      "path_id": "r3:zap-to-char:prefix-u4",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "prefix-u4",
+      "initial_bytes": "alpha beta beta beta beta gamma\n",
+      "effect_bytes": "eta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "eta gamma",
+          "index": 0
+        }
+      ],
+      "command_keys": [
+        "C-u",
+        "4",
+        "M-z",
+        "b"
       ]
     }
   ]
