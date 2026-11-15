@@ -19,15 +19,15 @@
 (defun system-dependencies (system-name)
   (copy-list (getf (cddr (find-defsystem-form system-name)) :depends-on)))
 
-(defun flake-input-repositories ()
-  (loop for line in (uiop:split-string (repo-file-string "flake.nix")
-                                       :separator '(#\Newline))
+(defun flake-input-repositories (&optional (source (repo-file-string "flake.nix")))
+  (loop for line in (uiop:split-string source :separator (quote (#\Newline)))
         for marker = "url = \"github:nerima-lisp/"
         for marker-position = (search marker line)
-        when marker-position
-          collect (subseq line
-                          (+ marker-position (length marker))
-                          (search "/v" line :start2 marker-position))))
+        for repository-start = (and marker-position
+                                    (+ marker-position (length marker)))
+        when repository-start
+          collect (subseq line repository-start
+                          (position #\/ line :start repository-start))))
 
 (defun block-between-markers (string start-marker end-marker &key from-end)
   (let ((start (search start-marker string :from-end from-end)))
@@ -180,6 +180,15 @@
       (expect (sort production-dependencies #'string<)
               :to-equal
               (sort flake-dependencies #'string<))))
+  (it-each
+      (("v0.6.1")
+       ("0123456789012345678901234567890123456789"))
+      "extracts the repository identity from reference ~A"
+      (reference)
+    (expect (flake-input-repositories
+             (format nil "url = ~S;"
+                     (format nil "github:nerima-lisp/cl-concurrent-kit/~A" reference)))
+            :to-equal (quote ("cl-concurrent-kit"))))
 
   (it
     "pins every root and slice test dependency in flake inputs"

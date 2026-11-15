@@ -58,7 +58,8 @@
       (cl-concurrent-kit:with-interruptible-scope (scope)
         (setf finished-scope scope)
         (loom/feature/evaluation:evaluate-lisp-source "(+ 20 22)"))
-      (cl-concurrent-kit:request-interruption finished-scope :reason :late-probe)
+      (expect (cl-concurrent-kit:request-interruption finished-scope :reason :late-probe)
+              :to-be nil)
       (let ((result
               (loom/feature/evaluation:evaluate-lisp-source "(+ 20 22)")))
         (expect (loom/feature/evaluation:evaluation-result-success-p result)

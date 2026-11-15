@@ -54,17 +54,17 @@
     "cl-concurrent-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1794682561,
-        "narHash": "sha256-JwnH9AfdXK76NJAs212gtUbiFegvyT8zqBL/uI9TehM=",
+        "lastModified": 1794706367,
+        "narHash": "sha256-ANaVsGH+MIsVHGXAVMCiuKWVcu7jNJ4SUf/JiC702ok=",
         "owner": "nerima-lisp",
         "repo": "cl-concurrent-kit",
-        "rev": "331c5bb00ffca10df46a890a5593bf2bbd9d70b9",
+        "rev": "11b1e66f0d95b6054a830a458695d0fa4ee94dd0",
         "type": "github"
       },
       "original": {
         "owner": "nerima-lisp",
-        "ref": "v0.6.1",
         "repo": "cl-concurrent-kit",
+        "rev": "11b1e66f0d95b6054a830a458695d0fa4ee94dd0",
         "type": "github"
       }
     },
