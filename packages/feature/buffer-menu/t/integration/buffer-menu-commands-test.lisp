@@ -138,6 +138,31 @@ keep their registration, so file buffers keep their disk snapshots."
         (expect (window-buffer (window-tree-selected-window tree)) :to-be a)))))
 
 (describe
+  "buffer menu q after x killed the buffer it would restore"
+  (it
+    "leaves the list for *scratch* when no ordinary buffer is left"
+    (%with-minibuffer-state (minibuffer "")
+      (let ((tree (editor-state-window-tree *editor-state*))
+            (a (make-buffer :name "a.txt" :initial-content "alpha"))
+            (b (make-buffer :name "b.txt" :initial-content "bravo")))
+        (%buffer-menu-register (list a b))
+        (let* ((upper (window-tree-selected-window tree))
+               (lower (window-split tree upper :horizontal)))
+          (window-set-buffer lower b)
+          (loom/core/window-tree:window-tree-select-index tree 0)
+          (loom/feature/buffer-menu:list-buffers)
+          (expect (window-buffer lower) :to-be (%buffer-menu-list-buffer))
+          (loom/core/window-tree:window-tree-select-index tree 1)
+          (loom/feature/buffer-menu:buffer-menu-delete)
+          (loom/feature/buffer-menu:buffer-menu-delete)
+          (loom/feature/buffer-menu:buffer-menu-execute)
+          (expect (%buffer-menu-live-p a) :to-be nil)
+          (expect (%buffer-menu-live-p b) :to-be nil)
+          (loom/feature/buffer-menu:buffer-menu-quit)
+          (expect (buffer-name (window-buffer lower)) :to-equal "*scratch*")
+          (expect (window-tree-windows tree) :to-equal (list upper lower)))))))
+
+(describe
   "buffer menu marks and motion"
   (it
     "moves within the listed lines and replaces a line's mark with the later one"

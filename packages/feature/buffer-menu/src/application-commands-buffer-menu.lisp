@@ -171,10 +171,13 @@ afterwards without replacing the last message."
         (save-next (%marked-buffers state :save list-buffer))))))
 
 (defun %fallback-buffer (list-buffer)
-  (find-if (lambda (buffer)
-             (and (not (eq buffer list-buffer))
-                  (not (buffer-menu-special-name-p (buffer-name buffer)))))
-           (reverse (registered-buffers *editor-session*))))
+  "Return the first ordinary buffer, else any buffer, other than LIST-BUFFER."
+  (let ((others (remove list-buffer (reverse (registered-buffers *editor-session*))
+                        :test #'eq)))
+    (or (find-if-not (lambda (buffer)
+                       (buffer-menu-special-name-p (buffer-name buffer)))
+                     others)
+        (first others))))
 
 (defun buffer-menu-quit ()
   "Close the window list-buffers created, or restore the buffer it replaced."
