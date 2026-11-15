@@ -1,5 +1,5 @@
 (in-package #:loom/core/minibuffer)
-(declaim (ftype (function (t t t t) t) %minibuffer-handle-char-event))
+(declaim (ftype (function (t t t t t) t) %minibuffer-handle-char-event))
 (defvar *message-sinks* nil)
 (defun register-message-sink (owner function)
   "Register FUNCTION to receive minibuffer messages for OWNER.
@@ -49,11 +49,15 @@ registration order. Callback errors propagate and stop dispatch."
   "Begin an interactive input session in MINIBUFFER, displaying PROMPT and
 accepting keystrokes via MINIBUFFER-HANDLE-KEY. ON-CONFIRM is called with the
 confirmed input string, and ON-CANCEL is called with no arguments. ON-CHANGE
-is called after each edit. ON-KEY may consume an event before default handling.
+is called after each edit. ON-KEY runs before default handling and consumes
+the event when it returns true. In :CHAR mode, C-g cancels before ON-KEY runs.
+COMPLETION-FUNCTION is called with current input and returns candidate strings
+used by Tab completion.
 When INPUT-KIND is :CHAR, the first allowed unmodified character is confirmed
 immediately without RET. ALLOWED-CHARACTERS, when supplied, is a string of
-accepted characters; otherwise any unmodified character is accepted. Invalid
-events leave the prompt active and show input guidance. Returns MINIBUFFER."
+accepted characters; otherwise any unmodified character is accepted. Accepting
+a :CHAR prompt does not call ON-CHANGE. Invalid events leave the prompt active
+and show input guidance. Returns MINIBUFFER."
   (%minibuffer-validate-function-option completion-function ":completion-function")
   (%minibuffer-validate-function-option on-change ":on-change")
   (%minibuffer-validate-function-option on-key ":on-key")
@@ -75,8 +79,7 @@ events leave the prompt active and show input guidance. Returns MINIBUFFER."
         (if (eq input-kind :char)
             (lambda (key-event)
               (%minibuffer-handle-char-event
-               minibuffer key-event allowed-characters
-               on-key))
+               minibuffer key-event prompt allowed-characters on-key))
             on-key)
         (%minibuffer-completion-function minibuffer) completion-function
         (%minibuffer-completion-candidates minibuffer) nil

@@ -26,9 +26,16 @@
     (error "COMMAND-SPEC :MUTATES must be true or false: ~S" mutates))
   (unless (and (listp prompts)
                (every (lambda (prompt)
-                        (member prompt '(:free-string :completion :yes-no :numeric :char)))
+                        (or (member prompt
+                                    '(:free-string :completion :yes-no :numeric :char))
+                            (and (consp prompt)
+                                 (eq (first prompt) :char)
+                                 (consp (rest prompt))
+                                 (stringp (second prompt))
+                                 (null (cddr prompt)))))
                       prompts))
-    (error "COMMAND-SPEC :PROMPTS must be a list of prompt kinds: ~S" prompts))
+    (error "COMMAND-SPEC :PROMPTS must be a list of prompt kinds or (:CHAR STRING) forms: ~S"
+           prompts))
   (unless (member needs-region '(nil t))
     (error "COMMAND-SPEC :NEEDS-REGION must be true or false: ~S" needs-region))
   (unless (and (listp external)

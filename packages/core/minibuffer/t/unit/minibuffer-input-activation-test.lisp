@@ -156,39 +156,36 @@
       (expect confirmed :to-equal "d")
       (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
 
-  (it
-    "keeps a :char prompt active and shows allowed keys for invalid input"
-    (let ((minibuffer (make-minibuffer))
-          (confirmed nil))
-      (minibuffer-activate
-       minibuffer "Choose: "
-       :input-kind :char
-       :allowed-characters "rdi"
-       :on-confirm (lambda (input)
-                     (setf confirmed input)))
-      (dolist
-          (event
-            (list
-             (%char-key #\x)
-             (cl-tty-kit:make-key-event
-              :type :character
-              :code #\r
-              :modifiers (list :control))
-             (%special-key :up)
-             (%special-key :enter)))
-        (minibuffer-handle-key minibuffer event)
-        (expect (minibuffer-active-p minibuffer) :to-be-truthy)
-        (expect confirmed :to-be-falsy)
-        (let ((message (minibuffer-message-string minibuffer)))
-          (expect
-           (and (stringp message)
-                (search "r" message)
-                (search "d" message)
-                (search "i" message))
-           :to-be-truthy)))
-      (expect (minibuffer-input-string minibuffer) :to-equal "")
-      (minibuffer-handle-key minibuffer (%special-key :control-g))
-      (expect (minibuffer-active-p minibuffer) :to-be-falsy)))
+  (it "keeps a :char prompt active and shows allowed keys for invalid input"
+  (let ((minibuffer (make-minibuffer))
+        (confirmed nil))
+    (minibuffer-activate
+     minibuffer "Choose: "
+     :input-kind :char
+     :allowed-characters "rdi"
+     :on-confirm (lambda (input) (setf confirmed input)))
+    (dolist
+        (event
+          (list
+           (%char-key #\x)
+           (cl-tty-kit:make-key-event
+            :type :character
+            :code #\r
+            :modifiers (list :control))
+           (%special-key :up)
+           (%special-key :enter)))
+      (minibuffer-handle-key minibuffer event)
+      (expect (minibuffer-active-p minibuffer) :to-be-truthy)
+      (expect (minibuffer-message-string minibuffer)
+              :to-equal "Allowed keys: r, d, i")
+      (expect (minibuffer-prompt-string minibuffer)
+              :to-equal "Choose: Allowed keys: r, d, i"))
+    (expect confirmed :to-be-falsy)
+    (expect (minibuffer-input-string minibuffer) :to-equal "")
+    (minibuffer-handle-key minibuffer (%special-key :control-g))
+    (expect (minibuffer-active-p minibuffer) :to-be-falsy)
+    (expect (minibuffer-prompt-string minibuffer) :to-be nil)
+    (expect (minibuffer-message-string minibuffer) :to-be nil)))
 
   (it
     "accepts any character when no allowed set is specified"

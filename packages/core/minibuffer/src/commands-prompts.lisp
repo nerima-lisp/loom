@@ -1,13 +1,18 @@
 (in-package #:loom/core/minibuffer)
 
 (defmacro with-prompts ((minibuffer-var minibuffer-form &key on-cancel) bindings &body body)
-  "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION) pair in
+  "Prompt for each (VAR PROMPT-STRING &KEY COMPLETION-FUNCTION INPUT-KIND ALLOWED-CHARACTERS) pair in
 BINDINGS in turn, binding VAR to the typed input, then run BODY with every VAR
 bound and MINIBUFFER-VAR bound to MINIBUFFER-FORM's value (evaluated once).
 ON-CANCEL, when supplied, is a form -- evaluated with MINIBUFFER-VAR in scope
 -- run if the user cancels (C-g) at any prompt in the chain, not only the
 first; it is threaded into every generated MINIBUFFER-ACTIVATE's :ON-CANCEL,
 and the keyword is omitted entirely when ON-CANCEL is absent.
+
+For :CHAR bindings, INPUT-KIND is passed to MINIBUFFER-ACTIVATE. When supplied,
+ALLOWED-CHARACTERS is the accepted character set. The first allowed
+unmodified character confirms immediately without RET and does not call
+ON-CHANGE.
 
 MINIBUFFER-ACTIVATE returns immediately; the typed answer only arrives later,
 asynchronously, through its :ON-CONFIRM callback. A second, dependent prompt
@@ -20,16 +25,21 @@ command reads top-to-bottom like ordinary sequential code instead of as a
 hand-nested pyramid of lambdas."
   (labels ((expand-bindings (bindings)
              (if bindings
-                 (destructuring-bind (var prompt &key completion-function)
+                 (destructuring-bind
+                     (var prompt &key completion-function input-kind
+                                   allowed-characters)
                      (first bindings)
                    `(minibuffer-activate ,minibuffer-var ,prompt
-                                              :on-confirm (lambda (,var)
-                                                            ,(expand-bindings (rest bindings)))
-                                              ,@(when completion-function
-                                                  `(:completion-function
-                                                    ,completion-function))
-                                              ,@(when on-cancel
-                                                  `(:on-cancel (lambda () ,on-cancel)))))
+                     :on-confirm (lambda (,var)
+                                   ,(expand-bindings (rest bindings)))
+                     ,@(when completion-function
+                         `(:completion-function ,completion-function))
+                     ,@(when input-kind
+                         `(:input-kind ,input-kind))
+                     ,@(when allowed-characters
+                         `(:allowed-characters ,allowed-characters))
+                     ,@(when on-cancel
+                         `(:on-cancel (lambda () ,on-cancel)))))
                  `(progn ,@body))))
     `(let ((,minibuffer-var ,minibuffer-form))
        ,(expand-bindings bindings))))

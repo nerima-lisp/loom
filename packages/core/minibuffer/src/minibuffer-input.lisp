@@ -230,7 +230,9 @@ completes, and C-g cancels. Returns MINIBUFFER."
      (format nil
              "Allowed keys: ~{~C~^, ~}"
              (loop for character across allowed-characters collect character)))))
-(defun %minibuffer-handle-char-event (minibuffer key-event
+(defun %minibuffer-char-guidance-prompt (prompt guidance)
+  (concatenate 'string (if (stringp prompt) prompt "") guidance))
+(defun %minibuffer-handle-char-event (minibuffer key-event prompt
                                        allowed-characters on-key)
   "Handle one event for a :CHAR activation, with C-g taking priority."
   (let* ((type (cl-tty-kit:key-event-type key-event))
@@ -238,6 +240,7 @@ completes, and C-g cancels. Returns MINIBUFFER."
          (modifiers (cl-tty-kit:key-event-modifiers key-event)))
     (cond
       ((%control-g-key-p key-event)
+       (minibuffer-message minibuffer nil)
        (%minibuffer-cancel minibuffer)
        t)
       ((and on-key (funcall on-key key-event)) t)
@@ -249,10 +252,14 @@ completes, and C-g cancels. Returns MINIBUFFER."
                    (%minibuffer-point minibuffer) 1)
              (minibuffer-message minibuffer nil)
              (%minibuffer-confirm minibuffer))
-           (minibuffer-message
-            minibuffer (%minibuffer-char-guidance allowed-characters)))
+           (let ((guidance (%minibuffer-char-guidance allowed-characters)))
+             (minibuffer-set-prompt
+              minibuffer (%minibuffer-char-guidance-prompt prompt guidance))
+             (minibuffer-message minibuffer guidance)))
        t)
       (t
-       (minibuffer-message
-        minibuffer (%minibuffer-char-guidance allowed-characters))
+       (let ((guidance (%minibuffer-char-guidance allowed-characters)))
+         (minibuffer-set-prompt
+          minibuffer (%minibuffer-char-guidance-prompt prompt guidance))
+         (minibuffer-message minibuffer guidance))
        t))))

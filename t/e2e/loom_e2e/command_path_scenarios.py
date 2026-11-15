@@ -1037,6 +1037,11 @@ def _answer_command_prompt(session, case):
             session.wait_for_region_exact_text(
                 "minibuffer", case["expected_minibuffer"], strip_right=True
             )
+            _assert_cursor(
+                session,
+                [0, len(case["expected_minibuffer"])],
+                "minibuffer",
+            )
             _send_key(session, "C-g")
             return False
         return True
@@ -1215,6 +1220,11 @@ def _run_r2(session, case, path):
             with stage("invalid prompt guidance"):
                 session.wait_for_region_exact_text(
                     "minibuffer", case["expected_minibuffer"], strip_right=True
+                )
+                _assert_cursor(
+                    session,
+                    [0, len(case["expected_minibuffer"])],
+                    "minibuffer",
                 )
         if prompt_case in {"cancel", "invalid"}:
             with stage("prompt cancel (C-g)"):

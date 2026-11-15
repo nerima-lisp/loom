@@ -278,7 +278,7 @@ class CommandPathScenarioTests(unittest.TestCase):
             "cancel": {"input_text": "", "expected_minibuffer": ""},
             "invalid": {
                 "input_text": "x",
-                "expected_minibuffer": "Allowed keys: r, d, i",
+                "expected_minibuffer": "Zap to char: Allowed keys: r, d, i",
             },
         }
 
@@ -344,6 +344,96 @@ class CommandPathScenarioTests(unittest.TestCase):
                         cancel_key = ("send", b"\x07")
                         self.assertIn(cancel_key, calls)
                         self.assertLess(notice_index, calls.index(cancel_key))
+                        cursor_wait = (
+                            "wait_region_cursor",
+                            "minibuffer",
+                            len(values["expected_minibuffer"]),
+                            0,
+                        )
+                        cursor_observation = (
+                            "observe_cursor",
+                            (0, len(values["expected_minibuffer"])),
+                            {"region": "minibuffer"},
+                        )
+                        self.assertIn(cursor_wait, calls)
+                        self.assertIn(cursor_observation, calls)
+                        cursor_index = calls.index(cursor_wait)
+                        self.assertLess(notice_index, cursor_index)
+                        self.assertLess(cursor_index, calls.index(cancel_key))
+
+    def test_char_prompt_validation_rejects_invalid_scenario_data(self):
+        valid_case = {
+            "name": "test/char-invalid",
+            "path_id": "r2:zap-to-char:prompt-1:char:invalid",
+            "lane": "F1",
+            "rule": "r2",
+            "entry": "key:M-z;prompt:1:char",
+            "commands": ["zap-to-char"],
+            "command": "zap-to-char",
+            "entry_mode": "key",
+            "entry_keys": ["M-z"],
+            "prompt_open": "Zap to char: ",
+            "prompt_kind": "char",
+            "prompt_case": "invalid",
+            "input_text": "x",
+            "initial_bytes": "abc\n",
+            "expected_bytes": "abc\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Zap to char: Allowed keys: r, d, i",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+        unsupported_case = {**valid_case, "prompt_case": "empty", "input_text": ""}
+        cancel_with_input = {**valid_case, "prompt_case": "cancel", "input_text": "d"}
+        empty_accept = {**valid_case, "prompt_case": "accept", "input_text": ""}
+        long_invalid = {**valid_case, "input_text": "xx"}
+        missing_guidance = dict(valid_case)
+        del missing_guidance["expected_minibuffer"]
+        empty_guidance = {**valid_case, "expected_minibuffer": ""}
+        cases = (
+            (
+                "unsupported char prompt_case",
+                unsupported_case,
+                "prompt_case is not supported for char prompts",
+            ),
+            (
+                "nonempty char cancellation input",
+                cancel_with_input,
+                "input_text must be empty for char cancellation",
+            ),
+            (
+                "char accept input length",
+                empty_accept,
+                "input_text must contain one character for char prompts",
+            ),
+            (
+                "char invalid input length",
+                long_invalid,
+                "input_text must contain one character for char prompts",
+            ),
+            (
+                "missing char invalid guidance",
+                missing_guidance,
+                "expected_minibuffer must be a string",
+            ),
+            (
+                "empty char invalid guidance",
+                empty_guidance,
+                "expected_minibuffer must be a non-empty trimmed string",
+            ),
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            for label, case, expected_error in cases:
+                path.write_text(
+                    json.dumps({"schema_version": 1, "scenarios": [case]}),
+                    encoding="utf-8",
+                )
+                with self.subTest(case=label):
+                    with self.assertRaisesRegex(
+                        CommandPathScenarioError, expected_error
+                    ):
+                        load_command_path_scenarios(path)
 
     def test_r2_command_prompts_send_pre_keys_before_opening_the_prompt(self):
         case = {
