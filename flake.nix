@@ -21,7 +21,7 @@
     };
 
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/b159b25fa5acee669e6c3da5fbfdf3f44105256b";
+      url = "github:nerima-lisp/cl-tty-kit/3db6ffa985ec325d822e2244c42eb8530f39f189";
       flake = false;
     };
     # cl-tty-kit requires these transitive libraries explicitly.
