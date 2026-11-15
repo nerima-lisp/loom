@@ -113,6 +113,7 @@ class GenerateRequiredPathsTests(unittest.TestCase):
             rule_counts[path["rule"]] = rule_counts.get(path["rule"], 0) + 1
             self.assertEqual(set(path), _PATH_FIELDS)
             self.assertEqual(path["scenario"], "")
+        self.assertEqual(rule_counts.pop("r9"), 1)
 
         self.assertEqual(
             rule_counts,
@@ -501,6 +502,41 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         for path_id in ("r8:session", "r8:split-windows", "r8:workspace", "r8:history"):
             self.assertIn(path_id, self.paths_by_id)
             self.assertEqual(self.paths_by_id[path_id]["entry"], "new-process")
+
+    def test_r9_daily_is_one_fixed_path_through_the_day(self):
+        path = self.paths_by_id["r9:daily"]
+        self.assertEqual(
+            {key: path[key] for key in ("rule", "lane", "entry", "event_targets")},
+            {"rule": "r9", "lane": "T9", "entry": "daily", "event_targets": []},
+        )
+        self.assertEqual(
+            path["commands"],
+            [
+                "project-find-file",
+                "indent-for-tab-command",
+                "forward-slurp-sexp",
+                "comment-line",
+                "newline",
+                "save-buffer",
+                "back-to-indentation",
+                "delete-horizontal-space",
+                "eval-expression",
+                "toggle-file-tree",
+                "file-tree-select-next",
+                "lsp-start",
+                "lsp-completion-at-point",
+                "lsp-find-definition",
+                "lsp-stop",
+                "list-buffers",
+                "save-buffers-kill-terminal",
+                "search-query-replace",
+                "save-some-buffers",
+            ],
+        )
+        self.assertEqual(
+            path["observe"],
+            ["screen_text", "cursor", "cell_attrs", "file_bytes", "external_state"],
+        )
 
     def test_generation_is_independent_of_catalog_and_key_order(self):
         reversed_catalog = copy.deepcopy(self.catalog[::-1])

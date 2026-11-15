@@ -835,10 +835,48 @@ def _wp1_recovery_paths():
     ]
 
 
+def _r9_daily_paths():
+    # One commanded R9 path; the scenario observes each command's effect
+    # before the next listed command runs, so the trace attributes every one.
+    return [
+        _path(
+            "r9:daily",
+            [
+                "project-find-file",
+                "indent-for-tab-command",
+                "forward-slurp-sexp",
+                "comment-line",
+                "newline",
+                "save-buffer",
+                "back-to-indentation",
+                "delete-horizontal-space",
+                "eval-expression",
+                "toggle-file-tree",
+                "file-tree-select-next",
+                "lsp-start",
+                "lsp-completion-at-point",
+                "lsp-find-definition",
+                "lsp-stop",
+                "list-buffers",
+                "save-buffers-kill-terminal",
+                "search-query-replace",
+                "save-some-buffers",
+            ],
+            "r9",
+            "T9",
+            "daily",
+            "one scratch HOME shared by loom processes started in turn",
+            "every scene of the day shows its expected effect",
+            ["screen_text", "cursor", "cell_attrs", "file_bytes", "external_state"],
+        )
+    ]
+
+
 def _fixed_paths():
     paths = []
     paths.extend(_file_tree_scroll_paths())
     paths.extend(_wp6_syntax_paths())
+    paths.extend(_r9_daily_paths())
     dimensions = ("fullwidth", "combining", "emoji", "wrap", "truncate")
     operations = (
         ("move", ["forward-char"], ["cursor"]),
