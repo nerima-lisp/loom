@@ -1102,11 +1102,22 @@ Toggle whether `tree`'s sidebar is shown. Returns the new visibility state.
 ### `file-tree-entries`
 
 ```lisp
-(loom/feature/file-tree:file-tree-entries tree)
+(loom/feature/file-tree:file-tree-entries tree &key limit stop-after-path (trailing-rows 0))
 ```
 
 Return the flattened list of currently visible entries in `tree`, respecting
 expand/collapse state, as `(path . depth)` conses in display order.
+
+Without `limit`, return all reachable entries. With `limit`, stop when both the
+entry count reaches `limit` and, if `stop-after-path` is supplied, the matching
+entry and `trailing-rows` following entries have been collected. Finding the path
+early does not shorten the prefix below `limit`. If the path is not found or the
+tree ends before both conditions hold, return the entries collected to the end.
+
+The second value, `present-p`, is true when every visited directory listing is
+available. Pending listings make it `nil`; the returned entries may be incomplete.
+When the runtime installed by `enable-file-tree-runtime` is used, a recorded
+listing error is treated as an available empty listing.
 
 ### `file-tree-entry-kind`
 
