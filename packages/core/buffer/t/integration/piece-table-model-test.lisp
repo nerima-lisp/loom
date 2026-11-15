@@ -146,6 +146,7 @@
              (versions (list (version buffer)))
              (operations nil)
              (narrow-history-count 0)
+             (prefix-history-count 0)
              (start 0)
              (end (length reference)))
         (labels ((pick (limit)
@@ -153,16 +154,18 @@
                        (%model-random-index state limit)
                      (setf state next-state)
                      value)))
-          (dotimes (step 32)
-            (declare (ignore step))
+          ;; The prefix guarantees narrowed replay without consuming the LCG state.
+          (dotimes (step 36)
             (let* ((old-version (version buffer))
-                   (kind (pick 6))
+                   (kind (if (< step 4) (nth step '(4 0 2 3)) (pick 6)))
                    (action nil))
               (push kind operations)
               (case kind
                 (0
-                 (let* ((offset (+ start (pick (1+ (- end start)))))
-                        (text (nth (pick 5)
+                 (let* ((offset (+ start (if (= step 1)
+                                                 (mod seed (1+ (- end start)))
+                                                 (pick (1+ (- end start))))))
+                        (text (nth (if (= step 1) (mod seed 5) (pick 5))
                                    (list "a" "bc" (string #\Newline)
                                          (format nil "x~%y")
                                          (format nil "~%~%")))))
@@ -190,7 +193,8 @@
                                   (<= (+ (first candidate) (length (second candidate))) end)))
                      (when (and candidate
                                 (or (plusp start) (< end (length reference))))
-                       (incf narrow-history-count))
+                       (incf narrow-history-count)
+                       (when (< step 4) (incf prefix-history-count)))
                      (if (= kind 2)
                          (progn
                            (setf action (pop undo))
@@ -203,8 +207,10 @@
                            (buffer-redo buffer)
                            (when action (push (inverse action) undo)))))))
                 (4
-                 (let* ((new-start (+ start (pick (1+ (- end start)))))
-                        (new-end (+ new-start (pick (1+ (- end new-start))))))
+                 (let* ((new-start (if (zerop step) 1
+                                       (+ start (pick (1+ (- end start))))))
+                        (new-end (if (zerop step) (1- (length reference))
+                                     (+ new-start (pick (1+ (- end new-start)))))))
                    (multiple-value-bind (line column)
                        (%model-position-at reference new-start)
                      (multiple-value-bind (end-line end-column)
@@ -242,8 +248,11 @@
                                 :to-be-truthy))
                       (expect (changed-since buffer old) :to-equal nil))))
               (push (version buffer) versions))))
-        (format t "~&C1-MODEL-TRACE seed=~D narrowed-replays=~D operations=~S~%"
-                seed narrow-history-count (reverse operations))
+        (expect (plusp narrow-history-count) :to-be-truthy)
+        (expect prefix-history-count :to-equal 2)
+        (format t "~&C1-MODEL-TRACE seed=~D narrowed-replays=~D prefix-replays=~D random-replays=~D operations=~S~%"
+                seed narrow-history-count prefix-history-count
+                (- narrow-history-count prefix-history-count) (reverse operations))
         t))
     (it "reports absolute changed lines while narrowed and after history replay"
       (let* ((buffer (make-buffer :initial-content (format nil "a~%b~%c~%d")))
@@ -372,7 +381,8 @@
 (describe "C1 buffer interruption at generated scheduling points"
   (it "keeps complete long-suffix edits and their point across asynchronous escape"
     (let ((state 731)
-          (inside-count 0))
+          (inside-count 0)
+          (pending-counts (make-array 4 :initial-element 0)))
       (dotimes (trial 24)
         (let* ((kind (mod trial 4))
                (base (with-output-to-string (stream)
@@ -382,6 +392,10 @@
                (ready (sb-thread:make-semaphore))
                (tag (list :generated-interrupt))
                (delivered nil)
+               (enqueue-ack (list nil))
+               (enqueued nil)
+               (pending-snapshot nil)
+               (helper-returned-p nil)
                (started nil)
                (finished nil)
                (helper-start nil)
@@ -420,8 +434,27 @@
                                            helper-start (get-internal-real-time))
                                      (sb-thread:signal-semaphore ready)
                                      (unwind-protect
-                                          (apply original arguments)
-                                       (setf helper-end (get-internal-real-time))))
+                                          (multiple-value-prog1
+                                              (apply original arguments)
+                                            ;; Keep the inherited mask while establishing actual enqueue.
+                                            (loop until (sb-ext:compare-and-swap
+                                                         (car enqueue-ack) t t)
+                                                  when (>= (get-internal-real-time)
+                                                           (+ helper-start
+                                                              (* 2 internal-time-units-per-second)))
+                                                    do (error "C1 enqueue acknowledgement timed out")
+                                                  do (sb-ext:spin-loop-hint))
+                                            (setf helper-returned-p t))
+                                       (let* ((ack (sb-ext:compare-and-swap
+                                                    (car enqueue-ack) t t))
+                                              (callback-delivered delivered))
+                                         (setf helper-end (get-internal-real-time)
+                                               pending-snapshot
+                                               (list :enqueue-ack ack
+                                                     :delivered callback-delivered
+                                                     :normal-return helper-returned-p
+                                                     :pending (and ack helper-returned-p
+                                                                   (not callback-delivered)))))))
                                    (apply original arguments))))))
                    (setf worker
                          (sb-thread:make-thread
@@ -449,16 +482,34 @@
                     (lambda ()
                       (setf delivered t)
                       (throw tag :interrupted)))
+                   ;; SBCL 2.6.8 target-thread.lisp queues the callback before return.
+                   ;; Publish only after INTERRUPT-THREAD returns; CAS is a memory barrier.
+                   (setf enqueued (get-internal-real-time))
+                   (sb-ext:compare-and-swap (car enqueue-ack) nil t)
                    (expect (sb-thread:join-thread worker) :to-equal :interrupted)
                    (expect delivered :to-be-truthy)
                    (expect (and started sent finished) :to-be-truthy)
                    (expect (and helper-entered-p helper-start helper-end) :to-be-truthy)
-                   (let ((inside (< helper-start sent helper-end)))
+                   (let ((inside (< helper-start sent helper-end))
+                         (pending (getf pending-snapshot :pending)))
+                     (when pending (incf (aref pending-counts kind)))
                      (when inside (incf inside-count))
-                     (format t "~&C1-STRESS trial=~D kind=~D start=~D sent=~D end=~D helper-start=~D helper-end=~D inside=~S~%"
-                             trial kind started sent finished helper-start helper-end inside))
+                     (format t "~&C1-STRESS trial=~D kind=~D start=~D sent=~D enqueued=~D end=~D helper-start=~D helper-end=~D inside=~S exit-snapshot=~S~%"
+                             trial kind started sent enqueued finished helper-start helper-end
+                             inside pending-snapshot))
                    ;; Both acceptable complete states are computed before the worker starts.
                    (let ((actual (buffer-text buffer)))
+                     (multiple-value-bind (expected-line expected-column)
+                         (%model-position-at after after-point)
+                       (format t "~&C1-STATE trial=~D kind=~D lengths=~S prefixes=~S point-slots=~S expected-after-slots=~S history-lengths=~S~%"
+                               trial kind (list (length actual) (length before) (length after))
+                               (mapcar (lambda (text) (subseq text 0 (min 24 (length text))))
+                                       (list actual before after))
+                               (list (loom/core/buffer::%buffer-point-line buffer)
+                                     (loom/core/buffer::%buffer-point-column buffer))
+                               (list expected-line expected-column)
+                               (list (length (loom/core/buffer::%buffer-undo-list buffer))
+                                     (length (loom/core/buffer::%buffer-redo-list buffer)))))
                      (expect (or (string= actual before) (string= actual after))
                              :to-be-truthy)
                      (if (string= actual before)
@@ -479,7 +530,11 @@
                 (dolist (entry saved)
                   (setf (symbol-function (car entry)) (cdr entry))))))))
       (format t "~&C1-STRESS inside-count=~D trials=24~%" inside-count)
-      (expect (plusp inside-count) :to-be-truthy))))
+      (expect (plusp inside-count) :to-be-truthy)
+      (format t "~&C1-STRESS pending-at-helper-exit-by-kind=~S~%"
+              (coerce pending-counts 'list))
+      (dotimes (kind 4)
+        (expect (plusp (aref pending-counts kind)) :to-be-truthy)))))
 
 
 
@@ -675,7 +730,7 @@
       (multiple-value-bind (lines count) (loom/core/buffer:buffer-visible-lines buffer 0 4)
         (expect lines :to-equal '("" ""))
         (expect count :to-equal 2))))
-  (it "reads visible positions and lines without whole-text or legacy index calls"
+  (it "reads visible positions and lines without whole-buffer constructors"
     (let ((buffer (make-buffer :initial-content (format nil "first~%ab~%cd~%ef~%")))
           (saved nil))
       (buffer-narrow-to-region buffer 1 1 3 0)
@@ -683,18 +738,19 @@
       (unwind-protect
            (progn
              (dolist (name '(loom/core/buffer:buffer-text
-                             loom/core/buffer::%buffer-visible-line-index
-                             loom/core/buffer::%build-visible-line-index))
-               (when (fboundp name)
-                 (let ((original (symbol-function name))
-                       (replaced-name name))
-                   (push (cons name original) saved)
-                   (setf (symbol-function name)
-                         (lambda (observed &rest arguments)
-                           (when (eq observed buffer)
-                             (error "Visible API called forbidden whole-buffer helper ~S"
-                                    replaced-name))
-                           (apply original observed arguments))))))
+                             loom/core/buffer::%pieces-text))
+               (expect (fboundp name) :to-be-truthy)
+               (unless (fboundp name)
+                 (error "Forbidden whole-buffer helper is missing: ~S" name))
+               (let ((original (symbol-function name))
+                     (replaced-name name))
+                 (push (cons name original) saved)
+                 (setf (symbol-function name)
+                       (lambda (observed &rest arguments)
+                         (when (eq observed buffer)
+                           (error "Visible API called forbidden whole-buffer helper ~S"
+                                  replaced-name))
+                         (apply original observed arguments)))))
              (expect (loom/core/buffer::buffer-narrow-start-line buffer) :to-equal 1)
              (expect (buffer-visible-text buffer) :to-equal (format nil "b~%cd~%"))
              (expect (buffer-visible-line-count buffer) :to-equal 3)
@@ -713,3 +769,143 @@
         (sb-sys:without-interrupts
           (dolist (entry saved)
             (setf (symbol-function (car entry)) (cdr entry))))))))
+
+(describe "C1 indexed piece ranges"
+  (labels ((model-lines (text)
+             (loop with start = 0
+                   for end = (position #\Newline text :start start)
+                   collect (subseq text start end)
+                   while end do (setf start (1+ end))))
+           (model-offset (text line column)
+             (loop with offset = 0
+                   repeat line
+                   do (setf offset (1+ (position #\Newline text :start offset)))
+                   finally (return (+ offset column))))
+           (check-cold-line (buffer text line)
+             (let* ((start (model-offset text line 0))
+                    (end (or (position #\Newline text :start start) (length text)))
+                    (expected (loop with cursor = 0
+                                    for piece in (loom/core/buffer::%buffer-pieces buffer)
+                                    for next = (+ cursor (loom/core/buffer::%piece-length piece))
+                                    when (and (< cursor end) (> next start)) collect cursor
+                                    do (setf cursor next)))
+                    (visited nil)
+                    (thread sb-thread:*current-thread*)
+                    (name 'loom/core/buffer::%piece-range-overlap)
+                    (original (symbol-function name)))
+               (expect expected :to-be-truthy)
+               (expect (plusp (first expected)) :to-be-truthy)
+               (unwind-protect
+                    (progn
+                      (setf (symbol-function name)
+                            (lambda (cursor next observed-start observed-end)
+                              (when (and (eq sb-thread:*current-thread* thread)
+                                         (= observed-start start) (= observed-end end))
+                                (push cursor visited))
+                              (funcall original cursor next observed-start observed-end)))
+                      (expect (buffer-visible-line buffer line)
+                              :to-equal (subseq text start end))
+                      (expect (reverse visited) :to-equal expected)
+                      (format t "~&C1-PIECE-RANGE line=~D pieces=~D start=~D end=~D expected=~S visited=~S~%"
+                              line (length (loom/core/buffer::%buffer-pieces buffer))
+                              start end expected (reverse visited)))
+                 (sb-sys:without-interrupts
+                   (setf (symbol-function name) original)))))
+           (check-pieces (buffer text)
+             (let ((pieces (loom/core/buffer::%buffer-pieces buffer))
+                   (vector (loom/core/buffer::%buffer-piece-vector buffer))
+                   (starts (loom/core/buffer::%buffer-piece-starts buffer))
+                   (offset 0))
+               (expect (typep vector 'simple-vector) :to-be-truthy)
+               (expect (typep starts '(simple-array fixnum (*))) :to-be-truthy)
+               (expect (length vector) :to-equal (length pieces))
+               (expect (length starts) :to-equal (length pieces))
+               (loop for piece in pieces for i from 0
+                     for size = (loom/core/buffer::%piece-length piece)
+                     do (expect (eq (aref vector i) piece) :to-be-truthy)
+                        (expect (aref starts i) :to-equal offset)
+                        (expect (loom/core/buffer::%piece-index-at-offset buffer offset)
+                                :to-equal i)
+                        (expect (loom/core/buffer::%piece-index-at-offset
+                                 buffer (+ offset size -1)) :to-equal i)
+                        (incf offset size))
+               (expect offset :to-equal (length text))
+               (expect (buffer-text buffer) :to-equal text)
+               (expect (loom/core/buffer::%piece-table-range-text buffer 0 0) :to-equal "")
+               (expect (loom/core/buffer::%piece-table-range-text buffer offset offset)
+                       :to-equal "")
+               (loop for i from (max 0 (- (length starts) 8)) below (length starts)
+                     for start = (aref starts i)
+                     for end = (min offset (+ start 9))
+                     do (expect (loom/core/buffer::%piece-table-range-text buffer start end)
+                                :to-equal (subseq text start end))
+                        (when (< (1+ start) end)
+                          (expect (loom/core/buffer::%piece-table-range-text
+                                   buffer (1+ start) end)
+                                  :to-equal (subseq text (1+ start) end)))))))
+    (it "indexes empty and initial piece ranges"
+      (check-pieces (make-buffer :initial-content "") "")
+      (check-pieces (make-buffer :initial-content "abc") "abc"))
+    (it "reads late fragmented ranges after edits, replay, and sliced narrowing"
+      (let* ((reference (with-output-to-string (stream)
+                          (dotimes (line 256) (format stream "row~D~%" line))))
+             (buffer (make-buffer :initial-content reference)))
+        (dotimes (line 256)
+          (let ((offset (model-offset reference line 1)))
+            (buffer-set-point buffer line 1)
+            (buffer-insert-string buffer "x")
+            (setf reference (concatenate 'string (subseq reference 0 offset)
+                                         "x" (subseq reference offset)))))
+        (expect (>= (length (loom/core/buffer::%buffer-pieces buffer)) 512)
+                :to-be-truthy)
+        (check-pieces buffer reference)
+        (let* ((before reference)
+               (offset (model-offset reference 250 1))
+               (inserted (format nil "u~%v")))
+          (buffer-record-undo-boundary buffer)
+          (buffer-set-point buffer 250 1)
+          (buffer-insert-string buffer inserted)
+          (setf reference (concatenate 'string (subseq before 0 offset)
+                                       inserted (subseq before offset)))
+          (check-pieces buffer reference)
+          (buffer-undo buffer)
+          (check-pieces buffer before)
+          (buffer-redo buffer)
+          (check-pieces buffer reference))
+        (let* ((before reference)
+               (start (model-offset before 252 1))
+               (end (model-offset before 253 2)))
+          (buffer-record-undo-boundary buffer)
+          (buffer-delete-region buffer 252 1 253 2)
+          (setf reference (concatenate 'string (subseq before 0 start) (subseq before end)))
+          (check-pieces buffer reference)
+          (buffer-undo buffer)
+          (check-pieces buffer before)
+          (buffer-redo buffer)
+          (check-pieces buffer reference))
+        (let* ((lines (model-lines reference))
+               (late (subseq lines 250)))
+          (check-cold-line buffer reference 254)
+          (multiple-value-bind (actual count)
+              (loom/core/buffer:buffer-visible-lines buffer 250 20)
+            (expect actual :to-equal late)
+            (expect count :to-equal (length lines))))
+        (let* ((start (model-offset reference 250 1))
+               (end (model-offset reference 252 2))
+               (visible (subseq reference start end))
+               (lines (model-lines visible)))
+          (buffer-narrow-to-region buffer 250 1 252 2)
+          (expect (buffer-visible-text buffer) :to-equal visible)
+          (expect (loom/core/buffer:buffer-narrow-start-line buffer) :to-equal 250)
+          (expect (buffer-visible-line-count buffer) :to-equal (length lines))
+          (multiple-value-bind (actual count)
+              (loom/core/buffer:buffer-visible-lines buffer 0 20)
+            (expect actual :to-equal lines)
+            (expect count :to-equal (length lines)))
+          (loop for line in lines for i from 0
+                do (expect (buffer-visible-line buffer i) :to-equal line))
+          (buffer-set-point buffer 251 1)
+          (expect (buffer-visible-point-line buffer) :to-equal 1)
+          (expect (buffer-visible-point-column buffer) :to-equal 1)
+          (buffer-widen buffer)
+          (check-pieces buffer reference))))))
