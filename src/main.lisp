@@ -698,11 +698,10 @@ the mode line or another footer in the remaining window rows."
     (loop for line from start-line
           for row from 0 below height
           while (< line line-count)
-          do (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
-              renderer
-              (nth-value 0 (%layout-buffer-line-display buffer line))
-              x (+ y row) width mode start-column buffer
-              (+ line (loom/core/buffer:buffer-narrow-start-line buffer))))))
+          do (let ((text (nth-value 0 (%layout-buffer-line-display buffer line))))
+               (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
+                renderer text x (+ y row) width mode start-column
+                (%prepare-syntax-line-tokens buffer line text))))))
 
 (defun %layout-draw-window-overlays
     (renderer leaf x-offset selected-p buffer-cell-function)

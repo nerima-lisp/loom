@@ -85,8 +85,12 @@ rejected."
 
 (defun syntax-draw-highlighted-line (renderer line x y width
                                               &optional (mode :common-lisp)
-                                              (start-column 0) buffer absolute-line)
+                                              (start-column 0)
+                                              (tokens nil tokens-p))
   "Draw LINE at (X, Y) within WIDTH screen cells.
+
+TOKENS, when supplied, are LINE's prepared syntax tokens; otherwise LINE is
+tokenized line-locally for MODE.
 
 START-COLUMN is a horizontal scroll offset in screen cells. The :CLIP-INDEX
 operation calculates the first visible character without changing LINE and
@@ -99,8 +103,8 @@ viewport edge."
     (let ((column (+ x leading-blank))
           (remaining (max 0 (- width leading-blank)))
           (character-index 0))
-      (dolist (token (if buffer
-                         (syntax-highlight-buffer-line buffer absolute-line line)
+      (dolist (token (if tokens-p
+                         tokens
                          (syntax-highlight-line-for-mode line mode)))
         (multiple-value-bind (next-column next-remaining next-index)
             (%syntax-draw-token renderer token character-index start-index
@@ -127,6 +131,5 @@ is a horizontal offset in screen cells."
            (+ y row)
            width
            (buffer-major-mode buffer)
-           start-column buffer
-           (+ line-number (buffer-narrow-start-line buffer)))))))
+           start-column)))))
   renderer)

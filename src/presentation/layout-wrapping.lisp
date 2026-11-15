@@ -59,8 +59,9 @@ Returns NIL once the count is known to exceed LIMIT."
     (values current-line current-row)))
 
 (defun %layout-draw-wrapped-line (renderer text x y width mode start-row
-                                  row-limit &optional buffer absolute-line)
-  "Draw TEXT's wrapped rows beginning at START-ROW, up to ROW-LIMIT rows."
+                                  row-limit tokens)
+  "Draw TEXT's wrapped rows beginning at START-ROW, up to ROW-LIMIT rows.
+Every row draws from the same syntax TOKENS of TEXT."
   (let ((segments (loom-renderer-wrap-segments renderer text width))
         (drawn 0))
     (loop for index from start-row below (length segments)
@@ -68,7 +69,7 @@ Returns NIL once the count is known to exceed LIMIT."
           do (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
               renderer text x (+ y drawn) width mode
               (%layout-segment-start-column renderer text (nth index segments))
-              buffer absolute-line)
+              tokens)
              (incf drawn))
     drawn))
 
@@ -85,7 +86,7 @@ Returns NIL once the count is known to exceed LIMIT."
                (incf row
                      (%layout-draw-wrapped-line
                       renderer text x (+ y row) width mode sub-row (- height row)
-                      buffer (+ line (loom/core/buffer:buffer-narrow-start-line buffer))))
+                      (%prepare-syntax-line-tokens buffer line text)))
                (incf line)
                (setf sub-row 0)))
     renderer))

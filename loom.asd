@@ -71,6 +71,7 @@ root source tree responsible for every feature."
      (:file "src/application/input-routing-effects")
      (:file "src/application/input-routing-dispatch")
      (:file "src/application/input-dispatch")
+     (:file "src/application/syntax-highlighting-preparation")
      (:file "src/application/event-loop-rendering")
      (:file "src/application/event-loop-control")
      (:file "src/application/event-loop")
