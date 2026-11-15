@@ -66,6 +66,12 @@ marks a replacement whose original point must be restored."
                   (%offset-to-position-values buffer offset)
                 (setf (%buffer-point-line buffer) restored-line
                       (%buffer-point-column buffer) restored-column)))))
+        (let* ((offset (%position-to-offset buffer
+                                            (%buffer-point-line buffer)
+                                            (%buffer-point-column buffer)))
+               (clamped (%clamp-offset-to-visible-region buffer offset)))
+          (unless (= offset clamped)
+            (%set-buffer-point-from-offset buffer clamped)))
         (append inverse
                 (list redo-line redo-column)
                 (when affinity-p (list point-at-deletion-end-p))
