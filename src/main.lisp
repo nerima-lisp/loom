@@ -108,6 +108,7 @@
 
 (defun main ()
   "Dispatch UIOP's raw command-line arguments through the startup CLI boundary."
+  (%install-loom-state-directory)
   (uiop:quit (%main-exit-code)))
 
 (defun %presentation-hit-test-provider (session screen-x screen-y)

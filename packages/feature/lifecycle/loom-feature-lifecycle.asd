@@ -5,13 +5,15 @@
                                   "loom-core-command"
                                   "loom-feature-buffers"
                                   "loom-feature-files"
-                                  "cl-prolog-kit")
+                                  "cl-prolog-kit"
+                                  "cl-host-kit")
   :serial t
   :components ((:module "src"
                         :serial
                         t
                         :components
-                        ((:file "package") (:file "application-commands-quit")
+                        ((:file "package") (:file "application-recovery-store")
+                         (:file "application-commands-quit")
                          (:file "command-specs-quit")))))
 
 (asdf:defsystem "loom-feature-lifecycle/test"
@@ -31,4 +33,5 @@
                                   ((:file "commands-editing-quit-test")
                                    (:file "commands-quit-test")
                                    (:file "host-kit-retained-lock-test")
-                                   (:file "line-diff-test")))))))
+                                   (:file "line-diff-test")
+                                   (:file "recovery-store-test")))))))

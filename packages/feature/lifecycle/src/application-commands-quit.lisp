@@ -83,38 +83,6 @@ original list when the answer is invalid."
       (loom/core/editor-session:request-terminal-suspend
        (loom/core/editor-session:editor-state-session *editor-state*)))
 
-    (defun %recovery-directory ()
-      (merge-pathnames #P".loom/recovery/" (user-homedir-pathname)))
-
-    (defun %recovery-file-path (directory reason index)
-      (loop for attempt from 0
-            for pathname =
-              (merge-pathnames
-               (format nil
-                       "buffer-~(~A~)-~D-~D-~D-~D.txt"
-                       reason
-                       (get-universal-time)
-                       (get-internal-real-time)
-                       index
-                       attempt)
-               directory)
-            unless (probe-file pathname)
-              return pathname))
-
-    (defun %save-recovery-buffer (buffer reason index)
-      (let ((pathname
-              (%recovery-file-path (%recovery-directory) reason index)))
-        (ensure-directories-exist pathname)
-        (with-open-file
-            (stream pathname
-                    :direction :output
-                    :if-exists :error
-                    :if-does-not-exist :create
-                    :external-format :utf-8)
-          (write-string (buffer-text buffer) stream)
-          (finish-output stream))
-        pathname))
-
     (defun %lifecycle-signal-hook (session signal-name)
       (declare (ignore session))
       (if (member signal-name (quote (:term :hup)) :test (function eq))
@@ -122,16 +90,19 @@ original list when the answer is invalid."
           :continue))
 
     (defun %lifecycle-shutdown-hook (session reason)
+      ;; The evaluation watchdog runs this on its own thread, which does not see
+      ;; the main thread's dynamic binding of *EDITOR-SESSION*.
       (when
           (and
            *editor-state*
            (eq session
                (loom/core/editor-session:editor-state-session *editor-state*))
            (member reason (quote (:sigterm :sighup)) :test (function eq)))
-        (loop for buffer in (loom/feature/buffers:quit-buffer-list)
-              for index from 0
-              when (buffer-modified-p buffer)
-                do (%save-recovery-buffer buffer reason index)))
+        (let ((loom/core/editor-session:*editor-session* session))
+          (loop for buffer in (loom/feature/buffers:quit-buffer-list)
+                for index from 0
+                when (buffer-modified-p buffer)
+                  do (%save-recovery-buffer buffer reason index))))
       nil)
 
     (eval-when (:load-toplevel :execute)

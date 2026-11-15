@@ -169,6 +169,12 @@ New files use the files feature constructor to initialize save metadata."
                                                        (function
                                                         make-editor-completion)))
 
+(defun %install-loom-state-directory ()
+  "Point recovery and lock state at ~/.loom/ for the running executable.
+Only MAIN calls this, so tests that start editor state never touch the real HOME."
+  (setf loom/feature/lifecycle:*loom-state-directory*
+        (merge-pathnames ".loom/" (user-homedir-pathname))))
+
 (defun %initialize-editor-state (path-argument &optional additional-file-paths)
   "Build a fresh *EDITOR-STATE* around the startup files and supporting objects."
   (multiple-value-bind (width height) (%initial-terminal-size)
