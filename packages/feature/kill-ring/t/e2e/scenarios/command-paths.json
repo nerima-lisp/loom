@@ -2636,7 +2636,8 @@
       "prompt_case": "accept",
       "input_text": "b",
       "initial_bytes": "alpha beta gamma\n",
-      "expected_bytes": "alpha beta gamma\n",
+      "expected_bytes": "eta gamma\n",
+      "save_after_effect": true,
       "expected_cursor": [
         0,
         0

@@ -203,6 +203,10 @@
      :keys (((:alt) . #\=)) :emacs "count-words-region" :target "count-words-region"
      :target-map :global :effective "count-words-region" :owner :wp5a :status :implemented
      :source "GNU Emacs 31.1: (key-binding (kbd \"M-=\"))")
+    (:id "zap-to-char-meta-z"
+     :keys (((:alt) . #\z)) :emacs "zap-to-char" :target "zap-to-char"
+     :target-map :global :effective "zap-to-char" :owner :wp5b :status :implemented
+     :source "GNU Emacs 31.1: (key-binding (kbd \"M-z\"))")
     (:id "suspend-frame-control-z"
      :keys (((:control) . #\z)) :emacs "suspend-frame on text terminal"
      :target "suspend-frame" :target-map :global
