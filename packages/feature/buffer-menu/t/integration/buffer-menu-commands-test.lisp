@@ -331,6 +331,37 @@ keep their registration, so file buffers keep their disk snapshots."
                     :to-equal (list #\S #\Space)))))))
 
   (it
+    "leaves a later save's error on screen after an earlier save was skipped"
+    (host-kit:with-temporary-directory (dir)
+      (let ((a-path (merge-pathnames "a.txt" dir))
+            (b-path (merge-pathnames "b.txt" dir)))
+        (host-kit:write-file-string "alpha" a-path)
+        (host-kit:write-file-string "bravo" b-path)
+        (%with-minibuffer-state (minibuffer "")
+          (let ((a (loom/feature/files:visit-file a-path))
+                (b (loom/feature/files:visit-file b-path)))
+            (%buffer-menu-register (list a b))
+            (buffer-insert-string a "!")
+            (host-kit:write-file-string "external" a-path)
+            (loom/core/buffer:buffer-set-read-only b t)
+            (loom/feature/buffer-menu:list-buffers)
+            (%buffer-menu-select-list-window)
+            (loom/feature/buffer-menu:buffer-menu-save)
+            (loom/feature/buffer-menu:buffer-menu-save)
+            (loom/feature/buffer-menu:buffer-menu-execute)
+            (expect (minibuffer-prompt-string minibuffer)
+                    :to-equal
+                    (format nil "File changed on disk. Overwrite? (y/n): ~A"
+                            (loom/core/buffer:buffer-path a)))
+            (%confirm-minibuffer minibuffer "n")
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-equal "Buffer b.txt is read-only")
+            (expect (host-kit:read-file-string a-path) :to-equal "external")
+            (expect (host-kit:read-file-string b-path) :to-equal "bravo")
+            (expect (mapcar (lambda (line) (char line 0)) (%buffer-menu-lines))
+                    :to-equal (list #\S #\S #\Space)))))))
+
+  (it
     "stops when a modified D buffer's kill is cancelled"
     (%with-minibuffer-state (minibuffer "")
       (let ((a (make-buffer :name "a.txt" :initial-content "alpha"))
