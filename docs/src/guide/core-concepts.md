@@ -56,6 +56,37 @@ recent entry, and `M-y` cycles through earlier entries after a yank. Run
 clipboard provider is available. If reading the clipboard fails or no provider
 is available, the command falls back to the kill ring.
 
+`M-z` (`zap-to-char`) prompts for a character and kills through its next
+occurrence; with a negative prefix argument it searches backward. The killed
+text joins the kill ring under the same rules as `C-k`. The match is
+case-sensitive, unlike Emacs, which follows `case-fold-search`.
+
+## Editing commands
+
+| Key | Command | Action |
+| --- | --- | --- |
+| `M-m` | `back-to-indentation` | Move to the first non-blank character of the line |
+| `M-\` | `delete-horizontal-space` | Delete spaces and tabs around point; with a prefix argument, only before point |
+| `M-SPC` | `just-one-space` | Leave one space around point, or N with a prefix argument; a negative N also deletes newlines |
+| `M-t` | `transpose-words` | Swap the words around point and move past them |
+| `M-=` | `count-words-region` | Report the lines, words, and characters in the region, or in the buffer without a region |
+
+Commands that change text are undone with one undo and are rejected in
+read-only buffers. On macOS, set the terminal emulator to use Option as Meta to
+type `M-SPC`.
+
+## Buffer list and saving several buffers
+
+`C-x C-b` (`list-buffers`) shows the read-only `*Buffer List*` in another
+window. In the list, `n` and `p` move between lines, `RET` and `o` show the
+buffer in this or another window, `d` and `s` mark the buffer for deletion or
+saving, `u` removes the mark, `x` applies the marks, `g` refreshes the list,
+and `q` closes it.
+
+`C-x s` (`save-some-buffers`) asks about each modified file-backed buffer:
+`y` saves, `n` skips, `!` saves the rest, `q` stops, and `C-g` quits. A prefix
+argument does not skip the questions.
+
 ## Language modes
 
 When a file is opened, loom selects a registered major mode from its path when
@@ -130,6 +161,11 @@ rename, references, and formatting:
 - Run `M-x lsp-format-buffer` to format the selected file when the server
   advertises formatting support.
 
+loom also answers requests that the server sends, such as
+`workspace/configuration`. For `window/showMessageRequest`, loom prompts you to
+choose one of the server's actions; `C-g` declines. Requests that loom does not
+handle receive a "Method not found" error and are recorded in `*Messages*`.
+
 ## Git status, staging, and diff
 
 `C-x g` and `M-x git-status` run `git status --short --branch` from the current
@@ -170,6 +206,29 @@ buffers to a `#file-name#` sidecar without clearing their modified state. Unmodi
 read-only buffers are skipped. A normal buffer save runs the editor state's
 after-save hooks, which can remove the sidecar or trigger other save-follow-up
 work.
+
+## Recovering unsaved work
+
+When loom receives SIGTERM or SIGHUP, it writes the text of modified buffers to
+recovery files under `~/.loom/recovery/`. When you open a file whose recovery
+file, or auto-save sidecar if auto-save is enabled, is newer than the file and
+differs from the buffer, loom reports it in the minibuffer. Run `M-x recover-file` to choose: `r`
+replaces the buffer text as one undoable edit without saving, `d` shows a
+unified diff in `*Loom-Recover-Diff*`, `i` ignores the work, and `C-g` quits.
+`M-x list-recoverable-files` lists every recoverable file in `*Loom-Recover*`;
+`RET` on a line opens the file and continues with `recover-file`. Saving the
+file deletes its sidecar and recovery files.
+
+loom also locks each open file under `~/.loom/locks/`. If another loom process
+has the file open, loom reports that process instead of offering recovery.
+
+## Interrupting evaluation
+
+`M-:`, `C-x C-e`, and `M-x eval-buffer` evaluate on the main thread. Press
+`C-g` to interrupt an evaluation; loom reports `Evaluation interrupted`. A
+second `C-g` forces the interruption through cleanup code that blocks. Other
+keys typed during evaluation run after it ends, in the order typed. The screen
+does not redraw while an evaluation runs.
 
 ## Concurrent file-tree work
 

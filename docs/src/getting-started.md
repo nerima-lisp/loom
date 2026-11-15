@@ -66,6 +66,23 @@ and `C-u`, `M-0` … `M-9`, and `M--` apply numeric prefixes to the next command
 - Split below with `C-x 2`, split right with `C-x 3`, switch windows with
   `C-x o`, delete the selected window with `C-x 0`, or keep only the selected
   window with `C-x 1`.
+- Use `M-m` to move to the first non-blank character of the line, `M-\` to
+  delete spaces and tabs around point, `M-SPC` to leave one space, `M-t` to
+  swap two words, and `M-=` to count the lines, words, and characters in the
+  region or buffer. `M-z` kills through the next occurrence of a character you
+  type. On macOS, set the terminal emulator to use Option as Meta to type
+  `M-SPC`.
+- Press `C-g` to interrupt a running `M-:`, `C-x C-e`, or `M-x eval-buffer`
+  evaluation.
+
+## Recovering unsaved work
+
+When you open a file that has newer unsaved work from auto-save or from a loom
+process that was terminated, loom reports it in the minibuffer. Run
+`M-x recover-file` and press `r` to restore that text into the buffer, `d` to
+see the difference, or `i` to ignore it; restoring does not save the file. Run
+`M-x list-recoverable-files` to list all recoverable files and press `RET` on a
+line to open it.
 
 ## Language modes and sessions
 
@@ -85,8 +102,10 @@ discovered command, enter the server command at the prompt.
 After starting a server, run `M-x lsp-diagnostics` to refresh and display
 diagnostics. Use `C-M-i` for completion, `M-.` to jump to a definition, and
 `M-,` to return to the previous location. Run `M-x lsp-hover-at-point` to show
-hover information when the server supports it. References, rename, and LSP
-formatting are not implemented. The [core concepts guide](guide/core-concepts.md)
+hover information when the server supports it. Run `M-x lsp-find-references`
+to list references, `M-x lsp-rename` to rename the symbol at point, and
+`M-x lsp-format-buffer` to format the file; each command requires the server to
+support the request. The [core concepts guide](guide/core-concepts.md)
 describes these workflows and the separate external formatter command.
 
 ## Build from source
