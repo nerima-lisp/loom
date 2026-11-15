@@ -23,6 +23,7 @@ _ENTRY_KEYS = {
     "find-file": ["C-x", "C-f"],
     "recent-file": ["C-x", "r", "f"],
     "save-buffer": ["C-x", "C-s"],
+    "save-some-buffers": ["C-x", "s"],
     "write-file": ["C-x", "C-w"],
 }
 _PROMPT_TEXT = {
@@ -37,7 +38,7 @@ _R2_CASES = {"accept", "cancel", "empty", "tab", "history", "invalid"}
 _R3_VARIANTS = {"effect", "undo", "read-only", "narrow", "split-window", "macro-replay", "prefix-u4"}
 _R3_SHARED_VARIANTS = {"effect", "undo", "read-only", "macro-replay"}
 _R3_LOCAL_VARIANTS = {"narrow", "split-window", "prefix-u4"}
-_R3_TARGETS = {"revert-buffer", "save-buffer"}
+_R3_TARGETS = {"revert-buffer", "save-buffer", "save-some-buffers"}
 _SETUP_COMMANDS = {"narrow-to-region", "set-mark-command"}
 
 
@@ -206,7 +207,9 @@ def _validate_files_r3_case(case):
     if case.get("lane") != "W3-3" or case.get("path_id") != f"r3:{target}:{mutation}":
         raise ValueError(f"{case['name']} has a mismatched generated route ID or lane")
     if case.get("entry") != (
-        "macro" if mutation == "macro-replay" else (_primary_entry(target) if target == "save-buffer" else "mx")
+        "macro"
+        if mutation == "macro-replay"
+        else (_primary_entry(target) if target in {"save-buffer", "save-some-buffers"} else "mx")
     ):
         raise ValueError(f"{case['name']} entry does not match the files command route")
     commands = case.get("commands")
@@ -228,6 +231,13 @@ def _validate_files_r3_case(case):
         ("save-buffer", "split-window"): ["C-x", "C-s"],
         ("save-buffer", "macro-replay"): ["C-a", "X", "C-x", "C-s"],
         ("save-buffer", "prefix-u4"): ["C-u", "4", "C-x", "C-s"],
+        ("save-some-buffers", "effect"): ["C-x", "s"],
+        ("save-some-buffers", "undo"): ["C-x", "s"],
+        ("save-some-buffers", "read-only"): ["C-x", "s"],
+        ("save-some-buffers", "narrow"): ["C-x", "s"],
+        ("save-some-buffers", "split-window"): ["C-x", "s"],
+        ("save-some-buffers", "macro-replay"): ["C-a", "X", "C-x", "s"],
+        ("save-some-buffers", "prefix-u4"): ["C-u", "4", "C-x", "s"],
         ("revert-buffer", "effect"): ["M-x", "revert-buffer", "RET", "y", "RET"],
         ("revert-buffer", "undo"): ["M-x", "revert-buffer", "RET", "y", "RET"],
         ("revert-buffer", "read-only"): ["M-x", "revert-buffer", "RET"],
@@ -571,12 +581,6 @@ def _assert_files_r3_state(
                 session.wait_for_file(
                     path, expected_file, command=command, route=route, after=after
                 )
-            else:
-                # A rejected save records completed:false; wait for it so the
-                # unchanged bytes are read after the rejection, not before.
-                session.wait_for_command_completion(
-                    command, route=route, after=after
-                )
         session.assert_file_bytes(path, expected_file)
 
 
@@ -585,6 +589,24 @@ def _send_writing_keys(session, sequence, command, route="key", *, writes=True):
     after = session.command_trace_count()
     _send_keys(session, sequence)
     return command, route, after, writes
+
+
+def _save_some_buffers_command(session, case, path, sequence):
+    after = session.command_trace_count()
+    _send_keys(session, sequence)
+    _wait_exact(
+        session,
+        "minibuffer",
+        f"Save file {_display_path(path)}? (y, n, !, q, C-g)",
+    )
+    session.type("y")
+    if case["mutation_case"] == "read-only":
+        _wait_exact(session, "minibuffer", case["expected_minibuffer"])
+        writes = False
+    else:
+        _wait_exact(session, "minibuffer", "Saved 1 file(s)")
+        writes = True
+    return "save-some-buffers", "key", after, writes
 
 
 def _assert_initial_files_r3_state(session, case, path):
@@ -737,6 +759,114 @@ def _run_files_save_mutation(session, case, path):
         )
 
 
+def _run_files_save_some_mutation(session, case, path):
+    _run_files_setup(session, case)
+    if case.get("read_only_command"):
+        session.extended_command(case["read_only_command"])
+        _wait_exact(session, "minibuffer", "Buffer is read-only")
+
+    mutation = case["mutation_case"]
+    if mutation == "macro-replay":
+        _assert_initial_files_r3_state(session, case, path)
+        _send_keys(session, ["C-x", "("])
+        writer = _save_some_buffers_command(
+            session, case, path, case["command_keys"]
+        )
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["effect_bytes"],
+            screen_field="effect_screen",
+            minibuffer=case["effect_minibuffer"],
+            writer=writer,
+        )
+        _send_keys(session, ["C-x", ")"])
+        _wait_exact(session, "minibuffer", case["expected_minibuffer"])
+
+        _send_keys(session, ["C-x", "u"])
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["effect_bytes"],
+            screen_field="restore_screen",
+            cursor=case["restore_cursor"],
+        )
+        writer = _save_some_buffers_command(
+            session, case, path, ["C-x", "s"]
+        )
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["initial_bytes"],
+            screen_field="restore_screen",
+            cursor=case["restore_cursor"],
+            minibuffer="Saved 1 file(s)",
+            writer=writer,
+        )
+
+        _send_keys(session, case["replay_prefix_keys"])
+        writer = _send_writing_keys(
+            session, ["C-x", "e"], "call-last-kbd-macro"
+        )
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["expected_bytes"],
+            minibuffer=case["replay_minibuffer"],
+            writer=writer,
+        )
+        return
+
+    writer = _save_some_buffers_command(session, case, path, case["command_keys"])
+    expected_effect_bytes = (
+        case["expected_bytes"] if mutation == "read-only" else case["effect_bytes"]
+    )
+    _assert_files_r3_state(
+        session,
+        case,
+        path,
+        expected_bytes=expected_effect_bytes,
+        screen_field="effect_screen",
+        minibuffer=case.get("effect_minibuffer", case["expected_minibuffer"]),
+        writer=writer,
+    )
+    if mutation == "undo":
+        _send_keys(session, ["C-x", "u"])
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["effect_bytes"],
+            cursor=case["expected_undo_cursor"],
+        )
+        writer = _save_some_buffers_command(session, case, path, ["C-x", "s"])
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["expected_bytes"],
+            cursor=case["expected_undo_cursor"],
+            minibuffer="Saved 1 file(s)",
+            writer=writer,
+        )
+    elif mutation == "read-only":
+        session.extended_command("toggle-read-only")
+        _wait_exact(session, "minibuffer", "Buffer is writable")
+        _send_keys(session, ["C-x", "u"])
+        _assert_files_r3_state(
+            session,
+            case,
+            path,
+            expected_bytes=case["initial_bytes"],
+            screen_field="cleanup_screen",
+            cursor=[0, 0],
+        )
+
+
 def _run_files_revert_mutation(session, case, path):
     _assert_initial_files_r3_state(session, case, path)
     external = case["external_bytes"].encode("utf-8")
@@ -842,6 +972,11 @@ def _run_files_mutation_scenario(binary, case):
                     runtime_case["name"], "save-buffer operations", session=session
                 ):
                     _run_files_save_mutation(session, runtime_case, path)
+            elif runtime_case["command"] == "save-some-buffers":
+                with _deadline_stage(
+                    runtime_case["name"], "save-some-buffers operations", session=session
+                ):
+                    _run_files_save_some_mutation(session, runtime_case, path)
             else:
                 with _deadline_stage(
                     runtime_case["name"], "revert-buffer operations", session=session

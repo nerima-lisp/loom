@@ -241,7 +241,7 @@
              :on-killed (lambda () (push :killed calls))
              :on-cancelled (lambda () (push :cancelled calls)))
             (%confirm-minibuffer minibuffer "s")
-            (expect calls :to-equal '(:cancelled))
+            (progn (format *error-output* "WP4B_CALLS=~S~%" calls) (expect calls :to-equal (quote (:cancelled))))
             (expect (search "File changed on disk: "
                             (loom:minibuffer-message-string minibuffer))
                     :to-equal 0)

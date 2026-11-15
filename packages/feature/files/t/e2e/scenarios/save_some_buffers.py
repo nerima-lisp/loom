@@ -40,7 +40,7 @@ def _start_save_some_buffers(session):
 
 def _wait_for_prompt(session, path):
     session.wait_for_region_text(
-        "minibuffer", f"Save file {path}? (y, n, !, q, C-g)"
+        "minibuffer", f"Save file {path.resolve()}? (y, n, !, q, C-g)"
     )
 
 
@@ -52,7 +52,8 @@ def _finish_command(session, after):
 
 def _quit_discarding(session):
     session.send(keys.ctrl("x") + keys.ctrl("c"))
-    session.wait_for_region_text("minibuffer", "Discard changes to ")
+    session.wait_for_region_text("minibuffer", "Save ")
+    session.wait_for_region_text("minibuffer", "(s/d/c):")
     session.type("d")
     session.key("RET")
     output, code = session.process.wait(timeout=DEFAULT_TIMEOUT)
@@ -158,7 +159,9 @@ def _single_prompt_scenario(binary, response):
 
             if response == "accept":
                 session.type("y")
-                session.wait_for_region_text("minibuffer", "Saved 1 file(s)")
+                session.wait_for_prompted_file(
+                    path, b"!alpha\n", "Saved 1 file(s)"
+                )
                 _finish_command(session, after)
                 session.assert_file_bytes(path, b"!alpha\n")
                 session.quit()

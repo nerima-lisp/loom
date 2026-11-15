@@ -2499,6 +2499,384 @@
       "reprompt_expected": "File changed on disk. Overwrite? (y/n): {source_path}",
       "save_after_effect": true,
       "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/effect",
+      "path_id": "r3:save-some-buffers:effect",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "effect",
+      "pre_command_keys": [
+        "X"
+      ],
+      "command_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/undo",
+      "path_id": "r3:save-some-buffers:undo",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "save-some-buffers",
+        "undo"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "undo",
+      "command_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "expected_undo_cursor": [
+        0,
+        0
+      ],
+      "setup": [
+        {
+          "keys": [
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/read-only",
+      "path_id": "r3:save-some-buffers:read-only",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "execute-extended-command",
+        "toggle-read-only",
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "read-only",
+      "command_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Buffer buffer.txt is read-only",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "read_only_command": "toggle-read-only",
+      "pre_command_keys": [
+        "X"
+      ],
+      "cleanup_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/narrow",
+      "path_id": "r3:save-some-buffers:narrow",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "forward-char",
+        "execute-extended-command",
+        "set-mark-command",
+        "narrow-to-region",
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "narrow",
+      "command_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "hidden-target-tail\n",
+      "effect_bytes": "hidden-Xtarget-tail\n",
+      "expected_bytes": "hidden-Xtarget-tail\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xtarget"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xtarget"
+        }
+      ],
+      "setup": [
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "set-mark-command"
+        },
+        {
+          "keys": [
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f",
+            "C-f"
+          ]
+        },
+        {
+          "command": "narrow-to-region"
+        },
+        {
+          "assert_screen": {
+            "region": "body",
+            "text": "target"
+          }
+        },
+        {
+          "keys": [
+            "C-a",
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/split-window",
+      "path_id": "r3:save-some-buffers:split-window",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "split-window-below",
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "split-window",
+      "command_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        12,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "screen",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "screen",
+          "text": "Xalpha beta"
+        }
+      ],
+      "expected_view_count": 2,
+      "setup": [
+        {
+          "keys": [
+            "C-x",
+            "2"
+          ]
+        },
+        {
+          "assert_screen": {
+            "region": "screen",
+            "text": "alpha beta",
+            "count": 2
+          }
+        },
+        {
+          "keys": [
+            "C-a",
+            "X"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/macro-replay",
+      "path_id": "r3:save-some-buffers:macro-replay",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "macro",
+      "commands": [
+        "start-kbd-macro",
+        "save-some-buffers",
+        "end-kbd-macro",
+        "undo",
+        "call-last-kbd-macro"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "macro-replay",
+      "command_keys": [
+        "C-a",
+        "X",
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Keyboard macro defined",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "replay_prefix_keys": [
+        "C-a"
+      ],
+      "replay_minibuffer": "Saved 1 file(s)",
+      "restore_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ],
+      "effect_minibuffer": "Saved 1 file(s)",
+      "restore_cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "command-path/r3/save-some-buffers/prefix-u4",
+      "path_id": "r3:save-some-buffers:prefix-u4",
+      "lane": "W3-3",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "universal-argument",
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "mutation_case": "prefix-u4",
+      "command_keys": [
+        "C-u",
+        "4",
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "effect_bytes": "Xalpha beta\n",
+      "expected_bytes": "Xalpha beta\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "Xalpha beta"
+        }
+      ],
+      "setup": [
+        {
+          "keys": [
+            "X"
+          ]
+        }
+      ]
     }
   ]
 }
