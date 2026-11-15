@@ -227,7 +227,7 @@
                     :to-be nil))))))
 
   (it
-    "shows a save error after s and reports cancelled without killing"
+    "prompts before overwriting after s and reports cancelled without killing"
     (host-kit:with-temporary-directory (directory)
       (let ((path (merge-pathnames "draft.txt" directory)))
         (host-kit:write-file-string "draft" path)
@@ -241,10 +241,12 @@
              :on-killed (lambda () (push :killed calls))
              :on-cancelled (lambda () (push :cancelled calls)))
             (%confirm-minibuffer minibuffer "s")
-            (progn (format *error-output* "WP4B_CALLS=~S~%" calls) (expect calls :to-equal (quote (:cancelled))))
-            (expect (search "File changed on disk: "
-                            (loom:minibuffer-message-string minibuffer))
+            (expect calls :to-equal nil)
+            (expect (search "File changed on disk. Overwrite? (y/n): "
+                            (minibuffer-prompt-string minibuffer))
                     :to-equal 0)
+            (%confirm-minibuffer minibuffer "n")
+            (expect calls :to-equal '(:cancelled))
             (expect (host-kit:read-file-string path) :to-equal "external")
             (expect (find buffer (%test-registered-buffers *editor-state*)
                           :test #'eq)

@@ -168,6 +168,9 @@ def _single_prompt_scenario(binary, response):
             elif response == "cancel":
                 session.send(keys.ctrl("g"))
                 session.wait_for_region_text("minibuffer", "Quit")
+                session.assert_screen_text(
+                    "Quit", region="minibuffer", match="contains"
+                )
                 _finish_command(session, after)
                 session.assert_file_bytes(path, _FIRST)
                 _quit_discarding(session)
@@ -176,8 +179,19 @@ def _single_prompt_scenario(binary, response):
                 session.wait_for_region_text(
                     "minibuffer", "Allowed keys: y, n, !, q"
                 )
+                session.assert_screen_text(
+                    "Save file", region="minibuffer", match="contains"
+                )
+                session.assert_screen_text(
+                    "Allowed keys: y, n, !, q",
+                    region="minibuffer",
+                    match="contains",
+                )
                 session.send(keys.ctrl("g"))
                 session.wait_for_region_text("minibuffer", "Quit")
+                session.assert_screen_text(
+                    "Quit", region="minibuffer", match="contains"
+                )
                 _finish_command(session, after)
                 session.assert_file_bytes(path, _FIRST)
                 _quit_discarding(session)

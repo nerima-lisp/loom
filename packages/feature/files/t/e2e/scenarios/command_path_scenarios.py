@@ -985,7 +985,15 @@ def _run_files_mutation_scenario(binary, case):
             with _deadline_stage(
                 runtime_case["name"], "session quit", session=session
             ):
-                output, code = session.quit()
+                if (
+                    runtime_case["command"] == "save-some-buffers"
+                    and runtime_case["mutation_case"] == "read-only"
+                ):
+                    output, code = _quit_after_discarding_buffer(
+                        session, f"Save {path.name}? (s/d/c): "
+                    )
+                else:
+                    output, code = session.quit()
             if code != 0:
                 raise AssertionError(
                     f"{runtime_case['name']} exited with {code}: {output!r}"
