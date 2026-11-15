@@ -25,6 +25,7 @@
                      #:file-tree-selected-path
                      #:file-tree-entry-kind
                      #:file-tree-move-selection
+                     #:file-tree-select-path
                      #:file-tree-toggle-expand
                      #:file-tree-child-lister
                      #:file-tree-install-child-lister

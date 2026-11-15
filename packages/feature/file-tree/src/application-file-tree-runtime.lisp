@@ -42,7 +42,8 @@
 
 (defun file-tree-prepare-viewport (tree width height &key wheel-delta)
   "Prepare one entry prefix, preserving viewport state until listings are ready."
-  (let* ((needed-p (file-tree-scroll-follow-needed-p tree))
+  (let* ((needed-p (or (file-tree-scroll-follow-needed-p tree)
+                       (/= height (file-tree-viewport-height tree))))
          (follow-p (and needed-p (plusp height) (file-tree-selected-path tree)))
          (margin (if follow-p (%file-tree-scroll-margin height) 0))
          (forward-rows (max 0 (or wheel-delta 0)))

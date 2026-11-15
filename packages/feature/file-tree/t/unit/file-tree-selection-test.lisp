@@ -291,6 +291,23 @@
       (multiple-value-bind (entries present-p) (file-tree-entries tree)
         (expect entries :to-be nil)
         (expect present-p :to-be expected)))))
+(describe "file-tree review resize following"
+  (cl-weave:it-each ((:up -3 3 17) (:down 12 12 0))
+      "restores ~S selection after wheel ~D at height ~D (top ~D)"
+      (direction delta height expected)
+    (let ((tree (make-file-tree "/root/")))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path) (declare (ignore path))
+              (loop for i below 20 collect (cons (format nil "/root/file~2,'0D" i) :file))))
+      (file-tree-move-selection tree direction)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5 :wheel-delta delta)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
+      (loom/feature/file-tree:file-tree-prepare-viewport tree 24 height)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal expected)
+      (expect (file-tree-selected-path tree)
+              :to-equal (if (eq direction :up) "/root/file19" "/root/file00")))))
+
 
 
 

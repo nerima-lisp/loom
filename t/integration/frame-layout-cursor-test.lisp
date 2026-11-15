@@ -290,11 +290,10 @@
       (expect (loom/feature/mouse::%mouse-file-tree-hit-test session -1 3)
               :to-be nil)
       (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 0 5)
-              :to-be nil)
-      ))
+              :to-be nil)))
 
   (it
-    "applies pending selection before a wheel event and clamps on resize"
+    "applies pending selection before a wheel event and restores it on resize"
     (let* ((*editor-state* (%fresh-layout-state))
            (tree (editor-state-file-tree *editor-state*)))
       (loom/feature/file-tree:file-tree-install-child-lister
@@ -311,7 +310,7 @@
       (loom::compose-frame *editor-state*)
       (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
       (loom/feature/file-tree:file-tree-prepare-viewport tree 20 3)
-      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 12)
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 17)
       (expect (loom/feature/file-tree:file-tree-viewport-width tree) :to-equal 20)
       (expect (file-tree-selected-path tree) :to-equal "/root/entry19")
       (loom/feature/file-tree:file-tree-prepare-viewport tree 20 0)
@@ -326,8 +325,7 @@
       (loom::compose-frame *editor-state*)
       (expect (loom/feature/file-tree:file-tree-viewport-width tree) :to-equal 24)
       (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 23 0) :to-be-truthy)
-      (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 24 0) :to-be nil)))
-)
+      (expect (loom/feature/mouse::%mouse-file-tree-hit-test session 24 0) :to-be nil))))
 
 
 (describe "file-tree delayed expansion viewport"
@@ -375,6 +373,7 @@
       (setf visits nil)
       (loom::compose-frame *editor-state*)
       (expect visits :to-equal '("/root/sub/" "/root/"))
+      (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 1)
       (expect (loom/feature/file-tree::file-tree-scroll-follow-needed-p tree) :to-be nil)
       (loom/feature/mouse::%mouse-scroll-file-tree :wheel-up)
       (loom::compose-frame *editor-state*)
@@ -421,7 +420,7 @@
       (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 15)
       (expect (file-tree-selected-path tree) :to-equal "/root/b"))))
 
-(describe "file-tree selected path invalidation"
+(describe "file-tree changed listing viewport"
   (it "resolves a vanished dirty target once and bounds subsequent refreshes"
     (let* ((*editor-state* (%fresh-layout-state))
            (tree (editor-state-file-tree *editor-state*))
@@ -436,11 +435,8 @@
       (file-tree-toggle-expand tree "/root/far/")
       (file-tree-move-selection tree :down)
       (setf far-visits 0)
-      (let ((selected (file-tree-selected-path tree))
-            (before (copy-structure tree)))
+      (let ((selected (file-tree-selected-path tree)))
         (setf children (rest children))
-        (loom/feature/file-tree::%invalidate-file-tree-path selected)
-        (expect (equalp tree before) :to-be t)
         (expect (length (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5))
                 :to-equal 199)
         (expect far-visits :to-equal 1)
@@ -450,10 +446,13 @@
                 :to-equal 5)
         (expect far-visits :to-equal 0)
         (setf children (cons '("/root/new-file" . :file) children))
-        (loom/feature/file-tree::%invalidate-file-tree-path "/root/new-file")
         (expect (length (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5))
                 :to-equal 5)
         (expect far-visits :to-equal 0)
+        (expect (length (loom/feature/file-tree:file-tree-prepare-viewport tree 24 10))
+                :to-equal 200)
+        (expect far-visits :to-equal 1)
+        (setf far-visits 0)
         (expect (length (loom/feature/file-tree:file-tree-prepare-viewport tree 24 10))
                 :to-equal 10)
         (expect far-visits :to-equal 0)
@@ -524,6 +523,29 @@
                (cl-tty-kit:screen-cell (%layout-screen *editor-state*) 0 1))
               :to-equal '(:reverse))
       (expect (loom/feature/file-tree::file-tree-scroll-follow-needed-p tree) :to-be nil))))
+(describe "file-tree direct mouse selection"
+  (it "selects a distant resolved target once before dispatching open"
+    (let* ((*editor-state* (%fresh-layout-state))
+           (tree (editor-state-file-tree *editor-state*))
+           (calls 0)
+           (opened nil)
+           (roots (loop for i below 200 collect
+                        (cons (format nil "/root/file~3,'0D" i) :file))))
+      (loom/feature/file-tree:file-tree-install-child-lister
+       tree (lambda (path) (declare (ignore path)) (incf calls) roots))
+      (file-tree-move-selection tree :down)
+      (setf calls 0
+            (loom/feature/file-tree::file-tree-scroll-follow-needed-p tree) nil)
+      (with-replaced-function
+          (loom/core/command:invoke-command
+           (lambda (name source)
+             (setf opened (list name source (file-tree-selected-path tree)))))
+        (loom/feature/mouse::%mouse-open-file-tree-target "/root/file199"))
+      (expect (file-tree-selected-path tree) :to-equal "/root/file199")
+      (expect (loom/feature/file-tree::file-tree-scroll-follow-needed-p tree) :to-be t)
+      (expect opened :to-equal '("file-tree-open-selected" :mouse "/root/file199"))
+      (expect (<= calls 1) :to-be t))))
+
 
 
 

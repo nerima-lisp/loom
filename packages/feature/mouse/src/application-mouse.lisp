@@ -27,54 +27,39 @@
         t)))
 
   (defun %mouse-file-tree-region-p (session screen-x screen-y)
-  (let* ((state *editor-state*)
-         (tree (and state (editor-state-file-tree state))))
-    (and tree
-         (eq session (editor-state-session state))
-         (file-tree-visible-p tree)
-         (<= 0 screen-x)
-         (< screen-x (loom/feature/file-tree:file-tree-viewport-width tree))
-         (<= 0 screen-y)
-         (< screen-y (loom/feature/file-tree:file-tree-viewport-height tree)))))
+    (let* ((state *editor-state*)
+           (tree (and state (editor-state-file-tree state))))
+      (and tree
+           (eq session (editor-state-session state))
+           (file-tree-visible-p tree)
+           (<= 0 screen-x)
+           (< screen-x (loom/feature/file-tree:file-tree-viewport-width tree))
+           (<= 0 screen-y)
+           (< screen-y (loom/feature/file-tree:file-tree-viewport-height tree)))))
 
-(defun %mouse-file-tree-hit-test (session screen-x screen-y)
-  (when (%mouse-file-tree-region-p session screen-x screen-y)
+  (defun %mouse-file-tree-hit-test (session screen-x screen-y)
+    (when (%mouse-file-tree-region-p session screen-x screen-y)
+      (let ((tree (editor-state-file-tree *editor-state*)))
+        (multiple-value-bind (entries present-p)
+            (loom/feature/file-tree:file-tree-prepare-viewport
+             tree (loom/feature/file-tree:file-tree-viewport-width tree)
+             (loom/feature/file-tree:file-tree-viewport-height tree))
+          (when present-p
+            (let* ((index (+ (loom/feature/file-tree:file-tree-scroll-top tree) screen-y))
+                   (entry (nth index entries)))
+              (when entry
+                (make-hit-test-result :feature/mouse :feature-item :target (car entry)))))))))
+
+  (defun %mouse-scroll-file-tree (button)
     (let ((tree (editor-state-file-tree *editor-state*)))
-      (multiple-value-bind (entries present-p)
-          (loom/feature/file-tree:file-tree-prepare-viewport
-           tree (loom/feature/file-tree:file-tree-viewport-width tree)
-           (loom/feature/file-tree:file-tree-viewport-height tree))
-        (when present-p
-          (let* ((index (+ (loom/feature/file-tree:file-tree-scroll-top tree) screen-y))
-                 (entry (nth index entries)))
-            (when entry
-              (make-hit-test-result :feature/mouse :feature-item :target (car entry)))))))))
-
-(defun %mouse-scroll-file-tree (button)
-  (let ((tree (editor-state-file-tree *editor-state*)))
-    (loom/feature/file-tree:file-tree-prepare-viewport
-     tree (loom/feature/file-tree:file-tree-viewport-width tree)
-     (loom/feature/file-tree:file-tree-viewport-height tree)
-     :wheel-delta (if (eq button :wheel-up) -3 3))))
+      (loom/feature/file-tree:file-tree-prepare-viewport
+       tree (loom/feature/file-tree:file-tree-viewport-width tree)
+       (loom/feature/file-tree:file-tree-viewport-height tree)
+       :wheel-delta (if (eq button :wheel-up) -3 3))))
 
   (defun %mouse-open-file-tree-target (target)
-    (let* ((tree (editor-state-file-tree *editor-state*))
-           (entries (file-tree-entries tree))
-           (paths (mapcar #'car entries))
-           (target-index (position target paths :test #'equal))
-           (selected-index
-             (position (file-tree-selected-path tree) paths :test #'equal)))
-      (when target-index
-        (unless selected-index
-          (file-tree-move-selection tree :down)
-          (setf selected-index 0))
-        (loop while (< selected-index target-index)
-              do (file-tree-move-selection tree :down)
-                 (incf selected-index))
-        (loop while (> selected-index target-index)
-              do (file-tree-move-selection tree :up)
-                 (decf selected-index))
-        (invoke-command "file-tree-open-selected" :mouse))))
+    (file-tree-select-path (editor-state-file-tree *editor-state*) target)
+    (invoke-command "file-tree-open-selected" :mouse))
 
   (defun %mouse-place-point-and-mark (hit)
     (let* ((buffer (%mouse-set-point-from-hit hit))

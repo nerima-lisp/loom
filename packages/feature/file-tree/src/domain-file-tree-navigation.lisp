@@ -158,6 +158,13 @@ selection mutation at the boundary and test navigation as a pure operation."
       (setf (file-tree-scroll-follow-needed-p tree) t))
     selection))
 
+(defun file-tree-select-path (tree path)
+  "Select an already-resolved PATH and request viewport following."
+  (setf (file-tree-selection tree) path
+        (file-tree-scroll-follow-needed-p tree) t)
+  path)
+
+
 (defun file-tree-toggle-expand (tree path)
   "Toggle the directory at PATH and request viewport following."
   (unless (eq (%file-tree-find-kind tree path) :directory)

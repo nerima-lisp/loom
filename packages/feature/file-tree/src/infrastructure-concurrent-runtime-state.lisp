@@ -49,9 +49,13 @@ results yet."
         (error condition)))))
 
 (defun loom-concurrent-runtime-directory-entries (runtime path)
-  "Return cached entries for PATH and a flag indicating whether they exist."
-  (gethash (%directory-key path)
-           (loom-concurrent-runtime-directory-cache runtime)))
+  "Return cached entries and whether listing has completed, including failure."
+  (let ((key (%directory-key path)))
+    (multiple-value-bind (entries present-p)
+        (gethash key (loom-concurrent-runtime-directory-cache runtime))
+      (values entries
+              (or present-p
+                  (nth-value 1 (gethash key (loom-concurrent-runtime-errors runtime))))))))
 
 (defun loom-concurrent-runtime-directory-error (runtime path)
   "Return a cached listing error for PATH and a flag indicating whether it exists."

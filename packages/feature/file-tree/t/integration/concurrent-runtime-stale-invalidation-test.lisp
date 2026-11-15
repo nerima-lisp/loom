@@ -129,4 +129,60 @@
           (cl-concurrent-kit:close-channel release)
           (cl-concurrent-kit:close-channel started)
           (loom/feature/file-tree:shutdown-file-tree-runtime *editor-state*))))))
+(describe "file-tree runtime recorded errors"
+  (it "keeps wheel and real file clicks available after an expanded listing fails"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((*editor-state* (%fresh-editor-state "" :with-minibuffer t))
+             (loom/core/editor-session:*editor-session*
+               (loom/core/editor-session:editor-state-session *editor-state*))
+             (tree (make-file-tree "/root/"))
+             (target (namestring (merge-pathnames "target.txt" directory)))
+             (roots (cons '("/root/bad/" . :directory)
+                          (loop for i from 1 below 200 collect
+                                (cons (if (= i 4) target (format nil "/root/file~3,'0D" i)) :file)))))
+        (with-open-file (out target :direction :output :if-exists :supersede
+                                    :if-does-not-exist :create)
+          (write-string "runtime-click-ok" out))
+        (setf (editor-state-file-tree *editor-state*) tree)
+        (loom/feature/file-tree:file-tree-install-child-lister
+         tree (lambda (path)
+                (if (equal path "/root/") roots (error "listing failed"))))
+        (file-tree-toggle tree)
+        (let ((runtime (loom/feature/file-tree:enable-file-tree-runtime *editor-state*)))
+          (unwind-protect
+               (progn
+                 (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+                 (file-tree-toggle-expand tree "/root/bad/")
+                 (let ((before (copy-structure tree)))
+                   (loom/feature/file-tree:file-tree-prepare-viewport tree 24 5)
+                   (expect (equalp tree before) :to-be t))
+                 (multiple-value-bind (promises accepted)
+                     (loom/feature/file-tree:loom-concurrent-runtime-prefetch runtime '("/root/bad/"))
+                   (expect accepted :to-equal 1)
+                   (signals error
+                     (cl-concurrent-kit:await (first promises)
+                                              :timeout (%concurrent-runtime-test-timeout))))
+                 (expect (loom/feature/file-tree:loom-concurrent-runtime-drain runtime) :to-equal 1)
+                 (multiple-value-bind (entries present-p)
+                     (loom/feature/file-tree:loom-concurrent-runtime-directory-entries runtime "/root/bad/")
+                   (expect entries :to-be nil)
+                   (expect present-p :to-be t))
+                 (expect (typep (loom/feature/file-tree:loom-concurrent-runtime-directory-error
+                                 runtime "/root/bad/") 'error) :to-be t)
+                 (loom/feature/mouse::%mouse-scroll-file-tree :wheel-down)
+                 (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal 3)
+                 (let ((hit (loom/feature/mouse::%mouse-file-tree-hit-test
+                             (loom/core/editor-session:editor-state-session *editor-state*) 0 1)))
+                   (expect hit :to-be-truthy)
+                   (expect (loom/core/editor-session:hit-test-result-target hit) :to-equal target)
+                   (loom/feature/mouse::%mouse-open-file-tree-target
+                    (loom/core/editor-session:hit-test-result-target hit)))
+                 (expect (file-tree-selected-path tree) :to-equal target)
+                 (expect (buffer-text
+                          (loom/core/window-tree:window-buffer
+                           (loom/core/window-tree:window-tree-selected-window
+                            (editor-state-window-tree *editor-state*))))
+                         :to-equal "runtime-click-ok"))
+            (loom/feature/file-tree:shutdown-file-tree-runtime *editor-state*)))))))
+
 

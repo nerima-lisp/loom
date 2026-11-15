@@ -42,8 +42,6 @@
                 #:window-tree-select-index
                 #:window-tree-windows)
   (:import-from #:loom/feature/file-tree
-                #:file-tree-entries
-                #:file-tree-move-selection
-                #:file-tree-selected-path
+                #:file-tree-select-path
                 #:file-tree-visible-p)
   (:export))
