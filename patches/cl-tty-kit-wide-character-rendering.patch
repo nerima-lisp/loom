@@ -186,7 +186,7 @@
 +                (setf end (* width (1+ (floor start width)))))))
 --- a/src/input-decode-internals.lisp
 +++ b/src/input-decode-internals.lisp
-@@ -29,2 +29 @@
+@@ -31,2 +31 @@
 -(defun %paste-marker-event-p (event marker)
 -  (and (eq :special (key-event-type event)) (eq marker (key-event-code event))))
 +(defun %paste-marker-event-p (event marker) (and (typep event (quote key-event)) (eq :special (key-event-type event)) (eq marker (key-event-code event))))
