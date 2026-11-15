@@ -15,23 +15,11 @@
                  (loop for octet across (%lsp-utf8-encode (string character))
                        do (format output "%~2,'0X" octet))))))
 
-(defun %lsp-native-namestring (path)
-  "Return PATH as the operating system names it.
-A CL namestring escapes literal * ? [ and \\ in a non-wild pathname, and a
-legacy (PATHNAME string) parse makes those characters wild, so neither form
-names the file a server sees."
-  (if (stringp path)
-      path
-      (let ((pathname (pathname path)))
-        (sb-ext:native-namestring
-         (if (wild-pathname-p pathname)
-             (sb-ext:parse-native-namestring (namestring pathname))
-             pathname)))))
-
 (defun lsp-path-uri (path)
   "Return the UTF-8 percent-encoded file URI for PATH."
   (format nil "file://~A"
-          (%lsp-uri-escape-path (%lsp-native-namestring path))))
+          (%lsp-uri-escape-path
+           (loom/core/editor-session:native-path-namestring path))))
 
 (defun %lsp-uri-hex-digit (character)
   (or (position character "0123456789" :test #'char=)

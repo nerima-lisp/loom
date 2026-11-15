@@ -36,6 +36,8 @@
                 #:editor-state-minibuffer
                 #:editor-state-recent-files
                 #:editor-state-window-tree
+                #:native-path-basename
+                #:native-path-namestring
                 #:register-session-hook
                 #:run-session-hooks)
   (:import-from #:loom/core/minibuffer

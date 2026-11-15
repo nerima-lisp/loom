@@ -109,7 +109,7 @@
     #-(and sbcl darwin 64-bit)
     nil)
   (defvar *freshly-loaded-file-buffers* (make-hash-table :test #'eq)))
-(defun %load-file-buffer (path &key (name (%native-file-name path)))
+(defun %load-file-buffer (path &key (name (native-path-basename path)))
   (let* ((before-stamp (%file-metadata-stamp path))
          (snapshot (%read-file-snapshot path))
          (after-stamp (%file-metadata-stamp path))
@@ -120,7 +120,7 @@
                         (if snapshot
                             (%file-snapshot-text snapshot)
                             (error "Cannot load missing file ~A"
-                                   (%native-display-namestring path))))))
+                                   (native-path-namestring path))))))
     (%remember-file-snapshot buffer snapshot)
     (setf (gethash buffer *freshly-loaded-file-buffers*)
           (and before-stamp
@@ -243,7 +243,7 @@
     (:report
      (lambda (condition stream)
        (format stream "File changed on disk: ~A"
-               (%native-display-namestring (%file-changed-path condition))))))
+               (native-path-namestring (%file-changed-path condition))))))
   (defun %file-path-exists-p (path)
     (if (%native-path-operation-p path)
         (%native-path-exists-p path)
@@ -402,7 +402,7 @@ The string contains newline style and encoding, plus BOM when present. New file 
                      (editor-state-minibuffer *editor-state*))))
           (when minibuffer
             (minibuffer-message minibuffer
-                                (format nil "Wrote ~A" (%native-display-namestring path))))))
+                                (format nil "Wrote ~A" (native-path-namestring path))))))
     buffer)))
 (progn
   (defun %file-parent-directory (path)

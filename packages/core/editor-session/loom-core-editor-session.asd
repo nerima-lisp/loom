@@ -6,6 +6,7 @@
     :serial t
     :components
     ((:file "package")
+     (:file "native-path-names")
      (:file "domain-editor-session-slices")
      (:file "application-editor-state-support")
      (:file "application-editor-state-types")
@@ -30,4 +31,5 @@
        (:file "editor-session-api-test")
        (:file "frame-snapshot-test")
        (:file "session-hook-test")
-       (:file "session-hook-resize-test")))))))
+       (:file "session-hook-resize-test")
+       (:file "native-path-names-test")))))))

@@ -1,17 +1,9 @@
 (in-package #:loom/feature/search)
 (progn
-  (defun %result-path-native-namestring (pathname)
-    ;; NAMESTRING escapes literal * ? [ and \ in a non-wild pathname; show
-    ;; the name the file has on disk.
-    (sb-ext:native-namestring
-     (if (wild-pathname-p pathname)
-         (sb-ext:parse-native-namestring (namestring pathname))
-         pathname)))
-
   (defun %result-item-path-text (item)
     (let ((path (result-item-file-path item)))
       (or (typecase path
-            (pathname (%result-path-native-namestring path))
+            (pathname (loom/core/editor-session:native-path-namestring path))
             (string path))
           (and (result-item-buffer item)
                (loom/core/buffer:buffer-name

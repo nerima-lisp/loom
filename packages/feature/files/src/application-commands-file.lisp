@@ -1,29 +1,8 @@
 (in-package #:loom/feature/files)
 
-(defun %file-disk-name (path)
-  "Return PATH's file name as it appears on disk.
-FILE-NAMESTRING escapes literal * ? [ and \\ in a non-wild pathname, so it is
-used only for wild (legacy-parsed) names, whose text it keeps verbatim."
-  (let* ((pathname (pathname path))
-         (name (pathname-name pathname))
-         (type (pathname-type pathname)))
-    (if (and (stringp name) (or (null type) (stringp type)))
-        (if type (concatenate 'string name "." type) name)
-        (file-namestring pathname))))
-
-(defun %file-display-path (path)
-  "Return PATH as the operating system names it, for messages and prompts."
-  (if (stringp path)
-      path
-      (let ((pathname (pathname path)))
-        (sb-ext:native-namestring
-         (if (wild-pathname-p pathname)
-             (sb-ext:parse-native-namestring (namestring pathname))
-             pathname)))))
-
 (defun %file-buffer-name (path)
   "Return a unique display name for PATH among the session buffers."
-  (let* ((filename (%file-disk-name path))
+  (let* ((filename (native-path-basename path))
          (existing (loom/feature/buffers:find-buffer-by-name *editor-session* filename)))
     (if existing
         (let ((directory (or (car (last (pathname-directory path))) "root")))
@@ -95,7 +74,7 @@ different owner is rejected."
             (host-kit:call-with-directory-entries
              (lambda (child-path metadata)
                (let* ((kind (host-kit:file-metadata-kind metadata))
-                      (name (%file-disk-name child-path)))
+                      (name (native-path-basename child-path)))
                  (when (member kind '(:directory :regular-file))
                    (push (cons (concatenate 'string
                                             directory-text

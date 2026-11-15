@@ -12,22 +12,13 @@
 (defun %major-mode-path-text (path)
   (typecase path
     (string path)
-    (pathname (namestring path))
     (t (princ-to-string path))))
 
-(defun %major-mode-pathname-native-basename (pathname)
-  ;; Non-wild components hold the literal name; NAMESTRING would escape
-  ;; * ? [ and \ in it, and the escape would read as a separator below.
-  (let ((name (pathname-name pathname))
-        (type (pathname-type pathname))
-        (last-directory (car (last (pathname-directory pathname)))))
-    (cond ((and (stringp name) (or (null type) (stringp type)))
-           (if type (concatenate 'string name "." type) name))
-          ((and (null name) (null type) (stringp last-directory))
-           last-directory))))
-
 (defun %major-mode-basename (path)
-  (or (and (pathnamep path) (%major-mode-pathname-native-basename path))
+  ;; NAMESTRING would escape * ? [ and \ in a pathname, and the text split
+  ;; below would read that escape as a separator.
+  (if (pathnamep path)
+      (loom/core/editor-session:native-path-basename path)
       (%major-mode-text-basename path)))
 
 (defun %major-mode-text-basename (path)

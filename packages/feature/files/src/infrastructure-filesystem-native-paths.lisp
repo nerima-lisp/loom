@@ -22,23 +22,12 @@ Tests rebind this to CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's in-memory fake.")
   nil)
 
 (defun %native-namestring (path)
+  ;; Unlike NATIVE-PATH-NAMESTRING, a string is first parsed with PATHNAME,
+  ;; as the system-call wrappers below have always read their path argument.
   #+sbcl
-  (let ((pathname (pathname path)))
-    ;; Only a wild (legacy-parsed) pathname needs the namestring round trip;
-    ;; for a literal one it would keep the escapes of * ? [ and \ in the name.
-    (sb-ext:native-namestring
-     (if (wild-pathname-p pathname)
-         (sb-ext:parse-native-namestring (namestring pathname))
-         pathname)))
+  (native-path-namestring (pathname path))
   #-sbcl
   (namestring (pathname path)))
-
-(defun %native-display-namestring (path)
-  (if (stringp path) path (%native-namestring path)))
-
-(defun %native-file-name (path)
-  (let ((native (%native-namestring path)))
-    (subseq native (1+ (or (position #\/ native :from-end t) -1)))))
 
 (defun %native-path-exists-p (path)
   #+sbcl

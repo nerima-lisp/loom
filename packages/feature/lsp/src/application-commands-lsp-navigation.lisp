@@ -8,8 +8,9 @@
   (let ((selected (loom/core/window-tree:window-buffer (loom/core/window-tree:window-tree-selected-window (editor-state-window-tree *editor-state*)))))
     (when (and selected
                (buffer-path selected)
-               (equal (%lsp-native-namestring (buffer-path selected))
-                      (%lsp-native-namestring path)))
+               (equal (loom/core/editor-session:native-path-namestring
+                       (buffer-path selected))
+                      (loom/core/editor-session:native-path-namestring path)))
       selected)))
 
 (defun %lsp-location-buffer (path)

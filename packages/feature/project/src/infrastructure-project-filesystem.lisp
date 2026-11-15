@@ -9,23 +9,12 @@
              (probe-file (merge-pathnames marker directory)))
            (project-marker-names)))))
 
-(defun %project-pathname-native-component (pathname)
-  ;; Non-wild components hold the literal name; NAMESTRING would escape
-  ;; * ? [ and \ in it, and the escape would read as a separator below.
-  (let ((name (pathname-name pathname))
-        (type (pathname-type pathname))
-        (last-directory (car (last (pathname-directory pathname)))))
-    (cond ((and (stringp name) (or (null type) (stringp type)))
-           (if type (concatenate 'string name "." type) name))
-          ((and (null name) (null type) (stringp last-directory))
-           last-directory))))
-
 (defun %project-last-path-component (path)
-  (let ((component (and (pathnamep path)
-                        (%project-pathname-native-component path))))
-    (if component
-        (string-downcase component)
-        (%project-text-last-path-component path))))
+  ;; NAMESTRING would escape * ? [ and \ in a pathname, and the text split
+  ;; below would read that escape as a separator.
+  (if (pathnamep path)
+      (string-downcase (loom/core/editor-session:native-path-basename path))
+      (%project-text-last-path-component path)))
 
 (defun %project-text-last-path-component (path)
   (let* ((text (string-right-trim '(#\/ #\\) (namestring path)))

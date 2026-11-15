@@ -117,4 +117,6 @@
                      #:consume-terminal-suspend-request
                      #:cancel-session-background-work
                      #:set-evaluation-interrupter
-                     #:call-with-evaluation-interrupter))
+                     #:call-with-evaluation-interrupter
+                     #:native-path-namestring
+                     #:native-path-basename))
