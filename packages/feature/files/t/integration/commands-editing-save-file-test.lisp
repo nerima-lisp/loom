@@ -1022,3 +1022,38 @@
                        collect (%selected-test-buffer))))
             (expect (mapcar #'buffer-text buffers) :to-equal (list "disk" "" "disk"))
             (expect opened :to-equal (list (first buffers) (second buffers)))))))))
+
+(describe "backup copies"
+  (it "keeps the original mode and never replaces an existing backup"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((path (merge-pathnames "note.txt" dir))
+             (backup-dir (merge-pathnames "backups/" dir))
+             (taken (merge-pathnames "note.txt.1~" backup-dir)))
+        (host-kit:write-file-string "old" path)
+        (host-kit:set-file-mode path #o640)
+        (ensure-directories-exist backup-dir)
+        (host-kit:write-file-string "older backup" taken)
+        (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+          (let ((backup (loom/feature/files::%backup-existing-file path)))
+            (expect (loom/core/editor-session:native-path-basename backup)
+                    :to-equal "note.txt.2~")
+            (expect (host-kit:read-file-string backup) :to-equal "old")
+            (expect (logand #o777 (host-kit:file-metadata-mode
+                                   (host-kit:file-metadata backup)))
+                    :to-equal #o640)
+            (expect (host-kit:read-file-string taken) :to-equal "older backup"))))))
+
+  (it "names the backup of a file containing * ? [ \\ literally"
+    (host-kit:with-temporary-directory (dir)
+      (let* ((name "a*b?c[d]\\e.txt")
+             (path (sb-ext:parse-native-namestring
+                    (concatenate 'string
+                                 (loom/core/editor-session:native-path-namestring dir)
+                                 name)))
+             (backup-dir (merge-pathnames "backups/" dir)))
+        (host-kit:write-file-string "old" path)
+        (let ((loom/feature/files::*loom-backup-directory* backup-dir))
+          (let ((backup (loom/feature/files::%backup-existing-file path)))
+            (expect (loom/core/editor-session:native-path-basename backup)
+                    :to-equal (format nil "~A.1~~" name))
+            (expect (host-kit:read-file-string backup) :to-equal "old")))))))

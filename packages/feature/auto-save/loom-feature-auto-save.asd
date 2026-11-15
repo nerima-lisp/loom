@@ -1,5 +1,6 @@
 (asdf:defsystem "loom-feature-auto-save"
-  :depends-on ("loom-core-buffer"
+  :depends-on ("cl-host-kit"
+               "loom-core-buffer"
                "loom-core-editor-session"
                "loom-core-minibuffer"
                "loom-core-window-tree"

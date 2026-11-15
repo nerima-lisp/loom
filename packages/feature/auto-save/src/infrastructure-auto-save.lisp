@@ -1,21 +1,31 @@
 (in-package #:loom/feature/auto-save)
 
-(defun write-auto-save-file (path text)
-  "Write TEXT to the auto-save sidecar PATH and return its pathname."
+(defun %file-access-mode (path)
+  "Return PATH's permission bits, or NIL when PATH names no regular file."
+  (let ((metadata
+          (and path
+               (handler-case (host-kit:file-metadata path)
+                 (host-kit:host-operation-failed () nil)))))
+    (when (and metadata
+               (eq (host-kit:file-metadata-kind metadata) :regular-file))
+      (logand #o777 (host-kit:file-metadata-mode metadata)))))
+
+(defun write-auto-save-file (path text &key (mode #o600))
+  "Atomically replace the auto-save sidecar PATH with TEXT and return its pathname.
+The sidecar gets permission bits MODE. The staging file beside it starts with
+the sidecar's own name and a dot, #<name>#."
   (check-type text string)
-  (let ((pathname (pathname path)))
+  (let* ((pathname (pathname path))
+         (existing-mode (%file-access-mode pathname)))
     (ensure-directories-exist pathname)
-    (with-open-file
-        (stream pathname
-                :direction
-                :output
-                :if-exists
-                :supersede
-                :if-does-not-exist
-                :create
-                :external-format
-                :utf-8)
-      (write-string text stream))
+    ;; An existing target keeps its own mode through the atomic replacement.
+    (when (and existing-mode (/= existing-mode mode))
+      (host-kit:set-file-mode pathname mode))
+    (host-kit:write-file-string text
+                                pathname
+                                :mode mode
+                                :prefix (format nil "~A."
+                                                (native-path-basename pathname)))
     pathname))
 
 (progn
@@ -45,4 +55,6 @@ pathname.  The buffer remains modified because an auto-save is not a normal
 save."
   (when (auto-save-eligible-p buffer)
     (write-auto-save-file (auto-save-path (buffer-path buffer))
-                          (buffer-text buffer))))
+                          (buffer-text buffer)
+                          :mode (or (%file-access-mode (buffer-path buffer))
+                                    #o600))))

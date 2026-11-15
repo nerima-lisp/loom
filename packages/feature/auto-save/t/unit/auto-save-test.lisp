@@ -427,3 +427,56 @@
                                              (maybe-auto-save :force t :now 100)
                                              :to-equal
                                              (list (auto-save-path path))))))))
+
+(describe "auto-save sidecar permissions and staging"
+  (it "gives the sidecar the original file's mode, or 0600 without an original"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((original (merge-pathnames "shared.txt" directory))
+             (missing (merge-pathnames "new.txt" directory))
+             (with-original (make-buffer :path original :initial-content "draft"))
+             (without-original (make-buffer :path missing :initial-content "new")))
+        (host-kit:write-file-string "disk" original)
+        (host-kit:set-file-mode original #o640)
+        (buffer-mark-modified with-original)
+        (buffer-mark-modified without-original)
+        (flet ((mode (path)
+                 (logand #o777 (host-kit:file-metadata-mode (host-kit:file-metadata path)))))
+          (expect (mode (auto-save-buffer-to-file with-original)) :to-equal #o640)
+          (expect (mode (auto-save-buffer-to-file without-original)) :to-equal #o600)))))
+
+  (it "resets an existing sidecar whose mode differs from the original"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((original (merge-pathnames "notes.txt" directory))
+             (sidecar (auto-save-path original))
+             (buffer (make-buffer :path original :initial-content "draft")))
+        (host-kit:write-file-string "disk" original)
+        (host-kit:set-file-mode original #o600)
+        (host-kit:write-file-string "stale" sidecar)
+        (host-kit:set-file-mode sidecar #o644)
+        (buffer-mark-modified buffer)
+        (auto-save-buffer-to-file buffer)
+        (expect (logand #o777 (host-kit:file-metadata-mode (host-kit:file-metadata sidecar)))
+                :to-equal #o600)
+        (expect (host-kit:read-file-string sidecar) :to-equal "draft"))))
+
+  (it "stages through #<name>#. and keeps * ? [ \\ literal in the sidecar name"
+    (host-kit:with-temporary-directory (directory)
+      (let* ((name "a*b?c[d]\\e.txt")
+             (original (sb-ext:parse-native-namestring
+                        (concatenate 'string
+                                     (loom/core/editor-session:native-path-namestring directory)
+                                     name)))
+             (buffer (make-buffer :path original :initial-content "draft"))
+             (prefixes nil))
+        (buffer-mark-modified buffer)
+        (let ((write (fdefinition 'host-kit:write-file-string)))
+          (with-replaced-function
+              (host-kit:write-file-string
+               (lambda (string pathspec &rest options)
+                 (push (getf options :prefix) prefixes)
+                 (apply write string pathspec options)))
+            (auto-save-buffer-to-file buffer)))
+        (expect prefixes :to-equal (list (format nil "#~A#." name)))
+        (expect (mapcar #'loom/core/editor-session:native-path-basename
+                        (host-kit:directory-files directory))
+                :to-equal (list (format nil "#~A#" name)))))))
