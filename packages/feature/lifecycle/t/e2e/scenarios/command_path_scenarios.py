@@ -1060,7 +1060,7 @@ def recovery_special_name_writes(binary):
 
 @scenario(
     "lifecycle/recovery-special-name-file-tree",
-    commands=["toggle-file-tree", "file-tree-open-selected"],
+    commands=["toggle-file-tree", "file-tree-select-next", "file-tree-open-selected"],
 )
 def recovery_special_name_file_tree(binary):
     with _scenario_directory() as directory:
@@ -1069,6 +1069,8 @@ def recovery_special_name_file_tree(binary):
             session.wait_ready(timeout=1.5)
             session.send(keys.ctrl("x") + keys.text("d"))
             session.wait_for_row_text(0, _SPECIAL_NAME)
+            # A new tree has no selection; C-c n selects its first entry.
+            session.send(keys.ctrl("c") + keys.text("n"))
             session.send(keys.ctrl("c") + keys.text("o"))
             session.wait_for_region_text("body", "special content")
             session.assert_screen_text(
