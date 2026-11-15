@@ -81,8 +81,9 @@ When you open a file that has newer unsaved work from auto-save or from a loom
 process that was terminated, loom reports it in the minibuffer. Run
 `M-x recover-file` and press `r` to restore that text into the buffer, `d` to
 see the difference, or `i` to ignore it; restoring does not save the file. Run
-`M-x list-recoverable-files` to list all recoverable files and press `RET` on a
-line to open it.
+`M-x list-recoverable-files` to list the recovery files written when loom was
+terminated; auto-save sidecars are not listed. Press `RET` on a line to open
+its file.
 
 ## Language modes and sessions
 

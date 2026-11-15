@@ -20,8 +20,9 @@ answers to language server requests.
   modified; it does not save. `d` shows a unified diff in
   `*Loom-Recover-Diff*` and asks again. `i` leaves the buffer unchanged, and
   `C-g` quits. In a narrowed buffer, the command asks you to widen first.
-- `M-x list-recoverable-files` lists recoverable files with their path and local
-  time in the read-only `*Loom-Recover*` buffer. `RET` on a line opens the file
+- `M-x list-recoverable-files` lists the recovery files under
+  `~/.loom/recovery/`, newest first, with their path and local time in the
+  read-only `*Loom-Recover*` buffer. Auto-save sidecars are not listed. `RET` on a line opens the file
   and continues with `recover-file`. A recovery file written by loom v0.1.0 has
   no recorded path; `RET` on it shows its text read-only.
 - At startup, if recovery files exist, loom reports how many and suggests
@@ -42,7 +43,8 @@ answers to language server requests.
 `C-g` interrupts a running `M-:`, `C-x C-e`, or `M-x eval-buffer` evaluation
 and reports `Evaluation interrupted`. A second `C-g` forces the interruption
 through cleanup code that blocks or keeps re-entering. Keys typed during
-evaluation run afterwards in the order typed. A `C-g` inside a bracketed paste
+evaluation run afterwards in the order typed, except in the case listed under
+Known limitations. A `C-g` inside a bracketed paste
 does not interrupt. If loom receives SIGTERM or SIGHUP during an
 evaluation, it interrupts the evaluation, writes recovery files, and exits with
 status 143 for SIGTERM or 129 for SIGHUP.

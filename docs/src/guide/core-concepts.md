@@ -211,12 +211,14 @@ recorded for its path. Recovery files written by loom v0.1.0 are kept.
 
 When loom receives SIGTERM or SIGHUP, it writes the text of modified buffers to
 recovery files under `~/.loom/recovery/`. When you open a file whose recovery
-file, or auto-save sidecar if auto-save is enabled, is newer than the file and
-differs from the buffer, loom reports it in the minibuffer. Run `M-x recover-file` to choose: `r`
+file or `#file-name#` auto-save sidecar is newer than the file and differs from
+the buffer, loom reports it in the minibuffer. An existing sidecar counts even
+when auto-save is now disabled. Run `M-x recover-file` to choose: `r`
 replaces the buffer text as one undoable edit without saving, `d` shows a
 unified diff in `*Loom-Recover-Diff*`, `i` ignores the work, and `C-g` quits.
-`M-x list-recoverable-files` lists every recoverable file in `*Loom-Recover*`;
-`RET` on a line opens the file and continues with `recover-file`.
+`M-x list-recoverable-files` lists the recovery files under `~/.loom/recovery/`,
+newest first, in `*Loom-Recover*`; auto-save sidecars are not listed. `RET` on a
+line opens the file and continues with `recover-file`.
 A successful save deletes the file's auto-save sidecar and the recovery files
 recorded for its path. Recovery files written by loom v0.1.0 are kept.
 
@@ -228,8 +230,9 @@ has the file open, loom reports that process instead of offering recovery.
 `M-:`, `C-x C-e`, and `M-x eval-buffer` evaluate on the main thread. Press
 `C-g` to interrupt an evaluation; loom reports `Evaluation interrupted`. A
 second `C-g` forces the interruption through cleanup code that blocks. Other
-keys typed during evaluation run after it ends, in the order typed. The screen
-does not redraw while an evaluation runs.
+keys typed during evaluation run after it ends, in the order typed. If several
+evaluations run in one burst of input, those keys may run in a different order.
+The screen does not redraw while an evaluation runs.
 
 ## Concurrent file-tree work
 
