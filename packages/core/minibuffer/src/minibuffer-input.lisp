@@ -254,12 +254,10 @@ completes, and C-g cancels. Returns MINIBUFFER."
              (%minibuffer-confirm minibuffer))
            (let ((guidance (%minibuffer-char-guidance allowed-characters)))
              (minibuffer-set-prompt
-              minibuffer (%minibuffer-char-guidance-prompt prompt guidance))
-             (minibuffer-message minibuffer guidance)))
+              minibuffer (%minibuffer-char-guidance-prompt prompt guidance))))
        t)
       (t
        (let ((guidance (%minibuffer-char-guidance allowed-characters)))
          (minibuffer-set-prompt
-          minibuffer (%minibuffer-char-guidance-prompt prompt guidance))
-         (minibuffer-message minibuffer guidance))
+          minibuffer (%minibuffer-char-guidance-prompt prompt guidance)))
        t))))

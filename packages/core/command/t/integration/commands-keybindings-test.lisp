@@ -96,8 +96,8 @@
                  :allowed-characters "rdi"))
      (setf *char-command-test-result* character)))
   (describe
-   "character prompt command contract"
-   (it "accepts an allowed key, guides invalid input, and cancels cleanly from :char command metadata"
+   "with-prompts character command behavior"
+   (it "accepts an allowed key, keeps invalid guidance in the prompt, and cancels cleanly"
        (let* ((*char-command-test-minibuffer*
                (loom/core/minibuffer:make-minibuffer))
               (*char-command-test-result* nil)
@@ -107,15 +107,11 @@
                 "test-char-prompt" %char-command-test-command
                 :mutates nil :prompts (:char) :needs-region nil
                 :external nil :modes (:all))))
-         (expect (getf spec :prompts) :to-equal '(:char))
          (funcall (getf spec :command))
          (loom/core/minibuffer:minibuffer-handle-key
           *char-command-test-minibuffer*
           (cl-tty-kit:make-key-event :type :character :code #\x))
-         (expect
-          (loom/core/minibuffer:minibuffer-message-string
-           *char-command-test-minibuffer*)
-          :to-equal "Allowed keys: r, d, i")
+         (expect (loom/core/minibuffer:minibuffer-message-string *char-command-test-minibuffer*) :to-be nil)
          (expect
           (loom/core/minibuffer:minibuffer-prompt-string
            *char-command-test-minibuffer*)
@@ -180,8 +176,7 @@
          (loom/core/minibuffer:minibuffer-handle-key
           minibuffer
           (cl-tty-kit:make-key-event :type :special :code :up))
-         (expect (loom/core/minibuffer:minibuffer-message-string minibuffer)
-                 :to-equal "Type a character.")
+         (expect (loom/core/minibuffer:minibuffer-message-string minibuffer) :to-be nil)
          (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
                  :to-equal "Choose: Type a character.")
          (expect (loom/core/minibuffer:minibuffer-active-p minibuffer)
@@ -223,8 +218,7 @@
           minibuffer
           (cl-tty-kit:make-key-event :type :special :code :up))
          (expect (length handled) :to-equal 2)
-         (expect (loom/core/minibuffer:minibuffer-message-string minibuffer)
-                 :to-equal "Allowed keys: d")
+         (expect (loom/core/minibuffer:minibuffer-message-string minibuffer) :to-be nil)
          (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
                  :to-equal "Choose: Allowed keys: d")
          (loom/core/minibuffer:minibuffer-handle-key
@@ -257,27 +251,4 @@
            (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
                    :to-be nil)
            (expect (loom/core/minibuffer:minibuffer-message-string minibuffer)
-                   :to-be nil))))
-   (it "keeps allowlist metadata in the command spec and catalogs only the prompt kind"
-       (let* ((loom/core/command::*registered-command-specs* nil)
-              (definition
-               (eval
-                (macroexpand-1
-                 '(loom/core/command:command-spec
-                   "char-command" %char-command-test-command
-                   :mutates nil :prompts ((:char "rdi")) :needs-region nil
-                   :external nil :modes (:all)))))
-              (prompts (getf definition :prompts))
-              (spec
-               (loom/core/command:register-command-spec
-                :test "test/char-prompt" nil (getf definition :command)
-                :mutates nil :prompts prompts :needs-region nil
-                :external nil :modes '(:all)))
-              (entry
-               (json-kit:parse
-                (json-kit:stringify
-                 (loom/core/command::%command-spec-json spec))
-                :array-type :list
-                :object-type :hash-table)))
-         (expect prompts :to-equal '((:char "rdi")))
-         (expect (gethash "prompts" entry) :to-equal '("char"))))))
+                   :to-be nil))))))

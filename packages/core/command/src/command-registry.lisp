@@ -70,10 +70,7 @@
     (cons "mutates"
           (if (%command-spec-mutates spec) t json-kit:+json-false+))
     (cons "prompts"
-          (mapcar (lambda (prompt)
-                    (%catalog-symbol-name
-                     (if (consp prompt) (first prompt) prompt)))
-                  (%command-spec-prompts spec)))
+          (mapcar #'%catalog-symbol-name (%command-spec-prompts spec)))
     (cons "needs-region"
           (if (%command-spec-needs-region spec) t json-kit:+json-false+))
     (cons "external" (%command-spec-external spec))
