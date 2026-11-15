@@ -641,6 +641,7 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 session.screen.cell_attrs.side_effect = lambda *_cell: {"fg": foreground}
                 session.send.side_effect = edit_syntax
                 session.assert_cell_attrs = Mock(return_value=True)
+                session.process.wait.return_value = (b"", 0)
                 result = ScenarioResult(f"benchmarks/{scenario_name}")
                 with patch("loom_e2e.benchmarks.Session", return_value=session):
                     with patch(

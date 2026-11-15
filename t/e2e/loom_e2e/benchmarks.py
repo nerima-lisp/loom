@@ -324,7 +324,14 @@ def _measure_cl_multiline(binary, split=False):
             # Each trial has an odd sample count and ends with the quote inserted.
             session.send(keys.ctrl("?"))
             session.wait_for_region_cursor("body", 0)
-            session.quit()
+            session.send(keys.ctrl("x") + keys.ctrl("c"))
+            session.wait_for_region_text("minibuffer", "Save multiline.lisp? (s/d/c): ")
+            session.type("d")
+            session.key("RET")
+            _output, exit_code = session.process.wait()
+            session.observe_exit_code(exit_code, expected=0)
+            if exit_code != 0:
+                raise AssertionError(f"CL multiline benchmark exited with {exit_code}")
     metric = (
         "cl_multiline_20k_split_p95_milliseconds" if split
         else "cl_multiline_20k_p95_milliseconds"
