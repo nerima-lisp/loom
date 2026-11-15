@@ -127,19 +127,16 @@ class ScenarioDeadlineTests(unittest.TestCase):
             run_scenario(r9_record, "unused")
             run_scenario(r9_record, "unused", seconds=2.0, cleanup_seconds=1.0)
 
-        r9_seconds = deadline_module.R9_SCENARIO_TIMEOUT_SECONDS
-        self.assertGreater(r9_seconds, SCENARIO_TIMEOUT_SECONDS)
+        self.assertEqual(deadline_module.R9_SCENARIO_EXECUTION_TIMEOUT_SECONDS, 33.892)
+        self.assertAlmostEqual(deadline_module.R9_SCENARIO_TIMEOUT_SECONDS, 38.892)
         self.assertEqual(
-            budgets,
-            [
-                (100.0 + SCENARIO_TIMEOUT_SECONDS, 100.0 + SCENARIO_EXECUTION_TIMEOUT_SECONDS),
-                (
-                    100.0 + r9_seconds,
-                    100.0 + r9_seconds - SCENARIO_CLEANUP_TIMEOUT_SECONDS,
-                ),
-                (102.0, 101.0),
-            ],
+            budgets[0],
+            (100.0 + SCENARIO_TIMEOUT_SECONDS, 100.0 + SCENARIO_EXECUTION_TIMEOUT_SECONDS),
         )
+        self.assertAlmostEqual(budgets[1][0], 100.0 + 38.892)
+        self.assertAlmostEqual(budgets[1][1], 100.0 + 33.892)
+        self.assertEqual(budgets[2], (102.0, 101.0))
+        self.assertEqual(len(budgets), 3)
 
     def test_preparation_time_does_not_consume_execution_budget(self):
         clock = [100.0]

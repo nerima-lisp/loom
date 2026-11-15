@@ -15,10 +15,15 @@ SCENARIO_CLEANUP_TIMEOUT_SECONDS = 5.0
 SCENARIO_EXECUTION_TIMEOUT_SECONDS = (
     SCENARIO_TIMEOUT_SECONDS - SCENARIO_CLEANUP_TIMEOUT_SECONDS
 )
-# Whole-scenario deadline for the R9 day scenario only. Provisional: it is
-# replaced by a value measured five times on both OSes once all twelve R9
-# scenes exist.
-R9_SCENARIO_TIMEOUT_SECONDS = 60.0
+# Execution budget for the R9 day scenario only (FR-T903): twice 16.946 s,
+# the largest r9/daily elapsed_seconds over five full E2E runs on each OS.
+# elapsed_seconds excludes the cleanup reserve, so the doubled value bounds
+# execution and the usual reserve is added on top. The runs are recorded in
+# docs/src/notes/verification-ledger.md.
+R9_SCENARIO_EXECUTION_TIMEOUT_SECONDS = 33.892
+R9_SCENARIO_TIMEOUT_SECONDS = (
+    R9_SCENARIO_EXECUTION_TIMEOUT_SECONDS + SCENARIO_CLEANUP_TIMEOUT_SECONDS
+)
 
 
 class ScenarioDeadlineExceeded(TimeoutError):
