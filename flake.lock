@@ -105,11 +105,11 @@
     "cl-host-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1794706506,
-        "narHash": "sha256-seilkaryCOQCZqr8f5Utnc3AVvKc3RqczBgkcDcoRGY=",
+        "lastModified": 1794710533,
+        "narHash": "sha256-CWGJeS3KevDdPANVXTUmAwm+c5f3ktWrpX8dDR56YKI=",
         "owner": "nerima-lisp",
         "repo": "cl-host-kit",
-        "rev": "5d4a532f65538eba0d2b604cf63adf985ff782cd",
+        "rev": "6f4cfa93f885ca8159e4d60721c70109aa24a2ea",
         "type": "github"
       },
       "original": {
