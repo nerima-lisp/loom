@@ -134,6 +134,10 @@
    "expected_minibuffer": "",
    "expected_screen": [
     {
+     "row": 0,
+     "text": "abc"
+    },
+    {
      "region": "body",
      "index": 5,
      "text": "  .   buffer.txt",
@@ -189,6 +193,10 @@
    ],
    "expected_minibuffer": "",
    "expected_screen": [
+    {
+     "row": 0,
+     "text": "abc"
+    },
     {
      "region": "body",
      "index": 5,
@@ -251,6 +259,10 @@
    "expected_minibuffer": "",
    "expected_screen": [
     {
+     "row": 0,
+     "text": "abc"
+    },
+    {
      "region": "body",
      "index": 5,
      "text": "  .   buffer.txt",
@@ -309,6 +321,10 @@
    ],
    "expected_minibuffer": "",
    "expected_screen": [
+    {
+     "row": 0,
+     "text": "abc"
+    },
     {
      "region": "body",
      "index": 5,
@@ -893,6 +909,10 @@
    "expected_minibuffer": "Killed other.txt",
    "expected_screen": [
     {
+     "row": 0,
+     "text": "abc"
+    },
+    {
      "region": "body",
      "index": 5,
      "text": "      buffer.txt",
@@ -980,6 +1000,10 @@
    ],
    "expected_minibuffer": "Killed other.txt",
    "expected_screen": [
+    {
+     "row": 0,
+     "text": "abc"
+    },
     {
      "region": "body",
      "index": 5,
@@ -1268,6 +1292,10 @@
    "expected_minibuffer": "Killed buffer.txt",
    "expected_screen": [
     {
+     "row": 0,
+     "text": ""
+    },
+    {
      "region": "body",
      "index": 5,
      "text": "*Messages*",
@@ -1325,6 +1353,10 @@
    ],
    "expected_screen": [
     {
+     "row": 0,
+     "text": "!abc"
+    },
+    {
      "region": "body",
      "index": 5,
      "text": "D . * buffer.txt",
@@ -1376,6 +1408,10 @@
    ],
    "expected_cursor_region": "minibuffer",
    "expected_screen": [
+    {
+     "row": 0,
+     "text": "!abc"
+    },
     {
      "region": "body",
      "index": 5,
@@ -1429,6 +1465,10 @@
    ],
    "expected_minibuffer": "Killed buffer.txt",
    "expected_screen": [
+    {
+     "row": 0,
+     "text": ""
+    },
     {
      "region": "body",
      "index": 5,
@@ -1489,6 +1529,10 @@
     0
    ],
    "expected_screen": [
+    {
+     "row": 0,
+     "text": "!abc"
+    },
     {
      "region": "body",
      "index": 5,
