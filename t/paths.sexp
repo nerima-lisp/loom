@@ -1,5 +1,6 @@
 ((:id "r9:daily"
-  :commands ("project-find-file" "indent-for-tab-command" "forward-slurp-sexp"
+  :commands ("list-recoverable-files" "recover-list-visit"
+             "project-find-file" "indent-for-tab-command" "forward-slurp-sexp"
              "comment-line" "newline" "save-buffer" "back-to-indentation"
              "delete-horizontal-space" "eval-expression" "toggle-file-tree"
              "file-tree-select-next" "lsp-start" "lsp-completion-at-point"

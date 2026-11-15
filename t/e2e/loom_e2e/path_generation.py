@@ -842,6 +842,8 @@ def _r9_daily_paths():
         _path(
             "r9:daily",
             [
+                "list-recoverable-files",
+                "recover-list-visit",
                 "project-find-file",
                 "indent-for-tab-command",
                 "forward-slurp-sexp",

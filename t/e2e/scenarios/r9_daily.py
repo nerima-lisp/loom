@@ -6,9 +6,12 @@ an observation to every command of r9:daily.
 """
 
 import os
+import re
 import shlex
+import signal
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 from loom_e2e import keys
@@ -36,6 +39,7 @@ _C_RIGHT = b"\x1b[1;5C"
 _C_M_I = b"\x1b[105;7u"
 
 _A_LISP = b"(defun a ()\n  :draft)\n"
+_A_LISP_UNSAVED = b"(defun a () ; unsaved evening edit\n  :draft)\n"
 _DAY_LISP = b"(defun day ()\n(list) :done)\n   (day)\n"
 _DAY_AFTER_0910 = b"(defun day ()\n  (list :done)) ;\n\n   (day)\n"
 _DAY_AFTER_0920 = (
@@ -58,6 +62,8 @@ _INBOX_ENTRIES = 200
 # loom and the server. typescript-language-server sends no server requests in
 # this scene, so loom's own requests carry the check, and these must appear.
 _REQUIRED_LOOM_REQUESTS = ("textDocument/completion", "textDocument/definition")
+_UNIVERSAL_TIME_OFFSET = 2208988800
+_META_TOKEN = re.compile(r'\s*(?:(\()|(\))|"((?:[^"\\]|\\.)*)"|([^\s()"]+))')
 
 
 def _git(directory, *arguments):
@@ -171,6 +177,139 @@ def _quit(session, scene):
     output, code = session.quit()
     if code != 0:
         raise AssertionError(f"{scene}: loom exited with {code}: {output!r}")
+
+
+def _recovery_names(session):
+    recovery = Path(session.home_dir) / ".loom" / "recovery"
+    return sorted(entry.name for entry in recovery.iterdir()) if recovery.is_dir() else []
+
+
+def _recovery_body_count(session):
+    # loom counts every NAME.txt in the directory, whatever NAME is.
+    return sum(1 for name in _recovery_names(session) if len(name) > 4 and name.endswith(".txt"))
+
+
+def _recovery_entries_for(session, path):
+    """Return (body, metadata path, metadata) for each entry recorded for PATH.
+
+    Entries are found through the :path in their metadata, not their names."""
+    recovery = Path(session.home_dir) / ".loom" / "recovery"
+    entries = []
+    for meta_path in sorted(recovery.glob("*.sexp")) if recovery.is_dir() else []:
+        meta = _read_flat_plist(meta_path.read_text(encoding="utf-8"))
+        if meta.get(":path") == str(path):
+            entries.append((meta_path.with_suffix(".txt"), meta_path, meta))
+    return entries
+
+
+def _read_flat_plist(text):
+    """Read recovery metadata as a dict with lowercase keyword names."""
+    text = text.strip()
+    tokens = []
+    position = 0
+    while position < len(text):
+        match = _META_TOKEN.match(text, position)
+        if match is None or match.end() == position:
+            raise AssertionError(f"unreadable recovery metadata: {text!r}")
+        tokens.append(match)
+        position = match.end()
+    if (
+        len(tokens) < 2
+        or tokens[0].group(1) is None
+        or tokens[-1].group(2) is None
+        or any(token.group(1) or token.group(2) for token in tokens[1:-1])
+    ):
+        raise AssertionError(f"recovery metadata is not one flat list: {text!r}")
+    values = []
+    for token in tokens[1:-1]:
+        if token.group(3) is not None:
+            values.append(re.sub(r"\\(.)", r"\1", token.group(3)))
+        elif re.fullmatch(r"-?\d+", token.group(4)):
+            values.append(int(token.group(4)))
+        else:
+            values.append(token.group(4).lower())
+    if len(values) % 2:
+        raise AssertionError(f"recovery metadata is not a plist: {text!r}")
+    return dict(zip(values[0::2], values[1::2]))
+
+
+def _scene_evening_sighup(session, binary, a_lisp):
+    _launch(session, binary, [str(a_lisp)])
+    session.wait_ready()
+    _wait_body_row(session, 0, "(defun a ()")
+    session.send(keys.ctrl("e"))
+    session.wait_for_region_cursor("body", len("(defun a ()"), index=0)
+    session.type(" ; unsaved evening edit")
+    _wait_body_row(session, 0, "(defun a () ; unsaved evening edit")
+    os.kill(session.process._pid, signal.SIGHUP)
+    _output, code = session.process.wait(timeout=1.5)
+    session.observe_exit_code(code, expected=129)
+    session.assert_external_state("evening exit status after SIGHUP", code, 129)
+
+    entries = _recovery_entries_for(session, a_lisp)
+    session.assert_external_state(
+        "evening recovery metadata files recording a.lisp", len(entries), 1
+    )
+    body, _meta_path, meta = entries[0]
+    session.assert_external_state(
+        "evening recovery body beside its metadata", body.is_file(), True
+    )
+    session.assert_external_state(
+        "evening recovery body bytes", body.read_bytes(), _A_LISP_UNSAVED
+    )
+    session.assert_external_state(
+        "evening recovery metadata fields",
+        {key: meta.get(key) for key in (":version", ":buffer-name", ":reason")},
+        {":version": 1, ":buffer-name": "a.lisp", ":reason": ":sighup"},
+    )
+    session.assert_external_state(
+        "evening recovery metadata time is a universal time",
+        isinstance(meta.get(":time"), int) and meta[":time"] > _UNIVERSAL_TIME_OFFSET,
+        True,
+    )
+
+
+def _scene_0900_recover(session, binary, a_lisp):
+    # File dates have whole-second resolution, so the entry must be at least
+    # a second newer than a.lisp to count as unsaved work.
+    now = int(time.time())
+    os.utime(a_lisp, (now - 30, now - 30))
+    for body, meta_path, _meta in _recovery_entries_for(session, a_lisp):
+        os.utime(body, (now, now))
+        os.utime(meta_path, (now, now))
+    bodies = _recovery_body_count(session)
+    session.assert_external_state(
+        "09:00 recovery bodies before startup", bodies > 0, True, purpose="precondition"
+    )
+
+    _launch(session, binary, [])
+    session.wait_ready()
+    _assert_minibuffer(
+        session, f"{bodies} recoverable file(s); M-x list-recoverable-files"
+    )
+    session.extended_command("list-recoverable-files")
+    # The list is newest first, and the evening entry is the newest.
+    session.wait_for_region_text("body", str(a_lisp))
+    session.assert_screen_text(str(a_lisp), match="contains", region="body", index=0)
+    session.assert_screen_text("  recovery  ", match="contains", region="body", index=0)
+    session.key("RET")
+    _assert_minibuffer(session, "Recover from recovery (<1 min newer)? (r, d, i, C-g)")
+    _wait_body_row(session, 0, "(defun a ()")
+    session.type("r")
+    _assert_minibuffer(session, "Recovered from recovery; save to keep")
+    _assert_body_row(session, 0, "(defun a () ; unsaved evening edit")
+    _assert_cursor(session, 0, 0)
+    session.save_buffer(str(a_lisp), _A_LISP_UNSAVED)
+    session.assert_file_bytes(str(a_lisp), _A_LISP_UNSAVED)
+    session.assert_external_state(
+        "09:00 recovery entries recording a.lisp after the save",
+        [meta_path.name for _body, meta_path, _meta in _recovery_entries_for(session, a_lisp)],
+        [],
+    )
+    session.assert_external_state(
+        "09:00 recovery bodies after the save", _recovery_body_count(session), bodies - 1
+    )
+    _quit(session, "09:00")
 
 
 def _scene_0905_project_file(session, binary, a_lisp):
@@ -503,6 +642,8 @@ def _scene_1800_save_all_and_quit(session, day, todo):
 @scenario(
     "r9/daily",
     commands=[
+        "list-recoverable-files",
+        "recover-list-visit",
         "project-find-file",
         "indent-for-tab-command",
         "forward-slurp-sexp",
@@ -534,6 +675,8 @@ def r9_daily(binary):
         day = work / "src" / "day.lisp"
         todo = work / "todo.txt"
         with Session(binary, [str(a_lisp)], columns=_COLUMNS) as session:
+            _scene_evening_sighup(session, binary, a_lisp)
+            _scene_0900_recover(session, binary, a_lisp)
             _scene_0905_project_file(session, binary, a_lisp)
             _scene_0910_lisp_keys(session, day)
             _scene_0915_docstring_and_block_comment(session)

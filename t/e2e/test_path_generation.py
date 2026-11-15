@@ -512,6 +512,8 @@ class GenerateRequiredPathsTests(unittest.TestCase):
         self.assertEqual(
             path["commands"],
             [
+                "list-recoverable-files",
+                "recover-list-visit",
                 "project-find-file",
                 "indent-for-tab-command",
                 "forward-slurp-sexp",
