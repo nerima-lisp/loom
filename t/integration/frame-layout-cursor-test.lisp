@@ -544,9 +544,4 @@
       (expect (file-tree-selected-path tree) :to-equal "/root/file199")
       (expect (loom/feature/file-tree::file-tree-scroll-follow-needed-p tree) :to-be t)
       (expect opened :to-equal '("file-tree-open-selected" :mouse "/root/file199"))
-      (expect (<= calls 1) :to-be t))))
-
-
-
-
-
+      (expect calls :to-equal 0))))

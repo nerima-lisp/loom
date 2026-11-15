@@ -184,5 +184,3 @@
                             (editor-state-window-tree *editor-state*))))
                          :to-equal "runtime-click-ok"))
             (loom/feature/file-tree:shutdown-file-tree-runtime *editor-state*)))))))
-
-

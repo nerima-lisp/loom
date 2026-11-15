@@ -164,7 +164,6 @@ selection mutation at the boundary and test navigation as a pure operation."
         (file-tree-scroll-follow-needed-p tree) t)
   path)
 
-
 (defun file-tree-toggle-expand (tree path)
   "Toggle the directory at PATH and request viewport following."
   (unless (eq (%file-tree-find-kind tree path) :directory)

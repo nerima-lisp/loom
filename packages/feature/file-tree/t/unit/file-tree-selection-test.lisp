@@ -307,7 +307,3 @@
       (expect (loom/feature/file-tree:file-tree-scroll-top tree) :to-equal expected)
       (expect (file-tree-selected-path tree)
               :to-equal (if (eq direction :up) "/root/file19" "/root/file00")))))
-
-
-
-

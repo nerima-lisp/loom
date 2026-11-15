@@ -107,7 +107,7 @@ def scroll_click(binary):
             _quit(session)
 
 
-@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next", "file-tree-open-selected"])
+@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next", "file-tree-select-previous", "file-tree-open-selected"])
 def scroll_resize(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-wp3-") as directory:
         _populate(directory)
@@ -115,14 +115,16 @@ def scroll_resize(binary):
             _open_tree(session)
             session.send((keys.ctrl("c") + keys.text("n")) * 200)
             _assert_selected(session, "wp3-199.txt", 30)
+            session.send((keys.ctrl("c") + keys.text("p")) * 3)
+            _assert_selected(session, "wp3-196.txt", 27)
             session.resize(80, 12)
             # Wait for fresh application output because pyte can move stale rows on resize.
             session.send(keys.ctrl("c") + keys.text("o"))
-            session.wait_for_region_text("body", "WP3 content 199")
-            session.assert_screen_text("WP3 content 199", match="contains", region="body")
-            _assert_selected(session, "wp3-199.txt", 10)
+            session.wait_for_region_text("body", "WP3 content 196")
+            session.assert_screen_text("WP3 content 196", match="contains", region="body")
+            _assert_selected(session, "wp3-196.txt", 9)
             session.resize(80, 42)
-            _assert_selected(session, "wp3-199.txt", 40)
+            _assert_selected(session, "wp3-196.txt", 37)
             _quit(session)
 
 
