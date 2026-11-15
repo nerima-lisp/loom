@@ -1050,7 +1050,47 @@
                    (loom/feature/files:visit-file path)
                    buffer)))
             (expect (loom/core/minibuffer:minibuffer-active-p minibuffer) :to-be-falsy)
-            (expect opened :to-equal (list buffer))))))))
+            (expect opened :to-equal (list buffer)))))))
+  (it "runs once when C-x b first shows a buffer whose first display was cancelled"
+    (cl-weave:expect-assertions 6)
+    (dolist (answer '("k" "r"))
+      (host-kit:with-temporary-directory (dir)
+        (let ((path (merge-pathnames "switched.txt" dir))
+              (load-file-buffer (fdefinition 'loom/feature/files::%load-file-buffer)))
+          (host-kit:write-file-string "disk" path)
+          (%with-minibuffer-state (minibuffer "source"
+                                   (source (%selected-test-buffer))
+                                   (session (editor-state-session *editor-state*)))
+            (flet ((switch-to (buffer)
+                     (loom/feature/buffers:switch-to-buffer)
+                     (%confirm-minibuffer minibuffer (buffer-name buffer)))
+                   ;; The event loop runs the :tick hooks after each command.
+                   (finish-command ()
+                     (loom/core/editor-session:run-session-hooks
+                      :tick session (get-universal-time))))
+              (multiple-value-bind (buffer opened)
+                  (%call-recording-file-opens
+                   (lambda ()
+                     (let ((buffer
+                             (with-replaced-function
+                                 (loom/feature/files::%load-file-buffer
+                                  (lambda (load-path &rest options)
+                                    (prog1 (apply load-file-buffer load-path options)
+                                      (host-kit:write-file-string "external" load-path))))
+                               (loom/feature/files:visit-file path))))
+                       (%confirm-minibuffer minibuffer "c")
+                       (finish-command)
+                       (switch-to buffer)
+                       (%confirm-minibuffer minibuffer answer)
+                       (finish-command)
+                       (expect (%selected-test-buffer) :to-be buffer)
+                       (switch-to source)
+                       (finish-command)
+                       (switch-to buffer)
+                       (finish-command)
+                       buffer)))
+                (expect (%selected-test-buffer) :to-be buffer)
+                (expect opened :to-equal (list buffer))))))))))
 
 (describe "backup copies"
   (it "keeps the original mode and never replaces an existing backup"

@@ -134,9 +134,24 @@ different owner is rejected."
   "Buffers this file loaded or created whose :AFTER-FILE-OPEN hooks have not run.
 A cancelled first display leaves the buffer here until a later visit shows it.")
 
-(defun %run-pending-file-open-hooks (buffer)
+(defun %run-pending-file-open-hooks (buffer &optional (session *editor-session*))
   (when (remhash buffer *file-open-pending-buffers*)
-    (run-session-hooks :after-file-open *editor-session* buffer)))
+    (run-session-hooks :after-file-open session buffer)))
+
+(defun %file-open-tick (session time)
+  "Run the pending :AFTER-FILE-OPEN hooks of each buffer a window now shows.
+The event loop runs :TICK after every command, so a buffer first shown by any
+switch (C-x b, the buffer menu, a window command) runs its hooks once, right
+after that command. With nothing pending this is one table count."
+  (declare (ignore time))
+  (when (and *editor-state* (plusp (hash-table-count *file-open-pending-buffers*)))
+    (dolist (window (loom/core/window-tree:window-tree-windows
+                     (editor-state-window-tree *editor-state*)))
+      (%run-pending-file-open-hooks (loom/core/window-tree:window-buffer window) session)))
+  nil)
+
+(eval-when (:load-toplevel :execute)
+  (register-session-hook :tick :feature/files #'%file-open-tick))
 
 (defun %new-file-open-buffer (buffer)
   (setf (gethash buffer *file-open-pending-buffers*) t)
