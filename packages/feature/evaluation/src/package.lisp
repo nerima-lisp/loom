@@ -29,6 +29,7 @@
            #:evaluation-result-output
            #:evaluation-result-error-output
            #:evaluation-result-error-message
+           #:evaluation-result-interrupted-p
            #:evaluation-result-success-p
            #:evaluation-result-text
            #:evaluate-lisp-source

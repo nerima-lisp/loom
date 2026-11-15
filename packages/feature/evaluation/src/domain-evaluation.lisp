@@ -6,17 +6,20 @@
                       (value-lines nil)
                       (output "")
                       (error-output "")
-                      error-message))
+                      error-message
+                      interrupted-p))
             (:copier nil))
   form-count
   value-lines
   output
   error-output
-  error-message)
+  error-message
+  interrupted-p)
 
 (defun evaluation-result-success-p (result)
-  "Return true when RESULT did not produce an evaluation error."
-  (null (evaluation-result-error-message result)))
+  "Return true when RESULT was neither interrupted nor ended by an evaluation error."
+  (and (null (evaluation-result-error-message result))
+       (not (evaluation-result-interrupted-p result))))
 
 (defun %write-evaluation-stream (stream label text)
   (when (string/= text "")
@@ -32,6 +35,7 @@
 (defun %evaluation-result-empty-p (result)
   (and (zerop (evaluation-result-form-count result))
        (null (evaluation-result-error-message result))
+       (not (evaluation-result-interrupted-p result))
        (string= (evaluation-result-output result) "")
        (string= (evaluation-result-error-output result) "")))
 
@@ -48,6 +52,8 @@
     (when (evaluation-result-error-message result)
       (format stream "Evaluation error: ~A~%"
               (evaluation-result-error-message result)))
+    (when (evaluation-result-interrupted-p result)
+      (format stream "Evaluation interrupted~%"))
     (when (%evaluation-result-empty-p result)
       (write-string "No forms evaluated." stream)
       (terpri stream))))

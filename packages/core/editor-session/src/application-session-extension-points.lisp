@@ -336,3 +336,30 @@
     (when failures
       (error (first failures)))
     (length tokens)))
+
+(defvar *evaluation-interrupter* nil)
+
+(defun set-evaluation-interrupter (function)
+  "Install FUNCTION as the process evaluation interrupter, or remove it with NIL.
+
+FUNCTION receives a thunk and an ON-INTERRUPT function or NIL, and returns two
+values: :COMPLETED and the list of the thunk's values, or :INTERRUPTED and the
+interruption reason. It calls ON-INTERRUPT on the evaluating thread before an
+interruption starts to unwind the thunk."
+  (unless (or (null function) (functionp function))
+    (error "Evaluation interrupter must be a function or NIL."))
+  (%with-session-extension-lock
+   (setf *evaluation-interrupter* function)))
+
+(defun call-with-evaluation-interrupter (thunk &key on-interrupt)
+  "Call THUNK under the installed interrupter, or directly when none is installed.
+
+Return :COMPLETED and THUNK's values as a list, or :INTERRUPTED and a reason.
+ON-INTERRUPT, when given, runs on this thread at the point an interruption is
+delivered, before any cleanup of THUNK runs; it must only record state."
+  (check-type thunk function)
+  (let ((interrupter
+         (%with-session-extension-lock *evaluation-interrupter*)))
+    (if interrupter
+        (funcall interrupter thunk on-interrupt)
+        (values :completed (multiple-value-list (funcall thunk))))))

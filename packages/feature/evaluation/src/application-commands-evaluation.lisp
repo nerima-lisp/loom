@@ -1,7 +1,9 @@
 (in-package #:loom/feature/evaluation)
 
 (defun %evaluation-status-message (result)
-  (if (evaluation-result-success-p result)
+  (cond
+    ((evaluation-result-interrupted-p result) "Evaluation interrupted")
+    ((evaluation-result-success-p result)
       (let* ((values (evaluation-result-value-lines result))
              (value (car (last values)))
              (number (and value (ignore-errors (parse-integer value)))))
@@ -17,12 +19,16 @@
                    number
                    (code-char (+ number 96))))
           ((string= value "NIL") "nil")
-          (t value)))
-      (evaluation-result-error-message result)))
+          (t value))))
+    (t (evaluation-result-error-message result))))
 
 (defun %evaluate-and-display (source &key last-expression-only insert-value-p silent-success-p)
   (multiple-value-bind (result evaluation-source)
-      (evaluate-lisp-source source :last-expression-only last-expression-only)
+      (evaluate-lisp-source
+       source
+       :last-expression-only last-expression-only
+       :call-with-interruption
+       (function loom/core/editor-session:call-with-evaluation-interrupter))
     (when evaluation-source
       (let ((minibuffer (editor-state-minibuffer *editor-state*)))
         (if (evaluation-result-success-p result)

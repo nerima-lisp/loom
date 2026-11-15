@@ -66,12 +66,38 @@ again as OWNER replaces its provider; a different owner is rejected."
         (setf error-message (princ-to-string condition))))
     (values form-count value-lines error-message)))
 
-(defun evaluate-lisp-source (source &key last-expression-only)
+(defun %call-without-interruption (thunk &key on-interrupt)
+  (declare (ignore on-interrupt))
+  (values :completed (multiple-value-list (funcall thunk))))
+
+(defun %evaluate-interruptibly (call-with-interruption source output-stream package
+                                on-interrupt)
+  "Return form count, value lines, error text, and whether evaluation was interrupted."
+  (multiple-value-bind (status forms-values)
+      (funcall call-with-interruption
+               (lambda ()
+                 (%evaluate-lisp-forms source output-stream package))
+               :on-interrupt on-interrupt)
+    (ecase status
+      (:completed (values-list (append forms-values (list nil))))
+      (:interrupted (values 0 nil nil t)))))
+
+(defun evaluate-lisp-source (source &key last-expression-only
+                                         (call-with-interruption
+                                          (function %call-without-interruption)))
   "Read and evaluate SOURCE forms in LOOM-USER until EOF or the first error.
 
 When LAST-EXPRESSION-ONLY is true, evaluate the last complete form before EOF.
 If reading fails, evaluate the unread tail to report the reader error. Return
 the evaluation result and selected source as a second value.
+
+CALL-WITH-INTERRUPTION receives the evaluation thunk and an :ON-INTERRUPT
+function, and returns :COMPLETED with the thunk's values as a list, or
+:INTERRUPTED. It is called outside the evaluator's error handlers, so an
+interruption is not reported as an error. An interrupted result keeps the
+standard output and the error output written before the interruption was
+delivered; error output written while the interruption unwinds, such as SBCL's
+report of a compilation it cut short, is dropped.
 
 Reader evaluation syntax such as #. is disabled, while the evaluated forms
 otherwise run with the same trusted access as user initialization code."
@@ -109,17 +135,33 @@ otherwise run with the same trusted access as user initialization code."
            (input-source (or evaluation-source ""))
            (output-stream (make-string-output-stream))
            (error-stream (make-string-output-stream))
-           (form-count 0)
-           (value-lines nil)
-           (error-message nil))
-      (let ((*error-output* error-stream))
-        (multiple-value-setq (form-count value-lines error-message)
-          (%evaluate-lisp-forms input-source output-stream package)))
-      (values
-       (make-evaluation-result
-        :form-count form-count
-        :value-lines value-lines
-        :output (get-output-stream-string output-stream)
-        :error-output (get-output-stream-string error-stream)
-        :error-message error-message)
-       evaluation-source))))
+           (error-length-at-interrupt nil))
+      (multiple-value-bind (form-count value-lines error-message interrupted-p)
+          (let ((*error-output* error-stream))
+            (%evaluate-interruptibly
+             call-with-interruption
+             input-source
+             output-stream
+             package
+             ;; Runs on this thread when the first interruption is delivered,
+             ;; before its unwind runs any cleanup that can write here.
+             ;; Error output the evaluated code writes between this marker and
+             ;; the kit's transfer is also cut; that gap stays open because no
+             ;; UI shows Error output and closing it would need kit changes.
+             (lambda ()
+               (unless error-length-at-interrupt
+                 (setf error-length-at-interrupt
+                       (file-position error-stream))))))
+        (values
+         (make-evaluation-result
+          :form-count form-count
+          :value-lines value-lines
+          :output (get-output-stream-string output-stream)
+          :error-output (let ((text (get-output-stream-string error-stream)))
+                          (if (and interrupted-p error-length-at-interrupt)
+                              (subseq text 0 (min error-length-at-interrupt
+                                                  (length text)))
+                              text))
+          :error-message error-message
+          :interrupted-p interrupted-p)
+         evaluation-source)))))

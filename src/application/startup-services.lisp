@@ -328,26 +328,114 @@ together."
    :from-end
    t))
 
+(defparameter *evaluation-signal-exit-grace-seconds*
+  1.0
+  "Seconds a forced signal interruption may take before Loom exits from a stuck evaluation.")
+
+(defun %exit-after-stuck-evaluation (state terminal-session byte
+                                           &key (exit (lambda (status)
+                                                        (sb-ext:exit :code status
+                                                                     :abort t))))
+  "Finish the session for termination BYTE through the loop's shutdown path, then exit.
+
+This is the last resort for evaluated cleanup that keeps replacing every forced
+transfer, so the evaluation never reaches its boundary. It runs on the watchdog
+thread while the main thread is still inside the evaluation, so it rebinds the
+session that %CALL-WITH-STARTED-EDITOR-STATE binds on the main thread. In the
+order of %RUN-LOOM-SESSION, %CALL-WITH-STARTED-EDITOR-STATE, and %RUN-LOOM, it
+runs the :SHUTDOWN hooks (which write recovery data), cancels background work,
+restores the terminal, stops the editor services, and lets the :EXIT-STATUS
+hooks choose the status. EXIT receives that status; the default calls _exit
+without unwinding or waiting for the main thread."
+  (let* ((*editor-state* state)
+         (session (editor-state-session state))
+         (reason (%evaluation-termination-reason byte))
+         (status (if (eql byte 1) 143 129))
+         (failures nil))
+    ;; The evaluation thread waits for this exit after losing the exit claim,
+    ;; so the process must end however the steps below fail.
+    (unwind-protect
+        (macrolet ((attempt (form)
+                     `(handler-case ,form
+                        (error (condition)
+                          (push condition failures)))))
+          (loom/core/editor-session:call-with-editor-session
+           session
+           (lambda ()
+             (attempt (loom/core/editor-session:run-session-hooks :shutdown session reason))
+             (attempt (loom/core/editor-session:cancel-session-background-work session))
+             (attempt (loom/core/editor-session:set-session-wake-function session nil))
+             (attempt (%uninstall-loom-terminal-signal-handlers))
+             (attempt (%close-loom-terminal-session terminal-session))
+             (attempt (%shutdown-editor-services state))
+             (unless failures
+               (attempt
+                (setf status
+                      (or (first
+                           (loom/core/editor-session:run-session-hooks
+                            :exit-status session reason))
+                          status))))))
+          (when failures
+            (setf status 1)
+            (mapc (function %log-loom-error) (nreverse failures))
+            (finish-output *error-output*)))
+      (funcall exit status))))
+
+(defun %evaluation-exit-watchdog-starter (terminal-session &key
+                                                           (grace-seconds
+                                                            *evaluation-signal-exit-grace-seconds*)
+                                                           (exit-function
+                                                            (function
+                                                             %exit-after-stuck-evaluation)))
+  "Return a function that starts the D20 watchdog for an interrupted evaluation."
+  (let ((editor-state *editor-state*))
+    (lambda (evaluation byte)
+      (sb-thread:make-thread
+       (lambda ()
+         (handler-case
+             (progn
+               (sleep grace-seconds)
+               (when (%claim-evaluation-exit evaluation :watchdog)
+                 (funcall exit-function editor-state terminal-session byte)))
+           (error (condition)
+             (%log-loom-error condition))))
+       :name "loom evaluation exit watchdog"))))
+
+(defun %install-evaluation-interrupter (terminal-session)
+  (let ((fd (%loom-terminal-session-fd terminal-session))
+        (input-stream *standard-input*))
+    (loom/core/editor-session:set-evaluation-interrupter
+     (lambda (thunk on-interrupt)
+       (%call-with-evaluation-interruption fd input-stream thunk on-interrupt)))))
+
 (defun %install-loom-terminal-signal-handlers (terminal-session)
   ;; Wake bytes 1-4 carry lifecycle signals; byte 5 requests a resize redraw.
-  (dolist
-      (entry
-       (list (cons sb-unix:sigterm 1)
-             (cons sb-unix:sighup 2)
-             (cons sb-unix:sigtstp 3)
-             (cons sb-unix:sigcont 4)
-             (cons sb-unix:sigwinch 5)))
-    (let ((signal (car entry))
-          (byte (cdr entry)))
-      (sb-sys:enable-interrupt signal
-                               (lambda (&rest arguments)
-                                 (declare (ignore arguments))
-                                 (unless
-                                     (and (= byte 4)
-                                          (%loom-terminal-session-suspended-p
-                                           terminal-session))
-                                   (%wake-loom-terminal-session terminal-session
-                                                                byte))))))
+  (let ((start-exit-watchdog
+         (%evaluation-exit-watchdog-starter terminal-session)))
+    (dolist
+        (entry
+         (list (cons sb-unix:sigterm 1)
+               (cons sb-unix:sighup 2)
+               (cons sb-unix:sigtstp 3)
+               (cons sb-unix:sigcont 4)
+               (cons sb-unix:sigwinch 5)))
+      (let ((signal (car entry))
+            (byte (cdr entry)))
+        (sb-sys:enable-interrupt signal
+                                 (lambda (&rest arguments)
+                                   (declare (ignore arguments))
+                                   (unless
+                                       (and (= byte 4)
+                                            (%loom-terminal-session-suspended-p
+                                             terminal-session))
+                                     (%wake-loom-terminal-session terminal-session
+                                                                  byte))
+                                   ;; Must stay last: see the function's docstring.
+                                   (when (or (= byte 1) (= byte 2))
+                                     (%request-evaluation-signal-interruption
+                                      byte
+                                      start-exit-watchdog)))))))
+  (%install-evaluation-interrupter terminal-session)
   terminal-session)
 
 (defun %uninstall-loom-terminal-signal-handlers ()
@@ -359,6 +447,8 @@ together."
              sb-unix:sigcont
              sb-unix:sigwinch))
     (sb-sys:enable-interrupt signal :default))
+  (loom/core/editor-session:set-evaluation-interrupter nil)
+  (setf *evaluation-termination-signal* nil)
   nil)
 
 (defun %close-loom-terminal-session (terminal-session)

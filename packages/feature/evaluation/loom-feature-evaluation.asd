@@ -19,7 +19,10 @@
 (asdf:defsystem "loom-feature-evaluation/test"
   :depends-on ("loom-feature-evaluation"
                "loom/test-support"
-               "cl-weave")
+               "cl-weave"
+               "cl-tty-kit"
+               "cl-concurrent-kit"
+               "cl-host-kit")
   :serial t
   :components
   ((:module "t"
@@ -29,4 +32,10 @@
       :serial t
       :components
       ((:file "evaluation-test")
-       (:file "evaluation-result-test")))))))
+       (:file "evaluation-result-test")))
+     (:module "integration"
+      :serial t
+      :components
+      ((:file "evaluation-interruption-test")
+       (:file "input-monitor-probe-test")
+       (:file "concurrent-kit-interruption-probe-test")))))))
