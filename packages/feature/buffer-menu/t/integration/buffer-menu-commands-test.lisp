@@ -350,17 +350,30 @@ keep their registration, so file buffers keep their disk snapshots."
                 :to-equal (list #\D #\D #\Space)))))
 
   (it
-    "skips a D mark on the buffer list itself"
+    "kills a D-marked buffer list after the other D lines and drops its state"
     (%with-minibuffer-state (minibuffer "")
-      (let ((a (make-buffer :name "a.txt" :initial-content "alpha")))
-        (%buffer-menu-register (list a))
+      (let ((tree (editor-state-window-tree *editor-state*))
+            (a (make-buffer :name "a.txt" :initial-content "alpha"))
+            (b (make-buffer :name "b.txt" :initial-content "bravo")))
+        (%buffer-menu-register (list a b))
         (loom/feature/buffer-menu:list-buffers)
         (%buffer-menu-select-list-window)
-        (loom/feature/buffer-menu:buffer-menu-next-line)
-        (loom/feature/buffer-menu:buffer-menu-delete)
-        (loom/feature/buffer-menu:buffer-menu-execute)
-        (expect (%buffer-menu-live-p (%buffer-menu-list-buffer)) :to-be-truthy)
-        (expect (%buffer-menu-live-p a) :to-be-truthy)))))
+        (let ((list-buffer (%buffer-menu-list-buffer)))
+          (loom/feature/buffer-menu:buffer-menu-delete)
+          (loom/feature/buffer-menu:buffer-menu-next-line)
+          (loom/feature/buffer-menu:buffer-menu-delete)
+          (loom/feature/buffer-menu:buffer-menu-execute)
+          (expect (%buffer-menu-live-p a) :to-be nil)
+          (expect (%buffer-menu-live-p list-buffer) :to-be nil)
+          (expect (%buffer-menu-live-p b) :to-be-truthy)
+          (expect (gethash list-buffer
+                           loom/feature/buffer-menu::*buffer-menu-states*)
+                  :to-be nil)
+          (expect (loom:minibuffer-message-string minibuffer)
+                  :to-equal "Killed *Buffer List*")
+          (expect (every (lambda (window) (eq (window-buffer window) b))
+                         (window-tree-windows tree))
+                  :to-be t))))))
 
 (describe
   "buffer menu key-input hook"

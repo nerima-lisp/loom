@@ -134,17 +134,25 @@ buffer on the line at point (NIL past the last entry)."
   "Save the S lines, then kill the D lines, from top to bottom.
 
 A save answered n keeps its mark and continues. A cancelled save or kill
-(c, C-g, or an error) stops; the remaining marks stay. The list is rebuilt
-afterwards without replacing the last message."
+(c, C-g, or an error) stops; the remaining marks stay. A D mark on the list
+itself kills it last. Unless the list was killed, it is rebuilt afterwards
+without replacing the last message."
   (%with-buffer-menu (list-buffer state entry)
-    (let ((marks (buffer-menu-state-marks state))
-          (deletes (%marked-buffers state :delete list-buffer)))
+    (let* ((marks (buffer-menu-state-marks state))
+           (deletes
+             (append (%marked-buffers state :delete list-buffer)
+                     (and (eq (gethash list-buffer marks) :delete)
+                          (list list-buffer)))))
       (labels ((finish ()
                  (%refresh-buffer-menu list-buffer state))
                (kill-next (remaining)
                  (let ((buffer (first remaining)))
                    (cond
                      ((null remaining) (finish))
+                     ((eq buffer list-buffer)
+                      ;; Last entry; its :buffer-close hook drops STATE.
+                      (kill-buffer-with-confirmation list-buffer
+                                                     :on-cancelled #'finish))
                      ((not (%buffer-menu-live-p buffer))
                       (kill-next (rest remaining)))
                      (t
