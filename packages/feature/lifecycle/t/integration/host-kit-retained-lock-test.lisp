@@ -1,5 +1,18 @@
 (in-package #:loom/test)
 
+(defun %host-kit-lock-holder-environment (directory)
+  ;; The holder reads SBCL and ASDF configuration from HOME and XDG paths;
+  ;; point them at the test's temporary directory.
+  (let ((overrides '("HOME" "XDG_CONFIG_HOME" "XDG_DATA_HOME" "XDG_CACHE_HOME"))
+        (home (sb-ext:native-namestring directory)))
+    (append (mapcar (lambda (name) (format nil "~A=~A" name home)) overrides)
+            (remove-if (lambda (entry)
+                         (some (lambda (name)
+                                 (uiop:string-prefix-p
+                                  (concatenate 'string name "=") entry))
+                               overrides))
+                       (sb-ext:posix-environ)))))
+
 (defun %start-host-kit-lock-holder (target ready &key expect-conflict)
   (let ((form
           (format nil
@@ -15,7 +28,7 @@
                   (namestring ready))))
     (sb-ext:run-program
      (namestring sb-ext:*runtime-pathname*)
-     (list "--noinform" "--non-interactive"
+     (list "--noinform" "--non-interactive" "--no-sysinit" "--no-userinit"
            "--eval" "(require :asdf)"
            "--eval" (format nil
                             "(asdf:initialize-output-translations '(:output-translations (t ~S) :ignore-inherited-configuration))"
@@ -26,7 +39,9 @@
                             (namestring (asdf:system-source-file "cl-host-kit")))
            "--eval" "(asdf:load-system \"cl-host-kit\")"
            "--eval" form)
-     :wait nil :input :stream :output nil :error *error-output*)))
+     :wait nil :input :stream :output nil :error *error-output*
+     :environment (%host-kit-lock-holder-environment
+                   (make-pathname :name nil :type nil :defaults ready)))))
 
 (defun %wait-for-host-kit-lock-holder (process ready)
   (let ((deadline (+ (get-internal-real-time)

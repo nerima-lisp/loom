@@ -17,7 +17,8 @@
 (asdf:defsystem "loom-feature-lifecycle/test"
   :depends-on ("loom-feature-lifecycle" "loom/test-support"
                                         "cl-weave"
-                                        "cl-host-kit")
+                                        "cl-host-kit"
+                                        "cl-vcs-kit")
   :serial t
   :components ((:module "t"
                         :serial
@@ -28,4 +29,6 @@
                                   t
                                   :components
                                   ((:file "commands-editing-quit-test")
-                                   (:file "commands-quit-test")))))))
+                                   (:file "commands-quit-test")
+                                   (:file "host-kit-retained-lock-test")
+                                   (:file "line-diff-test")))))))

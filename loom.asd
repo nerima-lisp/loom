@@ -155,9 +155,7 @@ root source tree responsible for every feature."
    (:file "t/integration/main-startup-test")
    (:file "t/integration/main-initialize-test")
    (:file "t/integration/advanced-test")
-   (:file "t/integration/editor-flow-test")
-   (:file "t/integration/host-kit-retained-lock-test")
-   (:file "t/integration/line-diff-test"))
+   (:file "t/integration/editor-flow-test"))
   :perform
   (asdf:test-op (o s)
              (declare (ignore o s))
