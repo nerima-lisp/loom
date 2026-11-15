@@ -87,7 +87,9 @@ its UTF-8 octets as 16 lowercase hex digits, with type lock."
 (defun read-lock-owner (pathname)
   "Return the (:pid :host :path) plist recorded in lock file PATHNAME, or NIL.
 Only the first form is read, with evaluation and # syntax disabled; files over
-4 KiB, unreadable files, and malformed forms yield NIL."
+4 KiB, unreadable files, and malformed forms yield NIL. Call it only for a lock
+this process does not hold: closing the descriptor it opens would release a
+POSIX lock this process holds on the same file."
   (handler-case
       (let ((metadata (host-kit:file-metadata pathname)))
         (when (and (eq (host-kit:file-metadata-kind metadata) :regular-file)
@@ -190,20 +192,20 @@ tried to lock, as after write-file or the first save of a new buffer."
       (lock-buffer-file buffer))))
 
 (defun %own-file-lock-p (buffer)
-  "True when BUFFER holds the lock of its current file and the lock file names
-this process, by pid and host, as its owner."
+  "True when this process holds the lock of BUFFER's current file, judged from
+the lock tables alone. The lock file is not opened: closing any other
+descriptor for a held lock file would release this process's POSIX lock."
   (let ((truename (and *loom-state-directory* (buffer-file-truename buffer))))
     (and truename
-         (let ((record (sb-thread:with-mutex (*file-locks-mutex*)
-                         (gethash buffer *buffer-file-locks*))))
-           (and record (cdr record) (string= (car record) truename)))
-         (let ((owner (read-lock-owner
-                       (merge-pathnames (file-lock-name truename)
-                                        (%state-subdirectory "locks/")))))
-           (and owner
-                (eql (getf owner :pid) (sb-posix:getpid))
-                (string= (getf owner :host) (host-kit:hostname))
-                (string= (getf owner :path) truename))))))
+         (sb-thread:with-mutex (*file-locks-mutex*)
+           (let ((record (gethash buffer *buffer-file-locks*))
+                 (held (gethash (file-lock-name truename) *held-file-locks*)))
+             (and record
+                  (cdr record)
+                  (string= (car record) truename)
+                  held
+                  (string= (%held-file-lock-truename held) truename)
+                  (plusp (%held-file-lock-count held))))))))
 
 (defun release-all-file-locks ()
   "Release every file lock this process holds. Safe on any thread."

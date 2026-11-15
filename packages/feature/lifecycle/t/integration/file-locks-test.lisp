@@ -31,6 +31,16 @@
                        loom/feature/lifecycle::*held-file-locks*)))
     (and held (loom/feature/lifecycle::%held-file-lock-count held))))
 
+(defun %lock-test-held-owner (path)
+  "Return the owner form this process wrote into its held lock for PATH, read
+through the lock's own stream. Opening the lock file again and closing that
+descriptor would release this process's POSIX lock."
+  (let* ((held (gethash (loom/feature/lifecycle:file-lock-name (%lock-test-truename path))
+                        loom/feature/lifecycle::*held-file-locks*))
+         (stream (host-kit:file-lock-stream (loom/feature/lifecycle::%held-file-lock-lock held))))
+    (file-position stream 0)
+    (loom/feature/lifecycle::%read-first-recovery-form (read-line stream))))
+
 (defun %start-lock-holder-process (target ready)
   "Start an SBCL process that holds a cl-host-kit lock on TARGET until it reads
 a line. READY appears once the lock is held."
@@ -87,7 +97,7 @@ a line. READY appears once the lock is held."
              (buffer (make-buffer :name "notes [1].txt" :path path)))
         (expect (loom/feature/lifecycle:lock-buffer-file buffer) :to-be :held)
         (let* ((lock-path (%lock-test-lock-path state path))
-               (owner (loom/feature/lifecycle:read-lock-owner lock-path)))
+               (owner (%lock-test-held-owner path)))
           (expect (%recovery-test-mode (merge-pathnames "locks/" state)) :to-equal #o700)
           (expect (%recovery-test-mode lock-path) :to-equal #o600)
           (expect (getf owner :pid) :to-equal (sb-posix:getpid))
@@ -192,9 +202,7 @@ a line. READY appears once the lock is held."
           (funcall (loom/core/minibuffer::%minibuffer-on-confirm minibuffer) new-path)
           (expect (host-kit:read-file-string new-path) :to-equal "draft")
           (expect (%lock-test-hold-count new-path) :to-equal 1)
-          (expect (getf (loom/feature/lifecycle:read-lock-owner
-                         (%lock-test-lock-path state new-path))
-                        :path)
+          (expect (getf (%lock-test-held-owner new-path) :path)
                   :to-equal (%lock-test-truename new-path))))))
 
   (it "releases every held lock from another thread at shutdown"

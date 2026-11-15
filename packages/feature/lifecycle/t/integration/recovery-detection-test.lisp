@@ -288,24 +288,40 @@ PATH's hash. Return both."
                    (expect (host-kit:path-exists-p stale) :to-be t))))
           (when process (%stop-lock-holder-process process))))))
 
-  (it "leaves staging files after a save when the lock file names another owner"
-    (cl-weave:expect-assertions 2)
+  (it "keeps the OS lock and deletes staging files after a file is opened and saved"
+    (cl-weave:expect-assertions 4)
     (%with-lock-test-state (state)
-      (let* ((path (%lock-test-file state "taken.txt" "saved
+      (let* ((path (%lock-test-file state "kept.txt" "saved
 "))
-             (stale (%lock-test-file state "#taken.txt#.QWErty.tmp"))
-             (lock-path (%lock-test-lock-path state path)))
+             (stale (%lock-test-file state "#kept.txt#.QWErty.tmp"))
+             (lock-path (%lock-test-lock-path state path))
+             (ready (merge-pathnames "contender-ready" state)))
         (%with-minibuffer-state (minibuffer "")
           (let ((buffer (loom/feature/files:visit-file path)))
-            (expect (%lock-test-hold-count path) :to-equal 1)
             (host-kit:write-file-string "again" stale)
-            (%write-lock-test-owner
-             lock-path
-             (format nil "(:pid ~D :host \"elsewhere\" :path ~S)~%"
-                     (1+ (sb-posix:getpid)) (%lock-test-truename path)))
             (buffer-insert-string buffer "X")
             (buffer-save buffer)
-            (expect (host-kit:path-exists-p stale) :to-be t))))))
+            (expect (%lock-test-hold-count path) :to-equal 1)
+            (expect (host-kit:path-exists-p stale) :to-be nil)
+            ;; Another process must still fail to take the lock.
+            (let ((process (%start-host-kit-lock-holder lock-path ready
+                                                        :expect-conflict t)))
+              (unwind-protect
+                   (progn
+                     (expect (handler-case
+                                 (progn (%wait-for-host-kit-lock-holder process ready)
+                                        :conflict)
+                               (error () :acquired))
+                             :to-be :conflict)
+                     (ignore-errors
+                      (write-line "exit" (sb-ext:process-input process))
+                      (finish-output (sb-ext:process-input process)))
+                     (sb-ext:process-wait process)
+                     (expect (sb-ext:process-exit-code process) :to-equal 0))
+                (when (sb-ext:process-alive-p process)
+                  (sb-ext:process-kill process 15))
+                (sb-ext:process-wait process)
+                (ignore-errors (close (sb-ext:process-input process))))))))))
 
   (it "delivers queued lifecycle messages to *Messages* sinks on the next tick"
     (cl-weave:expect-assertions 2)
