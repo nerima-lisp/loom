@@ -35,4 +35,22 @@
     (expect (loom/core/editor-session:native-path-namestring "/tmp/a\\b [1].txt")
             :to-equal "/tmp/a\\b [1].txt")
     (expect (loom/core/editor-session:native-path-basename "/tmp/sub/a [1].txt")
-            :to-equal "a [1].txt")))
+            :to-equal "a [1].txt"))
+
+  (it "parses a given file name with * ? [ or \\ as the literal native name"
+    (cl-weave:expect-assertions 6)
+    (let ((literal (loom/core/editor-session:literal-file-path "/tmp/a*b?c[d]\\e.txt")))
+      (expect (wild-pathname-p literal) :to-be nil)
+      (expect (sb-ext:native-namestring literal) :to-equal "/tmp/a*b?c[d]\\e.txt"))
+    (expect (sb-ext:native-namestring
+             (loom/core/editor-session:literal-file-path "~/x[1].txt"))
+            :to-equal (concatenate 'string
+                                   (sb-ext:native-namestring (user-homedir-pathname))
+                                   "x[1].txt"))
+    (expect (loom/core/editor-session:literal-file-path "~/plain.txt")
+            :to-equal "~/plain.txt")
+    (let ((native (sb-ext:parse-native-namestring "/tmp/a[1].txt")))
+      (expect (loom/core/editor-session:literal-file-path native) :to-be native))
+    (expect (sb-ext:native-namestring
+             (loom/core/editor-session:literal-file-path (pathname "/tmp/a[1].txt")))
+            :to-equal "/tmp/a[1].txt")))

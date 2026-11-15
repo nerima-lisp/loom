@@ -26,3 +26,25 @@ A string is parsed with PATHNAME first."
   (let ((native (string-right-trim
                  "/" (native-path-namestring (pathname path)))))
     (subseq native (1+ (or (position #\/ native :from-end t) -1)))))
+
+(defun literal-file-path (path)
+  "Return a path designator that names the file the user or a kit gave as PATH.
+A string holding * ? [ or \\ is the operating system's name for the file, so it
+is parsed natively, with a leading ~/ read as the home directory. Any other
+string is returned as is for callers that parse it with PATHNAME. A pathname is
+returned as is, except that a wild one is read through the text of its
+namestring."
+  (cond
+    ((not (stringp path))
+     (let ((pathname (pathname path)))
+       (if (wild-pathname-p pathname)
+           (sb-ext:parse-native-namestring (namestring pathname))
+           pathname)))
+    ((not (find-if (lambda (character) (find character "*?[\\")) path))
+     path)
+    ((and (>= (length path) 2) (string= "~/" path :end2 2))
+     (sb-ext:parse-native-namestring
+      (concatenate 'string
+                   (sb-ext:native-namestring (user-homedir-pathname))
+                   (subseq path 2))))
+    (t (sb-ext:parse-native-namestring path))))

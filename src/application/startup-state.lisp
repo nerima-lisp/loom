@@ -8,7 +8,8 @@ directory becomes the file-tree root. A missing file is accepted below the
 nearest existing parent directory, which becomes the file-tree root. A
 directory (or no argument) retains the scratch buffer and is itself the root."
   (let* ((root (or argument "."))
-         (resolved (probe-file root)))
+         (resolved
+           (probe-file (loom/core/editor-session:literal-file-path root))))
     (labels ((nearest-existing-directory (directory missing-components)
                (let ((existing (probe-file directory)))
                  (if (and existing (host-kit:directory-pathname-p existing))
@@ -25,8 +26,9 @@ directory (or no argument) retains the scratch buffer and is itself the root."
       (cond
         ((and argument (null resolved))
          (let* ((target-path
-                  (merge-pathnames (pathname argument)
-                                   *default-pathname-defaults*))
+                  (merge-pathnames
+                   (pathname (loom/core/editor-session:literal-file-path argument))
+                   *default-pathname-defaults*))
                 (parent-path
                   (host-kit:pathname-directory-pathname target-path)))
            (multiple-value-bind (parent missing-components)
@@ -64,7 +66,7 @@ New files use the files feature constructor to initialize save metadata."
           (loom/feature/files:make-file-buffer
            startup-file
            :name
-           (file-namestring startup-file)))
+           (loom/core/editor-session:native-path-basename startup-file)))
       (make-buffer :name "*scratch*")))
 
 (defun %make-startup-window-tree (initial-buffer width height)

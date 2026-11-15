@@ -36,6 +36,7 @@
                 #:editor-state-minibuffer
                 #:editor-state-recent-files
                 #:editor-state-window-tree
+                #:literal-file-path
                 #:native-path-basename
                 #:native-path-namestring
                 #:register-session-hook

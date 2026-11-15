@@ -151,7 +151,7 @@ A buffer loaded by this call runs the :AFTER-FILE-OPEN hooks once it is shown."
 The public form of what FIND-FILE does once it has a path, for callers that
 already know which file to open -- a definition jump, for one -- and have no
 prompt to run. Returns the buffer, or NIL when PATH does not exist."
-  (let ((existing (probe-file path)))
+  (let ((existing (probe-file (literal-file-path path))))
     (when existing
       (%visit-existing-file existing))))
 
@@ -164,8 +164,9 @@ an empty buffer associated with that path, so a later save creates the file."
    (minibuffer (editor-state-minibuffer *editor-state*)
                :on-cancel
                (minibuffer-message minibuffer "Quit"))
-   ((path "Find file: " :completion-function #'%find-file-candidates))
-   (let* ((existing-path (probe-file path))
+   ((input "Find file: " :completion-function #'%find-file-candidates))
+   (let* ((path (literal-file-path input))
+          (existing-path (probe-file path))
           (directory-p
             (and existing-path (host-kit:directory-pathname-p existing-path)))
           (existing-buffer
@@ -174,7 +175,7 @@ an empty buffer associated with that path, so a later save creates the file."
      (cond
        (directory-p
         (minibuffer-message (editor-state-minibuffer *editor-state*)
-                            (format nil "Cannot open directory: ~A" path)))
+                            (format nil "Cannot open directory: ~A" input)))
        (existing-buffer (%visit-existing-file (or existing-path path)))
        (existing-path (%visit-existing-file existing-path))
        (t

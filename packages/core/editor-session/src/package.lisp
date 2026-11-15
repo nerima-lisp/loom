@@ -119,4 +119,5 @@
                      #:set-evaluation-interrupter
                      #:call-with-evaluation-interrupter
                      #:native-path-namestring
-                     #:native-path-basename))
+                     #:native-path-basename
+                     #:literal-file-path))
