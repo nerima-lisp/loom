@@ -24,11 +24,13 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
   ;; handler. CONFIRM-SAVE-BUFFER passes a function that receives :SKIPPED or
   ;; :CANCELLED, so every path that does not write the file reports once.
   (defun %finish-save (on-outcome outcome text)
-    "Pass OUTCOME to ON-OUTCOME, when there is one, and then show TEXT.
-Calling first keeps the outcome independent of the message display."
-    (when on-outcome
-      (funcall on-outcome outcome))
-    (minibuffer-message (editor-state-minibuffer *editor-state*) text))
+    "Show TEXT, then pass OUTCOME to ON-OUTCOME when there is one.
+The callback runs even if showing TEXT fails, and a message from whatever
+it continues with stays on screen."
+    (unwind-protect
+         (minibuffer-message (editor-state-minibuffer *editor-state*) text)
+      (when on-outcome
+        (funcall on-outcome outcome))))
 
   (defun %call-save-step (on-outcome function)
     "Return FUNCTION's value and NIL. With ON-OUTCOME, an error finishes the
