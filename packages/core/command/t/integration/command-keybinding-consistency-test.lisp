@@ -231,3 +231,13 @@
                  (keymap-lookup active global-key))
                 :to-equal
                 (list "execute-extended-command" fallback))))))
+(describe
+  "Emacs keymap reference status"
+  (it "has no pending rows after implementation"
+    (load (asdf:system-relative-pathname
+           "loom-core-command" "t/emacs-keymap-reference.lisp"))
+    (let ((reference
+            (symbol-value
+             (find-symbol "*EMACS-KEYMAP-REFERENCE*" "LOOM/TEST"))))
+      (expect (count :pending reference :key (lambda (row) (getf row :status)))
+              :to-equal 0))))

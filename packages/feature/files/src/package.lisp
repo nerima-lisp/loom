@@ -4,6 +4,7 @@
                 #:find-buffer-by-name
                 #:find-buffer-by-path
                 #:register-buffer
+                #:register-buffer-save-handler
                 #:register-buffer-switch-guard
                 #:registered-buffers
                 #:run-buffer-switch-guard)
@@ -48,6 +49,7 @@
            #:recent-file
            #:save-buffer
            #:confirm-save-buffer
+           #:save-some-buffers
            #:write-file
            #:revert-buffer
            #:file-format-indicator

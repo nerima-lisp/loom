@@ -34,3 +34,15 @@
                        :needs-region nil
                        :external 'nil
                        :modes '(:all)))
+(progn
+  (register-command-spec :feature/files "save-some-buffers" "save-some-buffers" #'loom/feature/files:save-some-buffers
+                       :keys '(((:control #\x) #\s))
+                       :keymap :global
+                       :group "files and projects"
+                       :help "C-x s Save some"
+                       :help-order 43
+                       :mutates t
+                       :prompts '(:char)
+                       :needs-region nil
+                       :external 'nil
+                       :modes '(:all)))

@@ -77,6 +77,27 @@
           (expect (find buffer (%test-registered-buffers *editor-state*) :test #'eq)
                   :to-be nil)
           (expect (buffer-modified-p buffer) :to-be nil)))))
+  (it
+    "asks before killing a file buffer changed on disk"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "draft.txt" directory)))
+        (host-kit:write-file-string "draft" path)
+        (%with-minibuffer-state (minibuffer "selected")
+          (let ((buffer (loom/feature/files:visit-file path)))
+            (buffer-insert-string buffer "!")
+            (host-kit:write-file-string "external" path)
+            (loom/feature/buffers:kill-buffer)
+            (%confirm-minibuffer minibuffer "draft.txt")
+            (%confirm-minibuffer minibuffer "s")
+            (expect (search "File changed on disk. Overwrite? (y/n): "
+                            (minibuffer-prompt-string minibuffer))
+                    :to-equal 0)
+            (%confirm-minibuffer minibuffer "n")
+            (expect (host-kit:read-file-string path) :to-equal "external")
+            (expect (find buffer (%test-registered-buffers *editor-state*)
+                          :test (function eq))
+                    :to-be buffer)
+            (expect (buffer-modified-p buffer) :to-be t))))))
 
   (it
     "cancels and then discards a modified scratch buffer"

@@ -142,6 +142,61 @@
       ]
     },
     {
+      "name": "command-path/r1/save-some-buffers/key",
+      "path_id": "r1:save-some-buffers:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22s%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]}",
+      "commands": [
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "s"
+      ],
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "(No files need saving)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
+      "name": "command-path/r1/save-some-buffers/mx",
+      "path_id": "r1:save-some-buffers:mx",
+      "lane": "W3-3",
+      "rule": "r1",
+      "entry": "mx",
+      "commands": [
+        "execute-extended-command",
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "entry_mode": "mx",
+      "initial_bytes": "alpha beta\n",
+      "expected_bytes": "alpha beta\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "(No files need saving)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta"
+        }
+      ]
+    },
+    {
       "name": "command-path/r1/recent-file/key",
       "path_id": "r1:recent-file:key:%7B%22keymap%22%3A%22global%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22x%22%2C%22modifiers%22%3A%5B%22control%22%5D%7D%2C%7B%22key%22%3A%22r%22%2C%22modifiers%22%3A%5B%5D%7D%2C%7B%22key%22%3A%22f%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
       "lane": "W3-3",

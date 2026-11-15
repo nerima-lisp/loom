@@ -4,7 +4,6 @@
                 #:buffer-modified-p
                 #:buffer-name
                 #:buffer-path
-                #:buffer-save
                 #:make-buffer)
   (:import-from #:loom/core/editor-session
                 #:*editor-session*
@@ -30,6 +29,7 @@
            #:find-buffer-by-path
            #:ensure-result-buffer
            #:register-buffer-switch-guard
+           #:register-buffer-save-handler
            #:run-buffer-switch-guard
            #:switch-to-buffer
            #:kill-buffer

@@ -67,7 +67,7 @@ a measurable string rather than a bounds check of their own."
          (number-width (length (write-to-string line-count)))
          (gutter-width (1+ number-width)))
     (if (or (member (%layout-buffer-major-mode buffer)
-                    '(:fundamental :markdown :org :text)
+                    '(:buffer-menu :fundamental :markdown :org :text)
                     :test #'eq)
             (< width (1+ gutter-width)))
         0

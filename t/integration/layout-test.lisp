@@ -21,6 +21,11 @@
 (describe
   "window buffer layout mode"
   (it
+    "does not reserve a line-number gutter for the buffer menu"
+    (let ((buffer (make-buffer :initial-content "buffer one")))
+      (buffer-set-major-mode buffer :buffer-menu)
+      (expect (loom::%layout-window-gutter-width buffer 80) :to-equal 0)))
+  (it
     "draws both truncated and wrapped buffer views through the layout helper"
     (let ((truncated (%fresh-layout-state :content "abcdef" :width 3 :height 2))
           (wrapped (%fresh-layout-state :content "abcdef" :width 3 :height 2)))

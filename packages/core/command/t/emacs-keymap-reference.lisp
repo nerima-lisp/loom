@@ -110,7 +110,7 @@
     (:id "save-some-buffers-control-x-s"
      :keys (((:control) . #\x) #\s) :emacs "save-some-buffers"
      :target "save-some-buffers" :target-map :global
-     :effective :not-asserted :owner :w3-3 :status :pending)
+     :effective "save-some-buffers" :owner :w3-3 :status :implemented)
     (:id "eval-last-sexp-control-x-control-e"
      :keys (((:control) . #\x) ((:control) . #\e)) :emacs "eval-last-sexp"
      :target "eval-last-sexp" :target-map :global

@@ -391,3 +391,61 @@ buffer. Undo history is not transferred."
                        (%prompt-buffer-switch buffer current continuation)))))))
           (funcall continuation))))
   (register-buffer-switch-guard :feature/files #'%guard-file-buffer-switch))
+(progn
+  (register-buffer-save-handler #'confirm-save-buffer)
+  (defun save-some-buffers ()
+    "Prompt to save each modified file buffer in registration order."
+    (let* ((minibuffer (editor-state-minibuffer *editor-state*))
+           (targets
+             (remove-if-not
+              (lambda (buffer)
+                (and (buffer-path buffer)
+                     (buffer-modified-p buffer)))
+              (registered-buffers *editor-session*))))
+      (labels ((finish (saved)
+                 (minibuffer-message
+                  minibuffer
+                  (format nil "Saved ~D file(s)" saved)))
+               (confirm-and-continue (buffer remaining saved save-all-p)
+                 (confirm-save-buffer
+                  buffer
+                  :on-saved
+                  (lambda ()
+                    (next remaining (1+ saved) save-all-p))
+                  :on-skipped
+                  (lambda ()
+                    (next remaining saved save-all-p))))
+               (next (buffers saved save-all-p)
+                 (if (null buffers)
+                     (finish saved)
+                     (let ((buffer (first buffers))
+                           (remaining (rest buffers)))
+                       (if save-all-p
+                           (confirm-and-continue
+                            buffer remaining saved t)
+                           (minibuffer-activate
+                            minibuffer
+                            (format nil
+                                    "Save file ~A? (y, n, !, q, C-g)"
+                                    (buffer-path buffer))
+                            :input-kind :char
+                            :allowed-characters "yn!q"
+                            :on-confirm
+                            (lambda (answer)
+                              (case (char answer 0)
+                                (#\y
+                                 (confirm-and-continue
+                                  buffer remaining saved nil))
+                                (#\n
+                                 (next remaining saved nil))
+                                (#\!
+                                 (confirm-and-continue
+                                  buffer remaining saved t))
+                                (#\q
+                                 (finish saved))))
+                            :on-cancel
+                            (lambda ()
+                              (minibuffer-message minibuffer "Quit"))))))))
+        (if targets
+            (next targets 0 nil)
+            (minibuffer-message minibuffer "(No files need saving)"))))))

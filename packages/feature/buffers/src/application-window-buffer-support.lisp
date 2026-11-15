@@ -1,4 +1,12 @@
 (in-package #:loom/feature/buffers)
+(progn
+  (defvar *buffer-save-handler* nil)
+
+  (defun register-buffer-save-handler (handler)
+    "Register the file-aware handler for saving a buffer before it is killed."
+    (check-type handler function)
+    (setf *buffer-save-handler* handler)
+    handler))
 
 (defun %buffer-name-completion-candidates (input)
   "Return all registered buffer names as candidates for INPUT."
@@ -52,22 +60,26 @@
     ((string-equal answer "c") :cancel)
     (t :retry)))
 
-(defun %save-buffer-before-kill (minibuffer buffer on-cancelled)
-  "Save BUFFER and return true. With ON-CANCELLED, a save error is shown and
-ON-CANCELLED then runs even if showing it fails, returning NIL; without it, the
-error propagates."
-  (if on-cancelled
-      (handler-case (progn (buffer-save buffer) t)
-        (error (condition)
-          (unwind-protect
-               (minibuffer-message minibuffer (princ-to-string condition))
-            (funcall on-cancelled))
-          nil))
-      (progn (buffer-save buffer) t)))
+(defun %save-buffer-before-kill (buffer on-killed on-cancelled)
+  "Save BUFFER through the registered file handler, killing it only when saved."
+  (unless *buffer-save-handler*
+    (error "No buffer save handler is registered"))
+  (funcall *buffer-save-handler*
+           buffer
+           :on-saved
+           (lambda ()
+             (%kill-buffer-now buffer)
+             (when on-killed (funcall on-killed)))
+           :on-skipped
+           (lambda ()
+             (when on-cancelled (funcall on-cancelled)))
+           :on-cancelled
+           (lambda ()
+             (when on-cancelled (funcall on-cancelled)))))
 
 (defun %prompt-kill-buffer (minibuffer buffer &optional on-killed on-cancelled)
   "Ask how to handle modified BUFFER before killing it.
-ON-KILLED runs after the kill; ON-CANCELLED runs after c, C-g, or a save error."
+ON-KILLED runs after the kill; ON-CANCELLED runs after c, C-g, a skipped save, or a save error."
   (let ((has-path-p (not (null (buffer-path buffer)))))
     (minibuffer-activate minibuffer
                          (%kill-buffer-prompt-text buffer)
@@ -75,10 +87,8 @@ ON-KILLED runs after the kill; ON-CANCELLED runs after c, C-g, or a save error."
                          (lambda (answer)
                            (case (%kill-buffer-answer-action answer has-path-p)
                              (:save
-                               (when (%save-buffer-before-kill
-                                      minibuffer buffer on-cancelled)
-                                 (%kill-buffer-now buffer)
-                                 (when on-killed (funcall on-killed))))
+                               (%save-buffer-before-kill
+                                buffer on-killed on-cancelled))
                              (:discard
                                (%kill-buffer-now buffer)
                                (when on-killed (funcall on-killed)))

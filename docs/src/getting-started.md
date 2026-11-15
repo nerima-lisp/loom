@@ -48,7 +48,8 @@ loom ~/project
 
 `C-x d` toggles the file-tree sidebar; `C-x C-f` prompts for a path and opens
 it in the selected window; `C-x C-s` saves the selected buffer; `C-x C-c`
-quits. Press `M-x` to search the command catalogue by name.
+quits. `C-x C-b` opens the buffer list, and `C-x s` asks before saving each
+modified file. Press `M-x` to search the command catalogue by name.
 
 `C-x r` provides named registers, `C-x (` and `C-x )` record keyboard macros,
 and `C-u`, `M-0` … `M-9`, and `M--` apply numeric prefixes to the next command.
