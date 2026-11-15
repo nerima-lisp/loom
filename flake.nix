@@ -233,6 +233,7 @@
               src = cl-tty-kit;
               patches = [
                 ./patches/cl-tty-kit-wide-character-rendering.patch
+                ./patches/cl-tty-kit-paste-marker-event-type-guard.patch
                 ./patches/cl-tty-kit-control-h-key.patch
               ];
             };
