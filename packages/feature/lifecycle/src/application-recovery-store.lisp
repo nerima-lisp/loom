@@ -8,21 +8,20 @@ NIL disables every recovery and lock read or write. The executable sets it to
 (defconstant +recovery-meta-version+ 1)
 (defconstant +recovery-meta-size-limit+ 4096)
 
+(defun %state-subdirectory (name)
+  "Return the pathname of state subdirectory NAME (recovery/ or locks/) without
+creating it, or NIL when no state directory is set. Every recovery and lock
+path is derived from *LOOM-STATE-DIRECTORY* here."
+  (when *loom-state-directory*
+    (merge-pathnames name (uiop:ensure-directory-pathname *loom-state-directory*))))
+
 (defun %private-state-directory (name)
   "Return state subdirectory NAME, creating it with mode 0700 when missing.
 An existing directory keeps its mode. Return NIL when no state directory is set."
-  (when *loom-state-directory*
-    (let ((root (uiop:ensure-directory-pathname *loom-state-directory*)))
-      (ensure-directories-exist root)
-      (host-kit:create-directory (merge-pathnames name root)
-                                 :mode #o700
-                                 :if-exists :ignore))))
-
-(defun %recovery-directory ()
-  "Return the recovery directory pathname without creating it, or NIL."
-  (when *loom-state-directory*
-    (merge-pathnames "recovery/"
-                     (uiop:ensure-directory-pathname *loom-state-directory*))))
+  (let ((directory (%state-subdirectory name)))
+    (when directory
+      (ensure-directories-exist (uiop:ensure-directory-pathname *loom-state-directory*))
+      (host-kit:create-directory directory :mode #o700 :if-exists :ignore))))
 
 (defun %fnv-1a-64 (octets)
   (let ((hash 14695981039346656037))
@@ -223,7 +222,7 @@ whose metadata is missing or invalid."
   "Return the recovery entries in the state directory in body name order.
 The directory listing is reused while the directory's modification time, size,
 and inode stay unchanged; changed metadata files are read again."
-  (let ((directory (%recovery-directory)))
+  (let ((directory (%state-subdirectory "recovery/")))
     (when directory
       (let ((metadata (handler-case (host-kit:file-metadata directory)
                         (host-kit:host-operation-failed () nil))))
@@ -296,7 +295,7 @@ call per entry, or NIL when DIRECTORY does not exist."
 metadata is valid, in body name order. The directory is read by name, and only
 the matching bodies and their metadata files are examined, so the cost of an
 open grows with the directory's name count but not with unrelated metadata."
-  (let ((directory (%recovery-directory)))
+  (let ((directory (%state-subdirectory "recovery/")))
     (when directory
       (let* ((needles (mapcar (lambda (hash) (concatenate 'string "-" hash "-")) hashes))
              (bodies (remove-if-not (lambda (name) (%hashed-body-name-p name needles))
@@ -328,7 +327,7 @@ missing, the body is not a regular file, or the metadata is invalid."
 (defun recovery-body-count ()
   "Return how many recovery bodies the state directory holds, counted from
 their names alone."
-  (let ((directory (%recovery-directory)))
+  (let ((directory (%state-subdirectory "recovery/")))
     (if directory
         (count-if (lambda (name) (%name-stem name "txt"))
                   (%directory-entry-names directory))

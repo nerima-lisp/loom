@@ -388,20 +388,19 @@ monitor does, including the delivery-time callback."
             (loom/core/buffer:buffer-mark-modified
              (window-buffer (window-tree-selected-window
                              (editor-state-window-tree state))))
-            (with-replaced-function
-                (loom/feature/lifecycle::%recovery-directory
-                 (lambda () (pathname directory)))
-              ;; A fresh thread sees no dynamic binding from this one, as on
-              ;; the real watchdog thread.
-              (%join-test-thread
-               (%spawn-test-thread
-                (lambda ()
+            ;; A fresh thread sees no dynamic binding from this one, as on the
+            ;; real watchdog thread. The state directory is bound inside the
+            ;; thread because the executable sets it globally at startup.
+            (%join-test-thread
+             (%spawn-test-thread
+              (lambda ()
+                (let ((loom/feature/lifecycle:*loom-state-directory* (pathname directory)))
                   (loom::%exit-after-stuck-evaluation
                    state terminal-session byte
-                   :exit (lambda (status) (push status statuses))))
-                :name "loom evaluation exit test")))
+                   :exit (lambda (status) (push status statuses)))))
+              :name "loom evaluation exit test"))
             (expect statuses :to-equal (list expected-status))
-            (let ((files (directory (merge-pathnames "*.txt" directory))))
+            (let ((files (directory (merge-pathnames "recovery/*.txt" directory))))
               (expect (length files) :to-equal 1)
               (expect (search (format nil "buffer-~(~A~)" reason)
                               (file-namestring (first files)))

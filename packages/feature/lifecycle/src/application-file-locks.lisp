@@ -53,10 +53,7 @@ its UTF-8 octets as 16 lowercase hex digits, with type lock."
     (setf *lock-directory-failure-logged-p* t)
     (%log-lifecycle-message
      (format nil "Opening files without locks: cannot write ~A (~A)"
-             (native-path-namestring
-              (merge-pathnames "locks/"
-                               (uiop:ensure-directory-pathname
-                                *loom-state-directory*)))
+             (native-path-namestring (%state-subdirectory "locks/"))
              condition)))
   nil)
 
@@ -202,10 +199,7 @@ this process, by pid and host, as its owner."
            (and record (cdr record) (string= (car record) truename)))
          (let ((owner (read-lock-owner
                        (merge-pathnames (file-lock-name truename)
-                                        (merge-pathnames
-                                         "locks/"
-                                         (uiop:ensure-directory-pathname
-                                          *loom-state-directory*))))))
+                                        (%state-subdirectory "locks/")))))
            (and owner
                 (eql (getf owner :pid) (sb-posix:getpid))
                 (string= (getf owner :host) (host-kit:hostname))
