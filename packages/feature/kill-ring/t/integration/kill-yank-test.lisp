@@ -142,6 +142,9 @@
                         (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (buffer-set-point buffer 0 0)
+                  (setf (editor-state-kill-ring *editor-state*) '("old")
+                        (loom/core/editor-session:editor-state-last-command-kill-p
+                         *editor-state*) nil)
                   (loom/feature/kill-ring:zap-to-char)
                   (minibuffer-handle-key minibuffer
                                          (cl-tty-kit:make-key-event :type
@@ -149,9 +152,12 @@
                                                                     :code
                                                                     #\X))
                   (expect (buffer-text buffer) :to-equal "b")
-                  (expect (first (editor-state-kill-ring *editor-state*))
-                          :to-equal
-                          "aXaX")
+                  (expect (editor-state-kill-ring *editor-state*)
+                          :to-equal '("aXaX" "old"))
+                  (expect
+                   (loom/core/editor-session:editor-state-last-command-kill-p
+                    *editor-state*)
+                   :to-be t)
                   (buffer-undo buffer)
                   (expect (buffer-text buffer) :to-equal "aXaXb"))))
           (it "zap-to-char kills backward through the Nth occurrence"
@@ -169,9 +175,13 @@
                                                                     :code
                                                                     #\X))
                   (expect (buffer-text buffer) :to-equal "a")
+                  (expect (buffer-point-column buffer) :to-equal 1)
                   (expect (first (editor-state-kill-ring *editor-state*))
                           :to-equal
-                          "XaXb"))))
+                          "XaXb")
+                  (buffer-undo buffer)
+                  (expect (buffer-text buffer) :to-equal "aXaXb")
+                  (expect (buffer-point-column buffer) :to-equal 5))))
           (it "zap-to-char coalesces forward and backward kills"
               (let ((*editor-state* (%fresh-editor-state "aaXbb" :with-minibuffer t))
                     (loom:*current-prefix-argument* 1))
@@ -231,6 +241,49 @@
                (expect (loom:minibuffer-message-string minibuffer)
                        :to-equal
                        "Search failed: \"X\""))))
+          (it
+           "zap-to-char reports a miss when fewer than N occurrences remain"
+           (let ((*editor-state* (%fresh-editor-state "aXb" :with-minibuffer t))
+                 (loom:*current-prefix-argument* 2))
+             (let* ((buffer (%selected-test-buffer))
+                    (minibuffer
+                     (loom/core/editor-session:editor-state-minibuffer
+                      *editor-state*)))
+               (setf (editor-state-kill-ring *editor-state*) '("old"))
+               (loom/feature/kill-ring:zap-to-char)
+               (minibuffer-handle-key minibuffer
+                                      (cl-tty-kit:make-key-event :type
+                                                                 :character
+                                                                 :code
+                                                                 #\X))
+               (expect (buffer-text buffer) :to-equal "aXb")
+               (expect (editor-state-kill-ring *editor-state*)
+                       :to-equal
+                       '("old"))
+               (expect (loom:minibuffer-message-string minibuffer)
+                       :to-equal
+                       "Search failed: \"X\""))))
+          (it
+           "zap-to-char kills the character at point"
+           (let ((*editor-state* (%fresh-editor-state "aXb" :with-minibuffer t))
+                 (loom:*current-prefix-argument* 1))
+             (let* ((buffer (%selected-test-buffer))
+                    (minibuffer
+                     (loom/core/editor-session:editor-state-minibuffer
+                      *editor-state*)))
+               (setf (editor-state-kill-ring *editor-state*) '("old"))
+               (buffer-set-point buffer 0 1)
+               (loom/feature/kill-ring:zap-to-char)
+               (minibuffer-handle-key minibuffer
+                                      (cl-tty-kit:make-key-event :type
+                                                                 :character
+                                                                 :code
+                                                                 #\X))
+               (expect (buffer-text buffer) :to-equal "ab")
+               (expect (buffer-point-column buffer) :to-equal 1)
+               (expect (editor-state-kill-ring *editor-state*)
+                       :to-equal
+                       '("X" "old")))))
           (it "zap-to-char refuses to edit a read-only buffer"
               (let ((*editor-state* (%fresh-editor-state "aXb" :with-minibuffer t))
                     (loom:*current-prefix-argument* 1))
@@ -239,6 +292,7 @@
                         (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (loom/core/buffer:buffer-set-read-only buffer t)
+                  (setf (editor-state-kill-ring *editor-state*) '("old"))
                   (loom/feature/kill-ring:zap-to-char)
                   (signals loom/core/buffer:buffer-read-only-error
                            (minibuffer-handle-key minibuffer
@@ -247,4 +301,5 @@
                                                    :character
                                                    :code
                                                    #\X)))
-                  (expect (buffer-text buffer) :to-equal "aXb")))))
+                  (expect (buffer-text buffer) :to-equal "aXb")
+                  (expect (editor-state-kill-ring *editor-state*) :to-equal '("old"))))))

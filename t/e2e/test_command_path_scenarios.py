@@ -379,6 +379,146 @@ class CommandPathScenarioTests(unittest.TestCase):
                         self.assertLess(notice_index, cursor_index)
                         self.assertLess(cursor_index, calls.index(cancel_key))
 
+    def test_char_invalid_key_checks_guidance_and_cancel_result(self):
+        guidance = "Zap to char: Type a character."
+        case = {
+            "name": "test/char-invalid-key",
+            "path_id": "r2:zap-to-char:prompt-1:char:invalid-key",
+            "lane": "F1",
+            "rule": "r2",
+            "entry": "key:M-z;prompt:1:char",
+            "commands": ["zap-to-char"],
+            "command": "zap-to-char",
+            "entry_mode": "key",
+            "entry_keys": ["M-z"],
+            "prompt_open": "Zap to char: ",
+            "prompt_kind": "char",
+            "prompt_case": "invalid",
+            "input_text": "",
+            "invalid_key": "UP",
+            "initial_bytes": "abc\n",
+            "expected_bytes": "abc\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": guidance,
+            "expected_minibuffer_after_cancel": "Quit",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded_case = load_command_path_scenarios(path)[0]
+            sessions = []
+
+            def session_factory(*args, **kwargs):
+                session = FakeSession(*args, **kwargs)
+                sessions.append(session)
+                return session
+
+            run_command_path_scenario(
+                "unused", loaded_case, session_factory=session_factory
+            )
+
+        calls = sessions[0].calls
+        invalid_key = ("key", "UP")
+        guidance_check = (
+            "wait_exact_text",
+            "minibuffer",
+            guidance,
+            {"strip_right": True},
+        )
+        cursor_wait = ("wait_region_cursor", "minibuffer", len(guidance), 0)
+        cancel_key = ("send", b"\x07")
+        cancel_result = (
+            "wait_exact_text",
+            "minibuffer",
+            "Quit",
+            {"strip_right": True},
+        )
+        self.assertIn(invalid_key, calls)
+        self.assertNotIn(("type", ""), calls)
+        for call in (guidance_check, cursor_wait, cancel_key, cancel_result):
+            self.assertIn(call, calls)
+        self.assertLess(calls.index(invalid_key), calls.index(guidance_check))
+        self.assertLess(calls.index(guidance_check), calls.index(cursor_wait))
+        self.assertLess(calls.index(cursor_wait), calls.index(cancel_key))
+        self.assertLess(calls.index(cancel_key), calls.index(cancel_result))
+
+    def test_invalid_key_fields_reject_wrong_prompt_and_missing_cancel_result(self):
+        valid_case = {
+            "name": "test/char-invalid-key",
+            "path_id": "r2:zap-to-char:prompt-1:char:invalid-key",
+            "lane": "F1",
+            "rule": "r2",
+            "entry": "key:M-z;prompt:1:char",
+            "commands": ["zap-to-char"],
+            "command": "zap-to-char",
+            "entry_mode": "key",
+            "entry_keys": ["M-z"],
+            "prompt_open": "Zap to char: ",
+            "prompt_kind": "char",
+            "prompt_case": "invalid",
+            "input_text": "",
+            "invalid_key": "UP",
+            "initial_bytes": "abc\n",
+            "expected_bytes": "abc\n",
+            "expected_cursor": [0, 0],
+            "expected_minibuffer": "Zap to char: Type a character.",
+            "expected_minibuffer_after_cancel": "Quit",
+            "expected_screen": [{"region": "body", "text": "abc"}],
+        }
+        cases = (
+            (
+                "invalid_key outside invalid char prompt",
+                {
+                    **valid_case,
+                    "prompt_case": "accept",
+                    "input_text": "d",
+                },
+                "invalid_key is only valid for invalid char prompts",
+            ),
+            (
+                "cancel result outside invalid char prompt",
+                {
+                    **{
+                        key: value
+                        for key, value in valid_case.items()
+                        if key != "invalid_key"
+                    },
+                    "prompt_case": "accept",
+                    "input_text": "d",
+                },
+                "expected_minibuffer_after_cancel is only valid "
+                "for invalid char prompts",
+            ),
+            (
+                "missing cancel result for invalid_key",
+                {
+                    key: value
+                    for key, value in valid_case.items()
+                    if key != "expected_minibuffer_after_cancel"
+                },
+                "expected_minibuffer_after_cancel is required "
+                "with invalid_key",
+            ),
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            for label, case, expected_error in cases:
+                path.write_text(
+                    json.dumps({"schema_version": 1, "scenarios": [case]}),
+                    encoding="utf-8",
+                )
+                with self.subTest(case=label):
+                    with self.assertRaisesRegex(
+                        CommandPathScenarioError, expected_error
+                    ):
+                        load_command_path_scenarios(path)
+
     def test_char_prompt_validation_rejects_invalid_scenario_data(self):
         valid_case = {
             "name": "test/char-invalid",

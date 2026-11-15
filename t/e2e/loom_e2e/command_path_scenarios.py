@@ -337,13 +337,6 @@ def _validate_case(case, index):
             raise CommandPathScenarioError(
                 f"{location}.invalid_key is only valid for invalid char prompts"
             )
-        if prompt_kind == "char" and case["prompt_case"] == "invalid" and (
-            "invalid_key" in case
-        ):
-            _validate_cursor(
-                case.get("invalid_prompt_cursor"),
-                f"{location}.invalid_prompt_cursor",
-            )
         if prompt_kind == "char":
             if case["prompt_case"] not in {"accept", "cancel", "invalid"}:
                 raise CommandPathScenarioError(
@@ -366,11 +359,26 @@ def _validate_case(case, index):
                 raise CommandPathScenarioError(
                     f"{location}.input_text must contain one character for char prompts"
                 )
-            if case["prompt_case"] == "invalid" and "invalid_key" not in case:
+            if case["prompt_case"] == "invalid":
                 _nonempty_string(
                     case.get("expected_minibuffer"),
                     f"{location}.expected_minibuffer",
                 )
+        if "expected_minibuffer_after_cancel" in case:
+            if prompt_kind != "char" or case["prompt_case"] != "invalid":
+                raise CommandPathScenarioError(
+                    f"{location}.expected_minibuffer_after_cancel is only valid "
+                    "for invalid char prompts"
+                )
+            _nonempty_string(
+                case["expected_minibuffer_after_cancel"],
+                f"{location}.expected_minibuffer_after_cancel",
+            )
+        if "invalid_key" in case and "expected_minibuffer_after_cancel" not in case:
+            raise CommandPathScenarioError(
+                f"{location}.expected_minibuffer_after_cancel is required "
+                "with invalid_key"
+            )
         if "accepted_command" in case:
             _nonempty_string(case["accepted_command"], f"{location}.accepted_command")
         if (
@@ -1089,6 +1097,27 @@ def _enter_command_prompt(session, case, prompt_label):
     session.wait_for_region_text("minibuffer", prompt_label)
 
 
+def _handle_invalid_char_prompt(session, case):
+    if "invalid_key" in case:
+        session.key(case["invalid_key"])
+    else:
+        session.type(case["input_text"])
+    expected_minibuffer = case["expected_minibuffer"]
+    session.wait_for_region_exact_text(
+        "minibuffer", expected_minibuffer, strip_right=True
+    )
+    _assert_cursor(
+        session,
+        [0, len(expected_minibuffer)],
+        "minibuffer",
+    )
+    _send_key(session, "C-g")
+    if "expected_minibuffer_after_cancel" in case:
+        session.wait_for_region_exact_text(
+            "minibuffer", case["expected_minibuffer_after_cancel"], strip_right=True
+        )
+
+
 def _answer_command_prompt(session, case):
     prompt_case = case["prompt_case"]
     if case.get("prompt_kind") == "char":
@@ -1096,25 +1125,7 @@ def _answer_command_prompt(session, case):
             _send_key(session, "C-g")
             return False
         if prompt_case == "invalid":
-            if "invalid_key" in case:
-                session.key(case["invalid_key"])
-                prompt_label = case.get("prompt_labels", [case["prompt_open"]])[0]
-                invalid_prompt = prompt_label + "Type a character."
-                session.wait_for_region_exact_text(
-                    "minibuffer", invalid_prompt, strip_right=True
-                )
-                _assert_cursor(session, case["invalid_prompt_cursor"], "minibuffer")
-            else:
-                session.type(case["input_text"])
-                session.wait_for_region_exact_text(
-                    "minibuffer", case["expected_minibuffer"], strip_right=True
-                )
-                _assert_cursor(
-                    session,
-                    [0, len(case["expected_minibuffer"])],
-                    "minibuffer",
-                )
-            _send_key(session, "C-g")
+            _handle_invalid_char_prompt(session, case)
             return False
         session.type(case["input_text"])
         return True
@@ -1291,37 +1302,16 @@ def _run_r2(session, case, path):
                     strip_right=True,
                 )
     elif case.get("prompt_kind") == "char":
-        if prompt_case == "invalid" and "invalid_key" in case:
-            with stage("invalid prompt key"):
-                session.key(case["invalid_key"])
-            prompt_label = case.get("prompt_labels", [case["prompt_open"]])[0]
-            invalid_prompt = prompt_label + "Type a character."
-            with stage("invalid prompt guidance"):
-                session.wait_for_region_exact_text(
-                    "minibuffer", invalid_prompt, strip_right=True
-                )
-                _assert_cursor(session, case["invalid_prompt_cursor"], "minibuffer")
+        if prompt_case == "invalid":
+            with stage("invalid char prompt response"):
+                _handle_invalid_char_prompt(session, case)
         else:
             if prompt_case != "cancel":
                 with stage("target prompt input"):
                     session.type(case["input_text"])
-            if prompt_case == "invalid":
-                with stage("invalid prompt guidance"):
-                    session.wait_for_region_exact_text(
-                        "minibuffer", case["expected_minibuffer"], strip_right=True
-                    )
-                    _assert_cursor(
-                        session,
-                        [0, len(case["expected_minibuffer"])],
-                        "minibuffer",
-                    )
-        if prompt_case in {"cancel", "invalid"}:
-            with stage("prompt cancel (C-g)"):
-                _send_key(session, "C-g")
-                if prompt_case == "invalid" and "invalid_key" in case:
-                    session.wait_for_region_exact_text(
-                        "minibuffer", case["expected_minibuffer"], strip_right=True
-                    )
+            if prompt_case == "cancel":
+                with stage("prompt cancel (C-g)"):
+                    _send_key(session, "C-g")
     else:
         with stage("target prompt input"):
             session.type(case["input_text"])

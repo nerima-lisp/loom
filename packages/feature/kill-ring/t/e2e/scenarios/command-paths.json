@@ -2713,17 +2713,14 @@
       "prompt_case": "invalid",
       "input_text": "",
       "invalid_key": "UP",
-      "invalid_prompt_cursor": [
-        0,
-        30
-      ],
       "initial_bytes": "alpha beta gamma\n",
       "expected_bytes": "alpha beta gamma\n",
       "expected_cursor": [
         0,
         0
       ],
-      "expected_minibuffer": "Quit",
+      "expected_minibuffer": "Zap to char: Type a character.",
+      "expected_minibuffer_after_cancel": "Quit",
       "expected_screen": [
         {
           "region": "body",
@@ -2972,6 +2969,59 @@
       "command_keys": [
         "M-z",
         "b"
+      ],
+      "post_setup_keys": [
+        "M-<"
+      ]
+    },
+    {
+      "name": "command-path/kill-ring/r3/zap-to-char/narrow-outside",
+      "path_id": "r3:zap-to-char:narrow-outside",
+      "lane": "W3-8",
+      "rule": "r3",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"z\",\"modifiers\":[\"alt\"]}]}",
+      "commands": [
+        "execute-extended-command",
+        "narrow-to-region",
+        "zap-to-char",
+        "save-buffer"
+      ],
+      "command": "zap-to-char",
+      "mutation_case": "narrow",
+      "initial_bytes": "alpha beta gamma\nOUT X\n",
+      "effect_bytes": "alpha beta gamma\nOUT X\n",
+      "expected_bytes": "alpha beta gamma\nOUT X\n",
+      "expected_cursor": [
+        0,
+        0
+      ],
+      "expected_minibuffer": "Search failed: \"X\"",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ],
+      "effect_screen": [
+        {
+          "region": "body",
+          "text": "alpha beta gamma",
+          "index": 0
+        }
+      ],
+      "prepare_keys": [
+        "M-<",
+        "C-space",
+        "C-e",
+        "C-f"
+      ],
+      "prepare_commands": [
+        "narrow-to-region"
+      ],
+      "command_keys": [
+        "M-z",
+        "X"
       ],
       "post_setup_keys": [
         "M-<"
