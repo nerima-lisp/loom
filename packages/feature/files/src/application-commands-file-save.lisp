@@ -69,7 +69,8 @@ CONFIRMED-OVERWRITE is NIL or the (BUFFER . SNAPSHOT) the user approved."
            (minibuffer (editor-state-minibuffer *editor-state*)))
       (minibuffer-activate
        minibuffer
-       (format nil "File changed on disk. Overwrite? (y/n): ~A" path)
+       (format nil "File changed on disk. Overwrite? (y/n): ~A"
+               (%file-display-path path))
        :on-confirm
        (lambda (answer)
          (cond
@@ -104,7 +105,7 @@ CONFIRMED-OVERWRITE is NIL or the (BUFFER . SNAPSHOT) the user approved."
        minibuffer
        (format nil
                "Parent directory does not exist. Create it? (y/n): ~A"
-               parent)
+               (%file-display-path parent))
        :on-confirm
        (lambda (answer)
          (cond
@@ -284,14 +285,15 @@ buffer. Undo history is not transferred."
     (%replace-buffer-with-file-snapshot buffer snapshot)
     (minibuffer-message
      (editor-state-minibuffer *editor-state*)
-     (format nil "Reverted ~A" (buffer-path buffer)))
+     (format nil "Reverted ~A" (%file-display-path (buffer-path buffer))))
     buffer)
   (defun %prompt-revert-buffer (buffer snapshot)
     (let* ((path (buffer-path buffer))
            (minibuffer (editor-state-minibuffer *editor-state*)))
       (minibuffer-activate
        minibuffer
-       (format nil "Discard local changes and revert ~A? (y/n): " path)
+       (format nil "Discard local changes and revert ~A? (y/n): "
+               (%file-display-path path))
        :on-confirm
        (lambda (answer)
          (cond
@@ -301,7 +303,8 @@ buffer. Undo history is not transferred."
                 ((null current)
                  (minibuffer-message
                   minibuffer
-                  (format nil "File no longer exists: ~A" path)))
+                  (format nil "File no longer exists: ~A"
+                          (%file-display-path path))))
                 ((%file-snapshot-equal-p snapshot current)
                  (%show-reverted-buffer buffer current))
                 (t (%prompt-revert-buffer buffer current)))))
@@ -325,7 +328,7 @@ buffer. Undo history is not transferred."
               ((null snapshot)
                (minibuffer-message
                 minibuffer
-                (format nil "File is unavailable: ~A" path)))
+                (format nil "File is unavailable: ~A" (%file-display-path path))))
               ((buffer-modified-p buffer)
                (%prompt-revert-buffer buffer snapshot))
               (t (%show-reverted-buffer buffer snapshot))))
@@ -339,7 +342,7 @@ buffer. Undo history is not transferred."
        minibuffer
        (format nil
                "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
-               path)
+               (%file-display-path path))
        :on-confirm
        (lambda (answer)
          (cond
@@ -349,7 +352,7 @@ buffer. Undo history is not transferred."
                 ((null current)
                  (minibuffer-message
                   minibuffer
-                  (format nil "File is unavailable: ~A" path)))
+                  (format nil "File is unavailable: ~A" (%file-display-path path))))
                 ((%file-snapshot-equal-p snapshot current)
                  (%replace-buffer-with-file-snapshot buffer current)
                  (funcall continuation))

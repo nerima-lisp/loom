@@ -39,7 +39,8 @@
       :serial t
       :components
       ((:file "editor-state-recent-files-test")
-       (:file "file-format-test")))
+       (:file "file-format-test")
+       (:file "native-paths-test")))
      (:module "integration"
       :serial t
       :components

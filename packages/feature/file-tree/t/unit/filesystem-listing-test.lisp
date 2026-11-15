@@ -67,22 +67,22 @@
                                                      (conflict-name
                                                       "conflict [bracket] # 日本語.txt")
                                                      (old-path
-                                                      (pathname
+                                                      (sb-ext:parse-native-namestring
                                                        (format nil
                                                                "~A~A"
-                                                               (namestring dir)
+                                                               (sb-ext:native-namestring dir)
                                                                old-name)))
                                                      (new-path
-                                                      (pathname
+                                                      (sb-ext:parse-native-namestring
                                                        (format nil
                                                                "~A~A"
-                                                               (namestring dir)
+                                                               (sb-ext:native-namestring dir)
                                                                new-name)))
                                                      (conflict-path
-                                                      (pathname
+                                                      (sb-ext:parse-native-namestring
                                                        (format nil
                                                                "~A~A"
-                                                               (namestring dir)
+                                                               (sb-ext:native-namestring dir)
                                                                conflict-name))))
                                                 (expect
                                                  (file-tree-create-file nil
@@ -112,18 +112,18 @@
                                                   (expect
                                                    (mapcar
                                                     (lambda (entry)
-                                                      (namestring (car entry)))
+                                                      (sb-ext:native-namestring (car entry)))
                                                     entries)
                                                    :to-equal
-                                                   (list (namestring old-path)))
+                                                   (list (sb-ext:native-namestring old-path)))
                                                   (expect (cdr (first entries))
                                                           :to-be
                                                           :file)
                                                   (expect
-                                                   (namestring
+                                                   (sb-ext:native-namestring
                                                     (car (first entries)))
                                                    :to-equal
-                                                   (namestring old-path)))
+                                                   (sb-ext:native-namestring old-path)))
                                                 (expect
                                                  (file-tree-create-file nil
                                                                         conflict-path)
@@ -179,28 +179,28 @@
                                                 (let* ((directory-name
                                                         "folder [bracket] # 日本語")
                                                        (directory-path
-                                                        (pathname
+                                                        (sb-ext:parse-native-namestring
                                                          (format nil
                                                                  "~A~A/"
-                                                                 (namestring
+                                                                 (sb-ext:native-namestring
                                                                   dir)
                                                                  directory-name)))
                                                        (nested-directory-name
                                                         "nested folder [bracket] # 日本語")
                                                        (nested-directory-path
-                                                        (pathname
+                                                        (sb-ext:parse-native-namestring
                                                          (format nil
                                                                  "~A~A/"
-                                                                 (namestring
+                                                                 (sb-ext:native-namestring
                                                                   directory-path)
                                                                  nested-directory-name)))
                                                        (nested-name
                                                         "nested [bracket] # 日本語.txt")
                                                        (nested-path
-                                                        (pathname
+                                                        (sb-ext:parse-native-namestring
                                                          (format nil
                                                                  "~A~A"
-                                                                 (namestring
+                                                                 (sb-ext:native-namestring
                                                                   nested-directory-path)
                                                                  nested-name))))
                                                   (expect
@@ -231,12 +231,12 @@
                                                   (expect
                                                    (mapcar
                                                     (lambda (entry)
-                                                      (namestring (car entry)))
+                                                      (sb-ext:native-namestring (car entry)))
                                                     (loom-fs-list-directory
                                                      nested-directory-path))
                                                    :to-equal
                                                    (list
-                                                    (namestring nested-path)))
+                                                    (sb-ext:native-namestring nested-path)))
                                                   (host-kit:with-temporary-directory
                                                    (outside)
                                                    (let* ((preserved
@@ -246,18 +246,18 @@
                                                           (link-name
                                                            "link [bracket] # 日本語")
                                                           (link-path
-                                                           (pathname
+                                                           (sb-ext:parse-native-namestring
                                                             (format nil
                                                                     "~A~A"
-                                                                    (namestring
+                                                                    (sb-ext:native-namestring
                                                                      directory-path)
                                                                     link-name))))
                                                      (host-kit:write-file-string
                                                       "keep me"
                                                       preserved)
                                                      (sb-posix:symlink
-                                                      (namestring outside)
-                                                      (namestring link-path))
+                                                      (sb-ext:native-namestring outside)
+                                                      (sb-ext:native-namestring link-path))
                                                      (file-tree-delete nil
                                                                        directory-path)
                                                      (expect

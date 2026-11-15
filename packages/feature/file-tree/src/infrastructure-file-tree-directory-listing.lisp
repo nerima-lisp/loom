@@ -12,8 +12,8 @@
     (or (and (eq first-kind :directory)
              (eq second-kind :file))
         (and (eq first-kind second-kind)
-             (string< (namestring (car first))
-                      (namestring (car second)))))))
+             (string< (%native-namestring (car first))
+                      (%native-namestring (car second)))))))
 
 (defun %collect-file-tree-entries (path)
   (let ((entries '()))
@@ -30,6 +30,6 @@
 (CHILD-PATH . KIND) conses, where CHILD-PATH is an absolute pathname (as
 yielded by CL-HOST-KIT:CALL-WITH-DIRECTORY-ENTRIES) and KIND is :DIRECTORY or
 :FILE. Directories sort before files; within each group, entries sort
-alphabetically by their namestrings. Symbolic links and other special entries
+alphabetically by their native namestrings. Symbolic links and other special entries
 are omitted."
   (sort (%collect-file-tree-entries path) #'%file-tree-entry<))

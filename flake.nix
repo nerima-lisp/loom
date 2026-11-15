@@ -30,7 +30,7 @@
       flake = false;
     };
     cl-host-kit = {
-      url = "github:nerima-lisp/cl-host-kit/v0.3.1";
+      url = "github:nerima-lisp/cl-host-kit/v0.4.0";
       flake = false;
     };
     cl-history-kit = {
@@ -79,7 +79,7 @@
       flake = false;
     };
     cl-vcs-kit = {
-      url = "github:nerima-lisp/cl-vcs-kit/v0.2.0";
+      url = "github:nerima-lisp/cl-vcs-kit/v0.3.0";
       flake = false;
     };
     cl-resilience-kit = {
