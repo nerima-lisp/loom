@@ -773,6 +773,36 @@ class Session:
             purpose="precondition",
         )
 
+    def wait_for_row_exact_text(
+        self, row, expected, strip_right=True, timeout=DEFAULT_TIMEOUT
+    ):
+        def read_text():
+            actual = self.screen.text(row)
+            return actual.rstrip() if strip_right else actual
+
+        try:
+            self.wait_until(
+                lambda _screen: read_text() == expected,
+                timeout,
+                f"row {row} to equal {expected!r}",
+            )
+        except TimeoutError:
+            self.observe_screen_text(
+                expected=expected,
+                match="exact",
+                row=row,
+                strip_right=strip_right,
+                purpose="precondition",
+            )
+            raise
+        return self.observe_screen_text(
+            expected=expected,
+            match="exact",
+            row=row,
+            strip_right=strip_right,
+            purpose="precondition",
+        )
+
     def region_text(self, region, index=0):
         row = self.layout.row(region, index)
         if region == "body":

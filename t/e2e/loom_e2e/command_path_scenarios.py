@@ -66,7 +66,15 @@ def _validate_screen_expectations(value, location):
         where = f"{location}[{index}]"
         if not isinstance(expectation, dict):
             raise CommandPathScenarioError(f"{where} must be an object")
-        if expectation.get("region") not in {"body", "minibuffer", "screen"}:
+        if "row" in expectation:
+            # An absolute terminal row, independent of the selected window.
+            if "region" in expectation or "index" in expectation:
+                raise CommandPathScenarioError(
+                    f"{where}.row cannot be combined with region or index"
+                )
+            if type(expectation["row"]) is not int or expectation["row"] < 0:
+                raise CommandPathScenarioError(f"{where}.row must be non-negative")
+        elif expectation.get("region") not in {"body", "minibuffer", "screen"}:
             raise CommandPathScenarioError(
                 f"{where}.region must be body, minibuffer, or screen"
             )
@@ -811,14 +819,48 @@ def _assert_minibuffer(session, expected, match="exact"):
     )
 
 
+def _screen_source(expectation):
+    if "row" in expectation:
+        return {"row": expectation["row"]}
+    return {"region": expectation["region"], "index": expectation.get("index", 0)}
+
+
+def _screen_label(expectation):
+    if "row" in expectation:
+        return f"row {expectation['row']}"
+    return expectation["region"]
+
+
+def _wait_for_screen_expectation(session, expectation, match):
+    if "row" in expectation:
+        if match == "contains":
+            session.wait_for_row_text(expectation["row"], expectation["text"])
+        else:
+            session.wait_for_row_exact_text(
+                expectation["row"], expectation["text"], strip_right=True
+            )
+    elif match == "contains":
+        session.wait_for_region_text(
+            expectation["region"],
+            expectation["text"],
+            index=expectation.get("index", 0),
+        )
+    else:
+        session.wait_for_region_exact_text(
+            expectation["region"],
+            expectation["text"],
+            index=expectation.get("index", 0),
+            strip_right=True,
+        )
+
+
 def _assert_screen(session, expectations):
     for expectation in expectations:
         session.assert_screen_text(
             expectation["text"],
             match=expectation.get("match", "exact"),
-            region=expectation["region"],
-            index=expectation.get("index", 0),
             strip_right=True,
+            **_screen_source(expectation),
         )
 
 
@@ -917,21 +959,11 @@ def _assert_final_state(
             )
     for expectation in case["expected_screen"]:
         with stage(
-            f"screen {expectation['region']} {expectation['text']!r}"
+            f"screen {_screen_label(expectation)} {expectation['text']!r}"
         ):
-            if expectation.get("match", "exact") == "contains":
-                session.wait_for_region_text(
-                    expectation["region"],
-                    expectation["text"],
-                    index=expectation.get("index", 0),
-                )
-            else:
-                session.wait_for_region_exact_text(
-                    expectation["region"],
-                    expectation["text"],
-                    index=expectation.get("index", 0),
-                    strip_right=True,
-                )
+            _wait_for_screen_expectation(
+                session, expectation, expectation.get("match", "exact")
+            )
     with stage("screen assertions"):
         _assert_screen(session, case["expected_screen"])
     with stage("cursor"):
@@ -1293,12 +1325,7 @@ def _run_r2(session, case, path):
 def _assert_effect_state(session, case, *, check_minibuffer=True):
     with _deadline_stage(case["name"], "effect screen", session=session):
         for expectation in case["effect_screen"]:
-            session.wait_for_region_exact_text(
-                expectation["region"],
-                expectation["text"],
-                index=expectation.get("index", 0),
-                strip_right=True,
-            )
+            _wait_for_screen_expectation(session, expectation, "exact")
     if check_minibuffer:
         with _deadline_stage(case["name"], "effect minibuffer", session=session):
             _assert_minibuffer(session, case["expected_minibuffer"])
@@ -1448,12 +1475,7 @@ def _run_r3(session, case, path):
             session.send(keys.ctrl("x") + keys.text("u"))
             _wait_for_command_completion(session, case, "undo", "key", trace_count)
             restore = case["restore_screen"][0]
-            session.wait_for_region_exact_text(
-                restore["region"],
-                restore["text"],
-                index=restore.get("index", 0),
-                strip_right=True,
-            )
+            _wait_for_screen_expectation(session, restore, "exact")
             _save_and_assert_precondition(
                 session, path, initial, wait_for_save=True
             )
