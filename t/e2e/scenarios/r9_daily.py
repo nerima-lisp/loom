@@ -54,11 +54,10 @@ _TODO_AFTER_1500 = b"done one\nitem two\ndone three\ndone four\n"
 _TYPESCRIPT = "const targetValue = 1;\ntargetValue;\ntargetV\ntargetValue;\n"
 _COMMIT_SUBJECT = "R9 daily commit"
 _INBOX_ENTRIES = 200
-# lsp.py's response check passes with no server requests at all, so 10:30
-# also requires this many. Neither the CI logs nor the existing real-server
-# scenarios record how many typescript-language-server sends, so the floor is
-# the smallest count that makes "every request answered" non-vacuous.
-_MIN_SERVER_REQUESTS = 1
+# 10:30 reads "every request answered" as no request left waiting between
+# loom and the server. typescript-language-server sends no server requests in
+# this scene, so loom's own requests carry the check, and these must appear.
+_REQUIRED_LOOM_REQUESTS = ("textDocument/completion", "textDocument/definition")
 
 
 def _git(directory, *arguments):
@@ -358,25 +357,64 @@ def _scene_1030_typescript(session, binary):
         session.wait_for_text("LSP stopped.")
         _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
         _assert_server_request_responses(session, protocol_log, exit_status_file)
-        _assert_server_requests_present(session, protocol_log)
+        _assert_loom_requests_answered(session, protocol_log)
         _scene_1100_buffer_list(session)
         _quit(session, "11:00")
     finally:
         directory.cleanup()
 
 
-def _assert_server_requests_present(session, protocol_log):
-    requests = _server_request_response_counts(_protocol_events(protocol_log))
+def _loom_request_responses(events):
+    """Return each loom->server request with the count of responses to its ID."""
+    requests = []
+    latest_request = {}
+    for event in events:
+        message = event["message"]
+        if "id" not in message:
+            continue
+        key = (type(message["id"]), message["id"])
+        if event["direction"] == "loom->server" and "method" in message:
+            request = {"id": message["id"], "method": message["method"], "responses": 0}
+            requests.append(request)
+            latest_request[key] = request
+        elif (
+            event["direction"] == "server->loom"
+            and "method" not in message
+            and ("result" in message or "error" in message)
+            and key in latest_request
+        ):
+            latest_request[key]["responses"] += 1
+    return requests
+
+
+def _assert_loom_requests_answered(session, protocol_log):
+    events = _protocol_events(protocol_log)
+    requests = _loom_request_responses(events)
     methods = [request["method"] for request in requests]
-    if session.observe_external_state(
-        f"10:30 server requests number at least {_MIN_SERVER_REQUESTS}",
-        len(requests) >= _MIN_SERVER_REQUESTS,
-        True,
-    ) is not True:
+    missing = [method for method in _REQUIRED_LOOM_REQUESTS if method not in methods]
+    unanswered = [request for request in requests if request["responses"] != 1]
+    sent = session.observe_external_state(
+        "10:30 loom sent completion and definition requests", missing, []
+    )
+    answered = session.observe_external_state(
+        "10:30 each loom request has exactly one response with its ID",
+        unanswered,
+        [],
+    )
+    server_methods = [
+        request["method"] for request in _server_request_response_counts(events)
+    ]
+    session.observe_external_state(
+        "10:30 server request methods", server_methods, purpose="precondition"
+    )
+    print(
+        f"r9/daily 10:30: typescript-language-server sent {len(server_methods)} "
+        f"server request(s); methods={server_methods!r}"
+    )
+    if sent is not True or answered is not True:
         raise AssertionError(
-            f"10:30: typescript-language-server sent {len(requests)} server "
-            f"request(s), expected at least {_MIN_SERVER_REQUESTS}; "
-            f"methods={methods!r}"
+            f"10:30: missing loom requests {missing!r}; requests without exactly "
+            f"one response {unanswered!r}; loom requests {methods!r}"
         )
 
 
