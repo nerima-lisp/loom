@@ -10,6 +10,7 @@
      (:file "domain-syntax-highlighting")
      (:file "domain-syntax-highlighting-common-lisp")
      (:file "domain-syntax-highlighting-generic")
+     (:file "domain-syntax-cache")
      (:file "presentation-syntax-highlighting")))))
 
 (asdf:defsystem "loom-feature-syntax-highlighting/test"
@@ -19,4 +20,5 @@
   :serial t
   :components
   ((:file "t/unit/syntax-highlighting-test")
-   (:file "t/unit/major-mode-syntax-highlighting-test")))
+   (:file "t/unit/major-mode-syntax-highlighting-test")
+   (:file "t/unit/multiline-syntax-test")))

@@ -57,16 +57,12 @@
               :to-equal
               line)))
 
-  (it
-    "keeps an unterminated block comment local to the line"
-    (let ((line "#| unfinished")
-          (tokens (syntax-highlight-line "#| unfinished")))
-      (expect (mapcar #'syntax-token-kind tokens)
-              :to-equal
-              '(:comment))
-      (expect (mapcar #'syntax-token-text tokens)
-              :to-equal
-              (list line))))
+  (it "returns the next-line depth for an unterminated block comment"
+    (let ((line "#| unfinished"))
+      (multiple-value-bind (tokens state) (syntax-highlight-line line)
+        (expect (mapcar (function syntax-token-kind) tokens) :to-equal (quote (:comment)))
+        (expect (mapcar (function syntax-token-text) tokens) :to-equal (list line))
+        (expect state :to-equal 1))))
 
   (it
     "handles reader prefixes at the end of a line and delimiter boundaries"

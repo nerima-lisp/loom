@@ -10,6 +10,7 @@
                      #:syntax-token-kind
                      #:syntax-token-text
                      #:syntax-highlight-line
+                     #:syntax-highlight-buffer-line
                      #:syntax-highlight-line-for-mode
                      #:syntax-draw-highlighted-line
                      #:syntax-draw-buffer
@@ -17,5 +18,11 @@
                      #:call-renderer-operation)
             (:import-from #:loom/core/buffer
                           #:buffer-major-mode
+                          #:buffer-version
+                          #:buffer-changed-line-since
+                          #:buffer-line
+                          #:buffer-narrow-start-line
+                          #:buffer-narrow-start-offset
+                          #:buffer-position-offset
                           #:buffer-visible-line
                           #:buffer-visible-line-count))

@@ -85,7 +85,7 @@ rejected."
 
 (defun syntax-draw-highlighted-line (renderer line x y width
                                               &optional (mode :common-lisp)
-                                              (start-column 0))
+                                              (start-column 0) buffer absolute-line)
   "Draw LINE at (X, Y) within WIDTH screen cells.
 
 START-COLUMN is a horizontal scroll offset in screen cells. The :CLIP-INDEX
@@ -99,7 +99,9 @@ viewport edge."
     (let ((column (+ x leading-blank))
           (remaining (max 0 (- width leading-blank)))
           (character-index 0))
-      (dolist (token (syntax-highlight-line-for-mode line mode))
+      (dolist (token (if buffer
+                         (syntax-highlight-buffer-line buffer absolute-line line)
+                         (syntax-highlight-line-for-mode line mode)))
         (multiple-value-bind (next-column next-remaining next-index)
             (%syntax-draw-token renderer token character-index start-index
                                 column y remaining)
@@ -125,5 +127,6 @@ is a horizontal offset in screen cells."
            (+ y row)
            width
            (buffer-major-mode buffer)
-           start-column)))))
+           start-column buffer
+           (+ line-number (buffer-narrow-start-line buffer)))))))
   renderer)

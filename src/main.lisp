@@ -701,7 +701,8 @@ the mode line or another footer in the remaining window rows."
           do (loom/feature/syntax-highlighting:syntax-draw-highlighted-line
               renderer
               (nth-value 0 (%layout-buffer-line-display buffer line))
-              x (+ y row) width mode start-column))))
+              x (+ y row) width mode start-column buffer
+              (+ line (loom/core/buffer:buffer-narrow-start-line buffer))))))
 
 (defun %layout-draw-window-overlays
     (renderer leaf x-offset selected-p buffer-cell-function)
