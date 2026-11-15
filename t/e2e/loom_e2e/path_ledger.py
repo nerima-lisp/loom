@@ -231,9 +231,9 @@ def _parse_path(form, source):
         rule = rule.lower()
     else:
         rule = None
-    if rule not in {f"r{number}" for number in range(1, 9)}:
+    if rule not in {f"r{number}" for number in range(1, 10)}:
         raise PathLedgerError(
-            f"{_location(source, form)}: :rule must be one of :r1 through :r8"
+            f"{_location(source, form)}: :rule must be one of :r1 through :r9"
         )
 
     lane = (

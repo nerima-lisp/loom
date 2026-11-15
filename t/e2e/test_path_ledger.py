@@ -147,6 +147,24 @@ class PathLedgerTests(unittest.TestCase):
 
                 self.assertIn("t/paths.sexp:1:", str(caught.exception))
 
+    def test_accepts_r9_and_rejects_rules_after_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write(root, "t/paths.sexp", _PATH.replace(":rule :r1", ":rule :r9"))
+
+            paths, _exclusions = read_path_ledgers(root)
+
+        self.assertEqual(paths[0]["rule"], "r9")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write(root, "t/paths.sexp", _PATH.replace(":rule :r1", ":rule :r10"))
+
+            with self.assertRaisesRegex(
+                PathLedgerError, "t/paths.sexp:1:1: :rule must be one of :r1 through :r9"
+            ):
+                read_path_ledgers(root)
+
     def test_rejects_duplicate_ids_across_ledger_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
