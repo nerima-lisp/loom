@@ -139,7 +139,7 @@
                     (loom:*current-prefix-argument* 2))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
-                        (loom/core/editor-state:editor-state-minibuffer
+                        (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (buffer-set-point buffer 0 0)
                   (loom/feature/kill-ring:zap-to-char)
@@ -159,7 +159,7 @@
                     (loom:*current-prefix-argument* -2))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
-                        (loom/core/editor-state:editor-state-minibuffer
+                        (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (buffer-set-point buffer 0 5)
                   (loom/feature/kill-ring:zap-to-char)
@@ -177,7 +177,7 @@
                     (loom:*current-prefix-argument* 1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
-                        (loom/core/editor-state:editor-state-minibuffer
+                        (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (setf (editor-state-kill-ring *editor-state*) '("old")
                         (editor-state-last-command-kill-p *editor-state*) t)
@@ -195,7 +195,7 @@
                     (loom:*current-prefix-argument* -1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
-                        (loom/core/editor-state:editor-state-minibuffer
+                        (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (setf (editor-state-kill-ring *editor-state*) '("old")
                         (editor-state-last-command-kill-p *editor-state*) t)
@@ -215,7 +215,7 @@
                  (loom:*current-prefix-argument* 2))
              (let* ((buffer (%selected-test-buffer))
                     (minibuffer
-                     (loom/core/editor-state:editor-state-minibuffer
+                     (loom/core/editor-session:editor-state-minibuffer
                       *editor-state*)))
                (setf (editor-state-kill-ring *editor-state*) '("old"))
                (loom/feature/kill-ring:zap-to-char)
@@ -236,7 +236,7 @@
                     (loom:*current-prefix-argument* 1))
                 (let* ((buffer (%selected-test-buffer))
                        (minibuffer
-                        (loom/core/editor-state:editor-state-minibuffer
+                        (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (loom/core/buffer:buffer-set-read-only buffer t)
                   (loom/feature/kill-ring:zap-to-char)
