@@ -328,12 +328,15 @@ def main(argv):
                 f"{sample_text})"
             )
         for metric, value in report["informational_measurements"].items():
-            completed = report["informational_completion"][metric]
-            status = (
-                "last line observed"
-                if all(completed)
-                else "last line not observed before the execution deadline"
-            )
+            # Only end-of-buffer trials record per-sample completion; the split
+            # syntax benchmark keeps a sample only after observing its cells.
+            completed = report["informational_completion"].get(metric)
+            if completed is None:
+                status = "every sample observed"
+            elif all(completed):
+                status = "last line observed"
+            else:
+                status = "last line not observed before the execution deadline"
             print(
                 f"{metric}: {value:.3f} (informational; no threshold; {status})"
             )

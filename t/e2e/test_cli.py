@@ -423,6 +423,23 @@ class CoverageCliTests(unittest.TestCase):
                 ]), 0)
         self.assertNotIn("FAIL PTY performance gate", self.stderr.getvalue())
 
+    def test_benchmark_mode_reports_split_syntax_metric_as_informational(self):
+        scenarios = {
+            "cl-multiline-split": lambda _binary: {
+                "cl_multiline_20k_split_p95_milliseconds": 70.0,
+                "samples": [70.0],
+            },
+        }
+        self.run.side_effect = lambda function, binary, **_kwargs: function(binary)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(cli, "benchmark_scenarios", return_value=scenarios):
+                cli.main(["--benchmarks", "--artifacts-dir", directory])
+        self.assertIn(
+            "cl_multiline_20k_split_p95_milliseconds: 70.000 "
+            "(informational; no threshold; every sample observed)",
+            self.stdout.getvalue(),
+        )
+
     def test_benchmark_gate_fails_with_elapsed_value_when_open_expires(self):
         scenarios = {
             "startup": lambda _binary: {
