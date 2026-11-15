@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 import statistics
 from functools import partial
 import tempfile
@@ -291,19 +292,40 @@ def _measure_cl_multiline(binary, split=False):
             session.wait_ready()
             session.wait_for_text("CL_BENCH_00001")
             if split:
-                session.extended_command("split-window-below")
-                session.extended_command("other-window")
-                session.extended_command("end-of-buffer")
-                session.wait_for_text("CL_BENCH_19999")
-                session.extended_command("other-window")
+                session.extended_command("split-window-right")
                 session.wait_for_region_cursor("body", 0)
+            view_count = 2 if split else 1
+            height = session.layout.body_height
+            last_marker = f"CL_BENCH_{height - 1:05d}"
+            session.wait_until(
+                lambda screen: screen.text(height - 1).count(last_marker) == view_count,
+                what="all Common Lisp benchmark rows in every view",
+            )
+            session.assert_external_state(
+                "Common Lisp benchmark markers per screen row",
+                [session.screen.text(row).count(f"CL_BENCH_{row:05d}")
+                 for row in range(height)],
+                expected=[view_count] * height,
+                purpose="precondition",
+            )
             cells = [
-                (row, text.index("CL_BENCH_"))
+                (row, marker.start())
                 for row, text in enumerate(session.screen.lines())
-                if row > 0 and "CL_BENCH_" in text
+                if row > 0
+                for marker in re.finditer("CL_BENCH_", text)
             ]
             if not cells:
                 raise AssertionError("multiline benchmark has no visible syntax cells")
+            cell_counts = (
+                [sum(column < session.columns // 2 for _row, column in cells),
+                 sum(column >= session.columns // 2 for _row, column in cells)]
+                if split else [len(cells)]
+            )
+            session.assert_external_state(
+                "Common Lisp benchmark observed rows per view", cell_counts,
+                expected=[height - 1] * view_count,
+                purpose="precondition",
+            )
             for cell in cells:
                 session.assert_cell_attrs(*cell, expected={"fg": "default"})
             samples = []
@@ -554,7 +576,10 @@ def build_benchmark_report(measurements):
                 "all visible marker cells receiving the expected foreground "
                 "in a 20,000-line Common Lisp buffer"
             ),
-            "cl_multiline_split": "second window at end of buffer; informational only",
+            "cl_multiline_split": (
+                "two side-by-side views of the same buffer; maximizes visible "
+                "rows under the shared-point viewport behavior; informational only"
+            ),
             "warmup_runs": 0,
             "redraw_interval": (
                 "from C-f input to cursor-position output in a loaded "
