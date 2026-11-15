@@ -23,8 +23,11 @@ Tests rebind this to CL-BOUNDARY-KIT:MAKE-TEST-FILESYSTEM's in-memory fake.")
 
 (defun %native-namestring (path)
   #+sbcl
-  (sb-ext:native-namestring
-   (sb-ext:parse-native-namestring (namestring (pathname path))))
+  (let ((pathname (pathname path)))
+    (sb-ext:native-namestring
+     (if (wild-pathname-p pathname)
+         (sb-ext:parse-native-namestring (namestring pathname))
+         pathname)))
   #-sbcl
   (namestring (pathname path)))
 

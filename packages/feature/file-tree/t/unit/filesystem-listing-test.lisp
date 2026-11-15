@@ -1,6 +1,16 @@
 (in-package #:loom/test)
 
 (describe "loom-fs-list-directory"
+          (it "converts literal and legacy wildcard pathnames to native filenames"
+              (let* ((raw "literal [bracket].txt")
+                     (literal (sb-ext:parse-native-namestring raw))
+                     (legacy (pathname raw)))
+                (expect (wild-pathname-p literal) :to-be nil)
+                (expect (wild-pathname-p legacy) :to-be t)
+                (expect (loom/feature/files::%native-namestring literal)
+                        :to-equal raw)
+                (expect (loom/feature/files::%native-namestring legacy)
+                        :to-equal raw)))
           (it "lists directories before files, alphabetically within each group"
               (host-kit:with-temporary-directory (dir)
                                                  (host-kit:write-file-string ""
