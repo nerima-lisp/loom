@@ -103,6 +103,9 @@ original list when the answer is invalid."
                 for index from 0
                 when (buffer-modified-p buffer)
                   do (%save-recovery-buffer buffer reason index))))
+      ;; Locks go last so a signal's recovery files exist before another loom
+      ;; can take the file.
+      (release-all-file-locks)
       nil)
 
     (eval-when (:load-toplevel :execute)

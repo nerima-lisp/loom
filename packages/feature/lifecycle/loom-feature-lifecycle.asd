@@ -5,6 +5,7 @@
                                   "loom-core-command"
                                   "loom-feature-buffers"
                                   "loom-feature-files"
+                                  "loom-feature-auto-save"
                                   "cl-prolog-kit"
                                   "cl-host-kit")
   :serial t
@@ -13,6 +14,8 @@
                         t
                         :components
                         ((:file "package") (:file "application-recovery-store")
+                         (:file "application-file-locks")
+                         (:file "application-recovery-detection")
                          (:file "application-commands-quit")
                          (:file "command-specs-quit")))))
 
@@ -34,4 +37,6 @@
                                    (:file "commands-quit-test")
                                    (:file "host-kit-retained-lock-test")
                                    (:file "line-diff-test")
-                                   (:file "recovery-store-test")))))))
+                                   (:file "recovery-store-test")
+                                   (:file "file-locks-test")
+                                   (:file "recovery-detection-test")))))))

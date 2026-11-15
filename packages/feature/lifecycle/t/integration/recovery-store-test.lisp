@@ -49,7 +49,7 @@
             (expect (getf meta :version) :to-equal 1)
             (expect (getf meta :path)
                     :to-equal (loom/core/editor-session:native-path-namestring
-                               (host-kit:ensure-absolute-pathname path)))
+                               (host-kit:truenamize path)))
             (expect (getf meta :buffer-name) :to-equal "notes.txt")
             (expect (getf meta :reason) :to-be :sigterm)
             (expect (integerp (getf meta :time)) :to-be-truthy))))))

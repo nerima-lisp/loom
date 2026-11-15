@@ -42,11 +42,18 @@ An existing directory keeps its mode. Return NIL when no state directory is set.
   ;; *PRINT-READABLY* prints a BASE-STRING as #A(...), which the reader rejects.
   (coerce string '(simple-array character (*))))
 
-(defun %recovery-meta-path-string (buffer)
+(defun buffer-file-truename (buffer)
+  "Return the native truename string of BUFFER's file, or NIL without a path.
+A missing file resolves through its nearest existing directory."
   (let ((path (buffer-path buffer)))
-    (and path
-         (%character-string
-          (native-path-namestring (host-kit:ensure-absolute-pathname path))))))
+    (when path
+      (%character-string
+       (native-path-namestring (host-kit:truenamize (literal-file-path path)))))))
+
+(defun %recovery-meta-path-string (buffer)
+  ;; The truename lets a later open compare paths without resolving each
+  ;; recorded one.
+  (and (buffer-path buffer) (buffer-file-truename buffer)))
 
 (defun %recovery-meta-text (buffer reason)
   "Return the printed metadata form for BUFFER saved because of REASON."
