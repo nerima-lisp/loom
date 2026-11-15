@@ -1,5 +1,32 @@
 (in-package #:loom/core/buffer)
 
+(defun %set-buffer-pieces (buffer pieces)
+  ;; Build both vectors before publishing them with the new immutable piece list.
+  (let* ((count (length pieces))
+         (vector (make-array count))
+         (starts (make-array count :element-type 'fixnum))
+         (offset 0))
+    (loop for piece in pieces
+          for index from 0
+          do (setf (svref vector index) piece
+                   (aref starts index) offset)
+             (incf offset (%piece-length piece)))
+    (setf (%buffer-pieces buffer) pieces
+          (%buffer-piece-vector buffer) vector
+          (%buffer-piece-starts buffer) starts))
+  buffer)
+
+(defun %piece-index-at-offset (buffer offset)
+  (let ((starts (%buffer-piece-starts buffer))
+        (low 0)
+        (high (length (%buffer-piece-vector buffer))))
+    (loop while (< low high)
+          for middle = (floor (+ low high) 2)
+          do (if (<= (aref starts middle) offset)
+                 (setf low (1+ middle))
+                 (setf high middle)))
+    (1- low)))
+
 
 (defun %line-index-chunk (buffer line &optional create-p)
   (let ((node (%buffer-line-index buffer))

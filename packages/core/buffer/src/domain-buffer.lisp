@@ -8,14 +8,14 @@
 
 (defun %make-initial-buffer (name path original)
   (%initialize-line-index
-   (%make-buffer :name (or name "*scratch*")
+   (%set-buffer-pieces
+    (%make-buffer :name (or name "*scratch*")
                 :path path
                 :original original
                 :add-buffer (make-array 0
                                         :element-type (quote character)
                                         :adjustable t
                                         :fill-pointer 0)
-                :pieces (%buffer-initial-pieces original)
                 :narrow-start-offset 0
                 :narrow-end-offset (length original)
                 :point-line 0
@@ -29,6 +29,7 @@
                 :modified-p nil
                 :undo-list nil
                 :redo-list nil)
+    (%buffer-initial-pieces original))
    original))
 
 (defgeneric make-buffer (&key name path initial-content)

@@ -34,7 +34,7 @@
       (incf cursor (%piece-length piece)))
     (unless inserted
       (push new-piece result))
-    (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
+    (%set-buffer-pieces buffer (%coalesce-pieces (nreverse result)))))
 
 (defun %piece-outside-delete-range-p (cursor next start end)
   (or (<= next start) (>= cursor end)))
@@ -63,4 +63,4 @@
     (dolist (piece (%buffer-pieces buffer))
       (setf result (%splice-delete-piece-step piece cursor start end result))
       (incf cursor (%piece-length piece)))
-    (setf (%buffer-pieces buffer) (%coalesce-pieces (nreverse result)))))
+    (%set-buffer-pieces buffer (%coalesce-pieces (nreverse result)))))
