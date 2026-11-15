@@ -885,6 +885,39 @@
                 (expect calls :to-equal '(:cancelled)))))))))
 
   (it
+    "reports skipped exactly once when showing an n or no-file message fails"
+    (host-kit:with-temporary-directory (dir)
+      (let ((path (merge-pathnames "note.txt" dir)))
+        (%with-minibuffer-state (minibuffer "draft")
+          (flet ((failing-display (thunk)
+                   (handler-case
+                       (with-replaced-function
+                           (loom/core/minibuffer:minibuffer-message
+                            (lambda (minibuffer text)
+                              (declare (ignore minibuffer text))
+                              (error "message display failed")))
+                         (funcall thunk)
+                         nil)
+                     (simple-error (condition)
+                       (princ-to-string condition)))))
+            (%with-confirm-save-recorder (calls)
+              (expect (failing-display
+                       (lambda ()
+                         (apply #'loom/feature/files:confirm-save-buffer
+                                (%selected-test-buffer)
+                                (%confirm-save-callbacks))))
+                      :to-equal "message display failed")
+              (expect calls :to-equal '(:skipped)))
+            (let ((buffer (%visit-changed-file-buffer path)))
+              (%with-confirm-save-recorder (calls)
+                (apply #'loom/feature/files:confirm-save-buffer
+                       buffer (%confirm-save-callbacks))
+                (expect (failing-display
+                         (lambda () (%confirm-minibuffer minibuffer "n")))
+                        :to-equal "message display failed")
+                (expect calls :to-equal '(:skipped)))))))))
+
+  (it
     "keeps signalling the same save error from save-buffer"
     (host-kit:with-temporary-directory (dir)
       (let ((path (merge-pathnames "note.txt" dir))

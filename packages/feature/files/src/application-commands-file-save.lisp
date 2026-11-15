@@ -23,20 +23,20 @@ one), so that part of OLD-BUFFER's state is a known, documented loss."
   ;; ON-OUTCOME is NIL for SAVE-BUFFER, whose errors propagate to the top-level
   ;; handler. CONFIRM-SAVE-BUFFER passes a function that receives :SKIPPED or
   ;; :CANCELLED, so every path that does not write the file reports once.
-  (defun %report-save-outcome (on-outcome outcome)
+  (defun %finish-save (on-outcome outcome text)
+    "Pass OUTCOME to ON-OUTCOME, when there is one, and then show TEXT.
+Calling first keeps the outcome independent of the message display."
     (when on-outcome
-      (funcall on-outcome outcome)))
+      (funcall on-outcome outcome))
+    (minibuffer-message (editor-state-minibuffer *editor-state*) text))
 
   (defun %call-save-step (on-outcome function)
-    "Return FUNCTION's value and NIL. With ON-OUTCOME, an error is reported as
-:CANCELLED and then shown in the minibuffer, and the values are NIL and T.
-Reporting first keeps the outcome independent of the message display."
+    "Return FUNCTION's value and NIL. With ON-OUTCOME, an error finishes the
+save as :CANCELLED with its text, and the values are NIL and T."
     (if on-outcome
         (handler-case (values (funcall function) nil)
           (error (condition)
-            (funcall on-outcome :cancelled)
-            (minibuffer-message (editor-state-minibuffer *editor-state*)
-                                (princ-to-string condition))
+            (%finish-save on-outcome :cancelled (princ-to-string condition))
             (values nil t)))
         (values (funcall function) nil)))
 
@@ -84,17 +84,14 @@ CONFIRMED-OVERWRITE is NIL or the (BUFFER . SNAPSHOT) the user approved."
                  (%prompt-save-buffer-overwrite
                   buffer current on-saved on-outcome)))))
            ((string-equal answer "n")
-            (minibuffer-message minibuffer "Save cancelled")
-            (%report-save-outcome on-outcome :skipped))
+            (%finish-save on-outcome :skipped "Save cancelled"))
            ((string-equal answer "c")
-            (minibuffer-message minibuffer "Save cancelled")
-            (%report-save-outcome on-outcome :cancelled))
+            (%finish-save on-outcome :cancelled "Save cancelled"))
            (t
             (%prompt-save-buffer-overwrite buffer snapshot on-saved on-outcome))))
        :on-cancel
        (lambda ()
-         (minibuffer-message minibuffer "Quit")
-         (%report-save-outcome on-outcome :cancelled)))))
+         (%finish-save on-outcome :cancelled "Quit")))))
 
   (progn
   (defun %prompt-create-file-parent-directory (buffer on-saved &optional on-outcome)
@@ -117,17 +114,14 @@ CONFIRMED-OVERWRITE is NIL or the (BUFFER . SNAPSHOT) the user approved."
                       (lambda () (%ensure-file-parent-directories path))))
               (%save-buffer-with-confirmation buffer on-saved on-outcome)))
            ((string-equal answer "n")
-            (minibuffer-message minibuffer "Save cancelled")
-            (%report-save-outcome on-outcome :skipped))
+            (%finish-save on-outcome :skipped "Save cancelled"))
            ((string-equal answer "c")
-            (minibuffer-message minibuffer "Save cancelled")
-            (%report-save-outcome on-outcome :cancelled))
+            (%finish-save on-outcome :cancelled "Save cancelled"))
            (t
             (%prompt-create-file-parent-directory buffer on-saved on-outcome))))
        :on-cancel
        (lambda ()
-         (minibuffer-message minibuffer "Quit")
-         (%report-save-outcome on-outcome :cancelled)))))
+         (%finish-save on-outcome :cancelled "Quit")))))
   (defun %save-buffer-with-confirmation (buffer on-saved &optional on-outcome)
     (let ((path (buffer-path buffer)))
       (multiple-value-bind (save-now-p failed)
@@ -218,21 +212,20 @@ afterwards, so it must not open a new prompt."
              (unless reported
                (setf reported t)
                (funcall callback))))
-      (let ((path (buffer-path buffer)))
+      (let ((path (buffer-path buffer))
+            (on-outcome (lambda (outcome)
+                          (ecase outcome
+                            (:skipped (report on-skipped))
+                            (:cancelled (report on-cancelled))))))
         (if path
             (%save-buffer-with-confirmation
              buffer
              (lambda ()
                (%record-recent-file path)
                (report on-saved))
-             (lambda (outcome)
-               (ecase outcome
-                 (:skipped (report on-skipped))
-                 (:cancelled (report on-cancelled)))))
-            (progn
-              (minibuffer-message (editor-state-minibuffer *editor-state*)
-                                  "Buffer is not visiting a file")
-              (report on-skipped)))))))
+             on-outcome)
+            (%finish-save on-outcome :skipped
+                          "Buffer is not visiting a file"))))))
 
 (progn
   (defun write-file ()
