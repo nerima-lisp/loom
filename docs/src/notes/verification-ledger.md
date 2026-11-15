@@ -1206,7 +1206,7 @@ T9の差分は`t/e2e/scenarios/lsp.py`を変えておらず、`deadline.py`の�
 | # | 条件 | 満たしたか | 証拠 |
 |---|---|---|---|
 | 1 | 4章のすべてのタスクがmainに着地し、キットのリリースタグが出ている | 未達。T9とR1を待っている | 着地の事実は、進行役が`gh`と`jj`で確かめた値である。着地済みのタスクとmainのコミットは次のとおり。単位1（CI0、P2、S1、G1）は`ec5a519a`、単位2（P1、D0、WP5a、C1）は`3df0ca9e`、単位3（F1、WP7、WP4a）は`f37424f3`。WP3は`67a643c2`、C2は`dc1eb581`、FX2は`718403fa`、FX4は`ccfe2ae0`、WP2は`41164e95`、WP6は`4df46c8e`、WP4bは`75c1cb70`、WP5bは`1d26a5bd`。WP1は今のmainの先頭の`bb9124b5`で着地した（WP1のCI run `43765115990`は進行役が確認）。未着地はT9、R1（T9の後）、WP0（作者の手動確認）である。キットのリリースはcl-vcs-kit v0.3.0、cl-host-kit v0.4.0、cl-tty-kit v1.9.0、cl-concurrent-kit v0.8.0がすべて公開済みで、draftではない。cl-tty-kitはその後のv1.9.1がLatestである。 |
-| 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | 満たした。WP1の`bb9124b5`の上に積んだ`f3723d85`のrun `43766789222`でも緑 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。`87c8adce`のrun `43763441781`では6ジョブがすべて成功し、PTY E2EはLinux（job `132963132000`）とmacOS（job `132963131692`）のどちらも1,298件成功、0件失敗で、Path coverageも同じ値だった。`f3723d85`のrun `43766789222`では6ジョブがすべて成功した。loom-testはLinuxで2,191件成功、6件skip、0件失敗（全2,197件）、macOSで2,192件成功、6件skip、0件失敗（全2,198件）、formattingは両OSで成功。PTY E2Eは両OSとも1,323件成功、0件失敗で、Path coverageは1,187 pass、2 excluded、0 failing（全1,189件）、r6は59件、r9は1件。 |
+| 2 | Linuxとaarch64-darwinのCIで、`nix flake check`、`--require-path-coverage`、ベンチマークゲートが緑 | 満たした。WP1の`bb9124b5`の上に積んだ`f3723d85`のrun `43766789222`でも緑 | run `43756283240`。`nix flake check`はLinux（job `132944367944`）でloom-test 2,100件成功、6件skip、0件失敗（全2,106件）、cl-tty-kit-script-check 1,847件成功、`checks.x86_64-linux.formatting`成功。macOS（job `132944409741`）はloom-test 2,101件成功、6件skip、0件失敗（全2,107件）。PTY E2EはLinux（job `132944406426`）とmacOS（job `132944367067`）のどちらも1,298件成功、0件失敗で、`Path coverage: 1162 pass, 2 excluded, 0 failing of 1164 required paths`。ベンチマークは下の表のとおりすべて基準内。`87c8adce`のrun `43763441781`では6ジョブがすべて成功し、PTY E2EはLinux（job `132963132000`）とmacOS（job `132963131692`）のどちらも1,298件成功、0件失敗で、Path coverageも同じ値だった。`f3723d85`のrun `43766789222`では6ジョブがすべて成功した。loom-testはLinuxで2,191件成功、6件skip、0件失敗（全2,197件）、macOSで2,192件成功、6件skip、0件失敗（全2,198件）、formattingは両OSで成功。PTY E2Eは両OSとも1,323件成功、0件失敗で、Path coverageは1,187 pass、2 excluded、0 failing（全1,189件）、r6は59件、r9は1件。新しい制限時間の下の最終run `43774151589`（`e8417a48`）では、両OSのPTY E2Eが1,323件成功、0件失敗で、attempt 2で6ジョブがすべて成功した。 |
 | 3 | どの`boundary-allowlist.lisp`にも増えた項目がない | 満たした（WP1の`bb9124b5`とT9のすべてのコミットまで） | `jj --ignore-working-copy diff --from v0.1.0 --to bb9124b5 'glob:**/boundary-allowlist.lisp'`で変わった許可表は、新しいスライスの`packages/feature/buffer-menu/t/boundary-allowlist.lisp`だけである。中身は項目のない`("feature/buffer-menu")`で、WP4aのコミット`cce2215e`が足した。増えた項目は0件である。`bb9124b5`からT9の最後のコミットまでの差分に、許可表のファイルはない。 |
 | 4 | R9の13行（前夜と12の時刻）がすべて通る | 満たした（13行が両OSで通過） | `f3723d85`の全件のrun `43766789222`、`43771227001`、`43771230789`、`43771233980`、`43771237441`の両OSのPTY E2Eで`PASS r9/daily`。導線`r9:daily`はrun `43766789222`でpass 1件。場面ごとの結果は下の表にある。 |
 | 5 | `daily-driver-checklist.md`の5行を作者が記入し、Failがない | 未達。WP0（作者の記入）を待っている | mainの`docs/src/notes/daily-driver-checklist.md`では、`Author result`列の5行がすべて空欄である。 |
@@ -1256,6 +1256,7 @@ cleanupの予約5秒を足した合計（`R9_SCENARIO_TIMEOUT_SECONDS`）は38.8
 制限時間が効くのは全件のE2Eのrunの中なので、その負荷が入った全件のrunの値で決めた。
 `r9/daily`だけを流したrunの値は、全件のrunの負荷が入らないので参考として残す。
 ほかのシナリオの10秒は変えていない。
+この制限時間の下で、最終run `43774151589`（`e8417a48`）は両OSで`PASS r9/daily`だった。`r9/daily`の`elapsed_seconds`は、Linux（job `132996467307`）が4.815秒、macOSがattempt 1（job `132996467297`）で8.762秒、attempt 2（job `133001581069`）で9.928秒である。
 
 全件のrunは、どれも`f3723d85`で6ジョブがすべて成功し、PTY E2Eは両OSとも1,323件成功、0件失敗だった。
 値は`SCENARIO_TIMING`の`elapsed_seconds`（秒）である。
@@ -1283,8 +1284,8 @@ refが別なのでCIのconcurrencyグループも別で、各runは別のrunner�
 
 ### ベンチマーク（`--benchmark-gate`、CI）
 
-変更前はmainのrun `43748775992`、変更後は`02ae61ea`のrun `43756283240`、`87c8adce`のrun `43763441781`、`f3723d85`のrun `43766789222`である。
-基準は初回画面0.3秒、入力から再描画までのp95が50 msで、すべて基準内だった。
+変更前はmainのrun `43748775992`、変更後は`02ae61ea`のrun `43756283240`、`87c8adce`のrun `43763441781`、`f3723d85`のrun `43766789222`、`e8417a48`の最終run `43774151589`である。
+基準は初回画面0.3秒、入力から再描画までのp95が50 msで、最終runのattempt 1のmacOSの初回画面を除いて、すべて基準内だった。
 
 | OS | 測定 | 初回画面 | 入力→再描画 p95 | cl_multiline_20k p95 |
 |---|---|---|---|---|
@@ -1296,5 +1297,9 @@ refが別なのでCIのconcurrencyグループも別で、各runは別のrunner�
 | macOS | 照合を直した後（job `132963131692`） | 0.097 s | 2.326 ms | 14.295 ms |
 | Linux | 13行をそろえた後（job `132973637189`） | 0.136 s | 1.612 ms | 6.856 ms |
 | macOS | 13行をそろえた後（job `132973637013`） | 0.096 s | 1.713 ms | 5.948 ms |
+| Linux | 最終run（job `132996467307`） | 0.162 s | 1.560 ms | 8.706 ms |
+| macOS | 最終runのattempt 1（job `132996467297`） | 0.322 s | 6.281 ms | 13.902 ms |
+| macOS | 最終runのattempt 2（job `133001581069`） | 0.113 s | 2.315 ms | 9.837 ms |
 
+最終runのattempt 1では、macOSの初回画面が0.322秒で基準の0.3秒を超え、PTY E2E (aarch64-darwin)のジョブが失敗した。この変更はE2Eのテストコードと台帳だけでloom本体に触れていないので、runnerの揺れと判断し、基準は変えずに失敗したジョブだけを1回再実行した。attempt 2では6ジョブがすべて成功し、macOSの値は基準内だった。Linuxのjob `132996467307`はattempt 1で成功し、再実行の対象外である。
 どのrunも1回ずつの測定で、計測時のランナーの負荷は記録していない。
