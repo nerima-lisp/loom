@@ -725,6 +725,80 @@ def _file_tree_scroll_paths():
     ]
 
 
+def _wp2_evaluation_interrupt_paths():
+    lane = LANE_REGISTRY["feature/evaluation"]
+    return [
+        _path(
+            f"r6:evaluation-interrupt:{name}",
+            commands,
+            "r6",
+            lane,
+            entry,
+            state,
+            outcome,
+            observe,
+        )
+        for name, commands, entry, state, outcome, observe in (
+            (
+                "loop-c-g",
+                ["eval-expression"],
+                "M-: (loop) RET, C-g",
+                "evaluation of (loop) is running",
+                "C-g returns to the editor with Evaluation interrupted and unchanged bytes",
+                ["screen_text", "file_bytes"],
+            ),
+            (
+                "ignore-errors-c-g",
+                ["eval-expression"],
+                "M-: (loop (ignore-errors (sleep 0.1))) RET, C-g",
+                "evaluation that ignores errors is running",
+                "C-g interrupts the evaluation despite ignore-errors",
+                ["screen_text", "file_bytes"],
+            ),
+            (
+                "type-ahead",
+                ["eval-expression", "forward-char"],
+                "M-: (sleep 1) 42 RET, C-f during evaluation",
+                "evaluation of (sleep 1) 42 is running",
+                "42 is reported and C-f then moves point one character",
+                ["screen_text", "cursor"],
+            ),
+            (
+                "other-entries",
+                ["eval-last-sexp", "eval-buffer"],
+                "C-x C-e and M-x eval-buffer on (loop), C-g",
+                "buffer containing (loop)",
+                "C-g interrupts both evaluations with Evaluation interrupted",
+                ["screen_text", "file_bytes"],
+            ),
+            (
+                "public-api",
+                ["eval-last-sexp"],
+                "C-x C-e after an expression calling the editor API",
+                "buffer whose expression reads the selected buffer",
+                "the expression returns the selected buffer's line count",
+                ["screen_text"],
+            ),
+            (
+                "resize",
+                ["eval-expression"],
+                "M-: (progn (sleep 1) 42) RET, terminal resize during evaluation",
+                "evaluation of (progn (sleep 1) 42) is running",
+                "the resize does not interrupt and 42 is reported",
+                ["screen_text"],
+            ),
+            (
+                "sigterm",
+                ["eval-expression"],
+                "M-: (loop) RET, SIGTERM",
+                "unsaved buffer while evaluation of (loop) is running",
+                "process exits 143 and recovery holds the buffer text",
+                ["external_state"],
+            ),
+        )
+    ]
+
+
 def _fixed_paths():
     paths = []
     paths.extend(_file_tree_scroll_paths())
@@ -826,6 +900,7 @@ def _fixed_paths():
         )
     paths.extend(_wp7_fixed_paths())
     paths.extend(_buffer_menu_fixed_paths())
+    paths.extend(_wp2_evaluation_interrupt_paths())
     return paths
 
 

@@ -278,4 +278,67 @@
   :outcome "specified prefix behavior is observed"
   :observe (:file_bytes)
   :scenario "command-path/r3/eval-buffer/prefix-u4")
+ (:id "r6:evaluation-interrupt:loop-c-g"
+  :commands ("eval-expression")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "M-: (loop) RET, C-g"
+  :state "evaluation of (loop) is running"
+  :outcome "C-g returns to the editor with Evaluation interrupted and unchanged bytes"
+  :observe (:screen_text :file_bytes)
+  :scenario "evaluation/interrupt/loop-c-g")
+ (:id "r6:evaluation-interrupt:ignore-errors-c-g"
+  :commands ("eval-expression")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "M-: (loop (ignore-errors (sleep 0.1))) RET, C-g"
+  :state "evaluation that ignores errors is running"
+  :outcome "C-g interrupts the evaluation despite ignore-errors"
+  :observe (:screen_text :file_bytes)
+  :scenario "evaluation/interrupt/ignore-errors-c-g")
+ (:id "r6:evaluation-interrupt:type-ahead"
+  :commands ("eval-expression" "forward-char")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "M-: (sleep 1) 42 RET, C-f during evaluation"
+  :state "evaluation of (sleep 1) 42 is running"
+  :outcome "42 is reported and C-f then moves point one character"
+  :observe (:screen_text :cursor)
+  :scenario "evaluation/interrupt/type-ahead")
+ (:id "r6:evaluation-interrupt:other-entries"
+  :commands ("eval-last-sexp" "eval-buffer")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "C-x C-e and M-x eval-buffer on (loop), C-g"
+  :state "buffer containing (loop)"
+  :outcome "C-g interrupts both evaluations with Evaluation interrupted"
+  :observe (:screen_text :file_bytes)
+  :scenario "evaluation/interrupt/other-entries")
+ (:id "r6:evaluation-interrupt:public-api"
+  :commands ("eval-last-sexp")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "C-x C-e after an expression calling the editor API"
+  :state "buffer whose expression reads the selected buffer"
+  :outcome "the expression returns the selected buffer's line count"
+  :observe (:screen_text)
+  :scenario "evaluation/interrupt/public-api")
+ (:id "r6:evaluation-interrupt:resize"
+  :commands ("eval-expression")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "M-: (progn (sleep 1) 42) RET, terminal resize during evaluation"
+  :state "evaluation of (progn (sleep 1) 42) is running"
+  :outcome "the resize does not interrupt and 42 is reported"
+  :observe (:screen_text)
+  :scenario "evaluation/interrupt/resize")
+ (:id "r6:evaluation-interrupt:sigterm"
+  :commands ("eval-expression")
+  :rule :r6
+  :lane "W3-7b"
+  :entry "M-: (loop) RET, SIGTERM"
+  :state "unsaved buffer while evaluation of (loop) is running"
+  :outcome "process exits 143 and recovery holds the buffer text"
+  :observe (:external_state)
+  :scenario "evaluation/interrupt/sigterm")
 )
