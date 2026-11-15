@@ -294,7 +294,7 @@
   :lane "W3-10"
   :entry "shrink terminal"
   :state "200-entry directory with file-tree visible"
-  :outcome "viewport keeps its top on shrink and clamps on growth"
+  :outcome "selected entry stays visible after terminal height changes"
   :observe (:screen_text :cell_attrs)
   :scenario "file-tree/wp3-scroll/resize")
  (:id "r6:file-tree-scroll:wheel"

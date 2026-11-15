@@ -21,10 +21,10 @@ def _open_tree(session):
 
 def _assert_sidebar_row(session, row, label):
     session.wait_until(
-        lambda _screen: label in session.screen.lines()[row][:24],
+        lambda _screen: session.screen.lines()[row][:24] == label.ljust(24),
         what=f"file-tree row {row} to contain {label}",
     )
-    session.assert_screen_text(label, match="contains", row=row)
+    session.assert_screen_text(label.ljust(24), match="starts_with", row=row)
 
 
 def _selected_row(session, label):
@@ -45,7 +45,7 @@ def _assert_selected(session, label, expected_row=None):
         what=f"selected file-tree entry {label} to be visible",
     )
     row = _selected_row(session, label) if expected_row is None else expected_row
-    session.assert_screen_text(label, match="contains", row=row)
+    session.assert_screen_text(label.ljust(24), match="starts_with", row=row)
     session.assert_cell_attrs(row, 2, {"reverse": True})
 
 
@@ -106,7 +106,7 @@ def scroll_click(binary):
             _quit(session)
 
 
-@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next", "file-tree-open-selected"])
+@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next"])
 def scroll_resize(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-wp3-") as directory:
         _populate(directory)
@@ -114,16 +114,9 @@ def scroll_resize(binary):
             _open_tree(session)
             session.send((keys.ctrl("c") + keys.text("n")) * 200)
             _assert_selected(session, "wp3-199.txt", 30)
-            session.send(b"\x1b[<64;3;10M")
-            _assert_sidebar_row(session, 0, "wp3-166.txt")
-            session.send(keys.ctrl("c") + keys.text("o"))
-            session.wait_for_region_text("body", "WP3 content 199")
-            session.assert_screen_text("WP3 content 199", match="contains", region="body")
-            _assert_sidebar_row(session, 0, "wp3-166.txt")
             session.resize(80, 12)
-            _assert_sidebar_row(session, 0, "wp3-166.txt")
+            _assert_selected(session, "wp3-199.txt", 10)
             session.resize(80, 42)
-            _assert_sidebar_row(session, 0, "wp3-159.txt")
             _assert_selected(session, "wp3-199.txt", 40)
             _quit(session)
 

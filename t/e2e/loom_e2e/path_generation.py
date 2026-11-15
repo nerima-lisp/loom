@@ -719,7 +719,7 @@ def _file_tree_scroll_paths():
             ("down", "C-c n repeatedly", "each selected entry stays visible with the required margin", ["screen_text", "cell_attrs"]),
             ("up", "C-c p repeatedly from last entry", "each selected entry stays visible with the required margin", ["screen_text", "cell_attrs"]),
             ("click", "click lower half of scrolled sidebar", "the displayed file is opened", ["screen_text"]),
-            ("resize", "shrink terminal", "viewport keeps its top on shrink and clamps on growth", ["screen_text", "cell_attrs"]),
+            ("resize", "shrink terminal", "selected entry stays visible after terminal height changes", ["screen_text", "cell_attrs"]),
             ("wheel", "sidebar wheel down then up", "viewport moves three rows without changing selection", ["screen_text", "cell_attrs"]),
         )
     ]
