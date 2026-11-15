@@ -6,7 +6,7 @@
   method
   params
   params-present-p
-  (state :pending))
+  state)
 
 (define-condition lsp-server-invalid-params (error) ())
 
@@ -136,13 +136,19 @@
                                         json-kit:+json-null+)))
      :on-cancel (lambda ()
                   (%lsp-complete-server-prompt session request json-kit:+json-null+)))
-    (setf (lsp-server-request-state request) :active
-          (lsp-session-server-request-active session) request
+    (setf (lsp-session-server-request-active session) request
           (lsp-session-server-request-minibuffer session) minibuffer
           (lsp-session-server-request-token session)
           (loom/core/minibuffer:minibuffer-activation-token minibuffer))))
 
 (defun %lsp-show-next-server-request (session)
+  (let ((active (lsp-session-server-request-active session)))
+    (when (and active
+               (not (eq (lsp-session-server-request-token session)
+                        (loom/core/minibuffer:minibuffer-activation-token
+                         (lsp-session-server-request-minibuffer session)))))
+      (%lsp-clear-server-prompt session)
+      (push active (lsp-session-server-request-queue session))))
   (when (and (lsp-session-server-request-queue session)
              (not (lsp-session-closed-p session))
              *editor-state*)
@@ -185,8 +191,7 @@
        (%lsp-send-server-response session request "result" json-kit:+json-null+))
       ((string= method "window/showMessageRequest")
        (if (plusp (length (gethash "actions" params)))
-           (setf (lsp-server-request-state request) :queued
-                 (lsp-session-server-request-queue session)
+           (setf (lsp-session-server-request-queue session)
                  (append (lsp-session-server-request-queue session) (list request)))
            (progn
              (%lsp-show-server-notice params)
@@ -205,6 +210,3 @@
      (lambda ()
        (%lsp-validate-server-request request)
        (%lsp-dispatch-server-request session request)))))
-
-
-
