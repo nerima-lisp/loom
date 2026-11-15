@@ -26,8 +26,9 @@ answers to language server requests.
   no recorded path; `RET` on it shows its text read-only.
 - At startup, if recovery files exist, loom reports how many and suggests
   `M-x list-recoverable-files`.
-- Saving a file deletes its auto-save sidecar and its recovery files. Restoring
-  with `r` does not delete them.
+- A successful save deletes the file's auto-save sidecar and the recovery files
+  recorded for its path. Recovery files written by loom v0.1.0 are kept.
+  Restoring with `r` does not delete them.
 - loom locks each open file under `~/.loom/locks/`. If another loom process
   holds the lock, opening the file reports `<path> is open in another loom (pid
   N)` instead of offering recovery. If the lock directory is not writable, loom
@@ -150,6 +151,12 @@ text from the server before displaying or recording it.
 - If an evaluation does not stop after SIGTERM or SIGHUP, loom writes recovery
   files from another thread while the evaluation still runs. Those files may
   miss the last changes.
+- loom passes signals to its main loop through an internal pipe and drops a
+  signal notification when that pipe is full. If many signals arrive before
+  the main loop reads the pipe, loom may exit on SIGTERM or SIGHUP later than
+  expected.
+- If several evaluations run in one burst of input, keys typed during those
+  evaluations may be processed in a different order than they were typed.
 
 ### Signals during other long commands
 

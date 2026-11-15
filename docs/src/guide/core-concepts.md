@@ -203,9 +203,9 @@ when either is active: removing an individual registration does not disable it
 while global mode is active, and disabling global mode preserves individual
 registrations. The event loop periodically writes modified, writable file-backed
 buffers to a `#file-name#` sidecar without clearing their modified state. Unmodified and
-read-only buffers are skipped. A normal buffer save runs the editor state's
-after-save hooks, which can remove the sidecar or trigger other save-follow-up
-work.
+read-only buffers are skipped.
+A successful save deletes the file's auto-save sidecar and the recovery files
+recorded for its path. Recovery files written by loom v0.1.0 are kept.
 
 ## Recovering unsaved work
 
@@ -216,8 +216,9 @@ differs from the buffer, loom reports it in the minibuffer. Run `M-x recover-fil
 replaces the buffer text as one undoable edit without saving, `d` shows a
 unified diff in `*Loom-Recover-Diff*`, `i` ignores the work, and `C-g` quits.
 `M-x list-recoverable-files` lists every recoverable file in `*Loom-Recover*`;
-`RET` on a line opens the file and continues with `recover-file`. Saving the
-file deletes its sidecar and recovery files.
+`RET` on a line opens the file and continues with `recover-file`.
+A successful save deletes the file's auto-save sidecar and the recovery files
+recorded for its path. Recovery files written by loom v0.1.0 are kept.
 
 loom also locks each open file under `~/.loom/locks/`. If another loom process
 has the file open, loom reports that process instead of offering recovery.
