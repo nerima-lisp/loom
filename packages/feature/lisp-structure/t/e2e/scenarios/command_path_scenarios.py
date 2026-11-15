@@ -126,8 +126,12 @@ def _run_read_only_scenario(binary, case):
                     index=expectation.get("index", 0),
                     strip_right=True,
                 )
+            expected_cursor = tuple(case["expected_cursor"])
+            session.wait_for_region_cursor(
+                "body", expected_cursor[1], index=expected_cursor[0]
+            )
             if session.observe_cursor(
-                expected=tuple(case["expected_cursor"]), region="body"
+                expected=expected_cursor, region="body"
             ) is not True:
                 raise AssertionError("read-only command moved the body cursor")
             session.assert_file_bytes(path, initial)

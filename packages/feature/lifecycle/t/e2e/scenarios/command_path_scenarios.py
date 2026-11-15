@@ -44,9 +44,13 @@ def _assert_path_state(session, path, case):
             index=expectation.get("index", 0),
             strip_right=True,
         )
+    expected_cursor = tuple(case["expected_cursor"])
+    cursor_region = case.get("expected_cursor_region", "body")
+    session.wait_for_region_cursor(
+        cursor_region, expected_cursor[1], index=expected_cursor[0]
+    )
     if session.observe_cursor(
-        expected=tuple(case["expected_cursor"]),
-        region=case.get("expected_cursor_region", "body"),
+        expected=expected_cursor, region=cursor_region
     ) is not True:
         raise AssertionError(
             f"{case['name']} cursor did not match {case['expected_cursor']!r}"

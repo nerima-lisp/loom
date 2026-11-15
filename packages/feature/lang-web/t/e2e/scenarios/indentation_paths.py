@@ -76,6 +76,7 @@ def indentation_region(binary):
             session.assert_screen_text(
                 "  value", match="starts_with", region="body", index=1
             )
+            session.wait_for_region_cursor("body", 6, index=2, timeout=1.0)
             if session.observe_cursor(expected=(2, 6), region="body") is not True:
                 raise AssertionError("lang-web/indentation-region: cursor moved unexpectedly")
             _finish(session, "lang-web/indentation-region")

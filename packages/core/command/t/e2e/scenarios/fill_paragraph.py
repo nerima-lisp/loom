@@ -9,6 +9,7 @@ from loom_e2e.session import Session
 
 
 def _assert_cursor(session, expected, index=0):
+    session.wait_for_region_cursor("body", expected[1], index=index)
     if session.observe_cursor(
         expected=expected, region="body", index=index
     ) is not True:

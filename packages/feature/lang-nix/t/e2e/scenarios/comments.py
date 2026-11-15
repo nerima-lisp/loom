@@ -75,6 +75,7 @@ def lang_nix_mode_assignment(binary):
                 "Nix", match="contains", region="mode-line"
             )
             session.assert_file_bytes(nix_path, b"nix file body\n")
+            session.wait_for_region_cursor("body", 0)
             if session.observe_cursor(expected=(0, 0), region="body") is not True:
                 raise AssertionError(
                     "lang-nix-mode-assignment: cursor is not at the start of the .nix buffer"

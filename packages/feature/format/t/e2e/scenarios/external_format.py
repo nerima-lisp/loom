@@ -649,6 +649,7 @@ def format_current_buffer_prefix_u4(binary):
 
 
 def _assert_point_zero(session, scenario_name):
+    session.wait_for_region_cursor("body", 0)
     if session.observe_cursor(expected=(0, 0), region="body") is not True:
         raise AssertionError(
             f"{scenario_name}: cursor was {session.region_cursor('body')!r}, expected (0, 0)"

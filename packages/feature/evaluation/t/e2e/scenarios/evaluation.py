@@ -86,6 +86,7 @@ def eval_buffer_mx(binary):
                 "(+ 1 2)", match="contains", region="body"
             )
             session.assert_file_bytes(path, _SOURCE)
+            session.wait_for_region_cursor("body", 0)
             if session.observe_cursor(expected=(0, 0), region="body") is not True:
                 raise AssertionError(
                     f"cursor was {session.region_cursor('body')!r}, expected {(0, 0)!r}"
