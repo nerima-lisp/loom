@@ -79,7 +79,7 @@
       flake = false;
     };
     cl-vcs-kit = {
-      url = "github:nerima-lisp/cl-vcs-kit/68ea9cb355be2ea67d3f01412e432555a382387f";
+      url = "github:nerima-lisp/cl-vcs-kit/f614a6e96e74d428fe3aef687f349f3833f08f14";
       flake = false;
     };
     cl-resilience-kit = {
