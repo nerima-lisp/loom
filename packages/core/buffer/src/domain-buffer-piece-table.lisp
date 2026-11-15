@@ -1,9 +1,14 @@
 (in-package #:loom/core/buffer)
 
 
-(defun %update-after-insert (buffer was-narrowed-p old-length text-length)
+(defun %update-after-insert (buffer was-narrowed-p old-length offset text-length)
   (if was-narrowed-p
-      (incf (%buffer-narrow-end-offset buffer) text-length)
+      (progn
+        ;; Both boundaries include insertion exactly at their position.
+        (when (< offset (%buffer-narrow-start-offset buffer))
+          (incf (%buffer-narrow-start-offset buffer) text-length))
+        (when (<= offset (%buffer-narrow-end-offset buffer))
+          (incf (%buffer-narrow-end-offset buffer) text-length)))
       (setf (%buffer-narrow-start-offset buffer) 0
             (%buffer-narrow-end-offset buffer) (+ old-length text-length)))
   (setf (%buffer-modified-p buffer) t))
@@ -20,9 +25,16 @@
          (when undo-replacement-p (list :undo-replacement)))
         (%buffer-undo-list buffer)))
 
-(defun %update-after-delete (buffer was-narrowed-p old-length deleted-length)
+(defun %update-after-delete (buffer was-narrowed-p old-length offset deleted-length)
   (if was-narrowed-p
-      (decf (%buffer-narrow-end-offset buffer) deleted-length)
+      (setf (%buffer-narrow-start-offset buffer)
+            (- (%buffer-narrow-start-offset buffer)
+               (min deleted-length
+                    (max 0 (- (%buffer-narrow-start-offset buffer) offset))))
+            (%buffer-narrow-end-offset buffer)
+            (- (%buffer-narrow-end-offset buffer)
+               (min deleted-length
+                    (max 0 (- (%buffer-narrow-end-offset buffer) offset)))))
       (setf (%buffer-narrow-start-offset buffer) 0
             (%buffer-narrow-end-offset buffer) (- old-length deleted-length)))
   (setf (%buffer-modified-p buffer) t))
@@ -61,7 +73,7 @@ new edit rather than an undo/redo replay."
       (multiple-value-bind (end-line end-column)
           (%raw-insert-at buffer line column text)
         (%update-line-index-after-insert buffer line offset text)
-        (%update-after-insert buffer was-narrowed old-length text-length)
+        (%update-after-insert buffer was-narrowed old-length offset text-length)
         (%record-insert buffer line column text clear-redo undo-replacement-p)
         (%record-buffer-change buffer line)
         (values end-line end-column)))))
@@ -84,7 +96,7 @@ new edit rather than an undo/redo replay."
            (deleted-length (- end-offset start-offset)))
       (%raw-delete-region buffer start-line start-column end-line end-column)
       (%update-line-index-after-delete buffer start-line end-line deleted-length)
-      (%update-after-delete buffer was-narrowed old-length deleted-length)
+      (%update-after-delete buffer was-narrowed old-length start-offset deleted-length)
       (%record-delete buffer start-line start-column text clear-redo undo-replacement-p)
       (%record-buffer-change buffer start-line)
       text)))

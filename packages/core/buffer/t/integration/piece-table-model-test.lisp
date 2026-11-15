@@ -135,7 +135,7 @@
           (expect status :to-equal :external)
           (expect (and symbol (fboundp symbol)) :to-be-truthy))))
     (cl-weave:it-property
-        "matches a string model with history replay inside narrowed bounds"
+        "matches a string model with history replay across narrowed bounds"
         ((seed (cl-weave:gen-integer :min 1 :max 2147483647)))
       (let* ((reference (format nil "ab~%~%cd~%"))
              (buffer (make-buffer :initial-content reference))
@@ -186,26 +186,21 @@
                      (setf redo nil))))
                 ((2 3)
                  (let ((candidate (if (= kind 2) (first undo) (first redo))))
-                   ;; Earlier edits outside narrowing can invert the legacy bounds.
-                   ;; Replay only spans wholly inside the current visible region.
-                   (when (or (null candidate)
-                             (and (<= start (first candidate))
-                                  (<= (+ (first candidate) (length (second candidate))) end)))
-                     (when (and candidate
-                                (or (plusp start) (< end (length reference))))
-                       (incf narrow-history-count)
-                       (when (< step 4) (incf prefix-history-count)))
-                     (if (= kind 2)
-                         (progn
-                           (setf action (pop undo))
-                           (buffer-undo buffer)
-                           (when action
-                             (push (inverse action) undo)
-                             (push (inverse action) redo)))
-                         (progn
-                           (setf action (pop redo))
-                           (buffer-redo buffer)
-                           (when action (push (inverse action) undo)))))))
+                   (when (and candidate
+                              (or (plusp start) (< end (length reference))))
+                     (incf narrow-history-count)
+                     (when (< step 4) (incf prefix-history-count)))
+                   (if (= kind 2)
+                       (progn
+                         (setf action (pop undo))
+                         (buffer-undo buffer)
+                         (when action
+                           (push (inverse action) undo)
+                           (push (inverse action) redo)))
+                       (progn
+                         (setf action (pop redo))
+                         (buffer-redo buffer)
+                         (when action (push (inverse action) undo))))))
                 (4
                  (let* ((new-start (if (zerop step) 1
                                        (+ start (pick (1+ (- end start))))))
@@ -225,7 +220,18 @@
                     (push (cons (version buffer)
                                 (nth-value 0 (%model-position-at reference (first action))))
                           events)
-                    (incf end (- (length (third action)) (length (second action))))
+                    (destructuring-bind (offset removed inserted) action
+                      (flet ((move-bound (bound end-p)
+                               (let ((after-delete
+                                       (- bound (min (length removed)
+                                                     (max 0 (- bound offset))))))
+                                 (+ after-delete
+                                    (if (if end-p
+                                            (<= offset after-delete)
+                                            (< offset after-delete))
+                                        (length inserted) 0)))))
+                        (setf end (move-bound end t)
+                              start (move-bound start nil))))
                     (setf reference (apply-model reference action))
                     (expect (version buffer) :to-equal (1+ old-version)))
                   (expect (version buffer) :to-equal old-version))
@@ -253,6 +259,59 @@
         (format t "~&C1-MODEL-TRACE seed=~D narrowed-replays=~D prefix-replays=~D random-replays=~D operations=~S~%"
                 seed narrow-history-count prefix-history-count
                 (- narrow-history-count prefix-history-count) (reverse operations))
+        t))
+    (cl-weave:it-property
+        "matches a string model with mandatory outside undo and redo"
+        ((seed (cl-weave:gen-integer :min 1 :max 2147483647)))
+      (let ((replays 0))
+        ;; Every seed covers before, after, exact boundaries, crossing, and collapse.
+        (dolist (spec '((1 0 "XX") (2 0 "XX") (3 0 "XX")
+                        (5 0 "XX") (6 0 "XX") (7 0 "XX")
+                        (9 0 "XX") (1 0 "XXXXXXXX")
+                        (1 2 "") (3 2 "") (5 2 "")
+                        (7 2 "") (9 2 "")))
+          (destructuring-bind (offset count inserted) spec
+            (let* ((original (coerce (loop for index below 20
+                                          collect (if (zerop (mod (+ seed index) 5))
+                                                      #\Newline #\a)) 'string))
+                   (buffer (make-buffer :initial-content original))
+                   (action (list offset (subseq original offset (+ offset count)) inserted))
+                   (text (apply-model original action))
+                   (start 3)
+                   (end 7))
+              (apply-public buffer original action)
+              (multiple-value-bind (line column) (%model-position-at text start)
+                (multiple-value-bind (end-line end-column) (%model-position-at text end)
+                  (buffer-narrow-to-region buffer line column end-line end-column)))
+              (dolist (replay (list (inverse action) action))
+                (let ((old-version (version buffer)))
+                  (if (zerop (mod replays 2)) (buffer-undo buffer) (buffer-redo buffer))
+                  (incf replays)
+                  (destructuring-bind (position removed added) replay
+                    ;; Model the restriction as a slice: remove overlap to each boundary,
+                    ;; then include additions exactly at either end.
+                    (let ((left-removed (min (length removed) (max 0 (- start position))))
+                          (right-removed (min (length removed) (max 0 (- end position)))))
+                      (decf start left-removed)
+                      (decf end right-removed)
+                      (when (< position start) (incf start (length added)))
+                      (when (<= position end) (incf end (length added)))))
+                  (setf text (apply-model text replay))
+                  (expect (version buffer) :to-equal (1+ old-version))
+                  (check-index buffer text)
+                  (expect (buffer-narrow-start-offset buffer) :to-equal start)
+                  (expect (buffer-narrow-end-offset buffer) :to-equal end)
+                  (expect (<= 0 start end (length text)) :to-be-truthy)
+                  (expect (buffer-visible-text buffer) :to-equal (subseq text start end))
+                  (expect (buffer-visible-line-count buffer)
+                          :to-equal (%model-line-count (subseq text start end)))
+                  (expect (changed-since buffer old-version)
+                          :to-equal (nth-value 0 (%model-position-at
+                                                 (if (zerop (mod replays 2)) original
+                                                     (apply-model original action))
+                                                 (first replay)))))))))
+        (expect replays :to-equal 26)
+        (format t "~&C2-OUTSIDE-TRACE seed=~D replays=~D~%" seed replays)
         t))
     (it "reports absolute changed lines while narrowed and after history replay"
       (let* ((buffer (make-buffer :initial-content (format nil "a~%b~%c~%d")))
