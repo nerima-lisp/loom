@@ -16,7 +16,15 @@ def _populate(directory):
 def _open_tree(session):
     session.wait_ready()
     session.send(keys.ctrl("x") + keys.text("d"))
-    session.wait_for_region_text("screen", "wp3-000.txt", index=0)
+    _assert_sidebar_row(session, 0, "wp3-000.txt")
+
+
+def _assert_sidebar_row(session, row, label):
+    session.wait_until(
+        lambda _screen: label in session.screen.lines()[row][:24],
+        what=f"file-tree row {row} to contain {label}",
+    )
+    session.assert_screen_text(label, match="contains", row=row)
 
 
 def _selected_row(session, label):
@@ -31,13 +39,13 @@ def _selected_row(session, label):
     )
 
 
-def _assert_selected(session, label):
+def _assert_selected(session, label, expected_row=None):
     session.wait_until(
         lambda _screen: _selected_row(session, label) is not None,
         what=f"selected file-tree entry {label} to be visible",
     )
-    row = _selected_row(session, label)
-    session.assert_screen_text(label, match="contains", region="screen", index=row)
+    row = _selected_row(session, label) if expected_row is None else expected_row
+    session.assert_screen_text(label, match="contains", row=row)
     session.assert_cell_attrs(row, 2, {"reverse": True})
 
 
@@ -53,9 +61,11 @@ def scroll_down(binary):
         _populate(directory)
         with Session(binary, [directory]) as session:
             _open_tree(session)
+            height = session.rows - 1
             for index in range(200):
                 session.send(keys.ctrl("c") + keys.text("n"))
-                _assert_selected(session, f"wp3-{index:03d}.txt")
+                expected_row = height - 1 if index == 199 else min(index, height - 2)
+                _assert_selected(session, f"wp3-{index:03d}.txt", expected_row)
             _quit(session)
 
 
@@ -66,10 +76,12 @@ def scroll_up(binary):
         with Session(binary, [directory]) as session:
             _open_tree(session)
             session.send((keys.ctrl("c") + keys.text("n")) * 200)
-            _assert_selected(session, "wp3-199.txt")
+            _assert_selected(session, "wp3-199.txt", session.rows - 2)
+            initial_top = 200 - (session.rows - 1)
             for index in range(198, -1, -1):
                 session.send(keys.ctrl("c") + keys.text("p"))
-                _assert_selected(session, f"wp3-{index:03d}.txt")
+                expected_row = min(index, max(1, index - initial_top))
+                _assert_selected(session, f"wp3-{index:03d}.txt", expected_row)
             _quit(session)
 
 
@@ -94,38 +106,43 @@ def scroll_click(binary):
             _quit(session)
 
 
-@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next"])
+@scenario("file-tree/wp3-scroll/resize", commands=["toggle-file-tree", "file-tree-select-next", "file-tree-open-selected"])
 def scroll_resize(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-wp3-") as directory:
         _populate(directory)
         with Session(binary, [directory], rows=32) as session:
             _open_tree(session)
             session.send((keys.ctrl("c") + keys.text("n")) * 200)
-            _assert_selected(session, "wp3-199.txt")
+            _assert_selected(session, "wp3-199.txt", 30)
+            session.send(b"\x1b[<64;3;10M")
+            _assert_sidebar_row(session, 0, "wp3-166.txt")
+            session.send(keys.ctrl("c") + keys.text("o"))
+            session.wait_for_region_text("body", "WP3 content 199")
+            session.assert_screen_text("WP3 content 199", match="contains", region="body")
+            _assert_sidebar_row(session, 0, "wp3-166.txt")
             session.resize(80, 12)
-            _assert_selected(session, "wp3-199.txt")
-            session.assert_screen_text(
-                "wp3-189.txt", match="contains", region="screen", index=0
-            )
+            _assert_sidebar_row(session, 0, "wp3-166.txt")
+            session.resize(80, 42)
+            _assert_sidebar_row(session, 0, "wp3-159.txt")
+            _assert_selected(session, "wp3-199.txt", 40)
             _quit(session)
 
 
-@scenario("file-tree/wp3-scroll/wheel", commands=["toggle-file-tree", "file-tree-select-next"])
+@scenario("file-tree/wp3-scroll/wheel", commands=["toggle-file-tree", "file-tree-select-next", "file-tree-open-selected"])
 def scroll_wheel(binary):
     with tempfile.TemporaryDirectory(prefix="loom-e2e-wp3-") as directory:
         _populate(directory)
         with Session(binary, [directory]) as session:
             _open_tree(session)
             session.send(keys.ctrl("c") + keys.text("n"))
-            _assert_selected(session, "wp3-000.txt")
+            _assert_selected(session, "wp3-000.txt", 0)
             session.send(b"\x1b[<65;3;10M")
-            session.wait_for_region_text("screen", "wp3-003.txt", index=0)
-            session.assert_screen_text(
-                "wp3-003.txt", match="contains", region="screen", index=0
-            )
+            _assert_sidebar_row(session, 0, "wp3-003.txt")
+            session.send(keys.ctrl("c") + keys.text("o"))
+            session.wait_for_region_text("body", "WP3 content 000")
+            session.assert_screen_text("WP3 content 000", match="contains", region="body")
+            _assert_sidebar_row(session, 0, "wp3-003.txt")
             session.send(b"\x1b[<64;3;10M")
-            _assert_selected(session, "wp3-000.txt")
-            session.assert_screen_text(
-                "wp3-000.txt", match="contains", region="screen", index=0
-            )
+            _assert_selected(session, "wp3-000.txt", 0)
+            _assert_sidebar_row(session, 0, "wp3-000.txt")
             _quit(session)
