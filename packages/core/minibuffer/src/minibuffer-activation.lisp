@@ -71,13 +71,13 @@ events leave the prompt active and show input guidance. Returns MINIBUFFER."
         (%minibuffer-on-confirm minibuffer) on-confirm
         (%minibuffer-on-cancel minibuffer) on-cancel
         (%minibuffer-on-change minibuffer) on-change
-        (%minibuffer-on-key minibuffer
-                            (if (eq input-kind :char)
-                                (lambda (key-event)
-                                  (%minibuffer-handle-char-event
-                                   minibuffer key-event allowed-characters
-                                   on-key))
-                                on-key))
+        (%minibuffer-on-key minibuffer)
+        (if (eq input-kind :char)
+            (lambda (key-event)
+              (%minibuffer-handle-char-event
+               minibuffer key-event allowed-characters
+               on-key))
+            on-key)
         (%minibuffer-completion-function minibuffer) completion-function
         (%minibuffer-completion-candidates minibuffer) nil
         (%minibuffer-message minibuffer) nil)
