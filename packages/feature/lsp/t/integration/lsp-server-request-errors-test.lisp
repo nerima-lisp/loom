@@ -96,6 +96,24 @@
 
 (describe
   "LSP malformed server requests revision"
+  (it "rejects requests missing required params while allowing optional params to be absent"
+    (%with-fake-lsp-session ((transport session))
+      (loop for method in '("client/registerCapability" "client/unregisterCapability"
+                            "workspace/configuration" "window/showMessageRequest")
+            for id from 180
+            do (%fake-push-and-drain
+                transport session
+                (format nil "{\"jsonrpc\":\"2.0\",\"id\":~D,\"method\":~A}"
+                        id (json-kit:stringify method)))
+               (expect (gethash "code" (gethash "error" (%wp7-response transport id)))
+                       :to-equal -32602))
+      (%fake-push-and-drain transport session
+                            "{\"jsonrpc\":\"2.0\",\"id\":184,\"method\":\"workspace/workspaceFolders\"}")
+      (expect (gethash "result" (%wp7-response transport 184)) :to-be json-kit:+json-null+)
+      (%fake-push-and-drain transport session
+                            "{\"jsonrpc\":\"2.0\",\"id\":185,\"method\":\"unknown/method\"}")
+      (expect (gethash "code" (gethash "error" (%wp7-response transport 185))) :to-equal -32601)))
+
   (it "returns one Invalid params response and processes the following valid request"
     (%with-fake-lsp-session ((transport session))
       (loop for (method params) in

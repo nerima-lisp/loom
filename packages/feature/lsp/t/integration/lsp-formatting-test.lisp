@@ -17,9 +17,12 @@
               (%with-started-fake-lsp-session ((transport session))
                                               (expect session :to-be-truthy)
                                               (let* ((initialize
-                                                      (%fake-sent-message
-                                                       transport
-                                                       0))
+                                                      (json-kit:parse
+                                                       (first (%fake-sent-in-order transport))
+                                                       :object-type :hash-table
+                                                       :array-type :vector
+                                                       :null-value json-kit:+json-null+
+                                                       :false-value json-kit:+json-false+))
                                                      (params
                                                       (and
                                                        (hash-table-p initialize)
@@ -46,7 +49,7 @@
                                                 (expect (nth-value 1 (gethash "dynamicRegistration" formatting))
                                                         :to-be t)
                                                 (expect (gethash "dynamicRegistration" formatting)
-                                                        :to-be nil))))
+                                                        :to-be json-kit:+json-false+))))
           (it "registers M-x lsp-format-buffer and reports a missing session"
               (let ((command (%lsp-formatting-command)))
                 (expect command :to-be-truthy)

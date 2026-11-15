@@ -69,8 +69,7 @@
     (handler-case
         (%lsp-handle-initialize-response-payload session message)
       (error (condition)
-        (setf (lsp-session-last-error session)
-              (princ-to-string condition))))))
+        (%lsp-record-error session condition)))))
 
 (defun %lsp-handle-shutdown-response (session message)
   (when (%lsp-message-id-matches-p

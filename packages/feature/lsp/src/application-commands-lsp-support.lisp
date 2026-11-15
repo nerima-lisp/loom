@@ -164,4 +164,15 @@
                (lsp-session-stop new-session))
              (values nil condition)))))
 
-(defun %lsp-report-start-result (minibuffer session condition) (declare (ignore session)) (if condition (loom/core/minibuffer:minibuffer-message minibuffer (format nil "LSP start failed: ~A" (if (typep condition (quote lsp-transport-send-exit-error)) (format nil "server exited with status ~D" (lsp-transport-send-exit-status condition)) condition))) (loom/core/minibuffer:minibuffer-message minibuffer "LSP started.")))
+(defun %lsp-report-start-result (minibuffer session condition)
+  (declare (ignore session))
+  (if condition
+      (minibuffer-message
+       minibuffer
+       (%lsp-display-text
+        (format nil "LSP start failed: ~A"
+                (if (typep condition 'lsp-transport-send-exit-error)
+                    (format nil "server exited with status ~D"
+                            (lsp-transport-send-exit-status condition))
+                    condition))))
+      (minibuffer-message minibuffer "LSP started.")))

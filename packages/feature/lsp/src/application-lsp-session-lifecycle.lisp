@@ -42,7 +42,7 @@ request is pending."
                      (lsp-session-initialized-p session))
             (lsp-session-sync-buffer session buffer)))
       (error (condition)
-        (setf (lsp-session-last-error session) (princ-to-string condition)))))
+        (%lsp-record-error session condition))))
   session)
 
 (defun %lsp-shutdown-deadline (timeout)
@@ -55,8 +55,7 @@ request is pending."
         (setf (lsp-session-pending-shutdown-id session)
               (%lsp-send-request session "shutdown"))
       (error (condition)
-        (setf (lsp-session-last-error session)
-              (princ-to-string condition))))))
+        (%lsp-record-error session condition)))))
 
 (defun %lsp-await-shutdown (session timeout)
   (let ((deadline (%lsp-shutdown-deadline timeout)))
@@ -118,8 +117,8 @@ attempted before closing the transport; delivery is not guaranteed."
              (handler-case
                  (lsp-session-drain session)
                (error (condition)
-                      (setf (lsp-session-last-error session)
-                            (princ-to-string condition))))))
+                 (%lsp-record-error session condition))))
+           (%lsp-show-next-server-request session))
          registry)))
     state))
 

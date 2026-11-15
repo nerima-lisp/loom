@@ -1,8 +1,10 @@
 (in-package #:loom/feature/lsp)
 
-(defun %lsp-send-object (session object)
-  (lsp-transport-send (lsp-session-transport session)
-                      (json-kit:stringify object)))
+(defun %lsp-send-object (session object &key before-send)
+  (let ((json (json-kit:stringify object)))
+    (when before-send
+      (funcall before-send))
+    (lsp-transport-send (lsp-session-transport session) json)))
 
 (defun %lsp-send-notification (session method &optional (params nil params-p))
   (let ((fields (list (cons "jsonrpc" "2.0")

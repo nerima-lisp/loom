@@ -42,6 +42,8 @@ rejected."
   (registrations (make-hash-table :test #'equal))
   server-request-queue
   server-request-minibuffer
+  server-request-token
+  server-request-active
   pending-shutdown-id
   (exit-sent-p nil)
   transport-error

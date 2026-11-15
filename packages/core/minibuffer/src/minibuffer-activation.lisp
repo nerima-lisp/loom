@@ -20,6 +20,7 @@ registration order. Callback errors propagate and stop dispatch."
 (defun %minibuffer-deactivate (minibuffer)
   "Reset MINIBUFFER to the inactive state, discarding prompt/input/callbacks."
   (setf (%minibuffer-active-p minibuffer) nil
+        (%minibuffer-activation-token minibuffer) nil
         (%minibuffer-prompt minibuffer) nil
         (%minibuffer-input minibuffer) ""
         (%minibuffer-point minibuffer) 0
@@ -69,6 +70,7 @@ and show input guidance. Returns MINIBUFFER."
     (when history
       (history-kit:history-reset-navigation history)))
   (setf (%minibuffer-active-p minibuffer) t
+        (%minibuffer-activation-token minibuffer) (gensym "MINIBUFFER-ACTIVATION-")
         (%minibuffer-prompt minibuffer) prompt
         (%minibuffer-input minibuffer) ""
         (%minibuffer-point minibuffer) 0

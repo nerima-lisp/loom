@@ -5,6 +5,7 @@
    #:minibuffer-p
    #:make-minibuffer
    #:minibuffer-active-p
+   #:minibuffer-activation-token
    #:minibuffer-prompt-string
    #:minibuffer-input-string
    #:minibuffer-input-point
@@ -14,10 +15,10 @@
    #:minibuffer-deactivate
    #:minibuffer-set-prompt
    #:minibuffer-message
+   #:minibuffer-log-message
    #:register-message-sink
    #:minibuffer-history-entries
    #:minibuffer-set-history-entries
    #:minibuffer-complete
    #:minibuffer-handle-key
-   #:with-prompts
-   #:minibuffer-log-message))
+   #:with-prompts))

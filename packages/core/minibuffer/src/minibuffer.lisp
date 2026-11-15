@@ -2,6 +2,7 @@
 
 (defstruct (minibuffer (:constructor %make-minibuffer) (:conc-name %minibuffer-))
   (active-p nil)
+  activation-token
   (prompt nil)
   (input "")
   (point 0)
@@ -48,3 +49,9 @@ as a string. Returns an empty string when MINIBUFFER is not active."
 (defun minibuffer-input-point (minibuffer)
   "Return the character position of point in MINIBUFFER's current input."
   (%minibuffer-point minibuffer))
+
+(defun minibuffer-activation-token (minibuffer)
+  "Return an opaque identity for the current activation, or NIL when inactive.
+
+Compare tokens with EQ to recognize the same prompt even when text changes."
+  (%minibuffer-activation-token minibuffer))
