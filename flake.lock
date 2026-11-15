@@ -54,16 +54,16 @@
     "cl-concurrent-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1785940791,
-        "narHash": "sha256-4ZXzAIMn4x+/zhx+jOW/Vr61oT/lc+PJIWzAE5y2Qsw=",
+        "lastModified": 1794735161,
+        "narHash": "sha256-OdjkdT/DvB+VlVr7bA/2G6v2//HC4+vph8poFFCJ7fE=",
         "owner": "nerima-lisp",
         "repo": "cl-concurrent-kit",
-        "rev": "0ef20d36a0a12800f231172227bd94034611c639",
+        "rev": "3e3d6653447f6db954008277e3fec7d74446472f",
         "type": "github"
       },
       "original": {
         "owner": "nerima-lisp",
-        "ref": "v0.6.1",
+        "ref": "v0.8.0",
         "repo": "cl-concurrent-kit",
         "type": "github"
       }
@@ -357,16 +357,16 @@
     "cl-tty-kit": {
       "flake": false,
       "locked": {
-        "lastModified": 1792963631,
-        "narHash": "sha256-F2kpMBKgMIjYNV+Vpw6L7QfQO5Y+ztTomDQAE8qHTeQ=",
+        "lastModified": 1794727275,
+        "narHash": "sha256-YmJNkt56/hbYJhHOXHKH+vduVG+CDgkSU0het+rGzPM=",
         "owner": "nerima-lisp",
         "repo": "cl-tty-kit",
-        "rev": "9d7ac1f890010775d90e708dcf75f04517456a11",
+        "rev": "a71b6d344df2d296e07024f4b7d2b08a99ea6e9a",
         "type": "github"
       },
       "original": {
         "owner": "nerima-lisp",
-        "ref": "v1.7.3",
+        "ref": "v1.9.0",
         "repo": "cl-tty-kit",
         "type": "github"
       }

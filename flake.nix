@@ -21,7 +21,7 @@
     };
 
     cl-tty-kit = {
-      url = "github:nerima-lisp/cl-tty-kit/v1.7.3";
+      url = "github:nerima-lisp/cl-tty-kit/v1.9.0";
       flake = false;
     };
     # cl-tty-kit requires these transitive libraries explicitly.
@@ -54,7 +54,7 @@
       flake = false;
     };
     cl-concurrent-kit = {
-      url = "github:nerima-lisp/cl-concurrent-kit/v0.6.1";
+      url = "github:nerima-lisp/cl-concurrent-kit/v0.8.0";
       flake = false;
     };
     # cl-regex-kit requires cl-parser-kit explicitly.
@@ -233,7 +233,6 @@
               src = cl-tty-kit;
               patches = [
                 ./patches/cl-tty-kit-wide-character-rendering.patch
-                ./patches/cl-tty-kit-paste-marker-event-type-guard.patch
                 ./patches/cl-tty-kit-control-h-key.patch
               ];
             };
