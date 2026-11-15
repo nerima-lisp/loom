@@ -142,10 +142,10 @@ A cancelled first display leaves the buffer here until a later visit shows it.")
   (setf (gethash buffer *file-open-pending-buffers*) t)
   buffer)
 
-(defun %visit-existing-file (path)
+(defun %visit-existing-file (path &optional on-display)
   "Load PATH, display its file buffer, and refresh recency after the switch.
 A buffer loaded by this file runs the :AFTER-FILE-OPEN hooks the first time it
-is shown."
+is shown. ON-DISPLAY, when given, is then called with the buffer."
   (let ((buffer
           (or (find-buffer-by-path *editor-session* path)
               (%new-file-open-buffer
@@ -154,7 +154,9 @@ is shown."
      buffer
      (lambda ()
        (%record-recent-file path)
-       (%run-pending-file-open-hooks buffer)))
+       (%run-pending-file-open-hooks buffer)
+       (when on-display
+         (funcall on-display buffer))))
     buffer))
 
 (defun visit-file (path)
@@ -179,12 +181,14 @@ an empty buffer associated with that path, so a later save creates the file."
    ((input "Find file: " :completion-function #'%find-file-candidates))
    (find-file-path input)))
 
-(defun find-file-path (input)
+(defun find-file-path (input &key on-display)
   "Show the buffer for the path INPUT names in the selected window, as FIND-FILE
 does with its answer, and return the buffer.
 
 A path that does not exist opens as an empty buffer associated with that path.
-A directory is reported in the echo area and yields NIL."
+A directory is reported in the echo area and yields NIL. ON-DISPLAY, when given,
+is called with the buffer once it is shown: after the answer when the switch
+first asks about an external change, and never when that question is cancelled."
   (let* ((path (literal-file-path input))
          (existing-path (probe-file path))
          (directory-p
@@ -197,13 +201,16 @@ A directory is reported in the echo area and yields NIL."
        (minibuffer-message (editor-state-minibuffer *editor-state*)
                            (format nil "Cannot open directory: ~A" input))
        nil)
-      (existing-buffer (%visit-existing-file (or existing-path path)))
-      (existing-path (%visit-existing-file existing-path))
+      (existing-buffer (%visit-existing-file (or existing-path path) on-display))
+      (existing-path (%visit-existing-file existing-path on-display))
       (t
        (let ((buffer (%new-file-open-buffer (%make-file-buffer path))))
          (%show-buffer-in-selected-window
           buffer
-          (lambda () (%run-pending-file-open-hooks buffer))))))))
+          (lambda ()
+            (%run-pending-file-open-hooks buffer)
+            (when on-display
+              (funcall on-display buffer)))))))))
 
 (defun recent-file ()
   "Prompt from the recent-file list and visit the selected path."

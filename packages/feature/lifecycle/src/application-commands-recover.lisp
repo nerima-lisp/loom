@@ -235,11 +235,10 @@ buffer visiting the body or holding unsaved edits is never reused."
     buffer))
 
 (defun %visit-recovery-file (path)
-  "Open PATH as find-file does, then offer its unsaved work. The offer waits
-when the switch to the buffer is itself waiting on a question."
-  (let ((buffer (find-file-path path)))
-    (when (and buffer (eq (window-buffer (%selected-window)) buffer))
-      (%recover-buffer buffer))))
+  "Open PATH as find-file does, then offer its unsaved work once the buffer is
+shown. When the switch first asks about an external change, the offer follows
+an answer that shows the buffer; a cancelled switch offers nothing."
+  (find-file-path path :on-display #'%recover-buffer))
 
 (defun recover-list-visit ()
   "Open the recovery entry on this line of *Loom-Recover*: a file's entry opens

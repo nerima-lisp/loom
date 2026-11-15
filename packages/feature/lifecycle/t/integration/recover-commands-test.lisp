@@ -251,7 +251,47 @@
               (expect (eq (%recover-test-selected-buffer) shown) :to-be nil)
               (expect (buffer-text shown) :to-equal (format nil "mine legacy~%"))
               (expect (buffer-text (%recover-test-selected-buffer))
-                      :to-equal (format nil "legacy~%")))))))))
+                      :to-equal (format nil "legacy~%"))))))))
+
+  (it "offers the unsaved work once the external-change question shows the file"
+    (cl-weave:expect-assertions 8)
+    (%with-lock-test-state (state)
+      (let* ((path (%lock-test-file state "changed.txt" (format nil "saved~%")))
+             (entry (%detection-test-entry state "buffer-sigterm-1-0-0-0"
+                                           (format nil "recovered~%")
+                                           (%lock-test-truename path))))
+        (%with-minibuffer-state (minibuffer "")
+          (let* ((buffer (loom/feature/files:visit-file path))
+                 (change-prompt
+                   (format nil "File changed on disk. [r]eload (discard local edits), [k]eep, [c]ancel: ~A"
+                           (sb-ext:native-namestring (buffer-path buffer)))))
+            (host-kit:write-file-string (format nil "external~%") path)
+            (%detection-test-times path 3900000000 (first entry) 3900000125)
+            (let ((list-buffer (loom/feature/lifecycle:list-recoverable-files)))
+              (loom/feature/lifecycle:recover-list-visit)
+              (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
+                      :to-equal change-prompt)
+              (%confirm-minibuffer minibuffer "k")
+              (expect (eq (%recover-test-selected-buffer) buffer) :to-be-truthy)
+              (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
+                      :to-equal (%recover-test-prompt "recovery" "2 min"))
+              (%recover-test-key minibuffer #\i)
+              ;; c and C-g leave the list shown and offer nothing.
+              (host-kit:write-file-string (format nil "again~%") path)
+              (%detection-test-times path 3900000000 (first entry) 3900000125)
+              (loom/feature/lifecycle:list-recoverable-files)
+              (loom/feature/lifecycle:recover-list-visit)
+              (%confirm-minibuffer minibuffer "c")
+              (expect (loom/core/minibuffer:minibuffer-message-string minibuffer)
+                      :to-equal "Switch cancelled")
+              (expect (loom/core/minibuffer:minibuffer-active-p minibuffer) :to-be-falsy)
+              (expect (eq (%recover-test-selected-buffer) list-buffer) :to-be-truthy)
+              (loom/feature/lifecycle:recover-list-visit)
+              (expect (loom/core/minibuffer:minibuffer-prompt-string minibuffer)
+                      :to-equal change-prompt)
+              (%recover-test-cancel minibuffer)
+              (expect (loom/core/minibuffer:minibuffer-active-p minibuffer)
+                      :to-be-falsy))))))))
 
 (describe "recovery names and counts"
   (it "names a file's entries with its path hash and reads only those metadata files"
