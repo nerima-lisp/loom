@@ -192,8 +192,36 @@ argument is ignored."
           (window-set-buffer (%selected-window) list-buffer)
           list-buffer))))
 
+(defvar *legacy-recovery-buffers* (make-hash-table :test #'eq :weakness :key)
+  "Buffer created to show a legacy recovery entry to that entry's body name.")
+
+(defun %unused-buffer-name (session name)
+  (if (find-buffer-by-name session name)
+      (loop for suffix from 2
+            for candidate = (format nil "~A<~D>" name suffix)
+            unless (find-buffer-by-name session candidate)
+              return candidate)
+      name))
+
+(defun %legacy-recovery-buffer (body-name)
+  "Return the buffer this file created to show the legacy entry BODY-NAME when
+it still visits no file and has no unsaved edits, or register a new one named
+*Loom-Recover: BODY-NAME*. Any other buffer keeps its text."
+  (let ((session (editor-state-session *editor-state*)))
+    (or (find-if (lambda (buffer)
+                   (and (equal (gethash buffer *legacy-recovery-buffers*) body-name)
+                        (null (buffer-path buffer))
+                        (not (buffer-modified-p buffer))))
+                 (registered-buffers session))
+        (let ((buffer (make-buffer
+                       :name (%unused-buffer-name
+                              session (format nil "*Loom-Recover: ~A*" body-name)))))
+          (setf (gethash buffer *legacy-recovery-buffers*) body-name)
+          (register-buffer session buffer)))))
+
 (defun %show-legacy-recovery (entry)
-  "Show a legacy entry's text read-only in a buffer that visits no file."
+  "Show a legacy entry's text read-only in a buffer that visits no file. A
+buffer visiting the body or holding unsaved edits is never reused."
   (let* ((body (recovery-entry-body entry))
          (name (native-path-basename body))
          (text (handler-case (%lf-text (host-kit:read-file-string body))
@@ -201,7 +229,7 @@ argument is ignored."
                    (minibuffer-message (%lifecycle-minibuffer)
                                        (format nil "Cannot read ~A: ~A" name condition))
                    (return-from %show-legacy-recovery nil))))
-         (buffer (ensure-result-buffer (editor-state-session *editor-state*) name)))
+         (buffer (%legacy-recovery-buffer name)))
     (%replace-read-only-text buffer text)
     (window-set-buffer (%selected-window) buffer)
     buffer))

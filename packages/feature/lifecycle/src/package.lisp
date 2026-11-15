@@ -16,7 +16,8 @@
                 #:buffer-set-major-mode
                 #:buffer-set-point
                 #:buffer-set-read-only
-                #:buffer-text)
+                #:buffer-text
+                #:make-buffer)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
                 #:editor-state-minibuffer
@@ -41,7 +42,10 @@
                 #:window-tree-windows)
   (:import-from #:loom/feature/buffers
                 #:ensure-result-buffer
-                #:quit-buffer-list)
+                #:find-buffer-by-name
+                #:quit-buffer-list
+                #:register-buffer
+                #:registered-buffers)
   (:import-from #:loom/feature/files
                 #:find-file-path)
   (:export #:*loom-state-directory*

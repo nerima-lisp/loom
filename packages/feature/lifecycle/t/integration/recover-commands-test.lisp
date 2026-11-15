@@ -221,10 +221,37 @@
         (loom/feature/lifecycle:list-recoverable-files)
         (loom/feature/lifecycle:recover-list-visit)
         (let ((buffer (%recover-test-selected-buffer)))
-          (expect (buffer-name buffer) :to-equal "buffer-sighup-3-0-0-0.txt")
+          (expect (buffer-name buffer) :to-equal "*Loom-Recover: buffer-sighup-3-0-0-0.txt*")
           (expect (buffer-path buffer) :to-be nil)
           (expect (buffer-read-only-p buffer) :to-be-truthy)
-          (expect (buffer-text buffer) :to-equal (format nil "legacy~%")))))))
+          (expect (buffer-text buffer) :to-equal (format nil "legacy~%"))))))
+
+  (it "keeps the edits of a buffer visiting the legacy body and of an edited legacy view"
+    (cl-weave:expect-assertions 9)
+    (%with-lock-test-state (state)
+      (let ((legacy (%detection-test-entry state "buffer-sighup-3-0-0-0"
+                                           (format nil "legacy~%") nil)))
+        (%with-minibuffer-state (minibuffer "")
+          (let ((visited (loom/feature/files:find-file-path
+                          (sb-ext:native-namestring (first legacy)))))
+            (buffer-insert-string visited "edit ")
+            (loom/feature/lifecycle:list-recoverable-files)
+            (loom/feature/lifecycle:recover-list-visit)
+            (let ((shown (%recover-test-selected-buffer)))
+              (expect (eq shown visited) :to-be nil)
+              (expect (buffer-text visited) :to-equal (format nil "edit legacy~%"))
+              (expect (buffer-modified-p visited) :to-be-truthy)
+              (expect (buffer-read-only-p visited) :to-be-falsy)
+              (expect (buffer-path shown) :to-be nil)
+              (expect (buffer-text shown) :to-equal (format nil "legacy~%"))
+              (buffer-set-read-only shown nil)
+              (buffer-insert-string shown "mine ")
+              (loom/feature/lifecycle:list-recoverable-files)
+              (loom/feature/lifecycle:recover-list-visit)
+              (expect (eq (%recover-test-selected-buffer) shown) :to-be nil)
+              (expect (buffer-text shown) :to-equal (format nil "mine legacy~%"))
+              (expect (buffer-text (%recover-test-selected-buffer))
+                      :to-equal (format nil "legacy~%")))))))))
 
 (describe "recovery names and counts"
   (it "names a file's entries with its path hash and reads only those metadata files"
