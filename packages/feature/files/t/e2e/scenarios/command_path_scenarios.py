@@ -23,7 +23,6 @@ _ENTRY_KEYS = {
     "find-file": ["C-x", "C-f"],
     "recent-file": ["C-x", "r", "f"],
     "save-buffer": ["C-x", "C-s"],
-    "save-some-buffers": ["C-x", "s"],
     "write-file": ["C-x", "C-w"],
 }
 _PROMPT_TEXT = {
@@ -359,11 +358,12 @@ def _save_pathless_buffer_for_assertion(session, case):
     _wait_exact(session, "minibuffer", f"Wrote {case['target_path']}")
 
 
-def _quit_after_discarding_buffer(session, prompt_text):
+def _quit_after_discarding_buffer(session, prompt_text, *additional_prompt_texts):
     _send_keys(session, ["C-x", "C-c"])
-    _wait_exact(session, "minibuffer", prompt_text)
-    session.type("d")
-    session.key("RET")
+    for expected_prompt in (prompt_text, *additional_prompt_texts):
+        _wait_exact(session, "minibuffer", expected_prompt)
+        session.type("d")
+        session.key("RET")
     output, code = session.process.wait(timeout=DEFAULT_TIMEOUT)
     session.observe_exit_code(code, expected=0)
     return output, code
@@ -578,8 +578,22 @@ def _assert_files_r3_state(
         if writer is not None:
             command, route, after, writes = writer
             if writes:
-                session.wait_for_file(
-                    path, expected_file, command=command, route=route, after=after
+                if command == "save-some-buffers" or (
+                    command == "call-last-kbd-macro"
+                    and case["command"] == "save-some-buffers"
+                ):
+                    session.wait_for_prompted_file(
+                        path,
+                        expected_file,
+                        minibuffer or "Saved 1 file(s)",
+                    )
+                else:
+                    session.wait_for_file(
+                        path, expected_file, command=command, route=route, after=after
+                    )
+            else:
+                session.wait_for_command_completion(
+                    command, route=route, after=after
                 )
         session.assert_file_bytes(path, expected_file)
 
@@ -660,7 +674,13 @@ def _send_declared_revert_command(session, case):
         _wait_exact(session, "minibuffer", case["effect_minibuffer"])
 
 
-def _run_files_save_mutation(session, case, path):
+def _send_files_save_command(session, case, path, sequence, writer, *, writes=True):
+    if writer == "save-buffer":
+        return _send_writing_keys(session, sequence, writer, writes=writes)
+    return _save_some_buffers_command(session, case, path, sequence)
+
+
+def _run_files_save_mutation(session, case, path, writer):
     _run_files_setup(session, case)
     if case.get("read_only_command"):
         session.extended_command(case["read_only_command"])
@@ -670,7 +690,9 @@ def _run_files_save_mutation(session, case, path):
     if mutation == "macro-replay":
         _assert_initial_files_r3_state(session, case, path)
         _send_keys(session, ["C-x", "("])
-        writer = _send_writing_keys(session, case["command_keys"], "save-buffer")
+        writer_call = _send_files_save_command(
+            session, case, path, case["command_keys"], writer
+        )
         _assert_files_r3_state(
             session,
             case,
@@ -678,16 +700,20 @@ def _run_files_save_mutation(session, case, path):
             expected_bytes=case["effect_bytes"],
             screen_field="effect_screen",
             minibuffer=case["effect_minibuffer"],
-            writer=writer,
+            writer=writer_call,
         )
         _send_keys(session, ["C-x", ")"])
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["effect_bytes"],
-            minibuffer=case["expected_minibuffer"],
-        )
+        if writer == "save-buffer":
+            _assert_files_r3_state(
+                session,
+                case,
+                path,
+                expected_bytes=case["effect_bytes"],
+                minibuffer=case["expected_minibuffer"],
+            )
+        else:
+            _wait_exact(session, "minibuffer", case["expected_minibuffer"])
+
         _send_keys(session, ["C-x", "u"])
         _assert_files_r3_state(
             session,
@@ -697,7 +723,10 @@ def _run_files_save_mutation(session, case, path):
             screen_field="restore_screen",
             cursor=case["restore_cursor"],
         )
-        writer = _send_writing_keys(session, ["C-x", "C-s"], "save-buffer")
+        restore_keys = ["C-x", "C-s"] if writer == "save-buffer" else ["C-x", "s"]
+        writer_call = _send_files_save_command(
+            session, case, path, restore_keys, writer
+        )
         _assert_files_r3_state(
             session,
             case,
@@ -705,11 +734,16 @@ def _run_files_save_mutation(session, case, path):
             expected_bytes=case["initial_bytes"],
             screen_field="restore_screen",
             cursor=case["restore_cursor"],
-            minibuffer=case["replay_minibuffer"],
-            writer=writer,
+            minibuffer=(
+                case["replay_minibuffer"]
+                if writer == "save-buffer"
+                else "Saved 1 file(s)"
+            ),
+            writer=writer_call,
         )
+
         _send_keys(session, case["replay_prefix_keys"])
-        writer = _send_writing_keys(
+        writer_call = _send_writing_keys(
             session, ["C-x", "e"], "call-last-kbd-macro"
         )
         _assert_files_r3_state(
@@ -718,121 +752,32 @@ def _run_files_save_mutation(session, case, path):
             path,
             expected_bytes=case["expected_bytes"],
             minibuffer=case["replay_minibuffer"],
-            writer=writer,
+            writer=writer_call,
         )
         return
 
-    writer = _send_writing_keys(
+    writer_call = _send_files_save_command(
         session,
+        case,
+        path,
         case["command_keys"],
-        "save-buffer",
+        writer,
         writes=mutation != "read-only",
+    )
+    expected_effect_bytes = (
+        case["expected_bytes"]
+        if writer == "save-some-buffers" and mutation == "read-only"
+        else case["effect_bytes"]
     )
     effect_minibuffer = case.get("effect_minibuffer", case["expected_minibuffer"])
     _assert_files_r3_state(
         session,
         case,
         path,
-        expected_bytes=case["effect_bytes"],
-        screen_field="effect_screen",
-        minibuffer=effect_minibuffer,
-        writer=writer,
-    )
-    if mutation == "undo":
-        _send_keys(session, ["C-x", "u"])
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["effect_bytes"],
-            cursor=case["expected_undo_cursor"],
-        )
-        writer = _send_writing_keys(session, ["C-x", "C-s"], "save-buffer")
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["expected_bytes"],
-            cursor=case["expected_undo_cursor"],
-            minibuffer=case["expected_minibuffer"],
-            writer=writer,
-        )
-
-
-def _run_files_save_some_mutation(session, case, path):
-    _run_files_setup(session, case)
-    if case.get("read_only_command"):
-        session.extended_command(case["read_only_command"])
-        _wait_exact(session, "minibuffer", "Buffer is read-only")
-
-    mutation = case["mutation_case"]
-    if mutation == "macro-replay":
-        _assert_initial_files_r3_state(session, case, path)
-        _send_keys(session, ["C-x", "("])
-        writer = _save_some_buffers_command(
-            session, case, path, case["command_keys"]
-        )
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["effect_bytes"],
-            screen_field="effect_screen",
-            minibuffer=case["effect_minibuffer"],
-            writer=writer,
-        )
-        _send_keys(session, ["C-x", ")"])
-        _wait_exact(session, "minibuffer", case["expected_minibuffer"])
-
-        _send_keys(session, ["C-x", "u"])
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["effect_bytes"],
-            screen_field="restore_screen",
-            cursor=case["restore_cursor"],
-        )
-        writer = _save_some_buffers_command(
-            session, case, path, ["C-x", "s"]
-        )
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["initial_bytes"],
-            screen_field="restore_screen",
-            cursor=case["restore_cursor"],
-            minibuffer="Saved 1 file(s)",
-            writer=writer,
-        )
-
-        _send_keys(session, case["replay_prefix_keys"])
-        writer = _send_writing_keys(
-            session, ["C-x", "e"], "call-last-kbd-macro"
-        )
-        _assert_files_r3_state(
-            session,
-            case,
-            path,
-            expected_bytes=case["expected_bytes"],
-            minibuffer=case["replay_minibuffer"],
-            writer=writer,
-        )
-        return
-
-    writer = _save_some_buffers_command(session, case, path, case["command_keys"])
-    expected_effect_bytes = (
-        case["expected_bytes"] if mutation == "read-only" else case["effect_bytes"]
-    )
-    _assert_files_r3_state(
-        session,
-        case,
-        path,
         expected_bytes=expected_effect_bytes,
         screen_field="effect_screen",
-        minibuffer=case.get("effect_minibuffer", case["expected_minibuffer"]),
-        writer=writer,
+        minibuffer=effect_minibuffer,
+        writer=writer_call,
     )
     if mutation == "undo":
         _send_keys(session, ["C-x", "u"])
@@ -843,17 +788,24 @@ def _run_files_save_some_mutation(session, case, path):
             expected_bytes=case["effect_bytes"],
             cursor=case["expected_undo_cursor"],
         )
-        writer = _save_some_buffers_command(session, case, path, ["C-x", "s"])
+        save_keys = ["C-x", "C-s"] if writer == "save-buffer" else ["C-x", "s"]
+        writer_call = _send_files_save_command(
+            session, case, path, save_keys, writer
+        )
         _assert_files_r3_state(
             session,
             case,
             path,
             expected_bytes=case["expected_bytes"],
             cursor=case["expected_undo_cursor"],
-            minibuffer="Saved 1 file(s)",
-            writer=writer,
+            minibuffer=(
+                "Saved 1 file(s)"
+                if writer == "save-some-buffers"
+                else case["expected_minibuffer"]
+            ),
+            writer=writer_call,
         )
-    elif mutation == "read-only":
+    elif writer == "save-some-buffers" and mutation == "read-only":
         session.extended_command("toggle-read-only")
         _wait_exact(session, "minibuffer", "Buffer is writable")
         _send_keys(session, ["C-x", "u"])
@@ -967,16 +919,13 @@ def _run_files_mutation_scenario(binary, case):
                 runtime_case["name"], "session ready", session=session
             ):
                 session.wait_ready()
-            if runtime_case["command"] == "save-buffer":
+            if runtime_case["command"] in {"save-buffer", "save-some-buffers"}:
                 with _deadline_stage(
-                    runtime_case["name"], "save-buffer operations", session=session
+                    runtime_case["name"], "save operations", session=session
                 ):
-                    _run_files_save_mutation(session, runtime_case, path)
-            elif runtime_case["command"] == "save-some-buffers":
-                with _deadline_stage(
-                    runtime_case["name"], "save-some-buffers operations", session=session
-                ):
-                    _run_files_save_some_mutation(session, runtime_case, path)
+                    _run_files_save_mutation(
+                        session, runtime_case, path, runtime_case["command"]
+                    )
             else:
                 with _deadline_stage(
                     runtime_case["name"], "revert-buffer operations", session=session
@@ -1000,9 +949,36 @@ def _run_files_mutation_scenario(binary, case):
                 )
 
 
+class _FilesR2Session(Session):
+    def __init__(self, *args, discard_modified_buffer=False, **kwargs):
+        self.discard_modified_buffer = discard_modified_buffer
+        super().__init__(*args, **kwargs)
+
+    def quit(self, timeout=DEFAULT_TIMEOUT):
+        if self.discard_modified_buffer:
+            return _quit_after_discarding_buffer(
+                self, "Save buffer.txt? (s/d/c): "
+            )
+        return super().quit(timeout=timeout)
+
+
 def _scenario_function(case):
     def run(binary):
         if case["rule"] == "r2":
+            if case["command"] == "save-some-buffers":
+                def session_factory(binary, arguments, columns=80, rows=24):
+                    return _FilesR2Session(
+                        binary,
+                        arguments,
+                        columns=columns,
+                        rows=rows,
+                        discard_modified_buffer=case["prompt_case"]
+                        in {"cancel", "invalid"},
+                    )
+
+                return run_command_path_scenario(
+                    binary, case, session_factory=session_factory
+                )
             return _run_files_prompt_scenario(binary, case)
         if case["rule"] == "r3":
             return _run_files_mutation_scenario(binary, case)
@@ -1020,7 +996,7 @@ def _scenario_function(case):
 _CASES = _load_files_cases(Path(__file__).with_name("command-paths.json"))
 
 for _case in _CASES:
-    if _case["rule"] == "r2":
+    if _case["rule"] == "r2" and _case["command"] != "save-some-buffers":
         _validate_files_prompt_case(_case)
     scenario(_case["name"], commands=_case["commands"])(_scenario_function(_case))
 
@@ -1150,3 +1126,190 @@ def save_buffer_shell_nonzero(binary):
 )
 def save_buffer_shell_interrupted(binary):
     _run_save_buffer_shell_outcome(binary, "interrupted", 143, _SAVE_SHELL_SOURCE)
+
+
+_SAVE_SOME_FIRST = b"alpha\n"
+_SAVE_SOME_SECOND = b"beta\n"
+_SAVE_SOME_EXTERNAL = b"external\n"
+
+
+def _save_some_buffers_session(binary, first_path):
+    return Session(binary, [str(first_path)], columns=160)
+
+
+def _edit_save_some_current(session, expected):
+    session.type("!")
+    session.wait_for_region_exact_text("body", expected, index=0)
+
+
+def _open_second_save_some_buffer(session, second_path):
+    _edit_save_some_current(session, "!alpha")
+    session.extended_command("find-file")
+    session.wait_for_region_text("minibuffer", "Find file: ")
+    session.type(str(second_path))
+    session.key("RET")
+    session.wait_for_region_exact_text("body", "beta", index=0)
+    _edit_save_some_current(session, "!beta")
+
+
+def _start_save_some_buffers(session):
+    _send_keys(session, ["C-x", "s"])
+
+
+def _wait_save_some_prompt(session, path):
+    session.wait_for_region_text(
+        "minibuffer",
+        f"Save file {path.resolve()}? (y, n, !, q, C-g)",
+    )
+
+
+@scenario("files/save-some-buffers-n", commands=["save-some-buffers"])
+def save_some_buffers_n(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        path = Path(directory) / "buffer.txt"
+        path.write_bytes(_SAVE_SOME_FIRST)
+        with _save_some_buffers_session(binary, path) as session:
+            session.wait_ready()
+            _edit_save_some_current(session, "!alpha")
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, path)
+            session.type("n")
+            session.wait_for_region_exact_text("minibuffer", "Saved 0 file(s)")
+            session.assert_file_bytes(path, _SAVE_SOME_FIRST)
+            _quit_after_discarding_buffer(session, "Save buffer.txt? (s/d/c): ")
+
+
+@scenario(
+    "files/save-some-buffers-bang",
+    commands=["save-some-buffers", "find-file"],
+)
+def save_some_buffers_bang(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        first_path = Path(directory) / "first.txt"
+        second_path = Path(directory) / "second.txt"
+        first_path.write_bytes(_SAVE_SOME_FIRST)
+        second_path.write_bytes(_SAVE_SOME_SECOND)
+        with _save_some_buffers_session(binary, first_path) as session:
+            session.wait_ready()
+            _open_second_save_some_buffer(session, second_path)
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, first_path)
+            session.type("!")
+            session.wait_for_prompted_file(
+                second_path, b"!beta\n", "Saved 2 file(s)"
+            )
+            session.assert_file_bytes(first_path, b"!alpha\n")
+            output, code = session.quit()
+        if code != 0:
+            raise AssertionError(f"save-some-buffers bang exited with {code}: {output!r}")
+
+
+@scenario(
+    "files/save-some-buffers-q",
+    commands=["save-some-buffers", "find-file"],
+)
+def save_some_buffers_q(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        first_path = Path(directory) / "first.txt"
+        second_path = Path(directory) / "second.txt"
+        first_path.write_bytes(_SAVE_SOME_FIRST)
+        second_path.write_bytes(_SAVE_SOME_SECOND)
+        with _save_some_buffers_session(binary, first_path) as session:
+            session.wait_ready()
+            _open_second_save_some_buffer(session, second_path)
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, first_path)
+            session.type("y")
+            _wait_save_some_prompt(session, second_path)
+            session.type("q")
+            session.wait_for_prompted_file(
+                first_path, b"!alpha\n", "Saved 1 file(s)"
+            )
+            session.assert_file_bytes(second_path, _SAVE_SOME_SECOND)
+            _quit_after_discarding_buffer(session, "Save second.txt? (s/d/c): ")
+
+
+@scenario(
+    "files/save-some-buffers-external-change",
+    commands=["save-some-buffers"],
+)
+def save_some_buffers_external_change(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        path = Path(directory) / "buffer.txt"
+        path.write_bytes(_SAVE_SOME_FIRST)
+        with _save_some_buffers_session(binary, path) as session:
+            session.wait_ready()
+            _edit_save_some_current(session, "!alpha")
+            path.write_bytes(_SAVE_SOME_EXTERNAL)
+            session.assert_file_bytes(path, _SAVE_SOME_EXTERNAL)
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, path)
+            session.type("y")
+            session.wait_for_region_text(
+                "minibuffer", "File changed on disk. Overwrite? (y/n): "
+            )
+            session.type("n")
+            session.key("RET")
+            session.wait_for_region_exact_text("minibuffer", "Saved 0 file(s)")
+            session.assert_file_bytes(path, _SAVE_SOME_EXTERNAL)
+            _quit_after_discarding_buffer(session, "Save buffer.txt? (s/d/c): ")
+
+
+@scenario(
+    "files/save-some-buffers-bang-external-change-y",
+    commands=["save-some-buffers", "find-file"],
+)
+def save_some_buffers_bang_external_change_y(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        first_path = Path(directory) / "first.txt"
+        second_path = Path(directory) / "second.txt"
+        first_path.write_bytes(_SAVE_SOME_FIRST)
+        second_path.write_bytes(_SAVE_SOME_SECOND)
+        with _save_some_buffers_session(binary, first_path) as session:
+            session.wait_ready()
+            _open_second_save_some_buffer(session, second_path)
+            second_path.write_bytes(_SAVE_SOME_EXTERNAL)
+            session.assert_file_bytes(second_path, _SAVE_SOME_EXTERNAL)
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, first_path)
+            session.type("!")
+            session.wait_for_region_text(
+                "minibuffer", "File changed on disk. Overwrite? (y/n): "
+            )
+            session.type("y")
+            session.key("RET")
+            session.wait_for_prompted_file(
+                second_path, b"!beta\n", "Saved 2 file(s)"
+            )
+            session.assert_file_bytes(first_path, b"!alpha\n")
+            output, code = session.quit()
+        if code != 0:
+            raise AssertionError(
+                f"save-some-buffers bang with external change exited with {code}: {output!r}"
+            )
+
+
+@scenario(
+    "files/save-some-buffers-multi-cancel",
+    commands=["save-some-buffers", "find-file"],
+)
+def save_some_buffers_multi_cancel(binary):
+    with TemporaryDirectory(prefix="loom-save-some-buffers-") as directory:
+        first_path = Path(directory) / "first.txt"
+        second_path = Path(directory) / "second.txt"
+        first_path.write_bytes(_SAVE_SOME_FIRST)
+        second_path.write_bytes(_SAVE_SOME_SECOND)
+        with _save_some_buffers_session(binary, first_path) as session:
+            session.wait_ready()
+            _open_second_save_some_buffer(session, second_path)
+            _start_save_some_buffers(session)
+            _wait_save_some_prompt(session, first_path)
+            session.send(keys.ctrl("g"))
+            session.wait_for_region_exact_text("minibuffer", "Quit")
+            session.assert_file_bytes(first_path, _SAVE_SOME_FIRST)
+            session.assert_file_bytes(second_path, _SAVE_SOME_SECOND)
+            _quit_after_discarding_buffer(
+                session,
+                "Save first.txt? (s/d/c): ",
+                "Save second.txt? (s/d/c): ",
+            )

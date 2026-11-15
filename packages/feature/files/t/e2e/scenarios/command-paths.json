@@ -2501,6 +2501,129 @@
       "prompt_open": "File changed on disk. Overwrite? (y/n): {source_path}"
     },
     {
+      "name": "command-path/r2/save-some-buffers/prompt-1/char/accept",
+      "path_id": "r2:save-some-buffers:prompt-1:char:accept",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:char",
+      "commands": [
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "s"
+      ],
+      "prompt_open": "Save file $buffer_file? (y, n, !, q, C-g)",
+      "prompt_kind": "char",
+      "prompt_case": "accept",
+      "input_text": "y",
+      "initial_bytes": "alpha\n",
+      "expected_bytes": "!alpha\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Saved 1 file(s)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha"
+        }
+      ],
+      "fixture_keys": [
+        "C-a",
+        "!"
+      ],
+      "prompted_file_message": "Saved 1 file(s)",
+      "columns": 220
+    },
+    {
+      "name": "command-path/r2/save-some-buffers/prompt-1/char/cancel",
+      "path_id": "r2:save-some-buffers:prompt-1:char:cancel",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:char",
+      "commands": [
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "s"
+      ],
+      "prompt_open": "Save file $buffer_file? (y, n, !, q, C-g)",
+      "prompt_kind": "char",
+      "prompt_case": "cancel",
+      "input_text": "",
+      "initial_bytes": "alpha\n",
+      "expected_bytes": "alpha\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Quit",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Quit"
+        }
+      ],
+      "fixture_keys": [
+        "C-a",
+        "!"
+      ],
+      "columns": 220
+    },
+    {
+      "name": "command-path/r2/save-some-buffers/prompt-1/char/invalid",
+      "path_id": "r2:save-some-buffers:prompt-1:char:invalid",
+      "lane": "W3-3",
+      "rule": "r2",
+      "entry": "key:{\"keymap\":\"global\",\"sequence\":[{\"key\":\"x\",\"modifiers\":[\"control\"]},{\"key\":\"s\",\"modifiers\":[]}]};prompt:1:char",
+      "commands": [
+        "save-some-buffers"
+      ],
+      "command": "save-some-buffers",
+      "entry_mode": "key",
+      "entry_keys": [
+        "C-x",
+        "s"
+      ],
+      "prompt_open": "Save file $buffer_file? (y, n, !, q, C-g)",
+      "prompt_kind": "char",
+      "prompt_case": "invalid",
+      "input_text": "x",
+      "initial_bytes": "alpha\n",
+      "expected_bytes": "alpha\n",
+      "expected_cursor": [
+        0,
+        1
+      ],
+      "expected_minibuffer": "Save file $buffer_file? (y, n, !, q, C-g)Allowed keys: y, n, !, q",
+      "expected_screen": [
+        {
+          "region": "body",
+          "text": "!alpha"
+        },
+        {
+          "region": "minibuffer",
+          "text": "Quit"
+        }
+      ],
+      "fixture_keys": [
+        "C-a",
+        "!"
+      ],
+      "columns": 220
+    },
+    {
       "name": "command-path/r3/save-some-buffers/effect",
       "path_id": "r3:save-some-buffers:effect",
       "lane": "W3-3",

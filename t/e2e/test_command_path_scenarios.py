@@ -206,6 +206,12 @@ class FakeSession:
         self.calls.append(("wait_file", expected))
         self.observe_file_bytes(path, expected, purpose="precondition")
 
+    def wait_for_prompted_file(self, path, expected, message, *, timeout=None):
+        self.calls.append(
+            ("wait_for_prompted_file", path, expected, message)
+        )
+        self.observe_file_bytes(path, expected, purpose="precondition")
+
     def save_buffer(self, path, expected, *, route="key"):
         after = self.command_trace_count()
         self.send(b"\x18\x13")
@@ -1360,6 +1366,64 @@ class CommandPathScenarioTests(unittest.TestCase):
                 with self.subTest(mutation_case=mutation_case):
                     self.assertEqual(loaded[0]["mutation_case"], mutation_case)
                     self.assertEqual(loaded[0]["expected_bytes"], case[expected_source])
+
+    def test_prompted_writer_is_observed_before_changed_bytes(self):
+        case = {
+            "name": "test/prompted-writer",
+            "path_id": "r2:save-some-buffers:prompt-1:char:accept",
+            "lane": "W3-3",
+            "rule": "r2",
+            "entry": (
+                'key:{"keymap":"global","sequence":'
+                '[{"key":"x","modifiers":["control"]},'
+                '{"key":"s","modifiers":[]}]}'
+                ";prompt:1:char"
+            ),
+            "commands": ["save-some-buffers"],
+            "command": "save-some-buffers",
+            "entry_mode": "key",
+            "entry_keys": ["C-x", "s"],
+            "prompt_open": "Save file /tmp/buffer.txt? (y, n, !, q, C-g)",
+            "prompt_kind": "char",
+            "prompt_case": "accept",
+            "input_text": "y",
+            "initial_bytes": "alpha\n",
+            "expected_bytes": "!alpha\n",
+            "expected_cursor": [0, 1],
+            "expected_minibuffer": "Saved 1 file(s)",
+            "expected_screen": [{"region": "body", "text": "!alpha"}],
+            "prompted_file_message": "Saved 1 file(s)",
+        }
+        sessions = []
+
+        def session_factory(*args, **kwargs):
+            session = FakeSession(*args, **kwargs)
+            sessions.append(session)
+            return session
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenario.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "scenarios": [case]}),
+                encoding="utf-8",
+            )
+            loaded_case = load_command_path_scenarios(path)[0]
+            run_command_path_scenario(
+                "unused", loaded_case, session_factory=session_factory
+            )
+
+        calls = sessions[0].calls
+        writer_index = next(
+            index for index, call in enumerate(calls)
+            if call[0] == "wait_for_prompted_file"
+        )
+        bytes_index = calls.index(("assert_file_bytes", b"!alpha\n"))
+        self.assertEqual(
+            calls[writer_index][2:],
+            (b"!alpha\n", "Saved 1 file(s)"),
+        )
+        self.assertLess(writer_index, bytes_index)
+        self.assertNotIn(("send", b"\x18\x13"), calls)
 
     def test_accept_flow_uses_exact_body_cursor_and_saved_bytes(self):
         case = {

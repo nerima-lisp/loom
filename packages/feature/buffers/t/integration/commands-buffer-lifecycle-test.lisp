@@ -251,3 +251,35 @@
             (expect (find buffer (%test-registered-buffers *editor-state*)
                           :test #'eq)
                     :to-be buffer)))))))
+(describe
+  "kill-buffer save errors"
+  (it
+    "reports cancelled and keeps the buffer when saving fails"
+    (host-kit:with-temporary-directory (directory)
+      (let ((path (merge-pathnames "draft.txt" directory))
+            (blocked (merge-pathnames "blocked" directory)))
+        (host-kit:write-file-string "draft" path)
+        (host-kit:write-file-string "not a directory" blocked)
+        (%with-minibuffer-state (minibuffer "selected")
+          (let ((calls nil)
+                (buffer (loom/feature/files:visit-file path))
+                (loom/feature/files::*loom-backup-directory*
+                  (merge-pathnames "blocked/backups/" directory)))
+            (buffer-set-point buffer 0 (length (buffer-text buffer)))
+            (buffer-insert-string buffer "!")
+            (loom/feature/buffers:kill-buffer-with-confirmation
+             buffer
+             :on-killed (lambda () (push :killed calls))
+             :on-cancelled (lambda () (push :cancelled calls)))
+            (%expect-minibuffer-prompt
+             minibuffer
+             (%save-buffer-prompt-string buffer))
+            (%confirm-minibuffer minibuffer "s")
+            (expect calls :to-equal '(:cancelled))
+            (expect (host-kit:read-file-string path) :to-equal "draft")
+            (expect (buffer-modified-p buffer) :to-be t)
+            (expect (find buffer (%test-registered-buffers *editor-state*)
+                          :test #'eq)
+                    :to-be buffer)
+            (expect (loom:minibuffer-message-string minibuffer)
+                    :to-be-truthy)))))))

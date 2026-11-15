@@ -1,12 +1,20 @@
 (in-package #:loom/feature/buffers)
 (progn
   (defvar *buffer-save-handler* nil)
+  (defvar *buffer-save-handler-owner* nil)
 
-  (defun register-buffer-save-handler (handler)
-    "Register the file-aware handler for saving a buffer before it is killed."
-    (check-type handler function)
-    (setf *buffer-save-handler* handler)
-    handler))
+  (defun register-buffer-save-handler (owner function)
+    "Register OWNER's file-aware handler for saving a buffer before it is killed."
+    (unless (keywordp owner)
+      (error "Buffer-save handler owner must be a keyword: ~S" owner))
+    (check-type function function)
+    (when (and *buffer-save-handler-owner*
+               (not (eq owner *buffer-save-handler-owner*)))
+      (error "Buffer-save handler is already registered by ~S"
+             *buffer-save-handler-owner*))
+    (setf *buffer-save-handler-owner* owner
+          *buffer-save-handler* function)
+    function))
 
 (defun %buffer-name-completion-candidates (input)
   "Return all registered buffer names as candidates for INPUT."

@@ -392,16 +392,17 @@ buffer. Undo history is not transferred."
           (funcall continuation))))
   (register-buffer-switch-guard :feature/files #'%guard-file-buffer-switch))
 (progn
-  (register-buffer-save-handler #'confirm-save-buffer)
+  (register-buffer-save-handler :feature/files #'confirm-save-buffer)
   (defun save-some-buffers ()
     "Prompt to save each modified file buffer in registration order."
     (let* ((minibuffer (editor-state-minibuffer *editor-state*))
            (targets
-             (remove-if-not
-              (lambda (buffer)
-                (and (buffer-path buffer)
-                     (buffer-modified-p buffer)))
-              (registered-buffers *editor-session*))))
+             (reverse
+              (remove-if-not
+               (lambda (buffer)
+                 (and (buffer-path buffer)
+                      (buffer-modified-p buffer)))
+               (registered-buffers *editor-session*)))))
       (labels ((finish (saved)
                  (minibuffer-message
                   minibuffer

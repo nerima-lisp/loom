@@ -695,10 +695,23 @@ def _validate_case(case, index):
             f"{location}.session_fixture must define the temporary session path and text"
         )
 
-    if case["expected_bytes"] != case["initial_bytes"] and case["rule"] != "r3":
-        if case.get("save_after_effect") is not True:
+    prompted_file_message = case.get("prompted_file_message")
+    if prompted_file_message is not None:
+        if case["rule"] != "r2" or case.get("prompt_case") != "accept":
             raise CommandPathScenarioError(
-                f"{location} must save changed bytes before asserting them"
+                f"{location}.prompted_file_message is only valid for accepted R2 writes"
+            )
+        _nonempty_string(
+            prompted_file_message, f"{location}.prompted_file_message"
+        )
+        if case.get("save_after_effect") is True:
+            raise CommandPathScenarioError(
+                f"{location} cannot combine prompted_file_message and save_after_effect"
+            )
+    if case["expected_bytes"] != case["initial_bytes"] and case["rule"] != "r3":
+        if case.get("save_after_effect") is not True and prompted_file_message is None:
+            raise CommandPathScenarioError(
+                f"{location} must observe the writer before asserting changed bytes"
             )
     return dict(case)
 
@@ -1282,6 +1295,13 @@ def _run_r2(session, case, path):
     _wait_for_command_completion(
         session, case, case["command"], _command_route(case), trace_count
     )
+    if case.get("prompted_file_message") is not None:
+        with stage("prompted file write"):
+            session.wait_for_prompted_file(
+                path,
+                case["expected_bytes"].encode("utf-8"),
+                case["prompted_file_message"],
+            )
     if not (case.get("prompt_kind") == "char" and prompt_case == "invalid"):
         with stage("prompt result"):
             _assert_minibuffer(

@@ -979,3 +979,15 @@
             (expect (loom:minibuffer-message-string minibuffer)
                     :to-equal "Quit")
             (expect (probe-file (merge-pathnames "quit/" dir)) :to-be nil)))))))
+(describe
+  "buffer save handler ownership"
+  (it
+    "rejects a registration from a different owner"
+    (let ((rejected
+            (handler-case
+                (progn
+                  (loom/feature/buffers:register-buffer-save-handler
+                   :feature/other #'identity)
+                  nil)
+              (error () t))))
+      (expect rejected :to-be-truthy))))

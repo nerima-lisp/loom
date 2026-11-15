@@ -16,7 +16,7 @@ To find generated path IDs, run `nix run .#e2e -- --require-path-coverage` and r
 
 Every record declares exact `initial_bytes`, `expected_bytes`, `expected_cursor`, `expected_minibuffer`, and `expected_screen` values. `columns` and `rows` set positive terminal dimensions and default to 80 columns and 24 rows. Use a wider terminal when a prompt must display a long path. Cursor rows and columns are zero-based and relative to `expected_cursor_region`, which defaults to `body`; set the region to `minibuffer` when the command leaves input focus there. Use an empty string when the expected minibuffer is empty. Set `expected_minibuffer_match` to `contains` when the result includes dynamic text. Each `expected_screen` item names a `body`, `minibuffer`, or `screen` region; its optional zero-based `index` selects a row, and `match: contains` checks text within a decorated row. Keep each record focused on one generated command path; fixture keys and files may establish its starting state.
 
-When an R1 or R2 command changes bytes, set `save_after_effect` to `true`. The runner saves the buffer before checking the exact file bytes.
+When an R1 or R2 command changes bytes through a later save, set `save_after_effect` to `true`. The runner saves the buffer before checking the exact file bytes. When a minibuffer answer performs the write, set `prompted_file_message` to the completion message. The runner waits with Session.wait_for_prompted_file and checks the bytes written by that prompt answer; do not set save_after_effect for the same record.
 
 ## R1: command entries
 
