@@ -180,7 +180,7 @@
                         (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (setf (editor-state-kill-ring *editor-state*) '("old")
-                        (editor-state-last-command-kill-p *editor-state*) t)
+                        (loom/core/editor-session:editor-state-last-command-kill-p *editor-state*) t)
                   (buffer-set-point buffer 0 0)
                   (loom/feature/kill-ring:zap-to-char)
                   (minibuffer-handle-key minibuffer
@@ -198,7 +198,7 @@
                         (loom/core/editor-session:editor-state-minibuffer
                          *editor-state*)))
                   (setf (editor-state-kill-ring *editor-state*) '("old")
-                        (editor-state-last-command-kill-p *editor-state*) t)
+                        (loom/core/editor-session:editor-state-last-command-kill-p *editor-state*) t)
                   (buffer-set-point buffer 0 5)
                   (loom/feature/kill-ring:zap-to-char)
                   (minibuffer-handle-key minibuffer
