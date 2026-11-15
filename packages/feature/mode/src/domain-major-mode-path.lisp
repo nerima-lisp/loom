@@ -15,7 +15,22 @@
     (pathname (namestring path))
     (t (princ-to-string path))))
 
+(defun %major-mode-pathname-native-basename (pathname)
+  ;; Non-wild components hold the literal name; NAMESTRING would escape
+  ;; * ? [ and \ in it, and the escape would read as a separator below.
+  (let ((name (pathname-name pathname))
+        (type (pathname-type pathname))
+        (last-directory (car (last (pathname-directory pathname)))))
+    (cond ((and (stringp name) (or (null type) (stringp type)))
+           (if type (concatenate 'string name "." type) name))
+          ((and (null name) (null type) (stringp last-directory))
+           last-directory))))
+
 (defun %major-mode-basename (path)
+  (or (and (pathnamep path) (%major-mode-pathname-native-basename path))
+      (%major-mode-text-basename path)))
+
+(defun %major-mode-text-basename (path)
   (let* ((text (string-right-trim '(#\/ #\\) (%major-mode-path-text path)))
          (slash (position #\/ text :from-end t))
          (backslash (position #\\ text :from-end t))

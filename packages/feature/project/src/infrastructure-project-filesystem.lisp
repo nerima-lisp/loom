@@ -9,7 +9,25 @@
              (probe-file (merge-pathnames marker directory)))
            (project-marker-names)))))
 
+(defun %project-pathname-native-component (pathname)
+  ;; Non-wild components hold the literal name; NAMESTRING would escape
+  ;; * ? [ and \ in it, and the escape would read as a separator below.
+  (let ((name (pathname-name pathname))
+        (type (pathname-type pathname))
+        (last-directory (car (last (pathname-directory pathname)))))
+    (cond ((and (stringp name) (or (null type) (stringp type)))
+           (if type (concatenate 'string name "." type) name))
+          ((and (null name) (null type) (stringp last-directory))
+           last-directory))))
+
 (defun %project-last-path-component (path)
+  (let ((component (and (pathnamep path)
+                        (%project-pathname-native-component path))))
+    (if component
+        (string-downcase component)
+        (%project-text-last-path-component path))))
+
+(defun %project-text-last-path-component (path)
   (let* ((text (string-right-trim '(#\/ #\\) (namestring path)))
          (slash (position #\/ text :from-end t))
          (backslash (position #\\ text :from-end t))
@@ -56,7 +74,7 @@
      (project-directory-path root)
      (lambda (path) (push path files))
      (lambda () nil))
-    (sort files #'string< :key #'namestring)))
+    (sort files #'string< :key #'loom/feature/files:%native-namestring)))
 
 (defun project-search-files (root query)
   "Read regular files below ROOT and return path/match plist entries.
