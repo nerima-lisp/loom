@@ -374,8 +374,10 @@ output_thread.join()
 stderr_handle.close()
 if status < 0:
     status = 128 + -status
-with open(exit_status_file, "w", encoding="ascii") as handle:
+temporary_status_file = exit_status_file + ".tmp"
+with open(temporary_status_file, "w", encoding="ascii") as handle:
     handle.write(str(status) + "\\n")
+os.replace(temporary_status_file, exit_status_file)
 sys.exit(status)
 """
     )
@@ -582,6 +584,7 @@ def _assert_server_request_responses(
         "each server request receives one response with the same typed ID",
         counts,
         [dict(request, responses=1) for request in counts],
+        purpose="scenario" if counts else "precondition",
     )
 
 
