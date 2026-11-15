@@ -151,8 +151,7 @@ def missing_path(binary):
             session.type("created")
             session.wait_for_region_exact_text("body", "created", index=0)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"created")
+            session.save_buffer(path, b"created")
             session.assert_file_bytes(path, b"created")
             display_path = str(Path(path).resolve(strict=False))
             session.wait_for_region_exact_text(

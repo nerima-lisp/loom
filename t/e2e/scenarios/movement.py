@@ -31,10 +31,6 @@ def _prompted_mx(session, name, prompt, value):
     session.key("RET")
 
 
-def _save(session):
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-
-
 def _lines(count):
     return "\n".join(f"line{index}" for index in range(count)).encode()
 
@@ -322,8 +318,7 @@ def _structural_scenario(binary, scenario_name, filename, initial, setup_column,
                 _mx(session, "forward-char")
             session.wait_for_region_cursor("body", setup_column)
             _mx(session, command)
-            _save(session)
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             output, code = session.quit()
     _assert_exit_zero(scenario_name, output, code)
 

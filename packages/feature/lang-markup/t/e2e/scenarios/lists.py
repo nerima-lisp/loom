@@ -63,8 +63,7 @@ def markdown_list_continuation(binary):
             session.key("RET")
             session.wait_for_region_exact_text("body", "", index=10)
             session.wait_for_region_cursor("body", 0, index=11)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(markdown_path, markdown_expected)
+            session.save_buffer(markdown_path, markdown_expected)
             session.assert_file_bytes(markdown_path, markdown_expected)
 
             output, code = session.quit()
@@ -117,8 +116,7 @@ def org_list_continuation(binary):
             session.key("RET")
             session.wait_for_region_exact_text("body", "", index=6)
             session.wait_for_region_cursor("body", 0, index=7)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(org_path, org_expected)
+            session.save_buffer(org_path, org_expected)
             session.assert_file_bytes(org_path, org_expected)
 
             output, code = session.quit()
@@ -154,8 +152,7 @@ def markdown_indent_ret(binary):
             session.wait_for_region_cursor(
                 "body", 2, index=1, timeout=2.0
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected, timeout=2.0)
+            session.save_buffer(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -193,8 +190,7 @@ def markdown_indent_tab(binary):
                 "body", "  continuation", index=2
             )
             session.wait_for_region_cursor("body", 14, index=2)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -256,8 +252,7 @@ def markdown_indent_region(binary):
             session.wait_for_region_cursor(
                 "body", 8, index=4, timeout=2.0
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected, timeout=2.0)
+            session.save_buffer(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -294,8 +289,7 @@ def org_indent_ret(binary):
             session.wait_for_region_cursor(
                 "body", 2, index=1, timeout=2.0
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected, timeout=2.0)
+            session.save_buffer(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -333,8 +327,7 @@ def org_indent_tab(binary):
                 "body", "  continuation", index=2
             )
             session.wait_for_region_cursor("body", 14, index=2)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()
@@ -396,8 +389,7 @@ def org_indent_region(binary):
             session.wait_for_region_cursor(
                 "body", 8, index=4, timeout=2.0
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected, timeout=2.0)
+            session.save_buffer(path, expected, timeout=2.0)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()

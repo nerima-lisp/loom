@@ -97,8 +97,7 @@ def real_nixfmt_success(binary):
                 "nixfmt-exit-code", _read_text(marker), "0"
             )
             session.assert_file_bytes(path, _SOURCE)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, _FORMATTED)
+            session.save_buffer(path, _FORMATTED)
             session.assert_file_bytes(path, _FORMATTED)
             _assert_exit_zero(session, "real-nixfmt-success")
 
@@ -151,7 +150,7 @@ def missing_formatter(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _format_prompt(session, command)
-            session.wait_for_file(marker, b"127", timeout=2.0)
+            session.wait_for_untraced_file(marker, b"127", timeout=2.0)
             session.assert_external_state(
                 "missing-formatter-exit-code", _read_text(marker), "127"
             )
@@ -219,8 +218,7 @@ def format_on_save_real_nixfmt(binary):
                 "1+1", match="contains", region="body", index=None
             )
             session.send(keys.ctrl("e") + keys.text(" "))
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, _FORMATTED)
+            session.save_buffer(path, _FORMATTED)
             session.assert_file_bytes(path, _FORMATTED)
             session.extended_command("format-on-save-mode")
             _assert_exit_zero(session, "format-on-save-real-nixfmt")
@@ -237,8 +235,7 @@ def _assert_formatted(session):
 
 
 def _save_formatted(session, path):
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, _FORMATTED)
+    session.save_buffer(path, _FORMATTED)
     session.assert_file_bytes(path, _FORMATTED)
 
 
@@ -254,8 +251,7 @@ def _enable_format_on_save_and_save(session, path):
     session.extended_command("format-on-save-mode")
     session.pump()
     session.send(keys.ctrl("e") + keys.text(" "))
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, _FORMATTED)
+    session.save_buffer(path, _FORMATTED)
     session.assert_file_bytes(path, _FORMATTED)
 
 
@@ -704,7 +700,6 @@ def format_current_buffer_undo(binary):
             session.assert_screen_text(
                 "1+1", match="exact", region="body", index=0, strip_right=True
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, _SOURCE)
+            session.save_buffer(path, _SOURCE)
             session.assert_file_bytes(path, _SOURCE)
             _assert_exit_zero(session, "format-current-buffer-undo")

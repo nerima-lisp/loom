@@ -19,11 +19,10 @@ def _write(path, content):
 
 
 def _save(session, path, expected, *, timeout=None):
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
     if timeout is None:
-        session.wait_for_file(path, expected)
+        session.save_buffer(path, expected)
     else:
-        session.wait_for_file(path, expected, timeout=timeout)
+        session.save_buffer(path, expected, timeout=timeout)
     session.assert_file_bytes(path, expected)
 
 

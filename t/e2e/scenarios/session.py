@@ -60,8 +60,7 @@ def register_copy_and_insert(binary):
                 "a",
             )
             _wait_for_exact_line(session, "body", "hellohello")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"hellohello")
+            session.save_buffer(path, b"hellohello")
 
             output, code = session.quit()
         _assert_exit_zero("register copy and insert", output, code)

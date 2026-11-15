@@ -34,9 +34,7 @@ def file_format_preservation(binary):
                 stage = "edited body"
                 session.wait_for_region_text("body", "!alpha", index=0)
                 stage = "M-x save-buffer"
-                session.extended_command("save-buffer")
-                stage = "saved file bytes"
-                session.wait_for_file(path, _EDITED)
+                session.save_buffer(path, _EDITED, route="mx")
                 stage = "file byte assertion"
                 session.assert_file_bytes(path, _EDITED)
                 stage = "quit"

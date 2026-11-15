@@ -13,8 +13,7 @@ def _write(path, content):
 
 
 def _save(session, path, expected):
-    session.send(b"\x18\x13")
-    session.wait_for_file(path, expected)
+    session.save_buffer(path, expected)
     session.assert_file_bytes(path, expected)
 
 

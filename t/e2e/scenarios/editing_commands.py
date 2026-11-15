@@ -19,8 +19,7 @@ def _write(path, content):
 
 
 def _save(session, path, expected):
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected)
+    session.save_buffer(path, expected)
 
 
 def _close(session, name):
@@ -53,8 +52,13 @@ def auto_save_current_buffer(binary):
             session.extended_command("auto-save-mode")
             session.wait_for_region_text("minibuffer", "Auto-save mode enabled")
             session.type("x")
-            session.extended_command("auto-save-current-buffer")
-            session.wait_for_file(sidecar, b"xdraft\n")
+            session.write_and_wait(
+                sidecar,
+                b"xdraft\n",
+                command="auto-save-current-buffer",
+                route="mx",
+                mx="auto-save-current-buffer",
+            )
             _save(session, path, b"xdraft\n")
             _close(session, "editing/auto-save-current-buffer")
 
@@ -410,8 +414,13 @@ def toggle_auto_save(binary):
             session.extended_command("toggle-auto-save")
             session.wait_for_region_text("minibuffer", "Auto-save enabled")
             session.type("x")
-            session.extended_command("auto-save-current-buffer")
-            session.wait_for_file(sidecar, b"xdraft\n")
+            session.write_and_wait(
+                sidecar,
+                b"xdraft\n",
+                command="auto-save-current-buffer",
+                route="mx",
+                mx="auto-save-current-buffer",
+            )
             _save(session, path, b"xdraft\n")
             _close(session, "editing/toggle-auto-save")
 
@@ -577,5 +586,5 @@ def write_file(binary):
             session.wait_for_text("Write file: ")
             session.type(target_path)
             session.key("RET")
-            session.wait_for_file(target_path, b"source\n")
+            session.wait_for_prompted_file(target_path, b"source\n", "Wrote ")
             _close(session, "editing/write-file")

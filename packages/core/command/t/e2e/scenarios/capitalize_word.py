@@ -24,8 +24,7 @@ def capitalize_word(binary):
             session.wait_for_region_exact_text("body", "One two three")
             session.wait_for_region_cursor("body", 3)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()

@@ -77,7 +77,9 @@ def file_and_buffer_commands(binary):
             session.wait_for_region_text("minibuffer", "Write file: ")
             session.type(copy_path)
             session.key("RET")
-            session.wait_for_file(copy_path, b"beta\n")
+            session.wait_for_prompted_file(
+                copy_path, b"beta\n", f"Wrote {copy_path}"
+            )
             _assert_body_text(session, 0, "beta")
             session.wait_for_region_exact_text(
                 "minibuffer", f"Wrote {copy_path}", strip_right=True
@@ -90,8 +92,7 @@ def file_and_buffer_commands(binary):
             )
 
             session.type("!")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(copy_path, b"!beta\n")
+            session.save_buffer(copy_path, b"!beta\n")
             _wait_for_body_row(session, 0, "!beta")
             _assert_body_text(session, 0, "!beta")
             session.wait_for_region_exact_text(
@@ -108,8 +109,7 @@ def file_and_buffer_commands(binary):
             )
 
             session.type("!")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(copy_path, b"!!beta\n")
+            session.save_buffer(copy_path, b"!!beta\n")
             _wait_for_body_row(session, 0, "!!beta")
             _assert_body_text(session, 0, "!!beta")
             session.wait_for_region_exact_text(
@@ -179,8 +179,7 @@ def open_line(binary):
             session.wait_for_region_cursor("body", 0)
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"\nalpha\nomega\n")
+            session.save_buffer(path, b"\nalpha\nomega\n")
             _assert_body_text(session, 1, "alpha")
 
             output, code = session.quit()

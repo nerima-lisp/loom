@@ -180,8 +180,7 @@ def format_current_buffer(binary):
             session.key("RET")
             session.wait_for_text("Buffer formatted successfully")
             session.wait_for_text("LOWER")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"LOWER\n")
+            session.save_buffer(path, b"LOWER\n")
             output, code = session.quit()
         assert_exit_zero("format-current-buffer", output, code)
 
@@ -194,8 +193,7 @@ def format_on_save_mode(binary):
             session.wait_ready()
             _set_format(session)
             session.extended_command("format-on-save-mode")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"LOWER\n")
+            session.save_buffer(path, b"LOWER\n")
             output, code = session.quit()
         assert_exit_zero("format-on-save-mode", output, code)
 

@@ -67,8 +67,7 @@ def lang_web_pair_completion(binary):
                     session.send(keys.ctrl("e"))
 
                 expected_bytes = expected_text.encode("ascii")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_file(path, expected_bytes)
+                session.save_buffer(path, expected_bytes)
                 session.assert_file_bytes(path, expected_bytes)
 
             output, code = session.quit()

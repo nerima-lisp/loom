@@ -165,6 +165,300 @@ class SessionCommandCompletionTests(unittest.TestCase):
             session.pump.assert_called_once_with()
 
 
+class SessionFileWaitTests(unittest.TestCase):
+    _SAVE_TRACE = b'{"command":"save-buffer","route":"key","seq":1,"completed":true}\n'
+
+    def _session(self, directory):
+        trace_path = os.path.join(directory, "trace.jsonl")
+        session = Session("unused")
+        session.screen = Screen(columns=20, rows=2)
+        session._trace_path = trace_path
+        return session, trace_path
+
+    def test_unchanged_bytes_are_not_read_before_the_save_trace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            path = os.path.join(directory, "buffer.txt")
+            with open(path, "wb") as handle:
+                handle.write(b"abc\n")
+            steps = []
+
+            def save_across_turns():
+                # The old bytes equal the expected bytes, so only the trace can
+                # show that the save has started, truncated, and rewritten them.
+                if not steps:
+                    steps.append("idle")
+                elif steps == ["idle"]:
+                    open(path, "wb").close()
+                    steps.append("truncated")
+                else:
+                    with open(path, "wb") as handle:
+                        handle.write(b"abc\n")
+                    with open(trace_path, "ab") as handle:
+                        handle.write(self._SAVE_TRACE)
+                    steps.append("written")
+
+            session.pump = Mock(side_effect=save_across_turns)
+            result = ScenarioResult("file wait")
+            with capture_scenario(result):
+                session.wait_for_file(
+                    path,
+                    b"abc\n",
+                    command="save-buffer",
+                    route="key",
+                    after=0,
+                    timeout=1,
+                )
+
+            self.assertEqual(steps, ["idle", "truncated", "written"])
+            observation = result.observations[-1]
+            self.assertEqual(observation["type"], "file_bytes")
+            self.assertIs(observation["passed"], True)
+            self.assertEqual(observation["trace_lines"], 1)
+
+    def _write(self, path, data):
+        with open(path, "wb") as handle:
+            handle.write(data)
+
+    def _append_trace(self, trace_path, completed=True, seq=1, route="key"):
+        state = "true" if completed else "false"
+        with open(trace_path, "ab") as handle:
+            handle.write(
+                f'{{"command":"save-buffer","route":"{route}","seq":{seq},'
+                f'"completed":{state}}}\n'.encode()
+            )
+
+    def test_matching_bytes_without_a_save_trace_time_out(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, _trace_path = self._session(directory)
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            session.pump = Mock()
+
+            with self.assertRaisesRegex(TimeoutError, "save-buffer completion"):
+                session.wait_for_file(
+                    path,
+                    b"abc\n",
+                    command="save-buffer",
+                    route="key",
+                    after=0,
+                    timeout=0.05,
+                )
+
+    def test_bytes_that_differ_after_the_trace_fail_on_the_one_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"old\n")
+            self._append_trace(trace_path)
+            session.pump = Mock()
+
+            with self.assertRaisesRegex(AssertionError, "contained b'old"):
+                session.wait_for_file(
+                    path,
+                    b"new\n",
+                    command="save-buffer",
+                    route="key",
+                    after=0,
+                    timeout=1,
+                )
+            session.pump.assert_not_called()
+
+    def test_bare_wait_for_file_raises_before_reading_the_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            self._append_trace(trace_path)
+            session.pump = Mock()
+            result = ScenarioResult("bare wait")
+            with capture_scenario(result), patch(
+                "builtins.open", side_effect=AssertionError("file was read")
+            ):
+                with self.assertRaisesRegex(TypeError, "write_and_wait"):
+                    session.wait_for_file(path, b"abc\n")
+                with self.assertRaisesRegex(TypeError, "write_and_wait"):
+                    session.wait_for_file(path, b"abc\n", command="save-buffer")
+            self.assertEqual(result.observations, [])
+            session.pump.assert_not_called()
+
+    def test_old_style_raw_save_then_bare_wait_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            session.process = Mock()
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            self._append_trace(trace_path)
+
+            with self.assertRaises(TypeError):
+                session.wait_for_file(path, b"abc\n")
+
+    def test_mx_write_file_by_completion_or_split_input_errors(self):
+        for inputs in (
+            [keys.text("write-fil"), b"\t", b"\r"],
+            [keys.text("write-"), keys.text("file"), b"\r"],
+        ):
+            with self.subTest(inputs=inputs), tempfile.TemporaryDirectory() as directory:
+                session, trace_path = self._session(directory)
+                session.process = Mock()
+                path = os.path.join(directory, "buffer.txt")
+                self._write(path, b"abc\n")
+                session.pump = Mock(side_effect=lambda: self._append_trace(trace_path))
+                session.save_buffer(path, b"abc\n", timeout=1)
+                session.send(keys.meta("x"))
+                for data in inputs:
+                    session.send(data)
+
+                with self.assertRaises(TypeError):
+                    session.wait_for_file(path, b"abc\n")
+
+    def test_unconfirmed_write_blocks_the_next_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            session.process = Mock()
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            session.pump = Mock()
+
+            # Two saves sent before the first completion: the first wait gives
+            # up, and the second save must not reuse the first one's late row.
+            with self.assertRaises(TimeoutError):
+                session.save_buffer(path, b"abc\n", timeout=0.05)
+            self._append_trace(trace_path)
+            with self.assertRaisesRegex(RuntimeError, "never confirmed"):
+                session.save_buffer(path, b"abc\n", timeout=1)
+            self.assertEqual(session.process.write.call_count, 1)
+
+    def test_second_same_content_save_waits_for_its_own_row(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            session.process = Mock()
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            turns = []
+
+            def finish(seq):
+                def pump():
+                    turns.append(seq)
+                    self._append_trace(trace_path, seq=seq)
+                return pump
+
+            session.pump = Mock(side_effect=finish(1))
+            session.save_buffer(path, b"abc\n", timeout=1)
+            session.pump = Mock()
+            with self.assertRaises(TimeoutError):
+                session.write_and_wait(
+                    path,
+                    b"abc\n",
+                    command="save-buffer",
+                    route="key",
+                    keys=keys.ctrl("x") + keys.ctrl("s"),
+                    timeout=0.05,
+                )
+            self.assertEqual(turns, [1])
+
+    def test_failed_save_with_unchanged_bytes_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            session.process = Mock()
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"abc\n")
+            session.pump = Mock(
+                side_effect=lambda: self._append_trace(trace_path, completed=False)
+            )
+
+            with self.assertRaisesRegex(AssertionError, "completed:false"):
+                session.save_buffer(path, b"abc\n", timeout=1)
+
+    def test_macro_replay_waits_for_the_macro_route_save(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            session.process = Mock()
+            path = os.path.join(directory, "buffer.txt")
+            self._write(path, b"aa\n")
+            self._append_trace(trace_path)  # the save made while recording
+            session.pump = Mock(
+                side_effect=lambda: self._append_trace(
+                    trace_path, seq=2, route="macro"
+                )
+            )
+            session.write_and_wait(
+                path,
+                b"aa\n",
+                command="save-buffer",
+                route="macro",
+                keys=keys.ctrl("x") + b"e",
+                timeout=1,
+            )
+            session.pump.assert_called_once_with()
+
+    def test_mx_writer_runs_through_extended_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            sidecar = os.path.join(directory, "#buffer.txt#")
+            self._write(sidecar, b"xdraft\n")
+            ran = []
+
+            def extended_command(name, timeout):
+                ran.append(name)
+                with open(trace_path, "ab") as handle:
+                    handle.write(
+                        b'{"command":"auto-save-current-buffer","route":"mx",'
+                        b'"seq":1,"completed":true}\n'
+                    )
+
+            session.extended_command = extended_command
+            session.pump = Mock()
+            session.write_and_wait(
+                sidecar,
+                b"xdraft\n",
+                command="auto-save-current-buffer",
+                route="mx",
+                mx="auto-save-current-buffer",
+                timeout=1,
+            )
+            self.assertEqual(ran, ["auto-save-current-buffer"])
+
+    def test_save_buffer_anchors_on_the_trace_count_before_sending(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, trace_path = self._session(directory)
+            path = os.path.join(directory, "buffer.txt")
+            with open(trace_path, "wb") as handle:
+                handle.write(self._SAVE_TRACE)
+            with open(path, "wb") as handle:
+                handle.write(b"abc\n")
+            sent = []
+
+            def send(data):
+                sent.append(data)
+                with open(trace_path, "ab") as handle:
+                    handle.write(self._SAVE_TRACE.replace(b'"seq":1', b'"seq":2'))
+
+            session.send = send
+            session.pump = Mock()
+            session.save_buffer(path, b"abc\n", timeout=1)
+
+            self.assertEqual(sent, [keys.ctrl("x") + keys.ctrl("s")])
+            self.assertEqual(session.command_trace_count(), 2)
+
+    def test_prompted_file_is_read_after_the_writer_message(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session, _trace_path = self._session(directory)
+            path = os.path.join(directory, "written.txt")
+            order = []
+
+            def wait_for_message(region, text, timeout):
+                order.append(("message", region, text))
+                with open(path, "wb") as handle:
+                    handle.write(b"source\n")
+
+            session.wait_for_region_text = wait_for_message
+            session.wait_for_prompted_file(path, b"source\n", "Wrote ", timeout=1)
+
+            self.assertEqual(order, [("message", "minibuffer", "Wrote ")])
+
+
 class SessionStartupTimingTests(unittest.TestCase):
     def test_wait_ready_uses_time_when_output_is_read(self):
         clock = {"now": 10.0}

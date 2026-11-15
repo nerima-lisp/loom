@@ -148,8 +148,7 @@ def _run_clipboard_yank(binary, outcome):
                 )
 
             expected_bytes = expected_body.encode("utf-8") + b"\n"
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected_bytes)
+            session.save_buffer(path, expected_bytes)
             session.assert_file_bytes(path, expected_bytes)
 
 

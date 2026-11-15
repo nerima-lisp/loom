@@ -31,8 +31,7 @@ def major_mode_editing(binary):
             session.key("RET")
             session.key("DOWN")
             session.key("TAB")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"    root\n    value\n")
+            session.save_buffer(path, b"    root\n    value\n")
 
             output, code = session.quit()
         _assert_exit_zero("major mode editing", output, code)

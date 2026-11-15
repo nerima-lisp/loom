@@ -35,8 +35,7 @@ def edit_save_exit(binary):
                 index=0,
             )
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"ax\n")
+            session.save_buffer(path, b"ax\n")
 
             output, code = session.quit()
         _assert_exit_zero("edit/save/exit", output, code)
@@ -87,7 +86,6 @@ def ansi_wide_diff(binary):
             session.send(keys.ctrl("e"))
             session.type("!")
             expect_line("AX!", 3)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"AX!\n")
+            session.save_buffer(path, b"AX!\n")
             output, code = session.quit()
         _assert_exit_zero("ansi-wide-diff", output, code)

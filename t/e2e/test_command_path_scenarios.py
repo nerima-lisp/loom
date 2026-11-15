@@ -198,8 +198,20 @@ class FakeSession:
     def wait_for_region_exact_text(self, region, text, **kwargs):
         self.calls.append(("wait_exact_text", region, text, kwargs))
 
-    def wait_for_file(self, path, expected):
+    def wait_for_file(
+        self, path, expected, timeout=None, *, command=None, after=None, route=None
+    ):
+        if command is not None:
+            self.wait_for_command_completion(command, route=route, after=after)
         self.calls.append(("wait_file", expected))
+        self.observe_file_bytes(path, expected, purpose="precondition")
+
+    def save_buffer(self, path, expected, *, route="key"):
+        after = self.command_trace_count()
+        self.send(b"\x18\x13")
+        self.wait_for_file(
+            path, expected, command="save-buffer", route=route, after=after
+        )
 
     def wait_until(self, predicate, timeout=None, what="condition"):
         self.calls.append(("wait_until", what))
@@ -671,7 +683,13 @@ class CommandPathScenarioTests(unittest.TestCase):
                     test_case.assertEqual(todo_path.read_bytes(), initial_todo)
                     todo_path.write_bytes(expected_todo)
 
-            def wait_for_file(self, path, expected, timeout=None):
+            def save_buffer(self, path, expected, *, route="key", timeout=None):
+                # Mirrors Session.write_and_wait: count, send, completion, read.
+                after = self.command_trace_count()
+                self.send(b"\x18\x13")
+                self.wait_for_command_completion(
+                    "save-buffer", route=route, after=after, timeout=timeout
+                )
                 calls.append(("wait_file", timeout))
                 test_case.assertEqual(Path(path).read_bytes(), expected)
 
@@ -750,7 +768,13 @@ class CommandPathScenarioTests(unittest.TestCase):
             ):
                 calls.append(("wait_command", command, route, after, timeout))
 
-            def wait_for_file(self, path, contents, *, timeout):
+            def save_buffer(self, path, contents, *, route="key", timeout):
+                # Mirrors Session.write_and_wait: count, send, completion, read.
+                after = self.command_trace_count()
+                self.send(b"\x18\x13")
+                self.wait_for_command_completion(
+                    "save-buffer", route=route, after=after, timeout=timeout
+                )
                 calls.append(("wait_file", timeout))
                 test_case.assertEqual(
                     calls[-2], ("wait_command", "save-buffer", "key", 7, 1.5)
@@ -833,10 +857,14 @@ class CommandPathScenarioTests(unittest.TestCase):
             "unused", case, session_factory=lambda *_args, **_kwargs: session
         )
 
+        target_wait = session.calls.index(
+            ("wait_for_command_completion", "lsp-rename", "mx", 0)
+        )
         save_wait = session.calls.index(
-            ("wait_for_command_completion", "save-buffer", "key", 0)
+            ("wait_for_command_completion", "save-buffer", "key", 1)
         )
         quit_index = session.calls.index(("quit",))
+        self.assertLess(target_wait, save_wait)
         self.assertLess(save_wait, quit_index)
 
     def test_r2_history_waits_for_seed_command_before_target_prompt(self):
@@ -1466,6 +1494,29 @@ class CommandPathScenarioTests(unittest.TestCase):
         self.assertNotIn(
             ("wait_text", "minibuffer", "Go to line: ", {}), session.calls
         )
+
+    def test_r1_mx_waits_for_the_mx_trace_before_file_and_screen_checks(self):
+        case = next(
+            case
+            for case in load_command_path_scenarios(BUFFER_SCENARIO_DATA)
+            if case["path_id"] == "r1:delete-char:mx"
+        )
+        session = FakeSession()
+
+        run_command_path_scenario(
+            "unused", case, session_factory=lambda *_args, **_kwargs: session
+        )
+
+        trace_wait = session.calls.index(
+            ("wait_for_command_completion", "delete-char", "mx", 0)
+        )
+        first_check = min(
+            index
+            for index, call in enumerate(session.calls)
+            if call[0] in {"assert_file_bytes", "assert_screen", "wait_exact_text"}
+            and index > session.calls.index(("type", "delete-char"))
+        )
+        self.assertLess(trace_wait, first_check)
 
     def test_r1_followup_input_is_only_a_positive_ascii_line_number_for_goto_line(self):
         valid_case = next(
@@ -2157,8 +2208,12 @@ class CommandPathScenarioTests(unittest.TestCase):
         ]
         self.assertEqual(effect_file_assertions, [b"bc\n", b"bc\n"])
         self.assertEqual(
-            [call[2] for call in calls if call[0] == "observe_file_bytes"],
-            ["precondition"],
+            [call[1:] for call in calls if call[0] == "observe_file_bytes"],
+            [
+                (case["effect_bytes"].encode("utf-8"), "precondition"),
+                (case["initial_bytes"].encode("utf-8"), "precondition"),
+                (case["expected_bytes"].encode("utf-8"), "precondition"),
+            ],
         )
         self.assertEqual(
             sum(call == ("send", b"\x18u") for call in calls),

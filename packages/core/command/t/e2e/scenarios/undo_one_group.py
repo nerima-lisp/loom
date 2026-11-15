@@ -33,8 +33,7 @@ def undo_one_group(binary):
             )
             session.wait_for_region_cursor("body", 0)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, initial)
+            session.save_buffer(path, initial)
             session.assert_file_bytes(path, initial)
 
             output, code = session.quit()

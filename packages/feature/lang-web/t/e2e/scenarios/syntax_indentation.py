@@ -105,8 +105,7 @@ def _indent_all_lines(session, path, expected):
             payload.extend(keys.ctrl("n"))
     payload.extend(keys.ctrl("e"))
     session.send(bytes(payload))
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected)
+    session.save_buffer(path, expected)
     session.assert_file_bytes(path, expected)
     session.wait_for_region_cursor("body", 1, index=len(lines) - 1)
 

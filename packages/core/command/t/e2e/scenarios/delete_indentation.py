@@ -54,8 +54,7 @@ def delete_indentation(binary):
             )
             _assert_cursor(session, (0, 10))
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()

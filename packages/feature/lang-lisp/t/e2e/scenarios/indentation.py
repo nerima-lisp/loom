@@ -20,8 +20,7 @@ def _write(path, content):
 
 
 def _save(session, path, expected):
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected, timeout=0.75)
+    session.save_buffer(path, expected, timeout=0.75)
     session.assert_file_bytes(path, expected)
 
 

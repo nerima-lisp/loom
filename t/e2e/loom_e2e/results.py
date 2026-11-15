@@ -50,6 +50,8 @@ class ScenarioResult:
         self.status = "running"
         self.error = None
         self.timings = {}
+        self.phases = []
+        self.phase_events = []
         self.observations = []
         self.events = []
         self.sessions = []
@@ -159,6 +161,8 @@ class ScenarioResult:
             "binary_realpath": self.binary_realpath,
             "declared_commands": self.declared_commands,
             "timings": self.timings,
+            "phases": self.phases,
+            "phase_events": self.phase_events,
             "events": self.events,
             "observed_types": sorted({item["type"] for item in self.observations}),
             "observations": self.observations,

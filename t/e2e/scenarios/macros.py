@@ -29,8 +29,7 @@ def keyboard_macro(binary):
             session.type("a")
             session.send(keys.ctrl("x") + b")")
             session.send(keys.ctrl("x") + b"e")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"aa\n")
+            session.save_buffer(path, b"aa\n")
 
             output, code = session.quit()
         _assert_exit_zero("keyboard macro", output, code)
@@ -47,8 +46,7 @@ def numeric_prefix(binary):
             session.wait_ready()
             session.send(keys.ctrl("u"))
             session.type("2a")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"aa\n")
+            session.save_buffer(path, b"aa\n")
 
             output, code = session.quit()
         _assert_exit_zero("numeric prefix", output, code)

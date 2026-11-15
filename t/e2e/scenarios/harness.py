@@ -61,8 +61,7 @@ def harness_resize_and_observations(binary):
             session.wait_for_region_text("mode-line", "Ln 1, Col 1")
             session.key("RET")
             session.wait_for_region_cursor("body", 0, index=1)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"\nalpha\nbeta\n")
+            session.save_buffer(path, b"\nalpha\nbeta\n")
             output, code = session.quit()
             session.assert_pty_output(output, b"\x1b[", match="contains")
             if code != 0:

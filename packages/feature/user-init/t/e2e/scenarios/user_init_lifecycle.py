@@ -77,13 +77,14 @@ def _init_git_repo(directory, commits):
 
 
 def _save_and_exit_editor(session, file_path=None, expected_bytes=None):
-    trace_count = session.command_trace_count()
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_command_completion(
-        "save-buffer", route="key", after=trace_count, timeout=1
-    )
-    if file_path is not None:
-        session.wait_for_file(file_path, expected_bytes, timeout=1)
+    if file_path is None:
+        trace_count = session.command_trace_count()
+        session.send(keys.ctrl("x") + keys.ctrl("s"))
+        session.wait_for_command_completion(
+            "save-buffer", route="key", after=trace_count, timeout=1
+        )
+    else:
+        session.save_buffer(file_path, expected_bytes, timeout=1)
         session.assert_file_bytes(file_path, expected_bytes)
     trace_count = session.command_trace_count()
     session.send(keys.ctrl("x") + keys.ctrl("c"))
@@ -185,9 +186,8 @@ def init_error_is_reported_and_editor_continues(binary):
                 session.send(keys.ctrl("g"))
                 session.send(keys.ctrl("a"))
                 session.type("edited ")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
                 expected_bytes = b"edited seed\n"
-                session.wait_for_file(path, expected_bytes, timeout=2)
+                session.save_buffer(path, expected_bytes, timeout=2)
                 session.assert_file_bytes(path, expected_bytes)
 
                 session.send(keys.ctrl("x") + b"b")
@@ -379,12 +379,7 @@ def xargs_non_tty_stdin_uses_controlling_tty(binary):
                 session.wait_ready(timeout=1.5)
                 session.send(keys.ctrl("a"))
                 session.type("edited ")
-                trace_count = session.command_trace_count()
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_command_completion(
-                    "save-buffer", route="key", after=trace_count, timeout=1.5
-                )
-                session.wait_for_file(os.fspath(path), expected, timeout=1.5)
+                session.save_buffer(os.fspath(path), expected, timeout=1.5)
                 session.assert_file_bytes(os.fspath(path), expected)
                 _save_and_exit_editor(session)
                 _wait_editor_parent(session, "xargs non-tty stdin editor")
@@ -409,8 +404,7 @@ def plus_n_file_opens_requested_line(binary):
                     "two", match="contains", region="body", index=1
                 )
                 session.type("edited ")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_file(os.fspath(path), expected, timeout=1.5)
+                session.save_buffer(os.fspath(path), expected, timeout=1.5)
                 output, code = session.quit(timeout=1.5)
                 session.assert_file_bytes(os.fspath(path), expected)
                 _assert_exit_zero("+N FILE", output, code)
@@ -456,7 +450,9 @@ def new_file_is_created_on_save(binary):
                 )
                 session.type("y")
                 session.send(keys.key("RET"))
-                session.wait_for_file(os.fspath(path), expected, timeout=1.5)
+                session.wait_for_prompted_file(
+                    os.fspath(path), expected, "Wrote ", timeout=1.5
+                )
                 session.assert_external_state(
                     "parent directories are created after confirmation",
                     path.parent.is_dir(),
@@ -543,8 +539,7 @@ def non_tty_stdin_uses_controlling_tty(binary):
                 session.wait_ready(timeout=1.5)
                 session.send(keys.ctrl("a"))
                 session.type("edited ")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_file(os.fspath(path), expected, timeout=1.5)
+                session.save_buffer(os.fspath(path), expected, timeout=1.5)
                 session.assert_file_bytes(os.fspath(path), expected)
                 output, code = session.quit(timeout=1.5)
                 _assert_exit_zero("non-TTY stdin", output, code)
@@ -570,8 +565,7 @@ def non_tty_stdout_uses_controlling_tty(binary):
                 session.wait_ready(timeout=1.5)
                 session.send(keys.ctrl("a"))
                 session.type("edited ")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_file(os.fspath(path), expected, timeout=1.5)
+                session.save_buffer(os.fspath(path), expected, timeout=1.5)
                 session.assert_file_bytes(os.fspath(path), expected)
                 output, code = session.quit(timeout=1.5)
                 _assert_exit_zero("non-TTY stdout", output, code)

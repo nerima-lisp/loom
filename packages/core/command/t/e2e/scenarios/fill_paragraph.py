@@ -75,8 +75,7 @@ def fill_paragraph(binary):
             )
             _assert_cursor(session, (3, 0), index=3)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected)
+            session.save_buffer(path, expected)
             session.assert_file_bytes(path, expected)
 
             output, code = session.quit()

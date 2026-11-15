@@ -15,6 +15,9 @@ from .deadline import (
     ScenarioCleanupDeadlineExceeded,
     ScenarioDeadlineExceeded,
     current_deadline,
+    mark_phase,
+    note_phase_event,
+    phase_step,
 )
 from .layout import Layout, validate_dimensions
 from .process import LoomProcess
@@ -41,6 +44,74 @@ _COMMAND_TRACE_ALIASES = {
 
 def _canonical_command_trace_name(command):
     return _COMMAND_TRACE_ALIASES.get(command, command)
+
+
+_PHASE_LABEL_LIMIT = 48
+_TIMEOUT_TRACE_TAIL_LINES = 20
+_TIMEOUT_TRACE_LINE_LIMIT = 300
+
+
+def _clip(label):
+    if len(label) <= _PHASE_LABEL_LIMIT:
+        return label
+    return label[: _PHASE_LABEL_LIMIT - 3] + "..."
+
+
+def _describe_input(data, profile):
+    """Name raw input bytes with profile key names and C-/M- chords."""
+    sequences = sorted(
+        ((sequence, name) for name, sequence in profile.key_sequences.items()),
+        key=lambda item: -len(item[0]),
+    )
+    words = []
+    text = bytearray()
+    index = 0
+    data = bytes(data)
+
+    def flush_text():
+        if text:
+            words.append(repr(text.decode("utf-8", errors="replace")))
+            text.clear()
+
+    while index < len(data):
+        for sequence, name in sequences:
+            if len(sequence) > 1 and data.startswith(sequence, index):
+                flush_text()
+                words.append(name)
+                index += len(sequence)
+                break
+        else:
+            byte = data[index]
+            following = data[index + 1] if index + 1 < len(data) else None
+            if byte == 0x1B and following == ord("["):
+                end = index + 2
+                while end < len(data) and not 0x40 <= data[end] <= 0x7E:
+                    end += 1
+                flush_text()
+                words.append(
+                    "CSI " + data[index + 2 : end + 1].decode("ascii", "replace")
+                )
+                index = end + 1
+                continue
+            if byte == 0x1B and following is not None and 0x20 < following < 0x7F:
+                flush_text()
+                words.append(f"M-{chr(following)}")
+                index += 2
+                continue
+            if byte in (0x0D, 0x09, 0x1B):
+                flush_text()
+                words.append({0x0D: "RET", 0x09: "TAB", 0x1B: "ESC"}[byte])
+            elif byte < 0x20:
+                flush_text()
+                words.append(f"C-{chr(byte + 0x40).lower()}")
+            elif byte == 0x7F:
+                flush_text()
+                words.append("C-?")
+            else:
+                text.append(byte)
+            index += 1
+    flush_text()
+    return " ".join(words)
 
 
 def _session_environment(
@@ -120,6 +191,7 @@ class Session:
         self._layout_trace_path = None
         self._trace_bytes = b""
         self._trace_offset = 0
+        self._write_in_flight = None
         self._trace_line_counter_token = None
         self._artifacts_captured = False
         self.started_at = None
@@ -141,7 +213,68 @@ class Session:
     def trace_bytes(self):
         return self._trace_bytes
 
+    def _mark_launch(self, label):
+        budget = current_deadline()
+        if budget is None:
+            return
+        budget.timeline.session_count += 1
+        count = budget.timeline.session_count
+        mark_phase(label if count == 1 else f"{label} (session {count})")
+
+    def _record_timeout_snapshot(self):
+        """Record screen and trace tail once after expiry; return a deferred
+        deadline error so the caller can finish process cleanup first."""
+        budget = current_deadline()
+        if budget is None or not budget.expired:
+            return None
+        if budget.timeline.snapshot is not None:
+            return None
+        try:
+            self._write_timeout_snapshot(budget)
+        except ScenarioDeadlineExceeded as error:
+            return error
+        except Exception as error:
+            budget.timeline.record_snapshot(
+                f"--- screen and trace snapshot failed: {error!r} ---"
+            )
+        return None
+
+    def _write_timeout_snapshot(self, budget):
+        if self.screen is None:
+            screen = "(no screen: the session had not created one)"
+            cursor = None
+        else:
+            screen = self.screen.dump()
+            cursor = self.screen.cursor
+        trace_lines = self._read_trace_data().decode(
+            "utf-8", errors="replace"
+        ).splitlines()
+        tail = [
+            line
+            if len(line) <= _TIMEOUT_TRACE_LINE_LIMIT
+            else line[: _TIMEOUT_TRACE_LINE_LIMIT - 3] + "..."
+            for line in trace_lines[-_TIMEOUT_TRACE_TAIL_LINES:]
+        ]
+        first_screen = (
+            "never"
+            if self.first_screen_at is None or self.started_at is None
+            else f"{self.first_screen_at - self.started_at:.3f}s after launch"
+        )
+        budget.timeline.record_snapshot(
+            "\n".join(
+                [
+                    f"--- screen at timeout (cursor={cursor!r}; "
+                    f"first content {first_screen}) ---",
+                    screen,
+                    "--- command trace tail at timeout "
+                    f"(last {len(tail)} of {len(trace_lines)} records) ---",
+                    *(tail or ["(empty)"]),
+                ]
+            )
+        )
+
     def __enter__(self):
+        self._mark_launch("launch")
         locale = _pick_utf8_locale()
         self._locale_name = locale
         try:
@@ -180,6 +313,7 @@ class Session:
             self._trace_line_counter_token = set_trace_line_counter(
                 self._trace_line_count
             )
+            mark_phase("initial screen")
             return self
         except BaseException as error:
             try:
@@ -189,13 +323,14 @@ class Session:
             raise
 
     def __exit__(self, _exception_type, _exception, _traceback):
+        force_error = self._record_timeout_snapshot()
+        mark_phase("session teardown")
         budget = current_deadline()
-        force_error = None
         if budget is not None and budget.expired:
             try:
                 budget.force_cleanup()
             except BaseException as error:
-                force_error = error
+                force_error = force_error or error
         close_error = None
         try:
             if self.process is not None:
@@ -225,6 +360,7 @@ class Session:
                 if self._trace_line_counter_token is not None:
                     reset_trace_line_counter(self._trace_line_counter_token)
                     self._trace_line_counter_token = None
+                mark_phase("after session close")
         if close_error is not None:
             if force_error is not None:
                 raise close_error from force_error
@@ -240,13 +376,14 @@ class Session:
             raise RuntimeError("cannot restart a session before it is entered")
 
         previous_process = self.process
+        force_error = self._record_timeout_snapshot()
+        self._mark_launch("restart")
         budget = current_deadline()
-        force_error = None
         if budget is not None and budget.expired:
             try:
                 budget.force_cleanup()
             except BaseException as error:
-                force_error = error
+                force_error = force_error or error
 
         close_error = None
         try:
@@ -288,6 +425,7 @@ class Session:
         if budget is not None:
             budget.register_process(self.process)
         self.screen = Screen(self.columns, self.rows)
+        mark_phase("initial screen")
         return self
 
     def _read_trace_data(self):
@@ -412,6 +550,7 @@ class Session:
             and self.screen.has_content()
         ):
             self.first_screen_at = read_at
+            note_phase_event("first screen content")
         self._refresh_layout_trace()
         return data
 
@@ -433,6 +572,7 @@ class Session:
         validate_dimensions(columns, rows)
         if self.process is None or self.screen is None:
             raise RuntimeError("cannot resize a session before it is entered")
+        mark_phase(f"resize {columns}x{rows}")
         while self.pump(poll_timeout=0.0):
             pass
         self.process.resize(columns, rows)
@@ -1078,7 +1218,183 @@ class Session:
             body_col=col if region == "body" else None,
         )
 
-    def wait_for_file(self, path, expected_bytes, timeout=DEFAULT_TIMEOUT):
+    def wait_for_file(
+        self,
+        path,
+        expected_bytes,
+        timeout=DEFAULT_TIMEOUT,
+        *,
+        command=None,
+        after=None,
+        route=None,
+    ):
+        """Check PATH once COMMAND's trace row after record AFTER appears.
+
+        This is the low-level form for runners that send the writing input
+        themselves and keep AFTER from just before it.  Scenarios use
+        write_and_wait or save_buffer, which send the input and take AFTER in
+        one call.  loom appends a trace row only after the command returns,
+        so bytes read after the row are that write's final output.  The bytes
+        are read once, at the first such row; a mismatch fails, and a row with
+        completed:false fails because unchanged bytes would otherwise pass for
+        a write that never ran.
+        """
+        if command is None or after is None:
+            raise TypeError(
+                f"wait_for_file({path!r}) needs the writer: use "
+                "write_and_wait/save_buffer for a command write, "
+                "wait_for_prompted_file for a write from a minibuffer answer, "
+                "or wait_for_untraced_file for a writer without a trace row"
+            )
+        command = _canonical_command_trace_name(command)
+        deadline = time.monotonic() + timeout
+        while True:
+            records = self._read_complete_command_trace_records()
+            row = next(
+                (
+                    (index, record)
+                    for index, record in enumerate(records)
+                    if index >= after
+                    and _canonical_command_trace_name(record.get("command")) == command
+                    and (route is None or record.get("route") == route)
+                ),
+                None,
+            )
+            if row is not None:
+                index, record = row
+                actual = self.observe_file_bytes(
+                    path, expected_bytes, purpose="precondition"
+                )
+                if record.get("completed") is not True:
+                    raise AssertionError(
+                        f"{command} trace row {index} for {path} has "
+                        "completed:false, so the write did not finish"
+                        f"\n--- screen ---\n{self._screen_dump()}"
+                    )
+                if actual != expected_bytes:
+                    raise AssertionError(
+                        f"{path} contained {actual!r} after {command} trace row "
+                        f"{index}; expected {expected_bytes!r}"
+                        f"\n--- screen ---\n{self._screen_dump()}"
+                    )
+                return
+            if time.monotonic() >= deadline:
+                self.observe_file_bytes(
+                    path, expected_bytes, purpose="precondition"
+                )
+                raise TimeoutError(
+                    f"timed out waiting for {command} completion after trace "
+                    f"record {after} before reading {path}"
+                    f"\n--- screen ---\n{self._screen_dump()}"
+                )
+            self.pump()
+
+    def _screen_dump(self):
+        return self.screen.dump() if self.screen is not None else ""
+
+    def wait_for_prompted_file(
+        self, path, expected_bytes, message, *, timeout=DEFAULT_TIMEOUT
+    ):
+        """Check PATH after a minibuffer answer ran the write.
+
+        A prompting command records its trace when the prompt opens, before
+        the answer runs the write, and the answer records no trace.  loom
+        renders only after an input dispatch returns, so MESSAGE, which the
+        writer sets after writing, marks completion once it replaces the
+        prompt.  Wait for the prompt before answering so MESSAGE is not stale.
+        """
+        self.wait_for_region_text("minibuffer", message, timeout=timeout)
+        actual = self.observe_file_bytes(
+            path, expected_bytes, purpose="precondition"
+        )
+        if actual != expected_bytes:
+            raise AssertionError(
+                f"{path} contained {actual!r} after {message!r} appeared; "
+                f"expected {expected_bytes!r}\n--- screen ---\n"
+                f"{self.screen.dump() if self.screen is not None else ''}"
+            )
+
+    def write_and_wait(
+        self,
+        path,
+        expected_bytes,
+        *,
+        command,
+        route,
+        keys=None,
+        mx=None,
+        timeout=DEFAULT_TIMEOUT,
+    ):
+        """Send one writing input, then check PATH after COMMAND completes.
+
+        Send KEYS (bytes) or run MX through M-x; COMMAND and ROUTE name the
+        trace row that input records, for example save-buffer on the macro
+        route for a replay with C-x e.  The trace count is taken just before
+        the input, so only this input's row satisfies the wait provided no
+        unfinished raw writing input is mixed in: a raw write whose row lands
+        after that count would satisfy it too.  Raw sends are not tracked, so
+        after writing with raw input, confirm that write's completion
+        explicitly before calling this method.  A write sent through this
+        method and never confirmed blocks the next one.
+        """
+        if (keys is None) == (mx is None):
+            raise ValueError("write_and_wait needs exactly one of keys or mx")
+        if self._write_in_flight is not None:
+            raise RuntimeError(
+                f"{self._write_in_flight} was sent through write_and_wait but "
+                "its completion was never confirmed; a new write cannot be "
+                "told apart from it"
+            )
+        after = self.command_trace_count()
+        self._write_in_flight = f"{command} for {path}"
+        if keys is not None:
+            self.send(keys)
+        else:
+            self.extended_command(mx, timeout=timeout)
+        self.wait_for_file(
+            path,
+            expected_bytes,
+            timeout,
+            command=command,
+            route=route,
+            after=after,
+        )
+        self._write_in_flight = None
+
+    def save_buffer(
+        self, path, expected_bytes, *, route="key", timeout=DEFAULT_TIMEOUT
+    ):
+        """Run save-buffer through ROUTE ("key" or "mx") and check PATH."""
+        if route == "key":
+            self.write_and_wait(
+                path,
+                expected_bytes,
+                command="save-buffer",
+                route="key",
+                keys=keys.ctrl("x") + keys.ctrl("s"),
+                timeout=timeout,
+            )
+        elif route == "mx":
+            self.write_and_wait(
+                path,
+                expected_bytes,
+                command="save-buffer",
+                route="mx",
+                mx="save-buffer",
+                timeout=timeout,
+            )
+        else:
+            raise ValueError("save_buffer route must be 'key' or 'mx'")
+
+    def wait_for_untraced_file(
+        self, path, expected_bytes, timeout=DEFAULT_TIMEOUT
+    ):
+        """Poll PATH for bytes written outside any traced loom command.
+
+        Use this only for writers that record no command trace, such as a
+        child process or a timer.  A command's file effect goes through
+        wait_for_file so that its completion is observed first.
+        """
         deadline = time.monotonic() + timeout
         last_seen = None
         while True:
@@ -1103,11 +1419,15 @@ class Session:
                 )
 
     def send(self, data):
-        self.process.write(data)
+        with phase_step(
+            lambda: "key " + _clip(_describe_input(data, self.profile))
+        ):
+            self.process.write(data)
 
     def type(self, text):
-        self.send(keys.text(text))
-        record_event("text_input", text=text)
+        with phase_step(lambda: "type " + _clip(repr(text))):
+            self.send(keys.text(text))
+            record_event("text_input", text=text)
 
     def key(self, *names):
         payload = bytearray()
@@ -1121,13 +1441,15 @@ class Session:
 
     def extended_command(self, name, timeout=DEFAULT_TIMEOUT):
         """Invoke NAME through the real M-x key path."""
-        self.send(keys.meta("x"))
-        self.wait_for_region_text("minibuffer", "M-x ", timeout=timeout)
-        self.type(name)
-        self.key("RET")
+        with phase_step(lambda: "M-x " + _clip(name)):
+            self.send(keys.meta("x"))
+            self.wait_for_region_text("minibuffer", "M-x ", timeout=timeout)
+            self.type(name)
+            self.key("RET")
 
     def quit(self, timeout=DEFAULT_TIMEOUT):
-        self.send(keys.ctrl("x") + keys.ctrl("c"))
-        output, code = self.process.wait(timeout=timeout)
-        self.observe_exit_code(code, expected=0)
+        with phase_step("quit"):
+            self.send(keys.ctrl("x") + keys.ctrl("c"))
+            output, code = self.process.wait(timeout=timeout)
+            self.observe_exit_code(code, expected=0)
         return output, code

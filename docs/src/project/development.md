@@ -128,12 +128,19 @@ Each scenario runs the editor under a fresh scratch `HOME` and a temporary
 directory, reconstructs the 80x24 screen from the PTY byte stream with
 `pyte`, and waits on screen state rather than fixed delays. The runner prints
 how many registered `command-spec` names the scenarios exercise; pass
-`--require-full-coverage` to fail when that count is short.
+`--require-full-coverage` to fail when that count is short. Scenarios check a
+written file through `save_buffer` or `write_and_wait`, which wait for the
+named command's completion trace; do not mix them with an unfinished raw
+writing input, and after writing with raw keys, confirm that write's
+completion explicitly before calling them.
 
 The ordinary test process has a 1,800-second outer timeout and cl-weave's test
 runner gives each example a 40-second timeout. Coverage has a 1,800-second
 outer timeout. The PTY runner applies a 10-second deadline to each complete
-scenario, reserving five seconds for cleanup. Real cleanup must be verified
+scenario, reserving five seconds for cleanup. When that whole-scenario budget
+expires, the failure output adds a per-phase timeline, the screen, and the tail
+of the command trace; a shorter individual wait that times out first fails with
+its own message and no such report. Real cleanup must be verified
 against that total budget; the current failures are recorded in the
 [verification ledger](../notes/verification-ledger.md). These limits are part
 of the development contract and should be changed only with a measured reason.

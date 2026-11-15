@@ -53,8 +53,7 @@ def _run_structural_edit(
                     f"expected (0, {expected_point})"
                 )
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, expected, timeout=0.6)
+            session.save_buffer(path, expected, timeout=0.6)
             session.assert_file_bytes(path, expected)
             output, code = session.quit(timeout=0.75)
 

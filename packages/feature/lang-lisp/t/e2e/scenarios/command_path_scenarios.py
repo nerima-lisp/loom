@@ -71,9 +71,8 @@ def _assert_effect(session, case, path):
             f"{case['name']}: cursor did not match {expected_cursor!r}"
         )
 
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
     expected_bytes = case["expected_bytes"].encode("utf-8")
-    session.wait_for_file(path, expected_bytes)
+    session.save_buffer(path, expected_bytes)
     session.assert_file_bytes(path, expected_bytes)
 
 

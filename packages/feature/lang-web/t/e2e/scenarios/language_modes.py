@@ -59,8 +59,7 @@ def language_modes(binary):
 
             session.send(keys.ctrl("e"))
             session.type("!")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(first_path, expected)
+            session.save_buffer(first_path, expected)
             session.assert_file_bytes(first_path, expected)
             session.wait_for_region_cursor("body", 17)
 

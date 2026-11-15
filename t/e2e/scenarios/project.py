@@ -34,8 +34,7 @@ def project_find_file(binary):
             session.type("src/other.txt")
             session.key("RET")
             session.type("a")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(other_path, b"aother\n")
+            session.save_buffer(other_path, b"aother\n")
 
             output, code = session.quit()
         _assert_exit_zero("project find file", output, code)

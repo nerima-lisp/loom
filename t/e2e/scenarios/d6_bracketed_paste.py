@@ -34,11 +34,11 @@ def bracketed_paste_preserves_tab(binary):
             )
             session.send(paste)
 
+            trace_count = session.command_trace_count()
             session.send(keys.ctrl("x") + keys.ctrl("s"))
-            try:
-                session.wait_for_file(path, expected, timeout=1)
-            except TimeoutError:
-                pass
+            session.wait_for_command_completion(
+                "save-buffer", route="key", after=trace_count, timeout=1
+            )
 
             actual = session.observe_file_bytes(path, expected)
             output, code = session.quit()

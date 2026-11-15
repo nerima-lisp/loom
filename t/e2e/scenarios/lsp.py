@@ -624,8 +624,7 @@ def _run_server_request_completion(binary, request_kind):
                 "wp7Completed", match="contains", region="body", index=1,
             )
             session.key("RET")
-            session.extended_command("save-buffer")
-            session.wait_for_file(path, b"wp7Completed\n")
+            session.save_buffer(path, b"wp7Completed\n", route="mx")
             session.assert_file_bytes(path, b"wp7Completed\n")
             session.extended_command("lsp-stop")
             session.wait_for_text("LSP stopped.")
@@ -861,7 +860,7 @@ def lsp_trust_review(binary):
             )
             session.key("RET")
 
-            session.wait_for_file(marker, b"spawned")
+            session.wait_for_untraced_file(marker, b"spawned")
             session.wait_for_text("LSP started.")
             pid_data = session.observe_file_bytes(pid_file)
             pid = int(pid_data.decode("ascii").strip())
@@ -1246,8 +1245,9 @@ def lsp_completion_success(binary):
             completed = "let completionValue = 1; in completionValue"
             session.wait_for_region_text("body", completed)
             session.wait_for_region_cursor("body", len(completed))
-            session.extended_command("save-buffer")
-            session.wait_for_file(path, (completed + "\n").encode("utf-8"))
+            session.save_buffer(
+                path, (completed + "\n").encode("utf-8"), route="mx"
+            )
             session.extended_command("lsp-stop")
             session.wait_for_text("LSP stopped.")
             _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
@@ -1348,8 +1348,7 @@ def lsp_server_nonzero_exit(binary):
             session.assert_external_state("lsp-server exit status", status, "17")
             session.send(keys.ctrl("e"))
             session.type(" updated")
-            session.extended_command("save-buffer")
-            session.wait_for_file(path, b"still usable updated\n")
+            session.save_buffer(path, b"still usable updated\n", route="mx")
             output, code = session.quit()
         assert_exit_zero("lsp-server-nonzero-exit", output, code)
     finally:

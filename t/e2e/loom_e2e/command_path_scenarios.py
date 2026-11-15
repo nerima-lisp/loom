@@ -877,30 +877,13 @@ def _assert_cursor(session, expected, region):
         )
 
 
-def _save_and_assert(session, path, expected_bytes, *, wait_for_save=False):
-    trace_count = session.command_trace_count() if wait_for_save else None
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    if wait_for_save:
-        session.wait_for_command_completion(
-            "save-buffer", route="key", after=trace_count
-        )
-    session.wait_for_file(path, expected_bytes)
+def _save_and_assert(session, path, expected_bytes):
+    session.save_buffer(path, expected_bytes)
     return session.assert_file_bytes(path, expected_bytes)
 
 
-def _save_and_assert_precondition(session, path, expected_bytes, *, wait_for_save=False):
-    trace_count = session.command_trace_count() if wait_for_save else None
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    if wait_for_save:
-        session.wait_for_command_completion(
-            "save-buffer", route="key", after=trace_count
-        )
-    session.wait_for_file(path, expected_bytes)
-    actual = session.observe_file_bytes(
-        path, expected_bytes, purpose="precondition"
-    )
-    if actual != expected_bytes:
-        raise AssertionError("restored precondition bytes did not match exactly")
+def _save_and_assert_precondition(session, path, expected_bytes):
+    session.save_buffer(path, expected_bytes)
 
 
 def _assert_final_state(
@@ -913,7 +896,6 @@ def _assert_final_state(
     stage_prefix=None,
     check_minibuffer=True,
     expected_cursor=None,
-    wait_for_save=False,
 ):
     def stage(label):
         if stage_prefix is None:
@@ -975,9 +957,7 @@ def _assert_final_state(
     expected_bytes = expected_bytes.encode("utf-8")
     with stage("file"):
         if save:
-            _save_and_assert(
-                session, path, expected_bytes, wait_for_save=wait_for_save
-            )
+            _save_and_assert(session, path, expected_bytes)
         else:
             session.assert_file_bytes(path, expected_bytes)
 
@@ -990,9 +970,8 @@ def _send_pre_keys(session, case):
 def _run_r1(session, case, path):
     _send_pre_keys(session, case)
     entry_mode = case["entry_mode"]
-    trace_count = None
+    trace_count = session.command_trace_count()
     if entry_mode == "key":
-        trace_count = session.command_trace_count()
         _send_keys(session, case["entry_keys"])
     elif entry_mode == "mx":
         _send_mx(session, case.get("invoke_name", case["command"]))
@@ -1003,10 +982,9 @@ def _run_r1(session, case, path):
             session.wait_for_region_text("minibuffer", "Go to line: ")
             session.type(case["followup_input"])
             session.key("RET")
-    if trace_count is not None:
-        _wait_for_command_completion(
-            session, case, case["command"], "key", trace_count
-        )
+    _wait_for_command_completion(
+        session, case, case["command"], _command_route(case), trace_count
+    )
     _assert_final_state(
         session,
         case,
@@ -1120,6 +1098,7 @@ def _run_r2_command_prompts(session, case, path):
             )
             _send_keys(session, case["history_seed_interaction_keys"])
 
+    trace_count = session.command_trace_count()
     _enter_command_prompt(session, case, prompt_labels[0])
     for index, value in enumerate(case.get("prior_prompt_inputs", [])):
         if value:
@@ -1140,6 +1119,9 @@ def _run_r2_command_prompts(session, case, path):
             )
             _send_keys(session, case["interaction_keys"])
 
+    _wait_for_command_completion(
+        session, case, case["command"], _command_route(case), trace_count
+    )
     if not (
         case.get("prompt_kind") == "char" and case["prompt_case"] == "invalid"
     ):
@@ -1208,6 +1190,7 @@ def _run_r2(session, case, path):
                         index=history_seed_wait.get("index", 0),
                     )
 
+    trace_count = session.command_trace_count()
     with stage("target prompt open"):
         _open_r2_prompt(session, case)
     if prompt_case == "history":
@@ -1296,6 +1279,9 @@ def _run_r2(session, case, path):
             with stage("prompt accept (RET)"):
                 session.key("RET")
 
+    _wait_for_command_completion(
+        session, case, case["command"], _command_route(case), trace_count
+    )
     if not (case.get("prompt_kind") == "char" and prompt_case == "invalid"):
         with stage("prompt result"):
             _assert_minibuffer(
@@ -1311,7 +1297,6 @@ def _run_r2(session, case, path):
         save=case.get("save_after_effect", False),
         stage_prefix="final state",
         check_minibuffer=False,
-        wait_for_save=case.get("save_after_effect", False),
     )
 
     if case.get("cancel_prompt_after_assert", False):
@@ -1470,15 +1455,13 @@ def _run_r3(session, case, path):
             _assert_effect_state(session, case, check_minibuffer=False)
             _send_keys(session, ["C-x", ")"])
             _assert_minibuffer(session, case["expected_minibuffer"])
-            _save_and_assert(session, path, effect, wait_for_save=True)
+            _save_and_assert(session, path, effect)
             trace_count = session.command_trace_count()
             session.send(keys.ctrl("x") + keys.text("u"))
             _wait_for_command_completion(session, case, "undo", "key", trace_count)
             restore = case["restore_screen"][0]
             _wait_for_screen_expectation(session, restore, "exact")
-            _save_and_assert_precondition(
-                session, path, initial, wait_for_save=True
-            )
+            _save_and_assert_precondition(session, path, initial)
 
         with _deadline_stage(case["name"], "replay command", session=session):
             _send_keys(session, case["replay_prefix_keys"])
@@ -1493,7 +1476,6 @@ def _run_r3(session, case, path):
                 session,
                 path,
                 case["expected_bytes"].encode("utf-8"),
-                wait_for_save=True,
             )
         return
 
@@ -1521,9 +1503,7 @@ def _run_r3(session, case, path):
         effect if operation == "undo" else case["expected_bytes"].encode("utf-8")
     )
     with _deadline_stage(case["name"], "save effect", session=session):
-        _save_and_assert(
-            session, path, expected_effect, wait_for_save=True
-        )
+        _save_and_assert(session, path, expected_effect)
     if operation == "undo":
         with _deadline_stage(case["name"], "undo command", session=session):
             trace_count = session.command_trace_count()
@@ -1538,7 +1518,6 @@ def _run_r3(session, case, path):
             stage_prefix="undo result",
             check_minibuffer=False,
             expected_cursor=case["expected_undo_cursor"],
-            wait_for_save=True,
         )
 
 

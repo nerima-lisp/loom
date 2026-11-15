@@ -86,8 +86,7 @@ def _insert(session, paths):
     _assert_cursor(session, 0, 2)
     session.send(b"X")
     session.wait_for_region_exact_text("body", "abXcd", timeout=5)
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(paths["mouse.txt"], b"abXcd\n", timeout=5)
+    session.save_buffer(paths["mouse.txt"], b"abXcd\n", timeout=5)
     session.assert_file_bytes(paths["mouse.txt"], b"abXcd\n")
 
 
@@ -101,8 +100,7 @@ def _delete(session, paths):
     _assert_cursor(session, 0, 1)
     session.extended_command("delete-char")
     session.wait_for_region_exact_text("body", "acd", timeout=5)
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(paths["mouse.txt"], b"acd\n", timeout=5)
+    session.save_buffer(paths["mouse.txt"], b"acd\n", timeout=5)
     session.assert_file_bytes(paths["mouse.txt"], b"acd\n")
 
 
@@ -118,8 +116,7 @@ def _undo(session, paths):
     session.wait_for_region_exact_text("body", "abXcd", timeout=5)
     session.send(keys.ctrl("x") + keys.text("u"))
     session.wait_for_region_exact_text("body", "abcd", timeout=5)
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(paths["mouse.txt"], b"abcd\n", timeout=5)
+    session.save_buffer(paths["mouse.txt"], b"abcd\n", timeout=5)
     session.assert_file_bytes(paths["mouse.txt"], b"abcd\n")
 
 
@@ -133,8 +130,7 @@ def _save(session, paths):
     _assert_cursor(session, 0, 2)
     session.send(b"X")
     session.wait_for_region_exact_text("body", "abXcd", timeout=5)
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(paths["mouse.txt"], b"abXcd\n", timeout=5)
+    session.save_buffer(paths["mouse.txt"], b"abXcd\n", timeout=5)
     session.assert_file_bytes(paths["mouse.txt"], b"abXcd\n")
 
 
@@ -188,8 +184,7 @@ def _drag(session, paths):
     session.send(_left_drag(1, 0, 4, 0))
     session.send(keys.ctrl("w"))
     session.wait_for_region_exact_text("body", "aef", timeout=5)
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(paths["mouse.txt"], b"aef\n", timeout=5)
+    session.save_buffer(paths["mouse.txt"], b"aef\n", timeout=5)
     session.assert_file_bytes(paths["mouse.txt"], b"aef\n")
 
 
@@ -204,10 +199,7 @@ def _file_tree_open(session, paths):
     session.send(_left_click(2, 1))
     session.wait_for_region_exact_text("body", "TARGET-CONTENT", timeout=5)
     session.send(b"!")
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(
-        paths["b-target.txt"], b"!TARGET-CONTENT\n", timeout=5
-    )
+    session.save_buffer(paths["b-target.txt"], b"!TARGET-CONTENT\n", timeout=5)
     session.assert_file_bytes(paths["b-target.txt"], b"!TARGET-CONTENT\n")
 
 

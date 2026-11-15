@@ -110,8 +110,7 @@ def terminal_navigation_delete(binary):
             session.send(b"\x1b[3~")
             session.wait_for_region_text_prefix("body", "bc")
             session.assert_screen_text("bc", match="starts_with", region="body")
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, b"bc\n")
+            session.save_buffer(path, b"bc\n")
             session.assert_file_bytes(path, b"bc\n")
 
             output, code = session.quit()
@@ -136,8 +135,7 @@ def terminal_navigation_page(binary):
                 session.wait_ready()
                 session.send(b"\x1b[6~")
                 session.send(b"\x1b[5~")
-                session.send(keys.ctrl("x") + keys.ctrl("s"))
-                session.wait_for_file(path, initial)
+                session.save_buffer(path, initial)
                 session.assert_file_bytes(path, initial)
 
                 output, code = session.quit()

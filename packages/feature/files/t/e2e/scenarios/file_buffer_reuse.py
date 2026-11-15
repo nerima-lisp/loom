@@ -37,8 +37,7 @@ def find_file_buffer_reuse_and_names(binary):
             session.key("RET")
             session.wait_for_region_exact_text("body", "!left", index=0, strip_right=True)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(left_path, b"!left\n")
+            session.save_buffer(left_path, b"!left\n")
             session.assert_file_bytes(right_path, b"right\n")
 
             session.send(keys.ctrl("x") + keys.ctrl("f"))

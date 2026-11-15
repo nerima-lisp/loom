@@ -44,8 +44,7 @@ def markdown_org_comment_dwim(binary):
             session.send(keys.meta(";"))
             session.wait_for_region_exact_text("body", "<!-- hello -->", index=0)
             session.wait_for_region_cursor("body", 5, index=0)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(markdown_path, markdown_after_line)
+            session.save_buffer(markdown_path, markdown_after_line)
             session.assert_file_bytes(markdown_path, markdown_after_line)
 
             session.send(
@@ -59,8 +58,7 @@ def markdown_org_comment_dwim(binary):
                 "body", "<!-- selected --> words", index=1
             )
             session.wait_for_region_cursor("body", 13, index=1)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(markdown_path, markdown_after_region)
+            session.save_buffer(markdown_path, markdown_after_region)
             session.assert_file_bytes(markdown_path, markdown_after_region)
 
             session.send(keys.ctrl("x") + keys.ctrl("f"))
@@ -73,8 +71,7 @@ def markdown_org_comment_dwim(binary):
             session.send(keys.meta(";"))
             session.wait_for_region_exact_text("body", "# org text", index=0)
             session.wait_for_region_cursor("body", 2, index=0)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(org_path, org_after_line)
+            session.save_buffer(org_path, org_after_line)
             session.assert_file_bytes(org_path, org_after_line)
 
             session.send(
@@ -88,8 +85,7 @@ def markdown_org_comment_dwim(binary):
                 "body", "# selected words", index=1
             )
             session.wait_for_region_cursor("body", 10, index=1)
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(org_path, org_after_region)
+            session.save_buffer(org_path, org_after_region)
             session.assert_file_bytes(org_path, org_after_region)
 
             output, code = session.quit()

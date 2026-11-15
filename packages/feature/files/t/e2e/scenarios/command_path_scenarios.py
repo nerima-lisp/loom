@@ -536,6 +536,7 @@ def _assert_files_r3_state(
     screen_field="expected_screen",
     cursor=None,
     minibuffer=None,
+    writer=None,
 ):
     if minibuffer is not None:
         with _deadline_stage(case["name"], "exact minibuffer", session=session):
@@ -564,8 +565,26 @@ def _assert_files_r3_state(
             )
     expected_file = expected_bytes.encode("utf-8")
     with _deadline_stage(case["name"], "file bytes", session=session):
-        session.wait_for_file(path, expected_file)
+        if writer is not None:
+            command, route, after, writes = writer
+            if writes:
+                session.wait_for_file(
+                    path, expected_file, command=command, route=route, after=after
+                )
+            else:
+                # A rejected save records completed:false; wait for it so the
+                # unchanged bytes are read after the rejection, not before.
+                session.wait_for_command_completion(
+                    command, route=route, after=after
+                )
         session.assert_file_bytes(path, expected_file)
+
+
+def _send_writing_keys(session, sequence, command, route="key", *, writes=True):
+    """Send keys that run COMMAND and return the writer for the file check."""
+    after = session.command_trace_count()
+    _send_keys(session, sequence)
+    return command, route, after, writes
 
 
 def _assert_initial_files_r3_state(session, case, path):
@@ -629,7 +648,7 @@ def _run_files_save_mutation(session, case, path):
     if mutation == "macro-replay":
         _assert_initial_files_r3_state(session, case, path)
         _send_keys(session, ["C-x", "("])
-        _send_keys(session, case["command_keys"])
+        writer = _send_writing_keys(session, case["command_keys"], "save-buffer")
         _assert_files_r3_state(
             session,
             case,
@@ -637,6 +656,7 @@ def _run_files_save_mutation(session, case, path):
             expected_bytes=case["effect_bytes"],
             screen_field="effect_screen",
             minibuffer=case["effect_minibuffer"],
+            writer=writer,
         )
         _send_keys(session, ["C-x", ")"])
         _assert_files_r3_state(
@@ -655,7 +675,7 @@ def _run_files_save_mutation(session, case, path):
             screen_field="restore_screen",
             cursor=case["restore_cursor"],
         )
-        _send_keys(session, ["C-x", "C-s"])
+        writer = _send_writing_keys(session, ["C-x", "C-s"], "save-buffer")
         _assert_files_r3_state(
             session,
             case,
@@ -664,19 +684,28 @@ def _run_files_save_mutation(session, case, path):
             screen_field="restore_screen",
             cursor=case["restore_cursor"],
             minibuffer=case["replay_minibuffer"],
+            writer=writer,
         )
         _send_keys(session, case["replay_prefix_keys"])
-        _send_keys(session, ["C-x", "e"])
+        writer = _send_writing_keys(
+            session, ["C-x", "e"], "call-last-kbd-macro"
+        )
         _assert_files_r3_state(
             session,
             case,
             path,
             expected_bytes=case["expected_bytes"],
             minibuffer=case["replay_minibuffer"],
+            writer=writer,
         )
         return
 
-    _send_keys(session, case["command_keys"])
+    writer = _send_writing_keys(
+        session,
+        case["command_keys"],
+        "save-buffer",
+        writes=mutation != "read-only",
+    )
     effect_minibuffer = case.get("effect_minibuffer", case["expected_minibuffer"])
     _assert_files_r3_state(
         session,
@@ -685,6 +714,7 @@ def _run_files_save_mutation(session, case, path):
         expected_bytes=case["effect_bytes"],
         screen_field="effect_screen",
         minibuffer=effect_minibuffer,
+        writer=writer,
     )
     if mutation == "undo":
         _send_keys(session, ["C-x", "u"])
@@ -695,7 +725,7 @@ def _run_files_save_mutation(session, case, path):
             expected_bytes=case["effect_bytes"],
             cursor=case["expected_undo_cursor"],
         )
-        _send_keys(session, ["C-x", "C-s"])
+        writer = _send_writing_keys(session, ["C-x", "C-s"], "save-buffer")
         _assert_files_r3_state(
             session,
             case,
@@ -703,6 +733,7 @@ def _run_files_save_mutation(session, case, path):
             expected_bytes=case["expected_bytes"],
             cursor=case["expected_undo_cursor"],
             minibuffer=case["expected_minibuffer"],
+            writer=writer,
         )
 
 
@@ -767,13 +798,16 @@ def _run_files_revert_mutation(session, case, path):
             expected_bytes=case["external_bytes"],
             cursor=case["expected_undo_cursor"],
         )
-        _send_keys(session, case["restore_command_keys"])
+        writer = _send_writing_keys(
+            session, case["restore_command_keys"], "save-buffer"
+        )
         _assert_files_r3_state(
             session,
             case,
             path,
             expected_bytes=case["expected_bytes"],
             minibuffer=case["expected_minibuffer"],
+            writer=writer,
         )
     elif mutation == "read-only":
         session.type(case["read_only_probe"])
@@ -923,7 +957,7 @@ def _run_save_buffer_shell_outcome(binary, outcome, expected_status, expected_by
         with Session(binary, [path]) as session:
             session.wait_ready()
             _set_save_buffer_shell_command(session, shlex.quote(command_path))
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.save_buffer(path, expected_bytes)
             session.wait_for_text(f"Wrote {_display_path(path)}")
             session.assert_external_state(
                 f"save-buffer shell {outcome} started", Path(marker_path).read_text(), "started"

@@ -191,6 +191,9 @@ def _run_with_artifacts(
         )
         result.status = "failed"
         result.error = {"type": type(error).__name__, "message": str(error)}
+        timeout_report = getattr(error, "scenario_timeout_report", None)
+        if timeout_report is not None:
+            result.error["timeout_report"] = timeout_report
         timing = result.record_timing(
             "scenario_execution", elapsed, SCENARIO_EXECUTION_TIMEOUT_SECONDS
         )
@@ -209,6 +212,13 @@ def _run_with_artifacts(
     result.save(artifacts_dir)
     _write_scenario_timing(result, timing, timing_report_path)
     return value
+
+
+def _print_failure(name, error):
+    print(f"FAIL {name}: {error}", file=sys.stderr)
+    timeout_report = getattr(error, "scenario_timeout_report", None)
+    if timeout_report is not None:
+        print(timeout_report, file=sys.stderr)
 
 
 def _write_scenario_timing(result, timing, report_path):
@@ -266,7 +276,7 @@ def main(argv):
                         timing_report_path=timing_report_path,
                     )
                 except Exception as error:
-                    print(f"FAIL benchmarks/{name}: {error}", file=sys.stderr)
+                    _print_failure(f"benchmarks/{name}", error)
                     benchmark_errors.append(name)
         except Exception as error:
             print(f"FAIL benchmarks: {error}", file=sys.stderr)
@@ -368,7 +378,7 @@ def main(argv):
             )
         except Exception as error:
             failed += 1
-            print(f"FAIL {name}: {error}", file=sys.stderr)
+            _print_failure(name, error)
         else:
             passed += 1
             print(f"PASS {name}")

@@ -130,8 +130,7 @@ def _assert_layout_effect(session, name, operation, cursor, dimension):
 
 def _save_and_assert(session, path, expected):
     expected_bytes = expected.encode("utf-8")
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected_bytes)
+    session.save_buffer(path, expected_bytes)
     session.assert_file_bytes(path, expected_bytes)
 
 

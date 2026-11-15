@@ -43,8 +43,7 @@ def recenter_top_bottom(binary):
             session.wait_for_region_exact_text("body", "line7", index=3)
             session.wait_for_region_cursor("body", 0, index=3)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, initial)
+            session.save_buffer(path, initial)
             session.assert_file_bytes(path, initial)
 
             output, code = session.quit()

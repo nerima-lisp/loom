@@ -64,8 +64,7 @@ def _find_file(session, path):
 def _toggle_current_line(session, path, mode_name, expected, column):
     session.wait_for_region_text("mode-line", mode_name)
     session.send(keys.meta("<") + keys.ctrl("e") + keys.meta(";"))
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, expected)
+    session.save_buffer(path, expected)
     session.assert_file_bytes(path, expected)
     session.wait_for_region_cursor("body", column)
 
@@ -81,14 +80,12 @@ def _toggle_region(
         + keys.ctrl("f") * selection_length
         + keys.meta(";")
     )
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, wrapped)
+    session.save_buffer(path, wrapped)
     session.assert_file_bytes(path, wrapped)
     session.wait_for_region_cursor("body", column, index=1)
 
     session.send(keys.meta(";"))
-    session.send(keys.ctrl("x") + keys.ctrl("s"))
-    session.wait_for_file(path, original)
+    session.save_buffer(path, original)
     session.assert_file_bytes(path, original)
     session.wait_for_region_cursor("body", len(original.splitlines()[1]), index=1)
 
@@ -132,8 +129,7 @@ def comments(binary):
             session.wait_for_region_text(
                 "minibuffer", "Mode JSON has no line comment syntax"
             )
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(json_path, json_initial)
+            session.save_buffer(json_path, json_initial)
             session.assert_file_bytes(json_path, json_initial)
             session.wait_for_region_cursor("body", len(json_initial.rstrip(b"\n")))
 

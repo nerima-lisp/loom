@@ -39,7 +39,7 @@ def text_control_characters(binary):
             ):
                 session.wait_for_region_contents("body", visible_text)
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
+            session.save_buffer(path, contents)
             session.wait_for_region_exact_text("minibuffer", f"Wrote {path}")
             session.assert_file_bytes(path, contents)
 

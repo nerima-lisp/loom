@@ -83,7 +83,7 @@ def mode_sidecar_write(binary):
             session.wait_for_region_text(
                 "minibuffer", "Auto-save mode enabled", timeout=2
             )
-            session.wait_for_file(sidecar, b"xdraft\n", timeout=2)
+            session.wait_for_untraced_file(sidecar, b"xdraft\n", timeout=2)
             session.assert_screen_text(
                 "Auto-save mode enabled",
                 match="contains",
@@ -91,6 +91,14 @@ def mode_sidecar_write(binary):
             )
             session.assert_screen_text(
                 "xdraft", match="contains", region="body"
+            )
+            # At interval 0 every loop tick rewrites the sidecar.  Ticks run
+            # after each input dispatch on the same thread, so once the
+            # disabling auto-save-mode row is traced no tick write is pending.
+            trace_count = session.command_trace_count()
+            session.extended_command("auto-save-mode", timeout=2)
+            session.wait_for_command_completion(
+                "auto-save-mode", route="mx", after=trace_count, timeout=2
             )
             session.assert_file_bytes(sidecar, b"xdraft\n")
             session.assert_file_bytes(path, b"draft\n")

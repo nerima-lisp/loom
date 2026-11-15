@@ -47,8 +47,7 @@ def _comment_lisp_region(binary, mode, extension):
             ) is not True:
                 raise AssertionError(f"{mode}: point after M-; was not (1, 7)")
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, commented, timeout=2.0)
+            session.save_buffer(path, commented, timeout=2.0)
             session.assert_file_bytes(path, commented)
             output, code = session.quit()
 
@@ -83,8 +82,7 @@ def _skip_lisp_closer(binary, mode, extension):
             if session.observe_cursor(expected=(0, 3), region="body") is not True:
                 raise AssertionError(f"{mode}: point after skipped closer was not (0, 3)")
 
-            session.send(keys.ctrl("x") + keys.ctrl("s"))
-            session.wait_for_file(path, completed)
+            session.save_buffer(path, completed)
             session.assert_file_bytes(path, completed)
             output, code = session.quit()
 

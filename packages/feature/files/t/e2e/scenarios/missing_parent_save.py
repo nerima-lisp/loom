@@ -49,7 +49,7 @@ def missing_parent_startup_save_confirmation(binary):
             )
             session.type("y")
             session.key("RET")
-            session.wait_for_file(created_path, _CREATED)
+            session.wait_for_prompted_file(created_path, _CREATED, "Wrote ")
             session.assert_file_bytes(created_path, _CREATED)
             session.assert_external_state(
                 "parent directory after confirmation",
@@ -113,7 +113,7 @@ def write_file_missing_parent_confirmation(binary):
             _assert_parent_prompt(session, os.path.dirname(target), target)
             session.type("y")
             session.key("RET")
-            session.wait_for_file(target, _CREATED)
+            session.wait_for_prompted_file(target, _CREATED, "Wrote ")
             session.assert_file_bytes(target, _CREATED)
             session.assert_external_state(
                 "write-file parent directory after confirmation",
