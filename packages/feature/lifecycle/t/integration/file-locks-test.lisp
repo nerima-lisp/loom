@@ -229,4 +229,74 @@ a line. READY appears once the lock is held."
           (dolist (path (list left right))
             (let ((lock (host-kit:try-acquire-file-lock (%lock-test-lock-path state path))))
               (expect (typep lock 'host-kit:file-lock) :to-be t)
-              (when lock (host-kit:release-file-lock lock)))))))))
+              (when lock (host-kit:release-file-lock lock))))))))
+
+  (it "keeps writing after one buffer fails and releases the locks last"
+    (cl-weave:expect-assertions 7)
+    (%with-lock-test-state (state)
+      (%with-minibuffer-state (minibuffer "")
+        (let* ((state-object *editor-state*)
+               (session (editor-state-session *editor-state*))
+               (locked-path (%lock-test-file state "locked.txt"))
+               (locked (loom/feature/files:visit-file locked-path))
+               (unresolved-path (merge-pathnames "work/unresolved.txt" state))
+               (unresolved (make-buffer :name "unresolved.txt" :path unresolved-path
+                                        :initial-content "unresolved"))
+               (failing (make-buffer :name "failing" :initial-content "fails"))
+               (held-locks loom/feature/lifecycle::*held-file-locks*)
+               (buffer-locks loom/feature/lifecycle::*buffer-file-locks*)
+               (truenamize (fdefinition 'host-kit:truenamize))
+               (write-file-string (fdefinition 'host-kit:write-file-string)))
+          (dolist (buffer (list unresolved failing))
+            (loom/feature/buffers:register-buffer session buffer)
+            (buffer-mark-modified buffer))
+          (buffer-insert-string locked "kept ")
+          (expect (%lock-test-hold-count locked-path) :to-equal 1)
+          (with-replaced-function
+              (host-kit:truenamize
+               (lambda (path &rest options)
+                 (if (search "unresolved" (sb-ext:native-namestring path))
+                     (error "Cannot resolve ~A" (sb-ext:native-namestring path))
+                     (apply truenamize path options))))
+            (with-replaced-function
+                (host-kit:write-file-string
+                 (lambda (string pathspec &rest options)
+                   (if (string= string "fails")
+                       (error "Disk full")
+                       (apply write-file-string string pathspec options))))
+              (destructuring-bind (failure messages)
+                  (sb-thread:join-thread
+                   (sb-thread:make-thread
+                    (lambda ()
+                      ;; The test binds these on the main thread; at run time
+                      ;; they are global values that every thread sees.
+                      (let ((*editor-state* state-object)
+                            (loom/feature/lifecycle:*loom-state-directory* state)
+                            (loom/feature/lifecycle::*held-file-locks* held-locks)
+                            (loom/feature/lifecycle::*buffer-file-locks* buffer-locks)
+                            (loom/feature/lifecycle::*pending-lifecycle-messages* nil))
+                        (list (handler-case
+                                  (progn
+                                    (loom/feature/lifecycle::%lifecycle-shutdown-hook
+                                     session :sigterm)
+                                    nil)
+                                (error (condition) (princ-to-string condition)))
+                              loom/feature/lifecycle::*pending-lifecycle-messages*)))
+                    :name "recovery-isolation-test"))
+                (expect failure :to-be nil)
+                (expect (count-if (lambda (text) (search "failing" text)) messages)
+                        :to-equal 1))))
+          (let* ((directory (merge-pathnames "recovery/" state))
+                 (bodies (%recovery-test-files directory "txt")))
+            (expect (sort (mapcar #'host-kit:read-file-string bodies) #'string<)
+                    :to-equal (list (format nil "kept saved~%") "unresolved"))
+            (expect (length (%recovery-test-files directory "sexp")) :to-equal 2)
+            (expect (getf (loom/feature/lifecycle:read-recovery-meta
+                           (make-pathname
+                            :type "sexp"
+                            :defaults (find "unresolved" bodies
+                                            :key #'host-kit:read-file-string
+                                            :test #'string=)))
+                          :path)
+                    :to-equal (sb-ext:native-namestring unresolved-path)))
+          (expect (%lock-test-hold-count locked-path) :to-be nil))))))

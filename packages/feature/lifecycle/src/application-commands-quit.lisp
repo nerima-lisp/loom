@@ -89,23 +89,34 @@ original list when the answer is invalid."
           :terminate
           :continue))
 
+    (defun %save-recovery-buffer-or-log (buffer reason index)
+      ;; One buffer's failure goes to *Messages* through the lifecycle queue,
+      ;; which any thread may use, and the remaining buffers are still written.
+      (handler-case
+          (when (buffer-modified-p buffer)
+            (%save-recovery-buffer buffer reason index))
+        (error (condition)
+          (%log-lifecycle-message
+           (format nil "Cannot write recovery files for ~A: ~A"
+                   (buffer-name buffer) condition)))))
+
     (defun %lifecycle-shutdown-hook (session reason)
       ;; The evaluation watchdog runs this on its own thread, which does not see
       ;; the main thread's dynamic binding of *EDITOR-SESSION*.
-      (when
-          (and
-           *editor-state*
-           (eq session
-               (loom/core/editor-session:editor-state-session *editor-state*))
-           (member reason (quote (:sigterm :sighup)) :test (function eq)))
-        (let ((loom/core/editor-session:*editor-session* session))
-          (loop for buffer in (loom/feature/buffers:quit-buffer-list)
-                for index from 0
-                when (buffer-modified-p buffer)
-                  do (%save-recovery-buffer buffer reason index))))
-      ;; Locks go last so a signal's recovery files exist before another loom
-      ;; can take the file.
-      (release-all-file-locks)
+      (unwind-protect
+           (when
+               (and
+                *editor-state*
+                (eq session
+                    (loom/core/editor-session:editor-state-session *editor-state*))
+                (member reason (quote (:sigterm :sighup)) :test (function eq)))
+             (let ((loom/core/editor-session:*editor-session* session))
+               (loop for buffer in (loom/feature/buffers:quit-buffer-list)
+                     for index from 0
+                     do (%save-recovery-buffer-or-log buffer reason index))))
+        ;; Locks go last so a signal's recovery files exist before another loom
+        ;; can take the file.
+        (release-all-file-locks))
       nil)
 
     (eval-when (:load-toplevel :execute)

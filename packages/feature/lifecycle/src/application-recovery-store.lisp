@@ -80,12 +80,19 @@ resolving each recorded one."
                     :reason reason
                     :time (get-universal-time))))))
 
+(defun %recovery-path (buffer)
+  "Return the native truename of BUFFER's file, or the native name of its path
+when the truename cannot be resolved, so that the body is still written."
+  (handler-case (buffer-file-truename buffer)
+    (error ()
+      (%character-string (native-path-namestring (literal-file-path (buffer-path buffer)))))))
+
 (defun %save-recovery-buffer (buffer reason index)
   "Write BUFFER's text and then its metadata as new 0600 files.
 Return the body pathname, or NIL when no state directory is set."
   (let ((directory (%private-state-directory "recovery/")))
     (when directory
-      (let ((truename (and (buffer-path buffer) (buffer-file-truename buffer))))
+      (let ((truename (and (buffer-path buffer) (%recovery-path buffer))))
         (multiple-value-bind (body meta)
             (%recovery-entry-paths directory reason index
                                    (and truename (file-path-hash truename)))
