@@ -1,14 +1,27 @@
 (defpackage #:loom/feature/lifecycle
   (:use #:cl)
   (:import-from #:loom/core/buffer
+                #:buffer-delete-region
+                #:buffer-insert-string
+                #:buffer-mark-saved
                 #:buffer-modified-p
                 #:buffer-name
+                #:buffer-narrowed-p
                 #:buffer-path
+                #:buffer-point-line
+                #:buffer-read-only-error
+                #:buffer-read-only-p
+                #:buffer-record-undo-boundary
                 #:buffer-save
+                #:buffer-set-major-mode
+                #:buffer-set-point
+                #:buffer-set-read-only
                 #:buffer-text)
   (:import-from #:loom/core/editor-session
                 #:*editor-state*
                 #:editor-state-minibuffer
+                #:editor-state-session
+                #:editor-state-window-tree
                 #:literal-file-path
                 #:native-path-basename
                 #:native-path-namestring
@@ -19,8 +32,18 @@
                 #:minibuffer-message)
   (:import-from #:loom/feature/auto-save
                 #:auto-save-path)
+  (:import-from #:loom/core/window-tree
+                #:window-buffer
+                #:window-set-buffer
+                #:window-split
+                #:window-tree-select-index
+                #:window-tree-selected-window
+                #:window-tree-windows)
   (:import-from #:loom/feature/buffers
+                #:ensure-result-buffer
                 #:quit-buffer-list)
+  (:import-from #:loom/feature/files
+                #:find-file-path)
   (:export #:*loom-state-directory*
            #:read-recovery-meta
            #:recovery-entries
@@ -60,6 +83,9 @@
            #:delete-stale-auto-save-temporaries
            #:delete-recovery-entries-for-buffer
            #:file-open-notice-shown-p
+           #:recover-file
+           #:list-recoverable-files
+           #:recover-list-visit
            #:loom-quit
            #:loom-quit-abort
            #:save-buffers-kill-terminal

@@ -43,3 +43,27 @@
                          :needs-region nil
                          :external (quote ())
                          :modes (quote (:all))))
+
+(register-command-spec :feature/lifecycle "recover-file" "recover-file"
+  #'loom/feature/lifecycle:recover-file
+  :keys nil :keymap :global
+  :group "ui and lifecycle" :help "M-x recover-file Recover unsaved work" :help-order 40
+  :mutates t :prompts '(:char) :needs-region nil :external '() :modes '(:all))
+(register-command-spec :feature/lifecycle "list-recoverable-files" "list-recoverable-files"
+  #'loom/feature/lifecycle:list-recoverable-files
+  :keys nil :keymap :global
+  :group "ui and lifecycle" :help "M-x list-recoverable-files List unsaved work"
+  :help-order 41
+  :mutates nil :prompts '() :needs-region nil :external '() :modes '(:all))
+;;; RET opens a file and hands over to recover-file, whose spec declares the
+;;; char prompt and the edit, so this command itself neither prompts nor edits.
+(register-command-spec :feature/lifecycle "recover-list-visit" "recover-list-visit"
+  #'loom/feature/lifecycle:recover-list-visit
+  :keys '((:enter)) :keymap :recover-list-local
+  :group "ui and lifecycle" :help nil :help-order nil
+  :mutates nil :prompts '() :needs-region nil :external '() :modes '(:recover-list))
+(loom/feature/mode:register-major-mode
+ :recover-list
+ :name "Recover List"
+ :keybindings
+ (list (cons :enter #'loom/feature/lifecycle:recover-list-visit)))

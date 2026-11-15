@@ -817,8 +817,12 @@ def recovery_sigterm_meta_watchdog(binary):
             _assert_recovery_entry(session, path, "UNSAVED draft one\n")
 
 
-def _assert_no_unsaved_work(session, path):
-    session.assert_screen_text("", region="minibuffer", strip_right=True)
+def _assert_no_unsaved_work(session, path, startup_notice=None):
+    # Without a file-open notice the echo area keeps the startup count, if any.
+    if startup_notice:
+        _assert_minibuffer_text(session, startup_notice)
+    else:
+        session.assert_screen_text("", region="minibuffer", strip_right=True)
     session.extended_command("recover-file")
     _assert_minibuffer_text(session, f"No unsaved work for {path}")
 
@@ -860,7 +864,9 @@ def recovery_same_content(binary):
             session.restart()
             session.wait_ready(timeout=1.5)
             _assert_body_row(session, 0, "draft one")
-            _assert_no_unsaved_work(session, path)
+            _assert_no_unsaved_work(
+                session, path, "1 recoverable file(s); M-x list-recoverable-files"
+            )
             session.quit()
 
 
@@ -1090,3 +1096,55 @@ def recovery_special_name_file_tree(binary):
                 "special content", match="contains", region="body"
             )
             session.quit()
+
+
+def _run_recover_list_visit(binary, case, invoke):
+    """Open a missing file's entry from *Loom-Recover* and restore its text."""
+    with _scenario_directory() as directory:
+        path = _make_buffer(directory, case["initial_bytes"].encode("utf-8"))
+        lost = directory / "lost.txt"
+        with Session(binary, [str(path)], columns=200) as session:
+            session.wait_ready(timeout=1.5)
+            _write_recovery_entry(
+                session.home_dir, _recovery_stem(lost, 1), "lost draft\n", lost
+            )
+            session.restart()
+            session.wait_ready(timeout=1.5)
+            session.extended_command("list-recoverable-files")
+            session.wait_for_region_text("body", str(lost))
+            invoke(session)
+            _assert_path_state(session, path, case)
+            session.type("r")
+            _assert_minibuffer_text(session, _recovered_message("recovery"))
+            _assert_body_row(session, 0, "lost draft")
+            session.save_buffer(str(lost), b"lost draft\n")
+            session.assert_file_bytes(str(lost), b"lost draft\n")
+            session.quit()
+
+
+@scenario(
+    "lifecycle/recover-list-visit-key",
+    commands=[
+        "execute-extended-command",
+        "list-recoverable-files",
+        "recover-list-visit",
+    ],
+)
+def recover_list_visit_key(binary):
+    case = _path_case(name="lifecycle/recover-list-visit-key")
+    _run_recover_list_visit(binary, case, lambda session: session.key("RET"))
+
+
+@scenario(
+    "lifecycle/recover-list-visit-mx",
+    commands=[
+        "execute-extended-command",
+        "list-recoverable-files",
+        "recover-list-visit",
+    ],
+)
+def recover_list_visit_mx(binary):
+    case = _path_case(name="lifecycle/recover-list-visit-mx")
+    _run_recover_list_visit(
+        binary, case, lambda session: session.extended_command("recover-list-visit")
+    )

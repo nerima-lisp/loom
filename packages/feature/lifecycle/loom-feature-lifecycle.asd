@@ -6,8 +6,10 @@
                                   "loom-feature-buffers"
                                   "loom-feature-files"
                                   "loom-feature-auto-save"
+                                  "loom-feature-mode"
                                   "cl-prolog-kit"
-                                  "cl-host-kit")
+                                  "cl-host-kit"
+                                  "cl-vcs-kit")
   :serial t
   :components ((:module "src"
                         :serial
@@ -17,6 +19,7 @@
                          (:file "application-file-locks")
                          (:file "application-recovery-detection")
                          (:file "application-commands-quit")
+                         (:file "application-commands-recover")
                          (:file "command-specs-quit")))))
 
 (asdf:defsystem "loom-feature-lifecycle/test"
@@ -39,4 +42,5 @@
                                    (:file "line-diff-test")
                                    (:file "recovery-store-test")
                                    (:file "file-locks-test")
-                                   (:file "recovery-detection-test")))))))
+                                   (:file "recovery-detection-test")
+                                   (:file "recover-commands-test")))))))

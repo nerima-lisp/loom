@@ -561,6 +561,75 @@
       ]
     },
     {
+      "name": "lifecycle/recover-list-visit-key",
+      "path_id": "r1:recover-list-visit:key:%7B%22keymap%22%3A%22recover-list-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22enter%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D",
+      "entry": "key:{\"keymap\":\"recover-list-local\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}",
+      "lane": "W3-2",
+      "rule": "r1",
+      "commands": [
+        "execute-extended-command",
+        "list-recoverable-files",
+        "recover-list-visit"
+      ],
+      "command": "recover-list-visit",
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        53
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Recover from recovery (<1 min newer)? (r, d, i, C-g)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": ""
+        },
+        {
+          "region": "minibuffer",
+          "text": "Recover from recovery (<1 min newer)? (r, d, i, C-g)"
+        }
+      ],
+      "entry_mode": "key",
+      "entry_keys": [
+        "RET"
+      ]
+    },
+    {
+      "name": "lifecycle/recover-list-visit-mx",
+      "path_id": "r1:recover-list-visit:mx",
+      "entry": "mx",
+      "lane": "W3-2",
+      "rule": "r1",
+      "commands": [
+        "execute-extended-command",
+        "list-recoverable-files",
+        "recover-list-visit"
+      ],
+      "command": "recover-list-visit",
+      "initial_bytes": "draft one\n",
+      "expected_bytes": "draft one\n",
+      "expected_cursor": [
+        0,
+        53
+      ],
+      "expected_cursor_region": "minibuffer",
+      "expected_minibuffer": "Recover from recovery (<1 min newer)? (r, d, i, C-g)",
+      "expected_screen": [
+        {
+          "region": "body",
+          "index": 0,
+          "text": ""
+        },
+        {
+          "region": "minibuffer",
+          "text": "Recover from recovery (<1 min newer)? (r, d, i, C-g)"
+        }
+      ],
+      "entry_mode": "mx"
+    },
+    {
       "name": "command-path/r2/recover-file/prompt-1/accept",
       "path_id": "r2:recover-file:prompt-1:char:accept",
       "lane": "W3-2",

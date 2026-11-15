@@ -100,6 +100,17 @@
    :state "default" :outcome "command runs from M-x"
    :observe (:screen_text)
    :scenario "command-path/r1/list-recoverable-files/mx")
+  (:id "r1:recover-list-visit:key:%7B%22keymap%22%3A%22recover-list-local%22%2C%22sequence%22%3A%5B%7B%22key%22%3A%22enter%22%2C%22modifiers%22%3A%5B%5D%7D%5D%7D"
+   :commands ("recover-list-visit") :rule :r1 :lane "W3-2"
+   :entry "key:{\"keymap\":\"recover-list-local\",\"sequence\":[{\"key\":\"enter\",\"modifiers\":[]}]}"
+   :state "default" :outcome "command runs from its key sequence"
+   :observe (:screen_text)
+   :scenario "lifecycle/recover-list-visit-key")
+  (:id "r1:recover-list-visit:mx" :commands ("recover-list-visit")
+   :rule :r1 :lane "W3-2" :entry "mx"
+   :state "default" :outcome "command runs from M-x"
+   :observe (:screen_text)
+   :scenario "lifecycle/recover-list-visit-mx")
   (:id "r2:recover-file:prompt-1:char:accept" :commands ("recover-file")
    :rule :r2 :lane "W3-2" :entry "mx;prompt:1:char"
    :state "prompt:char" :outcome "accept"
