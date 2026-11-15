@@ -292,6 +292,7 @@ def main(argv):
             "startup_to_first_screen_seconds": "startup_to_first_screen",
             "open_100000_lines_5mb_seconds": "open_100000_lines_5mb",
             "input_to_redraw_p95_milliseconds": "input_to_redraw_p95",
+            "cl_multiline_20k_p95_milliseconds": "cl_multiline_20k_p95",
             "d13_20k_line_key_response_milliseconds": (
                 "d13_20k_line_key_response"
             ),

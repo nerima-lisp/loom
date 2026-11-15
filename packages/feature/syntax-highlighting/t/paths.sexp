@@ -1,1 +1,5 @@
-()
+(
+ (:id "r6:syntax-highlighting:block-comment" :commands () :rule :r6 :lane "W3-7a" :entry "open-lisp-file" :state "common-lisp-multiline" :outcome "block comment spans three lines" :observe (:cell_attrs) :scenario "syntax-highlighting/multiline/block-comment")
+ (:id "r6:syntax-highlighting:nested-comment" :commands () :rule :r6 :lane "W3-7a" :entry "open-lisp-file" :state "common-lisp-multiline" :outcome "nested block comments preserve depth" :observe (:cell_attrs) :scenario "syntax-highlighting/multiline/nested-comment")
+ (:id "r6:syntax-highlighting:docstring" :commands () :rule :r6 :lane "W3-7a" :entry "open-lisp-file" :state "common-lisp-multiline" :outcome "docstring spans three lines" :observe (:cell_attrs) :scenario "syntax-highlighting/multiline/docstring")
+ (:id "r6:syntax-highlighting:delete-opening-quote" :commands () :rule :r6 :lane "W3-7a" :entry "DEL" :state "common-lisp-multiline" :outcome "deleting the opening quote restores code attributes" :observe (:cell_attrs) :scenario "syntax-highlighting/multiline/delete-opening-quote"))

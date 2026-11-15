@@ -616,6 +616,10 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "end_of_buffer_100000_lines_5mb_seconds",
                 "seconds",
             ),
+            "cl-multiline": ("cl_multiline_20k_p95_milliseconds", "milliseconds"),
+            "cl-multiline-split": (
+                "cl_multiline_20k_split_p95_milliseconds", "milliseconds",
+            ),
         }
         for scenario_name, scenario in benchmark_scenarios().items():
             with self.subTest(scenario=scenario_name):
@@ -624,6 +628,19 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 session.__exit__.return_value = False
                 session.started_at = 10.0
                 session.first_screen_at = 10.25
+                foreground = "default"
+
+                def edit_syntax(data):
+                    nonlocal foreground
+                    if data == b'"':
+                        foreground = "green"
+                    elif data == keys.ctrl("?"):
+                        foreground = "default"
+
+                session.screen.lines.return_value = ["", "CL_BENCH_00001"]
+                session.screen.cell_attrs.side_effect = lambda *_cell: {"fg": foreground}
+                session.send.side_effect = edit_syntax
+                session.assert_cell_attrs = Mock(return_value=True)
                 result = ScenarioResult(f"benchmarks/{scenario_name}")
                 with patch("loom_e2e.benchmarks.Session", return_value=session):
                     with patch(
@@ -841,6 +858,14 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "input_to_redraw_p95_milliseconds": values[-1],
                 "samples": values,
             }
+            measurements[f"cl-multiline-trial-{batch + 1}"] = {
+                "cl_multiline_20k_p95_milliseconds": values[-1],
+                "samples": values,
+            }
+            measurements[f"cl-multiline-split-trial-{batch + 1}"] = {
+                "cl_multiline_20k_split_p95_milliseconds": values[-1] * 2,
+                "samples": [value * 2 for value in values],
+            }
 
         report = build_benchmark_report(measurements)
 
@@ -883,6 +908,15 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         self.assertEqual(report["input"], {"lines": 100_000, "bytes": 5_000_000})
         self.assertEqual(report["protocol"]["redraw_batches"], 4)
         self.assertEqual(report["protocol"]["redraw_batch_samples"], 25)
+        self.assertEqual(report["measurements"]["cl_multiline_20k_p95_milliseconds"], 95.0)
+        self.assertEqual(len(report["samples"]["cl_multiline_20k_p95_milliseconds"]), 100)
+        self.assertFalse(report["within_targets"]["cl_multiline_20k_p95"])
+        self.assertEqual(report["targets"]["cl_multiline_20k_p95_milliseconds"], 50.0)
+        self.assertEqual(
+            report["informational_measurements"]["cl_multiline_20k_split_p95_milliseconds"],
+            190.0,
+        )
+        self.assertNotIn("cl_multiline_20k_split_p95", report["within_targets"])
 
         incomplete = build_benchmark_report({
             "startup-trial-1": measurements["startup-trial-1"],
@@ -893,6 +927,7 @@ class BenchmarkMeasurementTests(unittest.TestCase):
                 "startup_to_first_screen_seconds",
                 "open_100000_lines_5mb_seconds",
                 "input_to_redraw_p95_milliseconds",
+                "cl_multiline_20k_p95_milliseconds",
             ],
         )
 
@@ -928,7 +963,7 @@ class BenchmarkMeasurementTests(unittest.TestCase):
         )
         self.assertEqual(
             report["missing_informational_metrics"],
-            ["end_of_buffer_100000_lines_5mb_seconds"],
+            ["end_of_buffer_100000_lines_5mb_seconds", "cl_multiline_20k_split_p95_milliseconds"],
         )
 
 

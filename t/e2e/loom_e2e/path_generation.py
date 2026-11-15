@@ -799,9 +799,26 @@ def _wp2_evaluation_interrupt_paths():
     ]
 
 
+def _wp6_syntax_paths():
+    return [
+        _path(
+            f"r6:syntax-highlighting:{case}", [], "r6", "W3-7a",
+            "open-lisp-file" if case != "delete-opening-quote" else "DEL",
+            "common-lisp-multiline", outcome, ["cell_attrs"],
+        )
+        for case, outcome in (
+            ("block-comment", "block comment spans three lines"),
+            ("nested-comment", "nested block comments preserve depth"),
+            ("docstring", "docstring spans three lines"),
+            ("delete-opening-quote", "deleting the opening quote restores code attributes"),
+        )
+    ]
+
+
 def _fixed_paths():
     paths = []
     paths.extend(_file_tree_scroll_paths())
+    paths.extend(_wp6_syntax_paths())
     dimensions = ("fullwidth", "combining", "emoji", "wrap", "truncate")
     operations = (
         ("move", ["forward-char"], ["cursor"]),

@@ -407,6 +407,9 @@ class CoverageCliTests(unittest.TestCase):
             "redraw": lambda _binary: {
                 "input_to_redraw_p95_milliseconds": 10.0,
             },
+            "cl-multiline": lambda _binary: {
+                "cl_multiline_20k_p95_milliseconds": 10.0,
+            },
             "large-file-open": lambda _binary: {
                 "open_100000_lines_5mb_seconds": 0.8,
                 "input": {"lines": 100_000, "bytes": 5_000_000},

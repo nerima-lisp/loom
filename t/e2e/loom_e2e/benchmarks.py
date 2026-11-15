@@ -32,6 +32,10 @@ _STARTUP_TARGET_SECONDS = 0.3
 _FILE_OPEN_TARGET_SECONDS = 1.0
 _REDRAW_TARGET_MILLISECONDS = 50.0
 _D13_KEY_RESPONSE_TARGET_MS = 50.0
+_CL_MULTILINE_SAMPLES = 100
+_CL_MULTILINE_BATCHES = 4
+_CL_MULTILINE_BATCH_SAMPLES = 25
+_CL_MULTILINE_TARGET_MS = 50.0
 
 
 def _large_file(path):
@@ -275,6 +279,61 @@ def _measure_large_file_eof(binary):
     }
 
 
+def _measure_cl_multiline(binary, split=False):
+    _require_active_deadline()
+    budget = current_deadline()
+    with tempfile.TemporaryDirectory(prefix="loom-e2e-cl-benchmark-") as directory:
+        path = os.path.join(directory, "multiline.lisp")
+        with open(path, "w", encoding="utf-8") as handle:
+            for line in range(20_000):
+                handle.write(f"CL_BENCH_{line:05d} (print 123)\n")
+        with Session(binary, [path]) as session:
+            session.wait_ready()
+            session.wait_for_text("CL_BENCH_00001")
+            if split:
+                session.extended_command("split-window-below")
+                session.extended_command("other-window")
+                session.extended_command("end-of-buffer")
+                session.wait_for_text("CL_BENCH_19999")
+                session.extended_command("other-window")
+                session.wait_for_region_cursor("body", 0)
+            cells = [
+                (row, text.index("CL_BENCH_"))
+                for row, text in enumerate(session.screen.lines())
+                if row > 0 and "CL_BENCH_" in text
+            ]
+            if not cells:
+                raise AssertionError("multiline benchmark has no visible syntax cells")
+            for cell in cells:
+                session.assert_cell_attrs(*cell, expected={"fg": "default"})
+            samples = []
+            for sample in range(_CL_MULTILINE_BATCH_SAMPLES):
+                quoted = sample % 2 == 0
+                expected = "green" if quoted else "default"
+                started = time.monotonic()
+                session.send(b'"' if quoted else keys.ctrl("?"))
+                while budget.execution_remaining() > 0:
+                    session.pump(poll_timeout=0.001)
+                    if all(session.screen.cell_attrs(*cell)["fg"] == expected for cell in cells):
+                        samples.append((time.monotonic() - started) * 1000.0)
+                        for cell in cells:
+                            session.assert_cell_attrs(*cell, expected={"fg": expected})
+                        break
+                else:
+                    raise TimeoutError("CL edit did not update visible syntax attributes")
+            # Each trial has an odd sample count and ends with the quote inserted.
+            session.send(keys.ctrl("?"))
+            session.wait_for_region_cursor("body", 0)
+            session.quit()
+    metric = (
+        "cl_multiline_20k_split_p95_milliseconds" if split
+        else "cl_multiline_20k_p95_milliseconds"
+    )
+    measurement = _percentile_95(samples)
+    _record_measurement(metric, measurement, "milliseconds", samples)
+    return {metric: measurement, "samples": samples}
+
+
 def benchmark_scenarios(registered=None):
     scenarios = {}
     for trial in range(1, _STARTUP_TRIALS + 1):
@@ -287,6 +346,11 @@ def benchmark_scenarios(registered=None):
         scenarios[f"large-file-open-trial-{trial}"] = _measure_large_file_open
     for trial in range(1, _FILE_OPEN_TRIALS + 1):
         scenarios[f"large-file-eof-trial-{trial}"] = _measure_large_file_eof
+    for trial in range(1, _CL_MULTILINE_BATCHES + 1):
+        scenarios[f"cl-multiline-trial-{trial}"] = _measure_cl_multiline
+        scenarios[f"cl-multiline-split-trial-{trial}"] = partial(
+            _measure_cl_multiline, split=True
+        )
     if registered is not None:
         d13_scenario = next(
             (
@@ -325,6 +389,8 @@ def _aggregate_trials(
         "redraw": _REDRAW_BATCHES,
         "large-file-open": _FILE_OPEN_TRIALS,
         "large-file-eof": _FILE_OPEN_TRIALS,
+        "cl-multiline": _CL_MULTILINE_BATCHES,
+        "cl-multiline-split": _CL_MULTILINE_BATCHES,
     }[scenario]
     trials = [
         measurements.get(f"{scenario}-trial-{trial}")
@@ -383,6 +449,12 @@ def build_benchmark_report(measurements):
             _percentile_95,
             _REDRAW_TARGET_MILLISECONDS,
         ),
+        "cl_multiline_20k_p95_milliseconds": (
+            "cl-multiline",
+            _CL_MULTILINE_SAMPLES,
+            _percentile_95,
+            _CL_MULTILINE_TARGET_MS,
+        ),
     }
     values = {}
     samples = {}
@@ -395,6 +467,7 @@ def build_benchmark_report(measurements):
             "startup": "startup_to_first_screen",
             "large-file-open": "open_100000_lines_5mb",
             "redraw": "input_to_redraw_p95",
+            "cl-multiline": "cl_multiline_20k_p95",
         }[scenario]
         targets[metric] = target
         result = _aggregate_trials(
@@ -433,6 +506,16 @@ def build_benchmark_report(measurements):
         informational_completion[eof_metric] = eof_result["completed_samples"]
     else:
         missing_informational_metrics.append(eof_metric)
+    split_metric = "cl_multiline_20k_split_p95_milliseconds"
+    split_result = _aggregate_trials(
+        measurements, "cl-multiline-split", split_metric,
+        _CL_MULTILINE_SAMPLES, _percentile_95,
+    )
+    if isinstance(split_result, dict):
+        informational_measurements[split_metric] = split_result[split_metric]
+        informational_samples[split_metric] = split_result["samples"]
+    else:
+        missing_informational_metrics.append(split_metric)
     report = {
         "measurements": values,
         "samples": samples,
@@ -455,6 +538,16 @@ def build_benchmark_report(measurements):
             "redraw_aggregation": "nearest-rank p95",
             "redraw_batches": _REDRAW_BATCHES,
             "redraw_batch_samples": _REDRAW_BATCH_SAMPLES,
+            "cl_multiline_samples": _CL_MULTILINE_SAMPLES,
+            "cl_multiline_batches": _CL_MULTILINE_BATCHES,
+            "cl_multiline_batch_samples": _CL_MULTILINE_BATCH_SAMPLES,
+            "cl_multiline_aggregation": "nearest-rank p95",
+            "cl_multiline_interval": (
+                "from inserting a quote at line 1 or deleting it with DEL to "
+                "all visible marker cells receiving the expected foreground "
+                "in a 20,000-line Common Lisp buffer"
+            ),
+            "cl_multiline_split": "second window at end of buffer; informational only",
             "warmup_runs": 0,
             "redraw_interval": (
                 "from C-f input to cursor-position output in a loaded "
