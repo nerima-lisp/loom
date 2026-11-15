@@ -14,8 +14,7 @@
                                           (loom-concurrent-runtime-directory-entries
                                            runtime
                                            path)
-                                        (when present-p
-                                          entries))))
+                                        (values entries present-p))))
     (setf (editor-state-concurrent-runtime state) runtime)
     runtime))
 
@@ -42,44 +41,31 @@
            (loom-concurrent-runtime-pending runtime))))))
 
 (defun file-tree-prepare-viewport (tree width height &key wheel-delta)
-  "Apply selection following or wheel movement to the current sidebar geometry."
-  (let* ((follow-p (and (file-tree-selection-index tree)
-                         (or (file-tree-scroll-follow-p tree)
-                             (/= height (file-tree-viewport-height tree)))))
+  "Prepare one entry prefix, preserving viewport state until listings are ready."
+  (let* ((needed-p (file-tree-scroll-follow-needed-p tree))
+         (follow-p (and needed-p (plusp height) (file-tree-selected-path tree)))
          (margin (if follow-p (%file-tree-scroll-margin height) 0))
          (forward-rows (max 0 (or wheel-delta 0)))
-         (top (if follow-p
-                  (file-tree-scroll-top-for-selection
-                   (file-tree-scroll-top tree)
-                   (file-tree-selection-index tree)
-                   (max (file-tree-entry-count tree)
-                        (+ (file-tree-scroll-top tree) height))
-                   height)
-                  (file-tree-scroll-top tree)))
-         (limit (+ top height margin forward-rows))
-         (entries (file-tree-entries
-                   tree limit
-                   :stop-after-path (when (and follow-p (plusp height))
-                                      (file-tree-selected-path tree))
-                   :trailing-rows (+ margin forward-rows)))
-         (count (length entries))
-         (index (when follow-p
-                  (position (file-tree-selected-path tree) entries
-                            :key #'car :test #'equal)))
-         (top (if follow-p
-                  (file-tree-scroll-top-for-selection top index count height)
-                  (file-tree-clamp-scroll-top top count height))))
-    (when wheel-delta
-      (setf top (file-tree-scroll-top-for-wheel top count height wheel-delta)))
-    (setf (file-tree-scroll-top tree) top
-          (file-tree-viewport-width tree) (min 24 width)
-          (file-tree-viewport-height tree) height
-          (file-tree-scroll-follow-p tree)
-          (and (file-tree-scroll-follow-p tree) (null wheel-delta))
-          (file-tree-scroll-follow-needed-p tree) nil
-          (file-tree-entry-count tree)
-          (if (< count limit) count (max count (file-tree-entry-count tree))))
-    (when index
-      (setf (file-tree-selection-index tree) index))
-    tree))
+         (top (file-tree-scroll-top tree))
+         (limit (+ top height margin forward-rows)))
+    (multiple-value-bind (entries present-p)
+        (file-tree-entries tree :limit limit
+                          :stop-after-path (when follow-p
+                                             (file-tree-selected-path tree))
+                          :trailing-rows (+ margin forward-rows))
+      (when present-p
+        (let* ((count (length entries))
+               (index (position (file-tree-selected-path tree) entries
+                                :key #'car :test #'equal))
+               (top (if follow-p
+                        (file-tree-scroll-top-for-selection top index count height)
+                        (file-tree-clamp-scroll-top top count height))))
+          (when wheel-delta
+            (setf top (file-tree-scroll-top-for-wheel top count height wheel-delta)))
+          (setf (file-tree-scroll-top tree) top
+                (file-tree-viewport-width tree) (min 24 width)
+                (file-tree-viewport-height tree) height
+                (file-tree-scroll-follow-needed-p tree)
+                (and needed-p (zerop height)))))
+      (values entries present-p))))
 

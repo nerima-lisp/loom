@@ -35,7 +35,7 @@
     (unwind-protect
          (%file-tree-search-children
           tree target-path
-          (funcall (file-tree-child-lister tree) directory-path)
+          (%file-tree-children tree directory-path)
           active-paths)
       (remhash directory-path active-paths))))
 
@@ -47,38 +47,45 @@ its root, for an entry whose path is EQUAL to PATH, and return its kind
   (%file-tree-search-directory tree path (file-tree-root-path tree)
                                (make-hash-table :test #'equal)))
 
-(defun file-tree-entries (tree &optional limit
-                        &key stop-after-path (trailing-rows 0))
-  "Return display-order entries through LIMIT and STOP-AFTER-PATH's trailing rows."
+(defun %file-tree-children (tree path)
+  (multiple-value-call
+      (lambda (children &optional (present-p t))
+        (values children present-p))
+    (funcall (file-tree-child-lister tree) path)))
+
+(defun file-tree-entries (tree &key limit stop-after-path (trailing-rows 0))
+  "Return display-order entries and whether every visited listing is available."
   (let ((entries nil)
         (count 0)
+        (present-p t)
         (target-seen (null stop-after-path))
         (active-paths (make-hash-table :test #'equal)))
     (block collected
       (labels ((complete-p ()
                  (and limit (>= count limit) target-seen))
                (visit (path depth)
-                 (when (complete-p)
-                   (return-from collected))
+                 (when (complete-p) (return-from collected))
                  (unless (gethash path active-paths)
                    (setf (gethash path active-paths) t)
                    (unwind-protect
-                        (dolist (child (funcall (file-tree-child-lister tree) path))
-                          (when (complete-p)
-                            (return-from collected))
-                          (let ((child-path (car child)))
-                            (push (cons child-path depth) entries)
-                            (incf count)
-                            (when (and limit (not target-seen)
-                                       (equal child-path stop-after-path))
-                              (setf target-seen t
-                                    limit (max limit (+ count trailing-rows))))
-                            (when (%file-tree-expanded-directory-p
-                                   tree child-path (cdr child))
-                              (visit child-path (1+ depth)))))
+                        (multiple-value-bind (children available-p)
+                            (%file-tree-children tree path)
+                          (unless available-p (setf present-p nil))
+                          (dolist (child children)
+                            (when (complete-p) (return-from collected))
+                            (let ((child-path (car child)))
+                              (push (cons child-path depth) entries)
+                              (incf count)
+                              (when (and limit (not target-seen)
+                                         (equal child-path stop-after-path))
+                                (setf target-seen t
+                                      limit (max limit (+ count trailing-rows))))
+                              (when (%file-tree-expanded-directory-p
+                                     tree child-path (cdr child))
+                                (visit child-path (1+ depth))))))
                      (remhash path active-paths)))))
         (visit (file-tree-root-path tree) 0)))
-    (nreverse entries)))
+    (values (nreverse entries) present-p)))
 
 (defun file-tree-clamp-scroll-top (top count height)
   (max 0 (min top (max 0 (- count height)))))
@@ -139,21 +146,17 @@ The calculation is independent of FILE-TREE state so callers can keep the
 selection mutation at the boundary and test navigation as a pure operation."
   (let ((next-position (%file-tree-next-position paths selected-path direction)))
     (when next-position
-      (values (nth next-position paths) next-position))))
+      (nth next-position paths))))
 
 (defun file-tree-move-selection (tree direction)
   "Move selection one entry in DIRECTION and request viewport following."
   (let* ((paths (mapcar #'car (file-tree-entries tree)))
-         (old-selection (file-tree-selection tree)))
-    (multiple-value-bind (selection index)
-        (%file-tree-next-selection paths old-selection direction)
-      (setf (file-tree-selection tree) selection
-            (file-tree-selection-index tree) index
-            (file-tree-entry-count tree) (length paths))
-      (unless (equal selection old-selection)
-        (setf (file-tree-scroll-follow-needed-p tree) t
-              (file-tree-scroll-follow-p tree) t))
-      selection)))
+         (old-selection (file-tree-selection tree))
+         (selection (%file-tree-next-selection paths old-selection direction)))
+    (setf (file-tree-selection tree) selection)
+    (unless (equal selection old-selection)
+      (setf (file-tree-scroll-follow-needed-p tree) t))
+    selection))
 
 (defun file-tree-toggle-expand (tree path)
   "Toggle the directory at PATH and request viewport following."
@@ -161,8 +164,7 @@ selection mutation at the boundary and test navigation as a pure operation."
     (error "not a directory in tree: ~S" path))
   (let ((expanded-path (%file-tree-expanded-directory-key tree path))
         (key (%file-tree-directory-key path)))
-    (setf (file-tree-scroll-follow-needed-p tree) t
-          (file-tree-scroll-follow-p tree) t)
+    (setf (file-tree-scroll-follow-needed-p tree) t)
     (if expanded-path
         (progn
           (remhash expanded-path (file-tree-expanded tree))

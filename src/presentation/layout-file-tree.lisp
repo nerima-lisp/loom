@@ -19,15 +19,14 @@ string via NAMESTRING/identity."
             (when (equal path selected) '(:reverse)))))
 
 (defun %layout-draw-file-tree (renderer file-tree width height)
-  "Draw the prepared sidebar viewport without copying its entry list."
-  (loom/feature/file-tree:file-tree-prepare-viewport file-tree width height)
-  (when (plusp width)
-    (let* ((top (loom/feature/file-tree:file-tree-scroll-top file-tree))
-           (entries (loom/feature/file-tree:file-tree-entries
-                     file-tree (+ top height)))
-           (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
-      (loop for (path . depth) in (nthcdr top entries)
-            for row from 0 below height
-            do (multiple-value-bind (visible style)
-                   (%layout-file-tree-row path depth selected width)
-                 (loom-renderer-write-string renderer 0 row visible :style style))))))
+  "Draw the single entry prefix returned by viewport preparation."
+  (let ((entries (loom/feature/file-tree:file-tree-prepare-viewport
+                  file-tree width height)))
+    (when (plusp width)
+      (let ((top (loom/feature/file-tree:file-tree-scroll-top file-tree))
+            (selected (loom/feature/file-tree:file-tree-selected-path file-tree)))
+        (loop for (path . depth) in (nthcdr top entries)
+              for row from 0 below height
+              do (multiple-value-bind (visible style)
+                     (%layout-file-tree-row path depth selected width)
+                   (loom-renderer-write-string renderer 0 row visible :style style)))))))

@@ -5,14 +5,9 @@
   (file-tree-toggle (editor-state-file-tree *editor-state*)))
 
 (defun %invalidate-file-tree-path (path)
-  "Invalidate PATH's listing and viewport metadata for a matching selection."
-  (let ((tree (and *editor-state* (editor-state-file-tree *editor-state*)))
-        (runtime (and *editor-state*
+  "Invalidate PATH and its parent in the running file-tree runtime."
+  (let ((runtime (and *editor-state*
                       (editor-state-concurrent-runtime *editor-state*))))
-    (when (and tree (equal path (file-tree-selected-path tree)))
-      (setf (file-tree-scroll-follow-p tree) nil
-            (file-tree-selection-index tree) nil
-            (file-tree-entry-count tree) 0))
     (when runtime
       (loom-concurrent-runtime-invalidate-path runtime path))))
 
@@ -122,26 +117,3 @@
      (function %file-tree-keymap-provider)
      :priority 100)))
 
-(defun %file-tree-scroll-tick-hook (session now)
-  (declare (ignore now))
-  (when (and *editor-state*
-             (eq session (loom/core/editor-session:editor-state-session
-                          *editor-state*)))
-    (let ((tree (editor-state-file-tree *editor-state*)))
-      (when (and tree (file-tree-scroll-follow-needed-p tree))
-        (file-tree-prepare-viewport tree (file-tree-viewport-width tree)
-                                    (file-tree-viewport-height tree))))))
-
-(defun %file-tree-scroll-resize-hook (session width height)
-  (when (and *editor-state*
-             (eq session (loom/core/editor-session:editor-state-session
-                          *editor-state*)))
-    (let ((tree (editor-state-file-tree *editor-state*)))
-      (when tree
-        (file-tree-prepare-viewport tree width (max 0 (1- height)))))))
-
-(eval-when (:load-toplevel :execute)
-  (loom/core/editor-session:register-session-hook
-   :tick :feature/file-tree #'%file-tree-scroll-tick-hook)
-  (loom/core/editor-session:register-session-hook
-   :resize :feature/file-tree #'%file-tree-scroll-resize-hook))

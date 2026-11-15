@@ -39,14 +39,16 @@
 
 (defun %mouse-file-tree-hit-test (session screen-x screen-y)
   (when (%mouse-file-tree-region-p session screen-x screen-y)
-    (let* ((tree (editor-state-file-tree *editor-state*)))
-      (loom/feature/file-tree:file-tree-prepare-viewport
-       tree (loom/feature/file-tree:file-tree-viewport-width tree)
-       (loom/feature/file-tree:file-tree-viewport-height tree))
-      (let* ((index (+ (loom/feature/file-tree:file-tree-scroll-top tree) screen-y))
-             (entry (nth index (file-tree-entries tree (1+ index)))))
-        (when entry
-          (make-hit-test-result :feature/mouse :feature-item :target (car entry)))))))
+    (let ((tree (editor-state-file-tree *editor-state*)))
+      (multiple-value-bind (entries present-p)
+          (loom/feature/file-tree:file-tree-prepare-viewport
+           tree (loom/feature/file-tree:file-tree-viewport-width tree)
+           (loom/feature/file-tree:file-tree-viewport-height tree))
+        (when present-p
+          (let* ((index (+ (loom/feature/file-tree:file-tree-scroll-top tree) screen-y))
+                 (entry (nth index entries)))
+            (when entry
+              (make-hit-test-result :feature/mouse :feature-item :target (car entry)))))))))
 
 (defun %mouse-scroll-file-tree (button)
   (let ((tree (editor-state-file-tree *editor-state*)))

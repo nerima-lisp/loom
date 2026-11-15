@@ -39,7 +39,6 @@
   (:import-from #:loom/core/window-tree
                 #:window-buffer
                 #:window-scroll-column
-                #:window-tree-height
                 #:window-tree-select-index
                 #:window-tree-windows)
   (:import-from #:loom/feature/file-tree
