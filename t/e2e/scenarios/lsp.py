@@ -567,6 +567,10 @@ def _assert_server_request_responses(
     events = _protocol_events(protocol_log)
     session.assert_external_state("LSP protocol log contains frames", bool(events), True)
     counts = _server_request_response_counts(events)
+    session.observe_external_state("server request count", len(counts))
+    session.observe_external_state(
+        "server request methods", [request["method"] for request in counts],
+    )
     if require_requests:
         session.assert_external_state(
             "fake server sent at least one request", len(counts) > 0, True,
@@ -634,10 +638,10 @@ def _run_server_request_completion(binary, request_kind):
                 responses,
                 [{"jsonrpc": "2.0", "id": request_id, "result": expected}],
             )
-            output, code = session.quit()
             _assert_server_request_responses(
                 session, protocol_log, exit_status_file, require_requests=True,
             )
+            output, code = session.quit()
         assert_exit_zero("lsp-server-request-" + request_kind, output, code)
     finally:
         directory.cleanup()
@@ -986,6 +990,7 @@ def lsp_typescript_start_success(binary):
         "lsp-start",
         "lsp-hover-at-point",
         "lsp-completion-at-point",
+        "lsp-stop",
     ],
 )
 def lsp_typescript_hover_completion_success(binary):
@@ -1006,7 +1011,7 @@ def lsp_typescript_hover_completion_success(binary):
             with scenario_preparation():
                 session.wait_ready()
                 _start(session)
-                pid, _wrapper_pid = _supervised_child_pid(
+                pid, wrapper_pid = _supervised_child_pid(
                     session, child_pid_file, wrapper_pid_file,
                 )
                 _warm_up_typescript_server(session, pid)
@@ -1041,8 +1046,11 @@ def lsp_typescript_hover_completion_success(binary):
                 session, pid, "lsp-completion-at-point"
             )
 
-            output, code = session.quit()
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+            _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
             _assert_server_request_responses(session, protocol_log, exit_status_file)
+            output, code = session.quit()
         assert_exit_zero("lsp-typescript-hover-completion-success", output, code)
     finally:
         directory.cleanup()
@@ -1205,11 +1213,11 @@ def lsp_completion(binary):
     _run_lsp_command(binary, "lsp-completion-at-point", "No completions")
 
 
-@scenario("lsp/completion-success", commands=["lsp-completion-at-point"])
+@scenario("lsp/completion-success", commands=["lsp-completion-at-point", "lsp-stop"])
 def lsp_completion_success(binary):
     source = "let completionValue = 1; in comp"
     (
-        directory, path, _child_pid_file, _wrapper_pid_file, exit_status_file,
+        directory, path, child_pid_file, wrapper_pid_file, exit_status_file,
         protocol_log, _stderr_file,
     ) = _supervised_server_fixture(
         [_nixd_command()], "main.nix", source + "\n", "nixd-lsp",
@@ -1218,6 +1226,9 @@ def lsp_completion_success(binary):
         with Session(binary, [path]) as session:
             session.wait_ready()
             _start(session)
+            _child_pid, wrapper_pid = _supervised_child_pid(
+                session, child_pid_file, wrapper_pid_file,
+            )
             _select_main_buffer(session, source)
             # Diagnostics arrive after initialization and didOpen, not just spawn.
             session.wait_for_region_text("mode-line", "Diag:")
@@ -1231,8 +1242,11 @@ def lsp_completion_success(binary):
             session.wait_for_region_cursor("body", len(completed))
             session.extended_command("save-buffer")
             session.wait_for_file(path, (completed + "\n").encode("utf-8"))
-            output, code = session.quit()
+            session.extended_command("lsp-stop")
+            session.wait_for_text("LSP stopped.")
+            _assert_supervised_exit(session, exit_status_file, wrapper_pid, "0")
             _assert_server_request_responses(session, protocol_log, exit_status_file)
+            output, code = session.quit()
         assert_exit_zero("lsp-completion-success", output, code)
     finally:
         directory.cleanup()
